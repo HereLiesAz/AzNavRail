@@ -46,7 +46,6 @@ data class NavRailCycleButton(
 ) : NavRailItem
 
 
-
 /**
  * Represents a single item in the expanded menu.
  *
