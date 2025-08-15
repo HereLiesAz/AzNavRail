@@ -20,8 +20,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.model.NavRailMenuSection
 
+/**
+ * The content of the expanded menu drawer.
+ *
+ * @param sections The list of sections to display in the main scrollable area.
+ * @param modifier The modifier to be applied to the drawer sheet.
+ * @param onCloseDrawer A lambda to be executed when a menu item is clicked, typically to close the drawer.
+ * @param onAboutClicked A lambda for the 'About' footer item. If null, the item is hidden.
+ * @param onFeedbackClicked A lambda for the 'Feedback' footer item. If null, the item is hidden.
+ * @param creditText The text for the credit footer item. If null, the item is hidden.
+ * @param onCreditClicked A lambda for the credit footer item.
+ */
 @Composable
-fun NavRailMenu(
+internal fun NavRailMenu(
     sections: List<NavRailMenuSection>,
     modifier: Modifier = Modifier,
     onCloseDrawer: () -> Unit,

@@ -32,6 +32,30 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/**
+ * An expressive and highly configurable navigation rail component for Jetpack Compose.
+ *
+ * This component provides a vertical navigation rail that can be expanded to a full menu drawer.
+ * It includes built-in support for simple action buttons, stateful cycle buttons with cooldown
+ * logic, a configurable footer, and swipe-to-collapse gestures.
+ *
+ * @param header The configuration for the header of the navigation rail, containing the content
+ * (e.g., an icon) and a click handler to toggle the expanded state. See [NavRailHeader].
+ * @param buttons The list of items to display in the collapsed state of the rail. This can be a
+ * mix of [NavRailActionButton] and [NavRailCycleButton] items. See [NavRailItem].
+ * @param menuSections The list of sections and their items to display in the expanded menu view.
+ * See [NavRailMenuSection].
+ * @param isExpanded Whether the navigation rail is currently in its expanded (menu) state.
+ * @param modifier The modifier to be applied to the navigation rail container.
+ * @param headerIconSize The size of the header icon. Defaults to 80.dp.
+ * @param onAboutClicked A lambda to be executed when the 'About' button in the footer is clicked.
+ * If null, the button is not shown.
+ * @param onFeedbackClicked A lambda to be executed when the 'Feedback' button in the footer is clicked.
+ * If null, the button is not shown.
+ * @param creditText The text for the credit/signature line in the footer. Defaults to "@HereLiesAz".
+ * If null, the item is not shown.
+ * @param onCreditClicked A lambda to be executed when the credit line is clicked.
+ */
 @Composable
 fun AzNavRail(
     header: NavRailHeader,
