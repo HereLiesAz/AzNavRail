@@ -1,0 +1,29 @@
+[versions]
+# Android & Jetpack
+composeBom = "2024.04.01"
+coreKtx = "1.16.0"
+material3 = "1.4.0-beta01"
+
+# Plugins
+kotlinAndroid = "2.2.0"
+kotlinCompose = "2.2.0"
+androidLibrary = "8.13.0-alpha03"
+
+[libraries]
+# AndroidX Core & UI
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+
+# Jetpack Compose
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
+androidx-compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout" }
+androidx-compose-animation-core = { group = "androidx.compose.animation", name = "animation-core" }
+
+
+[plugins]
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlinAndroid" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlinCompose" }
+android-library = { id = "com.android.library", version.ref = "androidLibrary" }
