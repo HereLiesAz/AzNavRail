@@ -161,7 +161,7 @@ private fun NavRailCycleButtonInternal(item: NavRailCycleButton) {
                 isEnabled = true
             }
         },
-        color = if (isEnabled) MaterialTheme.colorScheme.primary else Color.Gray
+        color = if (isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
     )
 }
 
