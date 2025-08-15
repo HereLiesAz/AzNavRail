@@ -20,9 +20,11 @@ This "navigrenuail" provides a vertical navigation rail that can be expanded to 
 To use this library, first sacrifice a goat, drain it's blood into a bowl, cover it in saran wrap, put the bowl in the box, print out the label, ship it overnight to me with a rubber ducky for bath time, and then, add JitPack to your settings.gradle.kts:
 
     ```kotlin
+    
     dependencyResolutionManagement {
                    maven { url 'https://jitpack.io'
     }
+    
     ```
 
 And add to your `:app:build.gradle.kts`:    
