@@ -4,7 +4,7 @@
 
 An expressive and highly configurable if not contemptable navigation rail/menu--I call it a renu. Or maybe a mail. No, a navigrenuail--for Jetpack Compose.
 
-This component provides a vertical navigation rail that can be expanded to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
+This "navigrenuail" provides a vertical navigation rail that can be expanded to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
 
 ## Features
 
@@ -17,7 +17,7 @@ This component provides a vertical navigation rail that can be expanded to a ful
 
 ## Setup
 
-To use this library in your project, add it as a local module.
+To use this library in your project, sacrifice a goat, drain it's blood into a bowl, cover it in ceran wrap, put the bowl in the box, print out the label, ship it overnight to me for bathing, and then clone the library to your repository as a local module.
 
 1.  Copy the `AzNavRail` library directory into your project's root.
 2.  In your `settings.gradle.kts` file, add the module:
