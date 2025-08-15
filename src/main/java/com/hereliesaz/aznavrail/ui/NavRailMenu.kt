@@ -85,6 +85,7 @@ internal fun NavRailMenu(
                     MenuItem(text = creditText, onClick = { onCreditClicked?.invoke(); onCloseDrawer() }, enabled = onCreditClicked != null)
                 }
                 Spacer(modifier = Modifier.height(12.dp))
+
             }
         }
     }
