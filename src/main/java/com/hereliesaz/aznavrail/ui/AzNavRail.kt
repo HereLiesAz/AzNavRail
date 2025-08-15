@@ -1,6 +1,7 @@
 package com.hereliesaz.aznavrail.ui
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.model.NavRailActionButton
@@ -49,8 +51,20 @@ fun AzNavRail(
     )
 
     NavigationRail(
-        modifier = modifier.width(railWidth),
-        containerColor = if (isExpanded) MaterialTheme.colorScheme.surface else Color.Transparent,
+        modifier = modifier
+            .width(railWidth)
+            .pointerInput(isExpanded) {
+                if (isExpanded) {
+                    detectDragGestures { change, dragAmount ->
+                        change.consume()
+                        val (x, _) = dragAmount
+                        if (x < -20) { // Threshold for a left swipe
+                            header.onClick()
+                        }
+                    }
+                }
+            },
+        containerColor = Color.Transparent,
         header = {
             IconButton(
                 onClick = header.onClick,
