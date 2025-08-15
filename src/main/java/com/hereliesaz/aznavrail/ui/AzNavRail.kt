@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -68,6 +69,7 @@ fun AzNavRail(
     onFeedbackClicked: (() -> Unit)? = null,
     creditText: String? = "@HereLiesAz",
     onCreditClicked: (() -> Unit)? = null
+
 ) {
     val railWidth by animateDpAsState(
         targetValue = if (isExpanded) 260.dp else 80.dp,
@@ -89,6 +91,7 @@ fun AzNavRail(
                 }
             },
         containerColor = Color.Transparent,
+
         header = {
             IconButton(
                 onClick = header.onClick,
@@ -97,6 +100,7 @@ fun AzNavRail(
                 Box(modifier = Modifier.size(headerIconSize)) {
                     header.content()
                 }
+
             }
         }
     ) {
@@ -108,6 +112,7 @@ fun AzNavRail(
                 onFeedbackClicked = onFeedbackClicked,
                 creditText = creditText,
                 onCreditClicked = onCreditClicked
+
             )
         } else {
             Column(
@@ -160,3 +165,4 @@ private fun NavRailCycleButtonInternal(item: NavRailCycleButton) {
         color = if (isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
     )
 }
+

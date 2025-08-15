@@ -21,6 +21,7 @@ sealed interface NavRailItem
 
 /**
  * Represents a simple button with a single action.
+
  *
  * @param text The text to display on the button.
  * @param onClick A lambda to be executed when the button is clicked.
@@ -43,6 +44,7 @@ data class NavRailCycleButton(
     val initialOption: String,
     val onStateChange: (String) -> Unit
 ) : NavRailItem
+
 
 
 /**
