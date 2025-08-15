@@ -16,6 +16,17 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+/**
+ * A circular, outlined button, designed for use in the collapsed navigation rail.
+ * This is the basic building block for all buttons in the rail.
+ *
+ * @param onClick A lambda to be executed when the button is clicked.
+ * @param text The text to display on the button.
+ * @param modifier The modifier to be applied to the button.
+ * @param size The diameter of the circular button.
+ * @param color The color of the button's border and text. Defaults to the theme's primary color.
+ */
+
 @Composable
 fun NavRailButton(
     onClick: () -> Unit,

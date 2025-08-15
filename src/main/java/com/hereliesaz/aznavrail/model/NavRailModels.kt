@@ -14,15 +14,38 @@ data class NavRailHeader(
 )
 
 /**
- * Represents a button in the collapsed state of the navigation rail.
+ * A sealed interface representing an item in the collapsed navigation rail.
+ * Can be either a simple action button or a stateful cycle button.
+ */
+sealed interface NavRailItem
+
+/**
+ * Represents a simple button with a single action.
+
  *
  * @param text The text to display on the button.
  * @param onClick A lambda to be executed when the button is clicked.
  */
-data class NavRailButton(
+data class NavRailActionButton(
     val text: String,
     val onClick: () -> Unit
-)
+) : NavRailItem
+
+/**
+ * Represents a button that cycles through a list of states, with built-in
+ * cooldown and rapid-cycle behavior.
+ *
+ * @param options The list of string options to cycle through.
+ * @param initialOption The starting option for the button. Must be one of the options.
+ * @param onStateChange A callback that is invoked with the new state whenever it changes.
+ */
+data class NavRailCycleButton(
+    val options: List<String>,
+    val initialOption: String,
+    val onStateChange: (String) -> Unit
+) : NavRailItem
+
+
 
 /**
  * Represents a single item in the expanded menu.
