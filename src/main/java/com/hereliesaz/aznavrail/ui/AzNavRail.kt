@@ -17,6 +17,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,18 +41,15 @@ import com.hereliesaz.aznavrail.model.PredefinedAction
 /**
  * An expressive and highly configurable navigation rail component for Jetpack Compose.
  *
- * This component provides a self-contained, stateful navigation rail that can be expanded
- * to a menu drawer. It simplifies the API by deriving rail buttons from a single source of
- * truth, the menu sections.
- *
- * @param header The configuration for the header of the navigation rail. See [NavRailHeader].
+ * @param header The configuration for the header of the navigation rail.
  * @param menuSections The list of sections and items that define the navigation structure.
  * @param modifier The modifier to be applied to the navigation rail container.
  * @param onPredefinedAction A lambda to handle clicks on items with a [PredefinedAction].
+ * @param buttonContent A composable lambda to customize the appearance of the rail buttons.
  * @param initiallyExpanded Whether the rail should be expanded when it first appears.
  * @param useAppIconAsHeader If true, the rail will display the app's icon in the header.
  * @param headerIconSize The size of the header icon.
- * @param allowCyclersOnRail If true, cycle buttons will be displayed on the collapsed rail. Defaults to false.
+ * @param allowCyclersOnRail If true, cycle buttons will be displayed on the collapsed rail.
  * @param creditText The text for the credit line in the footer.
  * @param onCreditClicked A lambda for when the credit line is clicked.
  */
@@ -61,6 +59,9 @@ fun AzNavRail(
     menuSections: List<NavRailMenuSection>,
     modifier: Modifier = Modifier,
     onPredefinedAction: (PredefinedAction) -> Unit,
+    buttonContent: @Composable (item: NavItem, state: MutableState<Any>?) -> Unit = { item, state ->
+        DefaultRailButton(item = item, state = state, onPredefinedAction = onPredefinedAction)
+    },
     initiallyExpanded: Boolean = false,
     useAppIconAsHeader: Boolean = false,
     headerIconSize: Dp = 80.dp,
@@ -76,7 +77,6 @@ fun AzNavRail(
         label = "railWidth"
     )
 
-    // Hoist the state for all items
     val itemStates = remember(menuSections) {
         val states = mutableMapOf<NavItem, MutableState<Any>>()
         menuSections.flatMap { it.items }.forEach { item ->
@@ -146,11 +146,7 @@ fun AzNavRail(
                 verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
             ) {
                 railButtons.forEach { item ->
-                    RailButton(
-                        item = item,
-                        state = itemStates[item],
-                        onPredefinedAction = onPredefinedAction
-                    )
+                    buttonContent(item, itemStates[item])
                 }
             }
         }
@@ -158,43 +154,41 @@ fun AzNavRail(
 }
 
 @Composable
-private fun RailButton(
+private fun DefaultRailButton(
     item: NavItem,
     state: MutableState<Any>?,
     onPredefinedAction: (PredefinedAction) -> Unit
 ) {
-    val buttonText = item.railButtonText ?: item.text
+    val buttonText: String
+    val onClick: () -> Unit
 
     when (val data = item.data) {
-        is NavItemData.Action -> NavRailButton(
+        is NavItemData.Action -> {
+            buttonText = item.railButtonText ?: item.text
             onClick = {
                 data.onClick?.invoke()
                 data.predefinedAction?.let(onPredefinedAction)
-            },
-            text = buttonText
-        )
+            }
+        }
         is NavItemData.Toggle -> {
             val isChecked = state?.value as? Boolean ?: data.initialIsChecked
-            NavRailButton(
-                onClick = {
-                    val newState = !isChecked
-                    state?.value = newState
-                    data.onStateChange(newState)
-                },
-                text = buttonText
-            )
+            buttonText = item.railButtonText ?: item.text
+            onClick = {
+                val newState = !isChecked
+                state?.value = newState
+                data.onStateChange(newState)
+            }
         }
         is NavItemData.Cycle -> {
             val currentIndex = state?.value as? Int ?: data.options.indexOf(data.initialOption)
-            val currentText = data.options.getOrNull(currentIndex) ?: ""
-            NavRailButton(
-                text = currentText,
-                onClick = {
-                    val nextIndex = (currentIndex + 1) % data.options.size
-                    state?.value = nextIndex
-                    data.onStateChange(data.options[nextIndex])
-                }
-            )
+            buttonText = data.options.getOrNull(currentIndex) ?: ""
+            onClick = {
+                val nextIndex = (currentIndex + 1) % data.options.size
+                state?.value = nextIndex
+                data.onStateChange(data.options[nextIndex])
+            }
         }
     }
+
+    NavRailButton(onClick = onClick, text = buttonText)
 }
