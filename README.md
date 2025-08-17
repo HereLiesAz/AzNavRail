@@ -109,3 +109,18 @@ AzNavRail(
 | `onFeedbackClicked` | `(() -> Unit)?`                    | (Optional) A click handler for the 'Feedback' button in the footer. If `null`, the button is hidden.                                     |
 | `creditText`        | `String?`                          | (Optional) The text for the credit line in the footer. If `null`, the item is hidden.                                                    |
 | `onCreditClicked`   | `(() -> Unit)?`                    | (Optional) A click handler for the credit line.                                                                                          |
+
+## Dependencies
+
+This library depends on the following third-party libraries:
+
+*   **AndroidX Core**: `androidx.core:core-ktx:1.16.0`
+*   **Jetpack Compose BOM**: `androidx.compose:compose-bom:2024.04.01`
+*   **Jetpack Compose UI**: `androidx.compose.ui:ui`
+*   **Jetpack Compose UI Graphics**: `androidx.compose.ui:ui-graphics`
+*   **Jetpack Compose UI Tooling Preview**: `androidx.compose.ui:ui-tooling-preview`
+*   **Material 3**: `androidx.compose.material3:material3:1.4.0-beta01`
+*   **Jetpack Compose Foundation Layout**: `androidx.compose.foundation:foundation-layout`
+*   **Jetpack Compose Animation Core**: `androidx.compose.animation:animation-core`
+*   **Jetpack Compose Material Icons Extended**: `androidx.compose.material:material-icons-extended`
+*   **Coil Compose**: `io.coil-kt:coil-compose:2.6.0`
