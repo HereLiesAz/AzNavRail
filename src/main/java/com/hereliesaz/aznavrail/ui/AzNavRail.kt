@@ -1,180 +1,180 @@
 package com.hereliesaz.aznavrail.ui
 
+import android.content.pm.PackageManager
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.model.NavRailActionButton
 import com.hereliesaz.aznavrail.model.NavRailCycleButton
+import com.hereliesaz.aznavrail.model.NavRailHeader
 import com.hereliesaz.aznavrail.model.NavRailItem
 import com.hereliesaz.aznavrail.model.NavRailMenuSection
 import kotlinx.coroutines.delay
 
 /**
- * An expressive, stateful, and highly configurable navigation rail component for Jetpack Compose.
+ * An expressive and highly configurable navigation rail component for Jetpack Compose.
  *
- * This component provides a "drop-in" solution for a vertical navigation rail that manages its
- * own state, automatically uses the app's launcher icon, and can be expanded to a full menu drawer.
- * It includes built-in support for simple action buttons, stateful cycle buttons with cooldown
- * logic, and a configurable footer. It uses [ModalNavigationDrawer] to provide a material-compliant
- * drawer experience.
+ * This component provides a self-contained, stateful navigation rail that can be expanded
+ * to a menu drawer. It includes built-in support for action buttons, cycle buttons,
+ * a configurable footer, and swipe-to-collapse gestures.
  *
  * @param header The configuration for the header of the navigation rail. See [NavRailHeader].
- * If `useAppIconAsHeader` is true, this is ignored.
- * @param buttons The list of items to display in the collapsed state of the rail. This can be a
- * mix of [NavRailActionButton] and [NavRailCycleButton] items. See [NavRailItem].
- * @param menuSections The list of sections and their items to display in the expanded menu view.
- * See [NavRailMenuSection].
- * @param isExpanded Whether the navigation rail is currently in its expanded (menu) state.
- * @param onExpandedChange A callback invoked when the rail's expansion state should change.
+ * @param buttons The list of items to display in the collapsed state of the rail.
+ * @param menuSections The list of sections and items to display in the expanded menu view.
  * @param modifier The modifier to be applied to the navigation rail container.
- * @param useAppIconAsHeader If true, the rail will attempt to display the app's launcher icon
- * in the header. If it fails, it will display a fallback menu icon.
- * @param headerIconSize The size of the header icon. Defaults to 80.dp.
- * @param onAboutClicked A lambda to be executed when the 'About' button in the footer is clicked.
- * If null, the button is not shown.
- * @param onFeedbackClicked A lambda to be executed when the 'Feedback' button in the footer is clicked.
- * If null, the button is not shown.
- * @param creditText The text for the credit/signature line in the footer. Defaults to "@HereLiesAz".
- * If null, the item is not shown.
- * @param onCreditClicked A lambda to be executed when the credit line is clicked.
- * @param content The main screen content to be displayed next to the navigation rail.
+ * @param initiallyExpanded Whether the rail should be expanded when it first appears.
+ * @param useAppIconAsHeader If true, the rail will display the app's icon in the header.
+ * @param headerIconSize The size of the header icon.
+ * @param onAboutClicked A lambda for the 'About' button in the footer.
+ * @param onFeedbackClicked A lambda for the 'Feedback' button in the footer.
+ * @param creditText The text for the credit line in the footer.
+ * @param onCreditClicked A lambda for when the credit line is clicked.
  */
 @Composable
 fun AzNavRail(
+    header: NavRailHeader,
     buttons: List<NavRailItem>,
     menuSections: List<NavRailMenuSection>,
-    isExpanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    initiallyExpanded: Boolean = false,
     useAppIconAsHeader: Boolean = false,
     headerIconSize: Dp = 80.dp,
     onAboutClicked: (() -> Unit)? = null,
     onFeedbackClicked: (() -> Unit)? = null,
     creditText: String? = "@HereLiesAz",
-    onCreditClicked: (() -> Unit)? = null,
-    content: @Composable () -> Unit
+    onCreditClicked: (() -> Unit)? = null
 ) {
-    val drawerState = rememberDrawerState(if (isExpanded) DrawerValue.Open else DrawerValue.Closed)
+    var isExpanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
 
-    LaunchedEffect(isExpanded) {
-        if (isExpanded) drawerState.open() else drawerState.close()
-    }
+    val railWidth by animateDpAsState(
+        targetValue = if (isExpanded) 260.dp else 80.dp,
+        label = "railWidth"
+    )
 
-    LaunchedEffect(drawerState.isOpen) {
-        if (drawerState.isOpen != isExpanded) {
-            onExpandedChange(drawerState.isOpen)
+    val onToggle: () -> Unit = { isExpanded = !isExpanded }
+
+    NavigationRail(
+        modifier = modifier
+            .width(railWidth)
+            .pointerInput(isExpanded) {
+                if (isExpanded) {
+                    detectDragGestures { change, dragAmount ->
+                        change.consume()
+                        val (x, _) = dragAmount
+                        if (x < -20) { // Threshold for a left swipe
+                            onToggle()
+                        }
+                    }
+                }
+            },
+        containerColor = Color.Transparent,
+        header = {
+            IconButton(
+                onClick = onToggle,
+                modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)
+            ) {
+                Box(modifier = Modifier.size(headerIconSize)) {
+                    if (useAppIconAsHeader) {
+                        val context = LocalContext.current
+                        val iconDrawable = try {
+                            context.packageManager.getApplicationIcon(context.packageName)
+                        } catch (e: Exception) {
+                            null
+                        }
+
+                        if (iconDrawable != null) {
+                            Image(
+                                painter = rememberAsyncImagePainter(model = iconDrawable),
+                                contentDescription = "App Icon"
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Menu"
+                            )
+                        }
+                    } else {
+                        header.content()
+                    }
+                }
+            }
         }
-    }
-
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
+    ) {
+        if (isExpanded) {
             NavRailMenu(
                 sections = menuSections,
-                onCloseDrawer = { onExpandedChange(false) },
+                onCloseDrawer = onToggle,
                 onAboutClicked = onAboutClicked,
                 onFeedbackClicked = onFeedbackClicked,
                 creditText = creditText,
                 onCreditClicked = onCreditClicked
             )
-        }
-    ) {
-        Row {
-            NavigationRail(
-                modifier = modifier.width(80.dp),
-                containerColor = Color.Transparent,
-                header = {
-                    IconButton(
-                        onClick = { onExpandedChange(!isExpanded) },
-                        modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)
-                    ) {
-                        Box(modifier = Modifier.size(headerIconSize)) {
-                            if (useAppIconAsHeader) {
-                                val context = LocalContext.current
-val iconDrawable = try {
-    context.packageManager.getApplicationIcon(context.packageName)
-} catch (e: android.content.pm.PackageManager.NameNotFoundException) {
-    null
-}
-
-                                if (iconDrawable != null) {
-                                    Image(
-                                        painter = rememberAsyncImagePainter(model = iconDrawable),
-                                        contentDescription = "App Icon"
-                                    )
-                                } else {
-                                    Icon(
-                                        imageVector = Icons.Default.Menu,
-                                        contentDescription = "Menu"
-                                    )
-                                }
-                            } else {
-                                header.content()
-                            }
-                        }
-                    }
-                }
+        } else {
+            Column(
+                modifier = Modifier.padding(horizontal = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
             ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 4.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
-                ) {
-                    buttons.forEach { item ->
-                        when (item) {
-                            is NavRailActionButton -> {
-                                NavRailButton(
-                                    onClick = item.onClick,
-                                    text = item.text
-                                )
-                            }
-                            is NavRailCycleButton -> {
-                                NavRailCycleButtonInternal(item = item)
-                            }
+                buttons.forEach { item ->
+                    when (item) {
+                        is NavRailActionButton -> {
+                            NavRailButton(
+                                onClick = item.onClick,
+                                text = item.text
+                            )
+                        }
+                        is NavRailCycleButton -> {
+                            NavRailCycleButtonInternal(item = item, isExpanded = isExpanded)
                         }
                     }
                 }
             }
-            content()
         }
     }
 }
 
 @Composable
-private fun NavRailCycleButtonInternal(item: NavRailCycleButton) {
+private fun NavRailCycleButtonInternal(item: NavRailCycleButton, isExpanded: Boolean) {
     var currentIndex by remember { mutableStateOf(item.options.indexOf(item.initialOption)) }
     var isEnabled by remember { mutableStateOf(true) }
 
     LaunchedEffect(currentIndex) {
         if (!isEnabled) {
             delay(1000)
+            isEnabled = true
+        }
+    }
+
+    // When the nav rail is collapsed, the button should be enabled.
+    LaunchedEffect(isExpanded) {
+        if (!isExpanded) {
             isEnabled = true
         }
     }
@@ -193,4 +193,3 @@ private fun NavRailCycleButtonInternal(item: NavRailCycleButton) {
         color = if (isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
     )
 }
-
