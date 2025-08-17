@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import com.hereliesaz.aznavrail.model.NavItem
 import com.hereliesaz.aznavrail.model.NavItemData
 import com.hereliesaz.aznavrail.model.NavRailHeader
@@ -22,7 +23,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun TestAppScreen() {
