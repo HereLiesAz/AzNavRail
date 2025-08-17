@@ -108,7 +108,6 @@ fun AzNavRail(
                         } catch (e: PackageManager.NameNotFoundException) {
                             null
                         }
-
                         if (iconDrawable != null) {
                             Image(
                                 painter = rememberAsyncImagePainter(model = iconDrawable),
