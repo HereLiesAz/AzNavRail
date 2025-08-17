@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import android.content.pm.PackageManager
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,21 +33,21 @@ import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.model.NavRailActionButton
 import com.hereliesaz.aznavrail.model.NavRailCycleButton
+import com.hereliesaz.aznavrail.model.NavRailHeader
 import com.hereliesaz.aznavrail.model.NavRailItem
 import com.hereliesaz.aznavrail.model.NavRailMenuSection
 import kotlinx.coroutines.delay
 
 /**
- * An expressive, stateful, and highly configurable navigation rail component for Jetpack Compose.
+ * An expressive and highly configurable navigation rail component for Jetpack Compose.
  *
- * This component provides a "drop-in" solution for a vertical navigation rail that manages its
- * own state, automatically uses the app's launcher icon, and can be expanded to a full menu drawer.
+ * This component provides a vertical navigation rail that can be expanded to a full menu drawer.
  * It includes built-in support for simple action buttons, stateful cycle buttons with cooldown
  * logic, and a configurable footer. It uses [ModalNavigationDrawer] to provide a material-compliant
  * drawer experience.
  *
  * @param header The configuration for the header of the navigation rail. See [NavRailHeader].
- * If `useAppIconAsHeader` is true, this is ignored.
+ * This is only required if `useAppIconAsHeader` is false.
  * @param buttons The list of items to display in the collapsed state of the rail. This can be a
  * mix of [NavRailActionButton] and [NavRailCycleButton] items. See [NavRailItem].
  * @param menuSections The list of sections and their items to display in the expanded menu view.
@@ -68,6 +69,7 @@ import kotlinx.coroutines.delay
  */
 @Composable
 fun AzNavRail(
+    header: NavRailHeader? = null,
     buttons: List<NavRailItem>,
     menuSections: List<NavRailMenuSection>,
     isExpanded: Boolean,
@@ -118,11 +120,11 @@ fun AzNavRail(
                         Box(modifier = Modifier.size(headerIconSize)) {
                             if (useAppIconAsHeader) {
                                 val context = LocalContext.current
-val iconDrawable = try {
-    context.packageManager.getApplicationIcon(context.packageName)
-} catch (e: android.content.pm.PackageManager.NameNotFoundException) {
-    null
-}
+                                val iconDrawable = try {
+                                    context.packageManager.getApplicationIcon(context.packageName)
+                                } catch (e: PackageManager.NameNotFoundException) {
+                                    null
+                                }
 
                                 if (iconDrawable != null) {
                                     Image(
@@ -136,6 +138,7 @@ val iconDrawable = try {
                                     )
                                 }
                             } else {
+                                requireNotNull(header) { "A custom header must be provided when useAppIconAsHeader is false." }
                                 header.content()
                             }
                         }
@@ -156,7 +159,7 @@ val iconDrawable = try {
                                 )
                             }
                             is NavRailCycleButton -> {
-                                NavRailCycleButtonInternal(item = item)
+                                NavRailCycleButtonInternal(item = item, isExpanded = isExpanded)
                             }
                         }
                     }
@@ -168,13 +171,20 @@ val iconDrawable = try {
 }
 
 @Composable
-private fun NavRailCycleButtonInternal(item: NavRailCycleButton) {
+private fun NavRailCycleButtonInternal(item: NavRailCycleButton, isExpanded: Boolean) {
     var currentIndex by remember { mutableStateOf(item.options.indexOf(item.initialOption)) }
     var isEnabled by remember { mutableStateOf(true) }
 
     LaunchedEffect(currentIndex) {
         if (!isEnabled) {
             delay(1000)
+            isEnabled = true
+        }
+    }
+
+    // When the nav rail is collapsed, the button should be enabled.
+    LaunchedEffect(isExpanded) {
+        if (!isExpanded) {
             isEnabled = true
         }
     }
@@ -193,4 +203,3 @@ private fun NavRailCycleButtonInternal(item: NavRailCycleButton) {
         color = if (isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
     )
 }
-

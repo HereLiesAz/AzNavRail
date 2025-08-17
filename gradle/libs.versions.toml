@@ -9,9 +9,6 @@ coil = "2.6.0"
 kotlinAndroid = "2.2.0"
 kotlinCompose = "2.2.0"
 androidLibrary = "8.13.0-alpha03"
-dokka = "1.9.20"
-coil = "2.6.0"
-
 
 [libraries]
 # AndroidX Core & UI
@@ -33,5 +30,3 @@ coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coi
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlinAndroid" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlinCompose" }
 android-library = { id = "com.android.library", version.ref = "androidLibrary" }
-dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
-
