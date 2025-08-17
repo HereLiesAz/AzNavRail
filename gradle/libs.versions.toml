@@ -9,10 +9,12 @@ coil = "2.6.0"
 kotlinAndroid = "2.0.0"
 kotlinCompose = "2.0.0"
 androidLibrary = "8.4.1"
+activityCompose = "1.9.0"
 
 [libraries]
 # AndroidX Core & UI
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 
 # Jetpack Compose
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
