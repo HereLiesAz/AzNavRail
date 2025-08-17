@@ -1,5 +1,7 @@
 package com.hereliesaz.testapp
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -20,14 +22,39 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+import androidx.compose.ui.platform.LocalContext
+
 @Composable
 fun TestAppScreen() {
+    val context = LocalContext.current
+    val appName = context.packageManager.getApplicationLabel(context.applicationInfo).toString()
+
     // In your screen's Composable, e.g., inside a Row
     AzNavRail(
+        appName = appName,
+        useAppIconAsHeader = true,
         header = NavRailHeader { /* ... */ },
+        onPredefinedAction = { action ->
+            when (action) {
+                PredefinedAction.HOME -> { /* Navigate to Home */
+                }
+                PredefinedAction.ABOUT -> {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/hereliesaz/$appName"))
+                    context.startActivity(intent)
+                }
+                PredefinedAction.FEEDBACK -> {
+                    val intent = Intent(Intent.ACTION_SENDTO).apply {
+                        data = Uri.parse("mailto:hereliesaz@gmail.com")
+                        putExtra(Intent.EXTRA_SUBJECT, "$appName - Feedback")
+                    }
+                    context.startActivity(intent)
+                }
+                else -> {}
+            }
+        },
         menuSections = listOf(
             NavRailMenuSection(
-                title = "Main",
+                title = "",
                 items = listOf(
                     NavItem(
                         text = "Home",
@@ -46,13 +73,15 @@ fun TestAppScreen() {
                 )
             )
         ),
-        onPredefinedAction = { action ->
-            when (action) {
-                PredefinedAction.HOME -> { /* Navigate to Home */
-                }
-
-                else -> {}
-            }
-        },
+        footerItems = listOf(
+            NavItem(
+                text = "About",
+                data = NavItemData.Action(predefinedAction = PredefinedAction.ABOUT)
+            ),
+            NavItem(
+                text = "Feedback",
+                data = NavItemData.Action(predefinedAction = PredefinedAction.FEEDBACK)
+            )
+        )
     )
 }
