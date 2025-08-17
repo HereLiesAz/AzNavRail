@@ -106,6 +106,7 @@ fun AzNavRail(
                         val iconDrawable = try {
                             context.packageManager.getApplicationIcon(context.packageName)
                         } catch (e: PackageManager.NameNotFoundException) {
+
                             null
                         }
 
