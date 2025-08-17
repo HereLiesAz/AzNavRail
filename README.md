@@ -31,9 +31,12 @@ To use this library,
 
 ```kotlin
     dependencyResolutionManagement {
-            // ...
-                   maven { url 'https://jitpack.io'}
-    }
+		repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+		repositories {
+			mavenCentral()
+			maven { url = uri("https://jitpack.io") }
+		}
+	}
 ```
 
 And add the dependency to your app's `build.gradle.kts`. The library now includes `coil-compose` as a transitive dependency, so you don't need to add it separately.
