@@ -103,10 +103,14 @@ fun AzNavRail(
                 Box(modifier = Modifier.size(headerIconSize)) {
                     if (useAppIconAsHeader) {
                         val context = LocalContext.current
-                        val iconDrawable = try {
-                            context.packageManager.getApplicationIcon(context.packageName)
-                        } catch (e: PackageManager.NameNotFoundException) {
-
+                        val packageName = context.packageName
+                        val iconDrawable = if (packageName != null) {
+                            try {
+                                context.packageManager.getApplicationIcon(packageName)
+                            } catch (e: PackageManager.NameNotFoundException) {
+                                null
+                            }
+                        } else {
                             null
                         }
 
@@ -163,34 +167,16 @@ fun AzNavRail(
 
 @Composable
 private fun NavRailCycleButtonInternal(item: NavRailCycleButton, isExpanded: Boolean) {
-    var currentIndex by remember { mutableStateOf(item.options.indexOf(item.initialOption)) }
-    var isEnabled by remember { mutableStateOf(true) }
-
-    LaunchedEffect(currentIndex) {
-        if (!isEnabled) {
-            delay(1000)
-            isEnabled = true
-        }
-    }
-
-    // When the nav rail is collapsed, the button should be enabled.
-    LaunchedEffect(isExpanded) {
-        if (!isExpanded) {
-            isEnabled = true
-        }
-    }
+    var currentIndex by rememberSaveable { mutableStateOf(item.options.indexOf(item.initialOption)) }
 
     val currentText = item.options.getOrNull(currentIndex) ?: ""
 
     NavRailButton(
         text = currentText,
         onClick = {
-            isEnabled = false
-
             val nextIndex = (currentIndex + 1) % item.options.size
             currentIndex = nextIndex
             item.onStateChange(item.options[nextIndex])
-        },
-        color = if (isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+        }
     )
 }
