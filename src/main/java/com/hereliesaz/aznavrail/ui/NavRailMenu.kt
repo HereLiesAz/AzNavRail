@@ -15,19 +15,23 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.hereliesaz.aznavrail.model.NavItem
+import com.hereliesaz.aznavrail.model.NavItemData
 import com.hereliesaz.aznavrail.model.NavRailMenuSection
+import com.hereliesaz.aznavrail.model.PredefinedAction
 
 /**
  * The content of the expanded menu drawer.
  *
  * @param sections The list of sections to display in the main scrollable area.
  * @param modifier The modifier to be applied to the drawer sheet.
- * @param onCloseDrawer A lambda to be executed when a menu item is clicked, typically to close the drawer.
- * @param onAboutClicked A lambda for the 'About' footer item. If null, the item is hidden.
- * @param onFeedbackClicked A lambda for the 'Feedback' footer item. If null, the item is hidden.
+ * @param onCloseDrawer A lambda to be executed when a menu item is clicked to close the drawer.
+ * @param onPredefinedAction A lambda to handle clicks on items with a [PredefinedAction].
+ * @param itemStates A map holding the mutable state for toggle and cycle items.
  * @param creditText The text for the credit footer item. If null, the item is hidden.
  * @param onCreditClicked A lambda for the credit footer item.
  */
@@ -36,15 +40,14 @@ internal fun NavRailMenu(
     sections: List<NavRailMenuSection>,
     modifier: Modifier = Modifier,
     onCloseDrawer: () -> Unit,
-    onAboutClicked: (() -> Unit)? = null,
-    onFeedbackClicked: (() -> Unit)? = null,
+    onPredefinedAction: (PredefinedAction) -> Unit,
+    itemStates: Map<NavItem, MutableState<Any>>,
     creditText: String? = null,
     onCreditClicked: (() -> Unit)? = null,
 ) {
     ModalDrawerSheet(
         modifier = modifier.padding(0.dp)
     ) {
-        // Main container for scroll + fixed footer
         Column {
             // --- Scrolling Content ---
             Column(
@@ -63,9 +66,10 @@ internal fun NavRailMenu(
                     }
                     section.items.forEach { item ->
                         MenuItem(
-                            text = item.text,
-                            onClick = { item.onClick(); onCloseDrawer() },
-                            enabled = item.enabled
+                            item = item,
+                            state = itemStates[item],
+                            onPredefinedAction = onPredefinedAction,
+                            onCloseDrawer = onCloseDrawer
                         )
                     }
                     if (index < sections.lastIndex) {
@@ -77,50 +81,65 @@ internal fun NavRailMenu(
             // --- Fixed Footer ---
             Column {
                 MenuDivider()
-                if (onAboutClicked != null) {
-                    MenuItem(text = "About", onClick = { onAboutClicked(); onCloseDrawer() }, enabled = true)
-                }
-                if (onFeedbackClicked != null) {
-                    MenuItem(text = "Feedback", onClick = { onFeedbackClicked(); onCloseDrawer() }, enabled = true)
-                }
                 if (creditText != null) {
-                    if (onCreditClicked != null) {
-                        MenuItem(text = creditText, onClick = { onCreditClicked(); onCloseDrawer() }, enabled = true)
-                    } else {
-                        // Display as plain text if no click handler
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 24.dp, vertical = 12.dp)
-                        ) {
-                            Text(
-                                text = creditText,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                    val creditItem = NavItem(
+                        text = creditText,
+                        data = NavItemData.Action(onClick = onCreditClicked),
+                        enabled = onCreditClicked != null
+                    )
+                    MenuItem(
+                        item = creditItem,
+                        state = null,
+                        onPredefinedAction = {},
+                        onCloseDrawer = onCloseDrawer
+                    )
                 }
                 Spacer(modifier = Modifier.height(12.dp))
-
             }
         }
     }
 }
 
 @Composable
-private fun MenuItem(text: String, onClick: () -> Unit, enabled: Boolean) {
+private fun MenuItem(
+    item: NavItem,
+    state: MutableState<Any>?,
+    onPredefinedAction: (PredefinedAction) -> Unit,
+    onCloseDrawer: () -> Unit
+) {
+    val clickHandler = {
+        when (val data = item.data) {
+            is NavItemData.Action -> {
+                data.onClick?.invoke()
+                data.predefinedAction?.let(onPredefinedAction)
+            }
+            is NavItemData.Toggle -> {
+                val isChecked = state?.value as? Boolean ?: data.initialIsChecked
+                val newState = !isChecked
+                state?.value = newState
+                data.onStateChange(newState)
+            }
+            is NavItemData.Cycle -> {
+                val currentIndex = state?.value as? Int ?: data.options.indexOf(data.initialOption)
+                val nextIndex = (currentIndex + 1) % data.options.size
+                state?.value = nextIndex
+                data.onStateChange(data.options[nextIndex])
+            }
+        }
+        onCloseDrawer()
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(enabled = enabled, onClick = onClick)
+            .clickable(enabled = item.enabled, onClick = clickHandler)
             .padding(horizontal = 24.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = text,
+            text = item.text,
             style = MaterialTheme.typography.bodyMedium,
-            color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+            color = if (item.enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
         )
     }
 }

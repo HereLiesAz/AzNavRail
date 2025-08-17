@@ -44,5 +44,5 @@ dependencies {
     implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.androidx.compose.animation.core)
     implementation(libs.androidx.material.icons.extended)
-    implementation(libs.coil.compose)
+    api(libs.coil.compose)
 }
