@@ -41,7 +41,7 @@ And add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
     dependencies {
-        implementation("com.github.HereLiesAz:AzNavRail:1.3") // Use the latest version
+        implementation("com.github.HereLiesAz:AzNavRail:1.4") 
     }
 ```
 
