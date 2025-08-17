@@ -106,7 +106,6 @@ fun AzNavRail(
                         val iconDrawable = try {
                             context.packageManager.getApplicationIcon(context.packageName)
                         } catch (e: PackageManager.NameNotFoundException) {
-
                             null
                         }
 
@@ -166,8 +165,8 @@ private fun NavRailCycleButtonInternal(item: NavRailCycleButton, isExpanded: Boo
     var currentIndex by remember { mutableStateOf(item.options.indexOf(item.initialOption)) }
     var isEnabled by remember { mutableStateOf(true) }
 
-    LaunchedEffect(currentIndex) {
-        if (!isEnabled) {
+    if (!isEnabled) {
+        LaunchedEffect(Unit) {
             delay(1000)
             isEnabled = true
         }
@@ -185,11 +184,12 @@ private fun NavRailCycleButtonInternal(item: NavRailCycleButton, isExpanded: Boo
     NavRailButton(
         text = currentText,
         onClick = {
-            isEnabled = false
-
-            val nextIndex = (currentIndex + 1) % item.options.size
-            currentIndex = nextIndex
-            item.onStateChange(item.options[nextIndex])
+            if (isEnabled) {
+                isEnabled = false
+                val nextIndex = (currentIndex + 1) % item.options.size
+                currentIndex = nextIndex
+                item.onStateChange(item.options[nextIndex])
+            }
         },
         color = if (isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
     )

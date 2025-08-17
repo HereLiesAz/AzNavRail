@@ -18,29 +18,21 @@ This component provides a vertical navigation rail that can be expanded to a ful
 
 ## Setup
 
-To use this library, 
+To use this library, add JitPack to your `settings.gradle.kts`:
 
-1) Sacrifice a goat. 
-2) Drain its blood into a bowl.
-3) Cover the bowl in saran wrap.
-4) Put the bowl in the box.
-5) Print out the label.
-6) Ship it overnight to me with a rubber ducky for bath time.
-7) Add JitPack to your settings.gradle.kts:
-
-    ```kotlin
-
-    dependencyResolutionManagement {
-            // ...
-                   maven { url 'https://jitpack.io'}
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        // ...
+        maven { url 'https://jitpack.io' }
     }
-
-    ```
+}
+```
 
 And add the dependency to your app's `build.gradle.kts`:
 ```kotlin
 dependencies {
-    implementation("com.github.HereLiesAz:AzNavRail:1.3") // Use the latest version
+    implementation("com.github.HereLiesAz:AzNavRail:1.1.0") // Use the latest version
 }
 ```
 
