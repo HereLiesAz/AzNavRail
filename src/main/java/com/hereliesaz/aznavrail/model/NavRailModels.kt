@@ -3,6 +3,13 @@ package com.hereliesaz.aznavrail.model
 import androidx.compose.runtime.Composable
 
 /**
+ * Represents the header of the navigation rail.
+ *
+ * @param content A composable lambda for the header content, typically an icon or logo.
+ */
+data class NavRailHeader(
+    val content: @Composable () -> Unit
+)
 
  * A sealed interface representing an item in the collapsed navigation rail.
  * Can be either a simple action button or a stateful cycle button.
@@ -32,7 +39,13 @@ data class NavRailCycleButton(
     val options: List<String>,
     val initialOption: String,
     val onStateChange: (String) -> Unit
-) : NavRailItem
+) : NavRailItem {
+    init {
+        require(initialOption in options) {
+            "initialOption ('$initialOption') must be one of the provided options: $options"
+        }
+    }
+}
 
 
 /**
