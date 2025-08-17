@@ -129,12 +129,24 @@ AzNavRail(
 | `headerIconSize`     | `Dp`                                                    | (Optional) The size of the header icon. Defaults to `80.dp`.                                                                             |
 | `creditText`         | `String?`                                               | (Optional) The text for the credit line in the footer.                                                                                   |
 | `onCreditClicked`    | `(() -> Unit)?`                                         | (Optional) A click handler for the credit line.                                                                                          |
+| `allowSwipeToDismiss` | `Boolean`                                               | (Optional) If `true`, the expanded menu can be dismissed with a swipe gesture. Defaults to `true`.                                     |
 
 #### `NavItem` Model
 
 The `NavItem` is the core data model for defining a navigation element.
 
-`data class NavItem(text: String, data: NavItemData, showOnRail: Boolean = false, railButtonText: String? = null, enabled: Boolean = true)`
+`data class NavItem(text: String, data: NavItemData, showOnRail: Boolean = false, railButtonText: String? = null, enabled: Boolean = true, icon: @Composable (() -> Unit)? = null)`
+
+The `icon` parameter allows you to add a composable icon to the navigation item, which will be displayed next to the text in the expanded menu.
+
+Example:
+```kotlin
+NavItem(
+    text = "Home",
+    data = NavItemData.Action(predefinedAction = PredefinedAction.HOME),
+    icon = { Icon(Icons.Default.Home, contentDescription = "Home") }
+)
+```
 
 #### `NavItemData` Sealed Class
 
