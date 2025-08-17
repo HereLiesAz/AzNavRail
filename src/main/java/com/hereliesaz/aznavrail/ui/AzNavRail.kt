@@ -168,33 +168,15 @@ fun AzNavRail(
 @Composable
 private fun NavRailCycleButtonInternal(item: NavRailCycleButton, isExpanded: Boolean) {
     var currentIndex by rememberSaveable { mutableStateOf(item.options.indexOf(item.initialOption)) }
-    var isEnabled by remember { mutableStateOf(true) }
-
-    LaunchedEffect(currentIndex) {
-        if (!isEnabled) {
-            delay(1000)
-            isEnabled = true
-        }
-    }
-
-    // When the nav rail is collapsed, the button should be enabled.
-    LaunchedEffect(isExpanded) {
-        if (!isExpanded) {
-            isEnabled = true
-        }
-    }
 
     val currentText = item.options.getOrNull(currentIndex) ?: ""
 
     NavRailButton(
         text = currentText,
         onClick = {
-            isEnabled = false
-
             val nextIndex = (currentIndex + 1) % item.options.size
             currentIndex = nextIndex
             item.onStateChange(item.options[nextIndex])
-        },
-        color = if (isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+        }
     )
 }
