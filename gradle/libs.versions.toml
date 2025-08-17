@@ -6,9 +6,9 @@ material3 = "1.4.0-beta01"
 coil = "2.6.0"
 
 # Plugins
-kotlinAndroid = "2.2.0"
-kotlinCompose = "2.2.0"
-androidLibrary = "8.13.0-alpha03"
+kotlinAndroid = "2.0.0"
+kotlinCompose = "2.0.0"
+androidLibrary = "8.4.1"
 
 [libraries]
 # AndroidX Core & UI
