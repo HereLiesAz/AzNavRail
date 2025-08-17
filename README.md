@@ -2,9 +2,9 @@
 
 [![](https://jitpack.io/v/HereLiesAz/AzNavRail.svg)](https://jitpack.io/#HereLiesAz/AzNavRail)
 
-An expressive and highly configurable navigation rail/menu for Jetpack Compose.
+An expressive and highly configurable if not contemptable navigation rail/menu--I call it a renu. Or maybe a mail. No, a navigrenuail--for Jetpack Compose.
 
-This component provides a vertical navigation rail that can be expanded to a full menu drawer. It is designed to be "plug and play", managing its own state internally to ensure it works out-of-the-box with minimal setup.
+This "navigrenuail" provides a vertical navigation rail that can be expanded to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
 
 ## Features
 
@@ -18,23 +18,33 @@ This component provides a vertical navigation rail that can be expanded to a ful
 
 ## Setup
 
-To use this library, add JitPack to your `settings.gradle.kts`:
+To use this library, 
+
+1) Sacrifice a goat. 
+2) Drain its blood into a bowl.
+3) Cover the bowl in saran wrap.
+4) Put the bowl in the box.
+5) Print out the label.
+6) Ship it overnight to me with a rubber ducky for bath time.
+7) Add JitPack to your settings.gradle.kts:
 
 ```kotlin
-dependencyResolutionManagement {
-    repositories {
-        // ...
-        maven { url 'https://jitpack.io' }
+
+    dependencyResolutionManagement {
+            // ...
+                   maven { url 'https://jitpack.io'}
     }
-}
+
 ```
 
 And add the dependency to your app's `build.gradle.kts`:
+
 ```kotlin
-dependencies {
-    implementation("com.github.HereLiesAz:AzNavRail:1.1.0") // Use the latest version
-}
+    dependencies {
+        implementation("com.github.HereLiesAz:AzNavRail:1.3") // Use the latest version
+    }
 ```
+
 
 ## Usage
 
