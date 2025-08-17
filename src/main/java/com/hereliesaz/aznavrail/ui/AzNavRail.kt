@@ -27,6 +27,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
@@ -55,6 +57,7 @@ import com.hereliesaz.aznavrail.model.PredefinedAction
  */
 @Composable
 fun AzNavRail(
+    appName: String,
     header: NavRailHeader,
     menuSections: List<NavRailMenuSection>,
     modifier: Modifier = Modifier,
@@ -69,6 +72,11 @@ fun AzNavRail(
     creditText: String? = "@HereLiesAz",
     onCreditClicked: (() -> Unit)? = null
 ) {
+    val context = LocalContext.current
+    val onCreditClickedLambda = onCreditClicked ?: {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.instagram.com/hereliesaz"))
+        context.startActivity(intent)
+    }
     var isExpanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
     val onToggle: () -> Unit = { isExpanded = !isExpanded }
 
@@ -124,12 +132,13 @@ fun AzNavRail(
     ) {
         if (isExpanded) {
             NavRailMenu(
+                appName = appName,
                 sections = menuSections,
                 onCloseDrawer = onToggle,
                 onPredefinedAction = onPredefinedAction,
                 itemStates = itemStates,
                 creditText = creditText,
-                onCreditClicked = onCreditClicked
+                onCreditClicked = onCreditClickedLambda
             )
         } else {
             Column(

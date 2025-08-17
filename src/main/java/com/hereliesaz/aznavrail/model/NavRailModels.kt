@@ -39,7 +39,6 @@ sealed class NavItemData {
         val predefinedAction: PredefinedAction? = null
     ) : NavItemData() {
         init {
-            require(onClick != null || predefinedAction != null) { "Action: Either onClick or predefinedAction must be provided." }
             require(onClick == null || predefinedAction == null) { "Action: Cannot provide both onClick and predefinedAction." }
         }
     }
