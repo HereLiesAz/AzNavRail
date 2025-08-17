@@ -8,12 +8,13 @@ This "navigrenuail" provides a vertical navigation rail that can be expanded to 
 
 ## Features
 
--   **Plug and Play:** A self-contained component that manages its own expanded/collapsed state.
+-   **Single Source of Truth:** Define your navigation items once. The rail buttons are automatically generated from your menu items.
+-   **Unified API:** A single `NavItem` model for all items, whether they are simple actions, toggles, or cycle buttons.
+-   **Customizable Buttons:** Provide your own Composable to completely customize the look and feel of the rail buttons.
 -   **Expandable & Collapsible:** A compact rail that expands into a full menu.
+-   **Simplified Actions:** Use `PredefinedAction` for common tasks like Home, Settings, and About, or provide your own custom lambdas.
+-   **Stateful Buttons:** `Toggle` and `Cycle` items automatically manage their state, which is shared between the rail button and the menu item.
 -   **Swipe-to-Collapse:** Intuitive swipe gesture to close the expanded menu.
--   **App Icon Header:** Optionally displays your app's launcher icon as the header, with a fallback.
--   **Stateful Cycle Buttons:** A special button type that cycles through a list of options with built-in cooldown behavior.
--   **Configurable Footer:** Easily add common menu items like "About" and "Feedback" to a fixed footer.
 -   **Theming:** Adapts to the `MaterialTheme` of the consuming application.
 
 ## Setup
@@ -22,73 +23,89 @@ To use this library,
 
 1) Sacrifice a goat. 
 2) Drain its blood into a bowl.
-3) Cover the bowl in saran wrap.
+3. Cover the bowl in saran wrap.
 4) Put the bowl in the box.
 5) Print out the label.
 6) Ship it overnight to me with a rubber ducky for bath time.
 7) Add JitPack to your settings.gradle.kts:
 
 ```kotlin
-
     dependencyResolutionManagement {
             // ...
                    maven { url 'https://jitpack.io'}
     }
-
 ```
 
-And add the dependency to your app's `build.gradle.kts`:
+And add the dependency to your app's `build.gradle.kts`. The library now includes `coil-compose` as a transitive dependency, so you don't need to add it separately.
 
 ```kotlin
     dependencies {
-        implementation("com.github.HereLiesAz:AzNavRail:1.5") 
+        implementation("com.github.HereLiesAz:AzNavRail:1.8") // Or latest version
     }
 ```
 
 
 ## Usage
 
-Here's a simple example of how to use the `AzNavRail` composable. Because it manages its own state, you can just drop it into your layout.
+Here's an example of how to use the new unified API. You define your navigation structure once using `NavItem`, and `AzNavRail` handles the rest.
 
 ```kotlin
 // In your screen's Composable, e.g., inside a Row
 AzNavRail(
-    // You can choose to use the app's icon as the header
-    useAppIconAsHeader = true,
-    // Or provide a custom header
-    header = NavRailHeader(
-        content = {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_your_logo),
-                contentDescription = "Logo"
-            )
-        }
-    ),
-    buttons = listOf(
-        NavRailActionButton(
-            text = "Reset",
-            onClick = { /* Handle reset action */ }
-        ),
-        NavRailCycleButton(
-            options = listOf("Low", "Medium", "High"),
-            initialOption = "Low",
-            onStateChange = { newState -> /* Handle new state */ }
-        )
-    ),
+    header = NavRailHeader { /* ... */ },
     menuSections = listOf(
         NavRailMenuSection(
             title = "Main",
             items = listOf(
-                NavRailMenuItem(text = "Profile", onClick = { /* ... */ }),
-                NavRailMenuItem(text = "Settings", onClick = { /* ... */ })
+                NavItem(
+                    text = "Home",
+                    data = NavItemData.Action(predefinedAction = PredefinedAction.HOME),
+                    showOnRail = true
+                ),
+                NavItem(
+                    text = "Online",
+                    data = NavItemData.Toggle(
+                        initialIsChecked = true,
+                        onStateChange = { isOnline -> /* ... */ }
+                    ),
+                    showOnRail = true,
+                    railButtonText = "On"
+                ),
             )
         )
     ),
-    // Optional Footer Items
-    onAboutClicked = { /* Open about screen */ },
-    onFeedbackClicked = { /* Open feedback form */ },
-    creditText = "Made by You",
-    onCreditClicked = { /* ... */ }
+    onPredefinedAction = { action ->
+        when (action) {
+            PredefinedAction.HOME -> { /* Navigate to Home */ }
+            else -> {}
+        }
+    }
+)
+```
+
+### Customizing Button Content
+
+You can provide a custom composable for the rail buttons using the `buttonContent` parameter. This gives you full control over the appearance, including different styles for active/inactive states.
+
+```kotlin
+AzNavRail(
+    // ... other parameters
+    buttonContent = { item, state ->
+        // Get the current state for toggle/cycle buttons
+        val isChecked = (state?.value as? Boolean) ?: false
+        val color = if (isChecked) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
+
+        // Your custom button implementation
+        OutlinedButton(
+            onClick = { /* The internal onClick logic is handled by the library */ },
+            modifier = Modifier.size(72.dp),
+            shape = CircleShape,
+            border = BorderStroke(3.dp, color.copy(alpha = 0.7f)),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = color)
+        ) {
+            Text(text = item.railButtonText ?: item.text)
+        }
+    }
 )
 ```
 
@@ -96,31 +113,30 @@ AzNavRail(
 
 #### `AzNavRail` Composable
 
-| Parameter           | Type                               | Description                                                                                                                              |
-| ------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `header`            | `NavRailHeader`                    | The configuration for the header content. Ignored if `useAppIconAsHeader` is `true`.                                                     |
-| `buttons`           | `List<NavRailItem>`                | The list of buttons to display in the collapsed rail. Can be `NavRailActionButton` or `NavRailCycleButton`.                              |
-| `menuSections`      | `List<NavRailMenuSection>`         | The list of sections to display in the expanded menu.                                                                                    |
-| `modifier`          | `Modifier`                         | (Optional) The modifier to be applied to the component.                                                                                  |
-| `initiallyExpanded` | `Boolean`                          | (Optional) Whether the rail should be expanded when it first appears. Defaults to `false`.                                               |
-| `useAppIconAsHeader`| `Boolean`                          | (Optional) If `true`, the rail will display the app's launcher icon in the header. Defaults to `false`.                                  |
-| `headerIconSize`    | `Dp`                               | (Optional) The size of the header icon. Defaults to `80.dp`.                                                                             |
-| `onAboutClicked`    | `(() -> Unit)?`                    | (Optional) A click handler for the 'About' button in the footer. If `null`, the button is hidden.                                        |
-| `onFeedbackClicked` | `(() -> Unit)?`                    | (Optional) A click handler for the 'Feedback' button in the footer. If `null`, the button is hidden.                                     |
-| `creditText`        | `String?`                          | (Optional) The text for the credit line in the footer. If `null`, the item is hidden.                                                    |
-| `onCreditClicked`   | `(() -> Unit)?`                    | (Optional) A click handler for the credit line.                                                                                          |
+| Parameter            | Type                                                    | Description                                                                                                                              |
+| -------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `header`             | `NavRailHeader`                                         | The configuration for the header content. Ignored if `useAppIconAsHeader` is `true`.                                                     |
+| `menuSections`       | `List<NavRailMenuSection>`                              | The list of sections that defines the entire navigation structure.                                                                       |
+| `onPredefinedAction` | `(PredefinedAction) -> Unit`                            | A handler for actions that use the `PredefinedAction` enum.                                                                              |
+| `buttonContent`      | `@Composable (item: NavItem, state: MutableState<Any>?) -> Unit` | (Optional) A composable lambda to customize the appearance of the rail buttons.                                                        |
+| `allowCyclersOnRail` | `Boolean`                                               | (Optional) If `true`, items of type `NavItemData.Cycle` will be shown on the rail. Defaults to `false`.                                  |
+| `modifier`           | `Modifier`                                              | (Optional) The modifier to be applied to the component.                                                                                  |
+| `initiallyExpanded`  | `Boolean`                                               | (Optional) Whether the rail should be expanded when it first appears. Defaults to `false`.                                               |
+| `useAppIconAsHeader` | `Boolean`                                               | (Optional) If `true`, the rail will display the app's launcher icon in the header. Defaults to `false`.                                  |
+| `headerIconSize`     | `Dp`                                                    | (Optional) The size of the header icon. Defaults to `80.dp`.                                                                             |
+| `creditText`         | `String?`                                               | (Optional) The text for the credit line in the footer.                                                                                   |
+| `onCreditClicked`    | `(() -> Unit)?`                                         | (Optional) A click handler for the credit line.                                                                                          |
 
-## Dependencies
+#### `NavItem` Model
 
-This library depends on the following third-party libraries:
+The `NavItem` is the core data model for defining a navigation element.
 
-*   **AndroidX Core**: `androidx.core:core-ktx:1.16.0`
-*   **Jetpack Compose BOM**: `androidx.compose:compose-bom:2024.04.01`
-*   **Jetpack Compose UI**: `androidx.compose.ui:ui`
-*   **Jetpack Compose UI Graphics**: `androidx.compose.ui:ui-graphics`
-*   **Jetpack Compose UI Tooling Preview**: `androidx.compose.ui:ui-tooling-preview`
-*   **Material 3**: `androidx.compose.material3:material3:1.4.0-beta01`
-*   **Jetpack Compose Foundation Layout**: `androidx.compose.foundation:foundation-layout`
-*   **Jetpack Compose Animation Core**: `androidx.compose.animation:animation-core`
-*   **Jetpack Compose Material Icons Extended**: `androidx.compose.material:material-icons-extended`
-*   **Coil Compose**: `io.coil-kt:coil-compose:2.6.0`
+`data class NavItem(text: String, data: NavItemData, showOnRail: Boolean = false, railButtonText: String? = null, enabled: Boolean = true)`
+
+#### `NavItemData` Sealed Class
+
+This class defines the behavior of a `NavItem`.
+
+-   `NavItemData.Action(onClick: (() -> Unit)?, predefinedAction: PredefinedAction?)`: A simple clickable item.
+-   `NavItemData.Toggle(initialIsChecked: Boolean, onStateChange: (Boolean) -> Unit)`: An item that toggles between two states.
+-   `NavItemData.Cycle(options: List<String>, initialOption: String, onStateChange: (String) -> Unit)`: An item that cycles through a list of options.
