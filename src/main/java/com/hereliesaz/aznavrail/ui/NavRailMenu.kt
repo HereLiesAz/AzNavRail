@@ -37,6 +37,7 @@ import com.hereliesaz.aznavrail.model.PredefinedAction
  */
 @Composable
 internal fun NavRailMenu(
+    appName: String,
     sections: List<NavRailMenuSection>,
     modifier: Modifier = Modifier,
     onCloseDrawer: () -> Unit,
@@ -49,6 +50,16 @@ internal fun NavRailMenu(
         modifier = modifier.padding(0.dp)
     ) {
         Column {
+            // App Name
+            Text(
+                text = appName,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
+                    .align(Alignment.CenterHorizontally)
+            )
+            MenuDivider()
+
             // --- Scrolling Content ---
             Column(
                 modifier = Modifier
