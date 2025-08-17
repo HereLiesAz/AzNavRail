@@ -102,7 +102,6 @@ internal fun NavRailMenu(
                     }
                 }
                 Spacer(modifier = Modifier.height(12.dp))
-
             }
         }
     }

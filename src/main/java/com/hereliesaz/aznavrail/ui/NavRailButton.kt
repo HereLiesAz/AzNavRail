@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.sp
  * @param size The diameter of the circular button.
  * @param color The color of the button's border and text. Defaults to the theme's primary color.
  */
-
 @Composable
 fun NavRailButton(
     onClick: () -> Unit,

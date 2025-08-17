@@ -32,15 +32,15 @@ import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.model.NavRailActionButton
 import com.hereliesaz.aznavrail.model.NavRailCycleButton
-import com.hereliesaz.aznavrail.model.NavRailHeader
 import com.hereliesaz.aznavrail.model.NavRailItem
 import com.hereliesaz.aznavrail.model.NavRailMenuSection
 import kotlinx.coroutines.delay
 
 /**
- * An expressive and highly configurable navigation rail component for Jetpack Compose.
+ * An expressive, stateful, and highly configurable navigation rail component for Jetpack Compose.
  *
- * This component provides a vertical navigation rail that can be expanded to a full menu drawer.
+ * This component provides a "drop-in" solution for a vertical navigation rail that manages its
+ * own state, automatically uses the app's launcher icon, and can be expanded to a full menu drawer.
  * It includes built-in support for simple action buttons, stateful cycle buttons with cooldown
  * logic, and a configurable footer. It uses [ModalNavigationDrawer] to provide a material-compliant
  * drawer experience.
@@ -68,7 +68,6 @@ import kotlinx.coroutines.delay
  */
 @Composable
 fun AzNavRail(
-    header: NavRailHeader,
     buttons: List<NavRailItem>,
     menuSections: List<NavRailMenuSection>,
     isExpanded: Boolean,

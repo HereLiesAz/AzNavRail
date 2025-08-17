@@ -11,7 +11,6 @@ data class NavRailHeader(
     val content: @Composable () -> Unit
 )
 
-/**
  * A sealed interface representing an item in the collapsed navigation rail.
  * Can be either a simple action button or a stateful cycle button.
  */
@@ -19,7 +18,6 @@ sealed interface NavRailItem
 
 /**
  * Represents a simple button with a single action.
-
  *
  * @param text The text to display on the button.
  * @param onClick A lambda to be executed when the button is clicked.
