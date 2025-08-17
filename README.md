@@ -1,10 +1,13 @@
-# Module AzNavRail
+# AzNavRail
 
-An expressive and highly configurable navigation rail component for Jetpack Compose, extracted from the Cue D'etat project.
+[![](https://jitpack.io/v/HereLiesAz/AzNavRail.svg)](https://jitpack.io/#HereLiesAz/AzNavRail)
 
-This component provides a vertical navigation rail that can be expanded to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
+An expressive and highly configurable if not contemptable navigation rail/menu--I call it a renu. Or maybe a mail. No, a navigrenuail--for Jetpack Compose.
+
+This "navigrenuail" provides a vertical navigation rail that can be expanded to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
 
 ## Features
+
 
 -   **Stateful:** Manages its own expanded/collapsed state. No need for external state management.
 -   **Auto App Icon:** Automatically displays the app's launcher icon in the header.
@@ -17,24 +20,20 @@ This component provides a vertical navigation rail that can be expanded to a ful
 
 ## Setup
 
-To use this library, first create a release on your GitHub repository to get a version tag (e.g., `v1.0.0`). Then, add JitPack to your project.
+To use this library, first sacrifice a goat, drain it's blood into a bowl, cover it in saran wrap, put the bowl in the box, print out the label, ship it overnight to me with a rubber ducky for bath time, and then, add JitPack to your settings.gradle.kts:
 
-1.  In your root `settings.gradle.kts` file, add the JitPack repository:
-    ```kotlin
+      ```kotlin
     dependencyResolutionManagement {
-        repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-        repositories {
-            google()
-            mavenCentral()
+            ...
             maven { url 'https://jitpack.io' }
         }
     }
     ```
 
-2.  In your app-level `build.gradle.kts` file, add the dependency, replacing `Tag` with your release tag:
+And add to your `:app:build.gradle.kts`:    
     ```kotlin
     dependencies {
-        implementation("com.github.HereLiesAz:AzNavRail:Tag")
+        implementation("com.github.HereLiesAz:AzNavRail:1.0")
     }
     ```
 
@@ -42,11 +41,13 @@ To use this library, first create a release on your GitHub repository to get a v
 
 Using the `AzNavRail` component is designed to be as simple as possible. Just drop it into your UI. It manages its own state.
 
+
 ```kotlin
 // In your screen's Composable
 
 // Just call the component. It's that easy!
 AzNavRail(
+
     buttons = listOf(
         NavRailActionButton(
             text = "Reset",
@@ -102,3 +103,4 @@ If you are working on the library itself, you may want to use it as a local modu
     ```kotlin
     implementation(project(":AzNavRail"))
     ```
+

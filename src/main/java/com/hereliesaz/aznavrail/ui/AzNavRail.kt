@@ -69,7 +69,6 @@ fun AzNavRail(
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     val onToggle: () -> Unit = { isExpanded = !isExpanded }
-
     val railWidth by animateDpAsState(
         targetValue = if (isExpanded) 260.dp else 80.dp,
         label = "railWidth"
@@ -168,3 +167,4 @@ private fun NavRailCycleButtonInternal(item: NavRailCycleButton) {
         color = if (isEnabled) MaterialTheme.colorScheme.primary else Color.Gray
     )
 }
+

@@ -3,6 +3,7 @@ package com.hereliesaz.aznavrail.model
 import androidx.compose.runtime.Composable
 
 /**
+
  * A sealed interface representing an item in the collapsed navigation rail.
  * Can be either a simple action button or a stateful cycle button.
  */
