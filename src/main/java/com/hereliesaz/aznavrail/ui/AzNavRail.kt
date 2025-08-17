@@ -118,11 +118,11 @@ fun AzNavRail(
                         Box(modifier = Modifier.size(headerIconSize)) {
                             if (useAppIconAsHeader) {
                                 val context = LocalContext.current
-                                val iconDrawable = try {
-                                    context.packageManager.getApplicationIcon(context.packageName)
-                                } catch (e: Exception) {
-                                    null
-                                }
+val iconDrawable = try {
+    context.packageManager.getApplicationIcon(context.packageName)
+} catch (e: android.content.pm.PackageManager.NameNotFoundException) {
+    null
+}
 
                                 if (iconDrawable != null) {
                                     Image(
