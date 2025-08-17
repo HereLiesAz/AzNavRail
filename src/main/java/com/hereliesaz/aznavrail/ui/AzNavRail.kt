@@ -7,6 +7,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -18,7 +19,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -89,14 +89,6 @@ fun AzNavRail(
         states
     }
 
-    val railButtons by remember(menuSections, allowCyclersOnRail) {
-        derivedStateOf {
-            menuSections.flatMap { it.items }
-                .filter { it.showOnRail && it.enabled }
-                .filter { allowCyclersOnRail || it.data !is NavItemData.Cycle }
-        }
-    }
-
     NavigationRail(
         modifier = modifier
             .width(railWidth)
@@ -145,8 +137,13 @@ fun AzNavRail(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
             ) {
-                railButtons.forEach { item ->
-                    buttonContent(item, itemStates[item])
+                menuSections.flatMap { it.items }.forEach { item ->
+                    val shouldShowOnRail = item.showOnRail && item.enabled && (allowCyclersOnRail || item.data !is NavItemData.Cycle)
+                    if (shouldShowOnRail) {
+                        buttonContent(item, itemStates[item])
+                    } else {
+                        Spacer(modifier = Modifier.size(72.dp))
+                    }
                 }
             }
         }
