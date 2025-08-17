@@ -1,17 +1,17 @@
 plugins {
-    alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
+    id("com.android.library")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
     namespace = "com.hereliesaz.aznavrail"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 26
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
+        consumerProguardFiles("proguard-rules.pro")
     }
 
     buildTypes {
@@ -31,6 +31,10 @@ android {
 
     buildFeatures {
         compose = true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.2"
     }
 }
 
