@@ -24,6 +24,7 @@ class MainActivity : ComponentActivity() {
 fun TestAppScreen() {
     // In your screen's Composable, e.g., inside a Row
     AzNavRail(
+        header = NavRailHeader { /* ... */ },
         menuSections = listOf(
             NavRailMenuSection(
                 title = "Main",
