@@ -103,17 +103,11 @@ fun AzNavRail(
                 Box(modifier = Modifier.size(headerIconSize)) {
                     if (useAppIconAsHeader) {
                         val context = LocalContext.current
-                        val packageName = context.packageName
-                        val iconDrawable = if (packageName != null) {
-                            try {
-                                context.packageManager.getApplicationIcon(packageName)
-                            } catch (e: PackageManager.NameNotFoundException) {
-                                null
-                            }
-                        } else {
+                        val iconDrawable = try {
+                            context.packageManager.getApplicationIcon(context.packageName)
+                        } catch (e: PackageManager.NameNotFoundException) {
                             null
                         }
-
                         if (iconDrawable != null) {
                             Image(
                                 painter = rememberAsyncImagePainter(model = iconDrawable),
@@ -167,16 +161,35 @@ fun AzNavRail(
 
 @Composable
 private fun NavRailCycleButtonInternal(item: NavRailCycleButton, isExpanded: Boolean) {
-    var currentIndex by rememberSaveable { mutableStateOf(item.options.indexOf(item.initialOption)) }
+    var currentIndex by remember { mutableStateOf(item.options.indexOf(item.initialOption)) }
+    var isEnabled by remember { mutableStateOf(true) }
+
+    if (!isEnabled) {
+        LaunchedEffect(Unit) {
+            delay(1000)
+            isEnabled = true
+        }
+    }
+
+    // When the nav rail is collapsed, the button should be enabled.
+    LaunchedEffect(isExpanded) {
+        if (!isExpanded) {
+            isEnabled = true
+        }
+    }
 
     val currentText = item.options.getOrNull(currentIndex) ?: ""
 
     NavRailButton(
         text = currentText,
         onClick = {
-            val nextIndex = (currentIndex + 1) % item.options.size
-            currentIndex = nextIndex
-            item.onStateChange(item.options[nextIndex])
-        }
+            if (isEnabled) {
+                isEnabled = false
+                val nextIndex = (currentIndex + 1) % item.options.size
+                currentIndex = nextIndex
+                item.onStateChange(item.options[nextIndex])
+            }
+        },
+        color = if (isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
     )
 }
