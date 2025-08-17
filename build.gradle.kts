@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.dokka)
+
 }
 
 android {
@@ -43,4 +45,14 @@ dependencies {
     implementation(libs.material3)
     implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.androidx.compose.animation.core)
+    implementation(libs.coil.compose)
+}
+
+// Dokka configuration
+tasks.withType<org.jetbrains.dokka.gradle.DokkaTask>().configureEach {
+    dokkaSourceSets.configureEach {
+        // Include the README.md file as module documentation.
+        includes.from("README.md")
+    }
+
 }

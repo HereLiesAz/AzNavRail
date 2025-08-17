@@ -1,6 +1,7 @@
 package com.hereliesaz.aznavrail.ui
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,11 +22,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.model.NavRailActionButton
 import com.hereliesaz.aznavrail.model.NavRailCycleButton
-import com.hereliesaz.aznavrail.model.NavRailHeader
 import com.hereliesaz.aznavrail.model.NavRailItem
 import com.hereliesaz.aznavrail.model.NavRailMenuSection
 import kotlinx.coroutines.Job
@@ -33,19 +35,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * An expressive and highly configurable navigation rail component for Jetpack Compose.
+ * An expressive, stateful, and highly configurable navigation rail component for Jetpack Compose.
  *
- * This component provides a vertical navigation rail that can be expanded to a full menu drawer.
+ * This component provides a "drop-in" solution for a vertical navigation rail that manages its
+ * own state, automatically uses the app's launcher icon, and can be expanded to a full menu drawer.
  * It includes built-in support for simple action buttons, stateful cycle buttons with cooldown
  * logic, a configurable footer, and swipe-to-collapse gestures.
  *
- * @param header The configuration for the header of the navigation rail, containing the content
- * (e.g., an icon) and a click handler to toggle the expanded state. See [NavRailHeader].
  * @param buttons The list of items to display in the collapsed state of the rail. This can be a
  * mix of [NavRailActionButton] and [NavRailCycleButton] items. See [NavRailItem].
  * @param menuSections The list of sections and their items to display in the expanded menu view.
  * See [NavRailMenuSection].
- * @param isExpanded Whether the navigation rail is currently in its expanded (menu) state.
  * @param modifier The modifier to be applied to the navigation rail container.
  * @param headerIconSize The size of the header icon. Defaults to 80.dp.
  * @param onAboutClicked A lambda to be executed when the 'About' button in the footer is clicked.
@@ -58,18 +58,17 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun AzNavRail(
-    header: NavRailHeader,
     buttons: List<NavRailItem>,
     menuSections: List<NavRailMenuSection>,
-    isExpanded: Boolean,
     modifier: Modifier = Modifier,
     headerIconSize: Dp = 80.dp,
     onAboutClicked: (() -> Unit)? = null,
     onFeedbackClicked: (() -> Unit)? = null,
     creditText: String? = "@HereLiesAz",
     onCreditClicked: (() -> Unit)? = null
-
 ) {
+    var isExpanded by remember { mutableStateOf(false) }
+    val onToggle: () -> Unit = { isExpanded = !isExpanded }
     val railWidth by animateDpAsState(
         targetValue = if (isExpanded) 260.dp else 80.dp,
         label = "railWidth"
@@ -84,34 +83,38 @@ fun AzNavRail(
                         change.consume()
                         val (x, _) = dragAmount
                         if (x < -20) { // Threshold for a left swipe
-                            header.onClick()
+                            onToggle()
                         }
                     }
                 }
             },
         containerColor = Color.Transparent,
-
         header = {
             IconButton(
-                onClick = header.onClick,
+                onClick = onToggle,
                 modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)
             ) {
+                val context = LocalContext.current
+                val painter = rememberAsyncImagePainter(
+                    model = runCatching { context.packageManager.getApplicationIcon(context.packageName) }.getOrNull()
+                )
                 Box(modifier = Modifier.size(headerIconSize)) {
-                    header.content()
+                    Image(
+                        painter = painter,
+                        contentDescription = "App Icon"
+                    )
                 }
-
             }
         }
     ) {
         if (isExpanded) {
             NavRailMenu(
                 sections = menuSections,
-                onCloseDrawer = header.onClick,
+                onCloseDrawer = onToggle,
                 onAboutClicked = onAboutClicked,
                 onFeedbackClicked = onFeedbackClicked,
                 creditText = creditText,
                 onCreditClicked = onCreditClicked
-
             )
         } else {
             Column(
