@@ -23,7 +23,7 @@ To use this library,
 
 1) Sacrifice a goat. 
 2) Drain its blood into a bowl.
-3. Cover the bowl in saran wrap.
+3) Cover the bowl in saran wrap.
 4) Put the bowl in the box.
 5) Print out the label.
 6) Ship it overnight to me with a rubber ducky for bath time.
