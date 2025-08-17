@@ -45,6 +45,7 @@ internal fun NavRailMenu(
     itemStates: Map<NavItem, MutableState<Any>>,
     creditText: String? = null,
     onCreditClicked: (() -> Unit)? = null,
+    footerItems: List<NavItem> = emptyList()
 ) {
     ModalDrawerSheet(
         modifier = modifier.padding(0.dp)
@@ -92,6 +93,14 @@ internal fun NavRailMenu(
             // --- Fixed Footer ---
             Column {
                 MenuDivider()
+                footerItems.forEach { item ->
+                    MenuItem(
+                        item = item,
+                        state = itemStates[item],
+                        onPredefinedAction = onPredefinedAction,
+                        onCloseDrawer = onCloseDrawer
+                    )
+                }
                 if (creditText != null) {
                     val creditItem = NavItem(
                         text = creditText,

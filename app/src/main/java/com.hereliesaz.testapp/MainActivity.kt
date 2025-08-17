@@ -54,7 +54,7 @@ fun TestAppScreen() {
         },
         menuSections = listOf(
             NavRailMenuSection(
-                title = "Main",
+                title = "",
                 items = listOf(
                     NavItem(
                         text = "Home",
@@ -71,19 +71,16 @@ fun TestAppScreen() {
                         railButtonText = "On"
                     ),
                 )
+            )
+        ),
+        footerItems = listOf(
+            NavItem(
+                text = "About",
+                data = NavItemData.Action(predefinedAction = PredefinedAction.ABOUT)
             ),
-            NavRailMenuSection(
-                title = "About",
-                items = listOf(
-                    NavItem(
-                        text = "About",
-                        data = NavItemData.Action(predefinedAction = PredefinedAction.ABOUT)
-                    ),
-                    NavItem(
-                        text = "Feedback",
-                        data = NavItemData.Action(predefinedAction = PredefinedAction.FEEDBACK)
-                    )
-                )
+            NavItem(
+                text = "Feedback",
+                data = NavItemData.Action(predefinedAction = PredefinedAction.FEEDBACK)
             )
         )
     )

@@ -70,7 +70,8 @@ fun AzNavRail(
     headerIconSize: Dp = 80.dp,
     allowCyclersOnRail: Boolean = false,
     creditText: String? = "@HereLiesAz",
-    onCreditClicked: (() -> Unit)? = null
+    onCreditClicked: (() -> Unit)? = null,
+    footerItems: List<NavItem> = emptyList()
 ) {
     val context = LocalContext.current
     val onCreditClickedLambda = onCreditClicked ?: {
@@ -138,7 +139,8 @@ fun AzNavRail(
                 onPredefinedAction = onPredefinedAction,
                 itemStates = itemStates,
                 creditText = creditText,
-                onCreditClicked = onCreditClickedLambda
+                onCreditClicked = onCreditClickedLambda,
+                footerItems = footerItems
             )
         } else {
             Column(
