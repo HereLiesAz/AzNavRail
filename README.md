@@ -2,53 +2,52 @@
 
 [![](https://jitpack.io/v/HereLiesAz/AzNavRail.svg)](https://jitpack.io/#HereLiesAz/AzNavRail)
 
-An expressive and highly configurable if not contemptable navigation rail/menu--I call it a renu. Or maybe a mail. No, a navigrenuail--for Jetpack Compose.
+An expressive and highly configurable navigation rail/menu for Jetpack Compose.
 
-This "navigrenuail" provides a vertical navigation rail that can be expanded to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
+This component provides a vertical navigation rail that can be expanded to a full menu drawer. It is designed to be "plug and play", managing its own state internally to ensure it works out-of-the-box with minimal setup.
 
 ## Features
 
+-   **Plug and Play:** A self-contained component that manages its own expanded/collapsed state.
 -   **Expandable & Collapsible:** A compact rail that expands into a full menu.
 -   **Swipe-to-Collapse:** Intuitive swipe gesture to close the expanded menu.
--   **Stateful Cycle Buttons:** A special button type that cycles through a list of options with built-in cooldown and rapid-cycle behavior.
+-   **App Icon Header:** Optionally displays your app's launcher icon as the header, with a fallback.
+-   **Stateful Cycle Buttons:** A special button type that cycles through a list of options with built-in cooldown behavior.
 -   **Configurable Footer:** Easily add common menu items like "About" and "Feedback" to a fixed footer.
--   **Customizable:** Fully data-driven API allows for complete control over the content of the rail and menu.
 -   **Theming:** Adapts to the `MaterialTheme` of the consuming application.
 
 ## Setup
 
-To use this library, first sacrifice a goat, drain it's blood into a bowl, cover it in saran wrap, put the bowl in the box, print out the label, ship it overnight to me with a rubber ducky for bath time, and then, add JitPack to your settings.gradle.kts:
+To use this library, add JitPack to your `settings.gradle.kts`:
 
-    ```kotlin
-    
-    dependencyResolutionManagement {
-                   maven { url 'https://jitpack.io'
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        // ...
+        maven { url 'https://jitpack.io' }
     }
-    
-    ```
+}
+```
 
-And add to your `:app:build.gradle.kts`:    
-    ```kotlin
-    dependencies {
-        implementation("com.github.HereLiesAz:AzNavRail:1.0")
-    }
-    ```
+And add the dependency to your app's `build.gradle.kts`:
+```kotlin
+dependencies {
+    implementation("com.github.HereLiesAz:AzNavRail:1.1.0") // Use the latest version
+}
+```
 
 ## Usage
 
-Here's how to use the `AzNavRail` composable.
+Here's a simple example of how to use the `AzNavRail` composable. Because it manages its own state, you can just drop it into your layout.
 
 ```kotlin
-// In your screen's Composable
-
-var isExpanded by remember { mutableStateOf(false) }
-
+// In your screen's Composable, e.g., inside a Row
 AzNavRail(
-    isExpanded = isExpanded,
+    // You can choose to use the app's icon as the header
+    useAppIconAsHeader = true,
+    // Or provide a custom header
     header = NavRailHeader(
-        onClick = { isExpanded = !isExpanded },
         content = {
-            // Your header icon, e.g., an Image or Icon
             Icon(
                 painter = painterResource(id = R.drawable.ic_your_logo),
                 contentDescription = "Logo"
@@ -87,15 +86,16 @@ AzNavRail(
 
 #### `AzNavRail` Composable
 
-| Parameter          | Type                               | Description                                                                                                                              |
-| ------------------ | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `isExpanded`       | `Boolean`                          | Controls whether the rail is in its expanded (menu) or collapsed state.                                                                  |
-| `header`           | `NavRailHeader`                    | The configuration for the header icon and its click action.                                                                              |
-| `buttons`          | `List<NavRailItem>`                | The list of buttons to display in the collapsed rail. Can be `NavRailActionButton` or `NavRailCycleButton`.                              |
-| `menuSections`     | `List<NavRailMenuSection>`         | The list of sections to display in the expanded menu.                                                                                    |
-| `modifier`         | `Modifier`                         | (Optional) The modifier to be applied to the component.                                                                                  |
-| `headerIconSize`   | `Dp`                               | (Optional) The size of the header icon. Defaults to `80.dp`.                                                                             |
-| `onAboutClicked`   | `(() -> Unit)?`                    | (Optional) A click handler for the 'About' button in the footer. If `null`, the button is hidden.                                        |
-| `onFeedbackClicked`| `(() -> Unit)?`                    | (Optional) A click handler for the 'Feedback' button in the footer. If `null`, the button is hidden.                                     |
-| `creditText`       | `String?`                          | (Optional) The text for the credit line in the footer. If `null`, the item is hidden.                                                    |
-| `onCreditClicked`  | `(() -> Unit)?`                    | (Optional) A click handler for the credit line.                                                                                          |
+| Parameter           | Type                               | Description                                                                                                                              |
+| ------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `header`            | `NavRailHeader`                    | The configuration for the header content. Ignored if `useAppIconAsHeader` is `true`.                                                     |
+| `buttons`           | `List<NavRailItem>`                | The list of buttons to display in the collapsed rail. Can be `NavRailActionButton` or `NavRailCycleButton`.                              |
+| `menuSections`      | `List<NavRailMenuSection>`         | The list of sections to display in the expanded menu.                                                                                    |
+| `modifier`          | `Modifier`                         | (Optional) The modifier to be applied to the component.                                                                                  |
+| `initiallyExpanded` | `Boolean`                          | (Optional) Whether the rail should be expanded when it first appears. Defaults to `false`.                                               |
+| `useAppIconAsHeader`| `Boolean`                          | (Optional) If `true`, the rail will display the app's launcher icon in the header. Defaults to `false`.                                  |
+| `headerIconSize`    | `Dp`                               | (Optional) The size of the header icon. Defaults to `80.dp`.                                                                             |
+| `onAboutClicked`    | `(() -> Unit)?`                    | (Optional) A click handler for the 'About' button in the footer. If `null`, the button is hidden.                                        |
+| `onFeedbackClicked` | `(() -> Unit)?`                    | (Optional) A click handler for the 'Feedback' button in the footer. If `null`, the button is hidden.                                     |
+| `creditText`        | `String?`                          | (Optional) The text for the credit line in the footer. If `null`, the item is hidden.                                                    |
+| `onCreditClicked`   | `(() -> Unit)?`                    | (Optional) A click handler for the credit line.                                                                                          |

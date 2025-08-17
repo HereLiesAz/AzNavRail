@@ -52,7 +52,7 @@ internal fun NavRailMenu(
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
             ) {
-                sections.forEach { section ->
+                sections.forEachIndexed { index, section ->
                     if (section.title.isNotEmpty()) {
                         Text(
                             text = section.title,
@@ -68,7 +68,9 @@ internal fun NavRailMenu(
                             enabled = item.enabled
                         )
                     }
-                    MenuDivider()
+                    if (index < sections.lastIndex) {
+                        MenuDivider()
+                    }
                 }
             }
 
@@ -82,7 +84,22 @@ internal fun NavRailMenu(
                     MenuItem(text = "Feedback", onClick = { onFeedbackClicked(); onCloseDrawer() }, enabled = true)
                 }
                 if (creditText != null) {
-                    MenuItem(text = creditText, onClick = { onCreditClicked?.invoke(); onCloseDrawer() }, enabled = onCreditClicked != null)
+                    if (onCreditClicked != null) {
+                        MenuItem(text = creditText, onClick = { onCreditClicked(); onCloseDrawer() }, enabled = true)
+                    } else {
+                        // Display as plain text if no click handler
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp, vertical = 12.dp)
+                        ) {
+                            Text(
+                                text = creditText,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 }
                 Spacer(modifier = Modifier.height(12.dp))
 
