@@ -96,7 +96,7 @@ fun AzNavRail(
             ) {
                 val context = LocalContext.current
                 val painter = rememberAsyncImagePainter(
-                    model = context.packageManager.getApplicationIcon(context.packageName)
+                    model = runCatching { context.packageManager.getApplicationIcon(context.packageName) }.getOrNull()
                 )
                 Box(modifier = Modifier.size(headerIconSize)) {
                     Image(
