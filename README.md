@@ -43,7 +43,7 @@ And add the dependency to your app's `build.gradle.kts`. The library now include
 
 ```kotlin
     dependencies {
-        implementation("com.github.HereLiesAz:AzNavRail:1.8")
+        implementation("com.github.HereLiesAz:AzNavRail:1.9")
     }
 ```
 
