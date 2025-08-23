@@ -124,6 +124,7 @@ fun AzNavRail(
                             Log.e("AzNavRail", "Error loading app icon", e)
                             null
                         }
+
                         if (iconDrawable != null) {
                             Image(painter = rememberAsyncImagePainter(model = iconDrawable), contentDescription = "App Icon")
                         } else {
