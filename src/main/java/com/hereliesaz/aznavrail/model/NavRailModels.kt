@@ -84,7 +84,8 @@ data class NavItem(
     val data: NavItemData,
     val showOnRail: Boolean = false,
     val railButtonText: String? = null,
-    val enabled: Boolean = true
+    val enabled: Boolean = true,
+    val icon: @Composable (() -> Unit)? = null
 )
 
 /**
