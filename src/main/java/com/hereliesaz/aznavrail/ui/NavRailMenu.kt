@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -156,6 +157,10 @@ private fun MenuItem(
             .padding(horizontal = 24.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        item.icon?.let {
+            it()
+            Spacer(modifier = Modifier.width(16.dp))
+        }
         Text(
             text = item.text,
             style = MaterialTheme.typography.bodyMedium,
