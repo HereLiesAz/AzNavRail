@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
@@ -119,7 +120,11 @@ fun AzNavRail(
                         val context = LocalContext.current
                         val iconDrawable = try {
                             context.packageManager.getApplicationIcon(context.packageName)
-                        } catch (e: Exception) { null }
+                        } catch (e: Exception) {
+                            Log.e("AzNavRail", "Error loading app icon", e)
+                            null
+                        }
+
                         if (iconDrawable != null) {
                             Image(painter = rememberAsyncImagePainter(model = iconDrawable), contentDescription = "App Icon")
                         } else {
@@ -129,6 +134,7 @@ fun AzNavRail(
                         try {
                             header.content()
                         } catch (e: Exception) {
+                            Log.e("AzNavRail", "Error in custom header content", e)
                             Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu")
                         }
                     }
