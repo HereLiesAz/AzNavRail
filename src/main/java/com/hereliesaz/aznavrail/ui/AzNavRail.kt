@@ -71,6 +71,7 @@ fun AzNavRail(
     allowCyclersOnRail: Boolean = false,
     creditText: String? = "@HereLiesAz",
     onCreditClicked: (() -> Unit)? = null,
+    allowSwipeToDismiss: Boolean = true,
     footerItems: List<NavItem> = emptyList()
 ) {
     val context = LocalContext.current
@@ -101,8 +102,8 @@ fun AzNavRail(
     NavigationRail(
         modifier = modifier
             .width(railWidth)
-            .pointerInput(isExpanded) {
-                if (isExpanded) {
+            .pointerInput(isExpanded, allowSwipeToDismiss) {
+                if (isExpanded && allowSwipeToDismiss) {
                     detectDragGestures { change, dragAmount ->
                         change.consume()
                         val (x, _) = dragAmount
@@ -118,14 +119,18 @@ fun AzNavRail(
                         val context = LocalContext.current
                         val iconDrawable = try {
                             context.packageManager.getApplicationIcon(context.packageName)
-                        } catch (e: PackageManager.NameNotFoundException) { null }
+                        } catch (e: Exception) { null }
                         if (iconDrawable != null) {
                             Image(painter = rememberAsyncImagePainter(model = iconDrawable), contentDescription = "App Icon")
                         } else {
                             Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu")
                         }
                     } else {
-                        header.content()
+                        try {
+                            header.content()
+                        } catch (e: Exception) {
+                            Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu")
+                        }
                     }
                 }
             }
