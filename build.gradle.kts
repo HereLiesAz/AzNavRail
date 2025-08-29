@@ -1,6 +1,8 @@
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
+    id("maven-publish")
+
 }
 
 android {
@@ -50,3 +52,19 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     api(libs.coil.compose)
 }
+publishing {
+        publications {
+            create<MavenPublication>("mavenJava") {
+                from(components["java"]) // For a standard JVM library
+                // artifact(tasks.jar) // If you need a specific JAR
+                // artifact(tasks.sourcesJar) // If you want to publish sources
+            }
+        }
+        repositories {
+            maven {
+                // For Maven Central, you'll configure Sonatype OSSRH
+                // For a local Maven repository:
+                // url = uri("${layout.buildDirectory.get()}/repo")
+            }
+        }
+    }
