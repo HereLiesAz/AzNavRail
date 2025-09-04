@@ -2,20 +2,19 @@
 
 [![](https://jitpack.io/v/HereLiesAz/AzNavRail.svg)](https://jitpack.io/#HereLiesAz/AzNavRail)
 
-An M3 Expressive and highly configurable navigation rail/menu for Jetpack Compose.
+An M3 Expressive and highly configurable navigation rail/menu for Jetpack Compose, now with a streamlined, text-only DSL-style API.
 
 This component provides a vertical navigation rail that can be expanded to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
 
 ## Features
 
--   **Separated Data Models:** Define your menu items (`MenuItem`) and rail buttons (`RailItem`) separately for maximum flexibility.
--   **Rich Item Types:** Both menu and rail items can be simple actions, toggles, or cycle buttons, with their state managed automatically.
--   **Always Circular Buttons:** The rail buttons are guaranteed to be perfect circles, regardless of screen orientation.
--   **Auto-Sizing Text:** Text inside the rail buttons automatically shrinks to fit, preventing ugly text wrapping.
--   **Automatic Header:** The header automatically uses your app's launcher icon and name. The only choice is which one to display.
+-   **Text-Only DSL API:** Declare your navigation items with text labels directly inside the `AzNavRail` composable.
+-   **Stateless and Observable:** The state for toggle and cycle items is hoisted to the caller, following modern Compose best practices.
+-   **Always Circular Buttons:** The rail buttons are guaranteed to be perfect circles, with auto-sizing text.
+-   **Customizable Colors:** Specify a custom color for each rail button.
+-   **Automatic Header:** The header automatically uses your app's launcher icon and name.
 -   **Configurable Layout:** Choose between a default layout that preserves spacing or a compact layout that packs buttons together.
--   **Intuitive Gestures:** Swipe-to-open and swipe-to-close gestures are enabled by default for a fluid user experience.
--   **Simplified Setup:** A new `AppNavRail` composable provides a streamlined API for easy implementation.
+-   **Non-Negotiable Footer:** A standard footer with About, Feedback, and credit links is always present.
 
 ## Setup
 
@@ -29,7 +28,6 @@ To use this library,
 6) Ship it overnight to me with a rubber ducky for bath time.
 7) Add JitPack to your `settings.gradle.kts`:
 
-
 ```kotlin
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
@@ -40,71 +38,74 @@ dependencyResolutionManagement {
 }
 ```
 
-2.  Add the dependency to your app's `build.gradle.kts`:
+And add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.github.HereLiesAz:AzNavRail:2.0") // Or the latest version
+    implementation("com.github.HereLiesAz:AzNavRail:4.0") // Or the latest version
 }
 ```
 
 ## Usage
 
-Using the new `AppNavRail` component is incredibly simple. Here’s a basic example:
+Using the new DSL API is incredibly simple. You manage the state in your own composable and pass it to the `AzNavRail`.
 
 ```kotlin
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import com.hereliesaz.aznavrail.model.MenuItem
-import com.hereliesaz.aznavrail.model.RailItem
-import com.hereliesaz.aznavrail.ui.AppNavRail
+import com.hereliesaz.aznavrail.AzNavRail
 
 @Composable
 fun MyAwesomeScreen() {
-    // 1. Define the items for the expanded menu
-    val menuItems = listOf(
-        MenuItem.MenuAction(id = "home", text = "Home", icon = Icons.Default.Home, onClick = { /* ... */ }),
-        MenuItem.MenuAction(id = "favorites", text = "Favorites", icon = Icons.Default.Favorite, onClick = { /* ... */ }),
-        MenuItem.MenuAction(id = "settings", text = "Settings", icon = Icons.Default.Settings, onClick = { /* ... */ })
-    )
+    var isOnline by remember { mutableStateOf(true) }
+    val cycleOptions = listOf("A", "B", "C")
+    var selectedOption by remember { mutableStateOf(cycleOptions.first()) }
 
-    // 2. Define which menu items should also appear on the rail
-    val railItems = listOf(
-        RailItem.RailAction(id = "home", text = "Home", icon = Icons.Default.Home, onClick = { /* ... */ }),
-        RailItem.RailAction(id = "favorites", text = "Favs", icon = Icons.Default.Favorite, onClick = { /* ... */ })
-    )
-
-    // 3. Add the AppNavRail to your layout
-    Row {
-        AppNavRail(
-            menuItems = menuItems,
-            railItems = railItems
-            // displayAppNameInHeader = true, // Uncomment to show app name instead of icon
-            // packRailButtons = true,      // Uncomment to remove gaps between rail buttons
+    AzNavRail {
+        // Configure the rail's behavior
+        settings(
+            displayAppNameInHeader = false,
+            packRailButtons = false
         )
-        // The rest of your app's content goes here
-        Text("Main content area")
+
+        // Declare the navigation items
+        MenuItem(id = "home", text = "Home", onClick = { /* Navigate home */ })
+        RailItem(id = "favorites", text = "Favs", onClick = { /* Show favorites */ })
+
+        RailToggle(
+            id = "online",
+            text = "Online",
+            isChecked = isOnline,
+            onClick = { isOnline = !isOnline }
+        )
+
+        MenuCycler(
+            id = "cycler",
+            text = "Cycle",
+            options = cycleOptions,
+            selectedOption = selectedOption,
+            onClick = {
+                val currentIndex = cycleOptions.indexOf(selectedOption)
+                selectedOption = cycleOptions[(currentIndex + 1) % cycleOptions.size]
+            }
+        )
     }
 }
 ```
 
 ## API Reference
 
-### `AppNavRail` Composable
+The main entry point is the `AzNavRail` composable.
 
-This is the recommended entry point for using the library.
+`@Composable fun AzNavRail(content: @Composable AzNavRailScope.() -> Unit)`
 
-| Parameter                | Type                  | Description                                                                                                                                                             |
-|--------------------------|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `menuItems`              | `List<MenuItem>`      | The list of items to display in the expanded menu drawer. This list also defines the layout order for the rail buttons. See [MenuItem].                                     |
-| `railItems`              | `List<RailItem>`      | The list of items to display as circular buttons on the collapsed rail. See [RailItem].                                                                                |
-| `displayAppNameInHeader` | `Boolean`             | (Optional) If `true`, the header will display the application's name. If `false` (the default), it will display the application's launcher icon.                             |
-| `packRailButtons`        | `Boolean`             | (Optional) If `true`, the rail buttons will be packed together at the top. If `false` (the default), they will be spaced out to align with their menu item counterparts. |
+You declare items and configure the rail within its content lambda. The available functions are:
 
+-   `settings(displayAppNameInHeader, packRailButtons)`
+-   `MenuItem(id, text, onClick)`
+-   `RailItem(id, text, color, onClick)`
+-   `MenuToggle(id, text, isChecked, onClick)`
+-   `RailToggle(id, text, color, isChecked, onClick)`
+-   `MenuCycler(id, text, options, selectedOption, onClick)`
+-   `RailCycler(id, text, color, options, selectedOption, onClick)`
 
-### Data Models
+For more detailed information on every parameter, refer to the KDoc documentation in the source code.
 
--   **`MenuItem`**: Represents an item in the expanded menu. Can be a `MenuAction`, `MenuToggle`, or `MenuCycle`.
--   **`RailItem`**: Represents a button on the collapsed rail. Can be a `RailAction`, `RailToggle`, or `RailCycle`.
-
-For more detailed information on every parameter and component, refer to the KDoc documentation in the source code.
