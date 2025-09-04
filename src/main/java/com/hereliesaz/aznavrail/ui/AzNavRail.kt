@@ -34,18 +34,17 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import coil.compose.rememberAsyncImagePainter
-import com.hereliesaz.aznavrail.model.NavItem
-import com.hereliesaz.aznavrail.model.NavItemData
-import com.hereliesaz.aznavrail.model.NavRailHeader
-import com.hereliesaz.aznavrail.model.NavRailMenuSection
+import com.hereliesaz.aznavrail.model.MenuItem
+import com.hereliesaz.aznavrail.model.RailItem
 import com.hereliesaz.aznavrail.model.PredefinedAction
 
 /**
  * An expressive and highly configurable navigation rail component for Jetpack Compose.
  *
- * @param header The configuration for the header of the navigation rail.
- * @param menuSections The list of sections and items that define the navigation structure.
+ * @param headerText The text to display in the header, typically the app name.
+ * @param headerIcon The icon to display in the header.
+ * @param menuItems The list of items to display in the expanded menu.
+ * @param railItems The list of items to display on the collapsed rail.
  * @param modifier The modifier to be applied to the navigation rail container.
  * @param onPredefinedAction A lambda to handle clicks on items with a [PredefinedAction].
  * @param buttonContent A composable lambda to customize the appearance of the rail buttons.
@@ -58,22 +57,20 @@ import com.hereliesaz.aznavrail.model.PredefinedAction
  */
 @Composable
 fun AzNavRail(
-    appName: String,
-    header: NavRailHeader,
-    menuSections: List<NavRailMenuSection>,
+    headerText: String,
+    headerIcon: ImageVector?,
+    menuItems: List<MenuItem>,
+    railItems: List<RailItem>,
     modifier: Modifier = Modifier,
-    onPredefinedAction: (PredefinedAction) -> Unit,
-    buttonContent: @Composable (item: NavItem, state: MutableState<Any>?) -> Unit = { item, state ->
-        DefaultRailButton(item = item, state = state, onPredefinedAction = onPredefinedAction)
+    buttonContent: @Composable (item: RailItem, state: MutableState<Any>?) -> Unit = { item, state ->
+        DefaultRailButton(item = item, state = state)
     },
     initiallyExpanded: Boolean = false,
-    useAppIconAsHeader: Boolean = false,
-    headerIconSize: Dp = 80.dp,
     allowCyclersOnRail: Boolean = false,
     creditText: String? = "@HereLiesAz",
     onCreditClicked: (() -> Unit)? = null,
-    allowSwipeToDismiss: Boolean = true,
-    footerItems: List<NavItem> = emptyList()
+    disableSwipeToOpen: Boolean = false,
+    footerItems: List<MenuItem> = emptyList()
 ) {
     val context = LocalContext.current
     val onCreditClickedLambda = onCreditClicked ?: {
@@ -88,12 +85,24 @@ fun AzNavRail(
         label = "railWidth"
     )
 
-    val itemStates = remember(menuSections) {
-        val states = mutableMapOf<NavItem, MutableState<Any>>()
-        menuSections.flatMap { it.items }.forEach { item ->
-            when (val data = item.data) {
-                is NavItemData.Toggle -> states[item] = mutableStateOf(data.initialIsChecked)
-                is NavItemData.Cycle -> states[item] = mutableStateOf(data.options.indexOf(data.initialOption))
+    val railItemStates = remember(railItems) {
+        val states = mutableMapOf<RailItem, MutableState<Any>>()
+        railItems.forEach { item ->
+            when (item) {
+                is RailItem.RailToggle -> states[item] = mutableStateOf(item.isChecked)
+                is RailItem.RailCycle -> states[item] = mutableStateOf(item.options.indexOf(item.selectedOption))
+                else -> {}
+            }
+        }
+        states
+    }
+
+    val menuItemStates = remember(menuItems) {
+        val states = mutableMapOf<MenuItem, MutableState<Any>>()
+        menuItems.forEach { item ->
+            when (item) {
+                is MenuItem.MenuToggle -> states[item] = mutableStateOf(item.isChecked)
+                is MenuItem.MenuCycle -> states[item] = mutableStateOf(item.options.indexOf(item.selectedOption))
                 else -> {}
             }
         }
@@ -103,40 +112,35 @@ fun AzNavRail(
     NavigationRail(
         modifier = modifier
             .width(railWidth)
-            .pointerInput(isExpanded, allowSwipeToDismiss) {
-                if (isExpanded && allowSwipeToDismiss) {
+            .pointerInput(isExpanded, disableSwipeToOpen) {
+                if (isExpanded) {
                     detectDragGestures { change, dragAmount ->
                         change.consume()
                         val (x, _) = dragAmount
                         if (x < -20) { onToggle() }
+                    }
+                } else if (!disableSwipeToOpen) {
+                    detectDragGestures { change, dragAmount ->
+                        change.consume()
+                        val (x, _) = dragAmount
+                        if (x > 20) { onToggle() }
                     }
                 }
             },
         containerColor = Color.Transparent,
         header = {
             IconButton(onClick = onToggle, modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)) {
-                Box(modifier = Modifier.size(headerIconSize)) {
-                    if (useAppIconAsHeader) {
-                        val context = LocalContext.current
-                        val iconDrawable = try {
-                            context.packageManager.getApplicationIcon(context.packageName)
-                        } catch (e: Exception) {
-                            Log.e("AzNavRail", "Error loading app icon", e)
-                            null
-                        }
-
-                        if (iconDrawable != null) {
-                            Image(painter = rememberAsyncImagePainter(model = iconDrawable), contentDescription = "App Icon")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(modifier = Modifier.size(56.dp)) { // Use a fixed size for the icon box
+                    if (headerIcon != null) {
+                        Icon(imageVector = headerIcon, contentDescription = "Header Icon")
                         } else {
-                            Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu")
+                        Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu")
                         }
-                    } else {
-                        try {
-                            header.content()
-                        } catch (e: Exception) {
-                            Log.e("AzNavRail", "Error in custom header content", e)
-                            Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu")
-                        }
+                    }
+                    if (isExpanded) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = headerText, style = MaterialTheme.typography.titleMedium)
                     }
                 }
             }
@@ -144,11 +148,10 @@ fun AzNavRail(
     ) {
         if (isExpanded) {
             NavRailMenu(
-                appName = appName,
-                sections = menuSections,
+                appName = headerText,
+                items = menuItems,
                 onCloseDrawer = onToggle,
-                onPredefinedAction = onPredefinedAction,
-                itemStates = itemStates,
+                itemStates = menuItemStates,
                 creditText = creditText,
                 onCreditClicked = onCreditClickedLambda,
                 footerItems = footerItems
@@ -159,13 +162,8 @@ fun AzNavRail(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
             ) {
-                menuSections.flatMap { it.items }.forEach { item ->
-                    val shouldShowOnRail = item.showOnRail && item.enabled && (allowCyclersOnRail || item.data !is NavItemData.Cycle)
-                    if (shouldShowOnRail) {
-                        buttonContent(item, itemStates[item])
-                    } else {
-                        Spacer(modifier = Modifier.size(72.dp))
-                    }
+                railItems.forEach { item ->
+                    buttonContent(item, railItemStates[item])
                 }
             }
         }
@@ -174,37 +172,33 @@ fun AzNavRail(
 
 @Composable
 private fun DefaultRailButton(
-    item: NavItem,
-    state: MutableState<Any>?,
-    onPredefinedAction: (PredefinedAction) -> Unit
+    item: RailItem,
+    state: MutableState<Any>?
 ) {
     val buttonText: String
     val onClick: () -> Unit
 
-    when (val data = item.data) {
-        is NavItemData.Action -> {
-            buttonText = item.railButtonText ?: item.text
-            onClick = {
-                data.onClick?.invoke()
-                data.predefinedAction?.let(onPredefinedAction)
-            }
+    when (item) {
+        is RailItem.RailAction -> {
+            buttonText = item.text
+            onClick = item.onClick
         }
-        is NavItemData.Toggle -> {
-            val isChecked = state?.value as? Boolean ?: data.initialIsChecked
-            buttonText = item.railButtonText ?: item.text
+        is RailItem.RailToggle -> {
+            val isChecked = state?.value as? Boolean ?: item.isChecked
+            buttonText = item.text
             onClick = {
                 val newState = !isChecked
                 state?.value = newState
-                data.onStateChange(newState)
+                item.onCheckedChange(newState)
             }
         }
-        is NavItemData.Cycle -> {
-            val currentIndex = state?.value as? Int ?: data.options.indexOf(data.initialOption)
-            buttonText = data.options.getOrNull(currentIndex) ?: ""
+        is RailItem.RailCycle -> {
+            val currentIndex = state?.value as? Int ?: item.options.indexOf(item.selectedOption)
+            buttonText = item.options.getOrNull(currentIndex) ?: ""
             onClick = {
-                val nextIndex = (currentIndex + 1) % data.options.size
+                val nextIndex = (currentIndex + 1) % item.options.size
                 state?.value = nextIndex
-                data.onStateChange(data.options[nextIndex])
+                item.onOptionSelected(item.options[nextIndex])
             }
         }
     }

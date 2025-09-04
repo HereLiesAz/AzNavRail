@@ -12,6 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.Text
@@ -20,39 +21,23 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.hereliesaz.aznavrail.model.NavItem
-import com.hereliesaz.aznavrail.model.NavItemData
-import com.hereliesaz.aznavrail.model.NavRailMenuSection
-import com.hereliesaz.aznavrail.model.PredefinedAction
+import com.hereliesaz.aznavrail.model.MenuItem as MenuItemModel
 
-/**
- * The content of the expanded menu drawer.
- *
- * @param sections The list of sections to display in the main scrollable area.
- * @param modifier The modifier to be applied to the drawer sheet.
- * @param onCloseDrawer A lambda to be executed when a menu item is clicked to close the drawer.
- * @param onPredefinedAction A lambda to handle clicks on items with a [PredefinedAction].
- * @param itemStates A map holding the mutable state for toggle and cycle items.
- * @param creditText The text for the credit footer item. If null, the item is hidden.
- * @param onCreditClicked A lambda for the credit footer item.
- */
 @Composable
 internal fun NavRailMenu(
     appName: String,
-    sections: List<NavRailMenuSection>,
+    items: List<MenuItemModel>,
     modifier: Modifier = Modifier,
     onCloseDrawer: () -> Unit,
-    onPredefinedAction: (PredefinedAction) -> Unit,
-    itemStates: Map<NavItem, MutableState<Any>>,
+    itemStates: Map<MenuItemModel, MutableState<Any>>,
     creditText: String? = null,
     onCreditClicked: (() -> Unit)? = null,
-    footerItems: List<NavItem> = emptyList()
+    footerItems: List<MenuItemModel> = emptyList()
 ) {
     ModalDrawerSheet(
         modifier = modifier.padding(0.dp)
     ) {
         Column {
-            // App Name
             Text(
                 text = appName,
                 style = MaterialTheme.typography.titleMedium,
@@ -62,56 +47,39 @@ internal fun NavRailMenu(
             )
             MenuDivider()
 
-            // --- Scrolling Content ---
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
             ) {
-                sections.forEachIndexed { index, section ->
-                    if (section.title.isNotEmpty()) {
-                        Text(
-                            text = section.title,
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
-                        )
-                    }
-                    section.items.forEach { item ->
-                        MenuItem(
-                            item = item,
-                            state = itemStates[item],
-                            onPredefinedAction = onPredefinedAction,
-                            onCloseDrawer = onCloseDrawer
-                        )
-                    }
-                    if (index < sections.lastIndex) {
-                        MenuDivider()
-                    }
+                items.forEach { item ->
+                    MenuItem(
+                        item = item,
+                        state = itemStates[item],
+                        onCloseDrawer = onCloseDrawer
+                    )
                 }
             }
 
-            // --- Fixed Footer ---
             Column {
                 MenuDivider()
                 footerItems.forEach { item ->
                     MenuItem(
                         item = item,
                         state = itemStates[item],
-                        onPredefinedAction = onPredefinedAction,
                         onCloseDrawer = onCloseDrawer
                     )
                 }
                 if (creditText != null) {
-                    val creditItem = NavItem(
+                    val creditItem = MenuItemModel.MenuAction(
+                        id = "credit",
                         text = creditText,
-                        data = NavItemData.Action(onClick = onCreditClicked),
-                        enabled = onCreditClicked != null
+                        icon = null, // Icon is now nullable
+                        onClick = onCreditClicked ?: {}
                     )
                     MenuItem(
                         item = creditItem,
                         state = null,
-                        onPredefinedAction = {},
                         onCloseDrawer = onCloseDrawer
                     )
                 }
@@ -123,28 +91,26 @@ internal fun NavRailMenu(
 
 @Composable
 private fun MenuItem(
-    item: NavItem,
+    item: MenuItemModel,
     state: MutableState<Any>?,
-    onPredefinedAction: (PredefinedAction) -> Unit,
     onCloseDrawer: () -> Unit
 ) {
     val clickHandler = {
-        when (val data = item.data) {
-            is NavItemData.Action -> {
-                data.onClick?.invoke()
-                data.predefinedAction?.let(onPredefinedAction)
+        when (item) {
+            is MenuItemModel.MenuAction -> {
+                item.onClick()
             }
-            is NavItemData.Toggle -> {
-                val isChecked = state?.value as? Boolean ?: data.initialIsChecked
+            is MenuItemModel.MenuToggle -> {
+                val isChecked = state?.value as? Boolean ?: item.isChecked
                 val newState = !isChecked
                 state?.value = newState
-                data.onStateChange(newState)
+                item.onCheckedChange(newState)
             }
-            is NavItemData.Cycle -> {
-                val currentIndex = state?.value as? Int ?: data.options.indexOf(data.initialOption)
-                val nextIndex = (currentIndex + 1) % data.options.size
+            is MenuItemModel.MenuCycle -> {
+                val currentIndex = state?.value as? Int ?: item.options.indexOf(item.selectedOption)
+                val nextIndex = (currentIndex + 1) % item.options.size
                 state?.value = nextIndex
-                data.onStateChange(data.options[nextIndex])
+                item.onOptionSelected(item.options[nextIndex])
             }
         }
         onCloseDrawer()
@@ -153,18 +119,18 @@ private fun MenuItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(enabled = item.enabled, onClick = clickHandler)
+            .clickable(enabled = true, onClick = clickHandler)
             .padding(horizontal = 24.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        item.icon?.let {
-            it()
+        if (item.icon != null) {
+            Icon(imageVector = item.icon, contentDescription = item.text)
             Spacer(modifier = Modifier.width(16.dp))
         }
         Text(
             text = item.text,
             style = MaterialTheme.typography.bodyMedium,
-            color = if (item.enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+            color = MaterialTheme.colorScheme.primary
         )
     }
 }
