@@ -108,3 +108,4 @@ You declare items and configure the rail within its content lambda. The availabl
 -   `RailCycler(id, text, color, options, selectedOption, onClick)`
 
 For more detailed information on every parameter, refer to the KDoc documentation in the source code.
+
