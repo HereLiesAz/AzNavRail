@@ -1,7 +1,6 @@
 package com.hereliesaz.aznavrail.model
 
 import androidx.compose.ui.graphics.vector.ImageVector
-
 /**
  * Represents a single item on the collapsed navigation rail.
  * These are the circular buttons that are always visible.
@@ -34,7 +33,6 @@ sealed class RailItem(
         override val icon: ImageVector?,
         val onClick: () -> Unit
     ) : RailItem(id, text, icon)
-
     /**
      * A rail item that represents a toggleable state (on/off).
      *
@@ -51,7 +49,6 @@ sealed class RailItem(
         val isChecked: Boolean,
         val onCheckedChange: (Boolean) -> Unit
     ) : RailItem(id, text, icon)
-
     /**
      * A rail item that allows the user to cycle through a predefined list of options.
      * Each click advances to the next option in the list.
