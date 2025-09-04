@@ -127,8 +127,9 @@ private fun MenuItem(
             .padding(horizontal = 24.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (item.icon != null) {
-            Icon(imageVector = item.icon, contentDescription = item.text)
+        val icon = item.icon
+        if (icon != null) {
+            Icon(imageVector = icon, contentDescription = item.text)
             Spacer(modifier = Modifier.width(16.dp))
         }
         Text(
