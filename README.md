@@ -2,9 +2,10 @@
 
 [![](https://jitpack.io/v/HereLiesAz/AzNavRail.svg)](https://jitpack.io/#HereLiesAz/AzNavRail)
 
-An M3 Expressive and highly configurable navigation rail/menu for Jetpack Compose, now with a streamlined, text-only DSL-style API.
 
-This component provides a vertical navigation rail that can be expanded to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
+An M3 Expressive and dictatorially confined if not contemptable navigation rail/menu--I call it a renu. Or maybe a mail. No, a navigrenuail--for Jetpack Compose with a streamlined, DSL-style API.
+
+This "navigrenuail" provides a vertical navigation rail that expands to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
 
 ## Features
 
@@ -54,7 +55,7 @@ Using the new DSL API is incredibly simple. You manage the state in your own com
 import com.hereliesaz.aznavrail.AzNavRail
 
 @Composable
-fun MyAwesomeScreen() {
+fun MainScreen() {
     var isOnline by remember { mutableStateOf(true) }
     val cycleOptions = listOf("A", "B", "C")
     var selectedOption by remember { mutableStateOf(cycleOptions.first()) }
@@ -108,3 +109,4 @@ You declare items and configure the rail within its content lambda. The availabl
 -   `RailCycler(id, text, color, options, selectedOption, onClick)`
 
 For more detailed information on every parameter, refer to the KDoc documentation in the source code.
+

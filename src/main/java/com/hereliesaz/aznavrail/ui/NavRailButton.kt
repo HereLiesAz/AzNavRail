@@ -2,6 +2,7 @@ package com.hereliesaz.aznavrail.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ButtonDefaults
@@ -9,7 +10,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -17,8 +23,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * A circular, outlined button, designed for use in the collapsed navigation rail.
- * This is the basic building block for all buttons in the rail.
+ * A highly specialized, circular, outlined button, designed for use in the collapsed navigation rail.
+ *
+ * This is the beautiful, circular button that makes up the rail. It has two key features:
+ * 1.  **It's always a perfect circle:** It uses `aspectRatio(1f)` to maintain its shape, regardless of layout constraints.
+ * 2.  **Auto-sizing text:** The text inside will automatically shrink to fit within the button's bounds, preventing ugly wrapping or truncation.
+ *
+ * While this component can be used directly, it is primarily intended for internal use by the [AzNavRail] component.
  *
  * @param onClick A lambda to be executed when the button is clicked.
  * @param text The text to display on the button.
@@ -26,7 +37,6 @@ import androidx.compose.ui.unit.sp
  * @param size The diameter of the circular button.
  * @param color The color of the button's border and text. Defaults to the theme's primary color.
  */
-
 @Composable
 fun NavRailButton(
     onClick: () -> Unit,
@@ -37,7 +47,7 @@ fun NavRailButton(
 ) {
     OutlinedButton(
         onClick = onClick,
-        modifier = modifier.size(size),
+        modifier = modifier.size(size).aspectRatio(1f),
         shape = CircleShape,
         border = BorderStroke(3.dp, color.copy(alpha = 0.7f)),
         colors = ButtonDefaults.outlinedButtonColors(
@@ -46,13 +56,22 @@ fun NavRailButton(
         ),
         contentPadding = PaddingValues(4.dp)
     ) {
+        var fontSize by remember { mutableStateOf(14.sp) }
+        var readyToDraw by remember { mutableStateOf(false) }
+
         Text(
             text = text,
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 14.sp,
-                lineHeight = 16.sp
-            ),
+            style = MaterialTheme.typography.labelSmall,
+            fontSize = fontSize,
+            onTextLayout = { textLayoutResult ->
+                if (textLayoutResult.didOverflowHeight || textLayoutResult.didOverflowWidth) {
+                    fontSize *= 0.9f
+                } else {
+                    readyToDraw = true
+                }
+            },
+            modifier = Modifier.alpha(if (readyToDraw) 1f else 0f)
         )
     }
 }
