@@ -5,19 +5,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.hereliesaz.aznavrail.model.MenuItem
-import com.hereliesaz.aznavrail.model.RailItem
-import com.hereliesaz.aznavrail.ui.AppNavRail
+import com.hereliesaz.aznavrail.AzNavRail
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,43 +34,38 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun SampleScreen() {
-    // Define the items for the expanded menu.
-    // The rail layout will be based on this list.
-    val menuItems = listOf(
-        MenuItem.MenuAction(id = "home", text = "Home", icon = Icons.Default.Home, onClick = {}),
-        MenuItem.MenuAction(id = "favorites", text = "Favorites", icon = Icons.Default.Favorite, onClick = {}),
-        MenuItem.MenuAction(id = "settings", text = "Settings", icon = Icons.Default.Settings, onClick = {})
-    )
-
-    // Define which of the menu items should also appear on the rail.
-    // Note that "settings" is missing, which will create a gap in the default layout.
-    val railItems = listOf(
-        RailItem.RailAction(id = "home", text = "Home", icon = Icons.Default.Home, onClick = {}),
-        RailItem.RailAction(id = "favorites", text = "Favs", icon = Icons.Default.Favorite, onClick = {})
-    )
-
-    val footerItems = listOf(
-        MenuItem.MenuAction(id = "about", text = "About", icon = Icons.Default.Info, onClick = {})
-    )
+    var isOnline by remember { mutableStateOf(true) }
+    val cycleOptions = remember { listOf("A", "B", "C") }
+    var selectedOption by remember { mutableStateOf(cycleOptions.first()) }
 
     Row {
-        // Example with the default gapped layout
-        AppNavRail(
-            menuItems = menuItems,
-            railItems = railItems,
-            footerItems = footerItems
-        )
+        AzNavRail {
+            settings(
+                displayAppNameInHeader = false,
+                packRailButtons = false
+            )
 
-        // Example with the packed layout
-        /*
-        AppNavRail(
-            menuItems = menuItems,
-            railItems = railItems,
-            footerItems = footerItems,
-            packRailButtons = true
-        )
-        */
+            MenuItem(id = "home", text = "Home", onClick = { /* ... */ })
+            RailItem(id = "favorites", text = "Favs", onClick = { /* ... */ })
 
+            RailToggle(
+                id = "online",
+                text = "Online",
+                isChecked = isOnline,
+                onClick = { isOnline = !isOnline }
+            )
+
+            MenuCycler(
+                id = "cycler",
+                text = "Cycle",
+                options = cycleOptions,
+                selectedOption = selectedOption,
+                onClick = {
+                    val currentIndex = cycleOptions.indexOf(selectedOption)
+                    selectedOption = cycleOptions[(currentIndex + 1) % cycleOptions.size]
+                }
+            )
+        }
         Text("Main content for the app.")
     }
 }
