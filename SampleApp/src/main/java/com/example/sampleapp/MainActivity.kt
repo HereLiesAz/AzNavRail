@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun SampleScreen() {
     var isOnline by remember { mutableStateOf(true) }
-    val cycleOptions = listOf("A", "B", "C")
+    val cycleOptions = remember { listOf("A", "B", "C") }
     var selectedOption by remember { mutableStateOf(cycleOptions.first()) }
 
     Row {
