@@ -2,20 +2,19 @@
 
 [![](https://jitpack.io/v/HereLiesAz/AzNavRail.svg)](https://jitpack.io/#HereLiesAz/AzNavRail)
 
-An M3 Expressive and highly configurable if not contemptable navigation rail/menu--I call it a renu. Or maybe a mail. No, a navigrenuail--for Jetpack Compose.
+An M3 Expressive and highly configurable navigation rail/menu for Jetpack Compose, now with a streamlined, text-only DSL-style API.
 
-This "navigrenuail" provides a vertical navigation rail that can be expanded to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
+This component provides a vertical navigation rail that can be expanded to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
 
 ## Features
 
--   **Single Source of Truth:** Define your navigation items once. The rail buttons are automatically generated from your menu items.
--   **Unified API:** A single `NavItem` model for all items, whether they are simple actions, toggles, or cycle buttons.
--   **Customizable Buttons:** Provide your own Composable to completely customize the look and feel of the rail buttons.
--   **Expandable & Collapsible:** A compact rail that expands into a full menu.
--   **Simplified Actions:** Use `PredefinedAction` for common tasks like Home, Settings, and About, or provide your own custom lambdas.
--   **Stateful Buttons:** `Toggle` and `Cycle` items automatically manage their state, which is shared between the rail button and the menu item.
--   **Swipe-to-Collapse:** Intuitive swipe gesture to close the expanded menu.
--   **Theming:** Adapts to the `MaterialTheme` of the consuming application.
+-   **Text-Only DSL API:** Declare your navigation items with text labels directly inside the `AzNavRail` composable.
+-   **Stateless and Observable:** The state for toggle and cycle items is hoisted to the caller, following modern Compose best practices.
+-   **Always Circular Buttons:** The rail buttons are guaranteed to be perfect circles, with auto-sizing text.
+-   **Customizable Colors:** Specify a custom color for each rail button.
+-   **Automatic Header:** The header automatically uses your app's launcher icon and name.
+-   **Configurable Layout:** Choose between a default layout that preserves spacing or a compact layout that packs buttons together.
+-   **Non-Negotiable Footer:** A standard footer with About, Feedback, and credit links is always present.
 
 ## Setup
 
@@ -27,131 +26,85 @@ To use this library,
 4) Put the bowl in the box.
 5) Print out the label.
 6) Ship it overnight to me with a rubber ducky for bath time.
-7) Add JitPack to your settings.gradle.kts:
+7) Add JitPack to your `settings.gradle.kts`:
 
 ```kotlin
-    dependencyResolutionManagement {
-		repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-		repositories {
-			mavenCentral()
-			maven { url = uri("https://jitpack.io") }
-		}
-	}
-```
-
-And add the dependency to your app's `build.gradle.kts`. The library now includes `coil-compose` as a transitive dependency, so you don't need to add it separately.
-
-```kotlin
-    dependencies {
-        implementation("com.github.HereLiesAz:AzNavRail:1.9")
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
     }
+}
 ```
 
+And add the dependency to your app's `build.gradle.kts`:
+
+```kotlin
+dependencies {
+    implementation("com.github.HereLiesAz:AzNavRail:4.0") // Or the latest version
+}
+```
 
 ## Usage
 
-Here's an example of how to use the new unified API. You define your navigation structure once using `NavItem`, and `AzNavRail` handles the rest.
+Using the new DSL API is incredibly simple. You manage the state in your own composable and pass it to the `AzNavRail`.
 
 ```kotlin
-// In your screen's Composable, e.g., inside a Row
-AzNavRail(
-    header = NavRailHeader { /* ... */ },
-    menuSections = listOf(
-        NavRailMenuSection(
-            title = "Main",
-            items = listOf(
-                NavItem(
-                    text = "Home",
-                    data = NavItemData.Action(predefinedAction = PredefinedAction.HOME),
-                    showOnRail = true
-                ),
-                NavItem(
-                    text = "Online",
-                    data = NavItemData.Toggle(
-                        initialIsChecked = true,
-                        onStateChange = { isOnline -> /* ... */ }
-                    ),
-                    showOnRail = true,
-                    railButtonText = "On"
-                ),
-            )
+import com.hereliesaz.aznavrail.AzNavRail
+
+@Composable
+fun MyAwesomeScreen() {
+    var isOnline by remember { mutableStateOf(true) }
+    val cycleOptions = listOf("A", "B", "C")
+    var selectedOption by remember { mutableStateOf(cycleOptions.first()) }
+
+    AzNavRail {
+        // Configure the rail's behavior
+        settings(
+            displayAppNameInHeader = false,
+            packRailButtons = false
         )
-    ),
-    onPredefinedAction = { action ->
-        when (action) {
-            PredefinedAction.HOME -> { /* Navigate to Home */ }
-            else -> {}
-        }
+
+        // Declare the navigation items
+        MenuItem(id = "home", text = "Home", onClick = { /* Navigate home */ })
+        RailItem(id = "favorites", text = "Favs", onClick = { /* Show favorites */ })
+
+        RailToggle(
+            id = "online",
+            text = "Online",
+            isChecked = isOnline,
+            onClick = { isOnline = !isOnline }
+        )
+
+        MenuCycler(
+            id = "cycler",
+            text = "Cycle",
+            options = cycleOptions,
+            selectedOption = selectedOption,
+            onClick = {
+                val currentIndex = cycleOptions.indexOf(selectedOption)
+                selectedOption = cycleOptions[(currentIndex + 1) % cycleOptions.size]
+            }
+        )
     }
-)
+}
 ```
 
-### Customizing Button Content
+## API Reference
 
-You can provide a custom composable for the rail buttons using the `buttonContent` parameter. This gives you full control over the appearance, including different styles for active/inactive states.
+The main entry point is the `AzNavRail` composable.
 
-```kotlin
-AzNavRail(
-    // ... other parameters
-    buttonContent = { item, state ->
-        // Get the current state for toggle/cycle buttons
-        val isChecked = (state?.value as? Boolean) ?: false
-        val color = if (isChecked) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
+`@Composable fun AzNavRail(content: @Composable AzNavRailScope.() -> Unit)`
 
-        // Your custom button implementation
-        OutlinedButton(
-            onClick = { /* The internal onClick logic is handled by the library */ },
-            modifier = Modifier.size(72.dp),
-            shape = CircleShape,
-            border = BorderStroke(3.dp, color.copy(alpha = 0.7f)),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = color)
-        ) {
-            Text(text = item.railButtonText ?: item.text)
-        }
-    }
-)
-```
+You declare items and configure the rail within its content lambda. The available functions are:
 
-### API Reference
+-   `settings(displayAppNameInHeader, packRailButtons)`
+-   `MenuItem(id, text, onClick)`
+-   `RailItem(id, text, color, onClick)`
+-   `MenuToggle(id, text, isChecked, onClick)`
+-   `RailToggle(id, text, color, isChecked, onClick)`
+-   `MenuCycler(id, text, options, selectedOption, onClick)`
+-   `RailCycler(id, text, color, options, selectedOption, onClick)`
 
-#### `AzNavRail` Composable
-
-| Parameter            | Type                                                    | Description                                                                                                                              |
-| -------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `header`             | `NavRailHeader`                                         | The configuration for the header content. Ignored if `useAppIconAsHeader` is `true`.                                                     |
-| `menuSections`       | `List<NavRailMenuSection>`                              | The list of sections that defines the entire navigation structure.                                                                       |
-| `onPredefinedAction` | `(PredefinedAction) -> Unit`                            | A handler for actions that use the `PredefinedAction` enum.                                                                              |
-| `buttonContent`      | `@Composable (item: NavItem, state: MutableState<Any>?) -> Unit` | (Optional) A composable lambda to customize the appearance of the rail buttons.                                                        |
-| `allowCyclersOnRail` | `Boolean`                                               | (Optional) If `true`, items of type `NavItemData.Cycle` will be shown on the rail. Defaults to `false`.                                  |
-| `modifier`           | `Modifier`                                              | (Optional) The modifier to be applied to the component.                                                                                  |
-| `initiallyExpanded`  | `Boolean`                                               | (Optional) Whether the rail should be expanded when it first appears. Defaults to `false`.                                               |
-| `useAppIconAsHeader` | `Boolean`                                               | (Optional) If `true`, the rail will display the app's launcher icon in the header. Defaults to `false`.                                  |
-| `headerIconSize`     | `Dp`                                                    | (Optional) The size of the header icon. Defaults to `80.dp`.                                                                             |
-| `creditText`         | `String?`                                               | (Optional) The text for the credit line in the footer.                                                                                   |
-| `onCreditClicked`    | `(() -> Unit)?`                                         | (Optional) A click handler for the credit line.                                                                                          |
-| `allowSwipeToDismiss` | `Boolean`                                               | (Optional) If `true`, the expanded menu can be dismissed with a swipe gesture. Defaults to `true`.                                     |
-
-#### `NavItem` Model
-
-The `NavItem` is the core data model for defining a navigation element.
-
-`data class NavItem(text: String, data: NavItemData, showOnRail: Boolean = false, railButtonText: String? = null, enabled: Boolean = true, icon: @Composable (() -> Unit)? = null)`
-
-The `icon` parameter allows you to add a composable icon to the navigation item, which will be displayed next to the text in the expanded menu.
-
-Example:
-```kotlin
-NavItem(
-    text = "Home",
-    data = NavItemData.Action(predefinedAction = PredefinedAction.HOME),
-    icon = { Icon(Icons.Default.Home, contentDescription = "Home") }
-)
-```
-
-#### `NavItemData` Sealed Class
-
-This class defines the behavior of a `NavItem`.
-
--   `NavItemData.Action(onClick: (() -> Unit)?, predefinedAction: PredefinedAction?)`: A simple clickable item.
--   `NavItemData.Toggle(initialIsChecked: Boolean, onStateChange: (Boolean) -> Unit)`: An item that toggles between two states.
--   `NavItemData.Cycle(options: List<String>, initialOption: String, onStateChange: (String) -> Unit)`: An item that cycles through a list of options.
+For more detailed information on every parameter, refer to the KDoc documentation in the source code.
