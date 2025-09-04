@@ -158,7 +158,7 @@ private fun Footer(appName: String) {
         MenuItem(item = AzNavItem(id = "feedback", text = "Feedback", isRailItem = false, onClick = {
             val intent = Intent(Intent.ACTION_SENDTO).apply {
                 data = Uri.parse("mailto:")
-                putExtra(Intent.EXTRA_EMAIL, arrayOf("feedback@example.com"))
+                putExtra(Intent.EXTRA_EMAIL, arrayOf("your-real-email@example.com"))
                 putExtra(Intent.EXTRA_SUBJECT, "Feedback for $appName")
             }
             context.startActivity(Intent.createChooser(intent, "Send Feedback"))
