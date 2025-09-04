@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.hereliesaz.testapp"
+    namespace = "com.example.sampleapp"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.hereliesaz.testapp"
+        applicationId = "com.example.sampleapp"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
@@ -36,11 +36,8 @@ android {
 }
 
 dependencies {
-
-    // Depend on the root library project
     implementation(project(":"))
 
-    // Standard Compose dependencies for the test app
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
@@ -48,7 +45,6 @@ dependencies {
     implementation(libs.material3)
     implementation(libs.androidx.activity.compose)
 
-    // Test dependencies
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)

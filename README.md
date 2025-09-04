@@ -2,20 +2,20 @@
 
 [![](https://jitpack.io/v/HereLiesAz/AzNavRail.svg)](https://jitpack.io/#HereLiesAz/AzNavRail)
 
-An M3 Expressive and highly configurable if not contemptable navigation rail/menu--I call it a renu. Or maybe a mail. No, a navigrenuail--for Jetpack Compose.
+An M3 Expressive and highly configurable navigation rail/menu for Jetpack Compose.
 
-This "navigrenuail" provides a vertical navigation rail that can be expanded to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
+This component provides a vertical navigation rail that can be expanded to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
 
 ## Features
 
--   **Single Source of Truth:** Define your navigation items once. The rail buttons are automatically generated from your menu items.
--   **Unified API:** A single `NavItem` model for all items, whether they are simple actions, toggles, or cycle buttons.
--   **Customizable Buttons:** Provide your own Composable to completely customize the look and feel of the rail buttons.
--   **Expandable & Collapsible:** A compact rail that expands into a full menu.
--   **Simplified Actions:** Use `PredefinedAction` for common tasks like Home, Settings, and About, or provide your own custom lambdas.
--   **Stateful Buttons:** `Toggle` and `Cycle` items automatically manage their state, which is shared between the rail button and the menu item.
--   **Swipe-to-Collapse:** Intuitive swipe gesture to close the expanded menu.
--   **Theming:** Adapts to the `MaterialTheme` of the consuming application.
+-   **Separated Data Models:** Define your menu items (`MenuItem`) and rail buttons (`RailItem`) separately for maximum flexibility.
+-   **Rich Item Types:** Both menu and rail items can be simple actions, toggles, or cycle buttons, with their state managed automatically.
+-   **Always Circular Buttons:** The rail buttons are guaranteed to be perfect circles, regardless of screen orientation.
+-   **Auto-Sizing Text:** Text inside the rail buttons automatically shrinks to fit, preventing ugly text wrapping.
+-   **Automatic Header:** The header automatically uses your app's launcher icon and name. The only choice is which one to display.
+-   **Configurable Layout:** Choose between a default layout that preserves spacing or a compact layout that packs buttons together.
+-   **Intuitive Gestures:** Swipe-to-open and swipe-to-close gestures are enabled by default for a fluid user experience.
+-   **Simplified Setup:** A new `AppNavRail` composable provides a streamlined API for easy implementation.
 
 ## Setup
 
@@ -27,131 +27,83 @@ To use this library,
 4) Put the bowl in the box.
 5) Print out the label.
 6) Ship it overnight to me with a rubber ducky for bath time.
-7) Add JitPack to your settings.gradle.kts:
+7) Add JitPack to your `settings.gradle.kts`:
 
 ```kotlin
-    dependencyResolutionManagement {
-		repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-		repositories {
-			mavenCentral()
-			maven { url = uri("https://jitpack.io") }
-		}
-	}
-```
-
-And add the dependency to your app's `build.gradle.kts`. The library now includes `coil-compose` as a transitive dependency, so you don't need to add it separately.
-
-```kotlin
-    dependencies {
-        implementation("com.github.HereLiesAz:AzNavRail:1.9")
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
     }
+}
 ```
 
+2.  Add the dependency to your app's `build.gradle.kts`:
+
+```kotlin
+dependencies {
+    implementation("com.github.HereLiesAz:AzNavRail:2.0") // Or the latest version
+}
+```
 
 ## Usage
 
-Here's an example of how to use the new unified API. You define your navigation structure once using `NavItem`, and `AzNavRail` handles the rest.
+Using the new `AppNavRail` component is incredibly simple. Here’s a basic example:
 
 ```kotlin
-// In your screen's Composable, e.g., inside a Row
-AzNavRail(
-    header = NavRailHeader { /* ... */ },
-    menuSections = listOf(
-        NavRailMenuSection(
-            title = "Main",
-            items = listOf(
-                NavItem(
-                    text = "Home",
-                    data = NavItemData.Action(predefinedAction = PredefinedAction.HOME),
-                    showOnRail = true
-                ),
-                NavItem(
-                    text = "Online",
-                    data = NavItemData.Toggle(
-                        initialIsChecked = true,
-                        onStateChange = { isOnline -> /* ... */ }
-                    ),
-                    showOnRail = true,
-                    railButtonText = "On"
-                ),
-            )
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import com.hereliesaz.aznavrail.model.MenuItem
+import com.hereliesaz.aznavrail.model.RailItem
+import com.hereliesaz.aznavrail.ui.AppNavRail
+
+@Composable
+fun MyAwesomeScreen() {
+    // 1. Define the items for the expanded menu
+    val menuItems = listOf(
+        MenuItem.MenuAction(id = "home", text = "Home", icon = Icons.Default.Home, onClick = { /* ... */ }),
+        MenuItem.MenuAction(id = "favorites", text = "Favorites", icon = Icons.Default.Favorite, onClick = { /* ... */ }),
+        MenuItem.MenuAction(id = "settings", text = "Settings", icon = Icons.Default.Settings, onClick = { /* ... */ })
+    )
+
+    // 2. Define which menu items should also appear on the rail
+    val railItems = listOf(
+        RailItem.RailAction(id = "home", text = "Home", icon = Icons.Default.Home, onClick = { /* ... */ }),
+        RailItem.RailAction(id = "favorites", text = "Favs", icon = Icons.Default.Favorite, onClick = { /* ... */ })
+    )
+
+    // 3. Add the AppNavRail to your layout
+    Row {
+        AppNavRail(
+            menuItems = menuItems,
+            railItems = railItems
+            // displayAppNameInHeader = true, // Uncomment to show app name instead of icon
+            // packRailButtons = true,      // Uncomment to remove gaps between rail buttons
         )
-    ),
-    onPredefinedAction = { action ->
-        when (action) {
-            PredefinedAction.HOME -> { /* Navigate to Home */ }
-            else -> {}
-        }
+        // The rest of your app's content goes here
+        Text("Main content area")
     }
-)
+}
 ```
 
-### Customizing Button Content
+## API Reference
 
-You can provide a custom composable for the rail buttons using the `buttonContent` parameter. This gives you full control over the appearance, including different styles for active/inactive states.
+### `AppNavRail` Composable
 
-```kotlin
-AzNavRail(
-    // ... other parameters
-    buttonContent = { item, state ->
-        // Get the current state for toggle/cycle buttons
-        val isChecked = (state?.value as? Boolean) ?: false
-        val color = if (isChecked) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
+This is the recommended entry point for using the library.
 
-        // Your custom button implementation
-        OutlinedButton(
-            onClick = { /* The internal onClick logic is handled by the library */ },
-            modifier = Modifier.size(72.dp),
-            shape = CircleShape,
-            border = BorderStroke(3.dp, color.copy(alpha = 0.7f)),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = color)
-        ) {
-            Text(text = item.railButtonText ?: item.text)
-        }
-    }
-)
-```
+| Parameter                | Type                  | Description                                                                                                                                                             |
+|--------------------------|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `menuItems`              | `List<MenuItem>`      | The list of items to display in the expanded menu drawer. This list also defines the layout order for the rail buttons. See [MenuItem].                                     |
+| `railItems`              | `List<RailItem>`      | The list of items to display as circular buttons on the collapsed rail. See [RailItem].                                                                                |
+| `displayAppNameInHeader` | `Boolean`             | (Optional) If `true`, the header will display the application's name. If `false` (the default), it will display the application's launcher icon.                             |
+| `packRailButtons`        | `Boolean`             | (Optional) If `true`, the rail buttons will be packed together at the top. If `false` (the default), they will be spaced out to align with their menu item counterparts. |
+| `footerItems`            | `List<MenuItem>`      | (Optional) A list of items to display in the footer of the expanded menu.                                                                                               |
 
-### API Reference
+### Data Models
 
-#### `AzNavRail` Composable
+-   **`MenuItem`**: Represents an item in the expanded menu. Can be a `MenuAction`, `MenuToggle`, or `MenuCycle`.
+-   **`RailItem`**: Represents a button on the collapsed rail. Can be a `RailAction`, `RailToggle`, or `RailCycle`.
 
-| Parameter            | Type                                                    | Description                                                                                                                              |
-| -------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `header`             | `NavRailHeader`                                         | The configuration for the header content. Ignored if `useAppIconAsHeader` is `true`.                                                     |
-| `menuSections`       | `List<NavRailMenuSection>`                              | The list of sections that defines the entire navigation structure.                                                                       |
-| `onPredefinedAction` | `(PredefinedAction) -> Unit`                            | A handler for actions that use the `PredefinedAction` enum.                                                                              |
-| `buttonContent`      | `@Composable (item: NavItem, state: MutableState<Any>?) -> Unit` | (Optional) A composable lambda to customize the appearance of the rail buttons.                                                        |
-| `allowCyclersOnRail` | `Boolean`                                               | (Optional) If `true`, items of type `NavItemData.Cycle` will be shown on the rail. Defaults to `false`.                                  |
-| `modifier`           | `Modifier`                                              | (Optional) The modifier to be applied to the component.                                                                                  |
-| `initiallyExpanded`  | `Boolean`                                               | (Optional) Whether the rail should be expanded when it first appears. Defaults to `false`.                                               |
-| `useAppIconAsHeader` | `Boolean`                                               | (Optional) If `true`, the rail will display the app's launcher icon in the header. Defaults to `false`.                                  |
-| `headerIconSize`     | `Dp`                                                    | (Optional) The size of the header icon. Defaults to `80.dp`.                                                                             |
-| `creditText`         | `String?`                                               | (Optional) The text for the credit line in the footer.                                                                                   |
-| `onCreditClicked`    | `(() -> Unit)?`                                         | (Optional) A click handler for the credit line.                                                                                          |
-| `allowSwipeToDismiss` | `Boolean`                                               | (Optional) If `true`, the expanded menu can be dismissed with a swipe gesture. Defaults to `true`.                                     |
-
-#### `NavItem` Model
-
-The `NavItem` is the core data model for defining a navigation element.
-
-`data class NavItem(text: String, data: NavItemData, showOnRail: Boolean = false, railButtonText: String? = null, enabled: Boolean = true, icon: @Composable (() -> Unit)? = null)`
-
-The `icon` parameter allows you to add a composable icon to the navigation item, which will be displayed next to the text in the expanded menu.
-
-Example:
-```kotlin
-NavItem(
-    text = "Home",
-    data = NavItemData.Action(predefinedAction = PredefinedAction.HOME),
-    icon = { Icon(Icons.Default.Home, contentDescription = "Home") }
-)
-```
-
-#### `NavItemData` Sealed Class
-
-This class defines the behavior of a `NavItem`.
-
--   `NavItemData.Action(onClick: (() -> Unit)?, predefinedAction: PredefinedAction?)`: A simple clickable item.
--   `NavItemData.Toggle(initialIsChecked: Boolean, onStateChange: (Boolean) -> Unit)`: An item that toggles between two states.
--   `NavItemData.Cycle(options: List<String>, initialOption: String, onStateChange: (String) -> Unit)`: An item that cycles through a list of options.
+For more detailed information on every parameter and component, refer to the KDoc documentation in the source code.
