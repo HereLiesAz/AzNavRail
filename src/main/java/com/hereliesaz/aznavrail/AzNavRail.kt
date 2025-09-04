@@ -36,53 +36,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
-import com.hereliesaz.aznavrail.model.NavItem
+import com.hereliesaz.aznavrail.model.AzNavItem
 
-/**
- * A highly configurable and expressive navigation rail component for Jetpack Compose,
- * built with a DSL-style API for a streamlined and intuitive developer experience.
- *
- * This component provides a vertical navigation rail that is compact when collapsed and
- * expands into a full menu drawer. It is stateless, meaning the caller is responsible for
- * managing the state of any toggle or cycle items.
- *
- * ### Example Usage:
- *
- * ```kotlin
- * var isOnline by remember { mutableStateOf(true) }
- * var selectedOption by remember { mutableStateOf("A") }
- *
- * AzNavRail {
- *     // Configure the rail's behavior
- *     settings(
- *         displayAppNameInHeader = true,
- *         packRailButtons = false
- *     )
- *
- *     // Declare the navigation items
- *     MenuItem(id = "home", text = "Home", onClick = { ... })
- *     RailToggle(
- *         id = "online",
- *         text = "Online",
- *         isChecked = isOnline,
- *         onClick = { isOnline = !isOnline }
- *     )
- *     MenuCycler(
- *         id = "cycler",
- *         text = "Cycle",
- *         options = listOf("A", "B", "C"),
- *         selectedOption = selectedOption,
- *         onClick = {
- *             val currentIndex = listOf("A", "B", "C").indexOf(selectedOption)
- *             selectedOption = listOf("A", "B", "C")[(currentIndex + 1) % 3]
- *         }
- *     )
- * }
- * ```
- *
- * @param content A lambda with a receiver of type [AzNavRailScope], allowing you to declare
- * navigation items and configure settings using the DSL functions.
- */
 @Composable
 fun AzNavRail(
     content: @Composable AzNavRailScope.() -> Unit
@@ -116,20 +71,12 @@ fun AzNavRail(
         header = {
             IconButton(onClick = onToggle, modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)) {
                 if (displayAppNameInHeader) {
-                    Text(text = if (isExpanded) appName else appName.first().toString(), style = MaterialTheme.typography.titleMedium)
+                    Text(text = appName, style = MaterialTheme.typography.titleMedium)
                 } else {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(56.dp)) {
-                            if (appIcon != null) {
-                                Image(painter = rememberAsyncImagePainter(model = appIcon), contentDescription = "App Icon")
-                            } else {
-                                Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu")
-                            }
-                        }
-                        if (isExpanded) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(text = appName, style = MaterialTheme.typography.titleMedium)
-                        }
+                    if (appIcon != null) {
+                        Image(painter = rememberAsyncImagePainter(model = appIcon), contentDescription = "App Icon", modifier = Modifier.size(56.dp))
+                    } else {
+                        Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu", modifier = Modifier.size(56.dp))
                     }
                 }
             }
@@ -142,7 +89,7 @@ fun AzNavRail(
                         MenuItem(item = item)
                     }
                 }
-                Footer()
+                Footer(appName = appName)
             } else {
                 val railItems = navItems.filter { it.isRailItem }
                 Column(
@@ -171,9 +118,9 @@ fun AzNavRail(
 }
 
 @Composable
-private fun RailContent(item: NavItem) {
+private fun RailContent(item: AzNavItem) {
     val textToShow = if (item.isCycler) item.selectedOption ?: "" else item.text
-    NavRailButton(
+    AzNavRailButton(
         onClick = item.onClick,
         text = textToShow,
         color = item.color ?: MaterialTheme.colorScheme.primary
@@ -181,7 +128,7 @@ private fun RailContent(item: NavItem) {
 }
 
 @Composable
-private fun MenuItem(item: NavItem) {
+private fun MenuItem(item: AzNavItem) {
     val textToShow = if (item.isCycler) "${item.text}: ${item.selectedOption}" else item.text
 
     Row(
@@ -200,14 +147,24 @@ private fun MenuItem(item: NavItem) {
 }
 
 @Composable
-private fun Footer() {
+private fun Footer(appName: String) {
     val context = LocalContext.current
     Column {
         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-        MenuItem(item = NavItem(id = "about", text = "About", isRailItem = false, onClick = {}))
-        MenuItem(item = NavItem(id = "feedback", text = "Feedback", isRailItem = false, onClick = {}))
+        MenuItem(item = AzNavItem(id = "about", text = "About", isRailItem = false, onClick = {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/HereLiesAz/$appName"))
+            context.startActivity(intent)
+        }))
+        MenuItem(item = AzNavItem(id = "feedback", text = "Feedback", isRailItem = false, onClick = {
+            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                data = Uri.parse("mailto:")
+                putExtra(Intent.EXTRA_EMAIL, arrayOf("your-real-email@example.com"))
+                putExtra(Intent.EXTRA_SUBJECT, "Feedback for $appName")
+            }
+            context.startActivity(Intent.createChooser(intent, "Send Feedback"))
+        }))
         MenuItem(
-            item = NavItem(
+            item = AzNavItem(
                 id = "credit",
                 text = "@HereLiesAz",
                 isRailItem = false,

@@ -2,7 +2,6 @@
 
 [![](https://jitpack.io/v/HereLiesAz/AzNavRail.svg)](https://jitpack.io/#HereLiesAz/AzNavRail)
 
-
 An M3 Expressive and dictatorially confined if not contemptable navigation rail/menu--I call it a renu. Or maybe a mail. No, a navigrenuail--for Jetpack Compose with a streamlined, DSL-style API.
 
 This "navigrenuail" provides a vertical navigation rail that expands to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
@@ -62,23 +61,23 @@ fun MainScreen() {
 
     AzNavRail {
         // Configure the rail's behavior
-        settings(
+        azSettings(
             displayAppNameInHeader = false,
             packRailButtons = false
         )
 
         // Declare the navigation items
-        MenuItem(id = "home", text = "Home", onClick = { /* Navigate home */ })
-        RailItem(id = "favorites", text = "Favs", onClick = { /* Show favorites */ })
+        azMenuItem(id = "home", text = "Home", onClick = { /* Navigate home */ })
+        azRailItem(id = "favorites", text = "Favs", onClick = { /* Show favorites */ })
 
-        RailToggle(
+        azRailToggle(
             id = "online",
             text = "Online",
             isChecked = isOnline,
             onClick = { isOnline = !isOnline }
         )
 
-        MenuCycler(
+        azMenuCycler(
             id = "cycler",
             text = "Cycle",
             options = cycleOptions,
@@ -100,13 +99,12 @@ The main entry point is the `AzNavRail` composable.
 
 You declare items and configure the rail within its content lambda. The available functions are:
 
--   `settings(displayAppNameInHeader, packRailButtons)`
--   `MenuItem(id, text, onClick)`
--   `RailItem(id, text, color, onClick)`
--   `MenuToggle(id, text, isChecked, onClick)`
--   `RailToggle(id, text, color, isChecked, onClick)`
--   `MenuCycler(id, text, options, selectedOption, onClick)`
--   `RailCycler(id, text, color, options, selectedOption, onClick)`
+-   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean)`
+-   `azMenuItem(id: String, text: String, onClick: () -> Unit)`
+-   `azRailItem(id: String, text: String, color: Color? = null, onClick: () -> Unit)`
+-   `azMenuToggle(id: String, text: String, isChecked: Boolean, onClick: () -> Unit)`
+-   `azRailToggle(id: String, text: String, color: Color? = null, isChecked: Boolean, onClick: () -> Unit)`
+-   `azMenuCycler(id: String, text: String, options: List<String>, selectedOption: String, onClick: () -> Unit)`
+-   `azRailCycler(id: String, text: String, color: Color? = null, options: List<String>, selectedOption: String, onClick: () -> Unit)`
 
 For more detailed information on every parameter, refer to the KDoc documentation in the source code.
-
