@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,13 +31,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.model.MenuItem
 import com.hereliesaz.aznavrail.model.RailItem
-
 
 /**
  * The core component of the AzNavRail library.
@@ -46,44 +46,50 @@ import com.hereliesaz.aznavrail.model.RailItem
  * toggleable and cycleable items automatically.
  *
  * It is recommended to use the [AppNavRail] wrapper for a more streamlined and opinionated
- * implementation, but this component can be used directly for more advanced customization.
+ * implementation.
  *
- * @param headerText The text to display in the header when the rail is expanded. Typically the app name.
- * @param headerIcon The icon to display in the header. A default menu icon is used if null.
- * @param menuItems The list of [MenuItem]s to display in the expanded menu drawer. The order of this list is preserved.
- * @param railItems The list of [RailItem]s to display on the collapsed navigation rail. The order of this list is preserved.
- * @param modifier The modifier to be applied to the `NavigationRail` container. Use this for sizing, padding, etc.
+ * @param menuItems The list of [MenuItem]s to display in the expanded menu drawer.
+ * @param railItems The list of [RailItem]s to display on the collapsed navigation rail.
+ * @param modifier The modifier to be applied to the `NavigationRail` container.
+ * @param displayAppNameInHeader If `true`, the header will display the application's name instead of its icon.
+ * @param packRailButtons If `true`, the rail buttons will be packed together at the top of the rail.
  * @param buttonContent A composable lambda that allows you to provide a completely custom appearance for the rail buttons.
- *        It provides the `RailItem` and its mutable state (`null` for actions) for you to draw. The default implementation uses the [NavRailButton].
- * @param initiallyExpanded Whether the rail should be expanded when it first appears. Defaults to `false`.
- * @param allowCyclersOnRail If true, [RailItem.RailCycle] buttons will be displayed on the collapsed rail. By default, they are hidden from the rail to avoid taking up too much space. Defaults to `false`.
- * @param creditText The text for the credit line in the footer of the expanded menu. If null, no credit is shown.
- * @param onCreditClicked A lambda to be executed when the credit line is clicked. Defaults to opening the author's social media page.
- * @param disableSwipeToOpen If `true`, the swipe-to-open gesture on the collapsed rail will be disabled. Defaults to `false`. Swipe-to-close is always enabled.
- * @param footerItems A list of [MenuItem]s to be displayed in the footer of the expanded menu, below the main items and any credit line.
+ * @param initiallyExpanded Whether the rail should be expanded when it first appears.
+ * @param allowCyclersOnRail If true, [RailItem.RailCycle] buttons will be displayed on the collapsed rail.
+ * @param disableSwipeToOpen If `true`, the swipe-to-open gesture will be disabled.
  */
 @Composable
 fun AzNavRail(
-    headerText: String,
-    headerIcon: ImageVector?,
     menuItems: List<MenuItem>,
     railItems: List<RailItem>,
     modifier: Modifier = Modifier,
+    displayAppNameInHeader: Boolean = false,
+    packRailButtons: Boolean = false,
     buttonContent: @Composable (item: RailItem, state: MutableState<Any>?) -> Unit = { item, state ->
         DefaultRailButton(item = item, state = state)
     },
     initiallyExpanded: Boolean = false,
     allowCyclersOnRail: Boolean = false,
-    creditText: String? = "@HereLiesAz",
-    onCreditClicked: (() -> Unit)? = null,
-    disableSwipeToOpen: Boolean = false,
-    footerItems: List<MenuItem> = emptyList()
+    disableSwipeToOpen: Boolean = false
 ) {
     val context = LocalContext.current
-    val onCreditClickedLambda = onCreditClicked ?: {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.instagram.com/hereliesaz"))
-        context.startActivity(intent)
+    val packageManager = context.packageManager
+    val packageName = context.packageName
+
+    val appName = try {
+        packageManager.getApplicationLabel(packageManager.getApplicationInfo(packageName, 0)).toString()
+    } catch (e: Exception) {
+        Log.e("AzNavRail", "Error getting app name", e)
+        "App" // Fallback name
     }
+
+    val appIcon = try {
+        packageManager.getApplicationIcon(packageName)
+    } catch (e: Exception) {
+        Log.e("AzNavRail", "Error getting app icon", e)
+        null // Fallback to default icon
+    }
+
     var isExpanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
     val onToggle: () -> Unit = { isExpanded = !isExpanded }
 
@@ -137,21 +143,21 @@ fun AzNavRail(
         containerColor = Color.Transparent,
         header = {
             IconButton(onClick = onToggle, modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(56.dp)) { // Use a fixed size for the icon box
-                        if (headerIcon != null) {
-                            Icon(imageVector = headerIcon, contentDescription = "Header Icon")
-                        } else {
-                            Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu")
+                if (displayAppNameInHeader) {
+                    Text(text = if (isExpanded) appName else appName.first().toString(), style = MaterialTheme.typography.titleMedium)
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(56.dp)) {
+                            if (appIcon != null) {
+                                Image(painter = rememberAsyncImagePainter(model = appIcon), contentDescription = "App Icon")
+                            } else {
+                                Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu")
+                            }
                         }
-                    }
-                    if (isExpanded) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = headerText, style = MaterialTheme.typography.titleMedium)
-                    }
-                    if (isExpanded) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = headerText, style = MaterialTheme.typography.titleMedium)
+                        if (isExpanded) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = appName, style = MaterialTheme.typography.titleMedium)
+                        }
                     }
                 }
             }
@@ -159,22 +165,34 @@ fun AzNavRail(
     ) {
         if (isExpanded) {
             NavRailMenu(
-                appName = headerText,
+                appName = appName,
                 items = menuItems,
                 onCloseDrawer = onToggle,
-                itemStates = menuItemStates,
-                creditText = creditText,
-                onCreditClicked = onCreditClickedLambda,
-                footerItems = footerItems
+                itemStates = menuItemStates
             )
         } else {
             Column(
                 modifier = Modifier.padding(horizontal = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
+                verticalArrangement = if (packRailButtons) Arrangement.Top else Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
             ) {
-                railItems.forEach { item ->
-                    buttonContent(item, railItemStates[item])
+                if (packRailButtons) {
+                    // Compact layout: just render the rail items.
+                    railItems.forEach { item ->
+                        buttonContent(item, railItemStates[item])
+                    }
+                } else {
+                    // Gapped layout: iterate through menu items to create spacers.
+                    val railItemsById = railItems.associateBy { it.id }
+                    menuItems.forEach { menuItem ->
+                        val correspondingRailItem = railItemsById[menuItem.id]
+                        if (correspondingRailItem != null) {
+                            buttonContent(correspondingRailItem, railItemStates[correspondingRailItem])
+                        } else {
+                            // Render a spacer to maintain the gap.
+                            Spacer(modifier = Modifier.height(72.dp)) // Height of a NavRailButton
+                        }
+                    }
                 }
             }
         }

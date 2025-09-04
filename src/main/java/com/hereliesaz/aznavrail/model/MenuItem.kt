@@ -14,7 +14,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
  * @property text The text to display for this item in the menu.
  * @property icon The icon to display next to the text. Can be null if no icon is desired.
  */
-
 sealed class MenuItem(
     open val id: String,
     open val text: String,
@@ -29,7 +28,6 @@ sealed class MenuItem(
      * @param icon The icon to display next to the text.
      * @param onClick The lambda function to be executed when the user clicks on this item.
      */
-
     data class MenuAction(
         override val id: String,
         override val text: String,
@@ -47,7 +45,6 @@ sealed class MenuItem(
      * @param isChecked The initial checked state of the toggle.
      * @param onCheckedChange A callback that is invoked with the new state whenever the user toggles the item.
      */
-
     data class MenuToggle(
         override val id: String,
         override val text: String,
@@ -67,7 +64,6 @@ sealed class MenuItem(
      * @param selectedOption The initial option that is selected from the `options` list.
      * @param onOptionSelected A callback that is invoked with the newly selected option string each time the user clicks the item.
      */
-
     data class MenuCycle(
         override val id: String,
         override val text: String,

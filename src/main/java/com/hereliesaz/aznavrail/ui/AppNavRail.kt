@@ -1,7 +1,6 @@
 package com.hereliesaz.aznavrail.ui
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.vector.ImageVector
 import com.hereliesaz.aznavrail.model.MenuItem
 import com.hereliesaz.aznavrail.model.RailItem
 
@@ -10,7 +9,9 @@ import com.hereliesaz.aznavrail.model.RailItem
  * This is the **recommended entry point** for developers using the library.
  * It provides a streamlined API for common use cases, making it incredibly easy to get started.
  *
- * Simply create your lists of `MenuItem`s and `RailItem`s and pass them to this composable.
+ * The header of the rail is configured with a single flag, `displayAppNameInHeader`.
+ * The component will automatically fetch the app's name and icon from the system.
+ * The footer is non-negotiable and will always display.
  *
  * ### Example Usage:
  *
@@ -19,8 +20,7 @@ import com.hereliesaz.aznavrail.model.RailItem
  * fun MyAppScreen() {
  *     val menuItems = listOf(
  *         MenuItem.MenuAction(id = "home", text = "Home", icon = Icons.Default.Home, onClick = { ... }),
- *         MenuItem.MenuToggle(id = "online", text = "Online Status", icon = Icons.Default.Cloud, isChecked = true, onCheckedChange = { ... }),
- *         MenuItem.MenuAction(id = "settings", text = "Settings", icon = Icons.Default.Settings, onClick = { ... })
+ *         MenuItem.MenuToggle(id = "online", text = "Online Status", icon = Icons.Default.Cloud, isChecked = true, onCheckedChange = { ... })
  *     )
  *
  *     val railItems = listOf(
@@ -31,8 +31,6 @@ import com.hereliesaz.aznavrail.model.RailItem
  *     Scaffold {
  *         Row {
  *             AppNavRail(
- *                 headerText = "My Awesome App",
- *                 headerIcon = Icons.Default.AcUnit,
  *                 menuItems = menuItems,
  *                 railItems = railItems
  *             )
@@ -43,26 +41,22 @@ import com.hereliesaz.aznavrail.model.RailItem
  * }
  * ```
  *
- * @param headerText The text to display in the header, typically the app name.
- * @param headerIcon The icon to display in the header. If null, a default menu icon will be used.
  * @param menuItems The list of items to display in the expanded menu drawer. See [MenuItem].
  * @param railItems The list of items to display as circular buttons on the collapsed rail. See [RailItem].
-
- * @param footerItems The list of items to display in the footer of the expanded menu.
+ * @param displayAppNameInHeader If `true`, the header will display the application's name. If `false` (the default), it will display the application's launcher icon.
+ * @param packRailButtons If `true`, the rail buttons will be packed together at the top. If `false` (the default), they will be spaced out to align with their menu item counterparts.
  */
 @Composable
 fun AppNavRail(
-    headerText: String,
-    headerIcon: ImageVector?,
     menuItems: List<MenuItem>,
     railItems: List<RailItem>,
-    footerItems: List<MenuItem> = emptyList()
+    displayAppNameInHeader: Boolean = false,
+    packRailButtons: Boolean = false
 ) {
     AzNavRail(
-        headerText = headerText,
-        headerIcon = headerIcon,
         menuItems = menuItems,
         railItems = railItems,
-        footerItems = footerItems
+        displayAppNameInHeader = displayAppNameInHeader,
+        packRailButtons = packRailButtons
     )
 }

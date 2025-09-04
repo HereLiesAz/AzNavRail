@@ -12,13 +12,23 @@ This component provides a vertical navigation rail that can be expanded to a ful
 -   **Rich Item Types:** Both menu and rail items can be simple actions, toggles, or cycle buttons, with their state managed automatically.
 -   **Always Circular Buttons:** The rail buttons are guaranteed to be perfect circles, regardless of screen orientation.
 -   **Auto-Sizing Text:** Text inside the rail buttons automatically shrinks to fit, preventing ugly text wrapping.
--   **Expandable & Collapsible:** A compact rail that expands into a full menu with a simple click or swipe.
+-   **Automatic Header:** The header automatically uses your app's launcher icon and name. The only choice is which one to display.
+-   **Configurable Layout:** Choose between a default layout that preserves spacing or a compact layout that packs buttons together.
 -   **Intuitive Gestures:** Swipe-to-open and swipe-to-close gestures are enabled by default for a fluid user experience.
 -   **Simplified Setup:** A new `AppNavRail` composable provides a streamlined API for easy implementation.
 
 ## Setup
 
-1.  Add JitPack to your `settings.gradle.kts`:
+To use this library, 
+
+1) Sacrifice a goat. 
+2) Drain its blood into a bowl.
+3) Cover the bowl in saran wrap.
+4) Put the bowl in the box.
+5) Print out the label.
+6) Ship it overnight to me with a rubber ducky for bath time.
+7) Add JitPack to your `settings.gradle.kts`:
+
 
 ```kotlin
 dependencyResolutionManagement {
@@ -54,23 +64,23 @@ fun MyAwesomeScreen() {
     // 1. Define the items for the expanded menu
     val menuItems = listOf(
         MenuItem.MenuAction(id = "home", text = "Home", icon = Icons.Default.Home, onClick = { /* ... */ }),
-        MenuItem.MenuToggle(id = "online", text = "Online Status", icon = Icons.Default.Cloud, isChecked = true, onCheckedChange = { /* ... */ }),
+        MenuItem.MenuAction(id = "favorites", text = "Favorites", icon = Icons.Default.Favorite, onClick = { /* ... */ }),
         MenuItem.MenuAction(id = "settings", text = "Settings", icon = Icons.Default.Settings, onClick = { /* ... */ })
     )
 
-    // 2. Define the items for the collapsed rail
+    // 2. Define which menu items should also appear on the rail
     val railItems = listOf(
         RailItem.RailAction(id = "home", text = "Home", icon = Icons.Default.Home, onClick = { /* ... */ }),
-        RailItem.RailToggle(id = "online", text = "Online", icon = Icons.Default.Cloud, isChecked = true, onCheckedChange = { /* ... */ })
+        RailItem.RailAction(id = "favorites", text = "Favs", icon = Icons.Default.Favorite, onClick = { /* ... */ })
     )
 
     // 3. Add the AppNavRail to your layout
     Row {
         AppNavRail(
-            headerText = "My Awesome App",
-            headerIcon = Icons.Default.AcUnit,
             menuItems = menuItems,
             railItems = railItems
+            // displayAppNameInHeader = true, // Uncomment to show app name instead of icon
+            // packRailButtons = true,      // Uncomment to remove gaps between rail buttons
         )
         // The rest of your app's content goes here
         Text("Main content area")
@@ -84,13 +94,13 @@ fun MyAwesomeScreen() {
 
 This is the recommended entry point for using the library.
 
-| Parameter     | Type                  | Description                                                                          |
-|---------------|-----------------------|--------------------------------------------------------------------------------------|
-| `headerText`  | `String`              | The text to display in the header, typically the app name.                           |
-| `headerIcon`  | `ImageVector?`        | The icon to display in the header. If null, a default menu icon will be used.        |
-| `menuItems`   | `List<MenuItem>`      | The list of items to display in the expanded menu drawer. See [MenuItem].            |
-| `railItems`   | `List<RailItem>`      | The list of items to display as circular buttons on the collapsed rail. See [RailItem].|
-| `footerItems` | `List<MenuItem>`      | (Optional) A list of items to display in the footer of the expanded menu.            |
+| Parameter                | Type                  | Description                                                                                                                                                             |
+|--------------------------|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `menuItems`              | `List<MenuItem>`      | The list of items to display in the expanded menu drawer. This list also defines the layout order for the rail buttons. See [MenuItem].                                     |
+| `railItems`              | `List<RailItem>`      | The list of items to display as circular buttons on the collapsed rail. See [RailItem].                                                                                |
+| `displayAppNameInHeader` | `Boolean`             | (Optional) If `true`, the header will display the application's name. If `false` (the default), it will display the application's launcher icon.                             |
+| `packRailButtons`        | `Boolean`             | (Optional) If `true`, the rail buttons will be packed together at the top. If `false` (the default), they will be spaced out to align with their menu item counterparts. |
+
 
 ### Data Models
 
