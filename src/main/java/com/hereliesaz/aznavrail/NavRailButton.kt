@@ -1,4 +1,4 @@
-package com.hereliesaz.aznavrail.ui
+package com.hereliesaz.aznavrail
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
@@ -22,21 +22,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/**
- * A highly specialized, circular, outlined button, designed for use in the collapsed navigation rail.
- *
- * This is the beautiful, circular button that makes up the rail. It has two key features:
- * 1.  **It's always a perfect circle:** It uses `aspectRatio(1f)` to maintain its shape, regardless of layout constraints.
- * 2.  **Auto-sizing text:** The text inside will automatically shrink to fit within the button's bounds, preventing ugly wrapping or truncation.
- *
- * While this component can be used directly, it is primarily intended for internal use by the [AzNavRail] component.
- *
- * @param onClick A lambda to be executed when the button is clicked.
- * @param text The text to display on the button.
- * @param modifier The modifier to be applied to the button.
- * @param size The diameter of the circular button.
- * @param color The color of the button's border and text. Defaults to the theme's primary color.
- */
 @Composable
 fun NavRailButton(
     onClick: () -> Unit,
