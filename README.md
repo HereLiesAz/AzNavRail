@@ -99,12 +99,12 @@ The main entry point is the `AzNavRail` composable.
 
 You declare items and configure the rail within its content lambda. The available functions are:
 
--   `azSettings(displayAppNameInHeader, packRailButtons)`
--   `azMenuItem(id, text, onClick)`
--   `azRailItem(id, text, color, onClick)`
--   `azMenuToggle(id, text, isChecked, onClick)`
--   `azRailToggle(id, text, color, isChecked, onClick)`
--   `azMenuCycler(id, text, options, selectedOption, onClick)`
--   `azRailCycler(id, text, color, options, selectedOption, onClick)`
+-   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean)`
+-   `azMenuItem(id: String, text: String, onClick: () -> Unit)`
+-   `azRailItem(id: String, text: String, color: Color? = null, onClick: () -> Unit)`
+-   `azMenuToggle(id: String, text: String, isChecked: Boolean, onClick: () -> Unit)`
+-   `azRailToggle(id: String, text: String, color: Color? = null, isChecked: Boolean, onClick: () -> Unit)`
+-   `azMenuCycler(id: String, text: String, options: List<String>, selectedOption: String, onClick: () -> Unit)`
+-   `azRailCycler(id: String, text: String, color: Color? = null, options: List<String>, selectedOption: String, onClick: () -> Unit)`
 
 For more detailed information on every parameter, refer to the KDoc documentation in the source code.
