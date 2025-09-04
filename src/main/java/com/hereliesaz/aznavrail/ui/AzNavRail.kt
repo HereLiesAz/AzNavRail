@@ -47,20 +47,17 @@ import com.hereliesaz.aznavrail.model.RailItem
  * toggleable and cycleable items automatically.
  *
  * It is recommended to use the [AppNavRail] wrapper for a more streamlined and opinionated
- * implementation, but this component can be used directly for more advanced customization.
+ * implementation.
  *
- * @param menuItems The list of [MenuItem]s to display in the expanded menu drawer. This list is the source of truth for the rail's layout.
+ * @param menuItems The list of [MenuItem]s to display in the expanded menu drawer.
  * @param railItems The list of [RailItem]s to display on the collapsed navigation rail.
  * @param modifier The modifier to be applied to the `NavigationRail` container.
  * @param displayAppNameInHeader If `true`, the header will display the application's name instead of its icon.
- * @param packRailButtons If `true`, the rail buttons will be packed together at the top of the rail. If `false`, they will be spaced out to align with their corresponding menu items, leaving gaps for menu items that are not on the rail.
+ * @param packRailButtons If `true`, the rail buttons will be packed together at the top of the rail.
  * @param buttonContent A composable lambda that allows you to provide a completely custom appearance for the rail buttons.
  * @param initiallyExpanded Whether the rail should be expanded when it first appears.
  * @param allowCyclersOnRail If true, [RailItem.RailCycle] buttons will be displayed on the collapsed rail.
- * @param creditText The text for the credit line in the footer of the expanded menu.
- * @param onCreditClicked A lambda to be executed when the credit line is clicked.
  * @param disableSwipeToOpen If `true`, the swipe-to-open gesture will be disabled.
- * @param footerItems A list of [MenuItem]s to be displayed in the footer of the expanded menu.
  */
 @Composable
 fun AzNavRail(
@@ -74,10 +71,7 @@ fun AzNavRail(
     },
     initiallyExpanded: Boolean = false,
     allowCyclersOnRail: Boolean = false,
-    creditText: String? = "@HereLiesAz",
-    onCreditClicked: (() -> Unit)? = null,
-    disableSwipeToOpen: Boolean = false,
-    footerItems: List<MenuItem> = emptyList()
+    disableSwipeToOpen: Boolean = false
 ) {
     val context = LocalContext.current
     val packageManager = context.packageManager
@@ -97,10 +91,6 @@ fun AzNavRail(
         null // Fallback to default icon
     }
 
-    val onCreditClickedLambda = onCreditClicked ?: {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.instagram.com/hereliesaz"))
-        context.startActivity(intent)
-    }
     var isExpanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
     val onToggle: () -> Unit = { isExpanded = !isExpanded }
 
@@ -179,10 +169,7 @@ fun AzNavRail(
                 appName = appName,
                 items = menuItems,
                 onCloseDrawer = onToggle,
-                itemStates = menuItemStates,
-                creditText = creditText,
-                onCreditClicked = onCreditClickedLambda,
-                footerItems = footerItems
+                itemStates = menuItemStates
             )
         } else {
             Column(

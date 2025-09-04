@@ -99,7 +99,6 @@ This is the recommended entry point for using the library.
 | `railItems`              | `List<RailItem>`      | The list of items to display as circular buttons on the collapsed rail. See [RailItem].                                                                                |
 | `displayAppNameInHeader` | `Boolean`             | (Optional) If `true`, the header will display the application's name. If `false` (the default), it will display the application's launcher icon.                             |
 | `packRailButtons`        | `Boolean`             | (Optional) If `true`, the rail buttons will be packed together at the top. If `false` (the default), they will be spaced out to align with their menu item counterparts. |
-| `footerItems`            | `List<MenuItem>`      | (Optional) A list of items to display in the footer of the expanded menu.                                                                                               |
 
 ### Data Models
 

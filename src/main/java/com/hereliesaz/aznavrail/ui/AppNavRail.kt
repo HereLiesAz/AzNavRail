@@ -11,6 +11,7 @@ import com.hereliesaz.aznavrail.model.RailItem
  *
  * The header of the rail is configured with a single flag, `displayAppNameInHeader`.
  * The component will automatically fetch the app's name and icon from the system.
+ * The footer is non-negotiable and will always display.
  *
  * ### Example Usage:
  *
@@ -44,21 +45,18 @@ import com.hereliesaz.aznavrail.model.RailItem
  * @param railItems The list of items to display as circular buttons on the collapsed rail. See [RailItem].
  * @param displayAppNameInHeader If `true`, the header will display the application's name. If `false` (the default), it will display the application's launcher icon.
  * @param packRailButtons If `true`, the rail buttons will be packed together at the top. If `false` (the default), they will be spaced out to align with their menu item counterparts.
- * @param footerItems The list of items to display in the footer of the expanded menu.
  */
 @Composable
 fun AppNavRail(
     menuItems: List<MenuItem>,
     railItems: List<RailItem>,
     displayAppNameInHeader: Boolean = false,
-    packRailButtons: Boolean = false,
-    footerItems: List<MenuItem> = emptyList()
+    packRailButtons: Boolean = false
 ) {
     AzNavRail(
         menuItems = menuItems,
         railItems = railItems,
         displayAppNameInHeader = displayAppNameInHeader,
-        packRailButtons = packRailButtons,
-        footerItems = footerItems
+        packRailButtons = packRailButtons
     )
 }
