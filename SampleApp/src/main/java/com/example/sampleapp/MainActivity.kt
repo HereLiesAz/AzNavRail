@@ -40,22 +40,22 @@ fun SampleScreen() {
 
     Row {
         AzNavRail {
-            settings(
+            azSettings(
                 displayAppNameInHeader = false,
                 packRailButtons = false
             )
 
-            MenuItem(id = "home", text = "Home", onClick = { /* ... */ })
-            RailItem(id = "favorites", text = "Favs", onClick = { /* ... */ })
+            azMenuItem(id = "home", text = "Home", onClick = { /* ... */ })
+            azRailItem(id = "favorites", text = "Favs", onClick = { /* ... */ })
 
-            RailToggle(
+            azRailToggle(
                 id = "online",
                 text = "Online",
                 isChecked = isOnline,
                 onClick = { isOnline = !isOnline }
             )
 
-            MenuCycler(
+            azMenuCycler(
                 id = "cycler",
                 text = "Cycle",
                 options = cycleOptions,
