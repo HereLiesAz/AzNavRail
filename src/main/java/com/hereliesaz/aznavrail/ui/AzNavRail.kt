@@ -1,12 +1,14 @@
 package com.hereliesaz.aznavrail.ui
 
-import android.content.pm.PackageManager
+import android.content.Intent
+import android.net.Uri
+import android.util.Log
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -17,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -27,33 +30,37 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import android.content.Intent
-import android.net.Uri
-import android.util.Log
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.model.MenuItem
 import com.hereliesaz.aznavrail.model.RailItem
-import com.hereliesaz.aznavrail.model.PredefinedAction
+
 
 /**
- * An expressive and highly configurable navigation rail component for Jetpack Compose.
+ * The core component of the AzNavRail library.
  *
- * @param headerText The text to display in the header, typically the app name.
- * @param headerIcon The icon to display in the header.
- * @param menuItems The list of items to display in the expanded menu.
- * @param railItems The list of items to display on the collapsed rail.
- * @param modifier The modifier to be applied to the navigation rail container.
- * @param onPredefinedAction A lambda to handle clicks on items with a [PredefinedAction].
- * @param buttonContent A composable lambda to customize the appearance of the rail buttons.
- * @param initiallyExpanded Whether the rail should be expanded when it first appears.
- * @param useAppIconAsHeader If true, the rail will display the app's icon in the header.
- * @param headerIconSize The size of the header icon.
- * @param allowCyclersOnRail If true, cycle buttons will be displayed on the collapsed rail.
- * @param creditText The text for the credit line in the footer.
- * @param onCreditClicked A lambda for when the credit line is clicked.
+ * This component provides a highly configurable and expressive navigation rail that is compact
+ * when collapsed and expands into a full menu drawer. It handles state management for
+ * toggleable and cycleable items automatically.
+ *
+ * It is recommended to use the [AppNavRail] wrapper for a more streamlined and opinionated
+ * implementation, but this component can be used directly for more advanced customization.
+ *
+ * @param headerText The text to display in the header when the rail is expanded. Typically the app name.
+ * @param headerIcon The icon to display in the header. A default menu icon is used if null.
+ * @param menuItems The list of [MenuItem]s to display in the expanded menu drawer. The order of this list is preserved.
+ * @param railItems The list of [RailItem]s to display on the collapsed navigation rail. The order of this list is preserved.
+ * @param modifier The modifier to be applied to the `NavigationRail` container. Use this for sizing, padding, etc.
+ * @param buttonContent A composable lambda that allows you to provide a completely custom appearance for the rail buttons.
+ *        It provides the `RailItem` and its mutable state (`null` for actions) for you to draw. The default implementation uses the [NavRailButton].
+ * @param initiallyExpanded Whether the rail should be expanded when it first appears. Defaults to `false`.
+ * @param allowCyclersOnRail If true, [RailItem.RailCycle] buttons will be displayed on the collapsed rail. By default, they are hidden from the rail to avoid taking up too much space. Defaults to `false`.
+ * @param creditText The text for the credit line in the footer of the expanded menu. If null, no credit is shown.
+ * @param onCreditClicked A lambda to be executed when the credit line is clicked. Defaults to opening the author's social media page.
+ * @param disableSwipeToOpen If `true`, the swipe-to-open gesture on the collapsed rail will be disabled. Defaults to `false`. Swipe-to-close is always enabled.
+ * @param footerItems A list of [MenuItem]s to be displayed in the footer of the expanded menu, below the main items and any credit line.
  */
 @Composable
 fun AzNavRail(
@@ -131,12 +138,16 @@ fun AzNavRail(
         header = {
             IconButton(onClick = onToggle, modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(56.dp)) { // Use a fixed size for the icon box
-                    if (headerIcon != null) {
-                        Icon(imageVector = headerIcon, contentDescription = "Header Icon")
+                    Box(modifier = Modifier.size(56.dp)) { // Use a fixed size for the icon box
+                        if (headerIcon != null) {
+                            Icon(imageVector = headerIcon, contentDescription = "Header Icon")
                         } else {
-                        Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu")
+                            Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu")
                         }
+                    }
+                    if (isExpanded) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = headerText, style = MaterialTheme.typography.titleMedium)
                     }
                     if (isExpanded) {
                         Spacer(modifier = Modifier.width(8.dp))
@@ -170,6 +181,11 @@ fun AzNavRail(
     }
 }
 
+/**
+ * The default implementation for the rail button content.
+ * This is a private composable that is used as the default value for the `buttonContent` parameter.
+ * It takes a [RailItem] and renders the appropriate [NavRailButton] with the correct text and onClick behavior.
+ */
 @Composable
 private fun DefaultRailButton(
     item: RailItem,
