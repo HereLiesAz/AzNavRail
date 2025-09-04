@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.model.MenuItem
 import com.hereliesaz.aznavrail.model.RailItem
 
+
 /**
  * The core component of the AzNavRail library.
  *
@@ -147,6 +148,10 @@ fun AzNavRail(
                     if (isExpanded) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(text = headerText, style = MaterialTheme.typography.titleMedium)
+                    }
+                    if (isExpanded) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = headerText, style = MaterialTheme.typography.titleMedium)
                     }
                 }
             }

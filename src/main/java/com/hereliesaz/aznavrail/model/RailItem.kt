@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
  * @property text The text to display on the button. The text will auto-size to fit.
  * @property icon The icon to display on the button.
  */
+
 sealed class RailItem(
     open val id: String,
     open val text: String,
@@ -28,6 +29,7 @@ sealed class RailItem(
      * @param icon The icon to display on the button.
      * @param onClick The lambda function to be executed when the user clicks on this button.
      */
+
     data class RailAction(
         override val id: String,
         override val text: String,
@@ -44,6 +46,7 @@ sealed class RailItem(
      * @param isChecked The initial checked state of the toggle.
      * @param onCheckedChange A callback that is invoked with the new state whenever the user toggles the button.
      */
+
     data class RailToggle(
         override val id: String,
         override val text: String,
@@ -63,6 +66,7 @@ sealed class RailItem(
      * @param selectedOption The initial option that is selected from the `options` list.
      * @param onOptionSelected A callback that is invoked with the newly selected option string each time the user clicks the button.
      */
+
     data class RailCycle(
         override val id: String,
         override val text: String,

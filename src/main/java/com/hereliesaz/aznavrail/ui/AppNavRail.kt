@@ -47,6 +47,7 @@ import com.hereliesaz.aznavrail.model.RailItem
  * @param headerIcon The icon to display in the header. If null, a default menu icon will be used.
  * @param menuItems The list of items to display in the expanded menu drawer. See [MenuItem].
  * @param railItems The list of items to display as circular buttons on the collapsed rail. See [RailItem].
+
  * @param footerItems The list of items to display in the footer of the expanded menu.
  */
 @Composable
