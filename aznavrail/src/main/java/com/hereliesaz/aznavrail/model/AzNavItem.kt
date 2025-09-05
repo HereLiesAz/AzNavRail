@@ -7,7 +7,7 @@ import androidx.compose.ui.graphics.Color
  * This is a text-only component; icons are not supported.
  *
  * @param id A unique identifier for this item.
- * @param text The text to display for this item. For toggle and cycler items, this is used as a prefix.
+ * @param text The text to display for this item. This is not used for toggle and cycler items.
  * @param isRailItem If `true`, this item will be displayed on the collapsed rail. All items are displayed in the expanded menu.
  * @param color The color for the rail button's text and border. Only applies if `isRailItem` is `true`.
  * @param isToggle If `true`, this item behaves like a toggle.
