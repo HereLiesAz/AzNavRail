@@ -34,7 +34,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":"))
+    implementation(libs.aznavrail)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
