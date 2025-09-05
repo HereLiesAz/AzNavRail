@@ -10,6 +10,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
@@ -294,11 +295,18 @@ private fun MenuItem(
     onCyclerClick: () -> Unit = item.onClick
 ) {
     val textToShow = if (item.isCycler) "${item.text}: ${item.selectedOption}" else item.text
+    val modifier = if (item.isToggle) {
+        Modifier.toggleable(
+            value = item.isChecked ?: false,
+            onValueChange = { _ -> item.onClick() }
+        )
+    } else {
+        Modifier.clickable(onClick = onCyclerClick)
+    }
 
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onCyclerClick)
             .padding(horizontal = AzNavRailDefaults.MenuItemHorizontalPadding, vertical = AzNavRailDefaults.MenuItemVerticalPadding),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -307,7 +315,7 @@ private fun MenuItem(
             Spacer(modifier = Modifier.weight(1f))
             Switch(
                 checked = item.isChecked ?: false,
-                onCheckedChange = { item.onClick() }
+                onCheckedChange = null
             )
         }
     }
