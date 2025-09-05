@@ -3,7 +3,6 @@ package com.hereliesaz.aznavrail
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
-import android.util.Log
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -11,6 +10,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
@@ -29,9 +29,19 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+private object AzNavRailLogger {
+    var enabled = true
+    fun e(tag: String, message: String, throwable: Throwable? = null) {
+        if (enabled) {
+            android.util.Log.e(tag, message, throwable)
+        }
+    }
+}
+
+/**
+ * Default values used by the [AzNavRail] composable.
+ */
 private object AzNavRailDefaults {
-    val ExpandedRailWidth = 260.dp
-    val CollapsedRailWidth = 80.dp
     const val SWIPE_THRESHOLD_PX = 20f
     val HeaderPadding = 16.dp
     val HeaderIconSize = 56.dp
@@ -46,12 +56,31 @@ private object AzNavRailDefaults {
     val FooterSpacerHeight = 12.dp
 }
 
+/**
+ * Represents the transient state of a cycler item.
+ * @param displayedOption The currently displayed option.
+ * @param pendingClickCount The number of pending clicks.
+ * @param job The coroutine job for handling clicks.
+ */
 private data class CyclerTransientState(
     val displayedOption: String,
     val pendingClickCount: Int = 0,
     val job: Job? = null
 )
 
+/**
+ * An M3-style navigation rail that expands into a menu drawer.
+ *
+ * This composable provides a vertical navigation rail that can be expanded to a full menu drawer.
+ * It is designed to be "batteries-included," providing common behaviors and features out-of-the-box.
+ *
+ * The content of the rail and menu is defined using a DSL within the `content` lambda.
+ *
+ * @param modifier The modifier to be applied to the navigation rail.
+ * @param initiallyExpanded Whether the navigation rail is expanded by default.
+ * @param disableSwipeToOpen Whether to disable the swipe-to-open gesture.
+ * @param content The DSL content for the navigation rail.
+ */
 @Composable
 fun AzNavRail(
     modifier: Modifier = Modifier,
@@ -69,7 +98,7 @@ fun AzNavRail(
         try {
             packageManager.getApplicationLabel(packageManager.getApplicationInfo(packageName, 0)).toString()
         } catch (e: Exception) {
-            Log.e("AzNavRail", "Error getting app name", e)
+            AzNavRailLogger.e("AzNavRail", "Error getting app name", e)
             "App" // Fallback name
         }
     }
@@ -78,7 +107,7 @@ fun AzNavRail(
         try {
             packageManager.getApplicationIcon(packageName)
         } catch (e: Exception) {
-            Log.e("AzNavRail", "Error getting app icon", e)
+            AzNavRailLogger.e("AzNavRail", "Error getting app icon", e)
             null // Fallback to default icon
         }
     }
@@ -87,7 +116,7 @@ fun AzNavRail(
     val onToggle: () -> Unit = remember { { isExpanded = !isExpanded } }
 
     val railWidth by animateDpAsState(
-        targetValue = if (isExpanded) AzNavRailDefaults.ExpandedRailWidth else AzNavRailDefaults.CollapsedRailWidth,
+        targetValue = if (isExpanded) scope.expandedRailWidth else scope.collapsedRailWidth,
         label = "railWidth"
     )
 
@@ -198,7 +227,9 @@ fun AzNavRail(
                                 MenuItem(item = finalItem, onCyclerClick = onCyclerClick)
                             }
                         }
-                        Footer(appName = appName)
+                        if (scope.showFooter) {
+                            Footer(appName = appName)
+                        }
                     } else {
                         val railItems = remember(scope) { scope.navItems.filter { it.isRailItem } }
                         Column(
@@ -239,6 +270,10 @@ fun AzNavRail(
     }
 }
 
+/**
+ * Composable for displaying a single item in the collapsed rail.
+ * @param item The navigation item to display.
+ */
 @Composable
 private fun RailContent(item: AzNavItem) {
     val textToShow = if (item.isCycler) item.selectedOption ?: "" else item.text
@@ -249,17 +284,29 @@ private fun RailContent(item: AzNavItem) {
     )
 }
 
+/**
+ * Composable for displaying a single item in the expanded menu.
+ * @param item The navigation item to display.
+ * @param onCyclerClick The click handler for cycler items.
+ */
 @Composable
 private fun MenuItem(
     item: AzNavItem,
     onCyclerClick: () -> Unit = item.onClick
 ) {
     val textToShow = if (item.isCycler) "${item.text}: ${item.selectedOption}" else item.text
+    val modifier = if (item.isToggle) {
+        Modifier.toggleable(
+            value = item.isChecked ?: false,
+            onValueChange = { _ -> item.onClick() }
+        )
+    } else {
+        Modifier.clickable(onClick = onCyclerClick)
+    }
 
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onCyclerClick)
             .padding(horizontal = AzNavRailDefaults.MenuItemHorizontalPadding, vertical = AzNavRailDefaults.MenuItemVerticalPadding),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -268,12 +315,16 @@ private fun MenuItem(
             Spacer(modifier = Modifier.weight(1f))
             Switch(
                 checked = item.isChecked ?: false,
-                onCheckedChange = { item.onClick() }
+                onCheckedChange = null
             )
         }
     }
 }
 
+/**
+ * Composable for displaying the footer in the expanded menu.
+ * @param appName The name of the app.
+ */
 @Composable
 private fun Footer(appName: String) {
     val context = LocalContext.current
@@ -283,7 +334,7 @@ private fun Footer(appName: String) {
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/HereLiesAz/$appName"))
                 context.startActivity(intent)
             } catch (e: ActivityNotFoundException) {
-                Log.e("AzNavRail.Footer", "Could not open 'About' link.", e)
+                AzNavRailLogger.e("AzNavRail.Footer", "Could not open 'About' link.", e)
             }
         }
     }
@@ -297,7 +348,7 @@ private fun Footer(appName: String) {
                 }
                 context.startActivity(Intent.createChooser(intent, "Send Feedback"))
             } catch (e: ActivityNotFoundException) {
-                Log.e("AzNavRail.Footer", "Could not open 'Feedback' link.", e)
+                AzNavRailLogger.e("AzNavRail.Footer", "Could not open 'Feedback' link.", e)
             }
         }
     }
@@ -307,7 +358,7 @@ private fun Footer(appName: String) {
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.instagram.com/hereliesaz"))
                 context.startActivity(intent)
             } catch (e: ActivityNotFoundException) {
-                Log.e("AzNavRail.Footer", "Could not open 'Credit' link.", e)
+                AzNavRailLogger.e("AzNavRail.Footer", "Could not open 'Credit' link.", e)
             }
         }
     }
