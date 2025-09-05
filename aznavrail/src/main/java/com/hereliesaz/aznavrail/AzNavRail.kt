@@ -171,7 +171,7 @@ fun AzNavRail(
                                             state.job?.cancel()
                                             val options = item.options!!
                                             val currentIndex = options.indexOf(state.displayedOption)
-                                            val nextIndex = (currentIndex + 1).let { if (it >= options.size) 0 else it }
+                                            val nextIndex = (currentIndex + 1) % options.size
                                             val nextOption = options[nextIndex]
                                             val clickCount = state.pendingClickCount + 1
                                             cyclerStates[item.id] = state.copy(
