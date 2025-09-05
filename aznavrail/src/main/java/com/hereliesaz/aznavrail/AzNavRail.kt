@@ -6,10 +6,9 @@ import android.net.Uri
 import android.util.Log
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -22,20 +21,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.model.AzNavItem
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private object AzNavRailDefaults {
     val ExpandedRailWidth = 260.dp
     val CollapsedRailWidth = 80.dp
     const val SWIPE_THRESHOLD_PX = 20f
-    const val CYCLER_COOLDOWN_MS = 1000L
     val HeaderPadding = 16.dp
     val HeaderIconSize = 56.dp
     val HeaderTextSpacer = 8.dp
@@ -48,6 +45,12 @@ private object AzNavRailDefaults {
     val FooterDividerVerticalPadding = 8.dp
     val FooterSpacerHeight = 12.dp
 }
+
+private data class CyclerTransientState(
+    val displayedOption: String,
+    val pendingClickCount: Int = 0,
+    val job: Job? = null
+)
 
 @Composable
 fun AzNavRail(
@@ -81,112 +84,156 @@ fun AzNavRail(
     }
 
     var isExpanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
-    val onToggle: () -> Unit = { isExpanded = !isExpanded }
+    val onToggle: () -> Unit = remember { { isExpanded = !isExpanded } }
 
     val railWidth by animateDpAsState(
         targetValue = if (isExpanded) AzNavRailDefaults.ExpandedRailWidth else AzNavRailDefaults.CollapsedRailWidth,
         label = "railWidth"
     )
 
-    val density = LocalDensity.current
-    var size by remember { mutableStateOf(IntSize.Zero) }
+    val coroutineScope = rememberCoroutineScope()
+    val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
 
-    val railModifier = modifier
-        .width(railWidth)
-        .onSizeChanged { size = it }
-        .pointerInput(isExpanded, disableSwipeToOpen) {
-            if (!isExpanded && !disableSwipeToOpen) {
-                detectDragGestures { change, dragAmount ->
-                    change.consume()
-                    val (x, _) = dragAmount
-                    if (x > AzNavRailDefaults.SWIPE_THRESHOLD_PX) onToggle()
+    LaunchedEffect(scope.navItems) {
+        scope.navItems.forEach { item ->
+            if (item.isCycler) {
+                cyclerStates.putIfAbsent(item.id, CyclerTransientState(item.selectedOption ?: ""))
+            }
+        }
+    }
+
+    LaunchedEffect(isExpanded) {
+        if (!isExpanded) {
+            cyclerStates.forEach { (id, state) ->
+                if (state.job != null) {
+                    state.job.cancel()
+                    val item = scope.navItems.find { it.id == id }
+                    if (item != null) {
+                        coroutineScope.launch {
+                            repeat(state.pendingClickCount) {
+                                item.onClick()
+                            }
+                            cyclerStates[id] = state.copy(pendingClickCount = 0, job = null)
+                        }
+                    }
                 }
             }
         }
+    }
 
-    Box(
-        modifier = if (isExpanded) {
-            Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.6f))
-                .pointerInput(onToggle) {
-                    detectDragGestures { change, dragAmount ->
-                        change.consume()
-                        val (x, _) = dragAmount
-                        if (x < -AzNavRailDefaults.SWIPE_THRESHOLD_PX) onToggle()
-                    }
-                }
-                .pointerInput(onToggle) {
-                    detectTapGestures(
-                        onTap = { offset ->
-                            val railWidthPx = with(density) { railWidth.toPx() }
-                            if (offset.x > railWidthPx) {
-                                onToggle()
-                            }
-                        }
-                    )
-                }
-        } else {
-            Modifier
-        }
-    ) {
-        NavigationRail(
-            modifier = railModifier,
-            containerColor = Color.Transparent,
-            header = {
-                IconButton(onClick = onToggle, modifier = Modifier.padding(top = AzNavRailDefaults.HeaderPadding, bottom = AzNavRailDefaults.HeaderPadding)) {
-                    if (scope.displayAppNameInHeader) {
-                        Text(text = if (isExpanded) appName else appName.firstOrNull()?.toString() ?: "", style = MaterialTheme.typography.titleMedium)
-                    } else {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize)) {
-                                if (appIcon != null) {
-                                    Image(painter = rememberAsyncImagePainter(model = appIcon), contentDescription = "Toggle menu, showing $appName icon")
-                                } else {
-                                    Icon(imageVector = Icons.Default.Menu, contentDescription = "Toggle Menu")
-                                }
-                            }
-                            if (isExpanded) {
-                                Spacer(modifier = Modifier.width(AzNavRailDefaults.HeaderTextSpacer))
-                                Text(text = appName, style = MaterialTheme.typography.titleMedium)
-                            }
-                        }
+    Box(modifier = modifier) {
+        Row(
+            modifier = Modifier.pointerInput(isExpanded, disableSwipeToOpen) {
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    val (x, _) = dragAmount
+                    if (isExpanded) {
+                        if (x < -AzNavRailDefaults.SWIPE_THRESHOLD_PX) { onToggle() }
+                    } else if (!disableSwipeToOpen) {
+                        if (x > AzNavRailDefaults.SWIPE_THRESHOLD_PX) { onToggle() }
                     }
                 }
             }
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                if (isExpanded) {
-                    Column(modifier = Modifier
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())) {
-                        scope.navItems.forEach { item ->
-                            MenuItem(item = item, onCollapse = { isExpanded = false })
-                        }
-                    }
-                    Footer(appName = appName)
-                } else {
-                    val railItems = remember(scope.navItems) { scope.navItems.filter { it.isRailItem } }
-                    Column(
-                        modifier = Modifier.padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = if (scope.packRailButtons) Arrangement.Top else Arrangement.spacedBy(AzNavRailDefaults.RailContentVerticalArrangement, Alignment.CenterVertically)
-                    ) {
-                        if (scope.packRailButtons) {
-                            railItems.forEach { item ->
-                                RailContent(item = item)
-                            }
+            NavigationRail(
+                modifier = Modifier.width(railWidth),
+                containerColor = Color.Transparent,
+                header = {
+                    IconButton(onClick = onToggle, modifier = Modifier.padding(top = AzNavRailDefaults.HeaderPadding, bottom = AzNavRailDefaults.HeaderPadding)) {
+                        if (scope.displayAppNameInHeader) {
+                            Text(text = if (isExpanded) appName else appName.firstOrNull()?.toString() ?: "", style = MaterialTheme.typography.titleMedium)
                         } else {
-                            scope.navItems.forEach { menuItem ->
-                                if (menuItem.isRailItem) {
-                                    RailContent(item = menuItem)
-                                } else {
-                                    Spacer(modifier = Modifier.height(AzNavRailDefaults.RailContentSpacerHeight))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize)) {
+                                    if (appIcon != null) {
+                                        Image(painter = rememberAsyncImagePainter(model = appIcon), contentDescription = "Toggle menu, showing $appName icon")
+                                    } else {
+                                        Icon(imageVector = Icons.Default.Menu, contentDescription = "Toggle Menu")
+                                    }
+                                }
+                                if (isExpanded) {
+                                    Spacer(modifier = Modifier.width(AzNavRailDefaults.HeaderTextSpacer))
+                                    Text(text = appName, style = MaterialTheme.typography.titleMedium)
                                 }
                             }
                         }
                     }
                 }
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (isExpanded) {
+                        Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                            scope.navItems.forEach { item ->
+                                val onCyclerClick = if (item.isCycler) {
+                                    {
+                                        val state = cyclerStates[item.id]
+                                        if (state != null) {
+                                            state.job?.cancel()
+                                            val options = item.options!!
+                                            val currentIndex = options.indexOf(state.displayedOption)
+                                            val nextIndex = (currentIndex + 1).let { if (it >= options.size) 0 else it }
+                                            val nextOption = options[nextIndex]
+                                            val clickCount = state.pendingClickCount + 1
+                                            cyclerStates[item.id] = state.copy(
+                                                displayedOption = nextOption,
+                                                pendingClickCount = clickCount,
+                                                job = coroutineScope.launch {
+                                                    delay(1000L)
+                                                    repeat(clickCount) {
+                                                        item.onClick()
+                                                    }
+                                                    cyclerStates[item.id] = state.copy(pendingClickCount = 0, job = null)
+                                                }
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    item.onClick
+                                }
+                                val finalItem = if (item.isCycler) {
+                                    item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption)
+                                } else {
+                                    item
+                                }
+                                MenuItem(item = finalItem, onCyclerClick = onCyclerClick)
+                            }
+                        }
+                        Footer(appName = appName)
+                    } else {
+                        val railItems = remember(scope) { scope.navItems.filter { it.isRailItem } }
+                        Column(
+                            modifier = Modifier.padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = if (scope.packRailButtons) Arrangement.Top else Arrangement.spacedBy(AzNavRailDefaults.RailContentVerticalArrangement, Alignment.CenterVertically)
+                        ) {
+                            if (scope.packRailButtons) {
+                                railItems.forEach { item ->
+                                    RailContent(item = item)
+                                }
+                            } else {
+                                scope.navItems.forEach { menuItem ->
+                                    if (menuItem.isRailItem) {
+                                        RailContent(item = menuItem)
+                                    } else {
+                                        Spacer(modifier = Modifier.height(AzNavRailDefaults.RailContentSpacerHeight))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (isExpanded) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .weight(1f)
+                        .clickable(
+                            onClick = onToggle,
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        )
+                )
             }
         }
     }
@@ -194,86 +241,35 @@ fun AzNavRail(
 
 @Composable
 private fun RailContent(item: AzNavItem) {
-    var currentOption by remember(item.selectedOption) { mutableStateOf(item.selectedOption) }
-    val textToShow = if (item.isCycler) currentOption ?: "" else item.text
-
-    LaunchedEffect(currentOption) {
-        if (currentOption != item.selectedOption) {
-            delay(AzNavRailDefaults.CYCLER_COOLDOWN_MS)
-            item.onClick()
-        }
-    }
-
-    val onClick: () -> Unit = when {
-        item.isCycler -> {
-            {
-                item.options?.let { options ->
-                    val currentIndex = options.indexOf(currentOption)
-                    if (currentIndex != -1) {
-                        val newIndex = (currentIndex + 1) % options.size
-                        currentOption = options[newIndex]
-                    }
-                }
-            }
-        }
-        else -> item.onClick
-    }
-
+    val textToShow = if (item.isCycler) item.selectedOption ?: "" else item.text
     AzNavRailButton(
-        onClick = onClick,
+        onClick = item.onClick,
         text = textToShow,
-        color = if (item.isToggle && item.isChecked == true) MaterialTheme.colorScheme.secondary else item.color ?: MaterialTheme.colorScheme.primary
+        color = item.color ?: MaterialTheme.colorScheme.primary
     )
 }
 
 @Composable
-private fun MenuItem(item: AzNavItem, onCollapse: () -> Unit) {
-    var currentOption by remember(item.selectedOption) { mutableStateOf(item.selectedOption) }
-    var isChecked by remember(item.isChecked) { mutableStateOf(item.isChecked) }
-
-    LaunchedEffect(currentOption) {
-        if (currentOption != item.selectedOption) {
-            delay(AzNavRailDefaults.CYCLER_COOLDOWN_MS)
-            item.onClick()
-            onCollapse()
-        }
-    }
-
-    val onClick: () -> Unit = {
-        when {
-            item.isToggle -> {
-                isChecked = !(isChecked ?: false)
-                item.onClick()
-                onCollapse()
-            }
-            item.isCycler -> {
-                item.options?.let { options ->
-                    val currentIndex = options.indexOf(currentOption)
-                    if (currentIndex != -1) {
-                        val newIndex = (currentIndex + 1) % options.size
-                        currentOption = options[newIndex]
-                    }
-                }
-            }
-            else -> {
-                item.onClick()
-                onCollapse()
-            }
-        }
-    }
+private fun MenuItem(
+    item: AzNavItem,
+    onCyclerClick: () -> Unit = item.onClick
+) {
+    val textToShow = if (item.isCycler) "${item.text}: ${item.selectedOption}" else item.text
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(onClick = onCyclerClick)
             .padding(horizontal = AzNavRailDefaults.MenuItemHorizontalPadding, vertical = AzNavRailDefaults.MenuItemVerticalPadding),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val textToShow = if (item.isCycler) "${item.text}: $currentOption" else item.text
         Text(text = textToShow, style = MaterialTheme.typography.bodyMedium)
         if (item.isToggle) {
             Spacer(modifier = Modifier.weight(1f))
-            Switch(checked = isChecked ?: false, onCheckedChange = { _ -> onClick() })
+            Switch(
+                checked = item.isChecked ?: false,
+                onCheckedChange = { item.onClick() }
+            )
         }
     }
 }
@@ -318,16 +314,15 @@ private fun Footer(appName: String) {
 
     Column {
         HorizontalDivider(modifier = Modifier.padding(horizontal = AzNavRailDefaults.FooterDividerHorizontalPadding, vertical = AzNavRailDefaults.FooterDividerVerticalPadding), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-        MenuItem(item = AzNavItem(id = "about", text = "About", isRailItem = false, onClick = onAboutClick), onCollapse = {})
-        MenuItem(item = AzNavItem(id = "feedback", text = "Feedback", isRailItem = false, onClick = onFeedbackClick), onCollapse = {})
+        MenuItem(item = AzNavItem(id = "about", text = "About", isRailItem = false, onClick = onAboutClick))
+        MenuItem(item = AzNavItem(id = "feedback", text = "Feedback", isRailItem = false, onClick = onFeedbackClick))
         MenuItem(
             item = AzNavItem(
                 id = "credit",
                 text = "@HereLiesAz",
                 isRailItem = false,
                 onClick = onCreditClick
-            ),
-            onCollapse = {}
+            )
         )
         Spacer(modifier = Modifier.height(AzNavRailDefaults.FooterSpacerHeight))
     }
