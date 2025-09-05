@@ -196,8 +196,13 @@ fun AzNavRail(
                     if (isExpanded) {
                         Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                             scope.navItems.forEach { item ->
-                                val onCyclerClick = if (item.isCycler) {
-                                    {
+                                val finalItem = if (item.isCycler) {
+                                    item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption)
+                                } else {
+                                    item
+                                }
+                                val finalOnClick = {
+                                    if (item.isCycler) {
                                         val state = cyclerStates[item.id]
                                         if (state != null) {
                                             state.job?.cancel()
@@ -205,29 +210,21 @@ fun AzNavRail(
                                             val currentIndex = options.indexOf(state.displayedOption)
                                             val nextIndex = (currentIndex + 1) % options.size
                                             val nextOption = options[nextIndex]
-                                            val clickCount = state.pendingClickCount + 1
                                             cyclerStates[item.id] = state.copy(
                                                 displayedOption = nextOption,
-                                                pendingClickCount = clickCount,
                                                 job = coroutineScope.launch {
                                                     delay(1000L)
-                                                    repeat(clickCount) {
-                                                        item.onClick()
-                                                    }
-                                                    cyclerStates[item.id] = cyclerStates[item.id]!!.copy(pendingClickCount = 0, job = null)
+                                                    item.onClick()
+                                                    onToggle()
                                                 }
                                             )
                                         }
+                                    } else {
+                                        item.onClick()
+                                        onToggle()
                                     }
-                                } else {
-                                    item.onClick
                                 }
-                                val finalItem = if (item.isCycler) {
-                                    item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption)
-                                } else {
-                                    item
-                                }
-                                MenuItem(item = finalItem, onCyclerClick = onCyclerClick)
+                                MenuItem(item = finalItem, onCyclerClick = finalOnClick)
                             }
                         }
                         if (scope.showFooter) {
@@ -279,7 +276,11 @@ fun AzNavRail(
  */
 @Composable
 private fun RailContent(item: AzNavItem) {
-    val textToShow = if (item.isCycler) item.selectedOption ?: "" else item.text
+    val textToShow = when {
+        item.isToggle -> if (item.isChecked == true) item.toggleOnText ?: "" else item.toggleOffText ?: ""
+        item.isCycler -> item.selectedOption ?: ""
+        else -> item.text
+    }
     AzNavRailButton(
         onClick = item.onClick,
         text = textToShow,
@@ -297,7 +298,11 @@ private fun MenuItem(
     item: AzNavItem,
     onCyclerClick: () -> Unit = item.onClick
 ) {
-    val textToShow = if (item.isCycler) "${item.text}: ${item.selectedOption}" else item.text
+    val textToShow = when {
+        item.isToggle -> if (item.isChecked == true) item.toggleOnText ?: "" else item.toggleOffText ?: ""
+        item.isCycler -> item.selectedOption ?: ""
+        else -> item.text
+    }
     val modifier = if (item.isToggle) {
         Modifier.toggleable(
             value = item.isChecked ?: false,
@@ -314,13 +319,6 @@ private fun MenuItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(text = textToShow, style = MaterialTheme.typography.bodyMedium)
-        if (item.isToggle) {
-            Spacer(modifier = Modifier.weight(1f))
-            Switch(
-                checked = item.isChecked ?: false,
-                onCheckedChange = null
-            )
-        }
     }
 }
 

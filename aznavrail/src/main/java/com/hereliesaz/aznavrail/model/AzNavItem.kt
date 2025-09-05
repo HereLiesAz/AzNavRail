@@ -24,6 +24,8 @@ data class AzNavItem(
     val color: Color? = null,
     val isToggle: Boolean = false,
     val isChecked: Boolean? = null,
+    val toggleOnText: String? = null,
+    val toggleOffText: String? = null,
     val isCycler: Boolean = false,
     val options: List<String>? = null,
     val selectedOption: String? = null,

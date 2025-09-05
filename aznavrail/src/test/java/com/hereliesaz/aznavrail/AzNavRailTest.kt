@@ -51,26 +51,30 @@ class AzNavRailTest {
     @Test
     fun `azMenuToggle should add a menu toggle item`() {
         val scope = AzNavRailScopeImpl()
-        scope.azMenuToggle("toggle", "Toggle", true) {}
-        val expectedItem = AzNavItem("toggle", "Toggle", isRailItem = false, isToggle = true, isChecked = true, onClick = {})
+        scope.azMenuToggle("toggle", "Toggle", true, "On", "Off") {}
+        val expectedItem = AzNavItem("toggle", "Toggle", isRailItem = false, isToggle = true, isChecked = true, toggleOnText = "On", toggleOffText = "Off", onClick = {})
         assertEquals(expectedItem.id, scope.navItems[0].id)
         assertEquals(expectedItem.text, scope.navItems[0].text)
         assertEquals(expectedItem.isRailItem, scope.navItems[0].isRailItem)
         assertEquals(expectedItem.isToggle, scope.navItems[0].isToggle)
         assertEquals(expectedItem.isChecked, scope.navItems[0].isChecked)
+        assertEquals(expectedItem.toggleOnText, scope.navItems[0].toggleOnText)
+        assertEquals(expectedItem.toggleOffText, scope.navItems[0].toggleOffText)
     }
 
     @Test
     fun `azRailToggle should add a rail toggle item`() {
         val scope = AzNavRailScopeImpl()
-        scope.azRailToggle("toggle", "Toggle", Color.Blue, false) {}
-        val expectedItem = AzNavItem("toggle", "Toggle", isRailItem = true, color = Color.Blue, isToggle = true, isChecked = false, onClick = {})
+        scope.azRailToggle("toggle", "Toggle", Color.Blue, false, "On", "Off") {}
+        val expectedItem = AzNavItem("toggle", "Toggle", isRailItem = true, color = Color.Blue, isToggle = true, isChecked = false, toggleOnText = "On", toggleOffText = "Off", onClick = {})
         assertEquals(expectedItem.id, scope.navItems[0].id)
         assertEquals(expectedItem.text, scope.navItems[0].text)
         assertEquals(expectedItem.isRailItem, scope.navItems[0].isRailItem)
         assertEquals(expectedItem.color, scope.navItems[0].color)
         assertEquals(expectedItem.isToggle, scope.navItems[0].isToggle)
         assertEquals(expectedItem.isChecked, scope.navItems[0].isChecked)
+        assertEquals(expectedItem.toggleOnText, scope.navItems[0].toggleOnText)
+        assertEquals(expectedItem.toggleOffText, scope.navItems[0].toggleOffText)
     }
 
     @Test
