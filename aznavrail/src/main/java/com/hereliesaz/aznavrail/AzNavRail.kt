@@ -169,7 +169,7 @@ fun AzNavRail(
                                         val state = cyclerStates[item.id]
                                         if (state != null) {
                                             state.job?.cancel()
-                                            val options = item.options!!
+                                            val options = requireNotNull(item.options) { "Cycler item '${item.id}' must have options" }
                                             val currentIndex = options.indexOf(state.displayedOption)
                                             val nextIndex = (currentIndex + 1) % options.size
                                             val nextOption = options[nextIndex]
