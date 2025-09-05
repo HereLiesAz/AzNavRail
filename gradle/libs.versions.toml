@@ -1,5 +1,5 @@
 [versions]
-aznavrail = "2.3"
+aznavrail = "2.4"
 # Android & Jetpack
 composeBom = "2024.04.01"
 coreKtx = "1.16.0"
