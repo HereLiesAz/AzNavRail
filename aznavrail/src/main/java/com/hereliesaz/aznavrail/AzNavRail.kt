@@ -187,7 +187,7 @@ private fun Footer(appName: String) {
     val onAboutClick: () -> Unit = remember(context, appName) {
         {
             try {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/HereLiesAz/AzNavRail"))
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/HereLiesAz/$appName"))
                 context.startActivity(intent)
             } catch (e: ActivityNotFoundException) {
                 Log.e("AzNavRail.Footer", "Could not open 'About' link.", e)
