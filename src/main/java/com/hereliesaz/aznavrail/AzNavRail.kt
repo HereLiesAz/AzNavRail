@@ -26,6 +26,7 @@ import com.hereliesaz.aznavrail.model.AzNavItem
 
 private const val SWIPE_THRESHOLD_PX = 20f
 
+
 @Composable
 fun AzNavRail(
     modifier: Modifier = Modifier,
@@ -70,12 +71,14 @@ fun AzNavRail(
                         change.consume()
                         val (x, _) = dragAmount
                         if (x < -SWIPE_THRESHOLD_PX) { onToggle() }
+
                     }
                 } else if (!disableSwipeToOpen) {
                     detectDragGestures { change, dragAmount ->
                         change.consume()
                         val (x, _) = dragAmount
                         if (x > SWIPE_THRESHOLD_PX) { onToggle() }
+
                     }
                 }
             },
@@ -125,6 +128,7 @@ fun AzNavRail(
                         scope.navItems.forEach { menuItem ->
                             if (menuItem.isRailItem) {
                                 RailContent(item = menuItem)
+
                             } else {
                                 Spacer(modifier = Modifier.height(72.dp))
                             }
@@ -176,6 +180,7 @@ private fun Footer(appName: String) {
     }
     val onFeedbackClick = remember(context, appName) {
         {
+
             val intent = Intent(Intent.ACTION_SENDTO).apply {
                 data = Uri.parse("mailto:")
                 putExtra(Intent.EXTRA_EMAIL, arrayOf("hereliesaz@gmail.com"))
@@ -195,12 +200,14 @@ private fun Footer(appName: String) {
         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
         MenuItem(item = AzNavItem(id = "about", text = "About", isRailItem = false, onClick = onAboutClick))
         MenuItem(item = AzNavItem(id = "feedback", text = "Feedback", isRailItem = false, onClick = onFeedbackClick))
+
         MenuItem(
             item = AzNavItem(
                 id = "credit",
                 text = "@HereLiesAz",
                 isRailItem = false,
                 onClick = onCreditClick
+
             )
         )
         Spacer(modifier = Modifier.height(12.dp))
