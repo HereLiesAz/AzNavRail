@@ -99,7 +99,7 @@ fun AzNavRail(
         header = {
             IconButton(onClick = onToggle, modifier = Modifier.padding(top = AzNavRailDefaults.HeaderPadding, bottom = AzNavRailDefaults.HeaderPadding)) {
                 if (scope.displayAppNameInHeader) {
-                    Text(text = if (isExpanded) appName else appName.first().toString(), style = MaterialTheme.typography.titleMedium)
+                    Text(text = if (isExpanded) appName else appName.firstOrNull()?.toString() ?: "", style = MaterialTheme.typography.titleMedium)
                 } else {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize)) {
