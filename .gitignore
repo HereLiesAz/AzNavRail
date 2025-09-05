@@ -34,3 +34,5 @@ google-services.json
 *.hprof
 
 CueDetat/
+/.kotlin/
+/app/
