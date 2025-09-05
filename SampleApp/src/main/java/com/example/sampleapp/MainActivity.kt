@@ -55,6 +55,8 @@ fun SampleScreen() {
                 id = "online",
                 text = "Online",
                 isChecked = isOnline,
+                toggleOnText = "Online",
+                toggleOffText = "Offline",
                 onClick = {
                     isOnline = !isOnline
                     Toast.makeText(context, "Toggle clicked! isOnline: $isOnline", Toast.LENGTH_SHORT).show()

@@ -13,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -168,17 +169,19 @@ fun AzNavRail(
                 modifier = Modifier.width(railWidth),
                 containerColor = Color.Transparent,
                 header = {
-                    IconButton(onClick = onToggle, modifier = Modifier.padding(top = AzNavRailDefaults.HeaderPadding, bottom = AzNavRailDefaults.HeaderPadding)) {
+                    Box(
+                        modifier = Modifier
+                            .padding(top = AzNavRailDefaults.HeaderPadding, bottom = AzNavRailDefaults.HeaderPadding)
+                            .clickable(onClick = onToggle)
+                    ) {
                         if (scope.displayAppNameInHeader) {
                             Text(text = if (isExpanded) appName else appName.firstOrNull()?.toString() ?: "", style = MaterialTheme.typography.titleMedium)
                         } else {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize)) {
-                                    if (appIcon != null) {
-                                        Image(painter = rememberAsyncImagePainter(model = appIcon), contentDescription = "Toggle menu, showing $appName icon")
-                                    } else {
-                                        Icon(imageVector = Icons.Default.Menu, contentDescription = "Toggle Menu")
-                                    }
+                                if (appIcon != null) {
+                                    Image(painter = rememberAsyncImagePainter(model = appIcon), contentDescription = "Toggle menu, showing $appName icon")
+                                } else {
+                                    Icon(imageVector = Icons.Default.Apps, contentDescription = "Toggle Menu")
                                 }
                                 if (isExpanded) {
                                     Spacer(modifier = Modifier.width(AzNavRailDefaults.HeaderTextSpacer))
@@ -193,8 +196,13 @@ fun AzNavRail(
                     if (isExpanded) {
                         Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                             scope.navItems.forEach { item ->
-                                val onCyclerClick = if (item.isCycler) {
-                                    {
+                                val finalItem = if (item.isCycler) {
+                                    item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption)
+                                } else {
+                                    item
+                                }
+                                val finalOnClick = {
+                                    if (item.isCycler) {
                                         val state = cyclerStates[item.id]
                                         if (state != null) {
                                             state.job?.cancel()
@@ -202,29 +210,21 @@ fun AzNavRail(
                                             val currentIndex = options.indexOf(state.displayedOption)
                                             val nextIndex = (currentIndex + 1) % options.size
                                             val nextOption = options[nextIndex]
-                                            val clickCount = state.pendingClickCount + 1
                                             cyclerStates[item.id] = state.copy(
                                                 displayedOption = nextOption,
-                                                pendingClickCount = clickCount,
                                                 job = coroutineScope.launch {
                                                     delay(1000L)
-                                                    repeat(clickCount) {
-                                                        item.onClick()
-                                                    }
-                                                    cyclerStates[item.id] = cyclerStates[item.id]!!.copy(pendingClickCount = 0, job = null)
+                                                    item.onClick()
+                                                    onToggle()
                                                 }
                                             )
                                         }
+                                    } else {
+                                        item.onClick()
+                                        onToggle()
                                     }
-                                } else {
-                                    item.onClick
                                 }
-                                val finalItem = if (item.isCycler) {
-                                    item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption)
-                                } else {
-                                    item
-                                }
-                                MenuItem(item = finalItem, onCyclerClick = onCyclerClick)
+                                MenuItem(item = finalItem, onCyclerClick = finalOnClick)
                             }
                         }
                         if (scope.showFooter) {
@@ -276,7 +276,11 @@ fun AzNavRail(
  */
 @Composable
 private fun RailContent(item: AzNavItem) {
-    val textToShow = if (item.isCycler) item.selectedOption ?: "" else item.text
+    val textToShow = when {
+        item.isToggle -> if (item.isChecked == true) item.toggleOnText ?: "" else item.toggleOffText ?: ""
+        item.isCycler -> item.selectedOption ?: ""
+        else -> item.text
+    }
     AzNavRailButton(
         onClick = item.onClick,
         text = textToShow,
@@ -294,7 +298,11 @@ private fun MenuItem(
     item: AzNavItem,
     onCyclerClick: () -> Unit = item.onClick
 ) {
-    val textToShow = if (item.isCycler) "${item.text}: ${item.selectedOption}" else item.text
+    val textToShow = when {
+        item.isToggle -> if (item.isChecked == true) item.toggleOnText ?: "" else item.toggleOffText ?: ""
+        item.isCycler -> item.selectedOption ?: ""
+        else -> item.text
+    }
     val modifier = if (item.isToggle) {
         Modifier.toggleable(
             value = item.isChecked ?: false,
@@ -311,13 +319,6 @@ private fun MenuItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(text = textToShow, style = MaterialTheme.typography.bodyMedium)
-        if (item.isToggle) {
-            Spacer(modifier = Modifier.weight(1f))
-            Switch(
-                checked = item.isChecked ?: false,
-                onCheckedChange = null
-            )
-        }
     }
 }
 
