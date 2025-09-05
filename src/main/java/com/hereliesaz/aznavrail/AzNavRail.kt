@@ -74,7 +74,7 @@ fun AzNavRail(
     }
 
     var isExpanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
-    val onToggle: () -> Unit = { isExpanded = !isExpanded }
+    val onToggle: () -> Unit = remember { { isExpanded = !isExpanded } }
 
     val railWidth by animateDpAsState(
         targetValue = if (isExpanded) AzNavRailDefaults.ExpandedRailWidth else AzNavRailDefaults.CollapsedRailWidth,
