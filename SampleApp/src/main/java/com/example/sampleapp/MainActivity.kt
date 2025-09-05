@@ -50,10 +50,11 @@ fun SampleScreen() {
 
             azMenuItem(id = "home", text = "Home", onClick = { /* ... */ })
             azRailItem(id = "favorites", text = "Favs", onClick = { /* ... */ })
+            azRailItem(id = "long_text", text = "This is a very long text", onClick = { /* ... */ })
+            azRailItem(id = "multi_line", text = "Multi\nLine", onClick = { /* ... */ })
 
             azRailToggle(
                 id = "online",
-                text = "Online",
                 isChecked = isOnline,
                 toggleOnText = "Online",
                 toggleOffText = "Offline",
@@ -65,7 +66,6 @@ fun SampleScreen() {
 
             azMenuCycler(
                 id = "cycler",
-                text = "Cycle",
                 options = cycleOptions,
                 selectedOption = selectedOption,
                 onClick = {

@@ -2,47 +2,27 @@ package com.hereliesaz.aznavrail
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.model.AzNavItem
 import kotlinx.coroutines.Job
@@ -188,22 +168,17 @@ fun AzNavRail(
                 modifier = Modifier.width(railWidth),
                 containerColor = Color.Transparent,
                 header = {
-                    Box(
-                        modifier = Modifier
-                            .padding(
-                                top = AzNavRailDefaults.HeaderPadding,
-                                bottom = AzNavRailDefaults.HeaderPadding
-                            )
-                            .clickable(onClick = onToggle)
-                    ) {
+                    IconButton(onClick = onToggle, modifier = Modifier.padding(top = AzNavRailDefaults.HeaderPadding, bottom = AzNavRailDefaults.HeaderPadding)) {
                         if (scope.displayAppNameInHeader) {
                             Text(text = if (isExpanded) appName else appName.firstOrNull()?.toString() ?: "", style = MaterialTheme.typography.titleMedium)
                         } else {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (appIcon != null) {
-                                    Image(painter = rememberAsyncImagePainter(model = appIcon), contentDescription = "Toggle menu, showing $appName icon")
-                                } else {
-                                    Icon(imageVector = Icons.Default.Apps, contentDescription = "Toggle Menu")
+                                Box(modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize)) {
+                                    if (appIcon != null) {
+                                        Image(painter = rememberAsyncImagePainter(model = appIcon), contentDescription = "Toggle menu, showing $appName icon")
+                                    } else {
+                                        Icon(imageVector = Icons.Default.Menu, contentDescription = "Toggle Menu")
+                                    }
                                 }
                                 if (isExpanded) {
                                     Spacer(modifier = Modifier.width(AzNavRailDefaults.HeaderTextSpacer))
@@ -216,19 +191,10 @@ fun AzNavRail(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     if (isExpanded) {
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .verticalScroll(rememberScrollState())
-                        ) {
+                        Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                             scope.navItems.forEach { item ->
-                                val finalItem = if (item.isCycler) {
-                                    item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption)
-                                } else {
-                                    item
-                                }
-                                val finalOnClick = {
-                                    if (item.isCycler) {
+                                val onCyclerClick = if (item.isCycler) {
+                                    {
                                         val state = cyclerStates[item.id]
                                         if (state != null) {
                                             state.job?.cancel()
@@ -236,21 +202,29 @@ fun AzNavRail(
                                             val currentIndex = options.indexOf(state.displayedOption)
                                             val nextIndex = (currentIndex + 1) % options.size
                                             val nextOption = options[nextIndex]
+                                            val clickCount = state.pendingClickCount + 1
                                             cyclerStates[item.id] = state.copy(
                                                 displayedOption = nextOption,
+                                                pendingClickCount = clickCount,
                                                 job = coroutineScope.launch {
                                                     delay(1000L)
-                                                    item.onClick()
-                                                    onToggle()
+                                                    repeat(clickCount) {
+                                                        item.onClick()
+                                                    }
+                                                    cyclerStates[item.id] = cyclerStates[item.id]!!.copy(pendingClickCount = 0, job = null)
                                                 }
                                             )
                                         }
-                                    } else {
-                                        item.onClick()
-                                        onToggle()
                                     }
+                                } else {
+                                    item.onClick
                                 }
-                                MenuItem(item = finalItem, onCyclerClick = finalOnClick)
+                                val finalItem = if (item.isCycler) {
+                                    item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption)
+                                } else {
+                                    item
+                                }
+                                MenuItem(item = finalItem, onCyclerClick = onCyclerClick)
                             }
                         }
                         if (scope.showFooter) {
@@ -303,7 +277,7 @@ fun AzNavRail(
 @Composable
 private fun RailContent(item: AzNavItem) {
     val textToShow = when {
-        item.isToggle -> if (item.isChecked == true) item.toggleOnText ?: "" else item.toggleOffText ?: ""
+        item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
         item.isCycler -> item.selectedOption ?: ""
         else -> item.text
     }
@@ -325,7 +299,7 @@ private fun MenuItem(
     onCyclerClick: () -> Unit = item.onClick
 ) {
     val textToShow = when {
-        item.isToggle -> if (item.isChecked == true) item.toggleOnText ?: "" else item.toggleOffText ?: ""
+        item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
         item.isCycler -> item.selectedOption ?: ""
         else -> item.text
     }
@@ -341,10 +315,7 @@ private fun MenuItem(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(
-                horizontal = AzNavRailDefaults.MenuItemHorizontalPadding,
-                vertical = AzNavRailDefaults.MenuItemVerticalPadding
-            ),
+            .padding(horizontal = AzNavRailDefaults.MenuItemHorizontalPadding, vertical = AzNavRailDefaults.MenuItemVerticalPadding),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(text = textToShow, style = MaterialTheme.typography.bodyMedium)
@@ -361,10 +332,7 @@ private fun Footer(appName: String) {
     val onAboutClick: () -> Unit = remember(context, appName) {
         {
             try {
-                val intent = Intent(
-                    Intent.ACTION_VIEW,
-                    "https://github.com/HereLiesAz/$appName".toUri()
-                )
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/HereLiesAz/$appName"))
                 context.startActivity(intent)
             } catch (e: ActivityNotFoundException) {
                 AzNavRailLogger.e("AzNavRail.Footer", "Could not open 'About' link.", e)
@@ -375,7 +343,7 @@ private fun Footer(appName: String) {
         {
             try {
                 val intent = Intent(Intent.ACTION_SENDTO).apply {
-                    data = "mailto:".toUri()
+                    data = Uri.parse("mailto:")
                     putExtra(Intent.EXTRA_EMAIL, arrayOf("hereliesaz@gmail.com"))
                     putExtra(Intent.EXTRA_SUBJECT, "Feedback for $appName")
                 }
@@ -388,10 +356,7 @@ private fun Footer(appName: String) {
     val onCreditClick: () -> Unit = remember(context) {
         {
             try {
-                val intent = Intent(
-                    Intent.ACTION_VIEW,
-                    "https://www.instagram.com/hereliesaz".toUri()
-                )
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.instagram.com/hereliesaz"))
                 context.startActivity(intent)
             } catch (e: ActivityNotFoundException) {
                 AzNavRailLogger.e("AzNavRail.Footer", "Could not open 'Credit' link.", e)

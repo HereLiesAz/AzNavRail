@@ -45,9 +45,6 @@ fun AzNavRailButton(
     size: Dp = 72.dp,
     color: Color = MaterialTheme.colorScheme.primary
 ) {
-    var fontSize by remember { mutableStateOf(50.sp) }
-    var readyToDraw by remember { mutableStateOf(false) }
-
     OutlinedButton(
         onClick = onClick,
         modifier = modifier.size(size).aspectRatio(1f),
@@ -59,25 +56,25 @@ fun AzNavRailButton(
         ),
         contentPadding = PaddingValues(4.dp)
     ) {
-        Text(
-            text = text,
-            modifier = Modifier.drawWithContent {
-                if (readyToDraw) {
-                    drawContent()
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            var shrunkTextStyle by remember(text) { mutableStateOf(TextStyle(fontSize = 50.sp)) }
+            var shouldShrink by remember(text) { mutableStateOf(true) }
+
+            Text(
+                text = text,
+                textAlign = TextAlign.Center,
+                style = shrunkTextStyle,
+                onTextLayout = { result ->
+                    if (shouldShrink && result.didOverflowWidth) {
+                        shrunkTextStyle = shrunkTextStyle.copy(fontSize = shrunkTextStyle.fontSize * 0.9f)
+                    } else {
+                        shouldShrink = false
+                    }
                 }
-            },
-            style = TextStyle(
-                fontSize = fontSize,
-                textAlign = TextAlign.Center
-            ),
-            maxLines = 1,
-            onTextLayout = { textLayoutResult ->
-                if (textLayoutResult.didOverflowWidth) {
-                    fontSize *= 0.9f
-                } else {
-                    readyToDraw = true
-                }
-            }
-        )
+            )
+        }
     }
 }
