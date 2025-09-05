@@ -44,4 +44,14 @@ dependencies {
     implementation(libs.androidx.compose.animation.core)
     implementation(libs.androidx.material.icons.extended)
     api(libs.coil.compose)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.androidx.test.ext.junit)
+
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.espresso.core)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+    debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.androidx.ui.test.manifest)
 }
