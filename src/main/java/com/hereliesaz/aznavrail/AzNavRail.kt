@@ -127,7 +127,7 @@ fun AzNavRail(
                 }
                 Footer(appName = appName)
             } else {
-                val railItems = scope.navItems.filter { it.isRailItem }
+                val railItems = remember(scope) { scope.navItems.filter { it.isRailItem } }
                 Column(
                     modifier = Modifier.padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding),
                     horizontalAlignment = Alignment.CenterHorizontally,
