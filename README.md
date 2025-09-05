@@ -16,6 +16,10 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 -   **Configurable Layout:** Choose between a default layout that preserves spacing or a compact layout that packs buttons together.
 -   **Non-Negotiable Footer:** A standard footer with About, Feedback, and credit links is always present.
 
+## Screenshots
+
+*(Screenshots will be added here soon)*
+
 ## Setup
 
 To use this library, 
@@ -42,7 +46,7 @@ And add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.github.HereLiesAz:AzNavRail:2.5") // Or the latest version
+    implementation("com.github.HereLiesAz:AzNavRail:2.5.0") // Or the latest version
 }
 ```
 
@@ -95,18 +99,55 @@ fun MainScreen() {
 
 The main entry point is the `AzNavRail` composable.
 
-`@Composable fun AzNavRail(modifier: Modifier = Modifier, initiallyExpanded: Boolean = false, disableSwipeToOpen: Boolean = false, content: AzNavRailScope.() -> Unit)`
+### `AzNavRail`
 
-You declare items and configure the rail within its content lambda. The available functions are:
+```kotlin
+@Composable
+fun AzNavRail(
+    modifier: Modifier = Modifier,
+    initiallyExpanded: Boolean = false,
+    disableSwipeToOpen: Boolean = false,
+    content: AzNavRailScope.() -> Unit
+)
+```
+
+An M3-style navigation rail that expands into a menu drawer.
+
+-   **`modifier`**: The modifier to be applied to the navigation rail.
+-   **`initiallyExpanded`**: Whether the navigation rail is expanded by default.
+-   **`disableSwipeToOpen`**: Whether to disable the swipe-to-open gesture.
+-   **`content`**: The DSL content for the navigation rail.
+
+### `AzNavRailScope`
+
+You declare items and configure the rail within the content lambda of `AzNavRail`. The available functions are:
 
 **Note:** Functions prefixed with `azMenu` will only appear in the expanded menu view. Functions prefixed with `azRail` will appear on the collapsed rail, and their text will be used as the label in the expanded menu.
 
--   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean)`
--   `azMenuItem(id: String, text: String, onClick: () -> Unit)`
--   `azRailItem(id: String, text: String, color: Color? = null, onClick: () -> Unit)`
--   `azMenuToggle(id: String, text: String, isChecked: Boolean, onClick: () -> Unit)`
--   `azRailToggle(id: String, text: String, color: Color? = null, isChecked: Boolean, onClick: () -> Unit)`
--   `azMenuCycler(id: String, text: String, options: List<String>, selectedOption: String, onClick: () -> Unit)`
--   `azRailCycler(id: String, text: String, color: Color? = null, options: List<String>, selectedOption: String, onClick: () -> Unit)`
+-   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean)`: Configures the settings for the `AzNavRail`.
+-   `azMenuItem(id: String, text: String, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu.
+-   `azRailItem(id: String, text: String, color: Color? = null, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu.
+-   `azMenuToggle(id: String, text: String, isChecked: Boolean, onClick: () -> Unit)`: Adds a toggle switch item that only appears in the expanded menu.
+-   `azRailToggle(id: String, text: String, color: Color? = null, isChecked: Boolean, onClick: () -> Unit)`: Adds a toggle switch item that appears in both the collapsed rail and the expanded menu.
+-   `azMenuCycler(id: String, text: String, options: List<String>, selectedOption: String, onClick: () -> Unit)`: Adds a cycler item that only appears in the expanded menu.
+-   `azRailCycler(id: String, text: String, color: Color? = null, options: List<String>, selectedOption: String, onClick: () -> Unit)`: Adds a cycler item that appears in both the collapsed rail and the expanded menu.
 
 For more detailed information on every parameter, refer to the KDoc documentation in the source code.
+
+## License
+
+```
+Copyright 2024 The AzNavRail Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
