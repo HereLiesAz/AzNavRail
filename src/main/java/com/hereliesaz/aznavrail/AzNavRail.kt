@@ -39,22 +39,18 @@ fun AzNavRail(
     val packageManager = context.packageManager
     val packageName = context.packageName
 
-    val appName = remember {
-        try {
-            packageManager.getApplicationLabel(packageManager.getApplicationInfo(packageName, 0)).toString()
-        } catch (e: Exception) {
-            Log.e("AzNavRail", "Error getting app name", e)
-            "App" // Fallback name
-        }
+    val appName = try {
+        packageManager.getApplicationLabel(packageManager.getApplicationInfo(packageName, 0)).toString()
+    } catch (e: Exception) {
+        Log.e("AzNavRail", "Error getting app name", e)
+        "App" // Fallback name
     }
 
-    val appIcon = remember {
-        try {
-            packageManager.getApplicationIcon(packageName)
-        } catch (e: Exception) {
-            Log.e("AzNavRail", "Error getting app icon", e)
-            null // Fallback to default icon
-        }
+    val appIcon = try {
+        packageManager.getApplicationIcon(packageName)
+    } catch (e: Exception) {
+        Log.e("AzNavRail", "Error getting app icon", e)
+        null // Fallback to default icon
     }
 
     var isExpanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
@@ -172,29 +168,39 @@ private fun MenuItem(item: AzNavItem) {
 @Composable
 private fun Footer(appName: String) {
     val context = LocalContext.current
-    Column {
-        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-        MenuItem(item = AzNavItem(id = "about", text = "About", isRailItem = false, onClick = {
+    val onAboutClick = remember(context, appName) {
+        {
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/HereLiesAz/$appName"))
             context.startActivity(intent)
-        }))
-        MenuItem(item = AzNavItem(id = "feedback", text = "Feedback", isRailItem = false, onClick = {
+        }
+    }
+    val onFeedbackClick = remember(context, appName) {
+        {
             val intent = Intent(Intent.ACTION_SENDTO).apply {
                 data = Uri.parse("mailto:")
                 putExtra(Intent.EXTRA_EMAIL, arrayOf("hereliesaz@gmail.com"))
                 putExtra(Intent.EXTRA_SUBJECT, "Feedback for $appName")
             }
             context.startActivity(Intent.createChooser(intent, "Send Feedback"))
-        }))
+        }
+    }
+    val onCreditClick = remember(context) {
+        {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.instagram.com/hereliesaz"))
+            context.startActivity(intent)
+        }
+    }
+
+    Column {
+        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+        MenuItem(item = AzNavItem(id = "about", text = "About", isRailItem = false, onClick = onAboutClick))
+        MenuItem(item = AzNavItem(id = "feedback", text = "Feedback", isRailItem = false, onClick = onFeedbackClick))
         MenuItem(
             item = AzNavItem(
                 id = "credit",
                 text = "@HereLiesAz",
                 isRailItem = false,
-                onClick = {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.instagram.com/hereliesaz"))
-                    context.startActivity(intent)
-                }
+                onClick = onCreditClick
             )
         )
         Spacer(modifier = Modifier.height(12.dp))
