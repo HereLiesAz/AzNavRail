@@ -39,18 +39,22 @@ fun AzNavRail(
     val packageManager = context.packageManager
     val packageName = context.packageName
 
-    val appName = try {
-        packageManager.getApplicationLabel(packageManager.getApplicationInfo(packageName, 0)).toString()
-    } catch (e: Exception) {
-        Log.e("AzNavRail", "Error getting app name", e)
-        "App" // Fallback name
+    val appName = remember {
+        try {
+            packageManager.getApplicationLabel(packageManager.getApplicationInfo(packageName, 0)).toString()
+        } catch (e: Exception) {
+            Log.e("AzNavRail", "Error getting app name", e)
+            "App" // Fallback name
+        }
     }
 
-    val appIcon = try {
-        packageManager.getApplicationIcon(packageName)
-    } catch (e: Exception) {
-        Log.e("AzNavRail", "Error getting app icon", e)
-        null // Fallback to default icon
+    val appIcon = remember {
+        try {
+            packageManager.getApplicationIcon(packageName)
+        } catch (e: Exception) {
+            Log.e("AzNavRail", "Error getting app icon", e)
+            null // Fallback to default icon
+        }
     }
 
     var isExpanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
