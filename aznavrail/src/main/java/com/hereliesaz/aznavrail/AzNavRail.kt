@@ -169,17 +169,19 @@ fun AzNavRail(
                 modifier = Modifier.width(railWidth),
                 containerColor = Color.Transparent,
                 header = {
-                    IconButton(onClick = onToggle, modifier = Modifier.padding(top = AzNavRailDefaults.HeaderPadding, bottom = AzNavRailDefaults.HeaderPadding)) {
+                    Box(
+                        modifier = Modifier
+                            .padding(top = AzNavRailDefaults.HeaderPadding, bottom = AzNavRailDefaults.HeaderPadding)
+                            .clickable(onClick = onToggle)
+                    ) {
                         if (scope.displayAppNameInHeader) {
                             Text(text = if (isExpanded) appName else appName.firstOrNull()?.toString() ?: "", style = MaterialTheme.typography.titleMedium)
                         } else {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize)) {
-                                    if (appIcon != null) {
-                                        Image(painter = rememberAsyncImagePainter(model = appIcon), contentDescription = "Toggle menu, showing $appName icon")
-                                    } else {
-                                        Icon(imageVector = Icons.Default.Apps, contentDescription = "Toggle Menu")
-                                    }
+                                if (appIcon != null) {
+                                    Image(painter = rememberAsyncImagePainter(model = appIcon), contentDescription = "Toggle menu, showing $appName icon")
+                                } else {
+                                    Icon(imageVector = Icons.Default.Apps, contentDescription = "Toggle Menu")
                                 }
                                 if (isExpanded) {
                                     Spacer(modifier = Modifier.width(AzNavRailDefaults.HeaderTextSpacer))
