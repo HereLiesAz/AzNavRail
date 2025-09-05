@@ -99,6 +99,8 @@ The main entry point is the `AzNavRail` composable.
 
 You declare items and configure the rail within its content lambda. The available functions are:
 
+**Note:** Functions prefixed with `azMenu` will only appear in the expanded menu view. Functions prefixed with `azRail` will appear on the collapsed rail, and their text will be used as the label in the expanded menu.
+
 -   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean)`
 -   `azMenuItem(id: String, text: String, onClick: () -> Unit)`
 -   `azRailItem(id: String, text: String, color: Color? = null, onClick: () -> Unit)`

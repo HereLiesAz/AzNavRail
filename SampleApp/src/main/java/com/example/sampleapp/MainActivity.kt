@@ -12,8 +12,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import android.widget.Toast
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import com.hereliesaz.aznavrail.AzNavRail
 
 class MainActivity : ComponentActivity() {
@@ -37,6 +39,7 @@ fun SampleScreen() {
     var isOnline by remember { mutableStateOf(true) }
     val cycleOptions = remember { listOf("A", "B", "C") }
     var selectedOption by remember { mutableStateOf(cycleOptions.first()) }
+    val context = LocalContext.current
 
     Row {
         AzNavRail {
@@ -52,7 +55,10 @@ fun SampleScreen() {
                 id = "online",
                 text = "Online",
                 isChecked = isOnline,
-                onClick = { isOnline = !isOnline }
+                onClick = {
+                    isOnline = !isOnline
+                    Toast.makeText(context, "Toggle clicked! isOnline: $isOnline", Toast.LENGTH_SHORT).show()
+                }
             )
 
             azMenuCycler(
@@ -63,6 +69,7 @@ fun SampleScreen() {
                 onClick = {
                     val currentIndex = cycleOptions.indexOf(selectedOption)
                     selectedOption = cycleOptions[(currentIndex + 1) % cycleOptions.size]
+                    Toast.makeText(context, "Cycler clicked! selectedOption: $selectedOption", Toast.LENGTH_SHORT).show()
                 }
             )
         }
