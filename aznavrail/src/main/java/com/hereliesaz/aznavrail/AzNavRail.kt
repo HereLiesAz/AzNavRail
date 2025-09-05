@@ -182,7 +182,7 @@ fun AzNavRail(
                                                     repeat(clickCount) {
                                                         item.onClick()
                                                     }
-                                                    cyclerStates[item.id] = state.copy(pendingClickCount = 0, job = null)
+                                                    cyclerStates[item.id] = cyclerStates[item.id]!!.copy(pendingClickCount = 0, job = null)
                                                 }
                                             )
                                         }
