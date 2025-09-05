@@ -104,7 +104,7 @@ fun AzNavRail(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize)) {
                             if (appIcon != null) {
-                                Image(painter = rememberAsyncImagePainter(model = appIcon), contentDescription = "$appName Icon")
+                                Image(painter = rememberAsyncImagePainter(model = appIcon), contentDescription = "Toggle menu, showing $appName icon")
                             } else {
                                 Icon(imageVector = Icons.Default.Menu, contentDescription = "Toggle Menu")
                             }
