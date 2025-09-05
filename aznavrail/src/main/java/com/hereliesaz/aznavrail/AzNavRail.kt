@@ -276,7 +276,11 @@ fun AzNavRail(
  */
 @Composable
 private fun RailContent(item: AzNavItem) {
-    val textToShow = if (item.isCycler) item.selectedOption ?: "" else item.text
+    val textToShow = when {
+        item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
+        item.isCycler -> item.selectedOption ?: ""
+        else -> item.text
+    }
     AzNavRailButton(
         onClick = item.onClick,
         text = textToShow,
@@ -294,7 +298,11 @@ private fun MenuItem(
     item: AzNavItem,
     onCyclerClick: () -> Unit = item.onClick
 ) {
-    val textToShow = if (item.isCycler) "${item.text}: ${item.selectedOption}" else item.text
+    val textToShow = when {
+        item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
+        item.isCycler -> item.selectedOption ?: ""
+        else -> item.text
+    }
     val modifier = if (item.isToggle) {
         Modifier.toggleable(
             value = item.isChecked ?: false,
@@ -311,13 +319,6 @@ private fun MenuItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(text = textToShow, style = MaterialTheme.typography.bodyMedium)
-        if (item.isToggle) {
-            Spacer(modifier = Modifier.weight(1f))
-            Switch(
-                checked = item.isChecked ?: false,
-                onCheckedChange = null
-            )
-        }
     }
 }
 

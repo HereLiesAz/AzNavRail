@@ -20,9 +20,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /**
  * A circular, text-only button with auto-sizing text, designed for the collapsed navigation rail.
@@ -46,7 +49,7 @@ fun AzNavRailButton(
         onClick = onClick,
         modifier = modifier.size(size).aspectRatio(1f),
         shape = CircleShape,
-        border = BorderStroke(3.dp, color.copy(alpha = 0.7f)),
+        border = BorderStroke(3.dp, color),
         colors = ButtonDefaults.outlinedButtonColors(
             containerColor = Color.Transparent,
             contentColor = color
@@ -57,15 +60,13 @@ fun AzNavRailButton(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            val initialStyle = MaterialTheme.typography.labelSmall
-            var shrunkTextStyle by remember(text) { mutableStateOf(initialStyle) }
+            var shrunkTextStyle by remember(text) { mutableStateOf(TextStyle(fontSize = 50.sp)) }
             var shouldShrink by remember(text) { mutableStateOf(true) }
 
             Text(
                 text = text,
                 textAlign = TextAlign.Center,
                 style = shrunkTextStyle,
-                maxLines = 1,
                 onTextLayout = { result ->
                     if (shouldShrink && result.didOverflowWidth) {
                         shrunkTextStyle = shrunkTextStyle.copy(fontSize = shrunkTextStyle.fontSize * 0.9f)
