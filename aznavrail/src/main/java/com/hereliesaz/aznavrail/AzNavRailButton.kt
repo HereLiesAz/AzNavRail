@@ -46,34 +46,18 @@ fun AzNavRailButton(
         onClick = onClick,
         modifier = modifier.size(size).aspectRatio(1f),
         shape = CircleShape,
-        border = BorderStroke(3.dp, color.copy(alpha = 0.7f)),
+        border = BorderStroke(3.dp, color),
         colors = ButtonDefaults.outlinedButtonColors(
             containerColor = Color.Transparent,
             contentColor = color
         ),
         contentPadding = PaddingValues(4.dp)
     ) {
-        BoxWithConstraints(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            val initialStyle = MaterialTheme.typography.labelSmall
-            var shrunkTextStyle by remember(text) { mutableStateOf(initialStyle) }
-            var shouldShrink by remember(text) { mutableStateOf(true) }
-
-            Text(
-                text = text,
-                textAlign = TextAlign.Center,
-                style = shrunkTextStyle,
-                maxLines = 1,
-                onTextLayout = { result ->
-                    if (shouldShrink && result.didOverflowWidth) {
-                        shrunkTextStyle = shrunkTextStyle.copy(fontSize = shrunkTextStyle.fontSize * 0.9f)
-                    } else {
-                        shouldShrink = false
-                    }
-                }
-            )
-        }
+        Text(
+            text = text,
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = 1
+        )
     }
 }
