@@ -50,14 +50,13 @@ fun AzNavRailButton(
         ),
         contentPadding = PaddingValues(4.dp)
     ) {
-        var fontSize by remember(text) { mutableStateOf(14.sp) }
-        var readyToDraw by remember(text) { mutableStateOf(false) }
+        var fontSize by remember { mutableStateOf(14.sp) }
+        var readyToDraw by remember { mutableStateOf(false) }
 
         Text(
             text = text,
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.labelSmall,
-            fontSize = fontSize,
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = fontSize),
             onTextLayout = { textLayoutResult ->
                 if (textLayoutResult.didOverflowHeight || textLayoutResult.didOverflowWidth) {
                     fontSize *= 0.9f
