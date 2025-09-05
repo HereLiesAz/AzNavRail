@@ -22,3 +22,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - The version number in the `README.md` was corrected.
+- The text in `AzNavRailButton` now correctly auto-sizes to fit within the button's bounds without wrapping.
