@@ -95,7 +95,7 @@ fun MainScreen() {
 
 The main entry point is the `AzNavRail` composable.
 
-`@Composable fun AzNavRail(content: @Composable AzNavRailScope.() -> Unit)`
+`@Composable fun AzNavRail(modifier: Modifier = Modifier, initiallyExpanded: Boolean = false, disableSwipeToOpen: Boolean = false, content: AzNavRailScope.() -> Unit)`
 
 You declare items and configure the rail within its content lambda. The available functions are:
 
