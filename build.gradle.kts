@@ -49,3 +49,17 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     api(libs.coil.compose)
 }
+
+publishing {
+    publications {
+        create<MavenPublication>("release") {
+            groupId = project.group.toString()
+            artifactId = "aznavrail"
+            version = project.version.toString()
+
+            afterEvaluate {
+                from(components["release"])
+            }
+        }
+    }
+}
