@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.hereliesaz.aznavrail.util.text.AutoSizeText
@@ -45,7 +46,7 @@ fun AzNavRailButton(
             containerColor = Color.Transparent,
             contentColor = color
         ),
-        contentPadding = PaddingValues(4.dp)
+        contentPadding = PaddingValues(8.dp)
     ) {
         AutoSizeText(
             text = text,
@@ -53,7 +54,11 @@ fun AzNavRailButton(
                 textAlign = TextAlign.Center,
                 color = color
             ),
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            maxLines = if (text.contains("\n")) Int.MAX_VALUE else 1,
+            softWrap = false,
+            alignment = Alignment.Center,
+            lineSpaceRatio = 0.9f
         )
     }
 }
