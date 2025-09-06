@@ -297,7 +297,7 @@ private fun RailContent(item: AzNavItem) {
 }
 
 /**
- * Composable for displaying a single item in the expanded menu.
+ * Composable for displaying a single item in the expanded menu. The text is always displayed on a single line.
  * @param item The navigation item to display.
  * @param onCyclerClick The click handler for cycler items.
  */
@@ -310,7 +310,7 @@ private fun MenuItem(
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
         item.isCycler -> item.selectedOption ?: ""
         else -> item.text
-    }
+    }.replace("\n", " ")
     val modifier = if (item.isToggle) {
         Modifier.toggleable(
             value = item.isChecked ?: false,
@@ -326,7 +326,7 @@ private fun MenuItem(
             .padding(horizontal = AzNavRailDefaults.MenuItemHorizontalPadding, vertical = AzNavRailDefaults.MenuItemVerticalPadding),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = textToShow, style = MaterialTheme.typography.bodyMedium)
+        Text(text = textToShow, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
     }
 }
 
