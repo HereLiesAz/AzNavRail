@@ -88,7 +88,9 @@ fun AzNavRail(
     disableSwipeToOpen: Boolean = false,
     content: AzNavRailScope.() -> Unit
 ) {
-    val scope = remember(content) { AzNavRailScopeImpl().apply(content) }
+    val scope = remember { AzNavRailScopeImpl() }
+    scope.navItems.clear()
+    scope.apply(content)
 
     val context = LocalContext.current
     val packageManager = context.packageManager
@@ -173,12 +175,18 @@ fun AzNavRail(
                             Text(text = if (isExpanded) appName else appName.firstOrNull()?.toString() ?: "", style = MaterialTheme.typography.titleMedium)
                         } else {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize)) {
-                                    if (appIcon != null) {
-                                        Image(painter = rememberAsyncImagePainter(model = appIcon), contentDescription = "Toggle menu, showing $appName icon")
-                                    } else {
-                                        Icon(imageVector = Icons.Default.Menu, contentDescription = "Toggle Menu")
-                                    }
+                                if (appIcon != null) {
+                                    Image(
+                                        painter = rememberAsyncImagePainter(model = appIcon),
+                                        contentDescription = "Toggle menu, showing $appName icon",
+                                        modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize)
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Default.Menu,
+                                        contentDescription = "Toggle Menu",
+                                        modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize)
+                                    )
                                 }
                                 if (isExpanded) {
                                     Spacer(modifier = Modifier.width(AzNavRailDefaults.HeaderTextSpacer))
@@ -276,7 +284,11 @@ fun AzNavRail(
  */
 @Composable
 private fun RailContent(item: AzNavItem) {
-    val textToShow = if (item.isCycler) item.selectedOption ?: "" else item.text
+    val textToShow = when {
+        item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
+        item.isCycler -> item.selectedOption ?: ""
+        else -> item.text
+    }
     AzNavRailButton(
         onClick = item.onClick,
         text = textToShow,
@@ -294,7 +306,11 @@ private fun MenuItem(
     item: AzNavItem,
     onCyclerClick: () -> Unit = item.onClick
 ) {
-    val textToShow = if (item.isCycler) "${item.text}: ${item.selectedOption}" else item.text
+    val textToShow = when {
+        item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
+        item.isCycler -> item.selectedOption ?: ""
+        else -> item.text
+    }
     val modifier = if (item.isToggle) {
         Modifier.toggleable(
             value = item.isChecked ?: false,
@@ -311,13 +327,6 @@ private fun MenuItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(text = textToShow, style = MaterialTheme.typography.bodyMedium)
-        if (item.isToggle) {
-            Spacer(modifier = Modifier.weight(1f))
-            Switch(
-                checked = item.isChecked ?: false,
-                onCheckedChange = null
-            )
-        }
     }
 }
 
