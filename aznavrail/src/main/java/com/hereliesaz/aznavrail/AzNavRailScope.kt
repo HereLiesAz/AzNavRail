@@ -2,6 +2,7 @@ package com.hereliesaz.aznavrail
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.model.AzNavItem
 
@@ -86,7 +87,7 @@ interface AzNavRailScope {
 }
 
 internal class AzNavRailScopeImpl : AzNavRailScope {
-    val navItems = mutableListOf<AzNavItem>()
+    val navItems = mutableStateListOf<AzNavItem>()
     var displayAppNameInHeader: Boolean = false
     var packRailButtons: Boolean = false
     var expandedRailWidth: Dp = 260.dp

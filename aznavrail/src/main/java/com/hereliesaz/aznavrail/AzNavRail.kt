@@ -88,7 +88,9 @@ fun AzNavRail(
     disableSwipeToOpen: Boolean = false,
     content: AzNavRailScope.() -> Unit
 ) {
-    val scope = remember(content) { AzNavRailScopeImpl().apply(content) }
+    val scope = remember { AzNavRailScopeImpl() }
+    scope.navItems.clear()
+    scope.apply(content)
 
     val context = LocalContext.current
     val packageManager = context.packageManager
@@ -173,12 +175,18 @@ fun AzNavRail(
                             Text(text = if (isExpanded) appName else appName.firstOrNull()?.toString() ?: "", style = MaterialTheme.typography.titleMedium)
                         } else {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize)) {
-                                    if (appIcon != null) {
-                                        Image(painter = rememberAsyncImagePainter(model = appIcon), contentDescription = "Toggle menu, showing $appName icon")
-                                    } else {
-                                        Icon(imageVector = Icons.Default.Menu, contentDescription = "Toggle Menu")
-                                    }
+                                if (appIcon != null) {
+                                    Image(
+                                        painter = rememberAsyncImagePainter(model = appIcon),
+                                        contentDescription = "Toggle menu, showing $appName icon",
+                                        modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize)
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Default.Menu,
+                                        contentDescription = "Toggle Menu",
+                                        modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize)
+                                    )
                                 }
                                 if (isExpanded) {
                                     Spacer(modifier = Modifier.width(AzNavRailDefaults.HeaderTextSpacer))
