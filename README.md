@@ -16,10 +16,6 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 -   **Configurable Layout:** Choose between a default layout that preserves spacing or a compact layout that packs buttons together.
 -   **Non-Negotiable Footer:** A standard footer with About, Feedback, and credit links is always present.
 
-## Screenshots
-
-*(Screenshots will be added here soon)*
-
 ## Setup
 
 To use this library, 
