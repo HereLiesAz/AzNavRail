@@ -2,6 +2,7 @@ package com.hereliesaz.aznavrail
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.model.AzNavItem
 
@@ -43,50 +44,50 @@ interface AzNavRailScope {
     fun azRailItem(id: String, text: String, color: Color? = null, onClick: () -> Unit)
 
     /**
-     * Adds a toggle switch item that only appears in the expanded menu.
+     * Adds a toggle item that only appears in the expanded menu. The text of the item changes to reflect the state.
      * @param id The unique identifier for the item.
-     * @param text The text to display for the item.
-     * @param isChecked Whether the switch is checked.
+     * @param isChecked Whether the toggle is in the "on" state.
+     * @param toggleOnText The text to display when the toggle is on.
+     * @param toggleOffText The text to display when the toggle is off.
      * @param onClick The callback to be invoked when the item is clicked.
      */
-    fun azMenuToggle(id: String, text: String, isChecked: Boolean, onClick: () -> Unit)
+    fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, onClick: () -> Unit)
 
     /**
-     * Adds a toggle switch item that appears in both the collapsed rail and the expanded menu.
+     * Adds a toggle item that appears in both the collapsed rail and the expanded menu. The text of the item changes to reflect the state.
      * @param id The unique identifier for the item.
-     * @param text The text to display for the item.
      * @param color The color of the item.
-     * @param isChecked Whether the switch is checked.
+     * @param isChecked Whether the toggle is in the "on" state.
+     * @param toggleOnText The text to display when the toggle is on.
+     * @param toggleOffText The text to display when the toggle is off.
      * @param onClick The callback to be invoked when the item is clicked.
      */
-    fun azRailToggle(id: String, text: String, color: Color? = null, isChecked: Boolean, onClick: () -> Unit)
+    fun azRailToggle(id: String, color: Color? = null, isChecked: Boolean, toggleOnText: String, toggleOffText: String, onClick: () -> Unit)
 
     /**
      * Adds a cycler item that only appears in the expanded menu.
-     * A cycler item cycles through a list of options when clicked.
+     * A cycler item cycles through a list of options when clicked. The action is triggered after a 1-second delay.
      * @param id The unique identifier for the item.
-     * @param text The text to display for the item.
      * @param options The list of options to cycle through.
      * @param selectedOption The currently selected option.
      * @param onClick The callback to be invoked when the item is clicked.
      */
-    fun azMenuCycler(id: String, text: String, options: List<String>, selectedOption: String, onClick: () -> Unit)
+    fun azMenuCycler(id: String, options: List<String>, selectedOption: String, onClick: () -> Unit)
 
     /**
      * Adds a cycler item that appears in both the collapsed rail and the expanded menu.
-     * A cycler item cycles through a list of options when clicked.
+     * A cycler item cycles through a list of options when clicked. The action is triggered after a 1-second delay.
      * @param id The unique identifier for the item.
-     * @param text The text to display for the item.
      * @param color The color of the item.
      * @param options The list of options to cycle through.
      * @param selectedOption The currently selected option.
      * @param onClick The callback to be invoked when the item is clicked.
      */
-    fun azRailCycler(id: String, text: String, color: Color? = null, options: List<String>, selectedOption: String, onClick: () -> Unit)
+    fun azRailCycler(id: String, color: Color? = null, options: List<String>, selectedOption: String, onClick: () -> Unit)
 }
 
 internal class AzNavRailScopeImpl : AzNavRailScope {
-    val navItems = mutableListOf<AzNavItem>()
+    val navItems = mutableStateListOf<AzNavItem>()
     var displayAppNameInHeader: Boolean = false
     var packRailButtons: Boolean = false
     var expandedRailWidth: Dp = 260.dp
@@ -115,19 +116,19 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         navItems.add(AzNavItem(id = id, text = text, isRailItem = true, color = color, onClick = onClick))
     }
 
-    override fun azMenuToggle(id: String, text: String, isChecked: Boolean, onClick: () -> Unit) {
-        navItems.add(AzNavItem(id = id, text = text, isRailItem = false, isToggle = true, isChecked = isChecked, onClick = onClick))
+    override fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, onClick: () -> Unit) {
+        navItems.add(AzNavItem(id = id, text = "", isRailItem = false, isToggle = true, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, onClick = onClick))
     }
 
-    override fun azRailToggle(id: String, text: String, color: Color?, isChecked: Boolean, onClick: () -> Unit) {
-        navItems.add(AzNavItem(id = id, text = text, isRailItem = true, color = color, isToggle = true, isChecked = isChecked, onClick = onClick))
+    override fun azRailToggle(id: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, onClick: () -> Unit) {
+        navItems.add(AzNavItem(id = id, text = "", isRailItem = true, color = color, isToggle = true, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, onClick = onClick))
     }
 
-    override fun azMenuCycler(id: String, text: String, options: List<String>, selectedOption: String, onClick: () -> Unit) {
-        navItems.add(AzNavItem(id = id, text = text, isRailItem = false, isCycler = true, options = options, selectedOption = selectedOption, onClick = onClick))
+    override fun azMenuCycler(id: String, options: List<String>, selectedOption: String, onClick: () -> Unit) {
+        navItems.add(AzNavItem(id = id, text = "", isRailItem = false, isCycler = true, options = options, selectedOption = selectedOption, onClick = onClick))
     }
 
-    override fun azRailCycler(id: String, text: String, color: Color?, options: List<String>, selectedOption: String, onClick: () -> Unit) {
-        navItems.add(AzNavItem(id = id, text = text, isRailItem = true, color = color, isCycler = true, options = options, selectedOption = selectedOption, onClick = onClick))
+    override fun azRailCycler(id: String, color: Color?, options: List<String>, selectedOption: String, onClick: () -> Unit) {
+        navItems.add(AzNavItem(id = id, text = "", isRailItem = true, color = color, isCycler = true, options = options, selectedOption = selectedOption, onClick = onClick))
     }
 }
