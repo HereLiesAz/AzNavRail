@@ -197,70 +197,65 @@ fun AzNavRail(
                     }
                 }
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    if (isExpanded) {
-                        Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                if (isExpanded) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                             scope.navItems.forEach { item ->
                                 val onCyclerClick = if (item.isCycler) {
                                     {
                                         val state = cyclerStates[item.id]
-                                        if (state != null) {
-                                            state.job?.cancel()
-                                            val options = requireNotNull(item.options) { "Cycler item '${item.id}' must have options" }
-                                            val currentIndex = options.indexOf(state.displayedOption)
-                                            val nextIndex = (currentIndex + 1) % options.size
-                                            val nextOption = options[nextIndex]
-                                            val clickCount = state.pendingClickCount + 1
-                                            cyclerStates[item.id] = state.copy(
-                                                displayedOption = nextOption,
-                                                pendingClickCount = clickCount,
-                                                job = coroutineScope.launch {
-                                                    delay(1000L)
-                                                    repeat(clickCount) {
-                                                        item.onClick()
-                                                    }
-                                                    cyclerStates[item.id] = cyclerStates[item.id]!!.copy(pendingClickCount = 0, job = null)
+                                    if (state != null) {
+                                        state.job?.cancel()
+                                        val options = requireNotNull(item.options) { "Cycler item '${item.id}' must have options" }
+                                        val currentIndex = options.indexOf(state.displayedOption)
+                                        val nextIndex = (currentIndex + 1) % options.size
+                                        val nextOption = options[nextIndex]
+                                        val clickCount = state.pendingClickCount + 1
+                                        cyclerStates[item.id] = state.copy(
+                                            displayedOption = nextOption,
+                                            pendingClickCount = clickCount,
+                                            job = coroutineScope.launch {
+                                                delay(1000L)
+                                                repeat(clickCount) {
+                                                    item.onClick()
                                                 }
-                                            )
-                                        }
+                                                cyclerStates[item.id] = cyclerStates[item.id]!!.copy(pendingClickCount = 0, job = null)
+                                            }
+                                        )
                                     }
-                                } else {
-                                    item.onClick
-                                }
-                                val finalItem = if (item.isCycler) {
-                                    item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption)
-                                } else {
-                                    item
-                                }
-                                MenuItem(item = finalItem, onCyclerClick = onCyclerClick)
-                            }
-                            if (scope.showFooter) {
-                                Footer(appName = appName)
-                            }
-                        }
-                    } else {
-                        val railItems = remember(scope) { scope.navItems.filter { it.isRailItem } }
-                        Column(
-                            modifier = Modifier
-                                .padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding)
-                                .verticalScroll(rememberScrollState()),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = if (scope.packRailButtons) Arrangement.Top else Arrangement.spacedBy(
-                                AzNavRailDefaults.RailContentVerticalArrangement,
-                                Alignment.CenterVertically
-                            )
-                        ) {
-                            if (scope.packRailButtons) {
-                                railItems.forEach { item ->
-                                    RailContent(item = item)
                                 }
                             } else {
-                                scope.navItems.forEach { menuItem ->
-                                    if (menuItem.isRailItem) {
-                                        RailContent(item = menuItem)
-                                    } else {
-                                        Spacer(modifier = Modifier.height(AzNavRailDefaults.RailContentSpacerHeight))
-                                    }
+                                item.onClick
+                            }
+                            val finalItem = if (item.isCycler) {
+                                item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption)
+                            } else {
+                                item
+                            }
+                            MenuItem(item = finalItem, onCyclerClick = onCyclerClick)
+                        }
+                        }
+                    }
+                    if (scope.showFooter) {
+                        Footer(appName = appName)
+                    }
+                } else {
+                    val railItems = remember(scope) { scope.navItems.filter { it.isRailItem } }
+                    Column(
+                        modifier = Modifier.padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding).verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = if (scope.packRailButtons) Arrangement.Top else Arrangement.spacedBy(AzNavRailDefaults.RailContentVerticalArrangement, Alignment.CenterVertically)
+                    ) {
+                        if (scope.packRailButtons) {
+                            railItems.forEach { item ->
+                                RailContent(item = item)
+                            }
+                        } else {
+                            scope.navItems.forEach { menuItem ->
+                                if (menuItem.isRailItem) {
+                                    RailContent(item = menuItem)
+                                } else {
+                                    Spacer(modifier = Modifier.height(AzNavRailDefaults.RailContentSpacerHeight))
                                 }
                             }
                         }
