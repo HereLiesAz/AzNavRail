@@ -234,9 +234,9 @@ fun AzNavRail(
                                 }
                                 MenuItem(item = finalItem, onCyclerClick = onCyclerClick)
                             }
-                        }
-                        if (scope.showFooter) {
-                            Footer(appName = appName)
+                            if (scope.showFooter) {
+                                Footer(appName = appName)
+                            }
                         }
                     } else {
                         val railItems = remember(scope) { scope.navItems.filter { it.isRailItem } }
