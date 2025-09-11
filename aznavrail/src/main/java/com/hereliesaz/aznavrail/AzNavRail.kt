@@ -44,7 +44,7 @@ private object AzNavRailLogger {
 private object AzNavRailDefaults {
     const val SWIPE_THRESHOLD_PX = 20f
     val HeaderPadding = 16.dp
-    val HeaderIconSize = 56.dp
+    val HeaderIconSize = 64.dp
     val HeaderTextSpacer = 8.dp
     val RailContentHorizontalPadding = 4.dp
     val RailContentVerticalArrangement = 8.dp
@@ -241,9 +241,14 @@ fun AzNavRail(
                     } else {
                         val railItems = remember(scope) { scope.navItems.filter { it.isRailItem } }
                         Column(
-                            modifier = Modifier.padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding),
+                            modifier = Modifier
+                                .padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding)
+                                .verticalScroll(rememberScrollState()),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = if (scope.packRailButtons) Arrangement.Top else Arrangement.spacedBy(AzNavRailDefaults.RailContentVerticalArrangement, Alignment.CenterVertically)
+                            verticalArrangement = if (scope.packRailButtons) Arrangement.Top else Arrangement.spacedBy(
+                                AzNavRailDefaults.RailContentVerticalArrangement,
+                                Alignment.CenterVertically
+                            )
                         ) {
                             if (scope.packRailButtons) {
                                 railItems.forEach { item ->
