@@ -198,12 +198,12 @@ fun AzNavRail(
                 }
             ) {
                 if (isExpanded) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Column(modifier = Modifier.fillMaxHeight()) {
+                        Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                             scope.navItems.forEach { item ->
                                 val onCyclerClick = if (item.isCycler) {
-                                    {
-                                        val state = cyclerStates[item.id]
+                                {
+                                    val state = cyclerStates[item.id]
                                     if (state != null) {
                                         state.job?.cancel()
                                         val options = requireNotNull(item.options) { "Cycler item '${item.id}' must have options" }
@@ -234,10 +234,10 @@ fun AzNavRail(
                             }
                             MenuItem(item = finalItem, onCyclerClick = onCyclerClick)
                         }
-                        }
                     }
                     if (scope.showFooter) {
                         Footer(appName = appName)
+                    }
                     }
                 } else {
                     val railItems = remember(scope) { scope.navItems.filter { it.isRailItem } }
