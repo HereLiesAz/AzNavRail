@@ -44,7 +44,7 @@ private object AzNavRailLogger {
 private object AzNavRailDefaults {
     const val SWIPE_THRESHOLD_PX = 20f
     val HeaderPadding = 16.dp
-    val HeaderIconSize = 64.dp
+    val HeaderIconSize = 72.dp
     val HeaderTextSpacer = 8.dp
     val RailContentHorizontalPadding = 4.dp
     val RailContentVerticalArrangement = 8.dp
