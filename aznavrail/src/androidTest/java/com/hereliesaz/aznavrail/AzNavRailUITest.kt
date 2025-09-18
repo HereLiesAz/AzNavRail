@@ -1,13 +1,11 @@
 package com.hereliesaz.aznavrail
 
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.unit.dp
+import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -42,6 +40,11 @@ class AzNavRailUITest {
 
     @Test
     fun appIcon_hasCorrectSize() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val appIcon = context.packageManager.getApplicationIcon(context.packageName)
+        val expectedWidth = appIcon.intrinsicWidth
+        val expectedHeight = appIcon.intrinsicHeight
+
         composeTestRule.setContent {
             AzNavRail {}
         }
@@ -49,12 +52,9 @@ class AzNavRailUITest {
         val iconNode = composeTestRule.onNodeWithContentDescription("Toggle menu, showing App icon", useUnmergedTree = true)
         iconNode.assertExists()
 
-        val density = composeTestRule.density
-        val expectedSize = with(density) { 72.dp.toPx() }
-
         val bounds = iconNode.fetchSemanticsNode().size
 
-        assertEquals(expectedSize.toInt(), bounds.width)
-        assertEquals(expectedSize.toInt(), bounds.height)
+        assertEquals(expectedWidth, bounds.width)
+        assertEquals(expectedHeight, bounds.height)
     }
 }
