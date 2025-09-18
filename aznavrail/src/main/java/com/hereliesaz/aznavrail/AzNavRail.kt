@@ -178,8 +178,7 @@ fun AzNavRail(
                                 if (appIcon != null) {
                                     Image(
                                         painter = rememberAsyncImagePainter(model = appIcon),
-                                        contentDescription = "Toggle menu, showing $appName icon",
-                                        modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize)
+                                        contentDescription = "Toggle menu, showing $appName icon"
                                     )
                                 } else {
                                     Icon(
