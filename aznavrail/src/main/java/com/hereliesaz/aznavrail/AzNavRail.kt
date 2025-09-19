@@ -231,11 +231,11 @@ fun AzNavRail(
                             } else {
                                 item
                             }
-                            MenuItem(item = finalItem, onCyclerClick = onCyclerClick)
+                            MenuItem(item = finalItem, onCyclerClick = onCyclerClick, onToggle = onToggle)
                         }
                     }
                     if (scope.showFooter) {
-                        Footer(appName = appName)
+                        Footer(appName = appName, onToggle = onToggle)
                     }
                     }
                 } else {
@@ -299,11 +299,13 @@ private fun RailContent(item: AzNavItem) {
  * Composable for displaying a single item in the expanded menu. The text is always displayed on a single line.
  * @param item The navigation item to display.
  * @param onCyclerClick The click handler for cycler items.
+ * @param onToggle The click handler for toggling the rail's expanded state.
  */
 @Composable
 private fun MenuItem(
     item: AzNavItem,
-    onCyclerClick: () -> Unit = item.onClick
+    onCyclerClick: () -> Unit = item.onClick,
+    onToggle: () -> Unit = {}
 ) {
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
@@ -316,7 +318,12 @@ private fun MenuItem(
             onValueChange = { _ -> item.onClick() }
         )
     } else {
-        Modifier.clickable(onClick = onCyclerClick)
+        Modifier.clickable {
+            onCyclerClick()
+            if (item.collapseOnClick && !item.isToggle && !item.isCycler) {
+                onToggle()
+            }
+        }
     }
 
     Row(
@@ -332,9 +339,10 @@ private fun MenuItem(
 /**
  * Composable for displaying the footer in the expanded menu.
  * @param appName The name of the app.
+ * @param onToggle The click handler for toggling the rail's expanded state.
  */
 @Composable
-private fun Footer(appName: String) {
+private fun Footer(appName: String, onToggle: () -> Unit) {
     val context = LocalContext.current
     val onAboutClick: () -> Unit = remember(context, appName) {
         {
@@ -373,15 +381,16 @@ private fun Footer(appName: String) {
 
     Column {
         HorizontalDivider(modifier = Modifier.padding(horizontal = AzNavRailDefaults.FooterDividerHorizontalPadding, vertical = AzNavRailDefaults.FooterDividerVerticalPadding), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-        MenuItem(item = AzNavItem(id = "about", text = "About", isRailItem = false, onClick = onAboutClick))
-        MenuItem(item = AzNavItem(id = "feedback", text = "Feedback", isRailItem = false, onClick = onFeedbackClick))
+        MenuItem(item = AzNavItem(id = "about", text = "About", isRailItem = false, onClick = onAboutClick), onToggle = onToggle)
+        MenuItem(item = AzNavItem(id = "feedback", text = "Feedback", isRailItem = false, onClick = onFeedbackClick), onToggle = onToggle)
         MenuItem(
             item = AzNavItem(
                 id = "credit",
                 text = "@HereLiesAz",
                 isRailItem = false,
                 onClick = onCreditClick
-            )
+            ),
+            onToggle = onToggle
         )
         Spacer(modifier = Modifier.height(AzNavRailDefaults.FooterSpacerHeight))
     }
