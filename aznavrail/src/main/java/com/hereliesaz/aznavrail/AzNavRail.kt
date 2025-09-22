@@ -78,8 +78,10 @@ private data class CyclerTransientState(
  *
  * The content of the rail and menu is defined using a DSL within the `content` lambda.
  *
- * The header of the rail will automatically display your app's icon. This icon is not a button,
- * but it is the same size as the rail items. Clicking it will expand or collapse the rail.
+ * The header of the rail will automatically display your app's icon by default. This can be changed
+ * to display the app's name instead by using the `azSettings` function in the content lambda.
+ * The header is not a button, but it is the same size as the rail items. Clicking it will expand
+ * or collapse the rail.
  *
  * @param modifier The modifier to be applied to the navigation rail.
  * @param initiallyExpanded Whether the navigation rail is expanded by default.

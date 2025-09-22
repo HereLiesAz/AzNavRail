@@ -12,7 +12,7 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 -   **Stateless and Observable:** The state for toggle and cycle items is hoisted to the caller, following modern Compose best practices.
 -   **Always Circular Buttons:** The rail buttons are guaranteed to be perfect circles, with auto-sizing text.
 -   **Customizable Colors:** Specify a custom color for each rail button.
--   **Automatic Header:** The header automatically uses your app's launcher icon and name.
+-   **Automatic Header:** The header automatically uses your app's launcher icon by default. You can configure it to display the app name instead.
 -   **Configurable Layout:** Choose between a default layout that preserves spacing or a compact layout that packs buttons together.
 -   **Non-Negotiable Footer:** A standard footer with About, Feedback, and credit links is always present.
 
@@ -161,7 +161,7 @@ You declare items and configure the rail within the content lambda of `AzNavRail
 
 **Note:** Functions prefixed with `azMenu` will only appear in the expanded menu view. Functions prefixed with `azRail` will appear on the collapsed rail, and their text will be used as the label in the expanded menu.
 
--   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean)`: Configures the settings for the `AzNavRail`.
+-   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean)`: Configures the settings for the `AzNavRail`. If `displayAppNameInHeader` is true, the app name is shown in the header instead of the app icon.
 -   `azMenuItem(id: String, text: String, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu.
 -   `azRailItem(id: String, text: String, color: Color? = null, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu.
 -   `azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, onClick: () -> Unit)`: Adds a toggle switch item that only appears in the expanded menu.
