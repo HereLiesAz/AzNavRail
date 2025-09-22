@@ -9,9 +9,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * What's so hard to understand about a button? It's a circle, it has text, and you click it.
- * This one is special, though, because it's the same size as the buttons in the `AzNavRail`.
- * The text will also shrink to fit, so you don't have to worry about it looking ugly.
+ * A circular, text-only button with auto-sizing text.
+ * This button is styled to be consistent with the buttons used in the `AzNavRail` component.
  *
  * @param onClick What happens when you click the button. You have to tell it what to do.
  * @param text The text that shows up on the button.
@@ -34,9 +33,8 @@ fun AzButton(
 }
 
 /**
- * This is a button that can be on or off. It's like a light switch.
- * You give it two pieces of text, one for when it's on and one for when it's off.
- * It will show the right text all by itself.
+ * A toggle button that displays different text based on its on/off state.
+ * This button is styled to be consistent with the buttons used in the `AzNavRail` component.
  *
  * @param textWhenOn The text to show when the button is on.
  * @param textWhenOff The text to show when the button is off.
@@ -63,10 +61,9 @@ fun AzToggle(
 }
 
 /**
- * This button is like a rolodex. You give it a list of things, and it will show them one by one.
- * Every time you click it, it shows the next thing in the list.
- * When it gets to the end, it starts over from the beginning.
- * The action for the selected option is executed after a 1-second delay.
+ * A button that cycles through a list of options. Each option consists of a text label and an associated action.
+ * When the button is clicked, it displays the next option in the list.
+ * The action for an option is executed one second after it is displayed.
  *
  * @param options The list of things to show, as pairs of (text, action). You can give it as many as you want.
  * @param modifier If you want to change how the button looks, you can use this.

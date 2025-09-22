@@ -197,7 +197,7 @@ fun AzNavRail(
                                 modifier = textModifier,
                                 softWrap = false,
                                 maxLines = if (isExpanded && appName.contains("\n")) Int.MAX_VALUE else 1,
-                                textAlign = TextAlign.Center
+                                textAlign = if (isExpanded) TextAlign.Center else TextAlign.Start
                             )
                         } else {
                             Row(verticalAlignment = Alignment.CenterVertically) {
