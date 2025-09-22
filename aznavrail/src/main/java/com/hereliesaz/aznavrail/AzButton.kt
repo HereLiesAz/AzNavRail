@@ -38,6 +38,17 @@ fun AzButton(
     content: AzButtonScope.() -> Unit
 ) {
     val scope = AzButtonScopeImpl().apply(content)
+    require(scope.text.isNotEmpty()) {
+        """
+        The text for an AzButton cannot be empty.
+
+        // AzButton sample
+        AzButton {
+            text("Click Me")
+            onClick { /* ... */ }
+        }
+        """.trimIndent()
+    }
     AzNavRailButton(
         onClick = scope.onClick,
         text = scope.text,
@@ -78,6 +89,20 @@ fun AzToggle(
     content: AzToggleScope.() -> Unit
 ) {
     val scope = AzToggleScopeImpl().apply(content)
+    require(scope.defaultText.isNotEmpty() && scope.altText.isNotEmpty()) {
+        """
+        The default and alt text for an AzToggle cannot be empty.
+
+        // AzToggle sample
+        AzToggle(
+            isOn = true,
+            onToggle = { /* ... */ }
+        ) {
+            default(text = "Off")
+            alt(text = "On")
+        }
+        """.trimIndent()
+    }
 
     val text = if (isOn) scope.altText else scope.defaultText
     val color = if (isOn) scope.altColor else scope.defaultColor
@@ -106,6 +131,17 @@ interface AzCyclerScope {
 private class AzCyclerScopeImpl : AzCyclerScope {
     val states = mutableListOf<CyclerState>()
     override fun state(text: String, onClick: () -> Unit, color: Color?) {
+        require(text.isNotEmpty()) {
+            """
+            The text for a cycler state cannot be empty.
+
+            // AzCycler sample
+            AzCycler {
+                state(text = "Option A", onClick = { /* ... */ })
+                state(text = "Option B", onClick = { /* ... */ })
+            }
+            """.trimIndent()
+        }
         states.add(CyclerState(text, onClick, color))
     }
 }
@@ -117,6 +153,18 @@ fun AzCycler(
 ) {
     val scope = AzCyclerScopeImpl().apply(content)
     var currentIndex by rememberSaveable { mutableStateOf(0) }
+
+    require(scope.states.isNotEmpty()) {
+        """
+        An AzCycler must have at least one state.
+
+        // AzCycler sample
+        AzCycler {
+            state(text = "Option A", onClick = { /* ... */ })
+            state(text = "Option B", onClick = { /* ... */ })
+        }
+        """.trimIndent()
+    }
 
     if (scope.states.isEmpty()) {
         return

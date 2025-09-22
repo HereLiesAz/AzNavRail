@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 
@@ -26,6 +27,35 @@ class AzButtonTest {
             }
         }
         composeTestRule.onNodeWithText(text).assertIsDisplayed()
+    }
+
+    @Test
+    fun azButton_withEmptyText_throwsException() {
+        try {
+            composeTestRule.setContent {
+                AzButton {
+                    text("")
+                    onClick {}
+                }
+            }
+            fail("Expected IllegalArgumentException")
+        } catch (e: IllegalArgumentException) {
+            // Success
+        }
+    }
+
+    @Test
+    fun azCycler_withEmptyTextInState_throwsException() {
+        try {
+            composeTestRule.setContent {
+                AzCycler {
+                    state(text = "", onClick = {})
+                }
+            }
+            fail("Expected IllegalArgumentException")
+        } catch (e: IllegalArgumentException) {
+            // Success
+        }
     }
 
     @Test
@@ -49,6 +79,24 @@ class AzButtonTest {
     }
 
     @Test
+    fun azToggle_withEmptyText_throwsException() {
+        try {
+            composeTestRule.setContent {
+                AzToggle(
+                    isOn = false,
+                    onToggle = {}
+                ) {
+                    default(text = "")
+                    alt(text = "On")
+                }
+            }
+            fail("Expected IllegalArgumentException")
+        } catch (e: IllegalArgumentException) {
+            // Success
+        }
+    }
+
+    @Test
     fun azCycler_cyclesThroughOptions() {
         val option1 = "Option 1"
         val option2 = "Option 2"
@@ -68,5 +116,19 @@ class AzButtonTest {
         composeTestRule.onNodeWithText(option3).assertIsDisplayed()
         composeTestRule.onNodeWithText(option3).performClick()
         composeTestRule.onNodeWithText(option1).assertIsDisplayed()
+    }
+
+    @Test
+    fun azCycler_withNoStates_throwsException() {
+        try {
+            composeTestRule.setContent {
+                AzCycler {
+                    // No states
+                }
+            }
+            fail("Expected IllegalArgumentException")
+        } catch (e: IllegalArgumentException) {
+            // Success
+        }
     }
 }
