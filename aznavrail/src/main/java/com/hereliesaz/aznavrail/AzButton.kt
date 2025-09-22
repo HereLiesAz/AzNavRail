@@ -37,7 +37,7 @@ fun AzButton(
     modifier: Modifier = Modifier,
     content: AzButtonScope.() -> Unit
 ) {
-    val scope = AzButtonScopeImpl().apply(content)
+    val scope = remember { AzButtonScopeImpl() }.apply(content)
     AzNavRailButton(
         onClick = scope.onClick,
         text = scope.text,
@@ -77,7 +77,7 @@ fun AzToggle(
     modifier: Modifier = Modifier,
     content: AzToggleScope.() -> Unit
 ) {
-    val scope = AzToggleScopeImpl().apply(content)
+    val scope = remember { AzToggleScopeImpl() }.apply(content)
 
     val text = if (isOn) scope.altText else scope.defaultText
     val color = if (isOn) scope.altColor else scope.defaultColor
@@ -115,7 +115,7 @@ fun AzCycler(
     modifier: Modifier = Modifier,
     content: AzCyclerScope.() -> Unit
 ) {
-    val scope = AzCyclerScopeImpl().apply(content)
+    val scope = remember { AzCyclerScopeImpl() }.apply(content)
     var currentIndex by rememberSaveable { mutableStateOf(0) }
 
     if (scope.states.isEmpty()) {
