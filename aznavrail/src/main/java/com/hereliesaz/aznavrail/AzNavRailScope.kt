@@ -12,7 +12,7 @@ import com.hereliesaz.aznavrail.model.AzNavItem
 interface AzNavRailScope {
     /**
      * Configures the settings for the [AzNavRail].
-     * @param displayAppNameInHeader Whether to display the app name in the header.
+     * @param displayAppNameInHeader If true, displays the app name in the header instead of the app icon. Defaults to false.
      * @param packRailButtons Whether to pack the rail buttons together at the top of the rail.
      * @param expandedRailWidth The width of the rail when it is expanded.
      * @param collapsedRailWidth The width of the rail when it is collapsed.
