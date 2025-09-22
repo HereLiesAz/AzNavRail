@@ -21,7 +21,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.model.AzNavItem
@@ -75,6 +77,9 @@ private data class CyclerTransientState(
  * It is designed to be "batteries-included," providing common behaviors and features out-of-the-box.
  *
  * The content of the rail and menu is defined using a DSL within the `content` lambda.
+ *
+ * The header of the rail will automatically display your app's icon. This icon is not a button,
+ * but it is the same size as the rail items. Clicking it will expand or collapse the rail.
  *
  * @param modifier The modifier to be applied to the navigation rail.
  * @param initiallyExpanded Whether the navigation rail is expanded by default.
@@ -170,16 +175,34 @@ fun AzNavRail(
                 modifier = Modifier.width(railWidth),
                 containerColor = Color.Transparent,
                 header = {
-                    IconButton(onClick = onToggle, modifier = Modifier.padding(top = AzNavRailDefaults.HeaderPadding, bottom = AzNavRailDefaults.HeaderPadding)) {
+                    Box(
+                        modifier = Modifier
+                            .padding(top = AzNavRailDefaults.HeaderPadding, bottom = AzNavRailDefaults.HeaderPadding)
+                            .clickable(
+                                onClick = onToggle,
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
                         if (scope.displayAppNameInHeader) {
-                            Text(text = if (isExpanded) appName else appName.firstOrNull()?.toString() ?: "", style = MaterialTheme.typography.titleMedium)
+                            val textModifier = Modifier.width(scope.expandedRailWidth)
+                            Text(
+                                text = if (isExpanded) appName else appName.firstOrNull()?.toString() ?: "",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = textModifier,
+                                softWrap = false,
+                                maxLines = if (isExpanded && appName.contains("\n")) Int.MAX_VALUE else 1,
+                                textAlign = if (isExpanded) TextAlign.Center else TextAlign.Start
+                            )
                         } else {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (appIcon != null) {
                                     Image(
                                         painter = rememberAsyncImagePainter(model = appIcon),
                                         contentDescription = "Toggle menu, showing $appName icon",
-                                        modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize)
+                                        modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize),
+                                        contentScale = ContentScale.Crop
                                     )
                                 } else {
                                     Icon(
