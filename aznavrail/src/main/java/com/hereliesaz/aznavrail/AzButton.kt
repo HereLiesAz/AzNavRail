@@ -37,7 +37,7 @@ fun AzButton(
     modifier: Modifier = Modifier,
     content: AzButtonScope.() -> Unit
 ) {
-    val scope = remember { AzButtonScopeImpl() }.apply(content)
+    val scope = AzButtonScopeImpl().apply(content)
     AzNavRailButton(
         onClick = scope.onClick,
         text = scope.text,
