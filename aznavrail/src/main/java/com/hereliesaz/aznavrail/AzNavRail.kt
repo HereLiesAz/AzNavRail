@@ -186,11 +186,7 @@ fun AzNavRail(
                         contentAlignment = Alignment.Center
                     ) {
                         if (scope.displayAppNameInHeader) {
-                            val textModifier = if (isExpanded) {
-                                Modifier.width(scope.expandedRailWidth)
-                            } else {
-                                Modifier
-                            }
+                            val textModifier = Modifier.width(scope.expandedRailWidth)
                             Text(
                                 text = if (isExpanded) appName else appName.firstOrNull()?.toString() ?: "",
                                 style = MaterialTheme.typography.titleMedium,
