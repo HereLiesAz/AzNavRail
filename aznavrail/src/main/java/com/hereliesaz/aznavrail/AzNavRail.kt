@@ -8,7 +8,20 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
@@ -24,6 +37,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.model.AzNavItem
@@ -75,6 +89,10 @@ private data class CyclerTransientState(
  *
  * This composable provides a vertical navigation rail that can be expanded to a full menu drawer.
  * It is designed to be "batteries-included," providing common behaviors and features out-of-the-box.
+ *
+ * The rail is responsive and will adjust its layout for landscape and portrait orientations.
+ * The content of both the collapsed rail and the expanded menu is scrollable, allowing for a large
+ * number of navigation items.
  *
  * The content of the rail and menu is defined using a DSL within the `content` lambda.
  *
@@ -159,7 +177,10 @@ fun AzNavRail(
         }
     }
 
-    Box(modifier = modifier) {
+    BoxWithConstraints(modifier = modifier) {
+        val isLandscape = maxWidth > maxHeight
+        val buttonSize = if (isLandscape) (maxHeight - AzNavRailDefaults.HeaderPadding * 2) / 8 else AzNavRailDefaults.HeaderIconSize
+
         Row(
             modifier = Modifier.pointerInput(isExpanded, disableSwipeToOpen) {
                 detectDragGestures { change, dragAmount ->
@@ -223,58 +244,58 @@ fun AzNavRail(
                         Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                             scope.navItems.forEach { item ->
                                 val onCyclerClick = if (item.isCycler) {
-                                {
-                                    val state = cyclerStates[item.id]
-                                    if (state != null) {
-                                        state.job?.cancel()
-                                        val options = requireNotNull(item.options) { "Cycler item '${item.id}' must have options" }
-                                        val currentIndex = options.indexOf(state.displayedOption)
-                                        val nextIndex = (currentIndex + 1) % options.size
-                                        val nextOption = options[nextIndex]
-                                        val clickCount = state.pendingClickCount + 1
-                                        cyclerStates[item.id] = state.copy(
-                                            displayedOption = nextOption,
-                                            pendingClickCount = clickCount,
-                                            job = coroutineScope.launch {
-                                                delay(1000L)
-                                                repeat(clickCount) {
-                                                    item.onClick()
+                                    {
+                                        val state = cyclerStates[item.id]
+                                        if (state != null) {
+                                            state.job?.cancel()
+                                            val options = requireNotNull(item.options) { "Cycler item '${item.id}' must have options" }
+                                            val currentIndex = options.indexOf(state.displayedOption)
+                                            val nextIndex = (currentIndex + 1) % options.size
+                                            val nextOption = options[nextIndex]
+                                            val clickCount = state.pendingClickCount + 1
+                                            cyclerStates[item.id] = state.copy(
+                                                displayedOption = nextOption,
+                                                pendingClickCount = clickCount,
+                                                job = coroutineScope.launch {
+                                                    delay(1000L)
+                                                    repeat(clickCount) {
+                                                        item.onClick()
+                                                    }
+                                                    cyclerStates[item.id] = cyclerStates[item.id]!!.copy(pendingClickCount = 0, job = null)
                                                 }
-                                                cyclerStates[item.id] = cyclerStates[item.id]!!.copy(pendingClickCount = 0, job = null)
-                                            }
-                                        )
+                                            )
+                                        }
                                     }
+                                } else {
+                                    item.onClick
                                 }
-                            } else {
-                                item.onClick
+                                val finalItem = if (item.isCycler) {
+                                    item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption)
+                                } else {
+                                    item
+                                }
+                                MenuItem(item = finalItem, onCyclerClick = onCyclerClick, onToggle = onToggle)
                             }
-                            val finalItem = if (item.isCycler) {
-                                item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption)
-                            } else {
-                                item
-                            }
-                            MenuItem(item = finalItem, onCyclerClick = onCyclerClick, onToggle = onToggle)
                         }
-                    }
-                    if (scope.showFooter) {
-                        Footer(appName = appName, onToggle = onToggle)
-                    }
+                        if (scope.showFooter) {
+                            Footer(appName = appName, onToggle = onToggle)
+                        }
                     }
                 } else {
                     val railItems = remember(scope) { scope.navItems.filter { it.isRailItem } }
-                    Column(
-                        modifier = Modifier.padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding).verticalScroll(rememberScrollState()),
+                    LazyColumn(
+                        modifier = Modifier.padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = if (scope.packRailButtons) Arrangement.Top else Arrangement.spacedBy(AzNavRailDefaults.RailContentVerticalArrangement, Alignment.CenterVertically)
                     ) {
                         if (scope.packRailButtons) {
-                            railItems.forEach { item ->
-                                RailContent(item = item)
+                            items(railItems) { item ->
+                                RailContent(item = item, buttonSize = buttonSize)
                             }
                         } else {
-                            scope.navItems.forEach { menuItem ->
+                            items(scope.navItems) { menuItem ->
                                 if (menuItem.isRailItem) {
-                                    RailContent(item = menuItem)
+                                    RailContent(item = menuItem, buttonSize = buttonSize)
                                 } else {
                                     Spacer(modifier = Modifier.height(AzNavRailDefaults.RailContentSpacerHeight))
                                 }
@@ -302,9 +323,10 @@ fun AzNavRail(
 /**
  * Composable for displaying a single item in the collapsed rail.
  * @param item The navigation item to display.
+ * @param buttonSize The size of the button.
  */
 @Composable
-private fun RailContent(item: AzNavItem) {
+private fun RailContent(item: AzNavItem, buttonSize: Dp) {
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
         item.isCycler -> item.selectedOption ?: ""
@@ -313,7 +335,8 @@ private fun RailContent(item: AzNavItem) {
     AzNavRailButton(
         onClick = item.onClick,
         text = textToShow,
-        color = item.color ?: MaterialTheme.colorScheme.primary
+        color = item.color ?: MaterialTheme.colorScheme.primary,
+        size = buttonSize
     )
 }
 

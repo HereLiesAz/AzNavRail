@@ -21,21 +21,12 @@ fun AzButton(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary
 ) {
-
-    val scope = AzButtonScopeImpl().apply(content)
-    require(scope.text.isNotEmpty()) {
-        """
-        The text for an AzButton cannot be empty.
-
-        // AzButton example
-            AzButton(
-                text = "Click Me",
-                color: Color? = null,
-                onClick = { /* Do something */ }
-            )
-        """.trimIndent()
-    }
-   
+    AzNavRailButton(
+        onClick = onClick,
+        text = text,
+        modifier = modifier,
+        color = color
+    )
 }
 
 /**
@@ -58,27 +49,13 @@ fun AzToggle(
     color: Color = MaterialTheme.colorScheme.primary
 ) {
     val text = if (isChecked) toggleOnText else toggleOffText
-    val scope = AzToggleScopeImpl().apply(content)
-    require(scope.defaultText.isNotEmpty() && scope.altText.isNotEmpty()) {
-        """
-        The default and alt text for an AzToggle cannot be empty.
-
-        // AzToggle example
-            var isToggled by remember { mutableStateOf(false) }
-            AzToggle(
-               isChecked = isToggled,
-               onToggle = { isToggled = !isToggled },
-               toggleOnText = "On",
-               toggleOffText = "Off",
-               color: Color? = null
-            )
-        """.trimIndent()
-    }
-
-    val text = if (isOn) scope.altText else scope.defaultText
-    val color = if (isOn) scope.altColor else scope.defaultColor
+    AzNavRailButton(
+        onClick = onToggle,
+        text = text,
+        modifier = modifier,
+        color = color
+    )
 }
- 
 
 /**
  * A button that cycles through a list of options when clicked.
@@ -89,9 +66,6 @@ fun AzToggle(
  * @param modifier The modifier to be applied to the button.
  * @param color The color of the button's border and text.
  */
-
-
-// --- AzCycler ---
 @Composable
 fun AzCycler(
     options: List<String>,
@@ -100,31 +74,10 @@ fun AzCycler(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary
 ) {
-    var currentIndex by rememberSaveable { mutableStateOf(options.indexOf(selectedOption)) }
-
-    if (currentIndex == -1) {
-        currentIndex = 0
-
-    require(scope.states.isNotEmpty()) {
-        """
-        An AzCycler must have at least one state.
-
-        // AzCycler example        
-            val cyclerOptions = listOf("A", "B", "C")
-            var selectedOption by remember { mutableStateOf(cyclerOptions.first()) }
-            AzCycler(
-              options = cyclerOptions,
-              selectedOption = selectedOption,
-              color: Color? = null,
-              onCycle = {
-                val currentIndex = cyclerOptions.indexOf(selectedOption)
-                selectedOption = cyclerOptions[(currentIndex + 1) % cyclerOptions.size]
-              }           
-            )
-        """.trimIndent()
-    }
-
-    if (scope.states.isEmpty()) {
-        return
-    }   
+    AzNavRailButton(
+        onClick = onCycle,
+        text = selectedOption,
+        modifier = modifier,
+        color = color
+    )
 }
