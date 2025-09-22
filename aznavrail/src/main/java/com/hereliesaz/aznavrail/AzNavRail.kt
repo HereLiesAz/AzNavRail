@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
@@ -35,6 +37,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.model.AzNavItem
@@ -86,6 +89,10 @@ private data class CyclerTransientState(
  *
  * This composable provides a vertical navigation rail that can be expanded to a full menu drawer.
  * It is designed to be "batteries-included," providing common behaviors and features out-of-the-box.
+ *
+ * The rail is responsive and will adjust its layout for landscape and portrait orientations.
+ * The content of both the collapsed rail and the expanded menu is scrollable, allowing for a large
+ * number of navigation items.
  *
  * The content of the rail and menu is defined using a DSL within the `content` lambda.
  *
@@ -172,6 +179,7 @@ fun AzNavRail(
 
     BoxWithConstraints(modifier = modifier) {
         val isLandscape = maxWidth > maxHeight
+        val buttonSize = if (isLandscape) (maxHeight - AzNavRailDefaults.HeaderPadding * 2) / 8 else AzNavRailDefaults.HeaderIconSize
 
         Row(
             modifier = Modifier.pointerInput(isExpanded, disableSwipeToOpen) {
@@ -231,9 +239,9 @@ fun AzNavRail(
                     }
                 }
             ) {
-                Column(modifier = Modifier.fillMaxHeight().verticalScroll(rememberScrollState())) {
-                    if (isExpanded) {
-                        Column(modifier = Modifier.weight(1f)) {
+                if (isExpanded) {
+                    Column(modifier = Modifier.fillMaxHeight()) {
+                        Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                             scope.navItems.forEach { item ->
                                 val onCyclerClick = if (item.isCycler) {
                                     {
@@ -272,24 +280,24 @@ fun AzNavRail(
                         if (scope.showFooter) {
                             Footer(appName = appName, onToggle = onToggle)
                         }
-                    } else {
-                        val railItems = remember(scope) { scope.navItems.filter { it.isRailItem } }
-                        Column(
-                            modifier = Modifier.padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = if (scope.packRailButtons || isLandscape) Arrangement.Top else Arrangement.spacedBy(AzNavRailDefaults.RailContentVerticalArrangement, Alignment.CenterVertically)
-                        ) {
-                            if (scope.packRailButtons) {
-                                railItems.forEach { item ->
-                                    RailContent(item = item)
-                                }
-                            } else {
-                                scope.navItems.forEach { menuItem ->
-                                    if (menuItem.isRailItem) {
-                                        RailContent(item = menuItem)
-                                    } else {
-                                        Spacer(modifier = Modifier.height(AzNavRailDefaults.RailContentSpacerHeight))
-                                    }
+                    }
+                } else {
+                    val railItems = remember(scope) { scope.navItems.filter { it.isRailItem } }
+                    LazyColumn(
+                        modifier = Modifier.padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = if (scope.packRailButtons) Arrangement.Top else Arrangement.spacedBy(AzNavRailDefaults.RailContentVerticalArrangement, Alignment.CenterVertically)
+                    ) {
+                        if (scope.packRailButtons) {
+                            items(railItems) { item ->
+                                RailContent(item = item, buttonSize = buttonSize)
+                            }
+                        } else {
+                            items(scope.navItems) { menuItem ->
+                                if (menuItem.isRailItem) {
+                                    RailContent(item = menuItem, buttonSize = buttonSize)
+                                } else {
+                                    Spacer(modifier = Modifier.height(AzNavRailDefaults.RailContentSpacerHeight))
                                 }
                             }
                         }
@@ -315,9 +323,10 @@ fun AzNavRail(
 /**
  * Composable for displaying a single item in the collapsed rail.
  * @param item The navigation item to display.
+ * @param buttonSize The size of the button.
  */
 @Composable
-private fun RailContent(item: AzNavItem) {
+private fun RailContent(item: AzNavItem, buttonSize: Dp) {
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
         item.isCycler -> item.selectedOption ?: ""
@@ -326,7 +335,8 @@ private fun RailContent(item: AzNavItem) {
     AzNavRailButton(
         onClick = item.onClick,
         text = textToShow,
-        color = item.color ?: MaterialTheme.colorScheme.primary
+        color = item.color ?: MaterialTheme.colorScheme.primary,
+        size = buttonSize
     )
 }
 
