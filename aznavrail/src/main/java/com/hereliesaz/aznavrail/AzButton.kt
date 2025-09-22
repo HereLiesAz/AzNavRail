@@ -1,21 +1,12 @@
 package com.hereliesaz.aznavrail
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import com.hereliesaz.aznavrail.util.text.AutoSizeText
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * What's so hard to understand about a button? It's a circle, it has text, and you click it.
@@ -34,30 +25,12 @@ fun AzButton(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary
 ) {
-    OutlinedButton(
+    AzNavRailButton(
         onClick = onClick,
-        modifier = modifier.size(72.dp).aspectRatio(1f),
-        shape = CircleShape,
-        border = BorderStroke(3.dp, color),
-        colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = Color.Transparent,
-            contentColor = color
-        ),
-        contentPadding = PaddingValues(8.dp)
-    ) {
-        AutoSizeText(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                textAlign = TextAlign.Center,
-                color = color
-            ),
-            modifier = Modifier.fillMaxSize(),
-            maxLines = if (text.contains("\n")) Int.MAX_VALUE else 1,
-            softWrap = false,
-            alignment = Alignment.Center,
-            lineSpaceRatio = 0.9f
-        )
-    }
+        text = text,
+        modifier = modifier,
+        color = color
+    )
 }
 
 /**
@@ -93,26 +66,35 @@ fun AzToggle(
  * This button is like a rolodex. You give it a list of things, and it will show them one by one.
  * Every time you click it, it shows the next thing in the list.
  * When it gets to the end, it starts over from the beginning.
+ * The action for the selected option is executed after a 1-second delay.
  *
- * @param options The list of things to show. You can give it as many as you want.
- * @param onOptionSelected This is how you know which option is showing. It will give you the text of the current option.
+ * @param options The list of things to show, as pairs of (text, action). You can give it as many as you want.
  * @param modifier If you want to change how the button looks, you can use this.
  * @param color The color of the button's border and text.
  */
 @Composable
 fun AzCycler(
-    vararg options: String,
-    onOptionSelected: (String) -> Unit,
+    vararg options: Pair<String, () -> Unit>,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary
 ) {
+    val coroutineScope = rememberCoroutineScope()
     var currentIndex by remember { mutableStateOf(0) }
+    var job by remember { mutableStateOf<Job?>(null) }
+
+    LaunchedEffect(currentIndex) {
+        job?.cancel()
+        job = coroutineScope.launch {
+            delay(1000L)
+            options[currentIndex].second()
+        }
+    }
+
     AzButton(
         onClick = {
             currentIndex = (currentIndex + 1) % options.size
-            onOptionSelected(options[currentIndex])
         },
-        text = options[currentIndex],
+        text = options[currentIndex].first,
         modifier = modifier,
         color = color
     )

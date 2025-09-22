@@ -21,7 +21,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.model.AzNavItem
@@ -173,16 +175,38 @@ fun AzNavRail(
                 modifier = Modifier.width(railWidth),
                 containerColor = Color.Transparent,
                 header = {
-                    IconButton(onClick = onToggle, modifier = Modifier.padding(top = AzNavRailDefaults.HeaderPadding, bottom = AzNavRailDefaults.HeaderPadding)) {
+                    Box(
+                        modifier = Modifier
+                            .padding(top = AzNavRailDefaults.HeaderPadding, bottom = AzNavRailDefaults.HeaderPadding)
+                            .clickable(
+                                onClick = onToggle,
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
                         if (scope.displayAppNameInHeader) {
-                            Text(text = if (isExpanded) appName else appName.firstOrNull()?.toString() ?: "", style = MaterialTheme.typography.titleMedium)
+                            val textModifier = if (isExpanded) {
+                                Modifier.width(scope.expandedRailWidth)
+                            } else {
+                                Modifier
+                            }
+                            Text(
+                                text = if (isExpanded) appName else appName.firstOrNull()?.toString() ?: "",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = textModifier,
+                                softWrap = false,
+                                maxLines = if (isExpanded && appName.contains("\n")) Int.MAX_VALUE else 1,
+                                textAlign = TextAlign.Center
+                            )
                         } else {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (appIcon != null) {
                                     Image(
                                         painter = rememberAsyncImagePainter(model = appIcon),
                                         contentDescription = "Toggle menu, showing $appName icon",
-                                        modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize)
+                                        modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize),
+                                        contentScale = ContentScale.Crop
                                     )
                                 } else {
                                     Icon(

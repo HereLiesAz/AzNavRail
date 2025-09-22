@@ -49,8 +49,9 @@ class AzButtonTest {
         val option3 = "Option 3"
         composeTestRule.setContent {
             AzCycler(
-                options = arrayOf(option1, option2, option3),
-                onOptionSelected = {}
+                option1 to {},
+                option2 to {},
+                option3 to {}
             )
         }
 

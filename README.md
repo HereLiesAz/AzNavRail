@@ -62,8 +62,6 @@ import com.hereliesaz.aznavrail.AzCycler
 @Composable
 fun MyScreen() {
     var isToggled by remember { mutableStateOf(false) }
-    val cyclerOptions = listOf("A", "B", "C")
-    var selectedCyclerOption by remember { mutableStateOf(cyclerOptions.first()) }
 
     Column {
         AzButton(
@@ -79,8 +77,9 @@ fun MyScreen() {
         )
 
         AzCycler(
-            options = cyclerOptions.toTypedArray(),
-            onOptionSelected = { selectedCyclerOption = it }
+            "Option A" to { /* Action for A */ },
+            "Option B" to { /* Action for B */ },
+            "Option C" to { /* Action for C */ }
         )
     }
 }
