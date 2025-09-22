@@ -8,129 +8,65 @@ import androidx.compose.ui.graphics.Color
 
 // --- AzButton ---
 
-interface AzButtonScope {
-    fun text(text: String)
-    fun onClick(action: () -> Unit)
-    fun color(color: Color)
-}
-
-private class AzButtonScopeImpl : AzButtonScope {
-    var text: String = ""
-    var onClick: () -> Unit = {}
-    var color: Color? = null
-
-    override fun text(text: String) {
-        this.text = text
-    }
-
-    override fun onClick(action: () -> Unit) {
-        this.onClick = action
-    }
-
-    override fun color(color: Color) {
-        this.color = color
-    }
-}
-
 @Composable
 fun AzButton(
+    onClick: () -> Unit,
+    text: String,
     modifier: Modifier = Modifier,
-    content: AzButtonScope.() -> Unit
+    color: Color = MaterialTheme.colorScheme.primary
 ) {
-    val scope = AzButtonScopeImpl().apply(content)
     AzNavRailButton(
-        onClick = scope.onClick,
-        text = scope.text,
+        onClick = onClick,
+        text = text,
         modifier = modifier,
-        color = scope.color ?: MaterialTheme.colorScheme.primary
+        color = color
     )
 }
 
 // --- AzToggle ---
 
-interface AzToggleScope {
-    fun default(text: String, color: Color? = null)
-    fun alt(text: String, color: Color? = null)
-}
-
-private class AzToggleScopeImpl : AzToggleScope {
-    var defaultText: String = ""
-    var defaultColor: Color? = null
-    var altText: String = ""
-    var altColor: Color? = null
-
-    override fun default(text: String, color: Color?) {
-        this.defaultText = text
-        this.defaultColor = color
-    }
-
-    override fun alt(text: String, color: Color?) {
-        this.altText = text
-        this.altColor = color
-    }
-}
-
 @Composable
 fun AzToggle(
-    isOn: Boolean,
+    isChecked: Boolean,
     onToggle: () -> Unit,
+    toggleOnText: String,
+    toggleOffText: String,
     modifier: Modifier = Modifier,
-    content: AzToggleScope.() -> Unit
+    color: Color = MaterialTheme.colorScheme.primary
 ) {
-    val scope = AzToggleScopeImpl().apply(content)
-
-    val text = if (isOn) scope.altText else scope.defaultText
-    val color = if (isOn) scope.altColor else scope.defaultColor
+    val text = if (isChecked) toggleOnText else toggleOffText
 
     AzNavRailButton(
         onClick = onToggle,
         text = text,
         modifier = modifier,
-        color = color ?: MaterialTheme.colorScheme.primary
+        color = color
     )
 }
 
-
 // --- AzCycler ---
-
-data class CyclerState(
-    val text: String,
-    val onClick: () -> Unit,
-    val color: Color?
-)
-
-interface AzCyclerScope {
-    fun state(text: String, onClick: () -> Unit, color: Color? = null)
-}
-
-private class AzCyclerScopeImpl : AzCyclerScope {
-    val states = mutableListOf<CyclerState>()
-    override fun state(text: String, onClick: () -> Unit, color: Color?) {
-        states.add(CyclerState(text, onClick, color))
-    }
-}
 
 @Composable
 fun AzCycler(
+    options: List<String>,
+    selectedOption: String,
+    onCycle: () -> Unit,
     modifier: Modifier = Modifier,
-    content: AzCyclerScope.() -> Unit
+    color: Color = MaterialTheme.colorScheme.primary
 ) {
-    val scope = AzCyclerScopeImpl().apply(content)
-    var currentIndex by rememberSaveable { mutableStateOf(0) }
+    var currentIndex by rememberSaveable { mutableStateOf(options.indexOf(selectedOption)) }
 
-    if (scope.states.isEmpty()) {
-        return
+    if (currentIndex == -1) {
+        currentIndex = 0
     }
-
-    val currentState = scope.states[currentIndex]
 
     AzNavRailButton(
         onClick = {
-            currentState.onClick()
-            currentIndex = (currentIndex + 1) % scope.states.size
+            onCycle()
+            currentIndex = (currentIndex + 1) % options.size
         },
-        text = currentState.text,
+        text = options[currentIndex],
         modifier = modifier,
-        color = currentState.color ?: MaterialTheme.colorScheme.primary
+        color = color
     )
 }
