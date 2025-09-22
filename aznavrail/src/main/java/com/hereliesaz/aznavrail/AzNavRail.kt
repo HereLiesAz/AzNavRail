@@ -76,6 +76,9 @@ private data class CyclerTransientState(
  *
  * The content of the rail and menu is defined using a DSL within the `content` lambda.
  *
+ * The header of the rail will automatically display your app's icon. This icon is not a button,
+ * but it is the same size as the rail items. Clicking it will expand or collapse the rail.
+ *
  * @param modifier The modifier to be applied to the navigation rail.
  * @param initiallyExpanded Whether the navigation rail is expanded by default.
  * @param disableSwipeToOpen Whether to disable the swipe-to-open gesture.
@@ -178,7 +181,8 @@ fun AzNavRail(
                                 if (appIcon != null) {
                                     Image(
                                         painter = rememberAsyncImagePainter(model = appIcon),
-                                        contentDescription = "Toggle menu, showing $appName icon"
+                                        contentDescription = "Toggle menu, showing $appName icon",
+                                        modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize)
                                     )
                                 } else {
                                     Icon(

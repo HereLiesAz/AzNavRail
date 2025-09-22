@@ -42,13 +42,51 @@ And add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.github.HereLiesAz:AzNavRail:3.2") // Or the latest version
+    implementation("com.github.HereLiesAz:AzNavRail:3.3") // Or the latest version
 }
 ```
 
 ## Usage
 
 Using the new DSL API is incredibly simple. You manage the state in your own composable and pass it to the `AzNavRail`.
+
+### Standalone Buttons
+
+You can also use the `AzButton`, `AzToggle`, and `AzCycler` composables by themselves. They are styled to look just like the buttons in the `AzNavRail`.
+
+```kotlin
+import com.hereliesaz.aznavrail.AzButton
+import com.hereliesaz.aznavrail.AzToggle
+import com.hereliesaz.aznavrail.AzCycler
+
+@Composable
+fun MyScreen() {
+    var isToggled by remember { mutableStateOf(false) }
+    val cyclerOptions = listOf("A", "B", "C")
+    var selectedCyclerOption by remember { mutableStateOf(cyclerOptions.first()) }
+
+    Column {
+        AzButton(
+            onClick = { /* Do something */ },
+            text = "Click Me"
+        )
+
+        AzToggle(
+            textWhenOn = "On",
+            textWhenOff = "Off",
+            isOn = isToggled,
+            onClick = { isToggled = !isToggled }
+        )
+
+        AzCycler(
+            options = cyclerOptions.toTypedArray(),
+            onOptionSelected = { selectedCyclerOption = it }
+        )
+    }
+}
+```
+
+### `AzNavRail`
 
 ```kotlin
 import com.hereliesaz.aznavrail.AzNavRail
