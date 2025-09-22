@@ -132,6 +132,26 @@ fun MyScreen() {
 }
 ```
 
+### Standalone Buttons API
+
+-   **`AzButton`**: A simple button.
+    -   `content: AzButtonScope.() -> Unit`: The DSL for the button content.
+        -   `text(text: String)`: Sets the text of the button. Throws an `IllegalArgumentException` if `text` is empty.
+        -   `onClick(action: () -> Unit)`: Sets the click action.
+        -   `color(color: Color)`: Sets the color of the button.
+
+-   **`AzToggle`**: A toggle button.
+    -   `isOn: Boolean`: The state of the toggle.
+    -   `onToggle: () -> Unit`: The callback for when the toggle is clicked.
+    -   `content: AzToggleScope.() -> Unit`: The DSL for the toggle content.
+        -   `default(text: String, color: Color? = null)`: The text and color for the "off" state. Throws an `IllegalArgumentException` if `text` is empty.
+        -   `alt(text: String, color: Color? = null)`: The text and color for the "on" state. Throws an `IllegalArgumentException` if `text` is empty.
+
+-   **`AzCycler`**: A button that cycles through a list of states.
+    -   `content: AzCyclerScope.() -> Unit`: The DSL for the cycler content.
+        -   `state(text: String, onClick: () -> Unit, color: Color? = null)`: Defines a state for the cycler. Throws an `IllegalArgumentException` if `text` is empty.
+    -   Throws an `IllegalArgumentException` if no states are defined.
+
 ## API Reference
 
 The main entry point is the `AzNavRail` composable.
