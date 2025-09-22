@@ -188,12 +188,12 @@ fun AzNavRail(
                         if (scope.displayAppNameInHeader) {
                             val textModifier = Modifier.width(scope.expandedRailWidth)
                             Text(
-                                text = if (isExpanded) appName else appName.firstOrNull()?.toString() ?: "",
+                                text = appName,
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = textModifier,
                                 softWrap = false,
                                 maxLines = if (isExpanded && appName.contains("\n")) Int.MAX_VALUE else 1,
-                                textAlign = if (isExpanded) TextAlign.Center else TextAlign.Start
+                                textAlign = TextAlign.Center
                             )
                         } else {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -210,10 +210,6 @@ fun AzNavRail(
                                         contentDescription = "Toggle Menu",
                                         modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize)
                                     )
-                                }
-                                if (isExpanded) {
-                                    Spacer(modifier = Modifier.width(AzNavRailDefaults.HeaderTextSpacer))
-                                    Text(text = appName, style = MaterialTheme.typography.titleMedium)
                                 }
                             }
                         }

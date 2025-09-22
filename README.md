@@ -104,26 +104,30 @@ import com.hereliesaz.aznavrail.AzCycler
 @Composable
 fun MyScreen() {
     var isToggled by remember { mutableStateOf(false) }
+    val cyclerOptions = listOf("A", "B", "C")
+    var selectedOption by remember { mutableStateOf(cyclerOptions.first()) }
 
     Column {
-        AzButton {
-            text("Click Me")
-            onClick { /* Do something */ }
-        }
+        AzButton(
+            text = "Click Me",
+            onClick = { /* Do something */ }
+        )
 
         AzToggle(
-            isOn = isToggled,
-            onToggle = { isToggled = !isToggled }
-        ) {
-            default(text = "Off")
-            alt(text = "On")
-        }
+            isChecked = isToggled,
+            onToggle = { isToggled = !isToggled },
+            toggleOnText = "On",
+            toggleOffText = "Off"
+        )
 
-        AzCycler {
-            state(text = "Option A", onClick = { /* Action for A */ })
-            state(text = "Option B", onClick = { /* Action for B */ })
-            state(text = "Option C", onClick = { /* Action for C */ })
-        }
+        AzCycler(
+            options = cyclerOptions,
+            selectedOption = selectedOption,
+            onCycle = {
+                val currentIndex = cyclerOptions.indexOf(selectedOption)
+                selectedOption = cyclerOptions[(currentIndex + 1) % cyclerOptions.size]
+            }
+        )
     }
 }
 ```
@@ -160,10 +164,16 @@ You declare items and configure the rail within the content lambda of `AzNavRail
 -   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean)`: Configures the settings for the `AzNavRail`.
 -   `azMenuItem(id: String, text: String, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu.
 -   `azRailItem(id: String, text: String, color: Color? = null, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu.
--   `azMenuToggle(id: String, text: String, isChecked: Boolean, onClick: () -> Unit)`: Adds a toggle switch item that only appears in the expanded menu.
--   `azRailToggle(id: String, text: String, color: Color? = null, isChecked: Boolean, onClick: () -> Unit)`: Adds a toggle switch item that appears in both the collapsed rail and the expanded menu.
--   `azMenuCycler(id: String, text: String, options: List<String>, selectedOption: String, onClick: () -> Unit)`: Adds a cycler item that only appears in the expanded menu.
--   `azRailCycler(id: String, text: String, color: Color? = null, options: List<String>, selectedOption: String, onClick: () -> Unit)`: Adds a cycler item that appears in both the collapsed rail and the expanded menu.
+-   `azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, onClick: () -> Unit)`: Adds a toggle switch item that only appears in the expanded menu.
+-   `azRailToggle(id: String, color: Color? = null, isChecked: Boolean, toggleOnText: String, toggleOffText: String, onClick: () -> Unit)`: Adds a toggle switch item that appears in both the collapsed rail and the expanded menu.
+-   `azMenuCycler(id: String, options: List<String>, selectedOption: String, onClick: () -> Unit)`: Adds a cycler item that only appears in the expanded menu.
+-   `azRailCycler(id: String, color: Color? = null, options: List<String>, selectedOption: String, onClick: () -> Unit)`: Adds a cycler item that appears in both the collapsed rail and the expanded menu.
+
+### Standalone Components
+
+-   `AzButton(onClick: () -> Unit, text: String, color: Color? = null)`: A standalone circular button.
+-   `AzToggle(isChecked: Boolean, onToggle: () -> Unit, toggleOnText: String, toggleOffText: String, color: Color? = null)`: A standalone toggle button.
+-   `AzCycler(options: List<String>, selectedOption: String, onCycle: () -> Unit, color: Color? = null)`: A standalone cycler button.
 
 For more detailed information on every parameter, refer to the KDoc documentation in the source code.
 
