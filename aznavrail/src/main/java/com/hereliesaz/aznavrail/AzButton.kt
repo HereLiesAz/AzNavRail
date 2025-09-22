@@ -115,7 +115,7 @@ fun AzCycler(
     modifier: Modifier = Modifier,
     content: AzCyclerScope.() -> Unit
 ) {
-    val scope = remember { AzCyclerScopeImpl() }.apply(content)
+    val scope = AzCyclerScopeImpl().apply(content)
     var currentIndex by rememberSaveable { mutableStateOf(0) }
 
     if (scope.states.isEmpty()) {
