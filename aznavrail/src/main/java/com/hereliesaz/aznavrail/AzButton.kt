@@ -77,7 +77,7 @@ fun AzToggle(
     modifier: Modifier = Modifier,
     content: AzToggleScope.() -> Unit
 ) {
-    val scope = remember { AzToggleScopeImpl() }.apply(content)
+    val scope = AzToggleScopeImpl().apply(content)
 
     val text = if (isOn) scope.altText else scope.defaultText
     val color = if (isOn) scope.altColor else scope.defaultColor
