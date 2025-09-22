@@ -128,6 +128,26 @@ fun MyScreen() {
 }
 ```
 
+### Standalone Buttons API
+
+-   **`AzButton`**: A simple button.
+    -   `content: AzButtonScope.() -> Unit`: The DSL for the button content.
+        -   `text(text: String)`: Sets the text of the button. Throws an `IllegalArgumentException` if `text` is empty.
+        -   `onClick(action: () -> Unit)`: Sets the click action.
+        -   `color(color: Color)`: Sets the color of the button.
+
+-   **`AzToggle`**: A toggle button.
+    -   `isOn: Boolean`: The state of the toggle.
+    -   `onToggle: () -> Unit`: The callback for when the toggle is clicked.
+    -   `content: AzToggleScope.() -> Unit`: The DSL for the toggle content.
+        -   `default(text: String, color: Color? = null)`: The text and color for the "off" state. Throws an `IllegalArgumentException` if `text` is empty.
+        -   `alt(text: String, color: Color? = null)`: The text and color for the "on" state. Throws an `IllegalArgumentException` if `text` is empty.
+
+-   **`AzCycler`**: A button that cycles through a list of states.
+    -   `content: AzCyclerScope.() -> Unit`: The DSL for the cycler content.
+        -   `state(text: String, onClick: () -> Unit, color: Color? = null)`: Defines a state for the cycler. Throws an `IllegalArgumentException` if `text` is empty.
+    -   Throws an `IllegalArgumentException` if no states are defined.
+
 ## API Reference
 
 The main entry point is the `AzNavRail` composable.
@@ -157,13 +177,13 @@ You declare items and configure the rail within the content lambda of `AzNavRail
 
 **Note:** Functions prefixed with `azMenu` will only appear in the expanded menu view. Functions prefixed with `azRail` will appear on the collapsed rail, and their text will be used as the label in the expanded menu.
 
--   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean)`: Configures the settings for the `AzNavRail`.
--   `azMenuItem(id: String, text: String, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu.
--   `azRailItem(id: String, text: String, color: Color? = null, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu.
--   `azMenuToggle(id: String, text: String, isChecked: Boolean, onClick: () -> Unit)`: Adds a toggle switch item that only appears in the expanded menu.
--   `azRailToggle(id: String, text: String, color: Color? = null, isChecked: Boolean, onClick: () -> Unit)`: Adds a toggle switch item that appears in both the collapsed rail and the expanded menu.
--   `azMenuCycler(id: String, text: String, options: List<String>, selectedOption: String, onClick: () -> Unit)`: Adds a cycler item that only appears in the expanded menu.
--   `azRailCycler(id: String, text: String, color: Color? = null, options: List<String>, selectedOption: String, onClick: () -> Unit)`: Adds a cycler item that appears in both the collapsed rail and the expanded menu.
+-   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean)`: Configures the settings for the `AzNavRail`. Throws an `IllegalArgumentException` if `expandedRailWidth` is not greater than `collapsedRailWidth`.
+-   `azMenuItem(id: String, text: String, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Throws an `IllegalArgumentException` if `text` is empty.
+-   `azRailItem(id: String, text: String, color: Color? = null, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu. Throws an `IllegalArgumentException` if `text` is empty.
+-   `azMenuToggle(id: String, text: String, isChecked: Boolean, onClick: () -> Unit)`: Adds a toggle switch item that only appears in the expanded menu. Throws an `IllegalArgumentException` if `toggleOnText` or `toggleOffText` are empty.
+-   `azRailToggle(id: String, text: String, color: Color? = null, isChecked: Boolean, onClick: () -> Unit)`: Adds a toggle switch item that appears in both the collapsed rail and the expanded menu. Throws an `IllegalArgumentException` if `toggleOnText` or `toggleOffText` are empty.
+-   `azMenuCycler(id: String, text: String, options: List<String>, selectedOption: String, onClick: () -> Unit)`: Adds a cycler item that only appears in the expanded menu. Throws an `IllegalArgumentException` if `selectedOption` is not in `options`.
+-   `azRailCycler(id: String, text: String, color: Color? = null, options: List<String>, selectedOption: String, onClick: () -> Unit)`: Adds a cycler item that appears in both the collapsed rail and the expanded menu. Throws an `IllegalArgumentException` if `selectedOption` is not in `options`.
 
 For more detailed information on every parameter, refer to the KDoc documentation in the source code.
 
