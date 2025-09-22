@@ -101,6 +101,17 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         collapsedRailWidth: Dp,
         showFooter: Boolean
     ) {
+        require(expandedRailWidth > collapsedRailWidth) {
+            """
+            `expandedRailWidth` must be greater than `collapsedRailWidth`.
+
+            // azSettings sample
+            azSettings(
+                expandedRailWidth = 260.dp,
+                collapsedRailWidth = 80.dp
+            )
+            """.trimIndent()
+        }
         this.displayAppNameInHeader = displayAppNameInHeader
         this.packRailButtons = packRailButtons
         this.expandedRailWidth = expandedRailWidth
@@ -109,26 +120,104 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
     }
 
     override fun azMenuItem(id: String, text: String, onClick: () -> Unit) {
+        require(text.isNotEmpty()) {
+            """
+            `text` must not be empty.
+
+            // azMenuItem sample
+            azMenuItem(
+                id = "item",
+                text = "My Item",
+                onClick = { /* ... */ }
+            )
+            """.trimIndent()
+        }
         navItems.add(AzNavItem(id = id, text = text, isRailItem = false, onClick = onClick))
     }
 
     override fun azRailItem(id: String, text: String, color: Color?, onClick: () -> Unit) {
+        require(text.isNotEmpty()) {
+            """
+            `text` must not be empty.
+
+            // azRailItem sample
+            azRailItem(
+                id = "item",
+                text = "My Item",
+                onClick = { /* ... */ }
+            )
+            """.trimIndent()
+        }
         navItems.add(AzNavItem(id = id, text = text, isRailItem = true, color = color, onClick = onClick))
     }
 
     override fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, onClick: () -> Unit) {
+        require(toggleOnText.isNotEmpty() && toggleOffText.isNotEmpty()) {
+            """
+            `toggleOnText` and `toggleOffText` must not be empty.
+
+            // azMenuToggle sample
+            azMenuToggle(
+                id = "toggle",
+                isChecked = true,
+                toggleOnText = "On",
+                toggleOffText = "Off",
+                onClick = { /* ... */ }
+            )
+            """.trimIndent()
+        }
         navItems.add(AzNavItem(id = id, text = "", isRailItem = false, isToggle = true, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, onClick = onClick))
     }
 
     override fun azRailToggle(id: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, onClick: () -> Unit) {
+        require(toggleOnText.isNotEmpty() && toggleOffText.isNotEmpty()) {
+            """
+            `toggleOnText` and `toggleOffText` must not be empty.
+
+            // azRailToggle sample
+            azRailToggle(
+                id = "toggle",
+                isChecked = true,
+                toggleOnText = "On",
+                toggleOffText = "Off",
+                onClick = { /* ... */ }
+            )
+            """.trimIndent()
+        }
         navItems.add(AzNavItem(id = id, text = "", isRailItem = true, color = color, isToggle = true, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, onClick = onClick))
     }
 
     override fun azMenuCycler(id: String, options: List<String>, selectedOption: String, onClick: () -> Unit) {
+        require(selectedOption in options) {
+            """
+            `selectedOption` must be one of the provided options.
+
+            // azMenuCycler sample
+            azMenuCycler(
+                id = "cycler",
+                options = listOf("A", "B", "C"),
+                selectedOption = "A",
+                onClick = { /* ... */ }
+            )
+            """.trimIndent()
+        }
         navItems.add(AzNavItem(id = id, text = "", isRailItem = false, isCycler = true, options = options, selectedOption = selectedOption, onClick = onClick))
     }
 
     override fun azRailCycler(id: String, color: Color?, options: List<String>, selectedOption: String, onClick: () -> Unit) {
+        require(selectedOption in options) {
+            """
+            `selectedOption` must be one of the provided options.
+
+            // azRailCycler sample
+            azRailCycler(
+                id = "cycler",
+                options = listOf("A", "B", "C"),
+                selectedOption = "A",
+                onClick = { /* ... */ }
+            )
+            """.trimIndent()
+        }
         navItems.add(AzNavItem(id = id, text = "", isRailItem = true, color = color, isCycler = true, options = options, selectedOption = selectedOption, onClick = onClick))
     }
 }

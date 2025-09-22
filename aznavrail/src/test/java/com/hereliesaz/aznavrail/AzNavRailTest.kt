@@ -27,6 +27,12 @@ class AzNavRailTest {
         assertEquals(false, scope.showFooter)
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun `azSettings with invalid widths should throw exception`() {
+        val scope = AzNavRailScopeImpl()
+        scope.azSettings(expandedRailWidth = 100.dp, collapsedRailWidth = 200.dp)
+    }
+
     @Test
     fun `azMenuItem should add a menu item`() {
         val scope = AzNavRailScopeImpl()
@@ -35,6 +41,12 @@ class AzNavRailTest {
         assertEquals(expectedItem.id, scope.navItems[0].id)
         assertEquals(expectedItem.text, scope.navItems[0].text)
         assertEquals(expectedItem.isRailItem, scope.navItems[0].isRailItem)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `azMenuItem with empty text should throw exception`() {
+        val scope = AzNavRailScopeImpl()
+        scope.azMenuItem("home", "") {}
     }
 
     @Test
@@ -46,6 +58,12 @@ class AzNavRailTest {
         assertEquals(expectedItem.text, scope.navItems[0].text)
         assertEquals(expectedItem.isRailItem, scope.navItems[0].isRailItem)
         assertEquals(expectedItem.color, scope.navItems[0].color)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `azRailItem with empty text should throw exception`() {
+        val scope = AzNavRailScopeImpl()
+        scope.azRailItem("home", "") {}
     }
 
     @Test
@@ -60,6 +78,18 @@ class AzNavRailTest {
         assertEquals(expectedItem.isChecked, scope.navItems[0].isChecked)
         assertEquals(expectedItem.toggleOnText, scope.navItems[0].toggleOnText)
         assertEquals(expectedItem.toggleOffText, scope.navItems[0].toggleOffText)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `azRailToggle with empty text should throw exception`() {
+        val scope = AzNavRailScopeImpl()
+        scope.azRailToggle("toggle", Color.Blue, false, "On", "") {}
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `azMenuToggle with empty text should throw exception`() {
+        val scope = AzNavRailScopeImpl()
+        scope.azMenuToggle("toggle", true, "", "Off") {}
     }
 
     @Test
@@ -89,6 +119,20 @@ class AzNavRailTest {
         assertEquals(expectedItem.isCycler, scope.navItems[0].isCycler)
         assertEquals(expectedItem.options, scope.navItems[0].options)
         assertEquals(expectedItem.selectedOption, scope.navItems[0].selectedOption)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `azRailCycler with invalid selectedOption should throw exception`() {
+        val scope = AzNavRailScopeImpl()
+        val options = listOf("A", "B", "C")
+        scope.azRailCycler("cycler", Color.Green, options, "D") {}
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `azMenuCycler with invalid selectedOption should throw exception`() {
+        val scope = AzNavRailScopeImpl()
+        val options = listOf("A", "B", "C")
+        scope.azMenuCycler("cycler", options, "D") {}
     }
 
     @Test
