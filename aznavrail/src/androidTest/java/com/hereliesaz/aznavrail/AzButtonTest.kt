@@ -1,7 +1,9 @@
 package com.hereliesaz.aznavrail
 
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -18,7 +20,10 @@ class AzButtonTest {
     fun azButton_displaysCorrectText() {
         val text = "Click me"
         composeTestRule.setContent {
-            AzButton(onClick = {}, text = text)
+            AzButton {
+                text(text)
+                onClick {}
+            }
         }
         composeTestRule.onNodeWithText(text).assertIsDisplayed()
     }
@@ -28,13 +33,14 @@ class AzButtonTest {
         val textOn = "On"
         val textOff = "Off"
         composeTestRule.setContent {
-            val (isOn, setIsOn) = remember { mutableStateOf(false) }
+            var isOn by remember { mutableStateOf(false) }
             AzToggle(
-                textWhenOn = textOn,
-                textWhenOff = textOff,
                 isOn = isOn,
-                onClick = { setIsOn(!isOn) }
-            )
+                onToggle = { isOn = !isOn }
+            ) {
+                default(text = textOff)
+                alt(text = textOn)
+            }
         }
 
         composeTestRule.onNodeWithText(textOff).assertIsDisplayed()
@@ -48,11 +54,11 @@ class AzButtonTest {
         val option2 = "Option 2"
         val option3 = "Option 3"
         composeTestRule.setContent {
-            AzCycler(
-                option1 to {},
-                option2 to {},
-                option3 to {}
-            )
+            AzCycler {
+                state(text = option1, onClick = {})
+                state(text = option2, onClick = {})
+                state(text = option3, onClick = {})
+            }
         }
 
         composeTestRule.onNodeWithText(option1).assertIsDisplayed()

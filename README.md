@@ -50,43 +50,6 @@ dependencies {
 
 Using the new DSL API is incredibly simple. You manage the state in your own composable and pass it to the `AzNavRail`.
 
-### Standalone Buttons
-
-You can also use the `AzButton`, `AzToggle`, and `AzCycler` composables by themselves. They are styled to look just like the buttons in the `AzNavRail`.
-
-```kotlin
-import com.hereliesaz.aznavrail.AzButton
-import com.hereliesaz.aznavrail.AzToggle
-import com.hereliesaz.aznavrail.AzCycler
-
-@Composable
-fun MyScreen() {
-    var isToggled by remember { mutableStateOf(false) }
-
-    Column {
-        AzButton(
-            onClick = { /* Do something */ },
-            text = "Click Me"
-        )
-
-        AzToggle(
-            textWhenOn = "On",
-            textWhenOff = "Off",
-            isOn = isToggled,
-            onClick = { isToggled = !isToggled }
-        )
-
-        AzCycler(
-            "Option A" to { /* Action for A */ },
-            "Option B" to { /* Action for B */ },
-            "Option C" to { /* Action for C */ }
-        )
-    }
-}
-```
-
-### `AzNavRail`
-
 ```kotlin
 import com.hereliesaz.aznavrail.AzNavRail
 
@@ -128,6 +91,42 @@ fun MainScreen() {
 }
 ```
 
+### Standalone Buttons
+
+You can also use the `AzButton`, `AzToggle`, and `AzCycler` composables by themselves. They are styled to look just like the buttons in the `AzNavRail`.
+
+```kotlin
+import com.hereliesaz.aznavrail.AzButton
+import com.hereliesaz.aznavrail.AzToggle
+import com.hereliesaz.aznavrail.AzCycler
+
+@Composable
+fun MyScreen() {
+    var isToggled by remember { mutableStateOf(false) }
+
+    Column {
+        AzButton {
+            text("Click Me")
+            onClick { /* Do something */ }
+        }
+
+        AzToggle(
+            isOn = isToggled,
+            onToggle = { isToggled = !isToggled }
+        ) {
+            default(text = "Off")
+            alt(text = "On")
+        }
+
+        AzCycler {
+            state(text = "Option A", onClick = { /* Action for A */ })
+            state(text = "Option B", onClick = { /* Action for B */ })
+            state(text = "Option C", onClick = { /* Action for C */ })
+        }
+    }
+}
+```
+
 ## API Reference
 
 The main entry point is the `AzNavRail` composable.
@@ -144,7 +143,7 @@ fun AzNavRail(
 )
 ```
 
-An M3-style navigation rail that expands into a menu drawer.
+An M3-style navigation rail that expands into a full menu drawer.
 
 -   **`modifier`**: The modifier to be applied to the navigation rail.
 -   **`initiallyExpanded`**: Whether the navigation rail is expanded by default.
