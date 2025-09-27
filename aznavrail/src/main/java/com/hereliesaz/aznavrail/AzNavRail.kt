@@ -178,8 +178,7 @@ fun AzNavRail(
     }
 
     BoxWithConstraints(modifier = modifier) {
-        val isLandscape = maxWidth > maxHeight
-        val buttonSize = if (isLandscape) (maxHeight - AzNavRailDefaults.HeaderPadding * 2) / 8 else AzNavRailDefaults.HeaderIconSize
+        val buttonSize = scope.collapsedRailWidth - AzNavRailDefaults.RailContentHorizontalPadding * 2
 
         Row(
             modifier = Modifier.pointerInput(isExpanded, disableSwipeToOpen) {
