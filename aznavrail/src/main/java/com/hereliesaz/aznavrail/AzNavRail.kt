@@ -74,10 +74,12 @@ private object AzNavRailDefaults {
 }
 
 /**
- * Represents the transient state of a cycler item.
- * @param displayedOption The currently displayed option.
- * @param pendingClickCount The number of pending clicks.
- * @param job The coroutine job for handling clicks.
+ * Represents the transient state of a cycler item, tracking the displayed option and the
+ * coroutine job for the delayed action.
+ *
+ * @param displayedOption The currently displayed option in the UI.
+ * @param job The coroutine job for handling the delayed click action. This is cancelled and
+ * restarted on each click.
  */
 private data class CyclerTransientState(
     val displayedOption: String,
@@ -98,8 +100,10 @@ private data class CyclerTransientState(
  *
  * The header of the rail will automatically display your app's icon by default. This can be changed
  * to display the app's name instead by using the `azSettings` function in the content lambda.
- * The header is not a button, but it is the same size as the rail items. Clicking it will expand
- * or collapse the rail.
+ * Clicking it will expand or collapse the rail.
+ *
+ * Standard and toggle menu items will collapse the rail upon being tapped. Cycler items will
+ * only collapse the rail after the user has settled on a choice for at least one second.
  *
  * @param modifier The modifier to be applied to the navigation rail.
  * @param initiallyExpanded Whether the navigation rail is expanded by default.
@@ -369,10 +373,16 @@ private fun RailContent(item: AzNavItem, buttonSize: Dp) {
 }
 
 /**
- * Composable for displaying a single item in the expanded menu. The text is always displayed on a single line.
+ * Composable for displaying a single item in the expanded menu.
+ *
+ * This composable handles the display and interaction for all types of menu items, including
+ * standard, toggle, and cycler items. It supports multi-line text with indentation for all
+ * lines after the first.
+ *
  * @param item The navigation item to display.
- * @param onCyclerClick The click handler for cycler items.
- * @param onToggle The click handler for toggling the rail's expanded state.
+ * @param onCyclerClick The click handler for cycler items, which includes the delay logic.
+ * @param onToggle The click handler for toggling the rail's expanded state. This is called
+ * immediately for standard and toggle items, and with a delay for cycler items.
  */
 @Composable
 private fun MenuItem(

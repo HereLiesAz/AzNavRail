@@ -11,8 +11,11 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 -   **Responsive Layout:** The rail automatically adjusts to landscape orientation, ensuring a great user experience on all devices.
 -   **Scrollable Content:** Both the expanded menu and the collapsed rail are scrollable, allowing for a large number of navigation items.
 -   **Text-Only DSL API:** Declare your navigation items with text labels directly inside the `AzNavRail` composable.
+-   **Multi-line Menu Items:** The expanded menu supports multi-line text, with automatic indentation for readability.
 -   **Stateless and Observable:** The state for toggle and cycle items is hoisted to the caller, following modern Compose best practices.
 -   **Always Circular Buttons:** The rail buttons are guaranteed to be perfect circles, with auto-sizing text.
+-   **Smart Collapse Behavior:** Toggle and standard menu items collapse the rail on tap. Cycler items wait for the user to settle on an option before acting and collapsing the rail.
+-   **Delayed Cycler Action:** Cycler items update their displayed option instantly but wait for a 1-second delay before triggering the associated action, allowing users to rapid-cycle without unintended consequences.
 -   **Customizable Colors:** Specify a custom color for each rail button.
 -   **Automatic Header:** The header automatically uses your app's launcher icon by default. You can configure it to display the app name instead.
 -   **Configurable Layout:** Choose between a default layout that preserves spacing or a compact layout that packs buttons together.
@@ -51,7 +54,7 @@ import com.hereliesaz.aznavrail.AzNavRail
 @Composable
 fun MainScreen() {
     var isOnline by remember { mutableStateOf(true) }
-    val cycleOptions = listOf("A", "B", "C")
+    val cycleOptions = listOf("Option A", "Option B", "Option C")
     var selectedOption by remember { mutableStateOf(cycleOptions.first()) }
 
     AzNavRail {
@@ -62,7 +65,7 @@ fun MainScreen() {
         )
 
         // Declare the navigation items
-        azMenuItem(id = "home", text = "Home", onClick = { /* Navigate home */ })
+        azMenuItem(id = "home", text = "Home\nSweet Home", onClick = { /* Navigate home */ })
         azRailItem(id = "favorites", text = "Favs", onClick = { /* Show favorites */ })
 
         azRailToggle(
@@ -119,7 +122,7 @@ fun MyScreen() {
             selectedOption = selectedOption,
             onCycle = {
                 val currentIndex = cyclerOptions.indexOf(selectedOption)
-                selectedOption = cycleOptions[(currentIndex + 1) % cyclerOptions.size]
+                selectedOption = cyclerOptions[(currentIndex + 1) % cyclerOptions.size]
             }
         )
     }
@@ -156,12 +159,12 @@ You declare items and configure the rail within the content lambda of `AzNavRail
 **Note:** Functions prefixed with `azMenu` will only appear in the expanded menu view. Functions prefixed with `azRail` will appear on the collapsed rail, and their text will be used as the label in the expanded menu.
 
 -   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean)`: Configures the settings for the `AzNavRail`.
--   `azMenuItem(id: String, text: String, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu.
--   `azRailItem(id: String, text: String, color: Color? = null, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu.
--   `azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, onClick: () -> Unit)`: Adds a toggle switch item that only appears in the expanded menu.
--   `azRailToggle(id: String, color: Color? = null, isChecked: Boolean, toggleOnText: String, toggleOffText: String, onClick: () -> Unit)`: Adds a toggle switch item that appears in both the collapsed rail and the expanded menu.
--   `azMenuCycler(id: String, options: List<String>, selectedOption: String, onClick: () -> Unit)`: Adds a cycler item that only appears in the expanded menu.
--   `azRailCycler(id: String, color: Color? = null, options: List<String>, selectedOption: String, onClick: () -> Unit)`: Adds a cycler item that appears in both the collapsed rail and the expanded menu.
+-   `azMenuItem(id: String, text: String, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
+-   `azRailItem(id: String, text: String, color: Color? = null, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text in the expanded menu.
+-   `azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, onClick: () -> Unit)`: Adds a toggle item that only appears in the expanded menu. Tapping it executes the action and collapses the rail.
+-   `azRailToggle(id: String, color: Color? = null, isChecked: Boolean, toggleOnText: String, toggleOffText: String, onClick: () -> Unit)`: Adds a toggle item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail.
+-   `azMenuCycler(id: String, options: List<String>, selectedOption: String, onClick: () -> Unit)`: Adds a cycler item that only appears in the expanded menu. Tapping it cycles through options and executes the `onClick` action for the final selection after a 1-second delay, then collapses the rail.
+-   `azRailCycler(id: String, color: Color? = null, options: List<String>, selectedOption: String, onClick: () -> Unit)`: Adds a cycler item that appears in both the collapsed rail and the expanded menu. The behavior is the same as `azMenuCycler`.
 
 ### Standalone Buttons API
 
@@ -182,7 +185,7 @@ You declare items and configure the rail within the content lambda of `AzNavRail
 -   **`AzCycler`**: A button that cycles through a list of options when clicked.
     -   `options: List<String>`: The list of options to cycle through.
     -   `selectedOption: String`: The currently selected option.
-    -   `onCycle: () -> Unit`: The callback to be invoked when the button is clicked.
+    -   `onCycle: () -> Unit`: The callback to be invoked after a 1-second delay on the final selected option.
     -   `modifier: Modifier`: The modifier to be applied to the button.
     -   `color: Color`: The color of the button's border and text.
 
@@ -190,7 +193,7 @@ You declare items and configure the rail within the content lambda of `AzNavRail
 
 -   `AzButton(onClick: () -> Unit, text: String, color: Color? = null)`: A standalone circular button.
 -   `AzToggle(isChecked: Boolean, onToggle: () -> Unit, toggleOnText: String, toggleOffText: String, color: Color? = null)`: A standalone toggle button.
--   `AzCycler(options: List<String>, selectedOption: String, onCycle: () -> Unit, color: Color? = null)`: A standalone cycler button.
+-   `AzCycler(options: List<String>, selectedOption: String, onCycle: () -> Unit, color: Color? = null)`: A standalone cycler button with delayed action.
 
 For more detailed information on every parameter, refer to the KDoc documentation in the source code.
 

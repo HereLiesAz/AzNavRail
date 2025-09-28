@@ -68,22 +68,30 @@ interface AzNavRailScope {
 
     /**
      * Adds a cycler item that only appears in the expanded menu.
-     * A cycler item cycles through a list of options when clicked. The action is triggered after a 1-second delay.
+     *
+     * A cycler item cycles through a list of options when clicked. The displayed option is updated
+     * immediately, but the `onClick` action is delayed by one second. Each click resets the timer.
+     * The action for the final selected option is triggered after the delay, and the menu collapses.
+     *
      * @param id The unique identifier for the item.
      * @param options The list of options to cycle through.
      * @param selectedOption The currently selected option.
-     * @param onClick The callback to be invoked when the item is clicked.
+     * @param onClick The callback to be invoked for the final selected option after the delay.
      */
     fun azMenuCycler(id: String, options: List<String>, selectedOption: String, onClick: () -> Unit)
 
     /**
      * Adds a cycler item that appears in both the collapsed rail and the expanded menu.
-     * A cycler item cycles through a list of options when clicked. The action is triggered after a 1-second delay.
+     *
+     * A cycler item cycles through a list of options when clicked. The displayed option is updated
+     * immediately, but the `onClick` action is delayed by one second. Each click resets the timer.
+     * The action for the final selected option is triggered after the delay, and the menu collapses.
+     *
      * @param id The unique identifier for the item.
      * @param color The color of the item.
      * @param options The list of options to cycle through.
      * @param selectedOption The currently selected option.
-     * @param onClick The callback to be invoked when the item is clicked.
+     * @param onClick The callback to be invoked for the final selected option after the delay.
      */
     fun azRailCycler(id: String, color: Color? = null, options: List<String>, selectedOption: String, onClick: () -> Unit)
 }

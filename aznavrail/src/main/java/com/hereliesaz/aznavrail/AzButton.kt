@@ -63,9 +63,13 @@ fun AzToggle(
 /**
  * A button that cycles through a list of options when clicked.
  *
+ * The displayed option changes immediately on click, but the `onCycle` action is delayed
+ * by one second. This allows for rapid cycling through options without triggering
+ * an action for each intermediate selection. Each click resets the delay timer.
+ *
  * @param options The list of options to cycle through.
- * @param selectedOption The currently selected option.
- * @param onCycle The callback to be invoked when the button is clicked.
+ * @param selectedOption The currently selected option from the view model.
+ * @param onCycle The callback to be invoked for the final selected option after a 1-second delay.
  * @param modifier The modifier to be applied to the button.
  * @param color The color of the button's border and text.
  */
