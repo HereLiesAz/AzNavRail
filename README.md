@@ -20,6 +20,7 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 -   **Automatic Header:** The header automatically uses your app's launcher icon by default. You can configure it to display the app name instead.
 -   **Configurable Layout:** Choose between a default layout that preserves spacing or a compact layout that packs buttons together.
 -   **Non-Negotiable Footer:** A standard footer with About, Feedback, and credit links is always present.
+-   **Loading State:** Display a loading animation over the rail while content is loading.
 
 ## Setup
 
@@ -85,6 +86,25 @@ fun MainScreen() {
                 selectedOption = cycleOptions[(currentIndex + 1) % cycleOptions.size]
             }
         )
+    }
+}
+```
+
+### Loading State
+
+When your app is loading data, you can display an unobtrusive animation over the rail by setting the `isLoading` parameter to `true` in the `azSettings` function. This will disable all buttons and show a loading indicator until the `isLoading` is set back to `false`.
+
+```kotlin
+@Composable
+fun MainScreen(myViewModel: MyViewModel = viewModel()) {
+    val uiState by myViewModel.uiState.collectAsState()
+
+    AzNavRail {
+        azSettings(
+            isLoading = uiState.isLoading
+        )
+
+        // ... your rail and menu items
     }
 }
 ```
@@ -158,7 +178,8 @@ You declare items and configure the rail within the content lambda of `AzNavRail
 
 **Note:** Functions prefixed with `azMenu` will only appear in the expanded menu view. Functions prefixed with `azRail` will appear on the collapsed rail, and their text will be used as the label in the expanded menu.
 
--   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean)`: Configures the settings for the `AzNavRail`.
+-   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean, isLoading: Boolean)`: Configures the settings for the `AzNavRail`.
+    -   **`isLoading`**: Whether to show the loading animation. Defaults to `false`.
 -   `azMenuItem(id: String, text: String, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
 -   `azRailItem(id: String, text: String, color: Color? = null, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text in the expanded menu.
 -   `azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, onClick: () -> Unit)`: Adds a toggle item that only appears in the expanded menu. Tapping it executes the action and collapses the rail.
