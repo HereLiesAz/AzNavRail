@@ -5,6 +5,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * A circular, text-only button with auto-sizing text.
@@ -74,9 +77,39 @@ fun AzCycler(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary
 ) {
+    var displayedOption by rememberSaveable(selectedOption) { mutableStateOf(selectedOption) }
+    var job by remember { mutableStateOf<Job?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(selectedOption) {
+        job?.cancel()
+        job = null
+        displayedOption = selectedOption
+    }
+
     AzNavRailButton(
-        onClick = onCycle,
-        text = selectedOption,
+        onClick = {
+            job?.cancel()
+
+            val currentIndex = options.indexOf(displayedOption)
+            val nextIndex = (currentIndex + 1) % options.size
+            displayedOption = options[nextIndex]
+
+            job = coroutineScope.launch {
+                delay(1000L)
+
+                val currentIndexInVm = options.indexOf(selectedOption)
+                val targetIndex = options.indexOf(displayedOption)
+
+                if (currentIndexInVm != -1 && targetIndex != -1) {
+                    val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
+                    repeat(clicksToCatchUp) {
+                        onCycle()
+                    }
+                }
+            }
+        },
+        text = displayedOption,
         modifier = modifier,
         color = color
     )

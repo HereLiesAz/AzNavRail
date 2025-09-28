@@ -81,7 +81,6 @@ private object AzNavRailDefaults {
  */
 private data class CyclerTransientState(
     val displayedOption: String,
-    val pendingClickCount: Int = 0,
     val job: Job? = null
 )
 
@@ -167,10 +166,20 @@ fun AzNavRail(
                     val item = scope.navItems.find { it.id == id }
                     if (item != null) {
                         coroutineScope.launch {
-                            repeat(state.pendingClickCount) {
-                                item.onClick()
+                            val options = requireNotNull(item.options)
+                            val currentStateInVm = item.selectedOption
+                            val targetState = state.displayedOption
+
+                            val currentIndexInVm = options.indexOf(currentStateInVm)
+                            val targetIndex = options.indexOf(targetState)
+
+                            if (currentIndexInVm != -1 && targetIndex != -1) {
+                                val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
+                                repeat(clicksToCatchUp) {
+                                    item.onClick()
+                                }
                             }
-                            cyclerStates[id] = state.copy(pendingClickCount = 0, job = null)
+                            cyclerStates[id] = state.copy(job = null)
                         }
                     }
                 }
@@ -178,9 +187,8 @@ fun AzNavRail(
         }
     }
 
-    BoxWithConstraints(modifier = modifier) {
-        val buttonSize = scope.collapsedRailWidth - AzNavRailDefaults.RailContentHorizontalPadding * 2
-
+    val buttonSize = scope.collapsedRailWidth - AzNavRailDefaults.RailContentHorizontalPadding * 2
+    Box(modifier = modifier) {
         Row(
             modifier = Modifier.pointerInput(isExpanded, disableSwipeToOpen) {
                 detectDragGestures { change, dragAmount ->
@@ -260,16 +268,28 @@ fun AzNavRail(
                                             val currentIndex = options.indexOf(state.displayedOption)
                                             val nextIndex = (currentIndex + 1) % options.size
                                             val nextOption = options[nextIndex]
-                                            val clickCount = state.pendingClickCount + 1
+
                                             cyclerStates[item.id] = state.copy(
                                                 displayedOption = nextOption,
-                                                pendingClickCount = clickCount,
                                                 job = coroutineScope.launch {
                                                     delay(1000L)
-                                                    repeat(clickCount) {
-                                                        item.onClick()
+
+                                                    val finalItemState = scope.navItems.find { it.id == item.id } ?: item
+                                                    val currentStateInVm = finalItemState.selectedOption
+                                                    val targetState = nextOption
+
+                                                    val currentIndexInVm = options.indexOf(currentStateInVm)
+                                                    val targetIndex = options.indexOf(targetState)
+
+                                                    if (currentIndexInVm != -1 && targetIndex != -1) {
+                                                        val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
+                                                        repeat(clicksToCatchUp) {
+                                                            item.onClick()
+                                                        }
                                                     }
-                                                    cyclerStates[item.id] = cyclerStates[item.id]!!.copy(pendingClickCount = 0, job = null)
+
+                                                    onToggle()
+                                                    cyclerStates[item.id] = cyclerStates[item.id]!!.copy(job = null)
                                                 }
                                             )
                                         }
@@ -364,16 +384,19 @@ private fun MenuItem(
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
         item.isCycler -> item.selectedOption ?: ""
         else -> item.text
-    }.replace("\n", " ")
+    }
     val modifier = if (item.isToggle) {
         Modifier.toggleable(
             value = item.isChecked ?: false,
-            onValueChange = { _ -> item.onClick() }
+            onValueChange = {
+                item.onClick()
+                onToggle()
+            }
         )
     } else {
         Modifier.clickable {
             onCyclerClick()
-            if (item.collapseOnClick && !item.isToggle && !item.isCycler) {
+            if (!item.isCycler) {
                 onToggle()
             }
         }
@@ -385,7 +408,16 @@ private fun MenuItem(
             .padding(horizontal = AzNavRailDefaults.MenuItemHorizontalPadding, vertical = AzNavRailDefaults.MenuItemVerticalPadding),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = textToShow, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+        val lines = textToShow.split('\n')
+        Column {
+            lines.forEachIndexed { index, line ->
+                Text(
+                    text = line,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = if (index > 0) Modifier.padding(start = 16.dp) else Modifier
+                )
+            }
+        }
     }
 }
 
