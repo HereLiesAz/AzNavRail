@@ -25,4 +25,3 @@ dependencyResolutionManagement {
 rootProject.name = "AzNavRail"
 include(":SampleApp")
 include(":aznavrail")
-include(":AzLoad")

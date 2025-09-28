@@ -5,6 +5,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * A circular, text-only button with auto-sizing text.
@@ -60,9 +63,13 @@ fun AzToggle(
 /**
  * A button that cycles through a list of options when clicked.
  *
+ * The displayed option changes immediately on click, but the `onCycle` action is delayed
+ * by one second. This allows for rapid cycling through options without triggering
+ * an action for each intermediate selection. Each click resets the delay timer.
+ *
  * @param options The list of options to cycle through.
- * @param selectedOption The currently selected option.
- * @param onCycle The callback to be invoked when the button is clicked.
+ * @param selectedOption The currently selected option from the view model.
+ * @param onCycle The callback to be invoked for the final selected option after a 1-second delay.
  * @param modifier The modifier to be applied to the button.
  * @param color The color of the button's border and text.
  */
@@ -74,9 +81,39 @@ fun AzCycler(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary
 ) {
+    var displayedOption by rememberSaveable(selectedOption) { mutableStateOf(selectedOption) }
+    var job by remember { mutableStateOf<Job?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(selectedOption) {
+        job?.cancel()
+        job = null
+        displayedOption = selectedOption
+    }
+
     AzNavRailButton(
-        onClick = onCycle,
-        text = selectedOption,
+        onClick = {
+            job?.cancel()
+
+            val currentIndex = options.indexOf(displayedOption)
+            val nextIndex = (currentIndex + 1) % options.size
+            displayedOption = options[nextIndex]
+
+            job = coroutineScope.launch {
+                delay(1000L)
+
+                val currentIndexInVm = options.indexOf(selectedOption)
+                val targetIndex = options.indexOf(displayedOption)
+
+                if (currentIndexInVm != -1 && targetIndex != -1) {
+                    val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
+                    repeat(clicksToCatchUp) {
+                        onCycle()
+                    }
+                }
+            }
+        },
+        text = displayedOption,
         modifier = modifier,
         color = color
     )

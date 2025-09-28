@@ -40,7 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
-import com.hereliesaz.azload.AzLoad
+import com.hereliesaz.aznavrail.AzLoad
 import com.hereliesaz.aznavrail.model.AzNavItem
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -74,14 +74,15 @@ private object AzNavRailDefaults {
 }
 
 /**
- * Represents the transient state of a cycler item.
- * @param displayedOption The currently displayed option.
- * @param pendingClickCount The number of pending clicks.
- * @param job The coroutine job for handling clicks.
+ * Represents the transient state of a cycler item, tracking the displayed option and the
+ * coroutine job for the delayed action.
+ *
+ * @param displayedOption The currently displayed option in the UI.
+ * @param job The coroutine job for handling the delayed click action. This is cancelled and
+ * restarted on each click.
  */
 private data class CyclerTransientState(
     val displayedOption: String,
-    val pendingClickCount: Int = 0,
     val job: Job? = null
 )
 
@@ -99,8 +100,10 @@ private data class CyclerTransientState(
  *
  * The header of the rail will automatically display your app's icon by default. This can be changed
  * to display the app's name instead by using the `azSettings` function in the content lambda.
- * The header is not a button, but it is the same size as the rail items. Clicking it will expand
- * or collapse the rail.
+ * Clicking it will expand or collapse the rail.
+ *
+ * Standard and toggle menu items will collapse the rail upon being tapped. Cycler items will
+ * only collapse the rail after the user has settled on a choice for at least one second.
  *
  * @param modifier The modifier to be applied to the navigation rail.
  * @param initiallyExpanded Whether the navigation rail is expanded by default.
@@ -167,10 +170,20 @@ fun AzNavRail(
                     val item = scope.navItems.find { it.id == id }
                     if (item != null) {
                         coroutineScope.launch {
-                            repeat(state.pendingClickCount) {
-                                item.onClick()
+                            val options = requireNotNull(item.options)
+                            val currentStateInVm = item.selectedOption
+                            val targetState = state.displayedOption
+
+                            val currentIndexInVm = options.indexOf(currentStateInVm)
+                            val targetIndex = options.indexOf(targetState)
+
+                            if (currentIndexInVm != -1 && targetIndex != -1) {
+                                val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
+                                repeat(clicksToCatchUp) {
+                                    item.onClick()
+                                }
                             }
-                            cyclerStates[id] = state.copy(pendingClickCount = 0, job = null)
+                            cyclerStates[id] = state.copy(job = null)
                         }
                     }
                 }
@@ -178,9 +191,8 @@ fun AzNavRail(
         }
     }
 
-    BoxWithConstraints(modifier = modifier) {
-        val buttonSize = scope.collapsedRailWidth - AzNavRailDefaults.RailContentHorizontalPadding * 2
-
+    val buttonSize = scope.collapsedRailWidth - AzNavRailDefaults.RailContentHorizontalPadding * 2
+    Box(modifier = modifier) {
         Row(
             modifier = Modifier.pointerInput(isExpanded, disableSwipeToOpen) {
                 detectDragGestures { change, dragAmount ->
@@ -260,16 +272,28 @@ fun AzNavRail(
                                             val currentIndex = options.indexOf(state.displayedOption)
                                             val nextIndex = (currentIndex + 1) % options.size
                                             val nextOption = options[nextIndex]
-                                            val clickCount = state.pendingClickCount + 1
+
                                             cyclerStates[item.id] = state.copy(
                                                 displayedOption = nextOption,
-                                                pendingClickCount = clickCount,
                                                 job = coroutineScope.launch {
                                                     delay(1000L)
-                                                    repeat(clickCount) {
-                                                        item.onClick()
+
+                                                    val finalItemState = scope.navItems.find { it.id == item.id } ?: item
+                                                    val currentStateInVm = finalItemState.selectedOption
+                                                    val targetState = nextOption
+
+                                                    val currentIndexInVm = options.indexOf(currentStateInVm)
+                                                    val targetIndex = options.indexOf(targetState)
+
+                                                    if (currentIndexInVm != -1 && targetIndex != -1) {
+                                                        val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
+                                                        repeat(clicksToCatchUp) {
+                                                            item.onClick()
+                                                        }
                                                     }
-                                                    cyclerStates[item.id] = cyclerStates[item.id]!!.copy(pendingClickCount = 0, job = null)
+
+                                                    onToggle()
+                                                    cyclerStates[item.id] = cyclerStates[item.id]!!.copy(job = null)
                                                 }
                                             )
                                         }
@@ -349,10 +373,16 @@ private fun RailContent(item: AzNavItem, buttonSize: Dp) {
 }
 
 /**
- * Composable for displaying a single item in the expanded menu. The text is always displayed on a single line.
+ * Composable for displaying a single item in the expanded menu.
+ *
+ * This composable handles the display and interaction for all types of menu items, including
+ * standard, toggle, and cycler items. It supports multi-line text with indentation for all
+ * lines after the first.
+ *
  * @param item The navigation item to display.
- * @param onCyclerClick The click handler for cycler items.
- * @param onToggle The click handler for toggling the rail's expanded state.
+ * @param onCyclerClick The click handler for cycler items, which includes the delay logic.
+ * @param onToggle The click handler for toggling the rail's expanded state. This is called
+ * immediately for standard and toggle items, and with a delay for cycler items.
  */
 @Composable
 private fun MenuItem(
@@ -364,16 +394,19 @@ private fun MenuItem(
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
         item.isCycler -> item.selectedOption ?: ""
         else -> item.text
-    }.replace("\n", " ")
+    }
     val modifier = if (item.isToggle) {
         Modifier.toggleable(
             value = item.isChecked ?: false,
-            onValueChange = { _ -> item.onClick() }
+            onValueChange = {
+                item.onClick()
+                onToggle()
+            }
         )
     } else {
         Modifier.clickable {
             onCyclerClick()
-            if (item.collapseOnClick && !item.isToggle && !item.isCycler) {
+            if (!item.isCycler) {
                 onToggle()
             }
         }
@@ -385,7 +418,16 @@ private fun MenuItem(
             .padding(horizontal = AzNavRailDefaults.MenuItemHorizontalPadding, vertical = AzNavRailDefaults.MenuItemVerticalPadding),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = textToShow, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+        val lines = textToShow.split('\n')
+        Column {
+            lines.forEachIndexed { index, line ->
+                Text(
+                    text = line,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = if (index > 0) Modifier.padding(start = 16.dp) else Modifier
+                )
+            }
+        }
     }
 }
 
