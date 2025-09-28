@@ -403,10 +403,10 @@ private fun MenuItem(
                 onToggle()
             }
         )
-    } else {
         Modifier.clickable {
-            onCyclerClick()
-            if (!item.isCycler) {
+            if (item.isCycler) {
+                onCyclerClick()
+            } else {
                 onToggle()
             }
         }
