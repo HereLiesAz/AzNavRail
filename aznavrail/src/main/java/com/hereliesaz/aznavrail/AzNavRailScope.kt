@@ -17,13 +17,15 @@ interface AzNavRailScope {
      * @param expandedRailWidth The width of the rail when it is expanded.
      * @param collapsedRailWidth The width of the rail when it is collapsed.
      * @param showFooter Whether to show the footer.
+     * @param isLoading Whether to show the loading animation.
      */
     fun azSettings(
         displayAppNameInHeader: Boolean = false,
         packRailButtons: Boolean = false,
         expandedRailWidth: Dp = 260.dp,
         collapsedRailWidth: Dp = 80.dp,
-        showFooter: Boolean = true
+        showFooter: Boolean = true,
+        isLoading: Boolean = false
     )
 
     /**
@@ -93,13 +95,15 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
     var expandedRailWidth: Dp = 260.dp
     var collapsedRailWidth: Dp = 80.dp
     var showFooter: Boolean = true
+    var isLoading: Boolean = false
 
     override fun azSettings(
         displayAppNameInHeader: Boolean,
         packRailButtons: Boolean,
         expandedRailWidth: Dp,
         collapsedRailWidth: Dp,
-        showFooter: Boolean
+        showFooter: Boolean,
+        isLoading: Boolean
     ) {
         require(expandedRailWidth > collapsedRailWidth) {
             """
@@ -117,6 +121,7 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         this.expandedRailWidth = expandedRailWidth
         this.collapsedRailWidth = collapsedRailWidth
         this.showFooter = showFooter
+        this.isLoading = isLoading
     }
 
     override fun azMenuItem(id: String, text: String, onClick: () -> Unit) {

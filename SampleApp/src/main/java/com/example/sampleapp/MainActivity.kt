@@ -37,6 +37,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun SampleScreen() {
     var isOnline by remember { mutableStateOf(true) }
+    var isLoading by remember { mutableStateOf(false) }
     val cycleOptions = remember { listOf("A", "B", "C") }
     var selectedOption by remember { mutableStateOf(cycleOptions.first()) }
     val context = LocalContext.current
@@ -45,13 +46,16 @@ fun SampleScreen() {
         AzNavRail {
             azSettings(
                 displayAppNameInHeader = false,
-                packRailButtons = false
+                packRailButtons = false,
+                isLoading = isLoading
             )
 
             azMenuItem(id = "home", text = "Home", onClick = { /* ... */ })
             azRailItem(id = "favorites", text = "Favs", onClick = { /* ... */ })
             azRailItem(id = "long_text", text = "This is a very long text", onClick = { /* ... */ })
             azRailItem(id = "multi_line", text = "Multi\nLine", onClick = { /* ... */ })
+
+            azRailItem(id = "loading", text = "Load", onClick = { isLoading = !isLoading })
 
             azRailToggle(
                 id = "online",

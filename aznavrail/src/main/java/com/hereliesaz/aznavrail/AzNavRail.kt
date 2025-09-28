@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
+import com.hereliesaz.azload.AzLoad
 import com.hereliesaz.aznavrail.model.AzNavItem
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -238,7 +239,15 @@ fun AzNavRail(
                     }
                 }
             ) {
-                if (isExpanded) {
+                if (scope.isLoading) {
+                    Box(
+                        modifier = Modifier.fillMaxHeight(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AzLoad()
+                    }
+                }
+                else if (isExpanded) {
                     Column(modifier = Modifier.fillMaxHeight()) {
                         Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                             scope.navItems.forEach { item ->
