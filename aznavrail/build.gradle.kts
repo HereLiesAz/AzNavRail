@@ -49,7 +49,6 @@ dependencies {
     implementation(libs.androidx.compose.animation.core)
     implementation(libs.androidx.material.icons.extended)
     api(libs.coil.compose)
-    implementation(project(":AzLoad"))
 
     testImplementation(libs.junit)
     testImplementation(libs.androidx.test.ext.junit)

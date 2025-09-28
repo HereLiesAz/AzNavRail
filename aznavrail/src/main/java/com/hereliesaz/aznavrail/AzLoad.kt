@@ -1,4 +1,4 @@
-package com.hereliesaz.azload
+package com.hereliesaz.aznavrail
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.border

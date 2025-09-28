@@ -40,7 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
-import com.hereliesaz.azload.AzLoad
+import com.hereliesaz.aznavrail.AzLoad
 import com.hereliesaz.aznavrail.model.AzNavItem
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -403,10 +403,10 @@ private fun MenuItem(
                 onToggle()
             }
         )
-    } else {
         Modifier.clickable {
-            onCyclerClick()
-            if (!item.isCycler) {
+            if (item.isCycler) {
+                onCyclerClick()
+            } else {
                 onToggle()
             }
         }
