@@ -1,0 +1,14 @@
+.menu-item {
+  padding: 12px 24px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-item:hover {
+  background-color: #e0e0e0;
+}
+
+.menu-item .indented {
+  padding-left: 16px;
+}
