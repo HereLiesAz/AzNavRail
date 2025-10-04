@@ -2,7 +2,8 @@
 - Make sure the app icon is displayed at the top by default. It's the app icon up there, or it's the
   app name. Do not stick either of them inside a circle like it's just another button. Tapping the
   appIcon/appName expands the rail and should NEVER be constrained into a circle. It should be
-  allowed to be whatever it is, no resizing.
+  allowed to be whatever it is, no resizing. 
+- On the other hand, I DO want the appIcon to be as wide as the circle buttons. Not the appName, mind you. That can be however big it needs to be, according to the developer's theme. Just the appIcon.
 - And I don't give a shit how "unstable" you think it is, RESIZE THE TEXT IN THE BUTTONS. The item
   text MUST MUST MUST fit inside the circle, no wrapping allowed without the developer explicitly
   deciding to do so!
