@@ -12,6 +12,10 @@ We are excited to introduce `aznavrail-web`, a new React component that brings t
 
 This "navigrenuail" provides a vertical navigation rail that expands to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
 
+## Introducing AzNavRail for Web
+**[➡️ View the AzNavRail for Web Documentation](./aznavrail-web/README.md)**
+
+
 ## Features
 
 -   **Responsive Layout:** The rail automatically adjusts to landscape orientation, ensuring a great user experience on all devices.
@@ -47,7 +51,7 @@ And add the dependency to your app's `build.gradle.kts`:
 ```kotlin
 dependencies {
 
-    implementation("com.github.HereLiesAz:AzNavRail:3.10") // Or the latest version
+    implementation("com.github.HereLiesAz:AzNavRail:3.11") // Or the latest version
 }
 ```
 
