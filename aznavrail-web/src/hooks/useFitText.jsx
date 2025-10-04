@@ -1,5 +1,16 @@
 import { useEffect, useRef } from 'react';
 
+/**
+ * A custom React hook that dynamically adjusts the font size of a text element
+ * to fit within its parent container.
+ *
+ * This hook uses a binary search algorithm to efficiently find the optimal font size.
+ * It also uses a ResizeObserver to re-calculate the font size whenever the container's
+ * dimensions change.
+ *
+ * @returns {React.RefObject} A React ref object that should be attached to the text
+ * element you want to resize.
+ */
 const useFitText = () => {
   const ref = useRef(null);
 
@@ -33,10 +44,11 @@ const useFitText = () => {
 
     resizeText();
 
-    // Optional: Add a resize observer to handle container resize
+    // Re-run the text fitting logic when the container is resized.
     const resizeObserver = new ResizeObserver(resizeText);
     resizeObserver.observe(container);
 
+    // Cleanup the observer when the component unmounts.
     return () => resizeObserver.disconnect();
   }, [ref]);
 
