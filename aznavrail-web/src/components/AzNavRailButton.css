@@ -1,0 +1,26 @@
+.az-nav-rail-button {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: transparent;
+  border: 2px solid;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 8px 0;
+  padding: 4px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.az-nav-rail-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.button-text {
+  font-size: 12px; /* Base font size, can be adjusted */
+  text-align: center;
+  white-space: normal; /* Allow wrapping for multi-word strings */
+  overflow-wrap: break-word;
+  color: #000;
+}
