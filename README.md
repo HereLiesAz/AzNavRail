@@ -4,13 +4,11 @@
 
 A contemptably stubborn if not dictatorially restrictive navigation rail/menu--I call it a renu. Or maybe a mail. No, a navigrenuail--for Jetpack Compose with a streamlined, DSL-style API.
 
+This "navigrenuail" provides a vertical navigation rail that expands to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
+
 ## Introducing AzNavRail for Web
-
-We are excited to introduce `aznavrail-web`, a new React component that brings the functionality and style of the original `AzNavRail` to the web. It is designed to be a "batteries-included" solution for modern web applications, providing a highly configurable and easy-to-use navigation component.
-
 **[➡️ View the AzNavRail for Web Documentation](./aznavrail-web/README.md)**
 
-This "navigrenuail" provides a vertical navigation rail that expands to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
 
 ## Features
 
