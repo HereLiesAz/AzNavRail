@@ -477,7 +477,7 @@ private fun Footer(appName: String, onToggle: () -> Unit) {
     }
 
     Column {
-        HorizontalDivider(modifier = Modifier.padding(horizontal = AzNavRailDefaults.FooterDividerHorizontalPadding, vertical = AzNavRailDefaults.FooterDividerVerticalPadding), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+        AzDivider()
         MenuItem(item = AzNavItem(id = "about", text = "About", isRailItem = false, onClick = onAboutClick), onToggle = onToggle)
         MenuItem(item = AzNavItem(id = "feedback", text = "Feedback", isRailItem = false, onClick = onFeedbackClick), onToggle = onToggle)
         MenuItem(
