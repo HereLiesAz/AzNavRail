@@ -14,8 +14,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import android.widget.Toast
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import com.hereliesaz.aznavrail.AzDivider
 import com.hereliesaz.aznavrail.AzNavRail
 
 class MainActivity : ComponentActivity() {
@@ -79,7 +81,16 @@ fun SampleScreen() {
                 }
             )
         }
-        Text("Main content for the app.")
+        Column {
+            Text("Horizontal Divider:")
+            AzDivider()
+            Text("Some content below the divider.")
+            Row {
+                Text("Vertical Divider:")
+                AzDivider()
+                Text("Some content to the right of the divider.")
+            }
+        }
     }
 }
 
