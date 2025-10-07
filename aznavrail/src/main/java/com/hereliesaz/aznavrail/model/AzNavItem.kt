@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
  * @param isCycler If `true`, this item behaves like a cycler.
  * @param options The list of options for a cycler.
  * @param selectedOption The currently selected option for a cycler.
+ * @param isDivider If `true`, this item is a divider.
  * @param collapseOnClick If `true`, the navigation rail will collapse after this item is clicked. This only applies to normal items (not toggles or cyclers).
  * @param onClick The lambda to be executed when the item is clicked. For toggles and cyclers, this is where you should update your state.
  */
@@ -32,6 +33,7 @@ data class AzNavItem(
     val isCycler: Boolean = false,
     val options: List<String>? = null,
     val selectedOption: String? = null,
+    val isDivider: Boolean = false,
     val collapseOnClick: Boolean = true,
     val onClick: () -> Unit
 )

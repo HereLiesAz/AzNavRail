@@ -94,6 +94,11 @@ interface AzNavRailScope {
      * @param onClick The callback to be invoked for the final selected option after the delay.
      */
     fun azRailCycler(id: String, color: Color? = null, options: List<String>, selectedOption: String, onClick: () -> Unit)
+
+    /**
+     * Adds a divider to the expanded menu.
+     */
+    fun azDivider()
 }
 
 internal class AzNavRailScopeImpl : AzNavRailScope {
@@ -232,5 +237,9 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
             """.trimIndent()
         }
         navItems.add(AzNavItem(id = id, text = "", isRailItem = true, color = color, isCycler = true, options = options, selectedOption = selectedOption, onClick = onClick))
+    }
+
+    override fun azDivider() {
+        navItems.add(AzNavItem(id = "divider_${navItems.size}", text = "", isRailItem = false, isDivider = true, onClick = {}))
     }
 }

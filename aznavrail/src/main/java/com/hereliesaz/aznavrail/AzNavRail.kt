@@ -263,50 +263,54 @@ fun AzNavRail(
                     Column(modifier = Modifier.fillMaxHeight()) {
                         Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                             scope.navItems.forEach { item ->
-                                val onCyclerClick = if (item.isCycler) {
-                                    {
-                                        val state = cyclerStates[item.id]
-                                        if (state != null) {
-                                            state.job?.cancel()
-                                            val options = requireNotNull(item.options) { "Cycler item '${item.id}' must have options" }
-                                            val currentIndex = options.indexOf(state.displayedOption)
-                                            val nextIndex = (currentIndex + 1) % options.size
-                                            val nextOption = options[nextIndex]
+                                if (item.isDivider) {
+                                    AzDivider()
+                                } else {
+                                    val onCyclerClick = if (item.isCycler) {
+                                        {
+                                            val state = cyclerStates[item.id]
+                                            if (state != null) {
+                                                state.job?.cancel()
+                                                val options = requireNotNull(item.options) { "Cycler item '${item.id}' must have options" }
+                                                val currentIndex = options.indexOf(state.displayedOption)
+                                                val nextIndex = (currentIndex + 1) % options.size
+                                                val nextOption = options[nextIndex]
 
-                                            cyclerStates[item.id] = state.copy(
-                                                displayedOption = nextOption,
-                                                job = coroutineScope.launch {
-                                                    delay(1000L)
+                                                cyclerStates[item.id] = state.copy(
+                                                    displayedOption = nextOption,
+                                                    job = coroutineScope.launch {
+                                                        delay(1000L)
 
-                                                    val finalItemState = scope.navItems.find { it.id == item.id } ?: item
-                                                    val currentStateInVm = finalItemState.selectedOption
-                                                    val targetState = nextOption
+                                                        val finalItemState = scope.navItems.find { it.id == item.id } ?: item
+                                                        val currentStateInVm = finalItemState.selectedOption
+                                                        val targetState = nextOption
 
-                                                    val currentIndexInVm = options.indexOf(currentStateInVm)
-                                                    val targetIndex = options.indexOf(targetState)
+                                                        val currentIndexInVm = options.indexOf(currentStateInVm)
+                                                        val targetIndex = options.indexOf(targetState)
 
-                                                    if (currentIndexInVm != -1 && targetIndex != -1) {
-                                                        val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
-                                                        repeat(clicksToCatchUp) {
-                                                            item.onClick()
+                                                        if (currentIndexInVm != -1 && targetIndex != -1) {
+                                                            val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
+                                                            repeat(clicksToCatchUp) {
+                                                                item.onClick()
+                                                            }
                                                         }
-                                                    }
 
-                                                    onToggle()
-                                                    cyclerStates[item.id] = cyclerStates[item.id]!!.copy(job = null)
-                                                }
-                                            )
+                                                        onToggle()
+                                                        cyclerStates[item.id] = cyclerStates[item.id]!!.copy(job = null)
+                                                    }
+                                                )
+                                            }
                                         }
+                                    } else {
+                                        item.onClick
                                     }
-                                } else {
-                                    item.onClick
+                                    val finalItem = if (item.isCycler) {
+                                        item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption)
+                                    } else {
+                                        item
+                                    }
+                                    MenuItem(item = finalItem, onCyclerClick = onCyclerClick, onToggle = onToggle)
                                 }
-                                val finalItem = if (item.isCycler) {
-                                    item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption)
-                                } else {
-                                    item
-                                }
-                                MenuItem(item = finalItem, onCyclerClick = onCyclerClick, onToggle = onToggle)
                             }
                         }
                         if (scope.showFooter) {
