@@ -15,14 +15,22 @@ import androidx.compose.ui.unit.dp
 
 /**
  * A divider that automatically adjusts its orientation based on the available space.
- * It renders as a [HorizontalDivider] in a vertical layout and a [VerticalDivider]
- * in a horizontal layout.
+ * It renders as a [HorizontalDivider] in a vertical layout (e.g., a `Column`)
+ * and a [VerticalDivider] in a horizontal layout (e.g., a `Row`).
+ *
+ * This composable is designed to be a direct replacement for `HorizontalDivider` or
+ * `VerticalDivider` when the orientation needs to be dynamic.
+ *
+ * The default styling matches the divider used in the `AzNavRail` footer.
  *
  * @param modifier The modifier to be applied to the divider.
- * @param thickness The thickness of the divider.
- * @param color The color of the divider.
- * @param horizontalPadding The padding to apply to the left and right of the divider.
- * @param verticalPadding The padding to apply to the top and bottom of the divider.
+ * @param thickness The thickness of the divider line. Defaults to `1.dp`.
+ * @param color The color of the divider line. Defaults to a semi-transparent outline color
+ * from the `MaterialTheme`.
+ * @param horizontalPadding The padding applied to the left and right of the divider.
+ * Defaults to `16.dp`.
+ * @param verticalPadding The padding applied to the top and bottom of the divider.
+ * Defaults to `8.dp`.
  */
 @Composable
 fun AzDivider(
