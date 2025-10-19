@@ -12,13 +12,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import android.widget.Toast
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import com.hereliesaz.aznavrail.AzDivider
+import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.AzNavRail
+import com.hereliesaz.aznavrail.model.AzButtonShape
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,56 +41,67 @@ class MainActivity : ComponentActivity() {
 fun SampleScreen() {
     var isOnline by remember { mutableStateOf(true) }
     var isLoading by remember { mutableStateOf(false) }
-    val cycleOptions = remember { listOf("A", "B", "C") }
+    val cycleOptions = remember { listOf("A", "B", "C", "D") }
     var selectedOption by remember { mutableStateOf(cycleOptions.first()) }
     val context = LocalContext.current
 
     Row {
         AzNavRail {
             azSettings(
-                displayAppNameInHeader = false,
+                displayAppNameInHeader = true,
                 packRailButtons = false,
-                isLoading = isLoading
+                isLoading = isLoading,
+                defaultShape = AzButtonShape.RECTANGLE // Set a default shape for all rail items
             )
 
+            // A standard menu item
             azMenuItem(id = "home", text = "Home", onClick = { /* ... */ })
-            azRailItem(id = "favorites", text = "Favs", onClick = { /* ... */ })
-            azRailItem(id = "long_text", text = "This is a very long text", onClick = { /* ... */ })
-            azRailItem(id = "multi_line", text = "Multi\nLine", onClick = { /* ... */ })
 
-            azRailItem(id = "loading", text = "Load", onClick = { isLoading = !isLoading })
+            // A rail item with the default shape (RECTANGLE)
+            azRailItem(id = "favorites", text = "Favorites", onClick = { /* ... */ })
 
+            // A disabled rail item that overrides the default shape
+            azRailItem(
+                id = "profile",
+                text = "Profile",
+                shape = AzButtonShape.CIRCLE,
+                disabled = true,
+                onClick = { /* This will not be triggered */ }
+            )
+
+            azDivider()
+
+            // A toggle item with the SQUARE shape
             azRailToggle(
                 id = "online",
                 isChecked = isOnline,
                 toggleOnText = "Online",
                 toggleOffText = "Offline",
-                onClick = {
-                    isOnline = !isOnline
-                    Toast.makeText(context, "Toggle clicked! isOnline: $isOnline", Toast.LENGTH_SHORT).show()
-                }
+                shape = AzButtonShape.SQUARE,
+                onClick = { isOnline = !isOnline }
             )
 
-            azMenuCycler(
+            // A cycler with a disabled option
+            azRailCycler(
                 id = "cycler",
                 options = cycleOptions,
                 selectedOption = selectedOption,
+                disabledOptions = listOf("C"),
                 onClick = {
                     val currentIndex = cycleOptions.indexOf(selectedOption)
                     selectedOption = cycleOptions[(currentIndex + 1) % cycleOptions.size]
-                    Toast.makeText(context, "Cycler clicked! selectedOption: $selectedOption", Toast.LENGTH_SHORT).show()
                 }
             )
+
+            // A button to demonstrate the loading state
+            azRailItem(id = "loading", text = "Load", onClick = { isLoading = !isLoading })
         }
-        Column {
-            Text("Horizontal Divider:")
-            AzDivider()
-            Text("Some content below the divider.")
-            Row {
-                Text("Vertical Divider:")
-                AzDivider()
-                Text("Some content to the right of the divider.")
-            }
+
+        // Your app's main content goes here
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("isOnline: $isOnline")
+            Text("selectedOption: $selectedOption")
+            Text("isLoading: $isLoading")
         }
     }
 }
