@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.unit.dp
+import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 
 /**
@@ -25,25 +26,29 @@ interface AzNavRailScope {
         expandedRailWidth: Dp = 260.dp,
         collapsedRailWidth: Dp = 80.dp,
         showFooter: Boolean = true,
-        isLoading: Boolean = false
+        isLoading: Boolean = false,
+        defaultShape: AzButtonShape = AzButtonShape.CIRCLE
     )
 
     /**
      * Adds a menu item that only appears in the expanded menu.
      * @param id The unique identifier for the item.
      * @param text The text to display for the item.
+     * @param disabled Whether the item is disabled.
      * @param onClick The callback to be invoked when the item is clicked.
      */
-    fun azMenuItem(id: String, text: String, onClick: () -> Unit)
+    fun azMenuItem(id: String, text: String, disabled: Boolean = false, onClick: () -> Unit)
 
     /**
      * Adds a rail item that appears in both the collapsed rail and the expanded menu.
      * @param id The unique identifier for the item.
      * @param text The text to display for the item.
      * @param color The color of the item.
+     * @param shape The shape of the button.
+     * @param disabled Whether the item is disabled.
      * @param onClick The callback to be invoked when the item is clicked.
      */
-    fun azRailItem(id: String, text: String, color: Color? = null, onClick: () -> Unit)
+    fun azRailItem(id: String, text: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, onClick: () -> Unit)
 
     /**
      * Adds a toggle item that only appears in the expanded menu. The text of the item changes to reflect the state.
@@ -51,9 +56,10 @@ interface AzNavRailScope {
      * @param isChecked Whether the toggle is in the "on" state.
      * @param toggleOnText The text to display when the toggle is on.
      * @param toggleOffText The text to display when the toggle is off.
+     * @param disabled Whether the item is disabled.
      * @param onClick The callback to be invoked when the item is clicked.
      */
-    fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, onClick: () -> Unit)
+    fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean = false, onClick: () -> Unit)
 
     /**
      * Adds a toggle item that appears in both the collapsed rail and the expanded menu. The text of the item changes to reflect the state.
@@ -62,9 +68,11 @@ interface AzNavRailScope {
      * @param isChecked Whether the toggle is in the "on" state.
      * @param toggleOnText The text to display when the toggle is on.
      * @param toggleOffText The text to display when the toggle is off.
+     * @param shape The shape of the button.
+     * @param disabled Whether the item is disabled.
      * @param onClick The callback to be invoked when the item is clicked.
      */
-    fun azRailToggle(id: String, color: Color? = null, isChecked: Boolean, toggleOnText: String, toggleOffText: String, onClick: () -> Unit)
+    fun azRailToggle(id: String, color: Color? = null, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape? = null, disabled: Boolean = false, onClick: () -> Unit)
 
     /**
      * Adds a cycler item that only appears in the expanded menu.
@@ -76,9 +84,11 @@ interface AzNavRailScope {
      * @param id The unique identifier for the item.
      * @param options The list of options to cycle through.
      * @param selectedOption The currently selected option.
+     * @param disabled Whether the item is disabled.
+     * @param disabledOptions The list of options to disable.
      * @param onClick The callback to be invoked for the final selected option after the delay.
      */
-    fun azMenuCycler(id: String, options: List<String>, selectedOption: String, onClick: () -> Unit)
+    fun azMenuCycler(id: String, options: List<String>, selectedOption: String, disabled: Boolean = false, disabledOptions: List<String>? = null, onClick: () -> Unit)
 
     /**
      * Adds a cycler item that appears in both the collapsed rail and the expanded menu.
@@ -91,9 +101,12 @@ interface AzNavRailScope {
      * @param color The color of the item.
      * @param options The list of options to cycle through.
      * @param selectedOption The currently selected option.
+     * @param shape The shape of the button.
+     * @param disabled Whether the item is disabled.
+     * @param disabledOptions The list of options to disable.
      * @param onClick The callback to be invoked for the final selected option after the delay.
      */
-    fun azRailCycler(id: String, color: Color? = null, options: List<String>, selectedOption: String, onClick: () -> Unit)
+    fun azRailCycler(id: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, disabled: Boolean = false, disabledOptions: List<String>? = null, onClick: () -> Unit)
 
     /**
      * Adds a divider to the expanded menu.
@@ -109,6 +122,7 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
     var collapsedRailWidth: Dp = 80.dp
     var showFooter: Boolean = true
     var isLoading: Boolean = false
+    var defaultShape: AzButtonShape = AzButtonShape.CIRCLE
 
     override fun azSettings(
         displayAppNameInHeader: Boolean,
@@ -116,7 +130,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         expandedRailWidth: Dp,
         collapsedRailWidth: Dp,
         showFooter: Boolean,
-        isLoading: Boolean
+        isLoading: Boolean,
+        defaultShape: AzButtonShape
     ) {
         require(expandedRailWidth > collapsedRailWidth) {
             """
@@ -135,9 +150,10 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         this.collapsedRailWidth = collapsedRailWidth
         this.showFooter = showFooter
         this.isLoading = isLoading
+        this.defaultShape = defaultShape
     }
 
-    override fun azMenuItem(id: String, text: String, onClick: () -> Unit) {
+    override fun azMenuItem(id: String, text: String, disabled: Boolean, onClick: () -> Unit) {
         require(text.isNotEmpty()) {
             """
             `text` must not be empty.
@@ -150,10 +166,10 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
             )
             """.trimIndent()
         }
-        navItems.add(AzNavItem(id = id, text = text, isRailItem = false, onClick = onClick))
+        navItems.add(AzNavItem(id = id, text = text, isRailItem = false, disabled = disabled, onClick = onClick))
     }
 
-    override fun azRailItem(id: String, text: String, color: Color?, onClick: () -> Unit) {
+    override fun azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, onClick: () -> Unit) {
         require(text.isNotEmpty()) {
             """
             `text` must not be empty.
@@ -166,10 +182,10 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
             )
             """.trimIndent()
         }
-        navItems.add(AzNavItem(id = id, text = text, isRailItem = true, color = color, onClick = onClick))
+        navItems.add(AzNavItem(id = id, text = text, isRailItem = true, color = color, shape = shape ?: defaultShape, disabled = disabled, onClick = onClick))
     }
 
-    override fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, onClick: () -> Unit) {
+    override fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean, onClick: () -> Unit) {
         require(toggleOnText.isNotEmpty() && toggleOffText.isNotEmpty()) {
             """
             `toggleOnText` and `toggleOffText` must not be empty.
@@ -184,10 +200,10 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
             )
             """.trimIndent()
         }
-        navItems.add(AzNavItem(id = id, text = "", isRailItem = false, isToggle = true, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, onClick = onClick))
+        navItems.add(AzNavItem(id = id, text = "", isRailItem = false, isToggle = true, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, disabled = disabled, onClick = onClick))
     }
 
-    override fun azRailToggle(id: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, onClick: () -> Unit) {
+    override fun azRailToggle(id: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, disabled: Boolean, onClick: () -> Unit) {
         require(toggleOnText.isNotEmpty() && toggleOffText.isNotEmpty()) {
             """
             `toggleOnText` and `toggleOffText` must not be empty.
@@ -202,10 +218,10 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
             )
             """.trimIndent()
         }
-        navItems.add(AzNavItem(id = id, text = "", isRailItem = true, color = color, isToggle = true, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, onClick = onClick))
+        navItems.add(AzNavItem(id = id, text = "", isRailItem = true, color = color, isToggle = true, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, shape = shape ?: defaultShape, disabled = disabled, onClick = onClick))
     }
 
-    override fun azMenuCycler(id: String, options: List<String>, selectedOption: String, onClick: () -> Unit) {
+    override fun azMenuCycler(id: String, options: List<String>, selectedOption: String, disabled: Boolean, disabledOptions: List<String>?, onClick: () -> Unit) {
         require(selectedOption in options) {
             """
             `selectedOption` must be one of the provided options.
@@ -219,10 +235,10 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
             )
             """.trimIndent()
         }
-        navItems.add(AzNavItem(id = id, text = "", isRailItem = false, isCycler = true, options = options, selectedOption = selectedOption, onClick = onClick))
+        navItems.add(AzNavItem(id = id, text = "", isRailItem = false, isCycler = true, options = options, selectedOption = selectedOption, disabled = disabled, disabledOptions = disabledOptions, onClick = onClick))
     }
 
-    override fun azRailCycler(id: String, color: Color?, options: List<String>, selectedOption: String, onClick: () -> Unit) {
+    override fun azRailCycler(id: String, color: Color?, options: List<String>, selectedOption: String, shape: AzButtonShape?, disabled: Boolean, disabledOptions: List<String>?, onClick: () -> Unit) {
         require(selectedOption in options) {
             """
             `selectedOption` must be one of the provided options.
@@ -236,7 +252,7 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
             )
             """.trimIndent()
         }
-        navItems.add(AzNavItem(id = id, text = "", isRailItem = true, color = color, isCycler = true, options = options, selectedOption = selectedOption, onClick = onClick))
+        navItems.add(AzNavItem(id = id, text = "", isRailItem = true, color = color, isCycler = true, options = options, selectedOption = selectedOption, shape = shape ?: defaultShape, disabled = disabled, disabledOptions = disabledOptions, onClick = onClick))
     }
 
     override fun azDivider() {

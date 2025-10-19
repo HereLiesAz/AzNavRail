@@ -35,5 +35,8 @@ data class AzNavItem(
     val selectedOption: String? = null,
     val isDivider: Boolean = false,
     val collapseOnClick: Boolean = true,
+    val shape: AzButtonShape = AzButtonShape.CIRCLE,
+    val disabled: Boolean = false,
+    val disabledOptions: List<String>? = null,
     val onClick: () -> Unit
 )

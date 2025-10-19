@@ -2,7 +2,7 @@
 
 [![](https://jitpack.io/v/HereLiesAz/AzNavRail.svg)](https://jitpack.io/#HereLiesAz/AzNavRail)
 
-A contemptably stubborn if not dictatorially restrictive navigation rail/menu--I call it a renu. Or maybe a mail. No, a navigrenuail--for Jetpack Compose with a streamlined, DSL-style API.
+AzNavRail is a highly customizable and opinionated navigation rail component for Jetpack Compose, designed with a streamlined, DSL-style API. It provides a powerful yet easy-to-use solution for app navigation, ensuring a consistent and polished user experience.
 
 This "navigrenuail" provides a vertical navigation rail that expands to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
 
@@ -12,20 +12,22 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 
 ## Features
 
--   **Responsive Layout:** The rail automatically adjusts to landscape orientation, ensuring a great user experience on all devices.
--   **Scrollable Content:** Both the expanded menu and the collapsed rail are scrollable, allowing for a large number of navigation items.
--   **Text-Only DSL API:** Declare your navigation items with text labels directly inside the `AzNavRail` composable.
--   **Multi-line Menu Items:** The expanded menu supports multi-line text, with automatic indentation for readability.
--   **Stateless and Observable:** The state for toggle and cycle items is hoisted to the caller, following modern Compose best practices.
--   **Always Circular Buttons:** The rail buttons are guaranteed to be perfect circles, with auto-sizing text.
--   **Smart Collapse Behavior:** Toggle and standard menu items collapse the rail on tap. Cycler items wait for the user to settle on an option before acting and collapsing the rail.
--   **Delayed Cycler Action:** Cycler items update their displayed option instantly but wait for a 1-second delay before triggering the associated action, allowing users to rapid-cycle without unintended consequences.
--   **Customizable Colors:** Specify a custom color for each rail button.
--   **Dividers:** Add visual separation to your menu with the `azDivider` function.
--   **Automatic Header:** The header automatically uses your app's launcher icon by default. You can configure it to display the app name instead.
--   **Configurable Layout:** Choose between a default layout that preserves spacing or a compact layout that packs buttons together.
--   **Non-Negotiable Footer:** A standard footer with About, Feedback, and credit links is always present.
--   **Loading State:** Display a loading animation over the rail while content is loading.
+-   **Responsive Layout:** Automatically adjusts to orientation changes.
+-   **Scrollable Content:** Both the rail and the expanded menu are scrollable.
+-   **Text-Only DSL API:** A simple, declarative API for building your navigation.
+-   **Multi-line Menu Items:** Supports multi-line text with automatic indentation.
+-   **Stateless and Observable:** Hoist and manage state in your own composables.
+-   **Customizable Shapes:** Choose from `CIRCLE`, `SQUARE`, or `RECTANGLE` for rail buttons.
+-   **Uniform Rectangle Width:** All rectangular buttons automatically share the same width.
+-   **Smart Collapse Behavior:** Menu items intelligently collapse the rail after interactions.
+-   **Delayed Cycler Action:** Cycler items have a built-in delay to prevent accidental triggers.
+-   **Customizable Colors:** Apply custom colors to individual rail buttons.
+-   **Dividers:** Easily add dividers to your menu.
+-   **Automatic Header:** Displays your app's icon or name by default.
+-   **Configurable Layout:** Pack buttons together or preserve spacing.
+-   **Disabled State:** Disable any item, including individual cycler options.
+-   **Loading State:** Show a loading animation over the rail.
+-   **Standalone Components:** Use `AzButton`, `AzToggle`, `AzCycler`, and `AzDivider` on their own.
 
 ## Setup
 
@@ -46,62 +48,93 @@ And add the dependency to your app's `build.gradle.kts`:
 ```kotlin
 dependencies {
 
-    implementation("com.github.HereLiesAz:AzNavRail:3.13") // Or the latest version
+    implementation("com.github.HereLiesAz:AzNavRail:3.14") // Or the latest version
 }
 ```
 
 ## Usage
 
-Using the new DSL API is incredibly simple. You manage the state in your own composable and pass it to the `AzNavRail`.
+Here is a comprehensive example demonstrating the various features of `AzNavRail`. You can find this code in the `SampleApp`.
 
 ```kotlin
 import com.hereliesaz.aznavrail.AzNavRail
+import com.hereliesaz.aznavrail.model.AzButtonShape
 
 @Composable
-fun MainScreen() {
+fun SampleScreen() {
     var isOnline by remember { mutableStateOf(true) }
-    val cycleOptions = listOf("Option A", "Option B", "Option C")
+    var isLoading by remember { mutableStateOf(false) }
+    val cycleOptions = remember { listOf("A", "B", "C", "D") }
     var selectedOption by remember { mutableStateOf(cycleOptions.first()) }
+    val context = LocalContext.current
 
-    AzNavRail {
-        // Configure the rail's behavior
-        azSettings(
-            displayAppNameInHeader = false,
-            packRailButtons = false
-        )
+    Row {
+        AzNavRail {
+            azSettings(
+                displayAppNameInHeader = true,
+                packRailButtons = false,
+                isLoading = isLoading,
+                defaultShape = AzButtonShape.RECTANGLE // Set a default shape for all rail items
+            )
 
-        // Declare the navigation items
-        azMenuItem(id = "home", text = "Home\nSweet Home", onClick = { /* Navigate home */ })
-        azRailItem(id = "favorites", text = "Favs", onClick = { /* Show favorites */ })
+            // A standard menu item
+            azMenuItem(id = "home", text = "Home", onClick = { /* ... */ })
 
-        azDivider()
+            // A rail item with the default shape (RECTANGLE)
+            azRailItem(id = "favorites", text = "Favorites", onClick = { /* ... */ })
 
-        azRailToggle(
-            id = "online",
-            isChecked = isOnline,
-            toggleOnText = "Online",
-            toggleOffText = "Offline",
-            onClick = { isOnline = !isOnline }
-        )
+            // A disabled rail item that overrides the default shape
+            azRailItem(
+                id = "profile",
+                text = "Profile",
+                shape = AzButtonShape.CIRCLE,
+                disabled = true,
+                onClick = { /* This will not be triggered */ }
+            )
 
-        azMenuCycler(
-            id = "cycler",
-            options = cycleOptions,
-            selectedOption = selectedOption,
-            onClick = {
-                val currentIndex = cycleOptions.indexOf(selectedOption)
-                selectedOption = cycleOptions[(currentIndex + 1) % cycleOptions.size]
-            }
-        )
+            azDivider()
+
+            // A toggle item with the SQUARE shape
+            azRailToggle(
+                id = "online",
+                isChecked = isOnline,
+                toggleOnText = "Online",
+                toggleOffText = "Offline",
+                shape = AzButtonShape.SQUARE,
+                onClick = { isOnline = !isOnline }
+            )
+
+            // A cycler with a disabled option
+            azRailCycler(
+                id = "cycler",
+                options = cycleOptions,
+                selectedOption = selectedOption,
+                disabledOptions = listOf("C"),
+                onClick = {
+                    val currentIndex = cycleOptions.indexOf(selectedOption)
+                    selectedOption = cycleOptions[(currentIndex + 1) % cycleOptions.size]
+                }
+            )
+
+            // A button to demonstrate the loading state
+            azRailItem(id = "loading", text = "Load", onClick = { isLoading = !isLoading })
+        }
+
+        // Your app's main content goes here
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("isOnline: $isOnline")
+            Text("selectedOption: $selectedOption")
+            Text("isLoading: $isLoading")
+        }
     }
 }
 ```
 
 ## API Reference
 
-The main entry point is the `AzNavRail` composable.
-
 ### `AzNavRail`
+
+The main composable for the navigation rail.
 
 ```kotlin
 @Composable
@@ -113,125 +146,18 @@ fun AzNavRail(
 )
 ```
 
-An M3-style navigation rail that expands into a full menu drawer.
-
--   **`modifier`**: The modifier to be applied to the navigation rail.
--   **`initiallyExpanded`**: Whether the navigation rail is expanded by default.
--   **`disableSwipeToOpen`**: Whether to disable the swipe-to-open gesture.
--   **`content`**: The DSL content for the navigation rail.
-
 ### `AzNavRailScope`
 
-You declare items and configure the rail within the content lambda of `AzNavRail`. The available functions are:
+The DSL for configuring the `AzNavRail`.
 
-**Note:** Functions prefixed with `azMenu` will only appear in the expanded menu view. Functions prefixed with `azRail` will appear on the collapsed rail, and their text will be used as the label in the expanded menu.
-
--   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean, isLoading: Boolean)`: Configures the settings for the `AzNavRail`.
--   `azMenuItem(id: String, text: String, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
--   `azRailItem(id: String, text: String, color: Color? = null, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text in the expanded menu.
--   `azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, onClick: () -> Unit)`: Adds a toggle item that only appears in the expanded menu. Tapping it executes the action and collapses the rail.
--   `azRailToggle(id: String, color: Color? = null, isChecked: Boolean, toggleOnText: String, toggleOffText: String, onClick: () -> Unit)`: Adds a toggle item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail.
--   `azMenuCycler(id: String, options: List<String>, selectedOption: String, onClick: () -> Unit)`: Adds a cycler item that only appears in the expanded menu. Tapping it cycles through options and executes the `onClick` action for the final selection after a 1-second delay, then collapses the rail.
--   `azRailCycler(id: String, color: Color? = null, options: List<String>, selectedOption: String, onClick: () -> Unit)`: Adds a cycler item that appears in both the collapsed rail and the expanded menu. The behavior is the same as `azMenuCycler`.
--   `azDivider()`: Adds a horizontal divider to the expanded menu.
-
-## Other Components
-
-### Loading State
-
-When your app is loading data, you can display an unobtrusive animation over the rail by setting the `isLoading` parameter to `true` in the `azSettings` function. This will disable all buttons and show a loading indicator until `isLoading` is set back to `false`.
-
-This feature is powered by the `AzLoad` composable, which is integrated directly into the `AzNavRail` and does not require any separate setup.
-
-```kotlin
-@Composable
-fun MainScreen(myViewModel: MyViewModel = viewModel()) {
-    val uiState by myViewModel.uiState.collectAsState()
-
-    AzNavRail {
-        azSettings(
-            isLoading = uiState.isLoading
-        )
-
-        // ... your rail and menu items
-    }
-}
-```
-
-### Standalone Components
-
-You can also use the `AzButton`, `AzToggle`, `AzCycler`, and `AzDivider` composables by themselves. They are styled to look just like the components in the `AzNavRail`.
-
-```kotlin
-import com.hereliesaz.aznavrail.AzButton
-import com.hereliesaz.aznavrail.AzToggle
-import com.hereliesaz.aznavrail.AzCycler
-import com.hereliesaz.aznavrail.AzDivider
-
-@Composable
-fun MyScreen() {
-    var isToggled by remember { mutableStateOf(false) }
-    val cyclerOptions = listOf("A", "B", "C")
-    var selectedOption by remember { mutableStateOf(cyclerOptions.first()) }
-
-    Column {
-        AzButton(
-            text = "Click Me",
-            onClick = { /* Do something */ }
-        )
-
-        AzDivider()
-
-        AzToggle(
-            isChecked = isToggled,
-            onToggle = { isToggled = !isToggled },
-            toggleOnText = "On",
-            toggleOffText = "Off"
-        )
-
-        AzCycler(
-            options = cyclerOptions,
-            selectedOption = selectedOption,
-            onCycle = {
-                val currentIndex = cyclerOptions.indexOf(selectedOption)
-                selectedOption = cyclerOptions[(currentIndex + 1) % cyclerOptions.size]
-            }
-        )
-    }
-}
-```
-
-#### `AzButton`
-A simple, circular button.
--   `onClick: () -> Unit`: The callback to be invoked when the button is clicked.
--   `text: String`: The text to display on the button.
--   `modifier: Modifier`: The modifier to be applied to the button.
--   `color: Color`: The color of the button's border and text.
-
-#### `AzToggle`
-A toggle button.
--   `isChecked: Boolean`: Whether the toggle is in the "on" state.
--   `onToggle: () -> Unit`: The callback to be invoked when the button is toggled.
--   `toggleOnText: String`: The text to display when the toggle is on.
--   `toggleOffText: String`: The text to display when the toggle is off.
--   `modifier: Modifier`: The modifier to be applied to the button.
--   `color: Color`: The color of the button's border and text.
-
-#### `AzCycler`
-A button that cycles through a list of options when clicked.
--   `options: List<String>`: The list of options to cycle through.
--   `selectedOption: String`: The currently selected option.
--   `onCycle: () -> Unit`: The callback to be invoked after a 1-second delay on the final selected option.
--   `modifier: Modifier`: The modifier to be applied to the button.
--   `color: Color`: The color of the button's border and text.
-
-#### `AzDivider`
-A divider that automatically adjusts its orientation based on the available space.
--   `modifier: Modifier`: The modifier to be applied to the divider.
--   `thickness: Dp`: The thickness of the divider line.
--   `color: Color`: The color of the divider line.
--   `horizontalPadding: Dp`: The padding applied to the left and right of the divider.
--   `verticalPadding: Dp`: The padding applied to the top and bottom of the divider.
+-   `azSettings(...)`: Configures global settings for the rail.
+-   `azMenuItem(...)`: Adds an item that only appears in the expanded menu.
+-   `azRailItem(...)`: Adds an item to the rail and the expanded menu.
+-   `azMenuToggle(...)`: Adds a toggle item to the expanded menu.
+-   `azRailToggle(...)`: Adds a toggle item to the rail and the expanded menu.
+-   `azMenuCycler(...)`: Adds a cycler item to the expanded menu.
+-   `azRailCycler(...)`: Adds a cycler item to the rail and the expanded menu.
+-   `azDivider()`: Adds a divider to the menu.
 
 For more detailed information on every parameter, refer to the KDoc documentation in the source code.
 
