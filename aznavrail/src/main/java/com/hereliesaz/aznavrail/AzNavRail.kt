@@ -330,26 +330,59 @@ fun AzNavRail(
                         }
                     }
                 } else {
-                    val railItems = remember(scope) { scope.navItems.filter { it.isRailItem } }
                     Column(
                         modifier = Modifier
                             .padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding)
                             .verticalScroll(rememberScrollState()),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = if (scope.packRailButtons) Arrangement.Top else Arrangement.spacedBy(
-                            AzNavRailDefaults.RailContentVerticalArrangement,
-                            Alignment.CenterVertically
-                        )
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        EqualWidthLayout {
+                        val onRailCyclerClick: (AzNavItem) -> Unit = { item ->
+                            val state = cyclerStates[item.id]
+                            if (state != null) {
+                                val options = requireNotNull(item.options) { "Cycler item '${item.id}' must have options" }
+                                val disabledOptions = item.disabledOptions ?: emptyList()
+                                val enabledOptions = options.filterNot { it in disabledOptions }
+
+                                if (enabledOptions.isNotEmpty()) {
+                                    val currentDisplayed = item.selectedOption
+                                    val currentIndexInEnabled = enabledOptions.indexOf(currentDisplayed)
+
+                                    val nextIndex = if (currentIndexInEnabled != -1) {
+                                        (currentIndexInEnabled + 1) % enabledOptions.size
+                                    } else {
+                                        0
+                                    }
+                                    val nextOption = enabledOptions[nextIndex]
+
+                                    val finalItemState = scope.navItems.find { it.id == item.id } ?: item
+                                    val currentStateInVm = finalItemState.selectedOption
+                                    val targetState = nextOption
+
+                                    val currentIndexInVm = options.indexOf(currentStateInVm)
+                                    val targetIndex = options.indexOf(targetState)
+
+                                    if (currentIndexInVm != -1 && targetIndex != -1) {
+                                        val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
+                                        repeat(clicksToCatchUp) {
+                                            item.onClick()
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        EqualWidthLayout(
+                            verticalSpacing = if (scope.packRailButtons) 0.dp else AzNavRailDefaults.RailContentVerticalArrangement
+                        ) {
                             if (scope.packRailButtons) {
+                                val railItems = scope.navItems.filter { it.isRailItem }
                                 railItems.forEach { item ->
-                                    RailContent(item = item, buttonSize = buttonSize)
+                                    RailContent(item = item, buttonSize = buttonSize, onRailCyclerClick = onRailCyclerClick)
                                 }
                             } else {
                                 scope.navItems.forEach { menuItem ->
                                     if (menuItem.isRailItem) {
-                                        RailContent(item = menuItem, buttonSize = buttonSize)
+                                        RailContent(item = menuItem, buttonSize = buttonSize, onRailCyclerClick = onRailCyclerClick)
                                     } else {
                                         Spacer(modifier = Modifier.height(AzNavRailDefaults.RailContentSpacerHeight))
                                     }
@@ -381,14 +414,25 @@ fun AzNavRail(
  * @param buttonSize The size of the button.
  */
 @Composable
-private fun RailContent(item: AzNavItem, buttonSize: Dp) {
+private fun RailContent(
+    item: AzNavItem,
+    buttonSize: Dp,
+    onRailCyclerClick: (AzNavItem) -> Unit
+) {
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
         item.isCycler -> item.selectedOption ?: ""
         else -> item.text
     }
+
+    val onClick = if (item.isCycler) {
+        { onRailCyclerClick(item) }
+    } else {
+        item.onClick
+    }
+
     AzNavRailButton(
-        onClick = item.onClick,
+        onClick = onClick,
         text = textToShow,
         color = item.color ?: MaterialTheme.colorScheme.primary,
         size = buttonSize,

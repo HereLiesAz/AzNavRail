@@ -146,9 +146,27 @@ fun AzNavRail(
 )
 ```
 
+-   **`modifier`**: The modifier to be applied to the navigation rail.
+-   **`initiallyExpanded`**: Whether the navigation rail is expanded by default.
+-   **`disableSwipeToOpen`**: Whether to disable the swipe-to-open gesture.
+-   **`content`**: The DSL content for the navigation rail.
+
 ### `AzNavRailScope`
 
 The DSL for configuring the `AzNavRail`.
+
+**Note:** Functions prefixed with `azMenu` will only appear in the expanded menu view. Functions prefixed with `azRail` will appear on the collapsed rail, and their text will be used as the label in the expanded menu.
+
+-   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean, isLoading: Boolean, defaultShape: AzButtonShape)`: Configures the settings for the `AzNavRail`.
+-   `azMenuItem(id: String, text: String, disabled: Boolean, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
+-   `azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text in the expanded menu.
+-   `azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean, onClick: () -> Unit)`: Adds a toggle item that only appears in the expanded menu. Tapping it executes the action and collapses the rail.
+-   `azRailToggle(id: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, disabled: Boolean, onClick: () -> Unit)`: Adds a toggle item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail.
+-   `azMenuCycler(id: String, options: List<String>, selectedOption: String, disabled: Boolean, disabledOptions: List<String>?, onClick: () -> Unit)`: Adds a cycler item that only appears in the expanded menu. Tapping it cycles through options and executes the `onClick` action for the final selection after a 1-second delay, then collapses the rail.
+-   `azRailCycler(id: String, color: Color?, options: List<String>, selectedOption: String, shape: AzButtonShape?, disabled: Boolean, disabledOptions: List<String>?, onClick: () -> Unit)`: Adds a cycler item that appears in both the collapsed rail and the expanded menu. The behavior is the same as `azMenuCycler`.
+-   `azDivider()`: Adds a horizontal divider to the expanded menu.
+
+## Other Components
 
 -   `azSettings(...)`: Configures global settings for the rail.
 -   `azMenuItem(...)`: Adds an item that only appears in the expanded menu.
