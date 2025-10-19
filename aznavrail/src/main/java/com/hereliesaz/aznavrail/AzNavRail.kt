@@ -20,8 +20,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
@@ -41,7 +39,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.AzLoad
+import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzNavItem
+import com.hereliesaz.aznavrail.util.EqualWidthLayout
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -271,34 +271,46 @@ fun AzNavRail(
                                             val state = cyclerStates[item.id]
                                             if (state != null) {
                                                 state.job?.cancel()
+
                                                 val options = requireNotNull(item.options) { "Cycler item '${item.id}' must have options" }
-                                                val currentIndex = options.indexOf(state.displayedOption)
-                                                val nextIndex = (currentIndex + 1) % options.size
-                                                val nextOption = options[nextIndex]
+                                                val disabledOptions = item.disabledOptions ?: emptyList()
+                                                val enabledOptions = options.filterNot { it in disabledOptions }
 
-                                                cyclerStates[item.id] = state.copy(
-                                                    displayedOption = nextOption,
-                                                    job = coroutineScope.launch {
-                                                        delay(1000L)
+                                                if (enabledOptions.isNotEmpty()) {
+                                                    val currentDisplayed = state.displayedOption
+                                                    val currentIndexInEnabled = enabledOptions.indexOf(currentDisplayed)
 
-                                                        val finalItemState = scope.navItems.find { it.id == item.id } ?: item
-                                                        val currentStateInVm = finalItemState.selectedOption
-                                                        val targetState = nextOption
-
-                                                        val currentIndexInVm = options.indexOf(currentStateInVm)
-                                                        val targetIndex = options.indexOf(targetState)
-
-                                                        if (currentIndexInVm != -1 && targetIndex != -1) {
-                                                            val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
-                                                            repeat(clicksToCatchUp) {
-                                                                item.onClick()
-                                                            }
-                                                        }
-
-                                                        onToggle()
-                                                        cyclerStates[item.id] = cyclerStates[item.id]!!.copy(job = null)
+                                                    val nextIndex = if (currentIndexInEnabled != -1) {
+                                                        (currentIndexInEnabled + 1) % enabledOptions.size
+                                                    } else {
+                                                        0
                                                     }
-                                                )
+                                                    val nextOption = enabledOptions[nextIndex]
+
+                                                    cyclerStates[item.id] = state.copy(
+                                                        displayedOption = nextOption,
+                                                        job = coroutineScope.launch {
+                                                            delay(1000L)
+
+                                                            val finalItemState = scope.navItems.find { it.id == item.id } ?: item
+                                                            val currentStateInVm = finalItemState.selectedOption
+                                                            val targetState = nextOption
+
+                                                            val currentIndexInVm = options.indexOf(currentStateInVm)
+                                                            val targetIndex = options.indexOf(targetState)
+
+                                                            if (currentIndexInVm != -1 && targetIndex != -1) {
+                                                                val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
+                                                                repeat(clicksToCatchUp) {
+                                                                    item.onClick()
+                                                                }
+                                                            }
+
+                                                            onToggle()
+                                                            cyclerStates[item.id] = cyclerStates[item.id]!!.copy(job = null)
+                                                        }
+                                                    )
+                                                }
                                             }
                                         }
                                     } else {
@@ -318,22 +330,62 @@ fun AzNavRail(
                         }
                     }
                 } else {
-                    val railItems = remember(scope) { scope.navItems.filter { it.isRailItem } }
-                    LazyColumn(
-                        modifier = Modifier.padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = if (scope.packRailButtons) Arrangement.Top else Arrangement.spacedBy(AzNavRailDefaults.RailContentVerticalArrangement, Alignment.CenterVertically)
+                    Column(
+                        modifier = Modifier
+                            .padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding)
+                            .verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        if (scope.packRailButtons) {
-                            items(railItems) { item ->
-                                RailContent(item = item, buttonSize = buttonSize)
+                        val onRailCyclerClick: (AzNavItem) -> Unit = { item ->
+                            val state = cyclerStates[item.id]
+                            if (state != null) {
+                                val options = requireNotNull(item.options) { "Cycler item '${item.id}' must have options" }
+                                val disabledOptions = item.disabledOptions ?: emptyList()
+                                val enabledOptions = options.filterNot { it in disabledOptions }
+
+                                if (enabledOptions.isNotEmpty()) {
+                                    val currentDisplayed = item.selectedOption
+                                    val currentIndexInEnabled = enabledOptions.indexOf(currentDisplayed)
+
+                                    val nextIndex = if (currentIndexInEnabled != -1) {
+                                        (currentIndexInEnabled + 1) % enabledOptions.size
+                                    } else {
+                                        0
+                                    }
+                                    val nextOption = enabledOptions[nextIndex]
+
+                                    val finalItemState = scope.navItems.find { it.id == item.id } ?: item
+                                    val currentStateInVm = finalItemState.selectedOption
+                                    val targetState = nextOption
+
+                                    val currentIndexInVm = options.indexOf(currentStateInVm)
+                                    val targetIndex = options.indexOf(targetState)
+
+                                    if (currentIndexInVm != -1 && targetIndex != -1) {
+                                        val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
+                                        repeat(clicksToCatchUp) {
+                                            item.onClick()
+                                        }
+                                    }
+                                }
                             }
-                        } else {
-                            items(scope.navItems) { menuItem ->
-                                if (menuItem.isRailItem) {
-                                    RailContent(item = menuItem, buttonSize = buttonSize)
-                                } else {
-                                    Spacer(modifier = Modifier.height(AzNavRailDefaults.RailContentSpacerHeight))
+                        }
+
+                        EqualWidthLayout(
+                            verticalSpacing = if (scope.packRailButtons) 0.dp else AzNavRailDefaults.RailContentVerticalArrangement
+                        ) {
+                            if (scope.packRailButtons) {
+                                val railItems = scope.navItems.filter { it.isRailItem }
+                                railItems.forEach { item ->
+                                    RailContent(item = item, buttonSize = buttonSize, onRailCyclerClick = onRailCyclerClick)
+                                }
+                            } else {
+                                scope.navItems.forEach { menuItem ->
+                                    if (menuItem.isRailItem) {
+                                        RailContent(item = menuItem, buttonSize = buttonSize, onRailCyclerClick = onRailCyclerClick)
+                                    } else {
+                                        Spacer(modifier = Modifier.height(AzNavRailDefaults.RailContentSpacerHeight))
+                                    }
                                 }
                             }
                         }
@@ -362,17 +414,30 @@ fun AzNavRail(
  * @param buttonSize The size of the button.
  */
 @Composable
-private fun RailContent(item: AzNavItem, buttonSize: Dp) {
+private fun RailContent(
+    item: AzNavItem,
+    buttonSize: Dp,
+    onRailCyclerClick: (AzNavItem) -> Unit
+) {
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
         item.isCycler -> item.selectedOption ?: ""
         else -> item.text
     }
+
+    val onClick = if (item.isCycler) {
+        { onRailCyclerClick(item) }
+    } else {
+        item.onClick
+    }
+
     AzNavRailButton(
-        onClick = item.onClick,
+        onClick = onClick,
         text = textToShow,
         color = item.color ?: MaterialTheme.colorScheme.primary,
-        size = buttonSize
+        size = buttonSize,
+        shape = item.shape,
+        disabled = item.disabled
     )
 }
 
@@ -399,23 +464,32 @@ private fun MenuItem(
         item.isCycler -> item.selectedOption ?: ""
         else -> item.text
     }
-    val modifier = if (item.isToggle) {
-        Modifier.toggleable(
-            value = item.isChecked ?: false,
-            onValueChange = {
-                item.onClick()
-                onToggle()
-            }
-        )
-    } else {
-        Modifier.clickable {
-            if (item.isCycler) {
-                onCyclerClick()
-            } else {
-                item.onClick()
-                onToggle()
+
+    val modifier = if (item.disabled) Modifier else {
+        if (item.isToggle) {
+            Modifier.toggleable(
+                value = item.isChecked ?: false,
+                onValueChange = {
+                    item.onClick()
+                    onToggle()
+                }
+            )
+        } else {
+            Modifier.clickable {
+                if (item.isCycler) {
+                    onCyclerClick()
+                } else {
+                    item.onClick()
+                    onToggle()
+                }
             }
         }
+    }
+
+    val textColor = if (item.disabled) {
+        MaterialTheme.typography.bodyMedium.color.copy(alpha = 0.5f)
+    } else {
+        MaterialTheme.typography.bodyMedium.color
     }
 
     Row(
@@ -430,6 +504,7 @@ private fun MenuItem(
                 Text(
                     text = line,
                     style = MaterialTheme.typography.bodyMedium,
+                    color = textColor,
                     modifier = if (index > 0) Modifier.padding(start = 16.dp) else Modifier
                 )
             }
