@@ -269,7 +269,7 @@ fun AzNavRail(
                                     val onCyclerClick = if (item.isCycler) {
                                         {
                                             val state = cyclerStates[item.id]
-                                            if (state != null) {
+                                            if (state != null && !item.disabled) {
                                                 state.job?.cancel()
 
                                                 val options = requireNotNull(item.options) { "Cycler item '${item.id}' must have options" }
