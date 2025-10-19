@@ -146,18 +146,123 @@ fun AzNavRail(
 )
 ```
 
+-   **`modifier`**: The modifier to be applied to the navigation rail.
+-   **`initiallyExpanded`**: Whether the navigation rail is expanded by default.
+-   **`disableSwipeToOpen`**: Whether to disable the swipe-to-open gesture.
+-   **`content`**: The DSL content for the navigation rail.
+
 ### `AzNavRailScope`
 
 The DSL for configuring the `AzNavRail`.
 
--   `azSettings(...)`: Configures global settings for the rail.
--   `azMenuItem(...)`: Adds an item that only appears in the expanded menu.
--   `azRailItem(...)`: Adds an item to the rail and the expanded menu.
--   `azMenuToggle(...)`: Adds a toggle item to the expanded menu.
--   `azRailToggle(...)`: Adds a toggle item to the rail and the expanded menu.
--   `azMenuCycler(...)`: Adds a cycler item to the expanded menu.
--   `azRailCycler(...)`: Adds a cycler item to the rail and the expanded menu.
--   `azDivider()`: Adds a divider to the menu.
+**Note:** Functions prefixed with `azMenu` will only appear in the expanded menu view. Functions prefixed with `azRail` will appear on the collapsed rail, and their text will be used as the label in the expanded menu.
+
+-   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean, isLoading: Boolean, defaultShape: AzButtonShape)`: Configures the settings for the `AzNavRail`.
+-   `azMenuItem(id: String, text: String, disabled: Boolean, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
+-   `azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text in the expanded menu.
+-   `azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean, onClick: () -> Unit)`: Adds a toggle item that only appears in the expanded menu. Tapping it executes the action and collapses the rail.
+-   `azRailToggle(id: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, disabled: Boolean, onClick: () -> Unit)`: Adds a toggle item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail.
+-   `azMenuCycler(id: String, options: List<String>, selectedOption: String, disabled: Boolean, disabledOptions: List<String>?, onClick: () -> Unit)`: Adds a cycler item that only appears in the expanded menu. Tapping it cycles through options and executes the `onClick` action for the final selection after a 1-second delay, then collapses the rail.
+-   `azRailCycler(id: String, color: Color?, options: List<String>, selectedOption: String, shape: AzButtonShape?, disabled: Boolean, disabledOptions: List<String>?, onClick: () -> Unit)`: Adds a cycler item that appears in both the collapsed rail and the expanded menu. The behavior is the same as `azMenuCycler`.
+-   `azDivider()`: Adds a horizontal divider to the expanded menu.
+
+## Other Components
+
+### Loading State
+
+When your app is loading data, you can display an unobtrusive animation over the rail by setting the `isLoading` parameter to `true` in the `azSettings` function. This will disable all buttons and show a loading indicator until `isLoading` is set back to `false`.
+
+This feature is powered by the `AzLoad` composable, which is integrated directly into the `AzNavRail` and does not require any separate setup.
+
+```kotlin
+@Composable
+fun MainScreen(myViewModel: MyViewModel = viewModel()) {
+    val uiState by myViewModel.uiState.collectAsState()
+
+    AzNavRail {
+        azSettings(
+            isLoading = uiState.isLoading
+        )
+
+        // ... your rail and menu items
+    }
+}
+```
+
+### Standalone Components
+
+You can also use the `AzButton`, `AzToggle`, `AzCycler`, and `AzDivider` composables by themselves. They are styled to look just like the components in the `AzNavRail`.
+
+```kotlin
+import com.hereliesaz.aznavrail.AzButton
+import com.hereliesaz.aznavrail.AzToggle
+import com.hereliesaz.aznavrail.AzCycler
+import com.hereliesaz.aznavrail.AzDivider
+
+@Composable
+fun MyScreen() {
+    var isToggled by remember { mutableStateOf(false) }
+    val cyclerOptions = listOf("A", "B", "C")
+    var selectedOption by remember { mutableStateOf(cyclerOptions.first()) }
+
+    Column {
+        AzButton(
+            text = "Click Me",
+            onClick = { /* Do something */ }
+        )
+
+        AzDivider()
+
+        AzToggle(
+            isChecked = isToggled,
+            onToggle = { isToggled = !isToggled },
+            toggleOnText = "On",
+            toggleOffText = "Off"
+        )
+
+        AzCycler(
+            options = cyclerOptions,
+            selectedOption = selectedOption,
+            onCycle = {
+                val currentIndex = cyclerOptions.indexOf(selectedOption)
+                selectedOption = cyclerOptions[(currentIndex + 1) % cyclerOptions.size]
+            }
+        )
+    }
+}
+```
+
+#### `AzButton`
+A simple, circular button.
+-   `onClick: () -> Unit`: The callback to be invoked when the button is clicked.
+-   `text: String`: The text to display on the button.
+-   `modifier: Modifier`: The modifier to be applied to the button.
+-   `color: Color`: The color of the button's border and text.
+
+#### `AzToggle`
+A toggle button.
+-   `isChecked: Boolean`: Whether the toggle is in the "on" state.
+-   `onToggle: () -> Unit`: The callback to be invoked when the button is toggled.
+-   `toggleOnText: String`: The text to display when the toggle is on.
+-   `toggleOffText: String`: The text to display when the toggle is off.
+-   `modifier: Modifier`: The modifier to be applied to the button.
+-   `color: Color`: The color of the button's border and text.
+
+#### `AzCycler`
+A button that cycles through a list of options when clicked.
+-   `options: List<String>`: The list of options to cycle through.
+-   `selectedOption: String`: The currently selected option.
+-   `onCycle: () -> Unit`: The callback to be invoked after a 1-second delay on the final selected option.
+-   `modifier: Modifier`: The modifier to be applied to the button.
+-   `color: Color`: The color of the button's border and text.
+
+#### `AzDivider`
+A divider that automatically adjusts its orientation based on the available space.
+-   `modifier: Modifier`: The modifier to be applied to the divider.
+-   `thickness: Dp`: The thickness of the divider line.
+-   `color: Color`: The color of the divider line.
+-   `horizontalPadding: Dp`: The padding applied to the left and right of the divider.
+-   `verticalPadding: Dp`: The padding applied to the top and bottom of the divider.
 
 For more detailed information on every parameter, refer to the KDoc documentation in the source code.
 
