@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 data class AzNavItem(
     val id: String,
     val text: String,
+    val screenTitle: String? = null,
     val isRailItem: Boolean,
     val color: Color? = null,
     val isToggle: Boolean = false,
