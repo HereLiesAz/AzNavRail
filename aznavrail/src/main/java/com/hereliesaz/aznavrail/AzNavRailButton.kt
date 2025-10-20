@@ -49,12 +49,14 @@ fun AzNavRailButton(
         AzButtonShape.CIRCLE -> CircleShape
         AzButtonShape.SQUARE -> RoundedCornerShape(0.dp)
         AzButtonShape.RECTANGLE -> RoundedCornerShape(0.dp)
+        AzButtonShape.NONE -> RoundedCornerShape(0.dp)
     }
 
     val buttonModifier = when (shape) {
         AzButtonShape.CIRCLE -> modifier.size(size).aspectRatio(1f)
         AzButtonShape.SQUARE -> modifier.size(size).aspectRatio(1f)
-        AzButtonShape.RECTANGLE -> modifier.height(size).widthIn(min = size)
+        AzButtonShape.RECTANGLE -> modifier.height(48.dp)
+        AzButtonShape.NONE -> modifier.size(size).aspectRatio(1f)
     }
 
     val disabledColor = color.copy(alpha = 0.5f)
@@ -63,7 +65,7 @@ fun AzNavRailButton(
         onClick = onClick,
         modifier = buttonModifier,
         shape = buttonShape,
-        border = BorderStroke(3.dp, if (disabled) disabledColor else color),
+        border = if (shape == AzButtonShape.NONE) BorderStroke(0.dp, Color.Transparent) else BorderStroke(3.dp, if (disabled) disabledColor else color),
         colors = ButtonDefaults.outlinedButtonColors(
             containerColor = Color.Transparent,
             contentColor = if (disabled) disabledColor else color,
