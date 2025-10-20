@@ -47,6 +47,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+object AzNavRail {
+    const val noTitle = "AZNAVRAIL_NO_TITLE"
+}
+
 private object AzNavRailLogger {
     var enabled = true
     fun e(tag: String, message: String, throwable: Throwable? = null) {
@@ -201,11 +205,12 @@ fun AzNavRail(
         }
         selectedItem?.screenTitle?.let { screenTitle ->
             if (screenTitle.isNotEmpty()) {
-                Popup(alignment = Alignment.TopStart) {
+                Popup(alignment = Alignment.TopEnd) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(start = railWidth + 16.dp, top = 16.dp)
+                            .padding(end = 16.dp, top = 16.dp),
+                        contentAlignment = Alignment.CenterEnd
                     ) {
                         Text(screenTitle, style = MaterialTheme.typography.titleLarge)
                     }
