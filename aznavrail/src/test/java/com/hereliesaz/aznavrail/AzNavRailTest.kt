@@ -149,4 +149,18 @@ class AzNavRailTest {
         assertEquals(expectedItem.options, scope.navItems[0].options)
         assertEquals(expectedItem.selectedOption, scope.navItems[0].selectedOption)
     }
+
+    @Test
+    fun `azMenuItem should add item with screenTitle`() {
+        val scope = AzNavRailScopeImpl()
+        scope.azMenuItem("home", "Home", onClick = {}, screenTitle = "My Home")
+        assertEquals("My Home", scope.navItems[0].screenTitle)
+    }
+
+    @Test
+    fun `azRailItem should add item with screenTitle`() {
+        val scope = AzNavRailScopeImpl()
+        scope.azRailItem("favorites", "Favorites", onClick = {}, screenTitle = "My Favorites")
+        assertEquals("My Favorites", scope.navItems[0].screenTitle)
+    }
 }

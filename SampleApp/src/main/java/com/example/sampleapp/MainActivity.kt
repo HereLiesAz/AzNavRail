@@ -40,22 +40,28 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun SampleScreen() {
     var isOnline by remember { mutableStateOf(true) }
+    var isDarkMode by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
-    val cycleOptions = remember { listOf("A", "B", "C", "D") }
-    var selectedOption by remember { mutableStateOf(cycleOptions.first()) }
+    val railCycleOptions = remember { listOf("A", "B", "C", "D") }
+    var railSelectedOption by remember { mutableStateOf(railCycleOptions.first()) }
+    val menuCycleOptions = remember { listOf("X", "Y", "Z") }
+    var menuSelectedOption by remember { mutableStateOf(menuCycleOptions.first()) }
     val context = LocalContext.current
 
     Row {
         AzNavRail {
             azSettings(
-                displayAppNameInHeader = true,
+                // displayAppNameInHeader = true, // Set to true to display the app name instead of the icon
                 packRailButtons = false,
                 isLoading = isLoading,
                 defaultShape = AzButtonShape.RECTANGLE // Set a default shape for all rail items
             )
 
-            // A standard menu item
+            // A standard menu item - only appears in the expanded menu
             azMenuItem(id = "home", text = "Home", onClick = { /* ... */ })
+
+            // A menu item with multi-line text
+            azMenuItem(id = "multi-line", text = "This is a\nmulti-line item", onClick = { /* ... */ })
 
             // A rail item with the default shape (RECTANGLE)
             azRailItem(id = "favorites", text = "Favorites", onClick = { /* ... */ })
@@ -71,7 +77,7 @@ fun SampleScreen() {
 
             azDivider()
 
-            // A toggle item with the SQUARE shape
+            // A rail toggle item with the SQUARE shape
             azRailToggle(
                 id = "online",
                 isChecked = isOnline,
@@ -81,17 +87,42 @@ fun SampleScreen() {
                 onClick = { isOnline = !isOnline }
             )
 
-            // A cycler with a disabled option
+            // A menu toggle item
+            azMenuToggle(
+                id = "dark-mode",
+                isChecked = isDarkMode,
+                toggleOnText = "Dark Mode",
+                toggleOffText = "Light Mode",
+                onClick = { isDarkMode = !isDarkMode }
+            )
+
+            azDivider()
+
+            // A rail cycler with a disabled option
             azRailCycler(
-                id = "cycler",
-                options = cycleOptions,
-                selectedOption = selectedOption,
+                id = "rail-cycler",
+                options = railCycleOptions,
+                selectedOption = railSelectedOption,
                 disabledOptions = listOf("C"),
                 onClick = {
-                    val currentIndex = cycleOptions.indexOf(selectedOption)
-                    selectedOption = cycleOptions[(currentIndex + 1) % cycleOptions.size]
+                    val currentIndex = railCycleOptions.indexOf(railSelectedOption)
+                    val nextIndex = (currentIndex + 1) % railCycleOptions.size
+                    railSelectedOption = railCycleOptions[nextIndex]
                 }
             )
+
+            // A menu cycler
+            azMenuCycler(
+                id = "menu-cycler",
+                options = menuCycleOptions,
+                selectedOption = menuSelectedOption,
+                onClick = {
+                    val currentIndex = menuCycleOptions.indexOf(menuSelectedOption)
+                    val nextIndex = (currentIndex + 1) % menuCycleOptions.size
+                    menuSelectedOption = menuCycleOptions[nextIndex]
+                }
+            )
+
 
             // A button to demonstrate the loading state
             azRailItem(id = "loading", text = "Load", onClick = { isLoading = !isLoading })
@@ -100,7 +131,9 @@ fun SampleScreen() {
         // Your app's main content goes here
         Column(modifier = Modifier.padding(16.dp)) {
             Text("isOnline: $isOnline")
-            Text("selectedOption: $selectedOption")
+            Text("isDarkMode: $isDarkMode")
+            Text("railSelectedOption: $railSelectedOption")
+            Text("menuSelectedOption: $menuSelectedOption")
             Text("isLoading: $isLoading")
         }
     }

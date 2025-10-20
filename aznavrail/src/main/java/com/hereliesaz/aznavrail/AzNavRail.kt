@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.AzLoad
 import com.hereliesaz.aznavrail.model.AzButtonShape
@@ -60,7 +61,7 @@ private object AzNavRailLogger {
  */
 private object AzNavRailDefaults {
     const val SWIPE_THRESHOLD_PX = 20f
-    val HeaderPadding = 16.dp
+    val HeaderPadding = 8.dp
     val HeaderIconSize = 72.dp
     val HeaderTextSpacer = 8.dp
     val RailContentHorizontalPadding = 4.dp
@@ -153,6 +154,7 @@ fun AzNavRail(
 
     val coroutineScope = rememberCoroutineScope()
     val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
+    var selectedItem by rememberSaveable { mutableStateOf<AzNavItem?>(null) }
 
     LaunchedEffect(scope.navItems) {
         scope.navItems.forEach { item ->
@@ -191,8 +193,25 @@ fun AzNavRail(
         }
     }
 
-    val buttonSize = scope.collapsedRailWidth - AzNavRailDefaults.RailContentHorizontalPadding * 2
-    Box(modifier = modifier) {
+    BoxWithConstraints(modifier = modifier) {
+        val buttonSize = if (maxWidth > maxHeight) {
+            maxWidth - AzNavRailDefaults.RailContentHorizontalPadding * 2
+        } else {
+            scope.collapsedRailWidth - AzNavRailDefaults.RailContentHorizontalPadding * 2
+        }
+        selectedItem?.screenTitle?.let { screenTitle ->
+            if (screenTitle.isNotEmpty()) {
+                Popup(alignment = Alignment.TopStart) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = railWidth + 16.dp, top = 16.dp)
+                    ) {
+                        Text(screenTitle, style = MaterialTheme.typography.titleLarge)
+                    }
+                }
+            }
+        }
         Row(
             modifier = Modifier.pointerInput(isExpanded, disableSwipeToOpen) {
                 detectDragGestures { change, dragAmount ->
@@ -321,7 +340,12 @@ fun AzNavRail(
                                     } else {
                                         item
                                     }
-                                    MenuItem(item = finalItem, onCyclerClick = onCyclerClick, onToggle = onToggle)
+                                    MenuItem(
+                                        item = finalItem,
+                                        onCyclerClick = onCyclerClick,
+                                        onToggle = onToggle,
+                                        onItemClick = { selectedItem = finalItem }
+                                    )
                                 }
                             }
                         }
@@ -377,12 +401,22 @@ fun AzNavRail(
                             if (scope.packRailButtons) {
                                 val railItems = scope.navItems.filter { it.isRailItem }
                                 railItems.forEach { item ->
-                                    RailContent(item = item, buttonSize = buttonSize, onRailCyclerClick = onRailCyclerClick)
+                                    RailContent(
+                                        item = item,
+                                        buttonSize = buttonSize,
+                                        onRailCyclerClick = onRailCyclerClick,
+                                        onItemClick = { selectedItem = item }
+                                    )
                                 }
                             } else {
                                 scope.navItems.forEach { menuItem ->
                                     if (menuItem.isRailItem) {
-                                        RailContent(item = menuItem, buttonSize = buttonSize, onRailCyclerClick = onRailCyclerClick)
+                                        RailContent(
+                                            item = menuItem,
+                                            buttonSize = buttonSize,
+                                            onRailCyclerClick = onRailCyclerClick,
+                                            onItemClick = { selectedItem = menuItem }
+                                        )
                                     } else {
                                         Spacer(modifier = Modifier.height(AzNavRailDefaults.RailContentSpacerHeight))
                                     }
@@ -417,7 +451,8 @@ fun AzNavRail(
 private fun RailContent(
     item: AzNavItem,
     buttonSize: Dp,
-    onRailCyclerClick: (AzNavItem) -> Unit
+    onRailCyclerClick: (AzNavItem) -> Unit,
+    onItemClick: () -> Unit
 ) {
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
@@ -426,9 +461,15 @@ private fun RailContent(
     }
 
     val onClick = if (item.isCycler) {
-        { onRailCyclerClick(item) }
+        {
+            onRailCyclerClick(item)
+            onItemClick()
+        }
     } else {
-        item.onClick
+        {
+            item.onClick()
+            onItemClick()
+        }
     }
 
     AzNavRailButton(
@@ -457,7 +498,8 @@ private fun RailContent(
 private fun MenuItem(
     item: AzNavItem,
     onCyclerClick: () -> Unit = item.onClick,
-    onToggle: () -> Unit = {}
+    onToggle: () -> Unit = {},
+    onItemClick: () -> Unit
 ) {
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
@@ -472,6 +514,7 @@ private fun MenuItem(
                 onValueChange = {
                     item.onClick()
                     onToggle()
+                    onItemClick()
                 }
             )
         } else {
@@ -481,6 +524,7 @@ private fun MenuItem(
                 } else {
                     item.onClick()
                     onToggle()
+                    onItemClick()
                 }
             }
         }
@@ -557,8 +601,8 @@ private fun Footer(appName: String, onToggle: () -> Unit) {
 
     Column {
         AzDivider()
-        MenuItem(item = AzNavItem(id = "about", text = "About", isRailItem = false, onClick = onAboutClick), onToggle = onToggle)
-        MenuItem(item = AzNavItem(id = "feedback", text = "Feedback", isRailItem = false, onClick = onFeedbackClick), onToggle = onToggle)
+        MenuItem(item = AzNavItem(id = "about", text = "About", isRailItem = false, onClick = onAboutClick), onToggle = onToggle, onItemClick = {})
+        MenuItem(item = AzNavItem(id = "feedback", text = "Feedback", isRailItem = false, onClick = onFeedbackClick), onToggle = onToggle, onItemClick = {})
         MenuItem(
             item = AzNavItem(
                 id = "credit",
@@ -566,7 +610,8 @@ private fun Footer(appName: String, onToggle: () -> Unit) {
                 isRailItem = false,
                 onClick = onCreditClick
             ),
-            onToggle = onToggle
+            onToggle = onToggle,
+            onItemClick = {}
         )
         Spacer(modifier = Modifier.height(AzNavRailDefaults.FooterSpacerHeight))
     }

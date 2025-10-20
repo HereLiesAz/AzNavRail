@@ -36,8 +36,9 @@ interface AzNavRailScope {
      * @param text The text to display for the item.
      * @param disabled Whether the item is disabled.
      * @param onClick The callback to be invoked when the item is clicked.
+     * @param screenTitle The text to display as the screen title when this item is selected.
      */
-    fun azMenuItem(id: String, text: String, disabled: Boolean = false, onClick: () -> Unit)
+    fun azMenuItem(id: String, text: String, disabled: Boolean = false, screenTitle: String? = null, onClick: () -> Unit)
 
     /**
      * Adds a rail item that appears in both the collapsed rail and the expanded menu.
@@ -47,8 +48,9 @@ interface AzNavRailScope {
      * @param shape The shape of the button.
      * @param disabled Whether the item is disabled.
      * @param onClick The callback to be invoked when the item is clicked.
+     * @param screenTitle The text to display as the screen title when this item is selected.
      */
-    fun azRailItem(id: String, text: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, onClick: () -> Unit)
+    fun azRailItem(id: String, text: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, onClick: () -> Unit)
 
     /**
      * Adds a toggle item that only appears in the expanded menu. The text of the item changes to reflect the state.
@@ -153,7 +155,7 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         this.defaultShape = defaultShape
     }
 
-    override fun azMenuItem(id: String, text: String, disabled: Boolean, onClick: () -> Unit) {
+    override fun azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
         require(text.isNotEmpty()) {
             """
             `text` must not be empty.
@@ -166,14 +168,13 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
             )
             """.trimIndent()
         }
-        navItems.add(AzNavItem(id = id, text = text, isRailItem = false, disabled = disabled, onClick = onClick))
+        navItems.add(AzNavItem(id = id, text = text, screenTitle = screenTitle, isRailItem = false, disabled = disabled, onClick = onClick))
     }
 
-    override fun azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, onClick: () -> Unit) {
+    override fun azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
         require(text.isNotEmpty()) {
             """
             `text` must not be empty.
-
             // azRailItem sample
             azRailItem(
                 id = "item",
@@ -182,7 +183,7 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
             )
             """.trimIndent()
         }
-        navItems.add(AzNavItem(id = id, text = text, isRailItem = true, color = color, shape = shape ?: defaultShape, disabled = disabled, onClick = onClick))
+        navItems.add(AzNavItem(id = id, text = text, screenTitle = screenTitle, isRailItem = true, color = color, shape = shape ?: defaultShape, disabled = disabled, onClick = onClick))
     }
 
     override fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean, onClick: () -> Unit) {
