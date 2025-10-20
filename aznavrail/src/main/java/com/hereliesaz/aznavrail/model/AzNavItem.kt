@@ -39,6 +39,5 @@ data class AzNavItem(
     val shape: AzButtonShape = AzButtonShape.CIRCLE,
     val disabled: Boolean = false,
     val disabledOptions: List<String>? = null,
-    val screenTitle: String? = null,
     val onClick: () -> Unit
 )

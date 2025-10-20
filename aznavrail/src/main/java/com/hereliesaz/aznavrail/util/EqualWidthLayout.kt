@@ -15,12 +15,12 @@ fun EqualWidthLayout(
     content: @Composable () -> Unit
 ) {
     SubcomposeLayout(modifier = modifier) { constraints ->
-        val placeables = subcompose(Unit, content).map { it.measure(constraints) }
+        val placeables = subcompose(0, content).map { it.measure(constraints) }
 
         val maxWidth = placeables.maxOfOrNull { it.width } ?: 0
         val newConstraints = constraints.copy(minWidth = maxWidth, maxWidth = maxWidth)
 
-        val newPlaceables = subcompose(Unit, content).map { it.measure(newConstraints) }
+        val newPlaceables = subcompose(1, content).map { it.measure(newConstraints) }
 
         val spacingPx = verticalSpacing.toPx()
         val totalHeight = (newPlaceables.sumOf { it.height } + (spacingPx * (newPlaceables.size - 1))).coerceAtLeast(0f)
