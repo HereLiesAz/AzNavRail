@@ -19,8 +19,8 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 - **Text-Only DSL API**: A simple, declarative API for building your navigation.
 - **Multi-line Menu Items**: Supports multi-line text with automatic indentation.
 - **Stateless and Observable**: Hoist and manage state in your own composables.
-- **Customizable Shapes**: Choose from `CIRCLE`, `SQUARE`, or `RECTANGLE` for rail buttons.
-- **Uniform Rectangle Width**: All rectangular buttons automatically share the same width.
+-   **Customizable Shapes**: Choose from `CIRCLE`, `SQUARE`, `RECTANGLE`, or `NONE` for rail buttons.
+-   **Uniform Rectangle Width**: All rectangular buttons automatically share the same width, determined by the widest rectangle.
 - **Smart Collapse Behavior**: Menu items intelligently collapse the rail after interactions.
 - **Delayed Cycler Action**: Cycler items have a built-in delay to prevent accidental triggers.
 - **Customizable Colors**: Apply custom colors to individual rail buttons.
