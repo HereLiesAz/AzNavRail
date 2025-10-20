@@ -36,7 +36,7 @@ class AzNavRailTest {
     @Test
     fun `azMenuItem should add a menu item`() {
         val scope = AzNavRailScopeImpl()
-        scope.azMenuItem("home", "Home") {}
+        scope.azMenuItem("home", "Home", onClick = {})
         val expectedItem = AzNavItem("home", "Home", isRailItem = false, onClick = {})
         assertEquals(expectedItem.id, scope.navItems[0].id)
         assertEquals(expectedItem.text, scope.navItems[0].text)
@@ -46,13 +46,13 @@ class AzNavRailTest {
     @Test(expected = IllegalArgumentException::class)
     fun `azMenuItem with empty text should throw exception`() {
         val scope = AzNavRailScopeImpl()
-        scope.azMenuItem("home", "") {}
+        scope.azMenuItem("home", "", onClick = {})
     }
 
     @Test
     fun `azRailItem should add a rail item`() {
         val scope = AzNavRailScopeImpl()
-        scope.azRailItem("home", "Home", Color.Red) {}
+        scope.azRailItem("home", "Home", Color.Red, onClick = {})
         val expectedItem = AzNavItem("home", "Home", isRailItem = true, color = Color.Red, onClick = {})
         assertEquals(expectedItem.id, scope.navItems[0].id)
         assertEquals(expectedItem.text, scope.navItems[0].text)
@@ -63,7 +63,7 @@ class AzNavRailTest {
     @Test(expected = IllegalArgumentException::class)
     fun `azRailItem with empty text should throw exception`() {
         val scope = AzNavRailScopeImpl()
-        scope.azRailItem("home", "") {}
+        scope.azRailItem("home", "", onClick = {})
     }
 
     @Test
