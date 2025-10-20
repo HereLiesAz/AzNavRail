@@ -51,11 +51,13 @@ fun SampleScreen() {
                 displayAppNameInHeader = true,
                 packRailButtons = false,
                 isLoading = isLoading,
-                defaultShape = AzButtonShape.RECTANGLE // Set a default shape for all rail items
+                defaultShape = AzButtonShape.RECTANGLE, // Set a default shape for all rail items
+                systemBarsPadding = true,
+                displayScreenTitle = true
             )
 
             // A standard menu item
-            azMenuItem(id = "home", text = "Home", onClick = { /* ... */ })
+            azMenuItem(id = "home", text = "Home", onClick = { /* ... */ }, screenTitle = "My Home")
 
             // A rail item with the default shape (RECTANGLE)
             azRailItem(id = "favorites", text = "Favorites", onClick = { /* ... */ })

@@ -14,8 +14,11 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -37,6 +40,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.AzLoad
 import com.hereliesaz.aznavrail.model.AzButtonShape
@@ -121,6 +125,8 @@ fun AzNavRail(
     scope.navItems.clear()
     scope.apply(content)
 
+    var selectedItem by remember { mutableStateOf<AzNavItem?>(null) }
+
     val context = LocalContext.current
     val packageManager = context.packageManager
     val packageName = context.packageName
@@ -192,7 +198,13 @@ fun AzNavRail(
     }
 
     val buttonSize = scope.collapsedRailWidth - AzNavRailDefaults.RailContentHorizontalPadding * 2
-    Box(modifier = modifier) {
+    Box(
+        modifier = if (scope.systemBarsPadding) {
+            modifier.padding(WindowInsets.systemBars.asPaddingValues())
+        } else {
+            modifier
+        }
+    ) {
         Row(
             modifier = Modifier.pointerInput(isExpanded, disableSwipeToOpen) {
                 detectDragGestures { change, dragAmount ->
@@ -321,7 +333,12 @@ fun AzNavRail(
                                     } else {
                                         item
                                     }
-                                    MenuItem(item = finalItem, onCyclerClick = onCyclerClick, onToggle = onToggle)
+                                    MenuItem(
+                                        item = finalItem,
+                                        onCyclerClick = onCyclerClick,
+                                        onToggle = onToggle,
+                                        onItemSelect = { selectedItem = item }
+                                    )
                                 }
                             }
                         }
@@ -404,6 +421,14 @@ fun AzNavRail(
                         )
                 )
             }
+            if (scope.displayScreenTitle) {
+                val title = selectedItem?.screenTitle ?: selectedItem?.text ?: ""
+                if (title.isNotEmpty()) {
+                    Popup(alignment = Alignment.TopEnd) {
+                        Text(text = title, style = MaterialTheme.typography.titleMedium)
+                    }
+                }
+            }
         }
     }
 }
@@ -457,7 +482,8 @@ private fun RailContent(
 private fun MenuItem(
     item: AzNavItem,
     onCyclerClick: () -> Unit = item.onClick,
-    onToggle: () -> Unit = {}
+    onToggle: () -> Unit = {},
+    onItemSelect: (AzNavItem) -> Unit = {}
 ) {
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
@@ -471,15 +497,18 @@ private fun MenuItem(
                 value = item.isChecked ?: false,
                 onValueChange = {
                     item.onClick()
+                    onItemSelect(item)
                     onToggle()
                 }
             )
         } else {
             Modifier.clickable {
                 if (item.isCycler) {
+                    onItemSelect(item)
                     onCyclerClick()
                 } else {
                     item.onClick()
+                    onItemSelect(item)
                     onToggle()
                 }
             }
@@ -557,8 +586,8 @@ private fun Footer(appName: String, onToggle: () -> Unit) {
 
     Column {
         AzDivider()
-        MenuItem(item = AzNavItem(id = "about", text = "About", isRailItem = false, onClick = onAboutClick), onToggle = onToggle)
-        MenuItem(item = AzNavItem(id = "feedback", text = "Feedback", isRailItem = false, onClick = onFeedbackClick), onToggle = onToggle)
+        MenuItem(item = AzNavItem(id = "about", text = "About", isRailItem = false, onClick = onAboutClick), onToggle = onToggle, onItemSelect = {})
+        MenuItem(item = AzNavItem(id = "feedback", text = "Feedback", isRailItem = false, onClick = onFeedbackClick), onToggle = onToggle, onItemSelect = {})
         MenuItem(
             item = AzNavItem(
                 id = "credit",
@@ -566,7 +595,8 @@ private fun Footer(appName: String, onToggle: () -> Unit) {
                 isRailItem = false,
                 onClick = onCreditClick
             ),
-            onToggle = onToggle
+            onToggle = onToggle,
+            onItemSelect = {}
         )
         Spacer(modifier = Modifier.height(AzNavRailDefaults.FooterSpacerHeight))
     }
