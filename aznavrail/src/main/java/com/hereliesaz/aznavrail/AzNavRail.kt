@@ -225,7 +225,7 @@ fun AzNavRail(
             }
         }
         if (scope.isLoading) {
-            Popup(alignment = Alignment.Center) {
+            Dialog(onDismissRequest = { /* Prevent dismissal by clicking outside */ }) {
                 AzLoad()
             }
         }
