@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -38,6 +39,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Popup
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.AzLoad
@@ -225,8 +228,19 @@ fun AzNavRail(
             }
         }
         if (scope.isLoading) {
-            Dialog(onDismissRequest = { /* Prevent dismissal by clicking outside */ }) {
-                AzLoad()
+            Dialog(
+                onDismissRequest = { },
+                properties = DialogProperties(
+                    dismissOnBackPress = false,
+                    dismissOnClickOutside = false,
+                    usePlatformDefaultWidth = false
+                )
+            ) {
+                Surface(
+                    color = Color.Transparent
+                ) {
+                    AzLoad(modifier = Modifier.fillMaxSize())
+                }
             }
         }
         Row(
