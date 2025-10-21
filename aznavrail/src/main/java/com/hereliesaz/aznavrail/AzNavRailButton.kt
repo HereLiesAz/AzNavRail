@@ -55,8 +55,7 @@ fun AzNavRailButton(
     val buttonModifier = when (shape) {
         AzButtonShape.CIRCLE -> modifier.size(size).aspectRatio(1f)
         AzButtonShape.SQUARE -> modifier.size(size).aspectRatio(1f)
-        AzButtonShape.RECTANGLE -> modifier.height(48.dp)
-        AzButtonShape.NONE -> modifier.size(size).aspectRatio(1f)
+        AzButtonShape.RECTANGLE, AzButtonShape.NONE -> modifier.height(48.dp)
     }
 
     val disabledColor = color.copy(alpha = 0.5f)
