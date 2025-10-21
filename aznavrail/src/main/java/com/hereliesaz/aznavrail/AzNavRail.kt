@@ -34,9 +34,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.Popup
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.AzLoad
@@ -212,9 +214,20 @@ fun AzNavRail(
                             .padding(end = 16.dp, top = 16.dp),
                         contentAlignment = Alignment.CenterEnd
                     ) {
-                        Text(screenTitle, style = MaterialTheme.typography.titleLarge)
+                        Text(
+                            text = screenTitle,
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        )
                     }
                 }
+            }
+        }
+        if (scope.isLoading) {
+            Dialog(onDismissRequest = {}) {
+                AzLoad()
             }
         }
         Row(
@@ -236,7 +249,7 @@ fun AzNavRail(
                 header = {
                     Box(
                         modifier = Modifier
-                            .padding(top = AzNavRailDefaults.HeaderPadding, bottom = AzNavRailDefaults.HeaderPadding)
+                            .padding(bottom = AzNavRailDefaults.HeaderPadding)
                             .clickable(
                                 onClick = onToggle,
                                 interactionSource = remember { MutableInteractionSource() },
@@ -275,15 +288,7 @@ fun AzNavRail(
                     }
                 }
             ) {
-                if (scope.isLoading) {
-                    Box(
-                        modifier = Modifier.fillMaxHeight(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        AzLoad()
-                    }
-                }
-                else if (isExpanded) {
+                if (isExpanded) {
                     Column(modifier = Modifier.fillMaxHeight()) {
                         Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                             scope.navItems.forEach { item ->
