@@ -43,7 +43,8 @@ fun AzNavRailButton(
     size: Dp = 72.dp,
     color: Color = MaterialTheme.colorScheme.primary,
     shape: AzButtonShape = AzButtonShape.CIRCLE,
-    disabled: Boolean = false
+    disabled: Boolean = false,
+    isSelected: Boolean = false
 ) {
     val buttonShape = when (shape) {
         AzButtonShape.CIRCLE -> CircleShape
@@ -59,15 +60,16 @@ fun AzNavRailButton(
     }
 
     val disabledColor = color.copy(alpha = 0.5f)
+    val finalColor = if (isSelected) MaterialTheme.colorScheme.primary else color
 
     OutlinedButton(
         onClick = onClick,
         modifier = buttonModifier,
         shape = buttonShape,
-        border = if (shape == AzButtonShape.NONE) BorderStroke(0.dp, Color.Transparent) else BorderStroke(3.dp, if (disabled) disabledColor else color),
+        border = if (shape == AzButtonShape.NONE) BorderStroke(0.dp, Color.Transparent) else BorderStroke(3.dp, if (disabled) disabledColor else finalColor),
         colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = Color.Transparent,
-            contentColor = if (disabled) disabledColor else color,
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent,
+            contentColor = if (disabled) disabledColor else finalColor,
             disabledContainerColor = Color.Transparent,
             disabledContentColor = disabledColor
         ),
@@ -78,7 +80,7 @@ fun AzNavRailButton(
             text = text,
             style = MaterialTheme.typography.bodyMedium.copy(
                 textAlign = TextAlign.Center,
-                color = if (disabled) disabledColor else color
+                color = if (disabled) disabledColor else finalColor
             ),
             modifier = Modifier.fillMaxSize(),
             maxLines = if (text.contains("\n")) Int.MAX_VALUE else 1,
