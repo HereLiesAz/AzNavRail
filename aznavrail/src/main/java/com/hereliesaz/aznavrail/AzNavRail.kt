@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Popup
+import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.AzLoad
 import com.hereliesaz.aznavrail.model.AzButtonShape
@@ -122,12 +123,16 @@ private data class CyclerTransientState(
 @Composable
 fun AzNavRail(
     modifier: Modifier = Modifier,
+    navController: NavController? = null,
+    currentDestination: String? = null,
     initiallyExpanded: Boolean = false,
     disableSwipeToOpen: Boolean = false,
     content: AzNavRailScope.() -> Unit
 ) {
     val scope = remember { AzNavRailScopeImpl() }
     scope.navItems.clear()
+    navController?.let { scope.navController = it }
+
     scope.apply(content)
 
     val context = LocalContext.current
@@ -365,6 +370,8 @@ fun AzNavRail(
                                     }
                                     MenuItem(
                                         item = finalItem,
+                                        navController = navController,
+                                        isSelected = finalItem.route == currentDestination,
                                         onCyclerClick = onCyclerClick,
                                         onToggle = onToggle,
                                         onItemClick = { selectedItem = finalItem }
@@ -426,6 +433,8 @@ fun AzNavRail(
                                 railItems.forEach { item ->
                                     RailContent(
                                         item = item,
+                                        navController = navController,
+                                        isSelected = item.route == currentDestination,
                                         buttonSize = buttonSize,
                                         onRailCyclerClick = onRailCyclerClick,
                                         onItemClick = { selectedItem = item }
@@ -436,6 +445,8 @@ fun AzNavRail(
                                     if (menuItem.isRailItem) {
                                         RailContent(
                                             item = menuItem,
+                                            navController = navController,
+                                            isSelected = menuItem.route == currentDestination,
                                             buttonSize = buttonSize,
                                             onRailCyclerClick = onRailCyclerClick,
                                             onItemClick = { selectedItem = menuItem }
@@ -473,6 +484,8 @@ fun AzNavRail(
 @Composable
 private fun RailContent(
     item: AzNavItem,
+    navController: NavController?,
+    isSelected: Boolean,
     buttonSize: Dp,
     onRailCyclerClick: (AzNavItem) -> Unit,
     onItemClick: () -> Unit
@@ -490,6 +503,7 @@ private fun RailContent(
         }
     } else {
         {
+            item.route?.let { navController?.navigate(it) }
             item.onClick()
             onItemClick()
         }
@@ -501,7 +515,8 @@ private fun RailContent(
         color = item.color ?: MaterialTheme.colorScheme.primary,
         size = buttonSize,
         shape = item.shape,
-        disabled = item.disabled
+        disabled = item.disabled,
+        isSelected = isSelected
     )
 }
 
@@ -520,6 +535,8 @@ private fun RailContent(
 @Composable
 private fun MenuItem(
     item: AzNavItem,
+    navController: NavController?,
+    isSelected: Boolean,
     onCyclerClick: () -> Unit = item.onClick,
     onToggle: () -> Unit = {},
     onItemClick: () -> Unit
@@ -535,6 +552,7 @@ private fun MenuItem(
             Modifier.toggleable(
                 value = item.isChecked ?: false,
                 onValueChange = {
+                    item.route?.let { navController?.navigate(it) }
                     item.onClick()
                     onToggle()
                     onItemClick()
@@ -545,6 +563,7 @@ private fun MenuItem(
                 if (item.isCycler) {
                     onCyclerClick()
                 } else {
+                    item.route?.let { navController?.navigate(it) }
                     item.onClick()
                     onToggle()
                     onItemClick()
@@ -553,10 +572,10 @@ private fun MenuItem(
         }
     }
 
-    val textColor = if (item.disabled) {
-        MaterialTheme.typography.bodyMedium.color.copy(alpha = 0.5f)
-    } else {
-        MaterialTheme.typography.bodyMedium.color
+    val textColor = when {
+        isSelected -> MaterialTheme.colorScheme.primary
+        item.disabled -> MaterialTheme.typography.bodyMedium.color.copy(alpha = 0.5f)
+        else -> MaterialTheme.typography.bodyMedium.color
     }
 
     Row(
@@ -624,8 +643,8 @@ private fun Footer(appName: String, onToggle: () -> Unit) {
 
     Column {
         AzDivider()
-        MenuItem(item = AzNavItem(id = "about", text = "About", isRailItem = false, onClick = onAboutClick), onToggle = onToggle, onItemClick = {})
-        MenuItem(item = AzNavItem(id = "feedback", text = "Feedback", isRailItem = false, onClick = onFeedbackClick), onToggle = onToggle, onItemClick = {})
+        MenuItem(item = AzNavItem(id = "about", text = "About", isRailItem = false, onClick = onAboutClick), navController = null, isSelected = false, onToggle = onToggle, onItemClick = {})
+        MenuItem(item = AzNavItem(id = "feedback", text = "Feedback", isRailItem = false, onClick = onFeedbackClick), navController = null, isSelected = false, onToggle = onToggle, onItemClick = {})
         MenuItem(
             item = AzNavItem(
                 id = "credit",
@@ -633,6 +652,8 @@ private fun Footer(appName: String, onToggle: () -> Unit) {
                 isRailItem = false,
                 onClick = onCreditClick
             ),
+            navController = null,
+            isSelected = false,
             onToggle = onToggle,
             onItemClick = {}
         )
