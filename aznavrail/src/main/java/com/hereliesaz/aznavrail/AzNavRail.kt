@@ -224,8 +224,11 @@ fun AzNavRail(
 
                             if (currentIndexInVm != -1 && targetIndex != -1) {
                                 val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
-                                repeat(clicksToCatchUp) {
-                                    item.onClick()
+                                val onClick = scope.onClickMap[item.id]
+                                if (onClick != null) {
+                                    repeat(clicksToCatchUp) {
+                                        onClick()
+                                    }
                                 }
                             }
                             cyclerStates[id] = state.copy(job = null)
@@ -332,6 +335,7 @@ fun AzNavRail(
                                 if (item.isDivider) {
                                     AzDivider()
                                 } else {
+                                    val onClick = scope.onClickMap[item.id]
                                     val onCyclerClick = if (item.isCycler) {
                                         {
                                             val state = cyclerStates[item.id]
@@ -367,8 +371,10 @@ fun AzNavRail(
 
                                                             if (currentIndexInVm != -1 && targetIndex != -1) {
                                                                 val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
-                                                                repeat(clicksToCatchUp) {
-                                                                    item.onClick()
+                                                                if (onClick != null) {
+                                                                    repeat(clicksToCatchUp) {
+                                                                        onClick()
+                                                                    }
                                                                 }
                                                             }
 
@@ -380,7 +386,7 @@ fun AzNavRail(
                                             }
                                         }
                                     } else {
-                                        item.onClick
+                                        onClick
                                     }
                                     val finalItem = if (item.isCycler) {
                                         item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption)
@@ -391,6 +397,7 @@ fun AzNavRail(
                                         item = finalItem,
                                         navController = navController,
                                         isSelected = finalItem.route == currentDestination,
+                                        onClick = onClick,
                                         onCyclerClick = onCyclerClick,
                                         onToggle = onToggle,
                                         onItemClick = { selectedItem = finalItem }
@@ -436,8 +443,11 @@ fun AzNavRail(
 
                                     if (currentIndexInVm != -1 && targetIndex != -1) {
                                         val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
-                                        repeat(clicksToCatchUp) {
-                                            item.onClick()
+                                        val onClick = scope.onClickMap[item.id]
+                                        if (onClick != null) {
+                                            repeat(clicksToCatchUp) {
+                                                onClick()
+                                            }
                                         }
                                     }
                                 }
@@ -455,6 +465,7 @@ fun AzNavRail(
                                         navController = navController,
                                         isSelected = item.route == currentDestination,
                                         buttonSize = buttonSize,
+                                        onClick = scope.onClickMap[item.id],
                                         onRailCyclerClick = onRailCyclerClick,
                                         onItemClick = { selectedItem = item }
                                     )
@@ -467,6 +478,7 @@ fun AzNavRail(
                                             navController = navController,
                                             isSelected = menuItem.route == currentDestination,
                                             buttonSize = buttonSize,
+                                            onClick = scope.onClickMap[menuItem.id],
                                             onRailCyclerClick = onRailCyclerClick,
                                             onItemClick = { selectedItem = menuItem }
                                         )
@@ -506,6 +518,7 @@ private fun RailContent(
     navController: NavController?,
     isSelected: Boolean,
     buttonSize: Dp,
+    onClick: (() -> Unit)?,
     onRailCyclerClick: (AzNavItem) -> Unit,
     onItemClick: () -> Unit
 ) {
@@ -515,7 +528,7 @@ private fun RailContent(
         else -> item.text
     }
 
-    val onClick = if (item.isCycler) {
+    val finalOnClick = if (item.isCycler) {
         {
             onRailCyclerClick(item)
             onItemClick()
@@ -523,7 +536,7 @@ private fun RailContent(
     } else {
         {
             item.route?.let { navController?.navigate(it) }
-            item.onClick()
+            onClick?.invoke()
             onItemClick()
         }
     }
@@ -532,7 +545,7 @@ private fun RailContent(
         modifier = if (item.shape == AzButtonShape.RECTANGLE) Modifier.padding(vertical = 2.dp) else Modifier
     ) {
         AzNavRailButton(
-            onClick = onClick,
+            onClick = finalOnClick,
             text = textToShow,
             color = item.color ?: MaterialTheme.colorScheme.primary,
             size = buttonSize,
@@ -560,7 +573,8 @@ private fun MenuItem(
     item: AzNavItem,
     navController: NavController?,
     isSelected: Boolean,
-    onCyclerClick: () -> Unit = item.onClick,
+    onClick: (() -> Unit)?,
+    onCyclerClick: (() -> Unit)?,
     onToggle: () -> Unit = {},
     onItemClick: () -> Unit
 ) {
@@ -576,7 +590,7 @@ private fun MenuItem(
                 value = item.isChecked ?: false,
                 onValueChange = {
                     item.route?.let { navController?.navigate(it) }
-                    item.onClick()
+                    onClick?.invoke()
                     onToggle()
                     onItemClick()
                 }
@@ -584,10 +598,10 @@ private fun MenuItem(
         } else {
             Modifier.clickable {
                 if (item.isCycler) {
-                    onCyclerClick()
+                    onCyclerClick?.invoke()
                 } else {
                     item.route?.let { navController?.navigate(it) }
-                    item.onClick()
+                    onClick?.invoke()
                     onToggle()
                     onItemClick()
                 }
@@ -666,17 +680,18 @@ private fun Footer(appName: String, onToggle: () -> Unit) {
 
     Column {
         AzDivider()
-        MenuItem(item = AzNavItem(id = "about", text = "About", isRailItem = false, onClick = onAboutClick), navController = null, isSelected = false, onToggle = onToggle, onItemClick = {})
-        MenuItem(item = AzNavItem(id = "feedback", text = "Feedback", isRailItem = false, onClick = onFeedbackClick), navController = null, isSelected = false, onToggle = onToggle, onItemClick = {})
+        MenuItem(item = AzNavItem(id = "about", text = "About", isRailItem = false), navController = null, isSelected = false, onClick = onAboutClick, onCyclerClick = null, onToggle = onToggle, onItemClick = {})
+        MenuItem(item = AzNavItem(id = "feedback", text = "Feedback", isRailItem = false), navController = null, isSelected = false, onClick = onFeedbackClick, onCyclerClick = null, onToggle = onToggle, onItemClick = {})
         MenuItem(
             item = AzNavItem(
                 id = "credit",
                 text = "@HereLiesAz",
-                isRailItem = false,
-                onClick = onCreditClick
+                isRailItem = false
             ),
             navController = null,
             isSelected = false,
+            onClick = onCreditClick,
+            onCyclerClick = null,
             onToggle = onToggle,
             onItemClick = {}
         )
