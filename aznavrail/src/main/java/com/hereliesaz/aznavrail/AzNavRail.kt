@@ -38,10 +38,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
@@ -96,6 +101,19 @@ private data class CyclerTransientState(
     val displayedOption: String,
     val job: Job? = null
 )
+
+private object CenteredPopupPositionProvider : PopupPositionProvider {
+    override fun calculatePosition(
+        anchorBounds: IntRect,
+        windowSize: IntSize,
+        layoutDirection: LayoutDirection,
+        popupContentSize: IntSize
+    ): IntOffset {
+        val x = (windowSize.width - popupContentSize.width) / 2
+        val y = (windowSize.height - popupContentSize.height) / 2
+        return IntOffset(x, y)
+    }
+}
 
 /**
  * An M3-style navigation rail that expands into a menu drawer.
@@ -242,10 +260,12 @@ fun AzNavRail(
         }
         if (scope.isLoading) {
             Popup(
-                alignment = Alignment.Center,
+                popupPositionProvider = CenteredPopupPositionProvider,
                 properties = PopupProperties(focusable = false)
             ) {
-                AzLoad(modifier = Modifier.fillMaxSize())
+                Box(contentAlignment = Alignment.Center) {
+                    AzLoad()
+                }
             }
         }
         Row(
@@ -508,15 +528,19 @@ private fun RailContent(
         }
     }
 
-    AzNavRailButton(
-        onClick = onClick,
-        text = textToShow,
-        color = item.color ?: MaterialTheme.colorScheme.primary,
-        size = buttonSize,
-        shape = item.shape,
-        disabled = item.disabled,
-        isSelected = isSelected
-    )
+    Box(
+        modifier = if (item.shape == AzButtonShape.RECTANGLE) Modifier.padding(vertical = 2.dp) else Modifier
+    ) {
+        AzNavRailButton(
+            onClick = onClick,
+            text = textToShow,
+            color = item.color ?: MaterialTheme.colorScheme.primary,
+            size = buttonSize,
+            shape = item.shape,
+            disabled = item.disabled,
+            isSelected = isSelected
+        )
+    }
 }
 
 /**
