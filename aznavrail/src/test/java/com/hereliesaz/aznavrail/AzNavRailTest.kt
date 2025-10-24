@@ -37,7 +37,7 @@ class AzNavRailTest {
     fun `azMenuItem should add a menu item`() {
         val scope = AzNavRailScopeImpl()
         scope.azMenuItem("home", "Home", onClick = {})
-        val expectedItem = AzNavItem("home", "Home", isRailItem = false, onClick = {})
+        val expectedItem = AzNavItem("home", "Home", isRailItem = false)
         assertEquals(expectedItem.id, scope.navItems[0].id)
         assertEquals(expectedItem.text, scope.navItems[0].text)
         assertEquals(expectedItem.isRailItem, scope.navItems[0].isRailItem)
@@ -53,7 +53,7 @@ class AzNavRailTest {
     fun `azRailItem should add a rail item`() {
         val scope = AzNavRailScopeImpl()
         scope.azRailItem("home", "Home", Color.Red, onClick = {})
-        val expectedItem = AzNavItem("home", "Home", isRailItem = true, color = Color.Red, onClick = {})
+        val expectedItem = AzNavItem("home", "Home", isRailItem = true, color = Color.Red)
         assertEquals(expectedItem.id, scope.navItems[0].id)
         assertEquals(expectedItem.text, scope.navItems[0].text)
         assertEquals(expectedItem.isRailItem, scope.navItems[0].isRailItem)
@@ -70,7 +70,7 @@ class AzNavRailTest {
     fun `azMenuToggle should add a menu toggle item`() {
         val scope = AzNavRailScopeImpl()
         scope.azMenuToggle("toggle", true, "On", "Off") {}
-        val expectedItem = AzNavItem("toggle", "", isRailItem = false, isToggle = true, isChecked = true, toggleOnText = "On", toggleOffText = "Off", onClick = {})
+        val expectedItem = AzNavItem("toggle", "", isRailItem = false, isToggle = true, isChecked = true, toggleOnText = "On", toggleOffText = "Off")
         assertEquals(expectedItem.id, scope.navItems[0].id)
         assertEquals(expectedItem.text, scope.navItems[0].text)
         assertEquals(expectedItem.isRailItem, scope.navItems[0].isRailItem)
@@ -96,7 +96,7 @@ class AzNavRailTest {
     fun `azRailToggle should add a rail toggle item`() {
         val scope = AzNavRailScopeImpl()
         scope.azRailToggle("toggle", Color.Blue, false, "On", "Off") {}
-        val expectedItem = AzNavItem("toggle", "", isRailItem = true, color = Color.Blue, isToggle = true, isChecked = false, toggleOnText = "On", toggleOffText = "Off", onClick = {})
+        val expectedItem = AzNavItem("toggle", "", isRailItem = true, color = Color.Blue, isToggle = true, isChecked = false, toggleOnText = "On", toggleOffText = "Off")
         assertEquals(expectedItem.id, scope.navItems[0].id)
         assertEquals(expectedItem.text, scope.navItems[0].text)
         assertEquals(expectedItem.isRailItem, scope.navItems[0].isRailItem)
@@ -112,7 +112,7 @@ class AzNavRailTest {
         val scope = AzNavRailScopeImpl()
         val options = listOf("A", "B", "C")
         scope.azMenuCycler("cycler", options, "A") {}
-        val expectedItem = AzNavItem("cycler", "", isRailItem = false, isCycler = true, options = options, selectedOption = "A", onClick = {})
+        val expectedItem = AzNavItem("cycler", "", isRailItem = false, isCycler = true, options = options, selectedOption = "A")
         assertEquals(expectedItem.id, scope.navItems[0].id)
         assertEquals(expectedItem.text, scope.navItems[0].text)
         assertEquals(expectedItem.isRailItem, scope.navItems[0].isRailItem)
@@ -140,7 +140,7 @@ class AzNavRailTest {
         val scope = AzNavRailScopeImpl()
         val options = listOf("A", "B", "C")
         scope.azRailCycler("cycler", Color.Green, options, "B") {}
-        val expectedItem = AzNavItem("cycler", "", isRailItem = true, color = Color.Green, isCycler = true, options = options, selectedOption = "B", onClick = {})
+        val expectedItem = AzNavItem("cycler", "", isRailItem = true, color = Color.Green, isCycler = true, options = options, selectedOption = "B")
         assertEquals(expectedItem.id, scope.navItems[0].id)
         assertEquals(expectedItem.text, scope.navItems[0].text)
         assertEquals(expectedItem.isRailItem, scope.navItems[0].isRailItem)

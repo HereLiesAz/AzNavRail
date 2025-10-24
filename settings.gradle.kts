@@ -4,6 +4,7 @@ pluginManagement {
         id("com.android.library").version("8.13.0")
         id("org.jetbrains.kotlin.android").version("2.2.20")
         id("org.jetbrains.kotlin.plugin.compose").version("2.2.20")
+        id("org.jetbrains.kotlin.plugin.parcelize").version("2.2.20")
     }
     repositories {
         google()
