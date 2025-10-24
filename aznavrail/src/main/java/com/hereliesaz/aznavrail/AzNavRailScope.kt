@@ -138,6 +138,7 @@ interface AzNavRailScope {
 
 internal class AzNavRailScopeImpl : AzNavRailScope {
     val navItems = mutableStateListOf<AzNavItem>()
+    val onClickMap = mutableMapOf<String, () -> Unit>()
     var navController: NavController? = null
     var displayAppNameInHeader: Boolean = false
     var packRailButtons: Boolean = false
@@ -202,7 +203,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
             """.trimIndent()
         }
         val finalScreenTitle = if (screenTitle == AzNavRail.noTitle) null else screenTitle ?: text
-        navItems.add(AzNavItem(id = id, text = text, route = route, screenTitle = finalScreenTitle, isRailItem = false, disabled = disabled, onClick = onClick))
+        onClickMap[id] = onClick
+        navItems.add(AzNavItem(id = id, text = text, route = route, screenTitle = finalScreenTitle, isRailItem = false, disabled = disabled))
     }
 
     override fun azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
@@ -230,7 +232,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
             """.trimIndent()
         }
         val finalScreenTitle = if (screenTitle == AzNavRail.noTitle) null else screenTitle ?: text
-        navItems.add(AzNavItem(id = id, text = text, route = route, screenTitle = finalScreenTitle, isRailItem = true, color = color, shape = shape ?: defaultShape, disabled = disabled, onClick = onClick))
+        onClickMap[id] = onClick
+        navItems.add(AzNavItem(id = id, text = text, route = route, screenTitle = finalScreenTitle, isRailItem = true, color = color, shape = shape ?: defaultShape, disabled = disabled))
     }
 
     override fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
@@ -262,7 +265,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         }
         val text = if (isChecked) toggleOnText else toggleOffText
         val finalScreenTitle = if (screenTitle == AzNavRail.noTitle) null else screenTitle ?: text
-        navItems.add(AzNavItem(id = id, text = "", route = route, screenTitle = finalScreenTitle, isRailItem = false, isToggle = true, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, disabled = disabled, onClick = onClick))
+        onClickMap[id] = onClick
+        navItems.add(AzNavItem(id = id, text = "", route = route, screenTitle = finalScreenTitle, isRailItem = false, isToggle = true, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, disabled = disabled))
     }
 
     override fun azRailToggle(id: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
@@ -294,7 +298,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         }
         val text = if (isChecked) toggleOnText else toggleOffText
         val finalScreenTitle = if (screenTitle == AzNavRail.noTitle) null else screenTitle ?: text
-        navItems.add(AzNavItem(id = id, text = "", route = route, screenTitle = finalScreenTitle, isRailItem = true, color = color, isToggle = true, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, shape = shape ?: defaultShape, disabled = disabled, onClick = onClick))
+        onClickMap[id] = onClick
+        navItems.add(AzNavItem(id = id, text = "", route = route, screenTitle = finalScreenTitle, isRailItem = true, color = color, isToggle = true, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, shape = shape ?: defaultShape, disabled = disabled))
     }
 
     override fun azMenuCycler(id: String, options: List<String>, selectedOption: String, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit) {
@@ -324,7 +329,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
             """.trimIndent()
         }
         val finalScreenTitle = if (screenTitle == AzNavRail.noTitle) null else screenTitle ?: selectedOption
-        navItems.add(AzNavItem(id = id, text = "", route = route, screenTitle = finalScreenTitle, isRailItem = false, isCycler = true, options = options, selectedOption = selectedOption, disabled = disabled, disabledOptions = disabledOptions, onClick = onClick))
+        onClickMap[id] = onClick
+        navItems.add(AzNavItem(id = id, text = "", route = route, screenTitle = finalScreenTitle, isRailItem = false, isCycler = true, options = options, selectedOption = selectedOption, disabled = disabled, disabledOptions = disabledOptions))
     }
 
     override fun azRailCycler(id: String, color: Color?, options: List<String>, selectedOption: String, shape: AzButtonShape?, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit) {
@@ -354,10 +360,11 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
             """.trimIndent()
         }
         val finalScreenTitle = if (screenTitle == AzNavRail.noTitle) null else screenTitle ?: selectedOption
-        navItems.add(AzNavItem(id = id, text = "", route = route, screenTitle = finalScreenTitle, isRailItem = true, color = color, isCycler = true, options = options, selectedOption = selectedOption, shape = shape ?: defaultShape, disabled = disabled, disabledOptions = disabledOptions, onClick = onClick))
+        onClickMap[id] = onClick
+        navItems.add(AzNavItem(id = id, text = "", route = route, screenTitle = finalScreenTitle, isRailItem = true, color = color, isCycler = true, options = options, selectedOption = selectedOption, shape = shape ?: defaultShape, disabled = disabled, disabledOptions = disabledOptions))
     }
 
     override fun azDivider() {
-        navItems.add(AzNavItem(id = "divider_${navItems.size}", text = "", isRailItem = false, isDivider = true, onClick = {}))
+        navItems.add(AzNavItem(id = "divider_${navItems.size}", text = "", isRailItem = false, isDivider = true))
     }
 }

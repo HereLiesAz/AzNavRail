@@ -1,6 +1,9 @@
 package com.hereliesaz.aznavrail.model
 
+import android.os.Parcelable
 import androidx.compose.ui.graphics.Color
+import kotlinx.parcelize.Parcelize
+import kotlinx.parcelize.RawValue
 
 /**
  * The unified, stateless data model for any item in the navigation rail or menu.
@@ -21,13 +24,14 @@ import androidx.compose.ui.graphics.Color
  * @param collapseOnClick If `true`, the navigation rail will collapse after this item is clicked. This only applies to normal items (not toggles or cyclers).
  * @param onClick The lambda to be executed when the item is clicked. For toggles and cyclers, this is where you should update your state.
  */
+@Parcelize
 data class AzNavItem(
     val id: String,
     val text: String,
     val route: String? = null,
     val screenTitle: String? = null,
     val isRailItem: Boolean,
-    val color: Color? = null,
+    val color: @RawValue Color? = null,
     val isToggle: Boolean = false,
     val isChecked: Boolean? = null,
     val toggleOnText: String = "",
@@ -39,6 +43,5 @@ data class AzNavItem(
     val collapseOnClick: Boolean = true,
     val shape: AzButtonShape = AzButtonShape.CIRCLE,
     val disabled: Boolean = false,
-    val disabledOptions: List<String>? = null,
-    val onClick: () -> Unit
-)
+    val disabledOptions: List<String>? = null
+) : Parcelable
