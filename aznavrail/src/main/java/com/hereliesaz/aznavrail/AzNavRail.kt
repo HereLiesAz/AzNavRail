@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.AzLoad
@@ -218,7 +219,7 @@ fun AzNavRail(
     }
 
     BoxWithConstraints(modifier = modifier) {
-        val buttonSize = if (isLandscape) scope.collapsedRailWidth else maxHeight / 10
+        val buttonSize = if (isLandscape) maxWidth else maxHeight / 10
         selectedItem?.screenTitle?.let { screenTitle ->
             if (screenTitle.isNotEmpty()) {
                 Popup(alignment = Alignment.TopEnd) {

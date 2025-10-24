@@ -23,7 +23,8 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 - **Configurable Layout**: Pack buttons together or preserve spacing.
 - **Disabled State**: Disable any item, including individual cycler options.
 - **Loading State**: Show a loading animation over the rail.
-- **Jetpack Navigation Integration**: Directly integrate with Jetpack Navigation using routes.
+- **Standalone Components**: Use `AzButton`, `AzToggle`, `AzCycler`, and `AzDivider` on their own.
+- **Jetpack Navigation Integration**: Seamlessly integrate with Jetpack Navigation using the `navController`.
 
 ## AzNavRail for Android (Jetpack Compose)
 
@@ -54,11 +55,6 @@ dependencies {
 Here is a comprehensive example demonstrating the various features of `AzNavRail`, including Jetpack Navigation integration. You can find this code in the `SampleApp`.
 
 ```kotlin
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -77,6 +73,7 @@ fun SampleScreen() {
     var railSelectedOption by remember { mutableStateOf(railCycleOptions.first()) }
     val menuCycleOptions = remember { listOf("X", "Y", "Z") }
     var menuSelectedOption by remember { mutableStateOf(menuCycleOptions.first()) }
+    val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.screenWidthDp > configuration.screenHeightDp
 
@@ -93,15 +90,27 @@ fun SampleScreen() {
                 defaultShape = AzButtonShape.RECTANGLE // Set a default shape for all rail items
             )
 
-            // A standard menu item with a route
+            // A standard menu item - only appears in the expanded menu
             azMenuItem(id = "home", text = "Home", route = "home")
 
-            // A rail item with a route
+            // A menu item with multi-line text
+            azMenuItem(id = "multi-line", text = "This is a\nmulti-line item", route = "multi-line")
+
+            // A rail item with the default shape (RECTANGLE)
             azRailItem(id = "favorites", text = "Favorites", route = "favorites")
+
+            // A disabled rail item that overrides the default shape
+            azRailItem(
+                id = "profile",
+                text = "Profile",
+                shape = AzButtonShape.CIRCLE,
+                disabled = true,
+                route = "profile"
+            )
 
             azDivider()
 
-            // A rail toggle item with both a route and an onClick action
+            // A rail toggle item with the SQUARE shape
             azRailToggle(
                 id = "online",
                 isChecked = isOnline,
@@ -112,7 +121,33 @@ fun SampleScreen() {
                 onClick = { isOnline = !isOnline }
             )
 
-            // A menu cycler with a route
+            // A menu toggle item
+            azMenuToggle(
+                id = "dark-mode",
+                isChecked = isDarkMode,
+                toggleOnText = "Dark Mode",
+                toggleOffText = "Light Mode",
+                route = "dark-mode",
+                onClick = { isDarkMode = !isDarkMode }
+            )
+
+            azDivider()
+
+            // A rail cycler with a disabled option
+            azRailCycler(
+                id = "rail-cycler",
+                options = railCycleOptions,
+                selectedOption = railSelectedOption,
+                disabledOptions = listOf("C"),
+                route = "rail-cycler",
+                onClick = {
+                    val currentIndex = railCycleOptions.indexOf(railSelectedOption)
+                    val nextIndex = (currentIndex + 1) % railCycleOptions.size
+                    railSelectedOption = railCycleOptions[nextIndex]
+                }
+            )
+
+            // A menu cycler
             azMenuCycler(
                 id = "menu-cycler",
                 options = menuCycleOptions,
@@ -125,6 +160,7 @@ fun SampleScreen() {
                 }
             )
 
+
             // A button to demonstrate the loading state
             azRailItem(id = "loading", text = "Load", route = "loading", onClick = { isLoading = !isLoading })
         }
@@ -132,8 +168,12 @@ fun SampleScreen() {
         // Your app's main content goes here
         NavHost(navController = navController, startDestination = "home") {
             composable("home") { Text("Home Screen") }
+            composable("multi-line") { Text("Multi-line Screen") }
             composable("favorites") { Text("Favorites Screen") }
+            composable("profile") { Text("Profile Screen") }
             composable("online") { Text("Online Screen") }
+            composable("dark-mode") { Text("Dark Mode Screen") }
+            composable("rail-cycler") { Text("Rail Cycler Screen") }
             composable("menu-cycler") { Text("Menu Cycler Screen") }
             composable("loading") { Text("Loading Screen") }
         }
@@ -175,13 +215,27 @@ The DSL for configuring the `AzNavRail`.
 **Note:** Functions prefixed with `azMenu` will only appear in the expanded menu view. Functions prefixed with `azRail` will appear on the collapsed rail, and their text will be used as the label in the expanded menu.
 
 -   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean, isLoading: Boolean, defaultShape: AzButtonShape)`: Configures the settings for the `AzNavRail`.
--   `azMenuItem(id: String, text: String, disabled: Boolean, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
--   `azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text in the expanded menu.
--   `azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean, onClick: () -> Unit)`: Adds a toggle item that only appears in the expanded menu. Tapping it executes the action and collapses the rail.
--   `azRailToggle(id: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, disabled: Boolean, onClick: () -> Unit)`: Adds a toggle item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail.
--   `azMenuCycler(id: String, options: List<String>, selectedOption: String, disabled: Boolean, disabledOptions: List<String>?, onClick: () -> Unit)`: Adds a cycler item that only appears in the expanded menu. Tapping it cycles through options and executes the `onClick` action for the final selection after a 1-second delay, then collapses the rail.
--   `azRailCycler(id: String, color: Color?, options: List<String>, selectedOption: String, shape: AzButtonShape?, disabled: Boolean, disabledOptions: List<String>?, onClick: () -> Unit)`: Adds a cycler item that appears in both the collapsed rail and the expanded menu. The behavior is the same as `azMenuCycler`.
+-   `azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
+-   `azMenuItem(id: String, text: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
+-   `azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text in the expanded menu.
+-   `azRailItem(id: String, text: String, route: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text in the expanded menu.
+-   `azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a toggle item that only appears in the expanded menu. Tpping it executes the action and collapses the rail.
+-   `azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a toggle item that only appears in the expanded menu. Tapping it executes the action and collapses the rail.
+-   `azRailToggle(id: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a toggle item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail.
+-   `azRailToggle(id: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a toggle item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail.
+-   `azMenuCycler(id: String, options: List<String>, selectedOption: String, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`: Adds a cycler item that only appears in the expanded menu. Tapping it cycles through options and executes the `onClick` action for the final selection after a 1-second delay, then collapses the rail.
+-   `azMenuCycler(id: String, options: List<String>, selectedOption: String, route: String, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`: Adds a cycler item that only appears in the expanded menu. Tapping it cycles through options and executes the `onClick` action for the final selection after a 1-second delay, then collapses the rail.
+-   `azRailCycler(id: String, color: Color?, options: List<String>, selectedOption: String, shape: AzButtonShape?, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`: Adds a cycler item that appears in both the collapsed rail and the expanded menu. The behavior is the same as `azMenuCycler`.
+-   `azRailCycler(id: String, color: Color?, options: List<String>, selectedOption: String, shape: AzButtonShape?, route: String, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`: Adds a cycler item that appears in both the collapsed rail and the expanded menu. The behavior is the same as `azMenuCycler`.
 -   `azDivider()`: Adds a horizontal divider to the expanded menu.
+-   **`screenTitle`**: An optional parameter for all `azMenuItem`, `azRailItem`, `azMenuToggle`, `azRailToggle`, `azMenuCycler`, and `azRailCycler` functions that displays a title on the screen when the item is selected. The title will be **force-aligned to the right** of the screen. If no `screenTitle` is provided, the item's `text` will be used instead. To prevent a title from being displayed, use `screenTitle = AzNavRail.noTitle`.
+-    **`route`**: An optional parameter for all `azMenuItem`, `azRailItem`, `azMenuToggle`, `azRailToggle`, `azMenuCycler`, and `azRailCycler` functions that specifies the route to navigate to when the item is clicked. This is used for integration with Jetpack Navigation.
+
+## AzNavRail for Web (React)
+
+`aznavrail-web` is a React component that provides a Material Design-style navigation rail, inspired by its counterpart in the Android ecosystem. It is designed to be a "batteries-included" solution, offering a highly configurable and easy-to-use navigation component for web applications.
+
+### Features
 
 All item functions are overloaded to support `route`-based navigation. The `route` parameter is a `String` that represents the destination in the navigation graph.
 
@@ -216,7 +270,7 @@ You may obtain a copy of the License at
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+WITHOUTHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ```
