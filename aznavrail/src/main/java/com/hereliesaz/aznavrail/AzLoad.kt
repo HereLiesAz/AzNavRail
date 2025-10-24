@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun AzLoad(modifier: Modifier = Modifier) {
+fun AzLoad() {
     val infiniteTransition = rememberInfiniteTransition()
     val rotationY by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -30,7 +30,7 @@ fun AzLoad(modifier: Modifier = Modifier) {
     )
 
     Box(
-        modifier = modifier
+        modifier = Modifier
             .size(120.dp)
             .graphicsLayer {
                 this.rotationY = rotationY

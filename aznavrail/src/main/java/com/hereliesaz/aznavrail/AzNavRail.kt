@@ -245,7 +245,9 @@ fun AzNavRail(
                 alignment = Alignment.Center,
                 properties = PopupProperties(focusable = false)
             ) {
-                AzLoad(modifier = Modifier.fillMaxSize())
+                Box(contentAlignment = Alignment.Center) {
+                    AzLoad()
+                }
             }
         }
         Row(
