@@ -38,6 +38,7 @@ interface AzNavRailScope {
      * @param disabled Whether the item is disabled.
      * @param onClick The callback to be invoked when the item is clicked.
      * @param screenTitle The text to display as the screen title when this item is selected.
+     * @param route The route to navigate to when the item is clicked.
      */
     fun azMenuItem(id: String, text: String, disabled: Boolean = false, screenTitle: String? = null, onClick: () -> Unit)
     fun azMenuItem(id: String, text: String, route: String, disabled: Boolean = false, screenTitle: String? = null)
@@ -53,6 +54,7 @@ interface AzNavRailScope {
      * @param disabled Whether the item is disabled.
      * @param onClick The callback to be invoked when the item is clicked.
      * @param screenTitle The text to display as the screen title when this item is selected.
+     * @param route The route to navigate to when the item is clicked.
      */
     fun azRailItem(id: String, text: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, onClick: () -> Unit)
     fun azRailItem(id: String, text: String, route: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null)
@@ -66,6 +68,7 @@ interface AzNavRailScope {
      * @param toggleOffText The text to display when the toggle is off.
      * @param disabled Whether the item is disabled.
      * @param onClick The callback to be invoked when the item is clicked.
+     * @param route The route to navigate to when the item is clicked.
      */
     fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean = false, screenTitle: String? = null, onClick: () -> Unit)
     fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String, disabled: Boolean = false, screenTitle: String? = null, onClick: () -> Unit)
@@ -81,6 +84,7 @@ interface AzNavRailScope {
      * @param shape The shape of the button.
      * @param disabled Whether the item is disabled.
      * @param onClick The callback to be invoked when the item is clicked.
+     * @param route The route to navigate to when the item is clicked.
      */
     fun azRailToggle(id: String, color: Color? = null, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, onClick: () -> Unit)
     fun azRailToggle(id: String, color: Color? = null, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape? = null, route: String, disabled: Boolean = false, screenTitle: String? = null, onClick: () -> Unit)
@@ -99,6 +103,7 @@ interface AzNavRailScope {
      * @param disabled Whether the item is disabled.
      * @param disabledOptions The list of options to disable.
      * @param onClick The callback to be invoked for the final selected option after the delay.
+     * @param route The route to navigate to when the item is clicked.
      */
     fun azMenuCycler(id: String, options: List<String>, selectedOption: String, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, onClick: () -> Unit)
     fun azMenuCycler(id: String, options: List<String>, selectedOption: String, route: String, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, onClick: () -> Unit)
@@ -119,6 +124,7 @@ interface AzNavRailScope {
      * @param disabled Whether the item is disabled.
      * @param disabledOptions The list of options to disable.
      * @param onClick The callback to be invoked for the final selected option after the delay.
+     * @param route The route to navigate to when the item is clicked.
      */
     fun azRailCycler(id: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, onClick: () -> Unit)
     fun azRailCycler(id: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, route: String, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, onClick: () -> Unit)

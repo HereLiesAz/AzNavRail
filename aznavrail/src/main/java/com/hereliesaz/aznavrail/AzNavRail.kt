@@ -116,6 +116,9 @@ private data class CyclerTransientState(
  * only collapse the rail after the user has settled on a choice for at least one second.
  *
  * @param modifier The modifier to be applied to the navigation rail.
+ * @param navController An optional [NavController] to enable integration with Jetpack Navigation.
+ * @param currentDestination The route of the current destination, used to highlight the active item.
+ * @param isLandscape A boolean to indicate if the device is in landscape mode.
  * @param initiallyExpanded Whether the navigation rail is expanded by default.
  * @param disableSwipeToOpen Whether to disable the swipe-to-open gesture.
  * @param content The DSL content for the navigation rail.
