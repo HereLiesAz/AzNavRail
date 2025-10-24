@@ -125,6 +125,7 @@ fun AzNavRail(
     modifier: Modifier = Modifier,
     navController: NavController? = null,
     currentDestination: String? = null,
+    isLandscape: Boolean = false,
     initiallyExpanded: Boolean = false,
     disableSwipeToOpen: Boolean = false,
     content: AzNavRailScope.() -> Unit
@@ -207,11 +208,7 @@ fun AzNavRail(
     }
 
     BoxWithConstraints(modifier = modifier) {
-        val buttonSize = if (maxWidth > maxHeight) {
-            maxWidth - AzNavRailDefaults.RailContentHorizontalPadding * 2
-        } else {
-            scope.collapsedRailWidth - AzNavRailDefaults.RailContentHorizontalPadding * 2
-        }
+        val buttonSize = if (isLandscape) scope.collapsedRailWidth else maxHeight / 10
         selectedItem?.screenTitle?.let { screenTitle ->
             if (screenTitle.isNotEmpty()) {
                 Popup(alignment = Alignment.TopEnd) {
@@ -291,8 +288,7 @@ fun AzNavRail(
                                     Image(
                                         painter = rememberAsyncImagePainter(model = appIcon),
                                         contentDescription = "Toggle menu, showing $appName icon",
-                                        modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize),
-                                        contentScale = ContentScale.Crop
+                                        modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize)
                                     )
                                 } else {
                                     Icon(

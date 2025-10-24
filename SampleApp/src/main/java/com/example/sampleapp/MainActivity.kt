@@ -53,11 +53,14 @@ fun SampleScreen() {
     val menuCycleOptions = remember { listOf("X", "Y", "Z") }
     var menuSelectedOption by remember { mutableStateOf(menuCycleOptions.first()) }
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.screenWidthDp > configuration.screenHeightDp
 
     Row {
         AzNavRail(
             navController = navController,
-            currentDestination = currentDestination?.destination?.route
+            currentDestination = currentDestination?.destination?.route,
+            isLandscape = isLandscape
         ) {
             azSettings(
                 // displayAppNameInHeader = true, // Set to true to display the app name instead of the icon
