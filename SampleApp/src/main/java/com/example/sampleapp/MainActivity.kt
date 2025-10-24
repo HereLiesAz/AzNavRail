@@ -16,8 +16,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.hereliesaz.aznavrail.AzNavRail
 import com.hereliesaz.aznavrail.model.AzButtonShape
 
@@ -39,6 +44,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun SampleScreen() {
+    val navController = rememberNavController()
+    val currentDestination by navController.currentBackStackEntryAsState()
     var isOnline by remember { mutableStateOf(true) }
     var isDarkMode by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
@@ -47,9 +54,15 @@ fun SampleScreen() {
     val menuCycleOptions = remember { listOf("X", "Y", "Z") }
     var menuSelectedOption by remember { mutableStateOf(menuCycleOptions.first()) }
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.screenWidthDp > configuration.screenHeightDp
 
     Row {
-        AzNavRail {
+        AzNavRail(
+            navController = navController,
+            currentDestination = currentDestination?.destination?.route,
+            isLandscape = isLandscape
+        ) {
             azSettings(
                 // displayAppNameInHeader = true, // Set to true to display the app name instead of the icon
                 packRailButtons = false,
@@ -58,13 +71,13 @@ fun SampleScreen() {
             )
 
             // A standard menu item - only appears in the expanded menu
-            azMenuItem(id = "home", text = "Home", onClick = { /* ... */ })
+            azMenuItem(id = "home", text = "Home", route = "home")
 
             // A menu item with multi-line text
-            azMenuItem(id = "multi-line", text = "This is a\nmulti-line item", onClick = { /* ... */ })
+            azMenuItem(id = "multi-line", text = "This is a\nmulti-line item", route = "multi-line")
 
             // A rail item with the default shape (RECTANGLE)
-            azRailItem(id = "favorites", text = "Favorites", onClick = { /* ... */ })
+            azRailItem(id = "favorites", text = "Favorites", route = "favorites")
 
             // A disabled rail item that overrides the default shape
             azRailItem(
@@ -72,7 +85,7 @@ fun SampleScreen() {
                 text = "Profile",
                 shape = AzButtonShape.CIRCLE,
                 disabled = true,
-                onClick = { /* This will not be triggered */ }
+                route = "profile"
             )
 
             azDivider()
@@ -84,6 +97,7 @@ fun SampleScreen() {
                 toggleOnText = "Online",
                 toggleOffText = "Offline",
                 shape = AzButtonShape.SQUARE,
+                route = "online",
                 onClick = { isOnline = !isOnline }
             )
 
@@ -93,6 +107,7 @@ fun SampleScreen() {
                 isChecked = isDarkMode,
                 toggleOnText = "Dark Mode",
                 toggleOffText = "Light Mode",
+                route = "dark-mode",
                 onClick = { isDarkMode = !isDarkMode }
             )
 
@@ -104,6 +119,7 @@ fun SampleScreen() {
                 options = railCycleOptions,
                 selectedOption = railSelectedOption,
                 disabledOptions = listOf("C"),
+                route = "rail-cycler",
                 onClick = {
                     val currentIndex = railCycleOptions.indexOf(railSelectedOption)
                     val nextIndex = (currentIndex + 1) % railCycleOptions.size
@@ -116,6 +132,7 @@ fun SampleScreen() {
                 id = "menu-cycler",
                 options = menuCycleOptions,
                 selectedOption = menuSelectedOption,
+                route = "menu-cycler",
                 onClick = {
                     val currentIndex = menuCycleOptions.indexOf(menuSelectedOption)
                     val nextIndex = (currentIndex + 1) % menuCycleOptions.size
@@ -125,16 +142,20 @@ fun SampleScreen() {
 
 
             // A button to demonstrate the loading state
-            azRailItem(id = "loading", text = "Load", onClick = { isLoading = !isLoading })
+            azRailItem(id = "loading", text = "Load", route = "loading", onClick = { isLoading = !isLoading })
         }
 
         // Your app's main content goes here
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("isOnline: $isOnline")
-            Text("isDarkMode: $isDarkMode")
-            Text("railSelectedOption: $railSelectedOption")
-            Text("menuSelectedOption: $menuSelectedOption")
-            Text("isLoading: $isLoading")
+        NavHost(navController = navController, startDestination = "home") {
+            composable("home") { Text("Home Screen") }
+            composable("multi-line") { Text("Multi-line Screen") }
+            composable("favorites") { Text("Favorites Screen") }
+            composable("profile") { Text("Profile Screen") }
+            composable("online") { Text("Online Screen") }
+            composable("dark-mode") { Text("Dark Mode Screen") }
+            composable("rail-cycler") { Text("Rail Cycler Screen") }
+            composable("menu-cycler") { Text("Menu Cycler Screen") }
+            composable("loading") { Text("Loading Screen") }
         }
     }
 }
