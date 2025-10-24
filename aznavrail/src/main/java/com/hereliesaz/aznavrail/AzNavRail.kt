@@ -240,19 +240,11 @@ fun AzNavRail(
             }
         }
         if (scope.isLoading) {
-            Dialog(
-                onDismissRequest = { },
-                properties = DialogProperties(
-                    dismissOnBackPress = false,
-                    dismissOnClickOutside = false,
-                    usePlatformDefaultWidth = false
-                )
+            Popup(
+                alignment = Alignment.Center,
+                properties = PopupProperties(focusable = false)
             ) {
-                Surface(
-                    color = Color.Transparent
-                ) {
-                    AzLoad(modifier = Modifier.fillMaxSize())
-                }
+                AzLoad(modifier = Modifier.fillMaxSize())
             }
         }
         Row(
