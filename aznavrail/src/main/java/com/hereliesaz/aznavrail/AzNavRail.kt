@@ -174,6 +174,13 @@ fun AzNavRail(
     var selectedItem by rememberSaveable { mutableStateOf<AzNavItem?>(null) }
 
     LaunchedEffect(scope.navItems) {
+        val initialSelectedItem = if (currentDestination != null) {
+            scope.navItems.find { it.route == currentDestination }
+        } else {
+            scope.navItems.firstOrNull()
+        }
+        selectedItem = initialSelectedItem
+
         scope.navItems.forEach { item ->
             if (item.isCycler) {
                 cyclerStates.putIfAbsent(item.id, CyclerTransientState(item.selectedOption ?: ""))
