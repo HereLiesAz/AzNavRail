@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -239,8 +240,12 @@ fun AzNavRail(
         }
     }
 
-    BoxWithConstraints(modifier = modifier) {
-        val buttonSize = if (isLandscape) maxWidth else maxHeight / 10
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+    val screenHeight = configuration.screenHeightDp.dp
+
+    Box(modifier = modifier) {
+        val buttonSize = if (isLandscape) screenWidth / 18 else screenHeight / 18
         selectedItem?.screenTitle?.let { screenTitle ->
             if (screenTitle.isNotEmpty()) {
                 Popup(alignment = Alignment.TopEnd) {
