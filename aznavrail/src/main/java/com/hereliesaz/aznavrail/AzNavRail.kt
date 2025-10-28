@@ -23,11 +23,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowRight
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.draw.rotate
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -192,6 +195,7 @@ fun AzNavRail(
     val coroutineScope = rememberCoroutineScope()
     val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
     var selectedItem by rememberSaveable { mutableStateOf<AzNavItem?>(null) }
+    val hostStates = remember { mutableStateMapOf<String, Boolean>() }
 
     LaunchedEffect(scope.navItems) {
         val initialSelectedItem = if (currentDestination != null) {
@@ -336,7 +340,8 @@ fun AzNavRail(
                 if (isExpanded) {
                     Column(modifier = Modifier.fillMaxHeight()) {
                         Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                            scope.navItems.forEach { item ->
+                            val itemsToShow = scope.navItems.filter { !it.isSubItem }
+                            itemsToShow.forEach { item ->
                                 if (item.isDivider) {
                                     AzDivider()
                                 } else {
@@ -395,6 +400,8 @@ fun AzNavRail(
                                     }
                                     val finalItem = if (item.isCycler) {
                                         item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption)
+                                    } else if (item.isHost) {
+                                        item.copy(isExpanded = hostStates[item.id] ?: false)
                                     } else {
                                         item
                                     }
@@ -405,8 +412,24 @@ fun AzNavRail(
                                         onClick = onClick,
                                         onCyclerClick = onCyclerClick,
                                         onToggle = onToggle,
-                                        onItemClick = { selectedItem = finalItem }
+                                        onItemClick = { selectedItem = finalItem },
+                                        onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) }
                                     )
+
+                                    if (item.isHost && (hostStates[item.id] ?: false)) {
+                                        val subItems = scope.navItems.filter { it.hostId == item.id }
+                                        subItems.forEach { subItem ->
+                                            MenuItem(
+                                                item = subItem,
+                                                navController = navController,
+                                                isSelected = subItem.route == currentDestination,
+                                                onClick = scope.onClickMap[subItem.id],
+                                                onCyclerClick = null,
+                                                onToggle = onToggle,
+                                                onItemClick = { selectedItem = subItem }
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -463,7 +486,7 @@ fun AzNavRail(
                             verticalSpacing = if (scope.packRailButtons) 0.dp else AzNavRailDefaults.RailContentVerticalArrangement
                         ) {
                             if (scope.packRailButtons) {
-                                val railItems = scope.navItems.filter { it.isRailItem }
+                                val railItems = scope.navItems.filter { it.isRailItem && !it.isSubItem }
                                 railItems.forEach { item ->
                                     RailContent(
                                         item = item,
@@ -472,12 +495,27 @@ fun AzNavRail(
                                         buttonSize = buttonSize,
                                         onClick = scope.onClickMap[item.id],
                                         onRailCyclerClick = onRailCyclerClick,
-                                        onItemClick = { selectedItem = item }
+                                        onItemClick = { selectedItem = item },
+                                        onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) }
                                     )
+                                    if (item.isHost && (hostStates[item.id] ?: false)) {
+                                        val subItems = scope.navItems.filter { it.hostId == item.id && it.isRailItem }
+                                        subItems.forEach { subItem ->
+                                            RailContent(
+                                                item = subItem,
+                                                navController = navController,
+                                                isSelected = subItem.route == currentDestination,
+                                                buttonSize = buttonSize,
+                                                onClick = scope.onClickMap[subItem.id],
+                                                onRailCyclerClick = onRailCyclerClick,
+                                                onItemClick = { selectedItem = subItem }
+                                            )
+                                        }
+                                    }
                                 }
                             } else {
                                 scope.navItems.forEach { menuItem ->
-                                    if (menuItem.isRailItem) {
+                                    if (menuItem.isRailItem && !menuItem.isSubItem) {
                                         RailContent(
                                             item = menuItem,
                                             navController = navController,
@@ -485,8 +523,23 @@ fun AzNavRail(
                                             buttonSize = buttonSize,
                                             onClick = scope.onClickMap[menuItem.id],
                                             onRailCyclerClick = onRailCyclerClick,
-                                            onItemClick = { selectedItem = menuItem }
+                                            onItemClick = { selectedItem = menuItem },
+                                            onHostClick = { hostStates[menuItem.id] = !(hostStates[menuItem.id] ?: false) }
                                         )
+                                        if (menuItem.isHost && (hostStates[menuItem.id] ?: false)) {
+                                            val subItems = scope.navItems.filter { it.hostId == menuItem.id && it.isRailItem }
+                                            subItems.forEach { subItem ->
+                                                RailContent(
+                                                    item = subItem,
+                                                    navController = navController,
+                                                    isSelected = subItem.route == currentDestination,
+                                                    buttonSize = buttonSize,
+                                                    onClick = scope.onClickMap[subItem.id],
+                                                    onRailCyclerClick = onRailCyclerClick,
+                                                    onItemClick = { selectedItem = subItem }
+                                                )
+                                            }
+                                        }
                                     } else {
                                         Spacer(modifier = Modifier.height(AzNavRailDefaults.RailContentSpacerHeight))
                                     }
@@ -525,7 +578,8 @@ private fun RailContent(
     buttonSize: Dp,
     onClick: (() -> Unit)?,
     onRailCyclerClick: (AzNavItem) -> Unit,
-    onItemClick: () -> Unit
+    onItemClick: () -> Unit,
+    onHostClick: () -> Unit = {}
 ) {
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
@@ -533,7 +587,12 @@ private fun RailContent(
         else -> item.text
     }
 
-    val finalOnClick = if (item.isCycler) {
+    val finalOnClick = if (item.isHost) {
+        {
+            onHostClick()
+            onItemClick()
+        }
+    } else if (item.isCycler) {
         {
             onRailCyclerClick(item)
             onItemClick()
@@ -581,7 +640,8 @@ private fun MenuItem(
     onClick: (() -> Unit)?,
     onCyclerClick: (() -> Unit)?,
     onToggle: () -> Unit = {},
-    onItemClick: () -> Unit
+    onItemClick: () -> Unit,
+    onHostClick: () -> Unit = {}
 ) {
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
@@ -602,7 +662,9 @@ private fun MenuItem(
             )
         } else {
             Modifier.clickable {
-                if (item.isCycler) {
+                if (item.isHost) {
+                    onHostClick()
+                } else if (item.isCycler) {
                     onCyclerClick?.invoke()
                 } else {
                     item.route?.let { navController?.navigate(it) }
@@ -627,7 +689,7 @@ private fun MenuItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         val lines = textToShow.split('\n')
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             lines.forEachIndexed { index, line ->
                 Text(
                     text = line,
@@ -636,6 +698,14 @@ private fun MenuItem(
                     modifier = if (index > 0) Modifier.padding(start = 16.dp) else Modifier
                 )
             }
+        }
+        if (item.isHost) {
+            val rotation by animateFloatAsState(targetValue = if (item.isExpanded) 90f else 0f)
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowRight,
+                contentDescription = if (item.isExpanded) "Collapse" else "Expand",
+                modifier = Modifier.rotate(rotation)
+            )
         }
     }
 }
