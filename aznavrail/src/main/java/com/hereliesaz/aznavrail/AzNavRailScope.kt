@@ -544,10 +544,6 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         }
         val finalScreenTitle = if (screenTitle == AzNavRail.noTitle) null else screenTitle ?: text
         onClickMap[id] = onClick
-        val host = navItems.find { it.id == hostId }
-        require(host != null && host.isRailItem) {
-            "A `azRailSubItem` can only be hosted by a `azRailHostItem`."
-        }
         navItems.add(AzNavItem(id = id, text = text, route = route, screenTitle = finalScreenTitle, isRailItem = true, disabled = disabled, isSubItem = true, hostId = hostId, shape = AzButtonShape.NONE))
     }
 }

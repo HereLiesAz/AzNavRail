@@ -3,6 +3,7 @@ package com.hereliesaz.aznavrail
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -71,6 +72,54 @@ private object AzNavRailLogger {
     fun e(tag: String, message: String, throwable: Throwable? = null) {
         if (enabled) {
             android.util.Log.e(tag, message, throwable)
+        }
+    }
+}
+
+@Composable
+private fun RailItems(
+    items: List<AzNavItem>,
+    scope: AzNavRailScopeImpl,
+    navController: NavController?,
+    currentDestination: String?,
+    buttonSize: Dp,
+    onRailCyclerClick: (AzNavItem) -> Unit,
+    onItemSelected: (AzNavItem) -> Unit,
+    hostStates: MutableMap<String, Boolean>,
+    packRailButtons: Boolean
+) {
+    val itemsToRender = if (packRailButtons) items.filter { it.isRailItem && !it.isSubItem } else items
+
+    itemsToRender.forEach { item ->
+        if (item.isRailItem && !item.isSubItem) {
+            RailContent(
+                item = item,
+                navController = navController,
+                isSelected = item.route == currentDestination,
+                buttonSize = buttonSize,
+                onClick = scope.onClickMap[item.id],
+                onRailCyclerClick = onRailCyclerClick,
+                onItemClick = { onItemSelected(item) },
+                onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) }
+            )
+            AnimatedVisibility(visible = item.isHost && (hostStates[item.id] ?: false)) {
+                Column {
+                    val subItems = scope.navItems.filter { it.hostId == item.id && it.isRailItem }
+                    subItems.forEach { subItem ->
+                        RailContent(
+                            item = subItem,
+                            navController = navController,
+                            isSelected = subItem.route == currentDestination,
+                            buttonSize = buttonSize,
+                            onClick = scope.onClickMap[subItem.id],
+                            onRailCyclerClick = onRailCyclerClick,
+                            onItemClick = { onItemSelected(subItem) }
+                        )
+                    }
+                }
+            }
+        } else if (!packRailButtons) {
+            Spacer(modifier = Modifier.height(AzNavRailDefaults.RailContentSpacerHeight))
         }
     }
 }
@@ -161,6 +210,15 @@ fun AzNavRail(
     navController?.let { scope.navController = it }
 
     scope.apply(content)
+
+    scope.navItems.forEach { item ->
+        if (item.isSubItem && item.isRailItem) {
+            val host = scope.navItems.find { it.id == item.hostId }
+            require(host != null && host.isRailItem) {
+                "A `azRailSubItem` can only be hosted by a `azRailHostItem`."
+            }
+        }
+    }
 
     val context = LocalContext.current
     val packageManager = context.packageManager
@@ -416,18 +474,20 @@ fun AzNavRail(
                                         onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) }
                                     )
 
-                                    if (item.isHost && (hostStates[item.id] ?: false)) {
-                                        val subItems = scope.navItems.filter { it.hostId == item.id }
-                                        subItems.forEach { subItem ->
-                                            MenuItem(
-                                                item = subItem,
-                                                navController = navController,
-                                                isSelected = subItem.route == currentDestination,
-                                                onClick = scope.onClickMap[subItem.id],
-                                                onCyclerClick = null,
-                                                onToggle = onToggle,
-                                                onItemClick = { selectedItem = subItem }
-                                            )
+                                    AnimatedVisibility(visible = item.isHost && (hostStates[item.id] ?: false)) {
+                                        Column {
+                                            val subItems = scope.navItems.filter { it.hostId == item.id }
+                                            subItems.forEach { subItem ->
+                                                MenuItem(
+                                                    item = subItem,
+                                                    navController = navController,
+                                                    isSelected = subItem.route == currentDestination,
+                                                    onClick = scope.onClickMap[subItem.id],
+                                                    onCyclerClick = null,
+                                                    onToggle = onToggle,
+                                                    onItemClick = { selectedItem = subItem }
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -485,66 +545,17 @@ fun AzNavRail(
                         EqualWidthLayout(
                             verticalSpacing = if (scope.packRailButtons) 0.dp else AzNavRailDefaults.RailContentVerticalArrangement
                         ) {
-                            if (scope.packRailButtons) {
-                                val railItems = scope.navItems.filter { it.isRailItem && !it.isSubItem }
-                                railItems.forEach { item ->
-                                    RailContent(
-                                        item = item,
-                                        navController = navController,
-                                        isSelected = item.route == currentDestination,
-                                        buttonSize = buttonSize,
-                                        onClick = scope.onClickMap[item.id],
-                                        onRailCyclerClick = onRailCyclerClick,
-                                        onItemClick = { selectedItem = item },
-                                        onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) }
-                                    )
-                                    if (item.isHost && (hostStates[item.id] ?: false)) {
-                                        val subItems = scope.navItems.filter { it.hostId == item.id && it.isRailItem }
-                                        subItems.forEach { subItem ->
-                                            RailContent(
-                                                item = subItem,
-                                                navController = navController,
-                                                isSelected = subItem.route == currentDestination,
-                                                buttonSize = buttonSize,
-                                                onClick = scope.onClickMap[subItem.id],
-                                                onRailCyclerClick = onRailCyclerClick,
-                                                onItemClick = { selectedItem = subItem }
-                                            )
-                                        }
-                                    }
-                                }
-                            } else {
-                                scope.navItems.forEach { menuItem ->
-                                    if (menuItem.isRailItem && !menuItem.isSubItem) {
-                                        RailContent(
-                                            item = menuItem,
-                                            navController = navController,
-                                            isSelected = menuItem.route == currentDestination,
-                                            buttonSize = buttonSize,
-                                            onClick = scope.onClickMap[menuItem.id],
-                                            onRailCyclerClick = onRailCyclerClick,
-                                            onItemClick = { selectedItem = menuItem },
-                                            onHostClick = { hostStates[menuItem.id] = !(hostStates[menuItem.id] ?: false) }
-                                        )
-                                        if (menuItem.isHost && (hostStates[menuItem.id] ?: false)) {
-                                            val subItems = scope.navItems.filter { it.hostId == menuItem.id && it.isRailItem }
-                                            subItems.forEach { subItem ->
-                                                RailContent(
-                                                    item = subItem,
-                                                    navController = navController,
-                                                    isSelected = subItem.route == currentDestination,
-                                                    buttonSize = buttonSize,
-                                                    onClick = scope.onClickMap[subItem.id],
-                                                    onRailCyclerClick = onRailCyclerClick,
-                                                    onItemClick = { selectedItem = subItem }
-                                                )
-                                            }
-                                        }
-                                    } else {
-                                        Spacer(modifier = Modifier.height(AzNavRailDefaults.RailContentSpacerHeight))
-                                    }
-                                }
-                            }
+                            RailItems(
+                                items = scope.navItems,
+                                scope = scope,
+                                navController = navController,
+                                currentDestination = currentDestination,
+                                buttonSize = buttonSize,
+                                onRailCyclerClick = onRailCyclerClick,
+                                onItemSelected = { selectedItem = it },
+                                hostStates = hostStates,
+                                packRailButtons = scope.packRailButtons
+                            )
                         }
                     }
                 }
@@ -590,6 +601,8 @@ private fun RailContent(
     val finalOnClick = if (item.isHost) {
         {
             onHostClick()
+            item.route?.let { navController?.navigate(it) }
+            onClick?.invoke()
             onItemClick()
         }
     } else if (item.isCycler) {
@@ -616,7 +629,16 @@ private fun RailContent(
             shape = item.shape,
             disabled = item.disabled,
             isSelected = isSelected
-        )
+        ) {
+            if (item.isHost) {
+                val rotation by animateFloatAsState(targetValue = if (item.isExpanded) 90f else 0f)
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowRight,
+                    contentDescription = if (item.isExpanded) "Collapse" else "Expand",
+                    modifier = Modifier.rotate(rotation)
+                )
+            }
+        }
     }
 }
 
@@ -664,6 +686,9 @@ private fun MenuItem(
             Modifier.clickable {
                 if (item.isHost) {
                     onHostClick()
+                    item.route?.let { navController?.navigate(it) }
+                    onClick?.invoke()
+                    onItemClick()
                 } else if (item.isCycler) {
                     onCyclerClick?.invoke()
                 } else {
