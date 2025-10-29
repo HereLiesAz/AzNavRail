@@ -88,10 +88,11 @@ private fun RailItems(
     hostStates: MutableMap<String, Boolean>,
     packRailButtons: Boolean
 ) {
-    val itemsToRender = if (packRailButtons) items.filter { it.isRailItem && !it.isSubItem } else items
+    val topLevelItems = items.filter { !it.isSubItem }
+    val itemsToRender = if (packRailButtons) topLevelItems.filter { it.isRailItem } else topLevelItems
 
     itemsToRender.forEach { item ->
-        if (item.isRailItem && !item.isSubItem) {
+        if (item.isRailItem) {
             RailContent(
                 item = item,
                 navController = navController,
@@ -118,7 +119,7 @@ private fun RailItems(
                     }
                 }
             }
-        } else if (!packRailButtons) {
+        } else { // This branch is only taken when packRailButtons is false for non-rail items
             Spacer(modifier = Modifier.height(AzNavRailDefaults.RailContentSpacerHeight))
         }
     }
@@ -600,10 +601,7 @@ private fun RailContent(
 
     val finalOnClick = if (item.isHost) {
         {
-            onHostClick()
-            item.route?.let { navController?.navigate(it) }
-            onClick?.invoke()
-            onItemClick()
+            handleHostItemClick(item, navController, onClick, onItemClick, onHostClick)
         }
     } else if (item.isCycler) {
         {
@@ -631,15 +629,23 @@ private fun RailContent(
             isSelected = isSelected
         ) {
             if (item.isHost) {
-                val rotation by animateFloatAsState(targetValue = if (item.isExpanded) 90f else 0f)
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowRight,
-                    contentDescription = if (item.isExpanded) "Collapse" else "Expand",
-                    modifier = Modifier.rotate(rotation)
-                )
+                HostIndicatorIcon(isExpanded = item.isExpanded)
             }
         }
     }
+}
+
+private fun handleHostItemClick(
+    item: AzNavItem,
+    navController: NavController?,
+    onClick: (() -> Unit)?,
+    onItemClick: () -> Unit,
+    onHostClick: () -> Unit
+) {
+    onHostClick()
+    item.route?.let { navController?.navigate(it) }
+    onClick?.invoke()
+    onItemClick()
 }
 
 /**
@@ -685,10 +691,7 @@ private fun MenuItem(
         } else {
             Modifier.clickable {
                 if (item.isHost) {
-                    onHostClick()
-                    item.route?.let { navController?.navigate(it) }
-                    onClick?.invoke()
-                    onItemClick()
+                    handleHostItemClick(item, navController, onClick, onItemClick, onHostClick)
                 } else if (item.isCycler) {
                     onCyclerClick?.invoke()
                 } else {
@@ -725,14 +728,19 @@ private fun MenuItem(
             }
         }
         if (item.isHost) {
-            val rotation by animateFloatAsState(targetValue = if (item.isExpanded) 90f else 0f)
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowRight,
-                contentDescription = if (item.isExpanded) "Collapse" else "Expand",
-                modifier = Modifier.rotate(rotation)
-            )
+            HostIndicatorIcon(isExpanded = item.isExpanded)
         }
     }
+}
+
+@Composable
+private fun HostIndicatorIcon(isExpanded: Boolean) {
+    val rotation by animateFloatAsState(targetValue = if (isExpanded) 90f else 0f, label = "HostIndicatorRotation")
+    Icon(
+        imageVector = Icons.AutoMirrored.Filled.ArrowRight,
+        contentDescription = if (isExpanded) "Collapse" else "Expand",
+        modifier = Modifier.rotate(rotation)
+    )
 }
 
 /**

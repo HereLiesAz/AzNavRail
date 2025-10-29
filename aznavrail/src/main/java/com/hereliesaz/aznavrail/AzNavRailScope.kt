@@ -440,21 +440,7 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
     }
 
     private fun addMenuHostItem(id: String, text: String, route: String?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
-        require(text.isNotEmpty()) {
-            """
-            `text` must not be empty.
-
-            // azMenuHostItem sample
-            azMenuHostItem(
-                id = "host",
-                text = "My Host",
-                onClick = { /* ... */ }
-            )
-            """.trimIndent()
-        }
-        val finalScreenTitle = if (screenTitle == AzNavRail.noTitle) null else screenTitle ?: text
-        onClickMap[id] = onClick
-        navItems.add(AzNavItem(id = id, text = text, route = route, screenTitle = finalScreenTitle, isRailItem = false, disabled = disabled, isHost = true))
+        addItem(id = id, text = text, route = route, screenTitle = screenTitle, isRailItem = false, disabled = disabled, isHost = true, onClick = onClick)
     }
 
     override fun azRailHostItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
@@ -470,20 +456,7 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
     }
 
     private fun addRailHostItem(id: String, text: String, route: String?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
-        require(text.isNotEmpty()) {
-            """
-            `text` must not be empty.
-            // azRailHostItem sample
-            azRailHostItem(
-                id = "host",
-                text = "My Host",
-                onClick = { /* ... */ }
-            )
-            """.trimIndent()
-        }
-        val finalScreenTitle = if (screenTitle == AzNavRail.noTitle) null else screenTitle ?: text
-        onClickMap[id] = onClick
-        navItems.add(AzNavItem(id = id, text = text, route = route, screenTitle = finalScreenTitle, isRailItem = true, color = color, shape = shape ?: defaultShape, disabled = disabled, isHost = true))
+        addItem(id = id, text = text, route = route, screenTitle = screenTitle, isRailItem = true, color = color, shape = shape, disabled = disabled, isHost = true, onClick = onClick)
     }
 
     override fun azMenuSubItem(id: String, hostId: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
@@ -499,22 +472,7 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
     }
 
     private fun addMenuSubItem(id: String, hostId: String, text: String, route: String?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
-        require(text.isNotEmpty()) {
-            """
-            `text` must not be empty.
-
-            // azMenuSubItem sample
-            azMenuSubItem(
-                id = "sub",
-                hostId = "host",
-                text = "My Sub",
-                onClick = { /* ... */ }
-            )
-            """.trimIndent()
-        }
-        val finalScreenTitle = if (screenTitle == AzNavRail.noTitle) null else screenTitle ?: text
-        onClickMap[id] = onClick
-        navItems.add(AzNavItem(id = id, text = text, route = route, screenTitle = finalScreenTitle, isRailItem = false, disabled = disabled, isSubItem = true, hostId = hostId, shape = AzButtonShape.NONE))
+        addItem(id = id, text = text, route = route, screenTitle = screenTitle, isRailItem = false, disabled = disabled, isSubItem = true, hostId = hostId, shape = AzButtonShape.NONE, onClick = onClick)
     }
 
     override fun azRailSubItem(id: String, hostId: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
@@ -530,20 +488,44 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
     }
 
     private fun addRailSubItem(id: String, hostId: String, text: String, route: String?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
+        addItem(id = id, text = text, route = route, screenTitle = screenTitle, isRailItem = true, disabled = disabled, isSubItem = true, hostId = hostId, shape = AzButtonShape.NONE, onClick = onClick)
+    }
+
+    private fun addItem(
+        id: String,
+        text: String,
+        route: String?,
+        screenTitle: String?,
+        isRailItem: Boolean,
+        color: Color? = null,
+        shape: AzButtonShape? = null,
+        disabled: Boolean = false,
+        isHost: Boolean = false,
+        isSubItem: Boolean = false,
+        hostId: String? = null,
+        onClick: () -> Unit
+    ) {
         require(text.isNotEmpty()) {
             """
-            `text` must not be empty.
-            // azRailSubItem sample
-            azRailSubItem(
-                id = "sub",
-                hostId = "host",
-                text = "My Sub",
-                onClick = { /* ... */ }
-            )
+            `text` must not be empty for item with id `$id`.
             """.trimIndent()
         }
         val finalScreenTitle = if (screenTitle == AzNavRail.noTitle) null else screenTitle ?: text
         onClickMap[id] = onClick
-        navItems.add(AzNavItem(id = id, text = text, route = route, screenTitle = finalScreenTitle, isRailItem = true, disabled = disabled, isSubItem = true, hostId = hostId, shape = AzButtonShape.NONE))
+        navItems.add(
+            AzNavItem(
+                id = id,
+                text = text,
+                route = route,
+                screenTitle = finalScreenTitle,
+                isRailItem = isRailItem,
+                color = color,
+                shape = shape ?: defaultShape,
+                disabled = disabled,
+                isHost = isHost,
+                isSubItem = isSubItem,
+                hostId = hostId
+            )
+        )
     }
 }
