@@ -143,12 +143,30 @@ fun SampleScreen() {
 
             // A button to demonstrate the loading state
             azRailItem(id = "loading", text = "Load", route = "loading", onClick = { isLoading = !isLoading })
+
+            azDivider()
+
+            azMenuHostItem(id = "menu-host", text = "Menu Host") {
+                // TODO: Handle host click
+            }
+            azMenuSubItem(id = "menu-sub-1", hostId = "menu-host", text = "Menu Sub 1", route = "menu-sub-1")
+            azMenuSubItem(id = "menu-sub-2", hostId = "menu-host", text = "Menu Sub 2", route = "menu-sub-2")
+
+            azRailHostItem(id = "rail-host", text = "Rail Host") {
+                // TODO: Handle host click
+            }
+            azRailSubItem(id = "rail-sub-1", hostId = "rail-host", text = "Rail Sub 1", route = "rail-sub-1")
+            azMenuSubItem(id = "rail-sub-2", hostId = "rail-host", text = "Rail Sub 2", route = "rail-sub-2")
         }
 
         // Your app's main content goes here
         NavHost(navController = navController, startDestination = "home") {
             composable("home") { Text("Home Screen") }
             composable("multi-line") { Text("Multi-line Screen") }
+            composable("menu-sub-1") { Text("Menu Sub 1 Screen") }
+            composable("menu-sub-2") { Text("Menu Sub 2 Screen") }
+            composable("rail-sub-1") { Text("Rail Sub 1 Screen") }
+            composable("rail-sub-2") { Text("Rail Sub 2 Screen") }
             composable("favorites") { Text("Favorites Screen") }
             composable("profile") { Text("Profile Screen") }
             composable("online") { Text("Online Screen") }

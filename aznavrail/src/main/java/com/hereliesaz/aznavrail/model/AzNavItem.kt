@@ -43,5 +43,9 @@ data class AzNavItem(
     val collapseOnClick: Boolean = true,
     val shape: AzButtonShape = AzButtonShape.CIRCLE,
     val disabled: Boolean = false,
-    val disabledOptions: List<String>? = null
+    val disabledOptions: List<String>? = null,
+    val isHost: Boolean = false,
+    val isSubItem: Boolean = false,
+    val hostId: String? = null,
+    val isExpanded: Boolean = false
 ) : Parcelable
