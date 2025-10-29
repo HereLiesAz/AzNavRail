@@ -25,6 +25,7 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 - **Loading State**: Show a loading animation over the rail.
 - **Standalone Components**: Use `AzButton`, `AzToggle`, `AzCycler`, and `AzDivider` on their own.
 - **Jetpack Navigation Integration**: Seamlessly integrate with Jetpack Navigation using the `navController`.
+- **Hierarchical Navigation**: Create nested menus with host and sub-items.
 
 ## AzNavRail for Android (Jetpack Compose)
 
@@ -163,6 +164,16 @@ fun SampleScreen() {
 
             // A button to demonstrate the loading state
             azRailItem(id = "loading", text = "Load", route = "loading", onClick = { isLoading = !isLoading })
+
+            azDivider()
+
+            azMenuHostItem(id = "menu-host", text = "Menu Host", route = "menu-host")
+            azMenuSubItem(id = "menu-sub-1", hostId = "menu-host", text = "Menu Sub 1", route = "menu-sub-1")
+            azMenuSubItem(id = "menu-sub-2", hostId = "menu-host", text = "Menu Sub 2", route = "menu-sub-2")
+
+            azRailHostItem(id = "rail-host", text = "Rail Host", route = "rail-host")
+            azRailSubItem(id = "rail-sub-1", hostId = "rail-host", text = "Rail Sub 1", route = "rail-sub-1")
+            azMenuSubItem(id = "rail-sub-2", hostId = "rail-host", text = "Menu Sub 2", route = "rail-sub-2")
         }
 
         // Your app's main content goes here
@@ -176,10 +187,23 @@ fun SampleScreen() {
             composable("rail-cycler") { Text("Rail Cycler Screen") }
             composable("menu-cycler") { Text("Menu Cycler Screen") }
             composable("loading") { Text("Loading Screen") }
+            composable("menu-host") { Text("Menu Host Screen") }
+            composable("menu-sub-1") { Text("Menu Sub 1 Screen") }
+            composable("menu-sub-2") { Text("Menu Sub 2 Screen") }
+            composable("rail-host") { Text("Rail Host Screen") }
+            composable("rail-sub-1") { Text("Rail Sub 1 Screen") }
+            composable("rail-sub-2") { Text("Rail Sub 2 Screen") }
         }
     }
 }
 ```
+
+### Hierarchical Navigation
+
+`AzNavRail` supports hierarchical navigation with host and sub-items. This allows you to create nested menus that are easy to navigate.
+
+-   **Host Items**: These are top-level items that can contain sub-items. They can be placed in the rail or the menu.
+-   **Sub-Items**: These are nested items that are only visible when their host item is expanded. They can also be placed in the rail or the menu.
 
 ### API Reference
 
@@ -230,6 +254,14 @@ The DSL for configuring the `AzNavRail`.
 -   `azDivider()`: Adds a horizontal divider to the expanded menu.
 -   **`screenTitle`**: An optional parameter for all `azMenuItem`, `azRailItem`, `azMenuToggle`, `azRailToggle`, `azMenuCycler`, and `azRailCycler` functions that displays a title on the screen when the item is selected. The title will be **force-aligned to the right** of the screen. If no `screenTitle` is provided, the item's `text` will be used instead. To prevent a title from being displayed, use `screenTitle = AzNavRail.noTitle`.
 -    **`route`**: An optional parameter for all `azMenuItem`, `azRailItem`, `azMenuToggle`, `azRailToggle`, `azMenuCycler`, and `azRailCycler` functions that specifies the route to navigate to when the item is clicked. This is used for integration with Jetpack Navigation.
+-   `azMenuHostItem(id: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a host item that only appears in the expanded menu.
+-   `azMenuHostItem(id: String, text: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a host item that only appears in the expanded menu.
+-   `azRailHostItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a host item that appears in both the collapsed rail and the expanded menu.
+-   `azRailHostItem(id: String, text: String, route: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a host item that appears in both the collapsed rail and the expanded menu.
+-   `azMenuSubItem(id: String, hostId: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a sub item that only appears in the expanded menu.
+-   `azMenuSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a sub item that only appears in the expanded menu.
+-   `azRailSubItem(id: String, hostId: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a sub item that appears in both the collapsed rail and the expanded menu.
+-   `azRailSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a sub item that appears in both the collapsed rail and the expanded menu.
 
 ## AzNavRail for Web (React)
 
