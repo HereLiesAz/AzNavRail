@@ -627,11 +627,7 @@ private fun RailContent(
             shape = item.shape,
             disabled = item.disabled,
             isSelected = isSelected
-        ) {
-            if (item.isHost) {
-                HostIndicatorIcon(isExpanded = item.isExpanded)
-            }
-        }
+        )
     }
 }
 
@@ -727,20 +723,7 @@ private fun MenuItem(
                 )
             }
         }
-        if (item.isHost) {
-            HostIndicatorIcon(isExpanded = item.isExpanded)
-        }
     }
-}
-
-@Composable
-private fun HostIndicatorIcon(isExpanded: Boolean) {
-    val rotation by animateFloatAsState(targetValue = if (isExpanded) 90f else 0f, label = "HostIndicatorRotation")
-    Icon(
-        imageVector = Icons.AutoMirrored.Filled.ArrowRight,
-        contentDescription = if (isExpanded) "Collapse" else "Expand",
-        modifier = Modifier.rotate(rotation)
-    )
 }
 
 /**

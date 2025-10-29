@@ -49,6 +49,7 @@ fun SampleScreen() {
     var isOnline by remember { mutableStateOf(true) }
     var isDarkMode by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
+    var packRailButtons by remember { mutableStateOf(false) }
     val railCycleOptions = remember { listOf("A", "B", "C", "D") }
     var railSelectedOption by remember { mutableStateOf(railCycleOptions.first()) }
     val menuCycleOptions = remember { listOf("X", "Y", "Z") }
@@ -65,7 +66,7 @@ fun SampleScreen() {
         ) {
             azSettings(
                 // displayAppNameInHeader = true, // Set to true to display the app name instead of the icon
-                packRailButtons = false,
+                packRailButtons = packRailButtons,
                 isLoading = isLoading,
                 defaultShape = AzButtonShape.RECTANGLE // Set a default shape for all rail items
             )
@@ -76,8 +77,15 @@ fun SampleScreen() {
             // A menu item with multi-line text
             azMenuItem(id = "multi-line", text = "This is a\nmulti-line item", route = "multi-line")
 
-            // A rail item with the default shape (RECTANGLE)
-            azRailItem(id = "favorites", text = "Favorites", route = "favorites")
+            // A rail toggle item with the default shape (RECTANGLE)
+            azRailToggle(
+                id = "pack-rail",
+                isChecked = packRailButtons,
+                toggleOnText = "Pack Rail",
+                toggleOffText = "Unpack Rail",
+                route = "pack-rail",
+                onClick = { packRailButtons = !packRailButtons }
+            )
 
             // A disabled rail item that overrides the default shape
             azRailItem(
@@ -157,6 +165,7 @@ fun SampleScreen() {
             }
             azRailSubItem(id = "rail-sub-1", hostId = "rail-host", text = "Rail Sub 1", route = "rail-sub-1")
             azMenuSubItem(id = "rail-sub-2", hostId = "rail-host", text = "Rail Sub 2", route = "rail-sub-2")
+            azMenuSubItem(id = "rail-sub-3", hostId = "rail-host", text = "Rail Sub 3", route = "rail-sub-3")
         }
 
         // Your app's main content goes here
@@ -167,7 +176,8 @@ fun SampleScreen() {
             composable("menu-sub-2") { Text("Menu Sub 2 Screen") }
             composable("rail-sub-1") { Text("Rail Sub 1 Screen") }
             composable("rail-sub-2") { Text("Rail Sub 2 Screen") }
-            composable("favorites") { Text("Favorites Screen") }
+            composable("rail-sub-3") { Text("Rail Sub 3 Screen") }
+            composable("pack-rail") { Text("Pack Rail Screen") }
             composable("profile") { Text("Profile Screen") }
             composable("online") { Text("Online Screen") }
             composable("dark-mode") { Text("Dark Mode Screen") }
