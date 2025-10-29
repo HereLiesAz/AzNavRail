@@ -3,6 +3,7 @@ package com.hereliesaz.aznavrail
 import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -44,7 +45,8 @@ fun AzNavRailButton(
     color: Color = MaterialTheme.colorScheme.primary,
     shape: AzButtonShape = AzButtonShape.CIRCLE,
     disabled: Boolean = false,
-    isSelected: Boolean = false
+    isSelected: Boolean = false,
+    content: @Composable () -> Unit = {}
 ) {
     val buttonShape = when (shape) {
         AzButtonShape.CIRCLE -> CircleShape
@@ -76,17 +78,20 @@ fun AzNavRailButton(
         contentPadding = PaddingValues(8.dp),
         enabled = !disabled
     ) {
-        AutoSizeText(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                textAlign = TextAlign.Center,
-                color = if (disabled) disabledColor else finalColor
-            ),
-            modifier = Modifier.fillMaxSize(),
-            maxLines = if (text.contains("\n")) Int.MAX_VALUE else 1,
-            softWrap = false,
-            alignment = Alignment.Center,
-            lineSpaceRatio = 0.9f
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            AutoSizeText(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    textAlign = TextAlign.Center,
+                    color = if (disabled) disabledColor else finalColor
+                ),
+                modifier = Modifier.weight(1f),
+                maxLines = if (text.contains("\n")) Int.MAX_VALUE else 1,
+                softWrap = false,
+                alignment = Alignment.Center,
+                lineSpaceRatio = 0.9f
+            )
+            content()
+        }
     }
 }
