@@ -54,6 +54,12 @@ fun SampleScreen() {
     var railSelectedOption by remember { mutableStateOf(railCycleOptions.first()) }
     val menuCycleOptions = remember { listOf("X", "Y", "Z") }
     var menuSelectedOption by remember { mutableStateOf(menuCycleOptions.first()) }
+    var subMenuIsChecked by remember { mutableStateOf(false) }
+    var subRailIsChecked by remember { mutableStateOf(false) }
+    val subMenuCycleOptions = remember { listOf("!", "@", "#") }
+    var subMenuSelectedOption by remember { mutableStateOf(subMenuCycleOptions.first()) }
+    val subRailCycleOptions = remember { listOf("$", "%", "^") }
+    var subRailSelectedOption by remember { mutableStateOf(subRailCycleOptions.first()) }
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.screenWidthDp > configuration.screenHeightDp
@@ -159,6 +165,27 @@ fun SampleScreen() {
             }
             azMenuSubItem(id = "menu-sub-1", hostId = "menu-host", text = "Menu Sub 1", route = "menu-sub-1")
             azMenuSubItem(id = "menu-sub-2", hostId = "menu-host", text = "Menu Sub 2", route = "menu-sub-2")
+            azMenuSubToggle(
+                id = "menu-sub-toggle",
+                hostId = "menu-host",
+                isChecked = subMenuIsChecked,
+                toggleOnText = "Sub-Menu On",
+                toggleOffText = "Sub-Menu Off",
+                route = "menu-sub-toggle",
+                onClick = { subMenuIsChecked = !subMenuIsChecked }
+            )
+            azMenuSubCycler(
+                id = "menu-sub-cycler",
+                hostId = "menu-host",
+                options = subMenuCycleOptions,
+                selectedOption = subMenuSelectedOption,
+                route = "menu-sub-cycler",
+                onClick = {
+                    val currentIndex = subMenuCycleOptions.indexOf(subMenuSelectedOption)
+                    val nextIndex = (currentIndex + 1) % subMenuCycleOptions.size
+                    subMenuSelectedOption = subMenuCycleOptions[nextIndex]
+                }
+            )
 
             azRailHostItem(id = "rail-host", text = "Rail Host") {
                 // TODO: Handle host click
@@ -166,6 +193,27 @@ fun SampleScreen() {
             azRailSubItem(id = "rail-sub-1", hostId = "rail-host", text = "Rail Sub 1", route = "rail-sub-1")
             azMenuSubItem(id = "rail-sub-2", hostId = "rail-host", text = "Rail Sub 2", route = "rail-sub-2")
             azMenuSubItem(id = "rail-sub-3", hostId = "rail-host", text = "Rail Sub 3", route = "rail-sub-3")
+            azRailSubToggle(
+                id = "rail-sub-toggle",
+                hostId = "rail-host",
+                isChecked = subRailIsChecked,
+                toggleOnText = "Sub-Rail On",
+                toggleOffText = "Sub-Rail Off",
+                route = "rail-sub-toggle",
+                onClick = { subRailIsChecked = !subRailIsChecked }
+            )
+            azRailSubCycler(
+                id = "rail-sub-cycler",
+                hostId = "rail-host",
+                options = subRailCycleOptions,
+                selectedOption = subRailSelectedOption,
+                route = "rail-sub-cycler",
+                onClick = {
+                    val currentIndex = subRailCycleOptions.indexOf(subRailSelectedOption)
+                    val nextIndex = (currentIndex + 1) % subRailCycleOptions.size
+                    subRailSelectedOption = subRailCycleOptions[nextIndex]
+                }
+            )
         }
 
         // Your app's main content goes here
@@ -174,9 +222,13 @@ fun SampleScreen() {
             composable("multi-line") { Text("Multi-line Screen") }
             composable("menu-sub-1") { Text("Menu Sub 1 Screen") }
             composable("menu-sub-2") { Text("Menu Sub 2 Screen") }
+            composable("menu-sub-toggle") { Text("Menu Sub-Toggle Screen") }
+            composable("menu-sub-cycler") { Text("Menu Sub-Cycler Screen") }
             composable("rail-sub-1") { Text("Rail Sub 1 Screen") }
             composable("rail-sub-2") { Text("Rail Sub 2 Screen") }
             composable("rail-sub-3") { Text("Rail Sub 3 Screen") }
+            composable("rail-sub-toggle") { Text("Rail Sub-Toggle Screen") }
+            composable("rail-sub-cycler") { Text("Rail Sub-Cycler Screen") }
             composable("pack-rail") { Text("Pack Rail Screen") }
             composable("profile") { Text("Profile Screen") }
             composable("online") { Text("Online Screen") }

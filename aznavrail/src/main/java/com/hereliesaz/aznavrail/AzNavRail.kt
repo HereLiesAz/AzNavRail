@@ -86,7 +86,8 @@ private fun RailItems(
     onRailCyclerClick: (AzNavItem) -> Unit,
     onItemSelected: (AzNavItem) -> Unit,
     hostStates: MutableMap<String, Boolean>,
-    packRailButtons: Boolean
+    packRailButtons: Boolean,
+    cyclerStates: Map<String, CyclerTransientState>
 ) {
     val topLevelItems = items.filter { !it.isSubItem }
     val itemsToRender = if (packRailButtons) topLevelItems.filter { it.isRailItem } else topLevelItems
@@ -107,14 +108,19 @@ private fun RailItems(
                 Column {
                     val subItems = scope.navItems.filter { it.hostId == item.id && it.isRailItem }
                     subItems.forEach { subItem ->
+                        val finalSubItem = if (subItem.isCycler) {
+                            subItem.copy(selectedOption = cyclerStates[subItem.id]?.displayedOption ?: subItem.selectedOption)
+                        } else {
+                            subItem
+                        }
                         RailContent(
-                            item = subItem,
+                            item = finalSubItem,
                             navController = navController,
-                            isSelected = subItem.route == currentDestination,
+                            isSelected = finalSubItem.route == currentDestination,
                             buttonSize = buttonSize,
-                            onClick = scope.onClickMap[subItem.id],
+                            onClick = scope.onClickMap[finalSubItem.id],
                             onRailCyclerClick = onRailCyclerClick,
-                            onItemClick = { onItemSelected(subItem) }
+                            onItemClick = { onItemSelected(finalSubItem) }
                         )
                     }
                 }
@@ -479,14 +485,19 @@ fun AzNavRail(
                                         Column {
                                             val subItems = scope.navItems.filter { it.hostId == item.id }
                                             subItems.forEach { subItem ->
+                                                val finalSubItem = if (subItem.isCycler) {
+                                                    subItem.copy(selectedOption = cyclerStates[subItem.id]?.displayedOption ?: subItem.selectedOption)
+                                                } else {
+                                                    subItem
+                                                }
                                                 MenuItem(
-                                                    item = subItem,
+                                                    item = finalSubItem,
                                                     navController = navController,
-                                                    isSelected = subItem.route == currentDestination,
-                                                    onClick = scope.onClickMap[subItem.id],
-                                                    onCyclerClick = null,
+                                                    isSelected = finalSubItem.route == currentDestination,
+                                                    onClick = scope.onClickMap[finalSubItem.id],
+                                                    onCyclerClick = onCyclerClick,
                                                     onToggle = onToggle,
-                                                    onItemClick = { selectedItem = subItem }
+                                                    onItemClick = { selectedItem = finalSubItem }
                                                 )
                                             }
                                         }
@@ -555,7 +566,8 @@ fun AzNavRail(
                                 onRailCyclerClick = onRailCyclerClick,
                                 onItemSelected = { selectedItem = it },
                                 hostStates = hostStates,
-                                packRailButtons = scope.packRailButtons
+                                packRailButtons = scope.packRailButtons,
+                                cyclerStates = cyclerStates
                             )
                         }
                     }
