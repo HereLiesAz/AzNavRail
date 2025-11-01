@@ -4,10 +4,14 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,6 +54,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import kotlin.math.pow
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
@@ -130,6 +135,7 @@ private fun RailItems(
  */
 private object AzNavRailDefaults {
     const val SWIPE_THRESHOLD_PX = 20f
+    const val SNAP_BACK_RADIUS_PX = 50f
     val HeaderPadding = 8.dp
     val HeaderIconSize = 72.dp
     val HeaderTextSpacer = 8.dp
@@ -244,7 +250,20 @@ fun AzNavRail(
     }
 
     var isExpanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
-    val onToggle: () -> Unit = remember { { isExpanded = !isExpanded } }
+    var railOffset by remember { mutableStateOf(IntOffset.Zero) }
+    var isDragging by remember { mutableStateOf(false) }
+    var isFloating by remember { mutableStateOf(false) }
+    var showFloatingButtons by remember { mutableStateOf(false) }
+
+    val onToggle: () -> Unit = remember(isFloating) {
+        {
+            if (isFloating) {
+                showFloatingButtons = !showFloatingButtons
+            } else {
+                isExpanded = !isExpanded
+            }
+        }
+    }
 
     val railWidth by animateDpAsState(
         targetValue = if (isExpanded) scope.expandedRailWidth else scope.collapsedRailWidth,
@@ -359,6 +378,39 @@ fun AzNavRail(
                     Box(
                         modifier = Modifier
                             .padding(bottom = AzNavRailDefaults.HeaderPadding)
+                            .pointerInput(scope.enableRailDragging, isFloating) {
+                                if (scope.enableRailDragging) {
+                                    detectTapGestures(
+                                        onLongPress = {
+                                            if (!isFloating) {
+                                                isDragging = true
+                                                isFloating = true
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                            .offset { railOffset }
+                            .pointerInput(isDragging) {
+                                if (isDragging) {
+                                    detectDragGestures(
+                                        onDragEnd = {
+                                            isDragging = false
+                                            val distance = kotlin.math.sqrt(railOffset.x.toFloat().pow(2) + railOffset.y.toFloat().pow(2))
+                                            if (distance < AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
+                                                railOffset = IntOffset.Zero
+                                                isFloating = false
+                                            }
+                                        }
+                                    ) { change, dragAmount ->
+                                        change.consume()
+                                        railOffset = IntOffset(
+                                            x = (railOffset.x + dragAmount.x).toInt(),
+                                            y = (railOffset.y + dragAmount.y).toInt()
+                                        )
+                                    }
+                                }
+                            }
                             .clickable(
                                 onClick = onToggle,
                                 interactionSource = remember { MutableInteractionSource() },
@@ -499,49 +551,50 @@ fun AzNavRail(
                         }
                     }
                 } else {
-                    Column(
-                        modifier = Modifier
-                            .padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding)
-                            .verticalScroll(rememberScrollState()),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        val onRailCyclerClick: (AzNavItem) -> Unit = { item ->
-                            val state = cyclerStates[item.id]
-                            if (state != null) {
-                                val options = requireNotNull(item.options) { "Cycler item '${item.id}' must have options" }
-                                val disabledOptions = item.disabledOptions ?: emptyList()
-                                val enabledOptions = options.filterNot { it in disabledOptions }
+                    AnimatedVisibility(visible = !isFloating || showFloatingButtons && !isDragging) {
+                        Column(
+                            modifier = Modifier
+                                .padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding)
+                                .verticalScroll(rememberScrollState()),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            val onRailCyclerClick: (AzNavItem) -> Unit = { item ->
+                                val state = cyclerStates[item.id]
+                                if (state != null) {
+                                    val options = requireNotNull(item.options) { "Cycler item '${item.id}' must have options" }
+                                    val disabledOptions = item.disabledOptions ?: emptyList()
+                                    val enabledOptions = options.filterNot { it in disabledOptions }
 
-                                if (enabledOptions.isNotEmpty()) {
-                                    val currentDisplayed = item.selectedOption
-                                    val currentIndexInEnabled = enabledOptions.indexOf(currentDisplayed)
+                                    if (enabledOptions.isNotEmpty()) {
+                                        val currentDisplayed = item.selectedOption
+                                        val currentIndexInEnabled = enabledOptions.indexOf(currentDisplayed)
 
-                                    val nextIndex = if (currentIndexInEnabled != -1) {
-                                        (currentIndexInEnabled + 1) % enabledOptions.size
-                                    } else {
-                                        0
-                                    }
-                                    val nextOption = enabledOptions[nextIndex]
+                                        val nextIndex = if (currentIndexInEnabled != -1) {
+                                            (currentIndexInEnabled + 1) % enabledOptions.size
+                                        } else {
+                                            0
+                                        }
+                                        val nextOption = enabledOptions[nextIndex]
 
-                                    val finalItemState = scope.navItems.find { it.id == item.id } ?: item
-                                    val currentStateInVm = finalItemState.selectedOption
-                                    val targetState = nextOption
+                                        val finalItemState = scope.navItems.find { it.id == item.id } ?: item
+                                        val currentStateInVm = finalItemState.selectedOption
+                                        val targetState = nextOption
 
-                                    val currentIndexInVm = options.indexOf(currentStateInVm)
-                                    val targetIndex = options.indexOf(targetState)
+                                        val currentIndexInVm = options.indexOf(currentStateInVm)
+                                        val targetIndex = options.indexOf(targetState)
 
-                                    if (currentIndexInVm != -1 && targetIndex != -1) {
-                                        val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
-                                        val onClick = scope.onClickMap[item.id]
-                                        if (onClick != null) {
-                                            repeat(clicksToCatchUp) {
-                                                onClick()
+                                        if (currentIndexInVm != -1 && targetIndex != -1) {
+                                            val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
+                                            val onClick = scope.onClickMap[item.id]
+                                            if (onClick != null) {
+                                                repeat(clicksToCatchUp) {
+                                                    onClick()
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
-                        }
 
                         EqualWidthLayout(
                             verticalSpacing = if (scope.packRailButtons) 0.dp else AzNavRailDefaults.RailContentVerticalArrangement
