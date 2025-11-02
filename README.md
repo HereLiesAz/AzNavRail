@@ -26,6 +26,7 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 - **Standalone Components**: Use `AzButton`, `AzToggle`, `AzCycler`, and `AzDivider` on their own.
 - **Jetpack Navigation Integration**: Seamlessly integrate with Jetpack Navigation using the `navController`.
 - **Hierarchical Navigation**: Create nested menus with host and sub-items.
+- **Draggable Rail**: The rail can be detached and moved around the screen.
 
 ## AzNavRail for Android (Jetpack Compose)
 
@@ -88,7 +89,8 @@ fun SampleScreen() {
                 // displayAppNameInHeader = true, // Set to true to display the app name instead of the icon
                 packRailButtons = false,
                 isLoading = isLoading,
-                defaultShape = AzButtonShape.RECTANGLE // Set a default shape for all rail items
+                defaultShape = AzButtonShape.RECTANGLE, // Set a default shape for all rail items
+                enableRailDragging = true // Enable the draggable rail feature
             )
 
             // A standard menu item - only appears in the expanded menu
@@ -174,6 +176,29 @@ fun SampleScreen() {
             azRailHostItem(id = "rail-host", text = "Rail Host", route = "rail-host")
             azRailSubItem(id = "rail-sub-1", hostId = "rail-host", text = "Rail Sub 1", route = "rail-sub-1")
             azMenuSubItem(id = "rail-sub-2", hostId = "rail-host", text = "Menu Sub 2", route = "rail-sub-2")
+
+            azMenuSubToggle(
+                id = "sub-toggle",
+                hostId = "menu-host",
+                isChecked = isDarkMode,
+                toggleOnText = "Sub Toggle On",
+                toggleOffText = "Sub Toggle Off",
+                route = "sub-toggle",
+                onClick = { isDarkMode = !isDarkMode }
+            )
+
+            azRailSubCycler(
+                id = "sub-cycler",
+                hostId = "rail-host",
+                options = menuCycleOptions,
+                selectedOption = menuSelectedOption,
+                route = "sub-cycler",
+                onClick = {
+                    val currentIndex = menuCycleOptions.indexOf(menuSelectedOption)
+                    val nextIndex = (currentIndex + 1) % menuCycleOptions.size
+                    menuSelectedOption = menuCycleOptions[nextIndex]
+                }
+            )
         }
 
         // Your app's main content goes here
@@ -193,6 +218,8 @@ fun SampleScreen() {
             composable("rail-host") { Text("Rail Host Screen") }
             composable("rail-sub-1") { Text("Rail Sub 1 Screen") }
             composable("rail-sub-2") { Text("Rail Sub 2 Screen") }
+            composable("sub-toggle") { Text("Sub Toggle Screen") }
+            composable("sub-cycler") { Text("Sub Cycler Screen") }
         }
     }
 }
@@ -204,6 +231,12 @@ fun SampleScreen() {
 
 -   **Host Items**: These are top-level items that can contain sub-items. They can be placed in the rail or the menu.
 -   **Sub-Items**: These are nested items that are only visible when their host item is expanded. They can also be placed in the rail or the menu.
+
+### Draggable Rail
+
+The rail can be detached and moved around the screen by long-pressing the header icon. To enable this feature, set `enableRailDragging = true` in the `azSettings` block.
+
+When the rail is in its floating state, the rail buttons will be hidden. A single tap on the header icon will toggle their visibility. To snap the rail back to its original position, drag it near the top-left corner of the screen.
 
 ### API Reference
 
@@ -238,7 +271,7 @@ The DSL for configuring the `AzNavRail`.
 
 **Note:** Functions prefixed with `azMenu` will only appear in the expanded menu view. Functions prefixed with `azRail` will appear on the collapsed rail, and their text will be used as the label in the expanded menu.
 
--   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean, isLoading: Boolean, defaultShape: AzButtonShape)`: Configures the settings for the `AzNavRail`.
+-   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean, isLoading: Boolean, defaultShape: AzButtonShape, enableRailDragging: Boolean)`: Configures the settings for the `AzNavRail`.
 -   `azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
 -   `azMenuItem(id: String, text: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
 -   `azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text in the expanded menu.
@@ -262,6 +295,14 @@ The DSL for configuring the `AzNavRail`.
 -   `azMenuSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a sub item that only appears in the expanded menu.
 -   `azRailSubItem(id: String, hostId: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a sub item that appears in both the collapsed rail and the expanded menu.
 -   `azRailSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a sub item that appears in both the collapsed rail and the expanded menu.
+-   `azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a toggle sub-item that only appears in the expanded menu.
+-   `azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a toggle sub-item that only appears in the expanded menu.
+-   `azRailSubToggle(id: String, hostId: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a toggle sub-item that appears in both the collapsed rail and the expanded menu.
+-   `azRailSubToggle(id: String, hostId: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a toggle sub-item that appears in both the collapsed rail and the expanded menu.
+-   `azMenuSubCycler(id: String, hostId: String, options: List<String>, selectedOption: String, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`: Adds a cycler sub-item that only appears in the expanded menu.
+-   `azMenuSubCycler(id: String, hostId: String, options: List<String>, selectedOption: String, route: String, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`: Adds a cycler sub-item that only appears in the expanded menu.
+-   `azRailSubCycler(id: String, hostId: String, color: Color?, options: List<String>, selectedOption: String, shape: AzButtonShape?, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`: Adds a cycler sub-item that appears in both the collapsed rail and the expanded menu.
+-   `azRailSubCycler(id: String, hostId: String, color: Color?, options: List<String>, selectedOption: String, shape: AzButtonShape?, route: String, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`: Adds a cycler sub-item that appears in both the collapsed rail and the expanded menu.
 
 ## AzNavRail for Web (React)
 

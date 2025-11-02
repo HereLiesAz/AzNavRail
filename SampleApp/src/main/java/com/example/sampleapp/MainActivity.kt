@@ -68,7 +68,8 @@ fun SampleScreen() {
                 // displayAppNameInHeader = true, // Set to true to display the app name instead of the icon
                 packRailButtons = packRailButtons,
                 isLoading = isLoading,
-                defaultShape = AzButtonShape.RECTANGLE // Set a default shape for all rail items
+                defaultShape = AzButtonShape.RECTANGLE, // Set a default shape for all rail items
+                enableRailDragging = true
             )
 
             // A standard menu item - only appears in the expanded menu
