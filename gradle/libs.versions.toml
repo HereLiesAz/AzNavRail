@@ -1,15 +1,15 @@
 [versions]
 aznavrail = "main-SNAPSHOT"
 # Android & Jetpack
-composeBom = "2025.08.01"
+composeBom = "2025.10.01"
 coreKtx = "1.17.0"
-material3 = "1.4.0-beta03"
+material3 = "1.4.0"
 coil = "2.7.0"
 
 # Plugins
-kotlin = "2.2.10"
-androidLibrary = "8.12.2"
-activityCompose = "1.10.1"
+kotlin = "2.2.21"
+androidLibrary = "8.13.0"
+activityCompose = "1.11.0"
 junit = "4.13.2"
 androidx-test-ext-junit = "1.3.0"
 espresso-core = "3.7.0"
