@@ -395,20 +395,6 @@ fun AzNavRail(
                     Box(
                         modifier = Modifier
                             .padding(bottom = AzNavRailDefaults.HeaderPadding)
-                            .pointerInput(scope.enableRailDragging, isFloating) {
-                                if (scope.enableRailDragging) {
-                                    detectTapGestures(
-                                        onLongPress = {
-                                            if (!isFloating) {
-                                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                isDragging = true
-                                                isFloating = true
-                                                if (scope.displayAppNameInHeader) isAppIcon = true
-                                            }
-                                        }
-                                    )
-                                }
-                            }
                             .offset { railOffset }
                             .pointerInput(isDragging) {
                                 if (isDragging) {
@@ -439,7 +425,21 @@ fun AzNavRail(
                                 onClick = onToggle,
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null
-                            ),
+                            )
+                            .pointerInput(key1 = scope.enableRailDragging) {
+                                if (scope.enableRailDragging) {
+                                    detectTapGestures(
+                                        onLongPress = {
+                                            if (!isFloating) {
+                                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                isDragging = true
+                                                isFloating = true
+                                                if (scope.displayAppNameInHeader) isAppIcon = true
+                                            }
+                                        }
+                                    )
+                                }
+                            },
                         contentAlignment = if (isAppIcon) Alignment.Center else Alignment.CenterStart
                     ) {
                         if (isAppIcon) {
