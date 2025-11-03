@@ -48,9 +48,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -261,6 +263,9 @@ fun AzNavRail(
     var isDragging by remember { mutableStateOf(false) }
     var isFloating by remember { mutableStateOf(false) }
     var showFloatingButtons by remember { mutableStateOf(false) }
+    var isAppIcon by remember { mutableStateOf(!scope.displayAppNameInHeader) }
+
+    val hapticFeedback = LocalHapticFeedback.current
 
     val onToggle: () -> Unit = remember(isFloating) {
         {
@@ -390,18 +395,6 @@ fun AzNavRail(
                     Box(
                         modifier = Modifier
                             .padding(bottom = AzNavRailDefaults.HeaderPadding)
-                            .pointerInput(scope.enableRailDragging, isFloating) {
-                                if (scope.enableRailDragging) {
-                                    detectTapGestures(
-                                        onLongPress = {
-                                            if (!isFloating) {
-                                                isDragging = true
-                                                isFloating = true
-                                            }
-                                        }
-                                    )
-                                }
-                            }
                             .offset { railOffset }
                             .pointerInput(isDragging) {
                                 if (isDragging) {
@@ -415,7 +408,9 @@ fun AzNavRail(
                                             if (distance < AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
                                                 railOffset = IntOffset.Zero
                                                 isFloating = false
+                                                if (scope.displayAppNameInHeader) isAppIcon = false
                                             }
+                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                         }
                                     ) { change, dragAmount ->
                                         change.consume()
@@ -430,20 +425,24 @@ fun AzNavRail(
                                 onClick = onToggle,
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (scope.displayAppNameInHeader) {
-                            val textModifier = Modifier.width(scope.expandedRailWidth)
-                            Text(
-                                text = appName,
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = textModifier,
-                                softWrap = false,
-                                maxLines = if (isExpanded && appName.contains("\n")) Int.MAX_VALUE else 1,
-                                textAlign = TextAlign.Center
                             )
-                        } else {
+                            .pointerInput(key1 = scope.enableRailDragging) {
+                                if (scope.enableRailDragging) {
+                                    detectTapGestures(
+                                        onLongPress = {
+                                            if (!isFloating) {
+                                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                isDragging = true
+                                                isFloating = true
+                                                if (scope.displayAppNameInHeader) isAppIcon = true
+                                            }
+                                        }
+                                    )
+                                }
+                            },
+                        contentAlignment = if (isAppIcon) Alignment.Center else Alignment.CenterStart
+                    ) {
+                        if (isAppIcon) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (appIcon != null) {
                                     Image(
@@ -459,6 +458,14 @@ fun AzNavRail(
                                     )
                                 }
                             }
+                        } else {
+                            Text(
+                                text = appName,
+                                style = MaterialTheme.typography.titleMedium,
+                                softWrap = false,
+                                maxLines = 1,
+                                textAlign = TextAlign.Start
+                            )
                         }
                     }
                 }
@@ -967,7 +974,8 @@ fun AzNavRailButton(
                 AutoSizeText(
                     text = text,
                     color = if (disabled) contentColor.copy(alpha = 0.5f) else contentColor,
-                    modifier = Modifier.padding(8.dp)
+                    modifier = Modifier.padding(8.dp),
+                    softWrap = false
                 )
             } else {
                 Text(
