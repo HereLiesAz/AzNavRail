@@ -43,9 +43,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -255,6 +257,7 @@ fun AzNavRail(
     var isDragging by remember { mutableStateOf(false) }
     var isFloating by remember { mutableStateOf(false) }
     var showFloatingButtons by remember { mutableStateOf(false) }
+    var showIconForDragging by remember { mutableStateOf(false) }
 
     val onToggle: () -> Unit = remember(isFloating) {
         {
@@ -327,6 +330,7 @@ fun AzNavRail(
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
     val screenHeight = configuration.screenHeightDp.dp
+    val haptic = LocalHapticFeedback.current
 
     Box(modifier = modifier) {
         val buttonSize = if (isLandscape) screenWidth / 18 else screenHeight / 18
@@ -397,6 +401,8 @@ fun AzNavRail(
                                             if (distance < AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
                                                 railOffset = IntOffset.Zero
                                                 isFloating = false
+                                                showIconForDragging = false
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                             }
                                         }
                                     ) { change, dragAmount ->
@@ -420,6 +426,8 @@ fun AzNavRail(
                                             if (!isFloating) {
                                                 isDragging = true
                                                 isFloating = true
+                                                showIconForDragging = true
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                             }
                                         }
                                     )
@@ -427,12 +435,10 @@ fun AzNavRail(
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        if (scope.displayAppNameInHeader) {
-                            val textModifier = Modifier.width(scope.expandedRailWidth)
+                        if (scope.displayAppNameInHeader && !showIconForDragging) {
                             Text(
                                 text = appName,
                                 style = MaterialTheme.typography.titleMedium,
-                                modifier = textModifier,
                                 softWrap = false,
                                 maxLines = if (isExpanded && appName.contains("")) Int.MAX_VALUE else 1,
                                 textAlign = TextAlign.Center
@@ -912,15 +918,3 @@ fun AzDivider() {
     )
 }
 
-@Composable
-fun AzNavRailButton(
-    onClick: () -> Unit,
-    text: String,
-    color: Color,
-    size: Dp,
-    shape: AzButtonShape,
-    disabled: Boolean,
-    isSelected: Boolean
-) {
-    // Implementation not shown
-}
