@@ -155,29 +155,51 @@ fun SampleScreen() {
 
             azDivider()
 
-            azMenuHostItem(id = "menu-host", text = "Menu Host") {
-                // TODO: Handle host click
-            }
+            azMenuHostItem(id = "menu-host", text = "Menu Host", route = "menu-host")
             azMenuSubItem(id = "menu-sub-1", hostId = "menu-host", text = "Menu Sub 1", route = "menu-sub-1")
             azMenuSubItem(id = "menu-sub-2", hostId = "menu-host", text = "Menu Sub 2", route = "menu-sub-2")
 
-            azRailHostItem(id = "rail-host", text = "Rail Host") {
-                // TODO: Handle host click
-            }
+            azRailHostItem(id = "rail-host", text = "Rail Host", route = "rail-host")
             azRailSubItem(id = "rail-sub-1", hostId = "rail-host", text = "Rail Sub 1", route = "rail-sub-1")
-            azMenuSubItem(id = "rail-sub-2", hostId = "rail-host", text = "Rail Sub 2", route = "rail-sub-2")
-            azMenuSubItem(id = "rail-sub-3", hostId = "rail-host", text = "Rail Sub 3", route = "rail-sub-3")
+            azMenuSubItem(id = "rail-sub-2", hostId = "rail-host", text = "Menu Sub 2", route = "rail-sub-2")
+
+            azMenuSubToggle(
+                id = "sub-toggle",
+                hostId = "menu-host",
+                isChecked = isDarkMode,
+                toggleOnText = "Sub Toggle On",
+                toggleOffText = "Sub Toggle Off",
+                route = "sub-toggle",
+                onClick = { isDarkMode = !isDarkMode }
+            )
+
+            azRailSubCycler(
+                id = "sub-cycler",
+                hostId = "rail-host",
+                options = menuCycleOptions,
+                selectedOption = menuSelectedOption,
+                route = "sub-cycler",
+                shape = null,
+                onClick = {
+                    val currentIndex = menuCycleOptions.indexOf(menuSelectedOption)
+                    val nextIndex = (currentIndex + 1) % menuCycleOptions.size
+                    menuSelectedOption = menuCycleOptions[nextIndex]
+                }
+            )
         }
 
         // Your app's main content goes here
         NavHost(navController = navController, startDestination = "home") {
             composable("home") { Text("Home Screen") }
             composable("multi-line") { Text("Multi-line Screen") }
+            composable("menu-host") { Text("Menu Host Screen") }
             composable("menu-sub-1") { Text("Menu Sub 1 Screen") }
             composable("menu-sub-2") { Text("Menu Sub 2 Screen") }
+            composable("rail-host") { Text("Rail Host Screen") }
             composable("rail-sub-1") { Text("Rail Sub 1 Screen") }
             composable("rail-sub-2") { Text("Rail Sub 2 Screen") }
-            composable("rail-sub-3") { Text("Rail Sub 3 Screen") }
+            composable("sub-toggle") { Text("Sub Toggle Screen") }
+            composable("sub-cycler") { Text("Sub Cycler Screen") }
             composable("pack-rail") { Text("Pack Rail Screen") }
             composable("profile") { Text("Profile Screen") }
             composable("online") { Text("Online Screen") }
