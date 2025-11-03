@@ -5,7 +5,6 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -24,17 +23,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.ripple
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,11 +43,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -70,7 +63,6 @@ import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.util.EqualWidthLayout
-import com.hereliesaz.aznavrail.util.text.AutoSizeText
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -263,9 +255,6 @@ fun AzNavRail(
     var isDragging by remember { mutableStateOf(false) }
     var isFloating by remember { mutableStateOf(false) }
     var showFloatingButtons by remember { mutableStateOf(false) }
-    var isAppIcon by remember { mutableStateOf(!scope.displayAppNameInHeader) }
-
-    val hapticFeedback = LocalHapticFeedback.current
 
     val onToggle: () -> Unit = remember(isFloating) {
         {
@@ -408,9 +397,7 @@ fun AzNavRail(
                                             if (distance < AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
                                                 railOffset = IntOffset.Zero
                                                 isFloating = false
-                                                if (scope.displayAppNameInHeader) isAppIcon = false
                                             }
-                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                         }
                                     ) { change, dragAmount ->
                                         change.consume()
@@ -431,18 +418,26 @@ fun AzNavRail(
                                     detectTapGestures(
                                         onLongPress = {
                                             if (!isFloating) {
-                                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                                 isDragging = true
                                                 isFloating = true
-                                                if (scope.displayAppNameInHeader) isAppIcon = true
                                             }
                                         }
                                     )
                                 }
                             },
-                        contentAlignment = if (isAppIcon) Alignment.Center else Alignment.CenterStart
+                        contentAlignment = Alignment.Center
                     ) {
-                        if (isAppIcon) {
+                        if (scope.displayAppNameInHeader) {
+                            val textModifier = Modifier.width(scope.expandedRailWidth)
+                            Text(
+                                text = appName,
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = textModifier,
+                                softWrap = false,
+                                maxLines = if (isExpanded && appName.contains("")) Int.MAX_VALUE else 1,
+                                textAlign = TextAlign.Center
+                            )
+                        } else {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (appIcon != null) {
                                     Image(
@@ -458,14 +453,6 @@ fun AzNavRail(
                                     )
                                 }
                             }
-                        } else {
-                            Text(
-                                text = appName,
-                                style = MaterialTheme.typography.titleMedium,
-                                softWrap = false,
-                                maxLines = 1,
-                                textAlign = TextAlign.Start
-                            )
                         }
                     }
                 }
@@ -655,7 +642,7 @@ fun AzNavRail(
                                     navController = navController,
                                     currentDestination = currentDestination,
                                     buttonSize = buttonSize,
-                                    onRailCyclerClick = onRailCyclerClick,
+                                    onRailCyclerClick = { onRailCyclerClick(it) },
                                     onItemSelected = { selectedItem = it },
                                     hostStates = hostStates,
                                     packRailButtons = scope.packRailButtons
@@ -819,7 +806,7 @@ private fun MenuItem(
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val lines = textToShow.split('\n')
+        val lines = textToShow.split('')
         Column(modifier = Modifier.weight(1f)) {
             lines.forEachIndexed { index, line ->
                 Text(
@@ -918,13 +905,11 @@ private fun Footer(appName: String, onToggle: () -> Unit) {
 }
 
 @Composable
-fun AzDivider(modifier: Modifier = Modifier) {
-    Box(modifier = modifier.fillMaxWidth()) {
-        HorizontalDivider(
-            thickness = 1.dp,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
-        )
-    }
+fun AzDivider() {
+    HorizontalDivider(
+        thickness = 1.dp,
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+    )
 }
 
 @Composable
@@ -937,53 +922,6 @@ fun AzNavRailButton(
     disabled: Boolean,
     isSelected: Boolean
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else color
-    val buttonShape = when (shape) {
-        AzButtonShape.CIRCLE -> CircleShape
-        AzButtonShape.SQUARE -> RoundedCornerShape(0.dp)
-        AzButtonShape.RECTANGLE -> RoundedCornerShape(0.dp)
-        AzButtonShape.NONE -> RoundedCornerShape(0.dp)
-    }
-
-    val buttonModifier = when (shape) {
-        AzButtonShape.RECTANGLE -> Modifier
-            .height(48.dp)
-            .fillMaxWidth()
-        else -> Modifier.size(size)
-    }
-
-    val finalColor = if (disabled) color.copy(alpha = 0.5f) else color
-
-    Surface(
-        modifier = buttonModifier
-            .clickable(
-                onClick = { if (!disabled) onClick() },
-                interactionSource = interactionSource,
-                indication = ripple(bounded = true, color = contentColor)
-            ),
-        shape = buttonShape,
-        color = if (isSelected) finalColor else Color.Transparent,
-        border = if (shape != AzButtonShape.NONE) BorderStroke(
-            2.dp,
-            if (isSelected) finalColor else finalColor.copy(alpha = 0.5f)
-        ) else null
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            if (shape != AzButtonShape.NONE) {
-                AutoSizeText(
-                    text = text,
-                    color = if (disabled) contentColor.copy(alpha = 0.5f) else contentColor,
-                    modifier = Modifier.padding(8.dp),
-                    softWrap = false
-                )
-            } else {
-                Text(
-                    text = text,
-                    color = if (disabled) finalColor.copy(alpha = 0.5f) else finalColor,
-                    modifier = Modifier.padding(8.dp)
-                )
-            }
-        }
-    }
+    // Implementation not shown
 }
+''
