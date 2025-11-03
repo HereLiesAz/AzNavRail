@@ -3,7 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("maven-publish")
-    id("org.jetbrains.kotlin.plugin.parcelize")
+    alias(libs.plugins.parcelize)
 }
 
 android {

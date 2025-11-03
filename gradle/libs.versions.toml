@@ -5,6 +5,7 @@ composeBom = "2025.10.01"
 coreKtx = "1.17.0"
 material3 = "1.4.0"
 coil = "2.7.0"
+navigationCompose = "2.9.5"
 
 # Plugins
 kotlin = "2.2.21"
@@ -32,6 +33,7 @@ androidx-compose-foundation-layout = { group = "androidx.compose.foundation", na
 androidx-compose-animation-core = { group = "androidx.compose.animation", name = "animation-core" }
 androidx-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidx-test-ext-junit" }
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso-core" }
@@ -44,4 +46,5 @@ androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-man
 android-application = { id = "com.android.application", version.ref = "androidLibrary" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "androidLibrary" }
