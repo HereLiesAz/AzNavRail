@@ -806,7 +806,7 @@ private fun MenuItem(
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val lines = textToShow.split('')
+        val lines = textToShow.split('\n')
         Column(modifier = Modifier.weight(1f)) {
             lines.forEachIndexed { index, line ->
                 Text(
@@ -924,4 +924,3 @@ fun AzNavRailButton(
 ) {
     // Implementation not shown
 }
-''
