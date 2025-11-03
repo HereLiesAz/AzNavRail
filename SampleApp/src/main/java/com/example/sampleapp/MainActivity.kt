@@ -1,6 +1,7 @@
 package com.example.sampleapp
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Row
@@ -85,7 +86,10 @@ fun SampleScreen() {
                 toggleOnText = "Pack Rail",
                 toggleOffText = "Unpack Rail",
                 route = "pack-rail",
-                onClick = { packRailButtons = !packRailButtons }
+                onClick = {
+                    packRailButtons = !packRailButtons
+                    Log.d("SampleApp", "Pack rail toggled")
+                }
             )
 
             // A disabled rail item that overrides the default shape
@@ -107,7 +111,10 @@ fun SampleScreen() {
                 toggleOffText = "Offline",
                 shape = AzButtonShape.SQUARE,
                 route = "online",
-                onClick = { isOnline = !isOnline }
+                onClick = {
+                    isOnline = !isOnline
+                    Log.d("SampleApp", "Online toggled")
+                }
             )
 
             // A menu toggle item
@@ -117,7 +124,10 @@ fun SampleScreen() {
                 toggleOnText = "Dark Mode",
                 toggleOffText = "Light Mode",
                 route = "dark-mode",
-                onClick = { isDarkMode = !isDarkMode }
+                onClick = {
+                    isDarkMode = !isDarkMode
+                    Log.d("SampleApp", "Dark mode toggled")
+                }
             )
 
             azDivider()
@@ -133,6 +143,7 @@ fun SampleScreen() {
                     val currentIndex = railCycleOptions.indexOf(railSelectedOption)
                     val nextIndex = (currentIndex + 1) % railCycleOptions.size
                     railSelectedOption = railCycleOptions[nextIndex]
+                    Log.d("SampleApp", "Rail cycler clicked, new option: $railSelectedOption")
                 }
             )
 
@@ -146,12 +157,16 @@ fun SampleScreen() {
                     val currentIndex = menuCycleOptions.indexOf(menuSelectedOption)
                     val nextIndex = (currentIndex + 1) % menuCycleOptions.size
                     menuSelectedOption = menuCycleOptions[nextIndex]
+                    Log.d("SampleApp", "Menu cycler clicked, new option: $menuSelectedOption")
                 }
             )
 
 
             // A button to demonstrate the loading state
-            azRailItem(id = "loading", text = "Load", route = "loading", onClick = { isLoading = !isLoading })
+            azRailItem(id = "loading", text = "Load", route = "loading", onClick = {
+                isLoading = !isLoading
+                Log.d("SampleApp", "Loading toggled")
+            })
 
             azDivider()
 
@@ -170,7 +185,10 @@ fun SampleScreen() {
                 toggleOnText = "Sub Toggle On",
                 toggleOffText = "Sub Toggle Off",
                 route = "sub-toggle",
-                onClick = { isDarkMode = !isDarkMode }
+                onClick = {
+                    isDarkMode = !isDarkMode
+                    Log.d("SampleApp", "Sub toggle clicked")
+                }
             )
 
             azRailSubCycler(
@@ -184,6 +202,7 @@ fun SampleScreen() {
                     val currentIndex = menuCycleOptions.indexOf(menuSelectedOption)
                     val nextIndex = (currentIndex + 1) % menuCycleOptions.size
                     menuSelectedOption = menuCycleOptions[nextIndex]
+                    Log.d("SampleApp", "Sub cycler clicked, new option: $menuSelectedOption")
                 }
             )
         }
