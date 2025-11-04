@@ -434,6 +434,8 @@ fun AzNavRail(
                                             }
                                         }
                                     )
+                                } else {
+                                    detectTapGestures(onTap = { onToggle() })
                                 }
                             },
                         contentAlignment = Alignment.Center
@@ -593,7 +595,7 @@ fun AzNavRail(
                         }
                     }
                 } else {
-                    AnimatedVisibility(visible = showFloatingButtons && !isDragging) {
+                    AnimatedVisibility(visible = !isFloating || (showFloatingButtons && !isDragging)) {
                         Column(
                             modifier = Modifier
                                 .padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding)
