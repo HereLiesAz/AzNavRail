@@ -370,17 +370,19 @@ fun AzNavRail(
             }
         }
         Row(
-            modifier = Modifier.pointerInput(isExpanded, disableSwipeToOpen) {
-                detectDragGestures { change, dragAmount ->
-                    change.consume()
-                    val (x, _) = dragAmount
-                    if (isExpanded) {
-                        if (x < -AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
-                            onToggle()
-                        }
-                    } else if (!disableSwipeToOpen) {
-                        if (x > AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
-                            onToggle()
+            modifier = Modifier.pointerInput(isFloating, isExpanded, disableSwipeToOpen) {
+                if (!isFloating) {
+                    detectDragGestures { change, dragAmount ->
+                        change.consume()
+                        val (x, _) = dragAmount
+                        if (isExpanded) {
+                            if (x < -AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
+                                onToggle()
+                            }
+                        } else if (!disableSwipeToOpen) {
+                            if (x > AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
+                                onToggle()
+                            }
                         }
                     }
                 }
@@ -399,14 +401,15 @@ fun AzNavRail(
                                     detectDragGestures(
                                         onDragStart = {
                                             Log.d(TAG, "Drag started")
-                                            if(showFloatingButtons) showFloatingButtons = false
+                                            if (showFloatingButtons) showFloatingButtons = false
                                         },
                                         onDragEnd = {
                                             Log.d(TAG, "Drag ended")
                                             isDragging = false
                                             val distance = kotlin.math.sqrt(
                                                 (railOffset.x - homeOffset.x).toFloat()
-                                                    .pow(2) + (railOffset.y - homeOffset.y).toFloat().pow(2)
+                                                    .pow(2) + (railOffset.y - homeOffset.y).toFloat()
+                                                    .pow(2)
                                             )
                                             if (distance < AzNavRailDefaults.HeaderIconSize.value / 2) {
                                                 Log.d(TAG, "FAB mode deactivated by snapping to home")
@@ -425,7 +428,7 @@ fun AzNavRail(
                                     }
                                 }
                             }
-                            .pointerInput(key1 = scope.enableRailDragging, key2 = isFloating) {
+                            .pointerInput(key1 = scope.enableRailDragging) {
                                 if (scope.enableRailDragging) {
                                     detectTapGestures(
                                         onTap = {
