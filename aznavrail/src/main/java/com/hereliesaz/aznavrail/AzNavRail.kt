@@ -3,6 +3,7 @@ package com.hereliesaz.aznavrail
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
@@ -214,6 +215,7 @@ fun AzNavRail(
     disableSwipeToOpen: Boolean = false,
     content: AzNavRailScope.() -> Unit
 ) {
+    val TAG = "AzNavRail"
     val scope = remember { AzNavRailScopeImpl() }
     scope.navItems.clear()
     navController?.let { scope.navController = it }
@@ -260,11 +262,13 @@ fun AzNavRail(
     var showFloatingButtons by remember { mutableStateOf(false) }
     var showIconForDragging by remember { mutableStateOf(false) }
 
-    val onToggle: () -> Unit = remember(isFloating) {
+    val onToggle: () -> Unit = remember(isFloating, isExpanded, showFloatingButtons) {
         {
             if (isFloating) {
+                Log.d(TAG, "Toggling floating buttons visibility to ${!showFloatingButtons}")
                 showFloatingButtons = !showFloatingButtons
             } else {
+                Log.d(TAG, "Toggling rail expansion to ${!isExpanded}")
                 isExpanded = !isExpanded
             }
         }
@@ -394,15 +398,18 @@ fun AzNavRail(
                                 if (isDragging) {
                                     detectDragGestures(
                                         onDragStart = {
+                                            Log.d(TAG, "Drag started")
                                             if(showFloatingButtons) showFloatingButtons = false
                                         },
                                         onDragEnd = {
+                                            Log.d(TAG, "Drag ended")
                                             isDragging = false
                                             val distance = kotlin.math.sqrt(
                                                 (railOffset.x - homeOffset.x).toFloat()
                                                     .pow(2) + (railOffset.y - homeOffset.y).toFloat().pow(2)
                                             )
                                             if (distance < AzNavRailDefaults.HeaderIconSize.value / 2) {
+                                                Log.d(TAG, "FAB mode deactivated by snapping to home")
                                                 railOffset = homeOffset
                                                 isFloating = false
                                                 showIconForDragging = false
@@ -426,6 +433,7 @@ fun AzNavRail(
                                         },
                                         onLongPress = {
                                             if (!isFloating) {
+                                                Log.d(TAG, "FAB mode activated")
                                                 homeOffset = railOffset
                                                 isDragging = true
                                                 isFloating = true
