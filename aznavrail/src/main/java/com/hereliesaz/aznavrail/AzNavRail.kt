@@ -391,22 +391,25 @@ fun AzNavRail(
                         modifier = Modifier
                             .padding(bottom = AzNavRailDefaults.HeaderPadding)
                             .offset { railOffset }
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onTap = { onToggle() },
-                                    onLongPress = {
-                                        if (scope.enableRailDragging) {
-                                            Log.d(TAG, "FAB mode activated")
-                                            homeOffset = railOffset
-                                            isFloating = true
-                                            showIconForDragging = true
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            .pointerInput(isFloating) {
+                                if (!isFloating) {
+                                    detectTapGestures(
+                                        onTap = { onToggle() },
+                                        onLongPress = {
+                                            if (scope.enableRailDragging) {
+                                                Log.d(TAG, "FAB mode activated")
+                                                homeOffset = railOffset
+                                                isFloating = true
+                                                showIconForDragging = true
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            }
                                         }
-                                    }
-                                )
+                                    )
+                                }
                             }
                             .pointerInput(isFloating) {
                                 if (isFloating) {
+                                    detectTapGestures(onTap = { onToggle() })
                                     detectDragGestures(
                                         onDragStart = {
                                             Log.d(TAG, "Drag started")
