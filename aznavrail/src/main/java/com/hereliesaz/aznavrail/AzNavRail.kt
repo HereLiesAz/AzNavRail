@@ -254,6 +254,7 @@ fun AzNavRail(
 
     var isExpanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
     var railOffset by remember { mutableStateOf(IntOffset.Zero) }
+    var homeOffset by remember { mutableStateOf(IntOffset.Zero) }
     var isDragging by remember { mutableStateOf(false) }
     var isFloating by remember { mutableStateOf(false) }
     var showFloatingButtons by remember { mutableStateOf(false) }
@@ -392,14 +393,17 @@ fun AzNavRail(
                             .pointerInput(isDragging) {
                                 if (isDragging) {
                                     detectDragGestures(
+                                        onDragStart = {
+                                            if(showFloatingButtons) showFloatingButtons = false
+                                        },
                                         onDragEnd = {
                                             isDragging = false
                                             val distance = kotlin.math.sqrt(
-                                                railOffset.x.toFloat()
-                                                    .pow(2) + railOffset.y.toFloat().pow(2)
+                                                (railOffset.x - homeOffset.x).toFloat()
+                                                    .pow(2) + (railOffset.y - homeOffset.y).toFloat().pow(2)
                                             )
-                                            if (distance < AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
-                                                railOffset = IntOffset.Zero
+                                            if (distance < AzNavRailDefaults.HeaderIconSize.value / 2) {
+                                                railOffset = homeOffset
                                                 isFloating = false
                                                 showIconForDragging = false
                                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -414,16 +418,15 @@ fun AzNavRail(
                                     }
                                 }
                             }
-                            .clickable(
-                                onClick = onToggle,
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            )
-                            .pointerInput(key1 = scope.enableRailDragging) {
+                            .pointerInput(key1 = scope.enableRailDragging, key2 = isFloating) {
                                 if (scope.enableRailDragging) {
                                     detectTapGestures(
+                                        onTap = {
+                                            onToggle()
+                                        },
                                         onLongPress = {
                                             if (!isFloating) {
+                                                homeOffset = railOffset
                                                 isDragging = true
                                                 isFloating = true
                                                 showIconForDragging = true
@@ -590,7 +593,7 @@ fun AzNavRail(
                         }
                     }
                 } else {
-                    AnimatedVisibility(visible = !isFloating || showFloatingButtons && !isDragging) {
+                    AnimatedVisibility(visible = showFloatingButtons && !isDragging) {
                         Column(
                             modifier = Modifier
                                 .padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding)
