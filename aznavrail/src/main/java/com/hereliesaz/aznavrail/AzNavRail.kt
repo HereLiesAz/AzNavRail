@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -202,7 +203,6 @@ private object CenteredPopupPositionProvider : PopupPositionProvider {
  * @param currentDestination The route of the current destination, used to highlight the active item.
  * @param isLandscape A boolean to indicate if the device is in landscape mode.
  * @param initiallyExpanded Whether the navigation rail is expanded by default.
- * @param disableSwipeToOpen Whether to disable the swipe-to-open gesture.
  * @param content The DSL content for the navigation rail.
  */
 @Composable
@@ -212,7 +212,6 @@ fun AzNavRail(
     currentDestination: String? = null,
     isLandscape: Boolean = false,
     initiallyExpanded: Boolean = false,
-    disableSwipeToOpen: Boolean = false,
     content: AzNavRailScope.() -> Unit
 ) {
     val TAG = "AzNavRail"
@@ -370,22 +369,18 @@ fun AzNavRail(
             }
         }
         Row(
-            modifier = Modifier.pointerInput(isFloating, isExpanded, disableSwipeToOpen) {
-                if (!isFloating) {
+            modifier = if (isExpanded) {
+                Modifier.pointerInput(Unit) {
                     detectDragGestures { change, dragAmount ->
                         change.consume()
                         val (x, _) = dragAmount
-                        if (isExpanded) {
-                            if (x < -AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
-                                onToggle()
-                            }
-                        } else if (!disableSwipeToOpen) {
-                            if (x > AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
-                                onToggle()
-                            }
+                        if (x < -AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
+                            onToggle()
                         }
                     }
                 }
+            } else {
+                Modifier
             }
         ) {
             NavigationRail(
@@ -396,11 +391,26 @@ fun AzNavRail(
                         modifier = Modifier
                             .padding(bottom = AzNavRailDefaults.HeaderPadding)
                             .offset { railOffset }
-                            .pointerInput(isDragging) {
-                                if (isDragging) {
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onTap = { onToggle() },
+                                    onLongPress = {
+                                        if (scope.enableRailDragging) {
+                                            Log.d(TAG, "FAB mode activated")
+                                            homeOffset = railOffset
+                                            isFloating = true
+                                            showIconForDragging = true
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        }
+                                    }
+                                )
+                            }
+                            .pointerInput(isFloating) {
+                                if (isFloating) {
                                     detectDragGestures(
                                         onDragStart = {
                                             Log.d(TAG, "Drag started")
+                                            isDragging = true
                                             if (showFloatingButtons) showFloatingButtons = false
                                         },
                                         onDragEnd = {
@@ -426,27 +436,6 @@ fun AzNavRail(
                                             y = (railOffset.y + dragAmount.y).toInt()
                                         )
                                     }
-                                }
-                            }
-                            .pointerInput(key1 = scope.enableRailDragging) {
-                                if (scope.enableRailDragging) {
-                                    detectTapGestures(
-                                        onTap = {
-                                            onToggle()
-                                        },
-                                        onLongPress = {
-                                            if (!isFloating) {
-                                                Log.d(TAG, "FAB mode activated")
-                                                homeOffset = railOffset
-                                                isDragging = true
-                                                isFloating = true
-                                                showIconForDragging = true
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            }
-                                        }
-                                    )
-                                } else {
-                                    detectTapGestures(onTap = { onToggle() })
                                 }
                             },
                         contentAlignment = Alignment.Center
@@ -673,19 +662,18 @@ fun AzNavRail(
                         }
                     }
                 }
-                if (isExpanded) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .weight(1f)
-                            .clickable(
-                                onClick = onToggle,
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            )
-                    )
-                }
             }
+        }
+        if (isExpanded) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        onClick = onToggle,
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    )
+            )
         }
     }
 }
@@ -933,4 +921,3 @@ fun AzDivider() {
         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
     )
 }
-
