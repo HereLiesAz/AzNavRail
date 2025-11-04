@@ -45,6 +45,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun SampleScreen() {
+    val TAG = "SampleApp"
     val navController = rememberNavController()
     val currentDestination by navController.currentBackStackEntryAsState()
     var isOnline by remember { mutableStateOf(true) }
@@ -74,10 +75,10 @@ fun SampleScreen() {
             )
 
             // A standard menu item - only appears in the expanded menu
-            azMenuItem(id = "home", text = "Home", route = "home")
+            azMenuItem(id = "home", text = "Home", route = "home", onClick = { Log.d(TAG, "Home menu item clicked") })
 
             // A menu item with multi-line text
-            azMenuItem(id = "multi-line", text = "This is a\nmulti-line item", route = "multi-line")
+            azMenuItem(id = "multi-line", text = "This is a\nmulti-line item", route = "multi-line", onClick = { Log.d(TAG, "Multi-line menu item clicked") })
 
             // A rail toggle item with the default shape (RECTANGLE)
             azRailToggle(
@@ -88,7 +89,7 @@ fun SampleScreen() {
                 route = "pack-rail",
                 onClick = {
                     packRailButtons = !packRailButtons
-                    Log.d("SampleApp", "Pack rail toggled")
+                    Log.d(TAG, "Pack rail toggled to: $packRailButtons")
                 }
             )
 
@@ -113,7 +114,7 @@ fun SampleScreen() {
                 route = "online",
                 onClick = {
                     isOnline = !isOnline
-                    Log.d("SampleApp", "Online toggled")
+                    Log.d(TAG, "Online toggled to: $isOnline")
                 }
             )
 
@@ -126,7 +127,7 @@ fun SampleScreen() {
                 route = "dark-mode",
                 onClick = {
                     isDarkMode = !isDarkMode
-                    Log.d("SampleApp", "Dark mode toggled")
+                    Log.d(TAG, "Dark mode toggled to: $isDarkMode")
                 }
             )
 
@@ -143,7 +144,7 @@ fun SampleScreen() {
                     val currentIndex = railCycleOptions.indexOf(railSelectedOption)
                     val nextIndex = (currentIndex + 1) % railCycleOptions.size
                     railSelectedOption = railCycleOptions[nextIndex]
-                    Log.d("SampleApp", "Rail cycler clicked, new option: $railSelectedOption")
+                    Log.d(TAG, "Rail cycler clicked, new option: $railSelectedOption")
                 }
             )
 
@@ -157,7 +158,7 @@ fun SampleScreen() {
                     val currentIndex = menuCycleOptions.indexOf(menuSelectedOption)
                     val nextIndex = (currentIndex + 1) % menuCycleOptions.size
                     menuSelectedOption = menuCycleOptions[nextIndex]
-                    Log.d("SampleApp", "Menu cycler clicked, new option: $menuSelectedOption")
+                    Log.d(TAG, "Menu cycler clicked, new option: $menuSelectedOption")
                 }
             )
 
@@ -165,18 +166,18 @@ fun SampleScreen() {
             // A button to demonstrate the loading state
             azRailItem(id = "loading", text = "Load", route = "loading", onClick = {
                 isLoading = !isLoading
-                Log.d("SampleApp", "Loading toggled")
+                Log.d(TAG, "Loading toggled to: $isLoading")
             })
 
             azDivider()
 
-            azMenuHostItem(id = "menu-host", text = "Menu Host", route = "menu-host")
-            azMenuSubItem(id = "menu-sub-1", hostId = "menu-host", text = "Menu Sub 1", route = "menu-sub-1")
-            azMenuSubItem(id = "menu-sub-2", hostId = "menu-host", text = "Menu Sub 2", route = "menu-sub-2")
+            azMenuHostItem(id = "menu-host", text = "Menu Host", route = "menu-host", onClick = { Log.d(TAG, "Menu host item clicked") })
+            azMenuSubItem(id = "menu-sub-1", hostId = "menu-host", text = "Menu Sub 1", route = "menu-sub-1", onClick = { Log.d(TAG, "Menu sub item 1 clicked") })
+            azMenuSubItem(id = "menu-sub-2", hostId = "menu-host", text = "Menu Sub 2", route = "menu-sub-2", onClick = { Log.d(TAG, "Menu sub item 2 clicked") })
 
-            azRailHostItem(id = "rail-host", text = "Rail Host", route = "rail-host")
-            azRailSubItem(id = "rail-sub-1", hostId = "rail-host", text = "Rail Sub 1", route = "rail-sub-1")
-            azMenuSubItem(id = "rail-sub-2", hostId = "rail-host", text = "Menu Sub 2", route = "rail-sub-2")
+            azRailHostItem(id = "rail-host", text = "Rail Host", route = "rail-host", onClick = { Log.d(TAG, "Rail host item clicked") })
+            azRailSubItem(id = "rail-sub-1", hostId = "rail-host", text = "Rail Sub 1", route = "rail-sub-1", onClick = { Log.d(TAG, "Rail sub item 1 clicked") })
+            azMenuSubItem(id = "rail-sub-2", hostId = "rail-host", text = "Menu Sub 2", route = "rail-sub-2", onClick = { Log.d(TAG, "Menu sub item 2 (from rail host) clicked") })
 
             azMenuSubToggle(
                 id = "sub-toggle",
@@ -187,7 +188,7 @@ fun SampleScreen() {
                 route = "sub-toggle",
                 onClick = {
                     isDarkMode = !isDarkMode
-                    Log.d("SampleApp", "Sub toggle clicked")
+                    Log.d(TAG, "Sub toggle clicked, dark mode is now: $isDarkMode")
                 }
             )
 
@@ -202,7 +203,7 @@ fun SampleScreen() {
                     val currentIndex = menuCycleOptions.indexOf(menuSelectedOption)
                     val nextIndex = (currentIndex + 1) % menuCycleOptions.size
                     menuSelectedOption = menuCycleOptions[nextIndex]
-                    Log.d("SampleApp", "Sub cycler clicked, new option: $menuSelectedOption")
+                    Log.d(TAG, "Sub cycler clicked, new option: $menuSelectedOption")
                 }
             )
         }

@@ -3,6 +3,7 @@ package com.hereliesaz.aznavrail
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -43,9 +45,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -199,7 +203,6 @@ private object CenteredPopupPositionProvider : PopupPositionProvider {
  * @param currentDestination The route of the current destination, used to highlight the active item.
  * @param isLandscape A boolean to indicate if the device is in landscape mode.
  * @param initiallyExpanded Whether the navigation rail is expanded by default.
- * @param disableSwipeToOpen Whether to disable the swipe-to-open gesture.
  * @param content The DSL content for the navigation rail.
  */
 @Composable
@@ -209,9 +212,9 @@ fun AzNavRail(
     currentDestination: String? = null,
     isLandscape: Boolean = false,
     initiallyExpanded: Boolean = false,
-    disableSwipeToOpen: Boolean = false,
     content: AzNavRailScope.() -> Unit
 ) {
+    val TAG = "AzNavRail"
     val scope = remember { AzNavRailScopeImpl() }
     scope.navItems.clear()
     navController?.let { scope.navController = it }
@@ -252,15 +255,19 @@ fun AzNavRail(
 
     var isExpanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
     var railOffset by remember { mutableStateOf(IntOffset.Zero) }
+    var homeOffset by remember { mutableStateOf(IntOffset.Zero) }
     var isDragging by remember { mutableStateOf(false) }
     var isFloating by remember { mutableStateOf(false) }
     var showFloatingButtons by remember { mutableStateOf(false) }
+    var showIconForDragging by remember { mutableStateOf(false) }
 
-    val onToggle: () -> Unit = remember(isFloating) {
+    val onToggle: () -> Unit = remember(isFloating, isExpanded, showFloatingButtons) {
         {
             if (isFloating) {
+                Log.d(TAG, "Toggling floating buttons visibility to ${!showFloatingButtons}")
                 showFloatingButtons = !showFloatingButtons
             } else {
+                Log.d(TAG, "Toggling rail expansion to ${!isExpanded}")
                 isExpanded = !isExpanded
             }
         }
@@ -327,6 +334,7 @@ fun AzNavRail(
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
     val screenHeight = configuration.screenHeightDp.dp
+    val haptic = LocalHapticFeedback.current
 
     Box(modifier = modifier) {
         val buttonSize = if (isLandscape) screenWidth / 18 else screenHeight / 18
@@ -361,20 +369,18 @@ fun AzNavRail(
             }
         }
         Row(
-            modifier = Modifier.pointerInput(isExpanded, disableSwipeToOpen) {
-                detectDragGestures { change, dragAmount ->
-                    change.consume()
-                    val (x, _) = dragAmount
-                    if (isExpanded) {
+            modifier = if (isExpanded) {
+                Modifier.pointerInput(Unit) {
+                    detectDragGestures { change, dragAmount ->
+                        change.consume()
+                        val (x, _) = dragAmount
                         if (x < -AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
-                            onToggle()
-                        }
-                    } else if (!disableSwipeToOpen) {
-                        if (x > AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
                             onToggle()
                         }
                     }
                 }
+            } else {
+                Modifier
             }
         ) {
             NavigationRail(
@@ -385,18 +391,42 @@ fun AzNavRail(
                         modifier = Modifier
                             .padding(bottom = AzNavRailDefaults.HeaderPadding)
                             .offset { railOffset }
-                            .pointerInput(isDragging) {
-                                if (isDragging) {
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onTap = { onToggle() },
+                                    onLongPress = {
+                                        if (scope.enableRailDragging) {
+                                            Log.d(TAG, "FAB mode activated")
+                                            homeOffset = railOffset
+                                            isFloating = true
+                                            showIconForDragging = true
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        }
+                                    }
+                                )
+                            }
+                            .pointerInput(isFloating) {
+                                if (isFloating) {
                                     detectDragGestures(
+                                        onDragStart = {
+                                            Log.d(TAG, "Drag started")
+                                            isDragging = true
+                                            if (showFloatingButtons) showFloatingButtons = false
+                                        },
                                         onDragEnd = {
+                                            Log.d(TAG, "Drag ended")
                                             isDragging = false
                                             val distance = kotlin.math.sqrt(
-                                                railOffset.x.toFloat()
-                                                    .pow(2) + railOffset.y.toFloat().pow(2)
+                                                (railOffset.x - homeOffset.x).toFloat()
+                                                    .pow(2) + (railOffset.y - homeOffset.y).toFloat()
+                                                    .pow(2)
                                             )
-                                            if (distance < AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
-                                                railOffset = IntOffset.Zero
+                                            if (distance < AzNavRailDefaults.HeaderIconSize.value / 2) {
+                                                Log.d(TAG, "FAB mode deactivated by snapping to home")
+                                                railOffset = homeOffset
                                                 isFloating = false
+                                                showIconForDragging = false
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                             }
                                         }
                                     ) { change, dragAmount ->
@@ -407,32 +437,13 @@ fun AzNavRail(
                                         )
                                     }
                                 }
-                            }
-                            .clickable(
-                                onClick = onToggle,
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            )
-                            .pointerInput(key1 = scope.enableRailDragging) {
-                                if (scope.enableRailDragging) {
-                                    detectTapGestures(
-                                        onLongPress = {
-                                            if (!isFloating) {
-                                                isDragging = true
-                                                isFloating = true
-                                            }
-                                        }
-                                    )
-                                }
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        if (scope.displayAppNameInHeader) {
-                            val textModifier = Modifier.width(scope.expandedRailWidth)
+                        if (scope.displayAppNameInHeader && !showIconForDragging) {
                             Text(
                                 text = appName,
                                 style = MaterialTheme.typography.titleMedium,
-                                modifier = textModifier,
                                 softWrap = false,
                                 maxLines = if (isExpanded && appName.contains("")) Int.MAX_VALUE else 1,
                                 textAlign = TextAlign.Center
@@ -584,7 +595,7 @@ fun AzNavRail(
                         }
                     }
                 } else {
-                    AnimatedVisibility(visible = !isFloating || showFloatingButtons && !isDragging) {
+                    AnimatedVisibility(visible = !isFloating || (showFloatingButtons && !isDragging)) {
                         Column(
                             modifier = Modifier
                                 .padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding)
@@ -651,19 +662,18 @@ fun AzNavRail(
                         }
                     }
                 }
-                if (isExpanded) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .weight(1f)
-                            .clickable(
-                                onClick = onToggle,
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            )
-                    )
-                }
             }
+        }
+        if (isExpanded) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        onClick = onToggle,
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    )
+            )
         }
     }
 }
@@ -910,17 +920,4 @@ fun AzDivider() {
         thickness = 1.dp,
         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
     )
-}
-
-@Composable
-fun AzNavRailButton(
-    onClick: () -> Unit,
-    text: String,
-    color: Color,
-    size: Dp,
-    shape: AzButtonShape,
-    disabled: Boolean,
-    isSelected: Boolean
-) {
-    // Implementation not shown
 }
