@@ -10,7 +10,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -374,16 +373,15 @@ fun AzNavRail(
         }
         Row(
             modifier = Modifier.pointerInput(isExpanded, disableSwipeToOpen) {
-                if (!disableSwipeToOpen) {
-                    detectHorizontalDragGestures { change, dragAmount ->
-                        val isSwipe = if (isExpanded) {
-                            dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX
-                        } else {
-                            dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    val (x, _) = dragAmount
+                    if (isExpanded) {
+                        if (x < -AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
+                            onToggle()
                         }
-
-                        if (isSwipe) {
-                            change.consume()
+                    } else if (!disableSwipeToOpen) {
+                        if (x > AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
                             onToggle()
                         }
                     }
@@ -397,31 +395,8 @@ fun AzNavRail(
                     Box(
                         modifier = Modifier
                             .padding(bottom = AzNavRailDefaults.HeaderPadding)
-                            .offset { railOffset }
-                            .pointerInput(isFloating, scope.enableRailDragging) {
-                                if (isFloating) {
-                                    detectDragGestures(
-                                        onDragEnd = {
-                                            val distance = kotlin.math.sqrt(
-                                                railOffset.x.toFloat().pow(2) + railOffset.y.toFloat().pow(2)
-                                            )
-                                            if (distance < AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
-                                                railOffset = IntOffset.Zero
-                                                isFloating = false
-                                                if (scope.displayAppNameInHeader) isAppIcon = false
-                                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            }
-                                        }
-                                    ) { change, dragAmount ->
-                                        change.consume()
-                                        railOffset = IntOffset(
-                                            x = (railOffset.x + dragAmount.x).toInt(),
-                                            y = (railOffset.y + dragAmount.y).toInt()
-                                        )
-                                    }
-                                } else {
+                                .pointerInput(Unit) {
                                     detectTapGestures(
-                                        onDoubleTap = null,
                                         onTap = { onToggle() },
                                         onLongPress = {
                                             if (scope.enableRailDragging) {
@@ -432,7 +407,31 @@ fun AzNavRail(
                                         }
                                     )
                                 }
-                            },
+                                .offset { railOffset }
+                                .pointerInput(isFloating) {
+                                    if (isFloating) {
+                                        detectDragGestures(
+                                            onDragEnd = {
+                                                val distance = kotlin.math.sqrt(
+                                                    railOffset.x.toFloat()
+                                                        .pow(2) + railOffset.y.toFloat().pow(2)
+                                                )
+                                                if (distance < AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
+                                                    railOffset = IntOffset.Zero
+                                                    isFloating = false
+                                                    if (scope.displayAppNameInHeader) isAppIcon = false
+                                                }
+                                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            }
+                                        ) { change, dragAmount ->
+                                            change.consume()
+                                            railOffset = IntOffset(
+                                                x = (railOffset.x + dragAmount.x).toInt(),
+                                                y = (railOffset.y + dragAmount.y).toInt()
+                                            )
+                                        }
+                                    }
+                                },
                         contentAlignment = if (isAppIcon) Alignment.Center else Alignment.CenterStart
                     ) {
                         if (isAppIcon) {
