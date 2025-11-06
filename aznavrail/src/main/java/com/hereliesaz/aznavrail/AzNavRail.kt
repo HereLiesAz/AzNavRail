@@ -397,37 +397,20 @@ fun AzNavRail(
                     Box(
                         modifier = Modifier
                             .padding(bottom = AzNavRailDefaults.HeaderPadding)
-                            .pointerInput(scope.enableRailDragging, isFloating) {
-                                detectTapGestures(
-                                    onTap = { onToggle() },
-                                    onLongPress = {
-                                        if (scope.enableRailDragging && !isFloating) {
-                                            hapticFeedback.performHapticFeedback(
-                                                HapticFeedbackType.LongPress
-                                            )
-                                            isDragging = true
-                                            isFloating = true
-                                            if (scope.displayAppNameInHeader) isAppIcon = true
-                                        }
-                                    }
-                                )
-                            }
                             .offset { railOffset }
-                            .pointerInput(isDragging) {
-                                if (isDragging) {
+                            .pointerInput(isFloating, scope.enableRailDragging) {
+                                if (isFloating) {
                                     detectDragGestures(
                                         onDragEnd = {
-                                            isDragging = false
                                             val distance = kotlin.math.sqrt(
-                                                railOffset.x.toFloat()
-                                                    .pow(2) + railOffset.y.toFloat().pow(2)
+                                                railOffset.x.toFloat().pow(2) + railOffset.y.toFloat().pow(2)
                                             )
                                             if (distance < AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
                                                 railOffset = IntOffset.Zero
                                                 isFloating = false
                                                 if (scope.displayAppNameInHeader) isAppIcon = false
+                                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                             }
-                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                         }
                                     ) { change, dragAmount ->
                                         change.consume()
@@ -436,6 +419,17 @@ fun AzNavRail(
                                             y = (railOffset.y + dragAmount.y).toInt()
                                         )
                                     }
+                                } else {
+                                    detectTapGestures(
+                                        onTap = { onToggle() },
+                                        onLongPress = {
+                                            if (scope.enableRailDragging) {
+                                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                isFloating = true
+                                                if (scope.displayAppNameInHeader) isAppIcon = true
+                                            }
+                                        }
+                                    )
                                 }
                             },
                         contentAlignment = if (isAppIcon) Alignment.Center else Alignment.CenterStart
