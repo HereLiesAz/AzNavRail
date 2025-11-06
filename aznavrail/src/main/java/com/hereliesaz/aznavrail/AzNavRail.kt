@@ -10,6 +10,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -373,17 +374,18 @@ fun AzNavRail(
         }
         Row(
             modifier = Modifier.pointerInput(isExpanded, disableSwipeToOpen) {
-                detectDragGestures { change, dragAmount ->
-                    change.consume()
-                    val (x, _) = dragAmount
-                    if (isExpanded) {
-                        if (x < -AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
-                            onToggle()
-                        }
+                detectHorizontalDragGestures { change, dragAmount ->
+                    val isSwipe = if (isExpanded) {
+                        dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX
                     } else if (!disableSwipeToOpen) {
-                        if (x > AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
-                            onToggle()
-                        }
+                        dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX
+                    } else {
+                        false
+                    }
+
+                    if (isSwipe) {
+                        change.consume()
+                        onToggle()
                     }
                 }
             }
@@ -396,20 +398,19 @@ fun AzNavRail(
                         modifier = Modifier
                             .padding(bottom = AzNavRailDefaults.HeaderPadding)
                             .pointerInput(scope.enableRailDragging, isFloating) {
-                                if (scope.enableRailDragging) {
-                                    detectTapGestures(
-                                        onLongPress = {
-                                            if (!isFloating) {
-                                                hapticFeedback.performHapticFeedback(
-                                                    HapticFeedbackType.LongPress
-                                                )
-                                                isDragging = true
-                                                isFloating = true
-                                                if (scope.displayAppNameInHeader) isAppIcon = true
-                                            }
+                                detectTapGestures(
+                                    onTap = { onToggle() },
+                                    onLongPress = {
+                                        if (scope.enableRailDragging && !isFloating) {
+                                            hapticFeedback.performHapticFeedback(
+                                                HapticFeedbackType.LongPress
+                                            )
+                                            isDragging = true
+                                            isFloating = true
+                                            if (scope.displayAppNameInHeader) isAppIcon = true
                                         }
-                                    )
-                                }
+                                    }
+                                )
                             }
                             .offset { railOffset }
                             .pointerInput(isDragging) {
@@ -436,12 +437,7 @@ fun AzNavRail(
                                         )
                                     }
                                 }
-                            }
-                            .clickable(
-                                onClick = onToggle,
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ),
+                            },
                         contentAlignment = if (isAppIcon) Alignment.Center else Alignment.CenterStart
                     ) {
                         if (isAppIcon) {
