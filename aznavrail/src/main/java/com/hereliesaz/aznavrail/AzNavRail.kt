@@ -9,7 +9,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,8 +47,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.forEachGesture
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -393,68 +392,58 @@ fun AzNavRail(
                         modifier = Modifier
                             .padding(bottom = AzNavRailDefaults.HeaderPadding)
                             .pointerInput(isFloating, scope.enableRailDragging) {
-                                forEachGesture {
-                                    if (isFloating) {
-                                        awaitPointerEventScope {
-                                            val down = awaitFirstDown()
-                                            var change = down
-                                            val dragStart = coroutineScope.launch {
-                                                delay(viewConfiguration.longPressTimeoutMillis)
-                                            }
+                                awaitEachGesture {
+                                    val down = awaitFirstDown()
+                                    down.consume()
 
-                                            var dragConsumed = false
-                                            while (dragStart.isActive && change.pressed) {
-                                                val event = awaitPointerEvent()
-                                                if (event.changes.any { it.pressed }) {
-                                                    val dragChange = event.changes.first()
-                                                    if (dragChange.positionChange() != Offset.Zero) {
-                                                        dragConsumed = true
-                                                        railOffset += IntOffset(
-                                                            dragChange.positionChange().x.toInt(),
-                                                            dragChange.positionChange().y.toInt()
-                                                        )
-                                                        dragChange.consume()
-                                                    }
-                                                    change = dragChange
-                                                } else {
-                                                    break
-                                                }
-                                            }
-                                            dragStart.cancel()
+                                    val longPress = coroutineScope.launch {
+                                        delay(viewConfiguration.longPressTimeoutMillis)
+                                        if (scope.enableRailDragging) {
+                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            isFloating = true
+                                            isExpanded = false
+                                            if (scope.displayAppNameInHeader) isAppIcon = true
+                                        }
+                                    }
 
-                                            if (change.pressed) { // Long press
+                                    var event = awaitPointerEvent()
+                                    var change = event.changes.first()
+                                    while (longPress.isActive && change.pressed) {
+                                        event = awaitPointerEvent()
+                                        change = event.changes.first()
+                                    }
+                                    longPress.cancel()
+
+                                    if (!isFloating) {
+                                        isExpanded = !isExpanded
+                                    } else {
+                                        var dragConsumed = false
+                                        while (change.pressed) {
+                                            val dragChange = awaitPointerEvent().changes.first()
+                                            if (dragChange.positionChange() != Offset.Zero) {
+                                                dragConsumed = true
+                                                railOffset += IntOffset(
+                                                    dragChange.positionChange().x.toInt(),
+                                                    dragChange.positionChange().y.toInt()
+                                                )
+                                                dragChange.consume()
+                                            }
+                                            change = dragChange
+                                        }
+
+                                        if (dragConsumed) { // Drag ended
+                                            val distance = kotlin.math.sqrt(
+                                                railOffset.x.toFloat().pow(2) + railOffset.y.toFloat().pow(2)
+                                            )
+                                            if (distance < AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
                                                 railOffset = IntOffset.Zero
                                                 isFloating = false
                                                 if (scope.displayAppNameInHeader) isAppIcon = false
                                                 hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            } else { // Drag or tap
-                                                if (dragConsumed) { // Drag ended
-                                                    val distance = kotlin.math.sqrt(
-                                                        railOffset.x.toFloat().pow(2) + railOffset.y.toFloat().pow(2)
-                                                    )
-                                                    if (distance < AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
-                                                        railOffset = IntOffset.Zero
-                                                        isFloating = false
-                                                        if (scope.displayAppNameInHeader) isAppIcon = false
-                                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                    }
-                                                } else { // Tap
-                                                    showFloatingButtons = !showFloatingButtons
-                                                }
                                             }
+                                        } else { // Tap
+                                            showFloatingButtons = !showFloatingButtons
                                         }
-                                    } else {
-                                        detectTapGestures(
-                                            onTap = { isExpanded = !isExpanded },
-                                            onLongPress = {
-                                                if (scope.enableRailDragging) {
-                                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                    isFloating = true
-                                                    isExpanded = false
-                                                    if (scope.displayAppNameInHeader) isAppIcon = true
-                                                }
-                                            }
-                                        )
                                     }
                                 }
                             },
