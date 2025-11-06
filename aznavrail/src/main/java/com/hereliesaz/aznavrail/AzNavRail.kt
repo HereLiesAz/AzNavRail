@@ -48,9 +48,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.gestures.forEachGesture
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -80,7 +79,6 @@ import com.hereliesaz.aznavrail.util.text.AutoSizeText
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.pow
 
 object AzNavRail {
@@ -266,12 +264,7 @@ fun AzNavRail(
     }
 
     var isExpanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
-    var railOffset by remember { mutableStateOf(IntOffset.Zero) }
-    var isFloating by remember { mutableStateOf(false) }
-    var showFloatingButtons by remember { mutableStateOf(false) }
     var isAppIcon by remember { mutableStateOf(!scope.displayAppNameInHeader) }
-
-    val hapticFeedback = LocalHapticFeedback.current
 
     val railWidth by animateDpAsState(
         targetValue = if (isExpanded) scope.expandedRailWidth else scope.collapsedRailWidth,
@@ -387,67 +380,13 @@ fun AzNavRail(
         ) {
             NavigationRail(
                 modifier = Modifier
-                    .width(railWidth)
-                    .offset { railOffset },
+                    .width(railWidth),
                 containerColor = Color.Transparent,
                 header = {
                     Box(
                         modifier = Modifier
                             .padding(bottom = AzNavRailDefaults.HeaderPadding)
-                            .pointerInput(isFloating, scope.enableRailDragging) {
-                                awaitEachGesture {
-                                    val down = awaitFirstDown()
-                                    down.consume()
-
-                                    val longPress = coroutineScope.launch {
-                                        delay(viewConfiguration.longPressTimeoutMillis)
-                                        if (scope.enableRailDragging && !isFloating) {
-                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            isFloating = true
-                                            isExpanded = false
-                                            if (scope.displayAppNameInHeader) isAppIcon = true
-                                        }
-                                    }
-
-                                    var change = awaitPointerEvent()
-                                    while (longPress.isActive && change.changes.all { it.pressed }) {
-                                        change = awaitPointerEvent()
-                                    }
-                                    longPress.cancel()
-
-                                    if (isFloating) {
-                                        var dragConsumed = false
-                                        while (change.changes.all { it.pressed }) {
-                                            val dragChange = awaitPointerEvent().changes.first()
-                                            if (dragChange.positionChange() != Offset.Zero) {
-                                                dragConsumed = true
-                                                railOffset += IntOffset(
-                                                    dragChange.positionChange().x.toInt(),
-                                                    dragChange.positionChange().y.toInt()
-                                                )
-                                                dragChange.consume()
-                                            }
-                                            change = awaitPointerEvent()
-                                        }
-
-                                        if (dragConsumed) { // Drag ended
-                                            val distance = kotlin.math.sqrt(
-                                                railOffset.x.toFloat().pow(2) + railOffset.y.toFloat().pow(2)
-                                            )
-                                            if (distance < AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
-                                                railOffset = IntOffset.Zero
-                                                isFloating = false
-                                                if (scope.displayAppNameInHeader) isAppIcon = false
-                                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            }
-                                        } else { // Tap
-                                            showFloatingButtons = !showFloatingButtons
-                                        }
-                                    } else {
-                                        isExpanded = !isExpanded
-                                    }
-                                }
-                            },
+                            .clickable { isExpanded = !isExpanded },
                         contentAlignment = if (isAppIcon) Alignment.Center else Alignment.CenterStart
                     ) {
                         if (isAppIcon) {
@@ -604,10 +543,9 @@ fun AzNavRail(
                         }
                     }
                 } else {
-                    AnimatedVisibility(visible = !isFloating || showFloatingButtons) {
-                        Column(
-                            modifier = Modifier
-                                .padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding)
+                    Column(
+                        modifier = Modifier
+                            .padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding)
                                 .verticalScroll(rememberScrollState()),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
@@ -669,7 +607,6 @@ fun AzNavRail(
                                 )
                             }
                         }
-                    }
                 }
                 if (isExpanded) {
                     Box(
