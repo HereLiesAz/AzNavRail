@@ -9,6 +9,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,6 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -78,6 +80,7 @@ import com.hereliesaz.aznavrail.util.text.AutoSizeText
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.pow
 
 object AzNavRail {
@@ -398,7 +401,7 @@ fun AzNavRail(
 
                                     val longPress = coroutineScope.launch {
                                         delay(viewConfiguration.longPressTimeoutMillis)
-                                        if (scope.enableRailDragging) {
+                                        if (scope.enableRailDragging && !isFloating) {
                                             hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                             isFloating = true
                                             isExpanded = false
@@ -406,19 +409,15 @@ fun AzNavRail(
                                         }
                                     }
 
-                                    var event = awaitPointerEvent()
-                                    var change = event.changes.first()
-                                    while (longPress.isActive && change.pressed) {
-                                        event = awaitPointerEvent()
-                                        change = event.changes.first()
+                                    var change = awaitPointerEvent()
+                                    while (longPress.isActive && change.changes.all { it.pressed }) {
+                                        change = awaitPointerEvent()
                                     }
                                     longPress.cancel()
 
-                                    if (!isFloating) {
-                                        isExpanded = !isExpanded
-                                    } else {
+                                    if (isFloating) {
                                         var dragConsumed = false
-                                        while (change.pressed) {
+                                        while (change.changes.all { it.pressed }) {
                                             val dragChange = awaitPointerEvent().changes.first()
                                             if (dragChange.positionChange() != Offset.Zero) {
                                                 dragConsumed = true
@@ -428,7 +427,7 @@ fun AzNavRail(
                                                 )
                                                 dragChange.consume()
                                             }
-                                            change = dragChange
+                                            change = awaitPointerEvent()
                                         }
 
                                         if (dragConsumed) { // Drag ended
@@ -444,6 +443,8 @@ fun AzNavRail(
                                         } else { // Tap
                                             showFloatingButtons = !showFloatingButtons
                                         }
+                                    } else {
+                                        isExpanded = !isExpanded
                                     }
                                 }
                             },
