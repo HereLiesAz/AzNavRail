@@ -75,3 +75,13 @@ Swipe gestures near the app icon should have no effect. Actually, swipe to expan
 necessary. And the area for swipe to collapse SHOULD be a little wider than the expanded menu.
 
 Tapping outside of the menu should also collapse the menu. 
+
+Also, when in FAB mode, the app icon should snap back into place when brought near its original
+docked position in non-fab mode
+
+in FAB mode, if the app icon is long pressed, this should immediately disable FAB mode and redock
+the rail.
+
+the MENU is never supposed to be present when in FAB mode. If the app icon is long pressed while the
+menu is expanded, it should fold up into the app icon, and when in fab mode and the app icon is
+tapped, this should unfold the RAIL, not the menu. The menu should NEVER be available in FAB mode.
