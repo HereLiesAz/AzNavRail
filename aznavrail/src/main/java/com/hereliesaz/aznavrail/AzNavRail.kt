@@ -396,20 +396,19 @@ fun AzNavRail(
                         modifier = Modifier
                             .padding(bottom = AzNavRailDefaults.HeaderPadding)
                             .pointerInput(scope.enableRailDragging, isFloating) {
-                                if (scope.enableRailDragging) {
-                                    detectTapGestures(
-                                        onLongPress = {
-                                            if (!isFloating) {
-                                                hapticFeedback.performHapticFeedback(
-                                                    HapticFeedbackType.LongPress
-                                                )
-                                                isDragging = true
-                                                isFloating = true
-                                                if (scope.displayAppNameInHeader) isAppIcon = true
-                                            }
+                                detectTapGestures(
+                                    onTap = { onToggle() },
+                                    onLongPress = {
+                                        if (scope.enableRailDragging && !isFloating) {
+                                            hapticFeedback.performHapticFeedback(
+                                                HapticFeedbackType.LongPress
+                                            )
+                                            isDragging = true
+                                            isFloating = true
+                                            if (scope.displayAppNameInHeader) isAppIcon = true
                                         }
-                                    )
-                                }
+                                    }
+                                )
                             }
                             .offset { railOffset }
                             .pointerInput(isDragging) {
@@ -436,12 +435,7 @@ fun AzNavRail(
                                         )
                                     }
                                 }
-                            }
-                            .clickable(
-                                onClick = onToggle,
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ),
+                            },
                         contentAlignment = if (isAppIcon) Alignment.Center else Alignment.CenterStart
                     ) {
                         if (isAppIcon) {
