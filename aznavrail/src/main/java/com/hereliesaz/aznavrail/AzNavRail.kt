@@ -374,18 +374,18 @@ fun AzNavRail(
         }
         Row(
             modifier = Modifier.pointerInput(isExpanded, disableSwipeToOpen) {
-                detectHorizontalDragGestures { change, dragAmount ->
-                    val isSwipe = if (isExpanded) {
-                        dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX
-                    } else if (!disableSwipeToOpen) {
-                        dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX
-                    } else {
-                        false
-                    }
+                if (!disableSwipeToOpen) {
+                    detectHorizontalDragGestures { change, dragAmount ->
+                        val isSwipe = if (isExpanded) {
+                            dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX
+                        } else {
+                            dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX
+                        }
 
-                    if (isSwipe) {
-                        change.consume()
-                        onToggle()
+                        if (isSwipe) {
+                            change.consume()
+                            onToggle()
+                        }
                     }
                 }
             }
