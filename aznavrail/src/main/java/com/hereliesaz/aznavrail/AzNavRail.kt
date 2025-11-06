@@ -421,6 +421,7 @@ fun AzNavRail(
                                     }
                                 } else {
                                     detectTapGestures(
+                                        onDoubleTap = null,
                                         onTap = { onToggle() },
                                         onLongPress = {
                                             if (scope.enableRailDragging) {
