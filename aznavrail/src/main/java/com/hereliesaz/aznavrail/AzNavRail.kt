@@ -10,7 +10,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,13 +48,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -81,12 +75,12 @@ import com.hereliesaz.aznavrail.util.text.AutoSizeText
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.pow
 
 object AzNavRail {
     const val noTitle = "AZNAVRAIL_NO_TITLE"
 }
 
+private const val TAG = "AzNavRail"
 private object AzNavRailLogger {
     var enabled = true
     fun e(tag: String, message: String, throwable: Throwable? = null) {
@@ -271,7 +265,6 @@ fun AzNavRail(
     var showFloatingButtons by remember { mutableStateOf(false) }
     var isAppIcon by remember { mutableStateOf(!scope.displayAppNameInHeader) }
 
-    val hapticFeedback = LocalHapticFeedback.current
 
     val railWidth by animateDpAsState(
         targetValue = if (isExpanded) scope.expandedRailWidth else scope.collapsedRailWidth,
@@ -282,6 +275,7 @@ fun AzNavRail(
     val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
     var selectedItem by rememberSaveable { mutableStateOf<AzNavItem?>(null) }
     val hostStates = remember { mutableStateMapOf<String, Boolean>() }
+    val hapticFeedback = LocalHapticFeedback.current
 
     LaunchedEffect(scope.navItems) {
         val initialSelectedItem = if (currentDestination != null) {
@@ -420,7 +414,10 @@ fun AzNavRail(
                             .pointerInput(isFloating) {
                                 if (isFloating) {
                                     detectDragGestures { change, dragAmount ->
-                                        railOffset += IntOffset(dragAmount.x.toInt(), dragAmount.y.toInt())
+                                        railOffset += IntOffset(
+                                            dragAmount.x.toInt(),
+                                            dragAmount.y.toInt()
+                                        )
                                         change.consume()
                                     }
                                 }
@@ -499,11 +496,17 @@ fun AzNavRail(
                                                         job = coroutineScope.launch {
                                                             delay(1000L)
 
-                                                            val finalItemState =
-                                                                scope.navItems.find { it.id == item.id }
-                                                                    ?: item
+                                                            var finalItemState: AzNavItem? = null
+                                                            for (navItem in scope.navItems) {
+                                                                if (navItem.id == item.id) {
+                                                                    finalItemState = navItem
+                                                                    break
+                                                                }
+                                                            }
+
                                                             val currentStateInVm =
-                                                                finalItemState.selectedOption
+                                                                (finalItemState
+                                                                    ?: item).selectedOption
                                                             val targetState = nextOption
 
                                                             val currentIndexInVm =
@@ -608,9 +611,16 @@ fun AzNavRail(
                                         }
                                         val nextOption = enabledOptions[nextIndex]
 
-                                        val finalItemState =
-                                            scope.navItems.find { it.id == item.id } ?: item
-                                        val currentStateInVm = finalItemState.selectedOption
+                                        var finalItemState: AzNavItem? = null
+                                        for (navItem in scope.navItems) {
+                                            if (navItem.id == item.id) {
+                                                finalItemState = navItem
+                                                break
+                                            }
+                                        }
+
+                                        val currentStateInVm =
+                                            (finalItemState ?: item).selectedOption
                                         val targetState = nextOption
 
                                         val currentIndexInVm = options.indexOf(currentStateInVm)

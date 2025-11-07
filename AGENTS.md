@@ -51,17 +51,18 @@ an App icon. So it transforms into app icon when dragging is enabled, and transf
 name when docked back into place.
 
 When I tap the app icon/name, it should expand or collapse the rail, revealing or hiding the menu.
-When I tap and hold the app icon/name for 2/3 of a second, this should activate the drag and place
-function, which means if the app name was enabled, it turns into an app icon, all of the rail items
+When activating the drag and place function, otherwise called FAB mode, if the app name was enabled,
+it turns into an app icon. All of the rail items
 fold up into the app icon, and the icon can be moved anywhere on the screen as a fab. In this mode,
 tapping the app icon causes all of the rail items to unfold downward. If the app icon is tapped
 again, the rail items fold back up. If the app icon is dragged while the rail items are unfolded,
 then they immediately fold back up until the app icon is released. It's important that while the app
-icon is draggable, tap and holding does nothing because it would interfere with dragging. To disable
-dragging, the user drags the app icon to its home location, which is where it was when the user
-first long-pressed the app icon/name. I fact, if the user brings the app icon within half the app
-icon's width of its home location, the app icon should snap back into place. This should activate
-the original AzNavRail mode.
+icon is draggable,
+
+To disable dragging, the user drags the app icon to its home location, which is where it was when in
+docked mode.
+If the user brings the app icon within half the app icon's width of its home location, the app icon
+should snap back into place, activating the original docked mode.
 
 I need the sample app to show in the logcat every function it actively performs and every user
 interaction.
@@ -69,10 +70,9 @@ interaction.
 The only haptic feedback should be when fab mode is activated and deactivated, not at the start and
 end of every drag event.
 
-The menu SHOULD expand and collapse on single tap.
+The menu SHOULD expand and collapse on single tap of the app icon/name.
 
-Swipe gestures near the app icon should have no effect. Actually, swipe to expand isn't even
-necessary. And the area for swipe to collapse SHOULD be a little wider than the expanded menu.
+the area for swipe to collapse SHOULD be a little wider than the expanded menu.
 
 Tapping outside of the menu should also collapse the menu. 
 
@@ -85,3 +85,15 @@ the rail.
 the MENU is never supposed to be present when in FAB mode. If the app icon is long pressed while the
 menu is expanded, it should fold up into the app icon, and when in fab mode and the app icon is
 tapped, this should unfold the RAIL, not the menu. The menu should NEVER be available in FAB mode.
+
+both a tap and a long press are defined not by when the touch begins but when it ends. So the logic
+that makes a long press shouldn't be interfering with the logic that makes a tap. The gesture
+listener hears the touch begin, and then, if it ends before what is considered a long press, then
+it's considered a tap.
+
+let's have two kinds of swipes. Horizontal swipes expand and collapse the rail. But a vertical swipe
+immediately initiates FAB mode and undocks the rail.
+swipe up causes all the rail/menu items to fold up into the app icon. This means the rail is in FAB
+mode, in a resting state.
+A swipe down when docked immediately initiates FAB mode and causes the app icon to be dragged, so
+all the items fold up and the app icon is already being dragged around.
