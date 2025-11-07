@@ -26,7 +26,10 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 - **Standalone Components**: Use `AzButton`, `AzToggle`, `AzCycler`, and `AzDivider` on their own.
 - **Jetpack Navigation Integration**: Seamlessly integrate with Jetpack Navigation using the `navController`.
 - **Hierarchical Navigation**: Create nested menus with host and sub-items.
-- **Draggable Rail**: The rail can be detached and moved around the screen.
+- **Draggable Rail (FAB Mode)**: The rail can be detached and moved around the screen.
+- **Auto-sizing Text**: Text within rail buttons automatically resizes to fit without wrapping, unless a newline character is explicitly used.
+- **Toggle and Cycler Items**: `azRailToggle` and `azMenuToggle` provide a simple way to manage boolean states, while `azRailCycler` and `azMenuCycler` allow cycling through a list of options.
+- **Gesture Control**: Intuitive swipe and tap gestures for expanding, collapsing, and activating FAB mode.
 
 ## AzNavRail for Android (Jetpack Compose)
 
@@ -232,11 +235,18 @@ fun SampleScreen() {
 -   **Host Items**: These are top-level items that can contain sub-items. They can be placed in the rail or the menu.
 -   **Sub-Items**: These are nested items that are only visible when their host item is expanded. They can also be placed in the rail or the menu.
 
-### Draggable Rail
+### Draggable Rail (FAB Mode)
 
-The rail can be detached and moved around the screen by long-pressing the header icon. To enable this feature, set `enableRailDragging = true` in the `azSettings` block.
+The rail can be detached and moved around the screen by long-pressing the header icon, which activates "FAB Mode". To enable this feature, set `enableRailDragging = true` in the `azSettings` block.
 
-When the rail is in its floating state, the rail buttons will be hidden. A single tap on the header icon will toggle their visibility. To snap the rail back to its original position, drag it near the top-left corner of the screen.
+- **Activation**: Long-press the header (app icon or name) to undock the rail and enter FAB mode. A vertical swipe on the rail will also activate it. Haptic feedback confirms activation/deactivation.
+- **Appearance**: In FAB mode, the rail collapses into a floating action button (FAB) displaying the app icon. If the app name was displayed, it transforms into the icon.
+- **Interaction**:
+    - **Tap**: Tapping the FAB unfolds the rail items downwards. Tapping it again folds them back up. The menu is not available in FAB mode.
+    - **Drag**: The FAB can be dragged anywhere on the screen, but is constrained to stay within the top and bottom 10% of the screen. If the rail items are unfolded, they will automatically fold up when a drag begins and unfold when it ends.
+- **Deactivation**:
+    - **Snapping**: Drag the FAB close to its original docked position to snap it back into place, exiting FAB mode.
+    - **Long Press**: Long-pressing the FAB will also immediately re-dock the rail.
 
 ### API Reference
 
@@ -343,7 +353,7 @@ You may obtain a copy of the License at
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUTHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ```
