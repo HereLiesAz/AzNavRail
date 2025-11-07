@@ -1,10 +1,18 @@
 package com.hereliesaz.aznavrail
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
+import com.hereliesaz.aznavrail.model.AzButtonShape
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -27,8 +35,11 @@ fun AzButton(
     AzNavRailButton(
         onClick = onClick,
         text = text,
-        modifier = modifier,
-        color = color
+        color = color,
+        size = AzNavRailDefaults.HeaderIconSize,
+        shape = AzButtonShape.CIRCLE,
+        disabled = false,
+        isSelected = false
     )
 }
 
@@ -55,21 +66,26 @@ fun AzToggle(
     AzNavRailButton(
         onClick = onToggle,
         text = text,
-        modifier = modifier,
-        color = color
+        color = color,
+        size = AzNavRailDefaults.HeaderIconSize,
+        shape = AzButtonShape.CIRCLE,
+        disabled = false,
+        isSelected = false
     )
 }
 
 /**
  * A button that cycles through a list of options when clicked.
  *
- * The displayed option changes immediately on click, but the `onCycle` action is delayed
- * by one second. This allows for rapid cycling through options without triggering
- * an action for each intermediate selection. Each click resets the delay timer.
+ * The displayed option changes immediately on click, but the `onCycle`
+ * action is delayed by one second. This allows for rapid cycling through
+ * options without triggering an action for each intermediate selection.
+ * Each click resets the delay timer.
  *
  * @param options The list of options to cycle through.
  * @param selectedOption The currently selected option from the view model.
- * @param onCycle The callback to be invoked for the final selected option after a 1-second delay.
+ * @param onCycle The callback to be invoked for the final selected option
+ *    after a 1-second delay.
  * @param modifier The modifier to be applied to the button.
  * @param color The color of the button's border and text.
  */
@@ -114,7 +130,10 @@ fun AzCycler(
             }
         },
         text = displayedOption,
-        modifier = modifier,
-        color = color
+        color = color,
+        size = AzNavRailDefaults.HeaderIconSize,
+        shape = AzButtonShape.CIRCLE,
+        disabled = false,
+        isSelected = false
     )
 }

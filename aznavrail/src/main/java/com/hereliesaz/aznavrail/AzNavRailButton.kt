@@ -5,27 +5,26 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.hereliesaz.aznavrail.util.text.AutoSizeText
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.model.AzButtonShape
+import com.hereliesaz.aznavrail.util.text.AutoSizeText
 
 /**
- * A circular, text-only button with auto-sizing text, designed for the collapsed navigation rail.
+ * A circular, text-only button with auto-sizing text, designed for the
+ * collapsed navigation rail.
  *
  * @param onClick A lambda to be executed when the button is clicked.
  * @param text The text to display on the button.
@@ -56,8 +55,12 @@ fun AzNavRailButton(
     }
 
     val buttonModifier = when (shape) {
-        AzButtonShape.CIRCLE -> modifier.size(size).aspectRatio(1f)
-        AzButtonShape.SQUARE -> modifier.size(size).aspectRatio(1f)
+        AzButtonShape.CIRCLE -> modifier
+            .size(size)
+            .aspectRatio(1f)
+        AzButtonShape.SQUARE -> modifier
+            .size(size)
+            .aspectRatio(1f)
         AzButtonShape.RECTANGLE, AzButtonShape.NONE -> modifier.height(48.dp)
     }
 
