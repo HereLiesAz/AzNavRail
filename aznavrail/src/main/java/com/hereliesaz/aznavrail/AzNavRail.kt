@@ -455,69 +455,53 @@ fun AzNavRail(
                                 }
                             } else { // Docked state
                                 val down = awaitFirstDown(requireUnconsumed = false)
+                                var totalDrag = Offset.Zero
+                                var dragStarted = false
 
-                                if (down.position.y < headerHeight) {
-                                    // Pointer down in header -> Handle tap
-                                    var dragStarted = false
-                                    var totalDrag = Offset.Zero
-                                    var finished = false
-                                    while (!finished) {
-                                        val event = awaitPointerEvent()
-                                        val change = event.changes.first()
+                                var finished = false
+                                while (!finished) {
+                                    val event = awaitPointerEvent()
+                                    val change = event.changes.first()
 
-                                        if (change.pressed) {
-                                            totalDrag += change.positionChange()
-                                            if (totalDrag.getDistance() > viewConfiguration.touchSlop) {
-                                                dragStarted = true
+                                    if (change.pressed) {
+                                        totalDrag += change.positionChange()
+                                        val absX = kotlin.math.abs(totalDrag.x)
+                                        val absY = kotlin.math.abs(totalDrag.y)
+                                        val slop = viewConfiguration.touchSlop
+
+                                        if (!dragStarted && (absX > slop || absY > slop)) {
+                                            dragStarted = true
+                                            // If it's a horizontal swipe outside the header, consume to prevent vertical scroll
+                                            if (absX > absY && down.position.y > headerHeight) {
+                                                change.consume()
                                             }
-                                        } else { // Finger lifted
-                                            finished = true
-                                            if (!dragStarted) {
-                                                isExpanded = !isExpanded
+                                        }
+                                    } else { // Finger lifted
+                                        finished = true
+                                    }
+                                }
+
+                                if (dragStarted) {
+                                    // It was a swipe
+                                    val absX = kotlin.math.abs(totalDrag.x)
+                                    val absY = kotlin.math.abs(totalDrag.y)
+
+                                    // Only process horizontal swipes that started below the header
+                                    if (absX > absY && down.position.y > headerHeight) {
+                                        if (isExpanded) {
+                                            if (totalDrag.x < -AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
+                                                isExpanded = false
+                                            }
+                                        } else if (!disableSwipeToOpen) {
+                                            if (totalDrag.x > AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
+                                                isExpanded = true
                                             }
                                         }
                                     }
                                 } else {
-                                    // Pointer down in rail items area -> Handle horizontal swipe
-                                    var totalDrag = Offset.Zero
-                                    var dragStarted = false
-                                    var finished = false
-
-                                    while (!finished) {
-                                        val event = awaitPointerEvent()
-                                        val change = event.changes.first()
-
-                                        if (change.pressed) {
-                                            totalDrag += change.positionChange()
-                                            val absX = kotlin.math.abs(totalDrag.x)
-                                            val absY = kotlin.math.abs(totalDrag.y)
-                                            val slop = viewConfiguration.touchSlop
-
-                                            if (!dragStarted && (absX > slop || absY > slop)) {
-                                                dragStarted = true
-                                                // If horizontal drag, consume to prevent vertical scroll
-                                                if (absX > absY) {
-                                                    change.consume()
-                                                }
-                                            }
-                                        } else { // Finger lifted
-                                            finished = true
-                                            if (dragStarted) {
-                                                val absX = kotlin.math.abs(totalDrag.x)
-                                                val absY = kotlin.math.abs(totalDrag.y)
-                                                if (absX > absY) { // It was a horizontal swipe
-                                                    if (isExpanded) {
-                                                        if (totalDrag.x < -AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
-                                                            isExpanded = false
-                                                        }
-                                                    } else if (!disableSwipeToOpen) {
-                                                        if (totalDrag.x > AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
-                                                            isExpanded = true
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
+                                    // It was a tap
+                                    if (down.position.y < headerHeight) {
+                                        isExpanded = !isExpanded
                                     }
                                 }
                             }
