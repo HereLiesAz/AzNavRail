@@ -100,3 +100,10 @@ all the items fold up and the app icon is already being dragged around.
 The vertical swipe logic should apply to the entire rail. A swipe up might start at the bottom or
 the middle of the rail. A swipe down will always start near the app icon/name.
 In fab mode, dragging must not be mistaken for a long press.
+In FAB mode, the app icon must NOT be allowed above the top 10% or the bottom 10% of the screen.
+Also, in FAB mode, a packed rail must be forced at all times. And, if the rail items are displayed,
+when a drag begins, the rail items must immediately fold up into the app icon. When the rail items
+are visible when a drag begins, they must unfold downward when the drag ends
+In FAB mode, the rail items must also not be allowed above the top 10% of the screen nor the bottom
+10% of the screen. This means that the rail should unfold downward, and push the location of the app
+icon upward if necessary.
