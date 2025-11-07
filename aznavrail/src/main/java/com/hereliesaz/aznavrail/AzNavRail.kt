@@ -8,8 +8,8 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,10 +47,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
@@ -166,12 +164,12 @@ private object AzNavRailDefaults {
 }
 
 /**
- * Represents the transient state of a cycler item, tracking the displayed option and the
- * coroutine job for the delayed action.
+ * Represents the transient state of a cycler item, tracking the displayed
+ * option and the coroutine job for the delayed action.
  *
  * @param displayedOption The currently displayed option in the UI.
- * @param job The coroutine job for handling the delayed click action. This is cancelled and
- * restarted on each click.
+ * @param job The coroutine job for handling the delayed click action. This
+ *    is cancelled and restarted on each click.
  */
 private data class CyclerTransientState(
     val displayedOption: String,
@@ -194,27 +192,36 @@ private object CenteredPopupPositionProvider : PopupPositionProvider {
 /**
  * An M3-style navigation rail that expands into a menu drawer.
  *
- * This composable provides a vertical navigation rail that can be expanded to a full menu drawer.
- * It is designed to be "batteries-included," providing common behaviors and features out-of-the-box.
+ * This composable provides a vertical navigation rail that can be expanded
+ * to a full menu drawer. It is designed to be "batteries-included,"
+ * providing common behaviors and features out-of-the-box.
  *
- * The rail is responsive and will adjust its layout for landscape and portrait orientations.
- * The content of both the collapsed rail and the expanded menu is scrollable, allowing for a large
- * number of navigation items.
+ * The rail is responsive and will adjust its layout for landscape and
+ * portrait orientations. The content of both the collapsed rail and the
+ * expanded menu is scrollable, allowing for a large number of navigation
+ * items.
  *
- * The content of the rail and menu is defined using a DSL within the `content` lambda.
+ * The content of the rail and menu is defined using a DSL within the
+ * `content` lambda.
  *
- * The header of the rail will automatically display your app's icon by default. This can be changed
- * to display the app's name instead by using the `azSettings` function in the content lambda.
- * Clicking it will expand or collapse the rail.
+ * The header of the rail will automatically display your app's icon by
+ * default. This can be changed to display the app's name instead by using
+ * the `azSettings` function in the content lambda. Clicking it will expand
+ * or collapse the rail.
  *
- * Standard and toggle menu items will collapse the rail upon being tapped. Cycler items will
- * only collapse the rail after the user has settled on a choice for at least one second.
+ * Standard and toggle menu items will collapse the rail upon being tapped.
+ * Cycler items will only collapse the rail after the user has settled on a
+ * choice for at least one second.
  *
  * @param modifier The modifier to be applied to the navigation rail.
- * @param navController An optional [NavController] to enable integration with Jetpack Navigation.
- * @param currentDestination The route of the current destination, used to highlight the active item.
- * @param isLandscape A boolean to indicate if the device is in landscape mode.
- * @param initiallyExpanded Whether the navigation rail is expanded by default.
+ * @param navController An optional [NavController] to enable integration
+ *    with Jetpack Navigation.
+ * @param currentDestination The route of the current destination, used to
+ *    highlight the active item.
+ * @param isLandscape A boolean to indicate if the device is in landscape
+ *    mode.
+ * @param initiallyExpanded Whether the navigation rail is expanded by
+ *    default.
  * @param disableSwipeToOpen Whether to disable the swipe-to-open gesture.
  * @param content The DSL content for the navigation rail.
  */
@@ -390,9 +397,16 @@ fun AzNavRail(
                 modifier = Modifier
                     .width(railWidth)
                     .offset { railOffset }
-                    .pointerInput(isFloating, scope.enableRailDragging, isExpanded, disableSwipeToOpen) {
+                    .pointerInput(
+                        isFloating,
+                        scope.enableRailDragging,
+                        isExpanded,
+                        disableSwipeToOpen,
+                        scope.displayAppNameInHeader
+                    ) {
                         awaitEachGesture {
                             if (isFloating) {
+                                // *** GESTURE LOGIC FOR FAB (FLOATING) MODE ***
                                 val down = awaitFirstDown()
                                 val longPressJob = coroutineScope.launch {
                                     delay(viewConfiguration.longPressTimeoutMillis)
@@ -424,11 +438,15 @@ fun AzNavRail(
 
                                         if (dragStarted) {
                                             val newY = railOffset.y + positionChange.y
-                                            val screenHeightPx = with(density) { screenHeight.toPx() }
+                                            val screenHeightPx =
+                                                with(density) { screenHeight.toPx() }
                                             val topBound = 0f
                                             val bottomBound = screenHeightPx * 0.9f - headerHeight
                                             val clampedY = newY.coerceIn(topBound, bottomBound)
-                                            railOffset = IntOffset(railOffset.x + positionChange.x.roundToInt(), clampedY.roundToInt())
+                                            railOffset = IntOffset(
+                                                railOffset.x + positionChange.x.roundToInt(),
+                                                clampedY.roundToInt()
+                                            )
                                             event.changes.forEach { it.consume() }
                                             dragConsumed = true
                                         }
@@ -440,7 +458,8 @@ fun AzNavRail(
                                 longPressJob.cancel()
                                 if (dragConsumed) {
                                     val distance = kotlin.math.sqrt(
-                                        railOffset.x.toFloat().pow(2) + railOffset.y.toFloat().pow(2)
+                                        railOffset.x.toFloat().pow(2) + railOffset.y.toFloat()
+                                            .pow(2)
                                     )
                                     if (distance < AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
                                         railOffset = IntOffset.Zero
@@ -451,58 +470,136 @@ fun AzNavRail(
                                         showFloatingButtons = true
                                     }
                                 } else {
+                                    // No drag, was a tap
                                     showFloatingButtons = !showFloatingButtons
                                 }
-                            } else { // Docked state
+                            } else {
+                                // *** GESTURE LOGIC FOR DOCKED MODE ***
                                 val down = awaitFirstDown(requireUnconsumed = false)
-                                var totalDrag = Offset.Zero
-                                var dragStarted = false
 
-                                var finished = false
-                                while (!finished) {
-                                    val event = awaitPointerEvent()
-                                    val change = event.changes.first()
-
-                                    if (change.pressed) {
-                                        totalDrag += change.positionChange()
-                                        val absX = kotlin.math.abs(totalDrag.x)
-                                        val absY = kotlin.math.abs(totalDrag.y)
-                                        val slop = viewConfiguration.touchSlop
-
-                                        if (!dragStarted && (absX > slop || absY > slop)) {
-                                            dragStarted = true
-                                            // If it's a horizontal swipe outside the header, consume to prevent vertical scroll
-                                            if (absX > absY && down.position.y > headerHeight) {
-                                                change.consume()
-                                            }
-                                        }
-                                    } else { // Finger lifted
-                                        finished = true
-                                    }
-                                }
-
-                                if (dragStarted) {
-                                    // It was a swipe
-                                    val absX = kotlin.math.abs(totalDrag.x)
-                                    val absY = kotlin.math.abs(totalDrag.y)
-
-                                    // Only process horizontal swipes that started below the header
-                                    if (absX > absY && down.position.y > headerHeight) {
-                                        if (isExpanded) {
-                                            if (totalDrag.x < -AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
-                                                isExpanded = false
-                                            }
-                                        } else if (!disableSwipeToOpen) {
-                                            if (totalDrag.x > AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
-                                                isExpanded = true
-                                            }
+                                if (down.position.y < headerHeight) {
+                                    // *** GESTURE ON HEADER ***
+                                    val longPressJob = coroutineScope.launch {
+                                        delay(viewConfiguration.longPressTimeoutMillis)
+                                        if (scope.enableRailDragging) {
+                                            isFloating = true
+                                            isExpanded = false
+                                            if (scope.displayAppNameInHeader) isAppIcon = true
+                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            down.consume()
                                         }
                                     }
-                                } else {
-                                    // It was a tap
-                                    if (down.position.y < headerHeight) {
+
+                                    var dragStarted = false
+                                    var dragConsumed = false
+                                    var totalDrag = Offset.Zero
+
+                                    var finished = false
+                                    while (!finished) {
+                                        val event = awaitPointerEvent()
+                                        val change = event.changes.first()
+
+                                        if (change.pressed) {
+                                            totalDrag += change.positionChange()
+                                            val absX = kotlin.math.abs(totalDrag.x)
+                                            val absY = kotlin.math.abs(totalDrag.y)
+                                            val slop = viewConfiguration.touchSlop
+
+                                            if (!dragStarted && (absX > slop || absY > slop)) {
+                                                dragStarted = true
+                                                longPressJob.cancel() // It's a drag, not a long press
+                                            }
+
+                                            if (dragStarted) {
+                                                // Check for Vertical Swipe to enter FAB mode
+                                                if (absY > absX && scope.enableRailDragging) {
+                                                    isFloating = true
+                                                    isExpanded = false
+                                                    if (scope.displayAppNameInHeader) isAppIcon =
+                                                        true
+                                                    hapticFeedback.performHapticFeedback(
+                                                        HapticFeedbackType.LongPress
+                                                    ) // Using long press haptic for mode change
+
+                                                    // Start dragging immediately
+                                                    railOffset = IntOffset(
+                                                        railOffset.x + totalDrag.x.roundToInt(),
+                                                        totalDrag.y.roundToInt()
+                                                    )
+                                                    event.changes.forEach { it.consume() }
+                                                    dragConsumed = true
+                                                    finished =
+                                                        true // Exit this loop, FAB mode logic will take over next gesture
+                                                } else {
+                                                    // It's a horizontal drag or other, consume to prevent parent scrolling
+                                                    change.consume()
+                                                    dragConsumed = true
+                                                }
+                                            }
+                                        } else { // Finger lifted
+                                            finished = true
+                                        }
+                                    }
+
+                                    longPressJob.cancel() // Cancel job if finger lifted before long press
+
+                                    if (!dragStarted && !dragConsumed) {
+                                        // It was a CLEAN TAP on the header
+                                        isExpanded = !isExpanded
+                                    } else if (dragConsumed && !isFloating) {
+                                        // This was a "DIRTY TAP" on the header that didn't trigger vertical drag
                                         isExpanded = !isExpanded
                                     }
+
+                                } else {
+                                    // *** GESTURE ON RAIL BODY ***
+                                    // Only handle horizontal swipes
+                                    var totalDrag = Offset.Zero
+                                    var dragStarted = false
+
+                                    var finished = false
+                                    while (!finished) {
+                                        val event = awaitPointerEvent()
+                                        val change = event.changes.first()
+
+                                        if (change.pressed) {
+                                            totalDrag += change.positionChange()
+                                            val absX = kotlin.math.abs(totalDrag.x)
+                                            val absY = kotlin.math.abs(totalDrag.y)
+                                            val slop = viewConfiguration.touchSlop
+
+                                            if (!dragStarted && (absX > slop || absY > slop)) {
+                                                dragStarted = true
+                                            }
+
+                                            if (dragStarted) {
+                                                if (absX > absY) { // Horizontal drag
+                                                    change.consume() // Consume horizontal drag to prevent parent
+                                                }
+                                                // Let vertical drag pass through for the scroller
+                                            }
+                                        } else { // Finger lifted
+                                            finished = true
+                                        }
+                                    }
+
+                                    if (dragStarted) {
+                                        val absX = kotlin.math.abs(totalDrag.x)
+                                        val absY = kotlin.math.abs(totalDrag.y)
+
+                                        if (absX > absY) { // It was a horizontal swipe
+                                            if (isExpanded) {
+                                                if (totalDrag.x < -AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
+                                                    isExpanded = false
+                                                }
+                                            } else if (!disableSwipeToOpen) {
+                                                if (totalDrag.x > AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
+                                                    isExpanded = true
+                                                }
+                                            }
+                                        }
+                                    }
+                                    // Tap on rail body does nothing.
                                 }
                             }
                         }
@@ -740,7 +837,7 @@ fun AzNavRail(
                                     onRailCyclerClick = onRailCyclerClick,
                                     onItemSelected = { selectedItem = it },
                                     hostStates = hostStates,
-                                     packRailButtons = if (isFloating) true else scope.packRailButtons
+                                    packRailButtons = if (isFloating) true else scope.packRailButtons
                                 )
                             }
                         }
@@ -833,14 +930,16 @@ private fun handleHostItemClick(
 /**
  * Composable for displaying a single item in the expanded menu.
  *
- * This composable handles the display and interaction for all types of menu items, including
- * standard, toggle, and cycler items. It supports multi-line text with indentation for all
- * lines after the first.
+ * This composable handles the display and interaction for all types of
+ * menu items, including standard, toggle, and cycler items. It supports
+ * multi-line text with indentation for all lines after the first.
  *
  * @param item The navigation item to display.
- * @param onCyclerClick The click handler for cycler items, which includes the delay logic.
- * @param onToggle The click handler for toggling the rail's expanded state. This is called
- * immediately for standard and toggle items, and with a delay for cycler items.
+ * @param onCyclerClick The click handler for cycler items, which includes
+ *    the delay logic.
+ * @param onToggle The click handler for toggling the rail's expanded
+ *    state. This is called immediately for standard and toggle items, and
+ *    with a delay for cycler items.
  */
 @Composable
 private fun MenuItem(
