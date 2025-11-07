@@ -394,7 +394,15 @@ fun AzNavRail(
                         awaitEachGesture {
                             if (isFloating) {
                                 val down = awaitFirstDown()
-                                val longPressJob = coroutineScope.launch { delay(viewConfiguration.longPressTimeoutMillis) }
+                                val longPressJob = coroutineScope.launch {
+                                    delay(viewConfiguration.longPressTimeoutMillis)
+                                    railOffset = IntOffset.Zero
+                                    isFloating = false
+                                    if (scope.displayAppNameInHeader) isAppIcon = false
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    down.consume()
+                                }
+
                                 var dragStarted = false
                                 var dragConsumed = false
 
@@ -417,7 +425,7 @@ fun AzNavRail(
                                         if (dragStarted) {
                                             val newY = railOffset.y + positionChange.y
                                             val screenHeightPx = with(density) { screenHeight.toPx() }
-                                            val topBound = screenHeightPx * 0.1f
+                                            val topBound = 0f
                                             val bottomBound = screenHeightPx * 0.9f - headerHeight
                                             val clampedY = newY.coerceIn(topBound, bottomBound)
                                             railOffset = IntOffset(railOffset.x + positionChange.x.roundToInt(), clampedY.roundToInt())
@@ -429,34 +437,26 @@ fun AzNavRail(
                                     }
                                 }
 
-                                if (longPressJob.isCompleted && !dragConsumed) {
-                                    railOffset = IntOffset.Zero
-                                    isFloating = false
-                                    if (scope.displayAppNameInHeader) isAppIcon = false
-                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                } else {
-                                    longPressJob.cancel()
-                                    if (dragConsumed) {
-                                        val distance = kotlin.math.sqrt(
-                                            railOffset.x.toFloat().pow(2) + railOffset.y.toFloat().pow(2)
-                                        )
-                                        if (distance < AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
-                                            railOffset = IntOffset.Zero
-                                            isFloating = false
-                                            if (scope.displayAppNameInHeader) isAppIcon = false
-                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        } else if (wasVisibleOnDragStart) {
-                                            showFloatingButtons = true
-                                        }
-                                    } else {
-                                        showFloatingButtons = !showFloatingButtons
+                                longPressJob.cancel()
+                                if (dragConsumed) {
+                                    val distance = kotlin.math.sqrt(
+                                        railOffset.x.toFloat().pow(2) + railOffset.y.toFloat().pow(2)
+                                    )
+                                    if (distance < AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
+                                        railOffset = IntOffset.Zero
+                                        isFloating = false
+                                        if (scope.displayAppNameInHeader) isAppIcon = false
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    } else if (wasVisibleOnDragStart) {
+                                        showFloatingButtons = true
                                     }
+                                } else {
+                                    showFloatingButtons = !showFloatingButtons
                                 }
                             } else { // Docked state
                                 val down = awaitFirstDown(requireUnconsumed = false)
                                 var dragStarted = false
                                 var totalDrag = Offset.Zero
-                                var isVerticalDrag = false
 
                                 var finished = false
                                 while (!finished) {
@@ -465,50 +465,12 @@ fun AzNavRail(
 
                                     if (change.pressed) {
                                         totalDrag += change.positionChange()
-                                        val absX = kotlin.math.abs(totalDrag.x)
-                                        val absY = kotlin.math.abs(totalDrag.y)
-                                        val slop = viewConfiguration.touchSlop
-
-                                        if (!dragStarted && (absX > slop || absY > slop)) {
+                                        if (totalDrag.getDistance() > viewConfiguration.touchSlop) {
                                             dragStarted = true
-                                            isVerticalDrag = absY > absX
-                                        }
-
-                                        if (dragStarted) {
-                                            if (isVerticalDrag) {
-                                                if (scope.enableRailDragging) {
-                                                    hapticFeedback.performHapticFeedback(
-                                                        HapticFeedbackType.LongPress
-                                                    )
-                                                    isFloating = true
-                                                    isExpanded = false
-                                                    if (scope.displayAppNameInHeader) isAppIcon =
-                                                        true
-                                                    railOffset = IntOffset(
-                                                        totalDrag.x.toInt(),
-                                                        totalDrag.y.toInt()
-                                                    )
-                                                    event.changes.forEach { it.consume() }
-                                                    finished =
-                                                        true // Exit loop to let the next gesture cycle handle floating drag
-                                                }
-                                            } else { // Horizontal drag
-                                                event.changes.forEach { it.consume() }
-                                            }
                                         }
                                     } else { // Finger lifted
                                         finished = true
-                                        if (dragStarted && !isVerticalDrag) { // Horizontal drag finished
-                                            if (isExpanded) {
-                                                if (totalDrag.x < -AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
-                                                    isExpanded = false
-                                                }
-                                            } else if (!disableSwipeToOpen) {
-                                                if (totalDrag.x > AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
-                                                    isExpanded = true
-                                                }
-                                            }
-                                        } else if (!dragStarted) { // Tap
+                                        if (!dragStarted) { // Tap
                                             if (down.position.y < headerHeight) {
                                                 isExpanded = !isExpanded
                                             }
@@ -676,7 +638,16 @@ fun AzNavRail(
                             }
                         }
                         if (scope.showFooter) {
-                            Footer(appName = appName, onToggle = { isExpanded = !isExpanded })
+                            Footer(
+                                appName = appName,
+                                onToggle = { isExpanded = !isExpanded },
+                                onUndock = {
+                                    isFloating = true
+                                    isExpanded = false
+                                    if (scope.displayAppNameInHeader) isAppIcon = true
+                                },
+                                scope = scope
+                            )
                         }
                     }
                 } else {
@@ -923,7 +894,12 @@ private fun MenuItem(
  * @param onToggle The click handler for toggling the rail's expanded state.
  */
 @Composable
-private fun Footer(appName: String, onToggle: () -> Unit) {
+private fun Footer(
+    appName: String,
+    onToggle: () -> Unit,
+    onUndock: () -> Unit,
+    scope: AzNavRailScopeImpl
+) {
     val context = LocalContext.current
     val onAboutClick: () -> Unit = remember(context, appName) {
         {
@@ -968,6 +944,17 @@ private fun Footer(appName: String, onToggle: () -> Unit) {
 
     Column {
         AzDivider()
+        if (scope.enableRailDragging) {
+            MenuItem(
+                item = AzNavItem(id = "undock", text = "Undock", isRailItem = false),
+                navController = null,
+                isSelected = false,
+                onClick = onUndock,
+                onCyclerClick = null,
+                onToggle = onToggle,
+                onItemClick = {}
+            )
+        }
         MenuItem(
             item = AzNavItem(id = "about", text = "About", isRailItem = false),
             navController = null,
