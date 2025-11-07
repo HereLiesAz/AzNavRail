@@ -390,7 +390,7 @@ fun AzNavRail(
                 modifier = Modifier
                     .width(railWidth)
                     .offset { railOffset }
-                    .pointerInput(isFloating, scope.enableRailDragging) {
+                    .pointerInput(isFloating, scope.enableRailDragging, isExpanded, disableSwipeToOpen) {
                         awaitEachGesture {
                             if (isFloating) {
                                 val down = awaitFirstDown()
@@ -455,24 +455,67 @@ fun AzNavRail(
                                 }
                             } else { // Docked state
                                 val down = awaitFirstDown(requireUnconsumed = false)
-                                var dragStarted = false
-                                var totalDrag = Offset.Zero
 
-                                var finished = false
-                                while (!finished) {
-                                    val event = awaitPointerEvent()
-                                    val change = event.changes.first()
+                                if (down.position.y < headerHeight) {
+                                    // Pointer down in header -> Handle tap
+                                    var dragStarted = false
+                                    var totalDrag = Offset.Zero
+                                    var finished = false
+                                    while (!finished) {
+                                        val event = awaitPointerEvent()
+                                        val change = event.changes.first()
 
-                                    if (change.pressed) {
-                                        totalDrag += change.positionChange()
-                                        if (totalDrag.getDistance() > viewConfiguration.touchSlop) {
-                                            dragStarted = true
-                                        }
-                                    } else { // Finger lifted
-                                        finished = true
-                                        if (!dragStarted) { // Tap
-                                            if (down.position.y < headerHeight) {
+                                        if (change.pressed) {
+                                            totalDrag += change.positionChange()
+                                            if (totalDrag.getDistance() > viewConfiguration.touchSlop) {
+                                                dragStarted = true
+                                            }
+                                        } else { // Finger lifted
+                                            finished = true
+                                            if (!dragStarted) {
                                                 isExpanded = !isExpanded
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    // Pointer down in rail items area -> Handle horizontal swipe
+                                    var totalDrag = Offset.Zero
+                                    var dragStarted = false
+                                    var finished = false
+
+                                    while (!finished) {
+                                        val event = awaitPointerEvent()
+                                        val change = event.changes.first()
+
+                                        if (change.pressed) {
+                                            totalDrag += change.positionChange()
+                                            val absX = kotlin.math.abs(totalDrag.x)
+                                            val absY = kotlin.math.abs(totalDrag.y)
+                                            val slop = viewConfiguration.touchSlop
+
+                                            if (!dragStarted && (absX > slop || absY > slop)) {
+                                                dragStarted = true
+                                                // If horizontal drag, consume to prevent vertical scroll
+                                                if (absX > absY) {
+                                                    change.consume()
+                                                }
+                                            }
+                                        } else { // Finger lifted
+                                            finished = true
+                                            if (dragStarted) {
+                                                val absX = kotlin.math.abs(totalDrag.x)
+                                                val absY = kotlin.math.abs(totalDrag.y)
+                                                if (absX > absY) { // It was a horizontal swipe
+                                                    if (isExpanded) {
+                                                        if (totalDrag.x < -AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
+                                                            isExpanded = false
+                                                        }
+                                                    } else if (!disableSwipeToOpen) {
+                                                        if (totalDrag.x > AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
+                                                            isExpanded = true
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                     }
