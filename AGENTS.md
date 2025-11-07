@@ -97,3 +97,6 @@ swipe up causes all the rail/menu items to fold up into the app icon. This means
 mode, in a resting state.
 A swipe down when docked immediately initiates FAB mode and causes the app icon to be dragged, so
 all the items fold up and the app icon is already being dragged around.
+The vertical swipe logic should apply to the entire rail. A swipe up might start at the bottom or
+the middle of the rail. A swipe down will always start near the app icon/name.
+In fab mode, dragging must not be mistaken for a long press.
