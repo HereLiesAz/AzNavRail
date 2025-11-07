@@ -8,6 +8,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -48,8 +49,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.forEachGesture
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -264,7 +266,12 @@ fun AzNavRail(
     }
 
     var isExpanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
+    var railOffset by remember { mutableStateOf(IntOffset.Zero) }
+    var isFloating by remember { mutableStateOf(false) }
+    var showFloatingButtons by remember { mutableStateOf(false) }
     var isAppIcon by remember { mutableStateOf(!scope.displayAppNameInHeader) }
+
+    val hapticFeedback = LocalHapticFeedback.current
 
     val railWidth by animateDpAsState(
         targetValue = if (isExpanded) scope.expandedRailWidth else scope.collapsedRailWidth,
@@ -380,13 +387,44 @@ fun AzNavRail(
         ) {
             NavigationRail(
                 modifier = Modifier
-                    .width(railWidth),
+                    .width(railWidth)
+                    .offset { railOffset },
                 containerColor = Color.Transparent,
                 header = {
                     Box(
                         modifier = Modifier
                             .padding(bottom = AzNavRailDefaults.HeaderPadding)
-                            .clickable { isExpanded = !isExpanded },
+                            .combinedClickable(
+                                onClick = {
+                                    if (isFloating) {
+                                        showFloatingButtons = !showFloatingButtons
+                                    } else {
+                                        isExpanded = !isExpanded
+                                    }
+                                },
+                                onLongClick = {
+                                    if (scope.enableRailDragging) {
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        if (isFloating) {
+                                            isFloating = false
+                                            railOffset = IntOffset.Zero
+                                            if (scope.displayAppNameInHeader) isAppIcon = false
+                                        } else {
+                                            isFloating = true
+                                            isExpanded = false
+                                            if (scope.displayAppNameInHeader) isAppIcon = true
+                                        }
+                                    }
+                                }
+                            )
+                            .pointerInput(isFloating) {
+                                if (isFloating) {
+                                    detectDragGestures { change, dragAmount ->
+                                        railOffset += IntOffset(dragAmount.x.toInt(), dragAmount.y.toInt())
+                                        change.consume()
+                                    }
+                                }
+                            },
                         contentAlignment = if (isAppIcon) Alignment.Center else Alignment.CenterStart
                     ) {
                         if (isAppIcon) {
@@ -543,9 +581,10 @@ fun AzNavRail(
                         }
                     }
                 } else {
-                    Column(
-                        modifier = Modifier
-                            .padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding)
+                    AnimatedVisibility(visible = !isFloating || showFloatingButtons) {
+                        Column(
+                            modifier = Modifier
+                                .padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding)
                                 .verticalScroll(rememberScrollState()),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
@@ -607,6 +646,7 @@ fun AzNavRail(
                                 )
                             }
                         }
+                    }
                 }
                 if (isExpanded) {
                     Box(
