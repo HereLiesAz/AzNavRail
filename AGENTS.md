@@ -1,4 +1,4 @@
-All changes must be backward-compatible.
+This document serves as a detailed specification and behavior guide for the AzNavRail component. All changes must be backward-compatible.
 
 - The rail buttons must be a transparent shape with a colored stroke.
 
