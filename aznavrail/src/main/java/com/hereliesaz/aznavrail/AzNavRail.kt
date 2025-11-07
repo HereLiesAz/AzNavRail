@@ -57,6 +57,7 @@ import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.text.font.FontWeight
@@ -81,6 +82,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.pow
+import kotlin.math.roundToInt
 
 object AzNavRail {
     const val noTitle = "AZNAVRAIL_NO_TITLE"
@@ -268,8 +270,10 @@ fun AzNavRail(
     var railOffset by remember { mutableStateOf(IntOffset.Zero) }
     var isFloating by remember { mutableStateOf(false) }
     var showFloatingButtons by remember { mutableStateOf(false) }
+    var wasVisibleOnDragStart by remember { mutableStateOf(false) }
     var isAppIcon by remember { mutableStateOf(!scope.displayAppNameInHeader) }
     var headerHeight by remember { mutableStateOf(0) }
+    var railItemsHeight by remember { mutableStateOf(0) }
 
     val hapticFeedback = LocalHapticFeedback.current
 
@@ -335,6 +339,19 @@ fun AzNavRail(
     val screenWidth = configuration.screenWidthDp.dp
     val screenHeight = configuration.screenHeightDp.dp
     val viewConfiguration = LocalViewConfiguration.current
+    val density = LocalDensity.current
+
+    LaunchedEffect(showFloatingButtons) {
+        if (showFloatingButtons) {
+            val screenHeightPx = with(density) { screenHeight.toPx() }
+            val bottomBound = screenHeightPx * 0.9f
+            val railBottom = railOffset.y + headerHeight + railItemsHeight
+            if (railBottom > bottomBound) {
+                val newY = bottomBound - headerHeight - railItemsHeight
+                railOffset = IntOffset(railOffset.x, newY.roundToInt())
+            }
+        }
+    }
 
     Box(modifier = modifier) {
         val buttonSize = if (isLandscape) screenWidth / 18 else screenHeight / 18
@@ -392,11 +409,18 @@ fun AzNavRail(
                                             if (!dragStarted) {
                                                 dragStarted = true
                                                 longPressJob.cancel()
+                                                wasVisibleOnDragStart = showFloatingButtons
+                                                showFloatingButtons = false
                                             }
                                         }
 
                                         if (dragStarted) {
-                                            railOffset += IntOffset(positionChange.x.toInt(), positionChange.y.toInt())
+                                            val newY = railOffset.y + positionChange.y
+                                            val screenHeightPx = with(density) { screenHeight.toPx() }
+                                            val topBound = screenHeightPx * 0.1f
+                                            val bottomBound = screenHeightPx * 0.9f - headerHeight
+                                            val clampedY = newY.coerceIn(topBound, bottomBound)
+                                            railOffset = IntOffset(railOffset.x + positionChange.x.roundToInt(), clampedY.roundToInt())
                                             event.changes.forEach { it.consume() }
                                             dragConsumed = true
                                         }
@@ -421,6 +445,8 @@ fun AzNavRail(
                                             isFloating = false
                                             if (scope.displayAppNameInHeader) isAppIcon = false
                                             hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        } else if (wasVisibleOnDragStart) {
+                                            showFloatingButtons = true
                                         }
                                     } else {
                                         showFloatingButtons = !showFloatingButtons
@@ -658,7 +684,8 @@ fun AzNavRail(
                         Column(
                             modifier = Modifier
                                 .padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding)
-                                .verticalScroll(rememberScrollState()),
+                                .verticalScroll(rememberScrollState())
+                                .onSizeChanged { railItemsHeight = it.height },
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             val onRailCyclerClick: (AzNavItem) -> Unit = { item ->
@@ -715,7 +742,7 @@ fun AzNavRail(
                                     onRailCyclerClick = onRailCyclerClick,
                                     onItemSelected = { selectedItem = it },
                                     hostStates = hostStates,
-                                    packRailButtons = scope.packRailButtons
+                                     packRailButtons = if (isFloating) true else scope.packRailButtons
                                 )
                             }
                         }
