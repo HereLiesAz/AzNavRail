@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -49,6 +50,7 @@ fun AzForm(
     formName: String,
     modifier: Modifier = Modifier,
     outlined: Boolean = true,
+    buttonOutlined: Boolean = false,
     outlineColor: Color = MaterialTheme.colorScheme.primary,
     onSubmit: (Map<String, String>) -> Unit,
     submitButtonContent: @Composable () -> Unit = { Text("Submit") },
@@ -66,7 +68,7 @@ fun AzForm(
     Column(modifier = modifier) {
         scope.entries.forEachIndexed { index, entry ->
             if (index == scope.entries.lastIndex) {
-                Row {
+                Row(verticalAlignment = Alignment.Bottom) {
                     Box(modifier = Modifier.weight(1f)) {
                         AzTextBox(
                             value = formData[entry.entryName] ?: "",
@@ -87,7 +89,7 @@ fun AzForm(
                                 .clickable { onSubmit(formData.toMap()) }
                                 .background(AzTextBoxDefaults.getBackgroundColor().copy(alpha = AzTextBoxDefaults.getBackgroundOpacity()))
                                 .then(
-                                    if (!outlined) {
+                                    if (buttonOutlined) {
                                         Modifier.border(1.dp, outlineColor)
                                     } else {
                                         Modifier

@@ -96,9 +96,11 @@ object HistoryManager {
             return if (query.isBlank()) {
                 history.take(maxSuggestions)
             } else {
-                history
-                    .filter { it.startsWith(query, ignoreCase = true) && !it.equals(query, ignoreCase = true) }
-                    .take(maxSuggestions)
+                val (startsWith, contains) = history
+                    .filter { it.contains(query, ignoreCase = true) && !it.equals(query, ignoreCase = true) }
+                    .partition { it.startsWith(query, ignoreCase = true) }
+
+                (startsWith + contains.sorted()).take(maxSuggestions)
             }
         }
     }

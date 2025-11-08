@@ -35,6 +35,9 @@ import com.hereliesaz.aznavrail.AzTextBox
 import com.hereliesaz.aznavrail.AzTextBoxDefaults
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.AzForm
+import com.hereliesaz.aznavrail.AzButton
+import com.hereliesaz.aznavrail.AzToggle
+import com.hereliesaz.aznavrail.AzCycler
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -265,6 +268,29 @@ fun SampleScreen() {
                 entry(entryName = "bio", hint = "Biography", multiline = true)
             }
 
+            Row {
+                AzButton(onClick = { Log.d(TAG, "Standalone AzButton clicked") }, text = "Button", shape = AzButtonShape.SQUARE)
+                var isToggled by remember { mutableStateOf(false) }
+                AzToggle(
+                    isChecked = isToggled,
+                    onToggle = { isToggled = !isToggled },
+                    toggleOnText = "On",
+                    toggleOffText = "Off",
+                    shape = AzButtonShape.RECTANGLE
+                )
+                val cyclerOptions = remember { listOf("1", "2", "3") }
+                var selectedCyclerOption by remember { mutableStateOf(cyclerOptions.first()) }
+                AzCycler(
+                    options = cyclerOptions,
+                    selectedOption = selectedCyclerOption,
+                    onCycle = {
+                        val currentIndex = cyclerOptions.indexOf(selectedCyclerOption)
+                        val nextIndex = (currentIndex + 1) % cyclerOptions.size
+                        selectedCyclerOption = cyclerOptions[nextIndex]
+                    },
+                    shape = AzButtonShape.CIRCLE
+                )
+            }
 
             NavHost(navController = navController, startDestination = "home") {
                 composable("home") { Text("Home Screen") }

@@ -521,7 +521,8 @@ fun AzButton(
     onClick: () -> Unit,
     text: String,
     modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.primary
+    color: Color = MaterialTheme.colorScheme.primary,
+    shape: AzButtonShape = AzButtonShape.CIRCLE
 )
 ```
 
@@ -529,6 +530,7 @@ fun AzButton(
 -   **`text`**: The text to display on the button.
 -   **`modifier`**: The modifier to be applied to the button.
 -   **`color`**: The color of the button's border and text.
+-   **`shape`**: The shape of the button.
 
 #### `AzToggle`
 
@@ -542,7 +544,8 @@ fun AzToggle(
     toggleOnText: String,
     toggleOffText: String,
     modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.primary
+    color: Color = MaterialTheme.colorScheme.primary,
+    shape: AzButtonShape = AzButtonShape.CIRCLE
 )
 ```
 
@@ -552,6 +555,7 @@ fun AzToggle(
 -   **`toggleOffText`**: The text to display when the toggle is off.
 -   **`modifier`**: The modifier to be applied to the button.
 -   **`color`**: The color of the button's border and text.
+-   **`shape`**: The shape of the button.
 
 #### `AzCycler`
 
@@ -564,7 +568,8 @@ fun AzCycler(
     selectedOption: String,
     onCycle: () -> Unit,
     modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.primary
+    color: Color = MaterialTheme.colorScheme.primary,
+    shape: AzButtonShape = AzButtonShape.CIRCLE
 )
 ```
 
@@ -573,6 +578,7 @@ fun AzCycler(
 -   **`onCycle`**: The callback to be invoked for the final selected option after a 1-second delay.
 -   **`modifier`**: The modifier to be applied to the button.
 -   **`color`**: The color of the button's border and text.
+-   **`shape`**: The shape of the button.
 
 ## AzNavRail for Web (React)
 
