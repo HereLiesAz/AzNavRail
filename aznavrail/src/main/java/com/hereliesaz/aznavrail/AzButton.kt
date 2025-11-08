@@ -30,14 +30,15 @@ fun AzButton(
     onClick: () -> Unit,
     text: String,
     modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.primary
+    color: Color = MaterialTheme.colorScheme.primary,
+    shape: AzButtonShape = AzButtonShape.CIRCLE
 ) {
     AzNavRailButton(
         onClick = onClick,
         text = text,
         color = color,
         size = AzNavRailDefaults.HeaderIconSize,
-        shape = AzButtonShape.CIRCLE,
+        shape = shape,
         disabled = false,
         isSelected = false
     )
@@ -60,7 +61,8 @@ fun AzToggle(
     toggleOnText: String,
     toggleOffText: String,
     modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.primary
+    color: Color = MaterialTheme.colorScheme.primary,
+    shape: AzButtonShape = AzButtonShape.CIRCLE
 ) {
     val text = if (isChecked) toggleOnText else toggleOffText
     AzNavRailButton(
@@ -68,7 +70,7 @@ fun AzToggle(
         text = text,
         color = color,
         size = AzNavRailDefaults.HeaderIconSize,
-        shape = AzButtonShape.CIRCLE,
+        shape = shape,
         disabled = false,
         isSelected = false
     )
@@ -95,7 +97,8 @@ fun AzCycler(
     selectedOption: String,
     onCycle: () -> Unit,
     modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.primary
+    color: Color = MaterialTheme.colorScheme.primary,
+    shape: AzButtonShape = AzButtonShape.CIRCLE
 ) {
     var displayedOption by rememberSaveable(selectedOption) { mutableStateOf(selectedOption) }
     var job by remember { mutableStateOf<Job?>(null) }
@@ -132,7 +135,7 @@ fun AzCycler(
         text = displayedOption,
         color = color,
         size = AzNavRailDefaults.HeaderIconSize,
-        shape = AzButtonShape.CIRCLE,
+        shape = shape,
         disabled = false,
         isSelected = false
     )

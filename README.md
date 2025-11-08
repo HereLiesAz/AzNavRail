@@ -511,6 +511,75 @@ An object for configuring global `AzTextBox` and `AzForm` settings.
 -   `setBackgroundColor(color: Color)`: Sets the global background color for all text boxes and forms.
 -   `setBackgroundOpacity(opacity: Float)`: Sets the global background opacity for all text boxes and forms.
 
+#### `AzButton`
+
+A circular, text-only button with auto-sizing text.
+
+```kotlin
+@Composable
+fun AzButton(
+    onClick: () -> Unit,
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.primary,
+    shape: AzButtonShape = AzButtonShape.CIRCLE
+)
+```
+
+-   **`onClick`**: A lambda to be executed when the button is clicked.
+-   **`text`**: The text to display on the button.
+-   **`modifier`**: The modifier to be applied to the button.
+-   **`color`**: The color of the button's border and text.
+-   **`shape`**: The shape of the button.
+
+#### `AzToggle`
+
+A toggle button that displays different text for its on and off states.
+
+```kotlin
+@Composable
+fun AzToggle(
+    isChecked: Boolean,
+    onToggle: () -> Unit,
+    toggleOnText: String,
+    toggleOffText: String,
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.primary,
+    shape: AzButtonShape = AzButtonShape.CIRCLE
+)
+```
+
+-   **`isChecked`**: Whether the toggle is in the "on" state.
+-   **`onToggle`**: The callback to be invoked when the button is toggled.
+-   **`toggleOnText`**: The text to display when the toggle is on.
+-   **`toggleOffText`**: The text to display when the toggle is off.
+-   **`modifier`**: The modifier to be applied to the button.
+-   **`color`**: The color of the button's border and text.
+-   **`shape`**: The shape of the button.
+
+#### `AzCycler`
+
+A button that cycles through a list of options when clicked, with a delayed action.
+
+```kotlin
+@Composable
+fun AzCycler(
+    options: List<String>,
+    selectedOption: String,
+    onCycle: () -> Unit,
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.primary,
+    shape: AzButtonShape = AzButtonShape.CIRCLE
+)
+```
+
+-   **`options`**: The list of options to cycle through.
+-   **`selectedOption`**: The currently selected option from the view model.
+-   **`onCycle`**: The callback to be invoked for the final selected option after a 1-second delay.
+-   **`modifier`**: The modifier to be applied to the button.
+-   **`color`**: The color of the button's border and text.
+-   **`shape`**: The shape of the button.
+
 ## AzNavRail for Web (React)
 
 `aznavrail-web` is a React component that provides a Material Design-style navigation rail, inspired by its counterpart in the Android ecosystem. It is designed to be a "batteries-included" solution, offering a highly configurable and easy-to-use navigation component for web applications.
