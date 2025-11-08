@@ -454,6 +454,7 @@ fun AzTextBox(
     onValueChange: ((String) -> Unit)? = null,
     hint: String = "",
     outlined: Boolean = true,
+    buttonOutlined: Boolean = false,
     multiline: Boolean = false,
     secret: Boolean = false,
     outlineColor: Color = MaterialTheme.colorScheme.primary,
@@ -485,6 +486,7 @@ fun AzForm(
     outlined: Boolean = true,
     outlineColor: Color = MaterialTheme.colorScheme.primary,
     onSubmit: (Map<String, String>) -> Unit,
+    submitButtonContent: @Composable () -> Unit = { Text("Submit") },
     content: AzFormScope.() -> Unit
 )
 ```
@@ -494,6 +496,7 @@ fun AzForm(
 -   **`outlined`**: Whether the text fields in the form have an outline.
 -   **`outlineColor`**: Sets the color for the outline, input text, and all icons for all fields in the form.
 -   **`onSubmit`**: A callback that is invoked when the form's submit button is clicked, providing a map of the form data.
+-   **`submitButtonContent`**: A composable lambda for the content of the submit button.
 -   **`content`**: The DSL content for the form, where you define the `entry` fields.
 
 #### `AzFormScope`

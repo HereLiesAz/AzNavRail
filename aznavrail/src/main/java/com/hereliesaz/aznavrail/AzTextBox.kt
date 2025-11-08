@@ -75,6 +75,7 @@ fun AzTextBox(
     onValueChange: ((String) -> Unit)? = null,
     hint: String = "",
     outlined: Boolean = true,
+    buttonOutlined: Boolean = false,
     multiline: Boolean = false,
     secret: Boolean = false,
     outlineColor: Color = MaterialTheme.colorScheme.primary,
@@ -188,7 +189,7 @@ fun AzTextBox(
                                 }
                             }
                             .then(
-                                if (!outlined) {
+                                if (buttonOutlined) {
                                     Modifier.border(1.dp, outlineColor)
                                 } else {
                                     Modifier
