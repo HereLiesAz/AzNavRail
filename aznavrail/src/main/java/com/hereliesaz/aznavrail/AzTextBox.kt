@@ -73,9 +73,9 @@ fun AzTextBox(
     modifier: Modifier = Modifier,
     value: String? = null,
     onValueChange: ((String) -> Unit)? = null,
+    historyContext: String = "default",
     hint: String = "",
     outlined: Boolean = true,
-    buttonOutlined: Boolean = false,
     multiline: Boolean = false,
     secret: Boolean = false,
     outlineColor: Color = MaterialTheme.colorScheme.primary,
@@ -102,7 +102,7 @@ fun AzTextBox(
 
     LaunchedEffect(text) {
         suggestions = if (text.isNotBlank()) {
-            HistoryManager.getSuggestions(text)
+            HistoryManager.getSuggestions(text, historyContext)
         } else {
             emptyList()
         }
@@ -183,13 +183,13 @@ fun AzTextBox(
                         modifier = Modifier
                             .clickable {
                                 onSubmit(text)
-                                HistoryManager.addEntry(text)
+                                HistoryManager.addEntry(text, historyContext)
                                 if (onValueChange == null) {
                                     onTextChange("")
                                 }
                             }
                             .then(
-                                if (buttonOutlined) {
+                                if (!outlined) {
                                     Modifier.border(1.dp, outlineColor)
                                 } else {
                                     Modifier

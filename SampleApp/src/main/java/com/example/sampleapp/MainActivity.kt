@@ -227,10 +227,11 @@ fun SampleScreen() {
 
         // Your app's main content goes here
         Column(modifier = Modifier.padding(16.dp)) {
-            // Uncontrolled AzTextBox
+            // Uncontrolled AzTextBox with history context
             AzTextBox(
                 modifier = Modifier.padding(bottom = 16.dp),
-                hint = "Uncontrolled AzTextBox...",
+                hint = "Uncontrolled (History: Search)",
+                historyContext = "search_history",
                 onSubmit = { text ->
                     Log.d(TAG, "Submitted text from uncontrolled AzTextBox: $text")
                 },
@@ -239,13 +240,14 @@ fun SampleScreen() {
                 }
             )
 
-            // Controlled AzTextBox
+            // Controlled AzTextBox with a different history context
             var controlledText by remember { mutableStateOf("") }
             AzTextBox(
                 modifier = Modifier.padding(bottom = 16.dp),
                 value = controlledText,
                 onValueChange = { controlledText = it },
-                hint = "Controlled AzTextBox...",
+                hint = "Controlled (History: Usernames)",
+                historyContext = "username_history",
                 onSubmit = { text ->
                     Log.d(TAG, "Submitted text from controlled AzTextBox: $text")
                 },
@@ -254,8 +256,22 @@ fun SampleScreen() {
                 }
             )
 
+            // AzTextBox with inverted outline
+            AzTextBox(
+                modifier = Modifier.padding(bottom = 16.dp),
+                hint = "Uncontrolled (No Outline)",
+                outlined = false,
+                onSubmit = { text ->
+                    Log.d(TAG, "Submitted text from no-outline AzTextBox: $text")
+                },
+                submitButtonContent = {
+                    Text("Go")
+                }
+            )
+
             AzForm(
                 formName = "loginForm",
+                modifier = Modifier.padding(bottom = 16.dp),
                 onSubmit = { formData ->
                     Log.d(TAG, "Form submitted: $formData")
                 },
@@ -266,6 +282,20 @@ fun SampleScreen() {
                 entry(entryName = "username", hint = "Username")
                 entry(entryName = "password", hint = "Password", secret = true)
                 entry(entryName = "bio", hint = "Biography", multiline = true)
+            }
+
+            AzForm(
+                formName = "registrationForm",
+                outlined = false,
+                onSubmit = { formData ->
+                    Log.d(TAG, "Registration Form submitted: $formData")
+                },
+                submitButtonContent = {
+                    Text("Register")
+                }
+            ) {
+                entry(entryName = "email", hint = "Email")
+                entry(entryName = "confirm_password", hint = "Confirm Password", secret = true)
             }
 
             Row {

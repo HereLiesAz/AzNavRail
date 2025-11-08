@@ -50,7 +50,6 @@ fun AzForm(
     formName: String,
     modifier: Modifier = Modifier,
     outlined: Boolean = true,
-    buttonOutlined: Boolean = false,
     outlineColor: Color = MaterialTheme.colorScheme.primary,
     onSubmit: (Map<String, String>) -> Unit,
     submitButtonContent: @Composable () -> Unit = { Text("Submit") },
@@ -70,16 +69,13 @@ fun AzForm(
             if (index == scope.entries.lastIndex) {
                 Row(verticalAlignment = Alignment.Bottom) {
                     Box(modifier = Modifier.weight(1f)) {
-                        AzTextBox(
+                        FormEntryTextBox(
+                            entry = entry,
                             value = formData[entry.entryName] ?: "",
                             onValueChange = { formData[entry.entryName] = it },
-                            hint = entry.hint,
                             outlined = outlined,
-                            multiline = entry.multiline,
-                            secret = entry.secret,
                             outlineColor = outlineColor,
-                            submitButtonContent = null,
-                            onSubmit = { /* Individual onSubmit is not used in a form context */ }
+                            historyContext = formName
                         )
                     }
                     Spacer(modifier = Modifier.width(8.dp))
@@ -89,7 +85,7 @@ fun AzForm(
                                 .clickable { onSubmit(formData.toMap()) }
                                 .background(AzTextBoxDefaults.getBackgroundColor().copy(alpha = AzTextBoxDefaults.getBackgroundOpacity()))
                                 .then(
-                                    if (buttonOutlined) {
+                                    if (!outlined) {
                                         Modifier.border(1.dp, outlineColor)
                                     } else {
                                         Modifier
@@ -102,19 +98,39 @@ fun AzForm(
                     }
                 }
             } else {
-                AzTextBox(
+                FormEntryTextBox(
+                    entry = entry,
                     value = formData[entry.entryName] ?: "",
                     onValueChange = { formData[entry.entryName] = it },
-                    hint = entry.hint,
                     outlined = outlined,
-                    multiline = entry.multiline,
-                    secret = entry.secret,
                     outlineColor = outlineColor,
-                    submitButtonContent = null,
-                    onSubmit = { /* Individual onSubmit is not used in a form context */ }
+                    historyContext = formName
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }
+}
+
+@Composable
+private fun FormEntryTextBox(
+    entry: AzFormEntry,
+    value: String,
+    onValueChange: (String) -> Unit,
+    outlined: Boolean,
+    outlineColor: Color,
+    historyContext: String
+) {
+    AzTextBox(
+        value = value,
+        onValueChange = onValueChange,
+        historyContext = historyContext,
+        hint = entry.hint,
+        outlined = outlined,
+        multiline = entry.multiline,
+        secret = entry.secret,
+        outlineColor = outlineColor,
+        submitButtonContent = null,
+        onSubmit = { /* Individual onSubmit is not used in a form context */ }
+    )
 }

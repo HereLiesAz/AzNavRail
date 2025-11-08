@@ -6,24 +6,22 @@ import java.io.IOException
 
 object HistoryManager {
 
-    private const val HISTORY_FILE_NAME = "az_text_box_history.txt"
+    private const val HISTORY_FILE_PREFIX = "az_text_box_history_"
+    private const val DEFAULT_HISTORY_CONTEXT = "default"
     private var maxSizeBytes = 5 * 1024
     private var maxSuggestions = 5
 
     private var isInitialized = false
-    private lateinit var historyFile: File
-    private val history = mutableListOf<String>()
+    private lateinit var context: Context
+    private val histories = mutableMapOf<String, MutableList<String>>()
 
     fun init(context: Context, suggestionLimit: Int = 5) {
         if (isInitialized) {
             updateSettings(suggestionLimit) // Allow updating settings on re-init
             return
         }
-        historyFile = File(context.applicationContext.filesDir, HISTORY_FILE_NAME)
+        this.context = context.applicationContext
         updateSettings(suggestionLimit)
-        if (historyFile.exists()) {
-            loadHistory()
-        }
         isInitialized = true
     }
 
@@ -33,29 +31,39 @@ object HistoryManager {
         maxSizeBytes = newLimit * 1024
         // If storage is reduced, we might need to trim the history file
         if (isInitialized) {
-            saveHistory()
+            histories.keys.forEach { saveHistory(it) }
         }
     }
 
-    private fun loadHistory() {
+    private fun getHistoryFile(historyContext: String): File {
+        return File(context.filesDir, "$HISTORY_FILE_PREFIX$historyContext.txt")
+    }
+
+    private fun loadHistory(historyContext: String) {
+        val historyFile = getHistoryFile(historyContext)
+        if (!historyFile.exists()) return
+
         try {
             val lines = historyFile.readLines(Charsets.UTF_8)
-            synchronized(history) {
-                history.clear()
-                history.addAll(lines)
+            synchronized(histories) {
+                histories.getOrPut(historyContext) { mutableListOf() }.apply {
+                    clear()
+                    addAll(lines)
+                }
             }
         } catch (e: IOException) {
             // Silently ignore, no history will be loaded.
         }
     }
 
-    private fun saveHistory() {
+    private fun saveHistory(historyContext: String) {
+        val historyFile = getHistoryFile(historyContext)
         try {
             historyFile.writer(Charsets.UTF_8).use { writer ->
                 var currentSize = 0
                 val entriesToWrite: List<String>
-                synchronized(history) {
-                    entriesToWrite = history.toList() // Create a snapshot
+                synchronized(histories) {
+                    entriesToWrite = histories[historyContext]?.toList() ?: emptyList()
                 }
 
                 for (entry in entriesToWrite) {
@@ -71,28 +79,33 @@ object HistoryManager {
                 }
             }
             // After saving, reload to ensure consistency and trim the in-memory list
-            loadHistory()
+            loadHistory(historyContext)
         } catch (e: IOException) {
             // Silently ignore, history not saved.
         }
     }
 
-
-    fun addEntry(text: String) {
+    fun addEntry(text: String, historyContext: String?) {
+        val context = historyContext ?: DEFAULT_HISTORY_CONTEXT
         if (!isInitialized || text.isBlank() || maxSizeBytes == 0) return
 
-        synchronized(history) {
+        synchronized(histories) {
+            val history = histories.getOrPut(context) { mutableListOf() }
             history.remove(text)
             history.add(0, text)
         }
-        saveHistory()
+        saveHistory(context)
     }
 
-    fun getSuggestions(query: String): List<String> {
+    fun getSuggestions(query: String, historyContext: String?): List<String> {
+        val context = historyContext ?: DEFAULT_HISTORY_CONTEXT
         if (!isInitialized || maxSuggestions == 0) {
             return emptyList()
         }
-        synchronized(history) {
+        synchronized(histories) {
+            loadHistory(context)
+            val history = histories[context] ?: return emptyList()
+
             return if (query.isBlank()) {
                 history.take(maxSuggestions)
             } else {
@@ -106,8 +119,8 @@ object HistoryManager {
     }
 
     internal fun resetForTesting() {
-        synchronized(history) {
-            history.clear()
+        synchronized(histories) {
+            histories.clear()
         }
         isInitialized = false
     }

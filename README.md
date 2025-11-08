@@ -454,10 +454,10 @@ fun AzTextBox(
     onValueChange: ((String) -> Unit)? = null,
     hint: String = "",
     outlined: Boolean = true,
-    buttonOutlined: Boolean = false,
     multiline: Boolean = false,
     secret: Boolean = false,
     outlineColor: Color = MaterialTheme.colorScheme.primary,
+    historyContext: String? = null,
     submitButtonContent: (@Composable () -> Unit)? = null,
     onSubmit: (String) -> Unit
 )
@@ -467,10 +467,11 @@ fun AzTextBox(
 -   **`value`**: The input text to be shown in the text field. Use `null` for an uncontrolled component.
 -   **`onValueChange`**: The callback that is triggered when the input service updates the text. Use `null` for an uncontrolled component.
 -   **`hint`**: The hint text to display when the input is empty.
--   **`outlined`**: Whether the text box has an outline. The submit button's outline will be the inverse.
+-   **`outlined`**: Whether the text box has an outline. The submit button's outline will be the inverse of this value.
 -   **`multiline`**: Enables multiline input, which expands the text box vertically.
 -   **`secret`**: Masks the input for password fields and replaces the clear button with a reveal icon.
 -   **`outlineColor`**: Sets the color for the outline, input text, and all icons.
+-   **`historyContext`**: An optional string to provide a unique context for the autocomplete history. If provided, suggestions will be drawn only from entries saved with the same context.
 -   **`submitButtonContent`**: A composable lambda for the content of the submit button.
 -   **`onSubmit`**: A callback that is invoked when the submit button is clicked, providing the current text.
 
@@ -491,9 +492,9 @@ fun AzForm(
 )
 ```
 
--   **`formName`**: A unique name for the form, used for managing history.
+-   **`formName`**: A unique name for the form. This name is used as the `historyContext` for all text fields within the form, ensuring that autocomplete suggestions are namespaced and relevant to this form only.
 -   **`modifier`**: The modifier to be applied to the form.
--   **`outlined`**: Whether the text fields in the form have an outline.
+-   **`outlined`**: Whether the text fields in the form have an outline. The submit button's outline will be the inverse of this value.
 -   **`outlineColor`**: Sets the color for the outline, input text, and all icons for all fields in the form.
 -   **`onSubmit`**: A callback that is invoked when the form's submit button is clicked, providing a map of the form data.
 -   **`submitButtonContent`**: A composable lambda for the content of the submit button.
