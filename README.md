@@ -248,21 +248,31 @@ fun SampleScreen() {
 }
 ```
 
-### `AzTextBox`
+### `AzTextBox` and `AzForm`
 
-`AzTextBox` is a modern, highly customizable text input field designed to be both sleek and functional. It features a single-line input, a clear button, a submit button, and an intelligent autocomplete system that suggests previously entered text.
+`AzTextBox` is a text input field. `AzForm` is a container that groups multiple `AzTextBox` fields, managing them as a single entity with one submit button.
 
 #### Features
 
-- **Customizable Appearance**: Can be displayed with or without an outline. The outline state of the submit button is always the inverse of the text box.
-- **Compact Design**: A smaller height and font size (`10.sp`) make it more compact than standard text fields.
-- **Built-in Buttons**: Includes an 'x' button to clear the current input and a customizable submit button.
-- **Autocomplete**: Suggests previously submitted text as the user types. The number of suggestions and the size of the history cache are globally configurable.
-- **Configurable History**: Use `AzTextBoxDefaults.setSuggestionLimit(limit: Int)` to set the maximum number of suggestions to display (0-5). This also sets the storage limit in kilobytes (e.g., a limit of 3 displays up to 3 suggestions and uses up to 3KB of storage). A limit of 0 disables the feature entirely.
+-   **Multiline Support**: `AzTextBox` can be configured as a multiline input, which will automatically expand vertically as the user types. The clear and submit buttons remain anchored to the bottom right.
+-   **Secret / Password Fields**: Text boxes can be set to `secret` mode, which masks the input. In this mode, the clear button is replaced by a reveal icon to temporarily show the password.
+-   **Mutual Exclusivity**: A field cannot be `multiline` and `secret` at the same time.
+-   **Unified Styling**:
+    -   The input text, outline, and all icons (clear, reveal, submit) share the same color, which can be customized.
+    -   The background color and opacity for all text boxes and forms can be set globally.
+    -   The submit button's background always matches the text box's background.
+-   **Intelligent Autocomplete**:
+    -   Suggestions appear in a dropdown as the user types.
+    -   The dropdown's style is clean: no outlines or separators, with a background that alternates between 90% and 80% opacity for each suggestion.
+    -   Suggestions are sorted by recency, showing the most recently used matching entries first.
+-   **`AzForm` Component**:
+    -   Group multiple text fields into a single form with a shared submit button.
+    -   Each field within the form has its own clear or reveal button.
+    -   Styling (outline, background) is applied consistently to all fields within the form.
 
 #### Usage
 
-Here is an example of how to use `AzTextBox` and configure its global settings:
+Here is an example of how to use the standalone `AzTextBox` for multiline and secret inputs:
 
 ```kotlin
 import com.hereliesaz.aznavrail.AzTextBox
@@ -270,18 +280,80 @@ import com.hereliesaz.aznavrail.AzTextBoxDefaults
 
 // In your main Activity or a central setup location:
 AzTextBoxDefaults.setSuggestionLimit(3) // Show up to 3 suggestions
+AzTextBoxDefaults.setBackgroundColor(Color.LightGray) // Set a global background color
+AzTextBoxDefaults.setBackgroundOpacity(0.5f) // Set a global background opacity
 
-// In your Composable:
+// Uncontrolled (internal state management)
 AzTextBox(
     modifier = Modifier.padding(16.dp),
-    hint = "Search...",
-    onSubmit = { query ->
+    hint = "Enter text...",
+    onSubmit = { text ->
+        // Handle the submitted text
+    },
+    submitButtonContent = {
+        Text("Go")
+    }
+)
+
+// Controlled (hoisted state management)
+var text by remember { mutableStateOf("") }
+AzTextBox(
+    modifier = Modifier.padding(16.dp),
+    value = text,
+    onValueChange = { text = it },
+    hint = "Enter text...",
+    onSubmit = {
+        // Handle the submitted text
+    },
+    submitButtonContent = {
+        Text("Go")
+    }
+)
+
+// Multiline Text Box
+AzTextBox(
+    modifier = Modifier.padding(16.dp),
+    hint = "Enter multiple lines of text...",
+    multiline = true,
+    onSubmit = { text ->
         // Handle the submitted text
     },
     submitButtonContent = {
         Text("Submit")
     }
 )
+
+// Secret Text Box
+AzTextBox(
+    modifier = Modifier.padding(16.dp),
+    hint = "Enter password...",
+    secret = true,
+    onSubmit = { password ->
+        // Handle the submitted password
+    },
+    submitButtonContent = {
+        Text("Go")
+    }
+)
+```
+
+Here is an example of the `AzForm` component:
+
+```kotlin
+import com.hereliesaz.aznavrail.AzForm
+
+AzForm(
+    formName = "loginForm",
+    onSubmit = { formData ->
+        // formData is a map of entryName to value
+        val username = formData["username"]
+        val password = formData["password"]
+    }
+) {
+    entry(entryName = "username", hint = "Username")
+    entry(entryName = "password", hint = "Password", secret = true)
+    entry(entryName = "bio", hint = "Biography", multiline = true)
+}
 ```
 
 ### Hierarchical Navigation
@@ -372,30 +444,135 @@ The DSL for configuring the `AzNavRail`.
 
 #### `AzTextBox`
 
-A customizable text input field with autocomplete.
+A text input field with autocomplete.
 
 ```kotlin
 @Composable
 fun AzTextBox(
     modifier: Modifier = Modifier,
+    value: String? = null,
+    onValueChange: ((String) -> Unit)? = null,
     hint: String = "",
     outlined: Boolean = true,
-    submitButtonContent: @Composable () -> Unit,
+    buttonOutlined: Boolean = false,
+    multiline: Boolean = false,
+    secret: Boolean = false,
+    outlineColor: Color = MaterialTheme.colorScheme.primary,
+    submitButtonContent: (@Composable () -> Unit)? = null,
     onSubmit: (String) -> Unit
 )
 ```
 
 -   **`modifier`**: The modifier to be applied to the text box.
+-   **`value`**: The input text to be shown in the text field. Use `null` for an uncontrolled component.
+-   **`onValueChange`**: The callback that is triggered when the input service updates the text. Use `null` for an uncontrolled component.
 -   **`hint`**: The hint text to display when the input is empty.
 -   **`outlined`**: Whether the text box has an outline. The submit button's outline will be the inverse.
+-   **`multiline`**: Enables multiline input, which expands the text box vertically.
+-   **`secret`**: Masks the input for password fields and replaces the clear button with a reveal icon.
+-   **`outlineColor`**: Sets the color for the outline, input text, and all icons.
 -   **`submitButtonContent`**: A composable lambda for the content of the submit button.
 -   **`onSubmit`**: A callback that is invoked when the submit button is clicked, providing the current text.
 
+#### `AzForm`
+
+A composable for creating a form with multiple `AzTextBox` fields.
+
+```kotlin
+@Composable
+fun AzForm(
+    formName: String,
+    modifier: Modifier = Modifier,
+    outlined: Boolean = true,
+    outlineColor: Color = MaterialTheme.colorScheme.primary,
+    onSubmit: (Map<String, String>) -> Unit,
+    submitButtonContent: @Composable () -> Unit = { Text("Submit") },
+    content: AzFormScope.() -> Unit
+)
+```
+
+-   **`formName`**: A unique name for the form, used for managing history.
+-   **`modifier`**: The modifier to be applied to the form.
+-   **`outlined`**: Whether the text fields in the form have an outline.
+-   **`outlineColor`**: Sets the color for the outline, input text, and all icons for all fields in the form.
+-   **`onSubmit`**: A callback that is invoked when the form's submit button is clicked, providing a map of the form data.
+-   **`submitButtonContent`**: A composable lambda for the content of the submit button.
+-   **`content`**: The DSL content for the form, where you define the `entry` fields.
+
+#### `AzFormScope`
+
+-   `entry(entryName: String, hint: String, multiline: Boolean, secret: Boolean)`: Adds a text field to the form.
+
 #### `AzTextBoxDefaults`
 
-An object for configuring global `AzTextBox` settings.
+An object for configuring global `AzTextBox` and `AzForm` settings.
 
 -   `setSuggestionLimit(limit: Int)`: Sets the maximum number of autocomplete suggestions to display (0-5) and the corresponding history storage limit in kilobytes.
+-   `setBackgroundColor(color: Color)`: Sets the global background color for all text boxes and forms.
+-   `setBackgroundOpacity(opacity: Float)`: Sets the global background opacity for all text boxes and forms.
+
+#### `AzButton`
+
+A circular, text-only button with auto-sizing text.
+
+```kotlin
+@Composable
+fun AzButton(
+    onClick: () -> Unit,
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.primary
+)
+```
+
+-   **`onClick`**: A lambda to be executed when the button is clicked.
+-   **`text`**: The text to display on the button.
+-   **`modifier`**: The modifier to be applied to the button.
+-   **`color`**: The color of the button's border and text.
+
+#### `AzToggle`
+
+A toggle button that displays different text for its on and off states.
+
+```kotlin
+@Composable
+fun AzToggle(
+    isChecked: Boolean,
+    onToggle: () -> Unit,
+    toggleOnText: String,
+    toggleOffText: String,
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.primary
+)
+```
+
+-   **`isChecked`**: Whether the toggle is in the "on" state.
+-   **`onToggle`**: The callback to be invoked when the button is toggled.
+-   **`toggleOnText`**: The text to display when the toggle is on.
+-   **`toggleOffText`**: The text to display when the toggle is off.
+-   **`modifier`**: The modifier to be applied to the button.
+-   **`color`**: The color of the button's border and text.
+
+#### `AzCycler`
+
+A button that cycles through a list of options when clicked, with a delayed action.
+
+```kotlin
+@Composable
+fun AzCycler(
+    options: List<String>,
+    selectedOption: String,
+    onCycle: () -> Unit,
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.primary
+)
+```
+
+-   **`options`**: The list of options to cycle through.
+-   **`selectedOption`**: The currently selected option from the view model.
+-   **`onCycle`**: The callback to be invoked for the final selected option after a 1-second delay.
+-   **`modifier`**: The modifier to be applied to the button.
+-   **`color`**: The color of the button's border and text.
 
 ## AzNavRail for Web (React)
 

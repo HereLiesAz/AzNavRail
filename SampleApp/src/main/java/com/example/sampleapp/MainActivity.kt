@@ -34,6 +34,7 @@ import com.hereliesaz.aznavrail.AzNavRail
 import com.hereliesaz.aznavrail.AzTextBox
 import com.hereliesaz.aznavrail.AzTextBoxDefaults
 import com.hereliesaz.aznavrail.model.AzButtonShape
+import com.hereliesaz.aznavrail.AzForm
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -223,16 +224,47 @@ fun SampleScreen() {
 
         // Your app's main content goes here
         Column(modifier = Modifier.padding(16.dp)) {
+            // Uncontrolled AzTextBox
             AzTextBox(
                 modifier = Modifier.padding(bottom = 16.dp),
-                hint = "Enter text...",
+                hint = "Uncontrolled AzTextBox...",
                 onSubmit = { text ->
-                    Log.d(TAG, "Submitted text: $text")
+                    Log.d(TAG, "Submitted text from uncontrolled AzTextBox: $text")
                 },
                 submitButtonContent = {
                     Text("Go")
                 }
             )
+
+            // Controlled AzTextBox
+            var controlledText by remember { mutableStateOf("") }
+            AzTextBox(
+                modifier = Modifier.padding(bottom = 16.dp),
+                value = controlledText,
+                onValueChange = { controlledText = it },
+                hint = "Controlled AzTextBox...",
+                onSubmit = { text ->
+                    Log.d(TAG, "Submitted text from controlled AzTextBox: $text")
+                },
+                submitButtonContent = {
+                    Text("Go")
+                }
+            )
+
+            AzForm(
+                formName = "loginForm",
+                onSubmit = { formData ->
+                    Log.d(TAG, "Form submitted: $formData")
+                },
+                submitButtonContent = {
+                    Text("Login")
+                }
+            ) {
+                entry(entryName = "username", hint = "Username")
+                entry(entryName = "password", hint = "Password", secret = true)
+                entry(entryName = "bio", hint = "Biography", multiline = true)
+            }
+
 
             NavHost(navController = navController, startDestination = "home") {
                 composable("home") { Text("Home Screen") }
