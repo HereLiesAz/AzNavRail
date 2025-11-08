@@ -34,6 +34,12 @@ android {
         compose = true
     }
 
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
+
     publishing {
         singleVariant("release")
     }
@@ -55,6 +61,7 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.robolectric)
 
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)

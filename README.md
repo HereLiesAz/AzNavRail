@@ -30,6 +30,7 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 - **Auto-sizing Text**: Text within rail buttons automatically resizes to fit without wrapping, unless a newline character is explicitly used.
 - **Toggle and Cycler Items**: `azRailToggle` and `azMenuToggle` provide a simple way to manage boolean states, while `azRailCycler` and `azMenuCycler` allow cycling through a list of options.
 - **Gesture Control**: Intuitive swipe and tap gestures for expanding, collapsing, and activating FAB mode.
+- **`AzTextBox`**: A modern, highly customizable text box with autocomplete and a built-in submit button.
 
 ## AzNavRail for Android (Jetpack Compose)
 
@@ -224,8 +225,63 @@ fun SampleScreen() {
             composable("sub-toggle") { Text("Sub Toggle Screen") }
             composable("sub-cycler") { Text("Sub Cycler Screen") }
         }
+
+        // Your app's main content goes here
+        Column(modifier = Modifier.padding(16.dp)) {
+            AzTextBox(
+                modifier = Modifier.padding(bottom = 16.dp),
+                hint = "Enter text...",
+                onSubmit = { text ->
+                    Log.d(TAG, "Submitted text: $text")
+                },
+                submitButtonContent = {
+                    Text("Go")
+                }
+            )
+
+            NavHost(navController = navController, startDestination = "home") {
+                composable("home") { Text("Home Screen") }
+                // ... other composable destinations
+            }
+        }
     }
 }
+```
+
+### `AzTextBox`
+
+`AzTextBox` is a modern, highly customizable text input field designed to be both sleek and functional. It features a single-line input, a clear button, a submit button, and an intelligent autocomplete system that suggests previously entered text.
+
+#### Features
+
+- **Customizable Appearance**: Can be displayed with or without an outline. The outline state of the submit button is always the inverse of the text box.
+- **Compact Design**: A smaller height and font size (`10.sp`) make it more compact than standard text fields.
+- **Built-in Buttons**: Includes an 'x' button to clear the current input and a customizable submit button.
+- **Autocomplete**: Suggests previously submitted text as the user types. The number of suggestions and the size of the history cache are globally configurable.
+- **Configurable History**: Use `AzTextBoxDefaults.setSuggestionLimit(limit: Int)` to set the maximum number of suggestions to display (0-5). This also sets the storage limit in kilobytes (e.g., a limit of 3 displays up to 3 suggestions and uses up to 3KB of storage). A limit of 0 disables the feature entirely.
+
+#### Usage
+
+Here is an example of how to use `AzTextBox` and configure its global settings:
+
+```kotlin
+import com.hereliesaz.aznavrail.AzTextBox
+import com.hereliesaz.aznavrail.AzTextBoxDefaults
+
+// In your main Activity or a central setup location:
+AzTextBoxDefaults.setSuggestionLimit(3) // Show up to 3 suggestions
+
+// In your Composable:
+AzTextBox(
+    modifier = Modifier.padding(16.dp),
+    hint = "Search...",
+    onSubmit = { query ->
+        // Handle the submitted text
+    },
+    submitButtonContent = {
+        Text("Submit")
+    }
+)
 ```
 
 ### Hierarchical Navigation
@@ -313,6 +369,33 @@ The DSL for configuring the `AzNavRail`.
 -   `azMenuSubCycler(id: String, hostId: String, options: List<String>, selectedOption: String, route: String, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`: Adds a cycler sub-item that only appears in the expanded menu.
 -   `azRailSubCycler(id: String, hostId: String, color: Color?, options: List<String>, selectedOption: String, shape: AzButtonShape?, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`: Adds a cycler sub-item that appears in both the collapsed rail and the expanded menu.
 -   `azRailSubCycler(id: String, hostId: String, color: Color?, options: List<String>, selectedOption: String, shape: AzButtonShape?, route: String, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`: Adds a cycler sub-item that appears in both the collapsed rail and the expanded menu.
+
+#### `AzTextBox`
+
+A customizable text input field with autocomplete.
+
+```kotlin
+@Composable
+fun AzTextBox(
+    modifier: Modifier = Modifier,
+    hint: String = "",
+    outlined: Boolean = true,
+    submitButtonContent: @Composable () -> Unit,
+    onSubmit: (String) -> Unit
+)
+```
+
+-   **`modifier`**: The modifier to be applied to the text box.
+-   **`hint`**: The hint text to display when the input is empty.
+-   **`outlined`**: Whether the text box has an outline. The submit button's outline will be the inverse.
+-   **`submitButtonContent`**: A composable lambda for the content of the submit button.
+-   **`onSubmit`**: A callback that is invoked when the submit button is clicked, providing the current text.
+
+#### `AzTextBoxDefaults`
+
+An object for configuring global `AzTextBox` settings.
+
+-   `setSuggestionLimit(limit: Int)`: Sets the maximum number of autocomplete suggestions to display (0-5) and the corresponding history storage limit in kilobytes.
 
 ## AzNavRail for Web (React)
 
