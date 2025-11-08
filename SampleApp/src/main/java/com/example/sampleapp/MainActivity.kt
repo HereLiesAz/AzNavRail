@@ -255,6 +255,9 @@ fun SampleScreen() {
                 formName = "loginForm",
                 onSubmit = { formData ->
                     Log.d(TAG, "Form submitted: $formData")
+                },
+                submitButtonContent = {
+                    Text("Login")
                 }
             ) {
                 entry(entryName = "username", hint = "Username")

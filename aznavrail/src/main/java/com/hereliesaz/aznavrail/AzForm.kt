@@ -9,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -50,10 +51,11 @@ fun AzForm(
     outlined: Boolean = true,
     outlineColor: Color = MaterialTheme.colorScheme.primary,
     onSubmit: (Map<String, String>) -> Unit,
+    submitButtonContent: @Composable () -> Unit = { Text("Submit") },
     content: AzFormScope.() -> Unit
 ) {
     val scope = remember { AzFormScope().apply(content) }
-    val formData = remember {
+    val formData = rememberSaveable {
         mutableStateMapOf<String, String>().apply {
             scope.entries.forEach { entry ->
                 this[entry.entryName] = ""
@@ -93,7 +95,7 @@ fun AzForm(
                                 )
                                 .padding(horizontal = 12.dp, vertical = 8.dp)
                         ) {
-                            Text("Submit")
+                            submitButtonContent()
                         }
                     }
                 }
