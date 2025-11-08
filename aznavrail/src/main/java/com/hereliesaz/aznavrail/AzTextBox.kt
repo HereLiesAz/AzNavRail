@@ -1,5 +1,6 @@
 package com.hereliesaz.aznavrail
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -12,15 +13,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,18 +39,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hereliesaz.aznavrail.util.HistoryManager
-
-import androidx.compose.foundation.background
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 
 object AzTextBoxDefaults {
     private var suggestionLimit: Int = 5
@@ -73,8 +71,8 @@ object AzTextBoxDefaults {
 @Composable
 fun AzTextBox(
     modifier: Modifier = Modifier,
-    value: String,
-    onValueChange: (String) -> Unit,
+    value: String? = null,
+    onValueChange: ((String) -> Unit)? = null,
     hint: String = "",
     outlined: Boolean = true,
     multiline: Boolean = false,
@@ -87,6 +85,10 @@ fun AzTextBox(
         "AzTextBox cannot be both multiline and secret."
     }
 
+    var internalText by remember { mutableStateOf("") }
+    val text = value ?: internalText
+    val onTextChange = onValueChange ?: { internalText = it }
+
     var suggestions by remember { mutableStateOf<List<String>>(emptyList()) }
     val context = LocalContext.current
     val suggestionLimit = AzTextBoxDefaults.getSuggestionLimit()
@@ -97,9 +99,9 @@ fun AzTextBox(
         HistoryManager.init(context, suggestionLimit)
     }
 
-    LaunchedEffect(value) {
-        suggestions = if (value.isNotBlank()) {
-            HistoryManager.getSuggestions(value)
+    LaunchedEffect(text) {
+        suggestions = if (text.isNotBlank()) {
+            HistoryManager.getSuggestions(text)
         } else {
             emptyList()
         }
@@ -124,8 +126,8 @@ fun AzTextBox(
                 contentAlignment = Alignment.CenterStart
             ) {
                 BasicTextField(
-                    value = value,
-                    onValueChange = onValueChange,
+                    value = text,
+                    onValueChange = onTextChange,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -139,12 +141,12 @@ fun AzTextBox(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(modifier = Modifier.weight(1f)) {
-                            if (value.isEmpty()) {
+                            if (text.isEmpty()) {
                                 Text(text = hint, fontSize = 10.sp, color = Color.Gray)
                             }
                             innerTextField()
                         }
-                        if (value.isNotEmpty()) {
+                        if (text.isNotEmpty()) {
                             val icon = when {
                                 secret && isPasswordVisible -> Icons.Default.VisibilityOff
                                 secret && !isPasswordVisible -> Icons.Default.Visibility
@@ -164,7 +166,7 @@ fun AzTextBox(
                                         if (secret) {
                                             isPasswordVisible = !isPasswordVisible
                                         } else {
-                                            onValueChange("")
+                                            onTextChange("")
                                         }
                                     },
                                 tint = outlineColor
@@ -179,9 +181,11 @@ fun AzTextBox(
                     Box(
                         modifier = Modifier
                             .clickable {
-                                onSubmit(value)
-                                HistoryManager.addEntry(value)
-                                onValueChange("")
+                                onSubmit(text)
+                                HistoryManager.addEntry(text)
+                                if (onValueChange == null) {
+                                    onTextChange("")
+                                }
                             }
                             .then(
                                 if (!outlined) {
@@ -204,7 +208,6 @@ fun AzTextBox(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 4.dp)
-                    .border(1.dp, outlineColor)
             ) {
                 itemsIndexed(suggestions) { index, suggestion ->
                     val suggestionBgColor = if (index % 2 == 0) {
@@ -218,7 +221,7 @@ fun AzTextBox(
                             .fillMaxWidth()
                             .background(suggestionBgColor)
                             .clickable {
-                                onValueChange(suggestion)
+                                onTextChange(suggestion)
                                 suggestions = emptyList()
                             }
                             .padding(vertical = 8.dp, horizontal = 12.dp)

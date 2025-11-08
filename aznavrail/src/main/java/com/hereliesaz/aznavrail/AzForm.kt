@@ -19,6 +19,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.LocalContentColor
 
@@ -77,7 +78,7 @@ fun AzForm(
                             onSubmit = { /* Individual onSubmit is not used in a form context */ }
                         )
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     CompositionLocalProvider(LocalContentColor provides outlineColor) {
                         Box(
                             modifier = Modifier

@@ -250,7 +250,7 @@ fun SampleScreen() {
 
 ### `AzTextBox` and `AzForm`
 
-`AzTextBox` is a modern, highly customizable text input field. `AzForm` is a container that groups multiple `AzTextBox` fields, managing them as a single entity with one submit button.
+`AzTextBox` is a text input field. `AzForm` is a container that groups multiple `AzTextBox` fields, managing them as a single entity with one submit button.
 
 #### Features
 
@@ -282,6 +282,33 @@ import com.hereliesaz.aznavrail.AzTextBoxDefaults
 AzTextBoxDefaults.setSuggestionLimit(3) // Show up to 3 suggestions
 AzTextBoxDefaults.setBackgroundColor(Color.LightGray) // Set a global background color
 AzTextBoxDefaults.setBackgroundOpacity(0.5f) // Set a global background opacity
+
+// Uncontrolled (internal state management)
+AzTextBox(
+    modifier = Modifier.padding(16.dp),
+    hint = "Enter text...",
+    onSubmit = { text ->
+        // Handle the submitted text
+    },
+    submitButtonContent = {
+        Text("Go")
+    }
+)
+
+// Controlled (hoisted state management)
+var text by remember { mutableStateOf("") }
+AzTextBox(
+    modifier = Modifier.padding(16.dp),
+    value = text,
+    onValueChange = { text = it },
+    hint = "Enter text...",
+    onSubmit = {
+        // Handle the submitted text
+    },
+    submitButtonContent = {
+        Text("Go")
+    }
+)
 
 // Multiline Text Box
 AzTextBox(
@@ -417,23 +444,27 @@ The DSL for configuring the `AzNavRail`.
 
 #### `AzTextBox`
 
-A customizable text input field with autocomplete.
+A text input field with autocomplete.
 
 ```kotlin
 @Composable
 fun AzTextBox(
     modifier: Modifier = Modifier,
+    value: String? = null,
+    onValueChange: ((String) -> Unit)? = null,
     hint: String = "",
     outlined: Boolean = true,
     multiline: Boolean = false,
     secret: Boolean = false,
     outlineColor: Color = MaterialTheme.colorScheme.primary,
-    submitButtonContent: @Composable () -> Unit,
+    submitButtonContent: (@Composable () -> Unit)? = null,
     onSubmit: (String) -> Unit
 )
 ```
 
 -   **`modifier`**: The modifier to be applied to the text box.
+-   **`value`**: The input text to be shown in the text field. Use `null` for an uncontrolled component.
+-   **`onValueChange`**: The callback that is triggered when the input service updates the text. Use `null` for an uncontrolled component.
 -   **`hint`**: The hint text to display when the input is empty.
 -   **`outlined`**: Whether the text box has an outline. The submit button's outline will be the inverse.
 -   **`multiline`**: Enables multiline input, which expands the text box vertically.

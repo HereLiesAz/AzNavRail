@@ -224,14 +224,27 @@ fun SampleScreen() {
 
         // Your app's main content goes here
         Column(modifier = Modifier.padding(16.dp)) {
-            var standaloneText by remember { mutableStateOf("") }
+            // Uncontrolled AzTextBox
             AzTextBox(
                 modifier = Modifier.padding(bottom = 16.dp),
-                value = standaloneText,
-                onValueChange = { standaloneText = it },
-                hint = "Enter text...",
+                hint = "Uncontrolled AzTextBox...",
                 onSubmit = { text ->
-                    Log.d(TAG, "Submitted text: $text")
+                    Log.d(TAG, "Submitted text from uncontrolled AzTextBox: $text")
+                },
+                submitButtonContent = {
+                    Text("Go")
+                }
+            )
+
+            // Controlled AzTextBox
+            var controlledText by remember { mutableStateOf("") }
+            AzTextBox(
+                modifier = Modifier.padding(bottom = 16.dp),
+                value = controlledText,
+                onValueChange = { controlledText = it },
+                hint = "Controlled AzTextBox...",
+                onSubmit = { text ->
+                    Log.d(TAG, "Submitted text from controlled AzTextBox: $text")
                 },
                 submitButtonContent = {
                     Text("Go")
