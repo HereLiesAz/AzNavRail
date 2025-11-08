@@ -53,6 +53,7 @@ The `aznavrail` directory contains the core `aznavrail` Android library module.
 | `build.gradle.kts` | The build script for the `aznavrail` module. |
 | `consumer-rules.pro` | ProGuard rules for consumers of the library. |
 | `src/` | Contains the source code for the `aznavrail` library. |
+| `src/main/java/com/hereliesaz/aznavrail/AzForm.kt` | The `AzForm` composable, which allows for the creation of forms with multiple `AzTextBox` fields. |
 
 ## aznavrail-web Directory
 
