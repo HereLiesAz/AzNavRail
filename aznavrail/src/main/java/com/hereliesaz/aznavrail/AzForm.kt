@@ -55,7 +55,7 @@ fun AzForm(
     submitButtonContent: @Composable () -> Unit = { Text("Submit") },
     content: AzFormScope.() -> Unit
 ) {
-    val scope = remember { AzFormScope().apply(content) }
+    val scope = remember(formName, content) { AzFormScope().apply(content) }
     val formData = rememberSaveable {
         mutableStateMapOf<String, String>().apply {
             scope.entries.forEach { entry ->

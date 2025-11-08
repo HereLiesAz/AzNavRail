@@ -465,7 +465,7 @@ fun AzTextBox(
 
 -   **`modifier`**: The modifier to be applied to the text box.
 -   **`value`**: The input text to be shown in the text field. Use `null` for an uncontrolled component.
--   **`onValueChange`**: The callback that is triggered when the input service updates the text. Use `null` for an uncontrolled component.
+-   **`onValueChange`**: The callback that is triggered when the input value updates. Use `null` for an uncontrolled component.
 -   **`hint`**: The hint text to display when the input is empty.
 -   **`outlined`**: Whether the text box has an outline. The submit button's outline will be the inverse of this value.
 -   **`multiline`**: Enables multiline input, which expands the text box vertically.

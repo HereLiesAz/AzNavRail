@@ -2,6 +2,9 @@ package com.hereliesaz.aznavrail.util
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.junit.After
@@ -24,6 +27,7 @@ class HistoryManagerTest {
         context = ApplicationProvider.getApplicationContext()
         historyFile = File(context.filesDir, "az_text_box_history.txt")
         HistoryManager.init(context, 5) // Default to 5
+        HistoryManager.coroutineScope = CoroutineScope(Dispatchers.Unconfined)
     }
 
     @After
@@ -35,7 +39,7 @@ class HistoryManagerTest {
     }
 
     @Test
-    fun addEntry_addsNewEntryToTopOfHistory() {
+    fun addEntry_addsNewEntryToTopOfHistory() = runBlocking {
         HistoryManager.addEntry("first", null)
         HistoryManager.addEntry("second", null)
         val suggestions = HistoryManager.getSuggestions("", null)
@@ -43,7 +47,7 @@ class HistoryManagerTest {
     }
 
     @Test
-    fun addEntry_movesExistingEntryToTop() {
+    fun addEntry_movesExistingEntryToTop() = runBlocking {
         HistoryManager.addEntry("first", null)
         HistoryManager.addEntry("second", null)
         HistoryManager.addEntry("first", null)
@@ -53,7 +57,7 @@ class HistoryManagerTest {
     }
 
     @Test
-    fun getSuggestions_returnsMatchingEntries() {
+    fun getSuggestions_returnsMatchingEntries() = runBlocking {
         HistoryManager.addEntry("apple", null)
         HistoryManager.addEntry("apricot", null)
         HistoryManager.addEntry("banana", null)
@@ -64,7 +68,7 @@ class HistoryManagerTest {
     }
 
     @Test
-    fun getSuggestions_respectsMaxSuggestionSetting() {
+    fun getSuggestions_respectsMaxSuggestionSetting() = runBlocking {
         HistoryManager.updateSettings(2)
         (1..5).forEach { HistoryManager.addEntry("entry$it", null) }
         val suggestions = HistoryManager.getSuggestions("entry", null)
@@ -72,7 +76,7 @@ class HistoryManagerTest {
     }
 
     @Test
-    fun storageLimit_isRespected() {
+    fun storageLimit_isRespected() = runBlocking {
         HistoryManager.updateSettings(1) // 1KB limit
         val longString = "a".repeat(1000)
 
@@ -93,7 +97,7 @@ class HistoryManagerTest {
     }
 
     @Test
-    fun zeroLimit_disablesHistory() {
+    fun zeroLimit_disablesHistory() = runBlocking {
         HistoryManager.updateSettings(0) // 0KB limit, 0 suggestions
         HistoryManager.addEntry("should not be saved", null)
         val suggestions = HistoryManager.getSuggestions("should", null)
@@ -104,7 +108,7 @@ class HistoryManagerTest {
     }
 
     @Test
-    fun namespacedHistory_isolatesSuggestions() {
+    fun namespacedHistory_isolatesSuggestions() = runBlocking {
         // Add entries to two different contexts
         HistoryManager.addEntry("user_search_1", "users")
         HistoryManager.addEntry("user_search_2", "users")
@@ -127,7 +131,7 @@ class HistoryManagerTest {
     }
 
     @Test
-    fun namespacedHistory_movesExistingEntryToTop() {
+    fun namespacedHistory_movesExistingEntryToTop() = runBlocking {
         HistoryManager.addEntry("entry1", "contextA")
         HistoryManager.addEntry("entry2", "contextA")
         HistoryManager.addEntry("entry1", "contextB") // different context

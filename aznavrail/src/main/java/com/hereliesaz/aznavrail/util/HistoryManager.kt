@@ -3,6 +3,10 @@ package com.hereliesaz.aznavrail.util
 import android.content.Context
 import java.io.File
 import java.io.IOException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 object HistoryManager {
 
@@ -14,6 +18,7 @@ object HistoryManager {
     private var isInitialized = false
     private lateinit var context: Context
     private val histories = mutableMapOf<String, MutableList<String>>()
+    internal var coroutineScope = CoroutineScope(Dispatchers.IO)
 
     fun init(context: Context, suggestionLimit: Int = 5) {
         if (isInitialized) {
@@ -31,7 +36,11 @@ object HistoryManager {
         maxSizeBytes = newLimit * 1024
         // If storage is reduced, we might need to trim the history file
         if (isInitialized) {
-            histories.keys.forEach { saveHistory(it) }
+            histories.keys.forEach { context ->
+                coroutineScope.launch {
+                    saveHistory(context)
+                }
+            }
         }
     }
 
@@ -39,9 +48,9 @@ object HistoryManager {
         return File(context.filesDir, "$HISTORY_FILE_PREFIX$historyContext.txt")
     }
 
-    private fun loadHistory(historyContext: String) {
+    private suspend fun loadHistory(historyContext: String) = withContext(Dispatchers.IO) {
         val historyFile = getHistoryFile(historyContext)
-        if (!historyFile.exists()) return
+        if (!historyFile.exists()) return@withContext
 
         try {
             val lines = historyFile.readLines(Charsets.UTF_8)
@@ -56,7 +65,7 @@ object HistoryManager {
         }
     }
 
-    private fun saveHistory(historyContext: String) {
+    private suspend fun saveHistory(historyContext: String) = withContext(Dispatchers.IO) {
         val historyFile = getHistoryFile(historyContext)
         try {
             historyFile.writer(Charsets.UTF_8).use { writer ->
@@ -78,8 +87,6 @@ object HistoryManager {
                     }
                 }
             }
-            // After saving, reload to ensure consistency and trim the in-memory list
-            loadHistory(historyContext)
         } catch (e: IOException) {
             // Silently ignore, history not saved.
         }
@@ -94,26 +101,33 @@ object HistoryManager {
             history.remove(text)
             history.add(0, text)
         }
-        saveHistory(context)
+        coroutineScope.launch {
+            saveHistory(context)
+        }
     }
 
-    fun getSuggestions(query: String, historyContext: String?): List<String> {
+    suspend fun getSuggestions(query: String, historyContext: String?): List<String> {
         val context = historyContext ?: DEFAULT_HISTORY_CONTEXT
         if (!isInitialized || maxSuggestions == 0) {
             return emptyList()
         }
-        synchronized(histories) {
-            loadHistory(context)
-            val history = histories[context] ?: return emptyList()
 
-            return if (query.isBlank()) {
+        // Lazy load history if not already in memory for this context
+        if (!histories.containsKey(context)) {
+            loadHistory(context)
+        }
+
+        return synchronized(histories) {
+            val history = histories[context] ?: return@synchronized emptyList()
+
+            if (query.isBlank()) {
                 history.take(maxSuggestions)
             } else {
                 val (startsWith, contains) = history
                     .filter { it.contains(query, ignoreCase = true) && !it.equals(query, ignoreCase = true) }
                     .partition { it.startsWith(query, ignoreCase = true) }
 
-                (startsWith + contains.sorted()).take(maxSuggestions)
+                (startsWith + contains).take(maxSuggestions)
             }
         }
     }
