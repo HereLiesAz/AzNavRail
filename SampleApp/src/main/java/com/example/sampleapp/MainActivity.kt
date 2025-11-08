@@ -31,6 +31,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.hereliesaz.aznavrail.AzNavRail
+import com.hereliesaz.aznavrail.AzTextBox
+import com.hereliesaz.aznavrail.AzTextBoxDefaults
 import com.hereliesaz.aznavrail.model.AzButtonShape
 
 class MainActivity : ComponentActivity() {
@@ -66,175 +68,191 @@ fun SampleScreen() {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.screenWidthDp > configuration.screenHeightDp
 
+    // Set the global suggestion limit for all AzTextBox instances
+    AzTextBoxDefaults.setSuggestionLimit(3)
+
     Row {
         Box {
             AzNavRail(
                 navController = navController,
                 currentDestination = currentDestination?.destination?.route,
-            isLandscape = isLandscape
-        ) {
-            azSettings(
-                // displayAppNameInHeader = true, // Set to true to display the app name instead of the icon
-                packRailButtons = packRailButtons,
-                isLoading = isLoading,
-                defaultShape = AzButtonShape.RECTANGLE, // Set a default shape for all rail items
-                enableRailDragging = true
-            )
+                isLandscape = isLandscape
+            ) {
+                azSettings(
+                    // displayAppNameInHeader = true, // Set to true to display the app name instead of the icon
+                    packRailButtons = packRailButtons,
+                    isLoading = isLoading,
+                    defaultShape = AzButtonShape.RECTANGLE, // Set a default shape for all rail items
+                    enableRailDragging = true
+                )
 
-            // A standard menu item - only appears in the expanded menu
-            azMenuItem(id = "home", text = "Home", route = "home", onClick = { Log.d(TAG, "Home menu item clicked") })
+                // A standard menu item - only appears in the expanded menu
+                azMenuItem(id = "home", text = "Home", route = "home", onClick = { Log.d(TAG, "Home menu item clicked") })
 
-            // A menu item with multi-line text
-            azMenuItem(id = "multi-line", text = "This is a\nmulti-line item", route = "multi-line", onClick = { Log.d(TAG, "Multi-line menu item clicked") })
+                // A menu item with multi-line text
+                azMenuItem(id = "multi-line", text = "This is a\nmulti-line item", route = "multi-line", onClick = { Log.d(TAG, "Multi-line menu item clicked") })
 
-            // A rail toggle item with the default shape (RECTANGLE)
-            azRailToggle(
-                id = "pack-rail",
-                isChecked = packRailButtons,
-                toggleOnText = "Pack Rail",
-                toggleOffText = "Unpack Rail",
-                route = "pack-rail",
-                onClick = {
-                    packRailButtons = !packRailButtons
-                    Log.d(TAG, "Pack rail toggled to: $packRailButtons")
-                }
-            )
+                // A rail toggle item with the default shape (RECTANGLE)
+                azRailToggle(
+                    id = "pack-rail",
+                    isChecked = packRailButtons,
+                    toggleOnText = "Pack Rail",
+                    toggleOffText = "Unpack Rail",
+                    route = "pack-rail",
+                    onClick = {
+                        packRailButtons = !packRailButtons
+                        Log.d(TAG, "Pack rail toggled to: $packRailButtons")
+                    }
+                )
 
-            // A disabled rail item that overrides the default shape
-            azRailItem(
-                id = "profile",
-                text = "Profile",
-                shape = AzButtonShape.CIRCLE,
-                disabled = true,
-                route = "profile"
-            )
+                // A disabled rail item that overrides the default shape
+                azRailItem(
+                    id = "profile",
+                    text = "Profile",
+                    shape = AzButtonShape.CIRCLE,
+                    disabled = true,
+                    route = "profile"
+                )
 
-            azDivider()
+                azDivider()
 
-            // A rail toggle item with the SQUARE shape
-            azRailToggle(
-                id = "online",
-                isChecked = isOnline,
-                toggleOnText = "Online",
-                toggleOffText = "Offline",
-                shape = AzButtonShape.SQUARE,
-                route = "online",
-                onClick = {
-                    isOnline = !isOnline
-                    Log.d(TAG, "Online toggled to: $isOnline")
-                }
-            )
+                // A rail toggle item with the SQUARE shape
+                azRailToggle(
+                    id = "online",
+                    isChecked = isOnline,
+                    toggleOnText = "Online",
+                    toggleOffText = "Offline",
+                    shape = AzButtonShape.SQUARE,
+                    route = "online",
+                    onClick = {
+                        isOnline = !isOnline
+                        Log.d(TAG, "Online toggled to: $isOnline")
+                    }
+                )
 
-            // A menu toggle item
-            azMenuToggle(
-                id = "dark-mode",
-                isChecked = isDarkMode,
-                toggleOnText = "Dark Mode",
-                toggleOffText = "Light Mode",
-                route = "dark-mode",
-                onClick = {
-                    isDarkMode = !isDarkMode
-                    Log.d(TAG, "Dark mode toggled to: $isDarkMode")
-                }
-            )
+                // A menu toggle item
+                azMenuToggle(
+                    id = "dark-mode",
+                    isChecked = isDarkMode,
+                    toggleOnText = "Dark Mode",
+                    toggleOffText = "Light Mode",
+                    route = "dark-mode",
+                    onClick = {
+                        isDarkMode = !isDarkMode
+                        Log.d(TAG, "Dark mode toggled to: $isDarkMode")
+                    }
+                )
 
-            azDivider()
+                azDivider()
 
-            // A rail cycler with a disabled option
-            azRailCycler(
-                id = "rail-cycler",
-                options = railCycleOptions,
-                selectedOption = railSelectedOption,
-                disabledOptions = listOf("C"),
-                route = "rail-cycler",
-                onClick = {
-                    val currentIndex = railCycleOptions.indexOf(railSelectedOption)
-                    val nextIndex = (currentIndex + 1) % railCycleOptions.size
-                    railSelectedOption = railCycleOptions[nextIndex]
-                    Log.d(TAG, "Rail cycler clicked, new option: $railSelectedOption")
-                }
-            )
+                // A rail cycler with a disabled option
+                azRailCycler(
+                    id = "rail-cycler",
+                    options = railCycleOptions,
+                    selectedOption = railSelectedOption,
+                    disabledOptions = listOf("C"),
+                    route = "rail-cycler",
+                    onClick = {
+                        val currentIndex = railCycleOptions.indexOf(railSelectedOption)
+                        val nextIndex = (currentIndex + 1) % railCycleOptions.size
+                        railSelectedOption = railCycleOptions[nextIndex]
+                        Log.d(TAG, "Rail cycler clicked, new option: $railSelectedOption")
+                    }
+                )
 
-            // A menu cycler
-            azMenuCycler(
-                id = "menu-cycler",
-                options = menuCycleOptions,
-                selectedOption = menuSelectedOption,
-                route = "menu-cycler",
-                onClick = {
-                    val currentIndex = menuCycleOptions.indexOf(menuSelectedOption)
-                    val nextIndex = (currentIndex + 1) % menuCycleOptions.size
-                    menuSelectedOption = menuCycleOptions[nextIndex]
-                    Log.d(TAG, "Menu cycler clicked, new option: $menuSelectedOption")
-                }
-            )
+                // A menu cycler
+                azMenuCycler(
+                    id = "menu-cycler",
+                    options = menuCycleOptions,
+                    selectedOption = menuSelectedOption,
+                    route = "menu-cycler",
+                    onClick = {
+                        val currentIndex = menuCycleOptions.indexOf(menuSelectedOption)
+                        val nextIndex = (currentIndex + 1) % menuCycleOptions.size
+                        menuSelectedOption = menuCycleOptions[nextIndex]
+                        Log.d(TAG, "Menu cycler clicked, new option: $menuSelectedOption")
+                    }
+                )
 
 
-            // A button to demonstrate the loading state
-            azRailItem(id = "loading", text = "Load", route = "loading", onClick = {
-                isLoading = !isLoading
-                Log.d(TAG, "Loading toggled to: $isLoading")
-            })
+                // A button to demonstrate the loading state
+                azRailItem(id = "loading", text = "Load", route = "loading", onClick = {
+                    isLoading = !isLoading
+                    Log.d(TAG, "Loading toggled to: $isLoading")
+                })
 
-            azDivider()
+                azDivider()
 
-            azMenuHostItem(id = "menu-host", text = "Menu Host", route = "menu-host", onClick = { Log.d(TAG, "Menu host item clicked") })
-            azMenuSubItem(id = "menu-sub-1", hostId = "menu-host", text = "Menu Sub 1", route = "menu-sub-1", onClick = { Log.d(TAG, "Menu sub item 1 clicked") })
-            azMenuSubItem(id = "menu-sub-2", hostId = "menu-host", text = "Menu Sub 2", route = "menu-sub-2", onClick = { Log.d(TAG, "Menu sub item 2 clicked") })
+                azMenuHostItem(id = "menu-host", text = "Menu Host", route = "menu-host", onClick = { Log.d(TAG, "Menu host item clicked") })
+                azMenuSubItem(id = "menu-sub-1", hostId = "menu-host", text = "Menu Sub 1", route = "menu-sub-1", onClick = { Log.d(TAG, "Menu sub item 1 clicked") })
+                azMenuSubItem(id = "menu-sub-2", hostId = "menu-host", text = "Menu Sub 2", route = "menu-sub-2", onClick = { Log.d(TAG, "Menu sub item 2 clicked") })
 
-            azRailHostItem(id = "rail-host", text = "Rail Host", route = "rail-host", onClick = { Log.d(TAG, "Rail host item clicked") })
-            azRailSubItem(id = "rail-sub-1", hostId = "rail-host", text = "Rail Sub 1", route = "rail-sub-1", onClick = { Log.d(TAG, "Rail sub item 1 clicked") })
-            azMenuSubItem(id = "rail-sub-2", hostId = "rail-host", text = "Menu Sub 2", route = "rail-sub-2", onClick = { Log.d(TAG, "Menu sub item 2 (from rail host) clicked") })
+                azRailHostItem(id = "rail-host", text = "Rail Host", route = "rail-host", onClick = { Log.d(TAG, "Rail host item clicked") })
+                azRailSubItem(id = "rail-sub-1", hostId = "rail-host", text = "Rail Sub 1", route = "rail-sub-1", onClick = { Log.d(TAG, "Rail sub item 1 clicked") })
+                azMenuSubItem(id = "rail-sub-2", hostId = "rail-host", text = "Menu Sub 2", route = "rail-sub-2", onClick = { Log.d(TAG, "Menu sub item 2 (from rail host) clicked") })
 
-            azMenuSubToggle(
-                id = "sub-toggle",
-                hostId = "menu-host",
-                isChecked = isDarkMode,
-                toggleOnText = "Sub Toggle On",
-                toggleOffText = "Sub Toggle Off",
-                route = "sub-toggle",
-                onClick = {
-                    isDarkMode = !isDarkMode
-                    Log.d(TAG, "Sub toggle clicked, dark mode is now: $isDarkMode")
-                }
-            )
+                azMenuSubToggle(
+                    id = "sub-toggle",
+                    hostId = "menu-host",
+                    isChecked = isDarkMode,
+                    toggleOnText = "Sub Toggle On",
+                    toggleOffText = "Sub Toggle Off",
+                    route = "sub-toggle",
+                    onClick = {
+                        isDarkMode = !isDarkMode
+                        Log.d(TAG, "Sub toggle clicked, dark mode is now: $isDarkMode")
+                    }
+                )
 
-            azRailSubCycler(
-                id = "sub-cycler",
-                hostId = "rail-host",
-                options = menuCycleOptions,
-                selectedOption = menuSelectedOption,
-                route = "sub-cycler",
-                shape = null,
-                onClick = {
-                    val currentIndex = menuCycleOptions.indexOf(menuSelectedOption)
-                    val nextIndex = (currentIndex + 1) % menuCycleOptions.size
-                    menuSelectedOption = menuCycleOptions[nextIndex]
-                    Log.d(TAG, "Sub cycler clicked, new option: $menuSelectedOption")
-                }
-            )
-        }
+                azRailSubCycler(
+                    id = "sub-cycler",
+                    hostId = "rail-host",
+                    options = menuCycleOptions,
+                    selectedOption = menuSelectedOption,
+                    route = "sub-cycler",
+                    shape = null,
+                    onClick = {
+                        val currentIndex = menuCycleOptions.indexOf(menuSelectedOption)
+                        val nextIndex = (currentIndex + 1) % menuCycleOptions.size
+                        menuSelectedOption = menuCycleOptions[nextIndex]
+                        Log.d(TAG, "Sub cycler clicked, new option: $menuSelectedOption")
+                    }
+                )
+            }
         }
 
         // Your app's main content goes here
-        NavHost(navController = navController, startDestination = "home") {
-            composable("home") { Text("Home Screen") }
-            composable("multi-line") { Text("Multi-line Screen") }
-            composable("menu-host") { Text("Menu Host Screen") }
-            composable("menu-sub-1") { Text("Menu Sub 1 Screen") }
-            composable("menu-sub-2") { Text("Menu Sub 2 Screen") }
-            composable("rail-host") { Text("Rail Host Screen") }
-            composable("rail-sub-1") { Text("Rail Sub 1 Screen") }
-            composable("rail-sub-2") { Text("Rail Sub 2 Screen") }
-            composable("sub-toggle") { Text("Sub Toggle Screen") }
-            composable("sub-cycler") { Text("Sub Cycler Screen") }
-            composable("pack-rail") { Text("Pack Rail Screen") }
-            composable("profile") { Text("Profile Screen") }
-            composable("online") { Text("Online Screen") }
-            composable("dark-mode") { Text("Dark Mode Screen") }
-            composable("rail-cycler") { Text("Rail Cycler Screen") }
-            composable("menu-cycler") { Text("Menu Cycler Screen") }
-            composable("loading") { Text("Loading Screen") }
+        Column(modifier = Modifier.padding(16.dp)) {
+            AzTextBox(
+                modifier = Modifier.padding(bottom = 16.dp),
+                hint = "Enter text...",
+                onSubmit = { text ->
+                    Log.d(TAG, "Submitted text: $text")
+                },
+                submitButtonContent = {
+                    Text("Go")
+                }
+            )
+
+            NavHost(navController = navController, startDestination = "home") {
+                composable("home") { Text("Home Screen") }
+                composable("multi-line") { Text("Multi-line Screen") }
+                composable("menu-host") { Text("Menu Host Screen") }
+                composable("menu-sub-1") { Text("Menu Sub 1 Screen") }
+                composable("menu-sub-2") { Text("Menu Sub 2 Screen") }
+                composable("rail-host") { Text("Rail Host Screen") }
+                composable("rail-sub-1") { Text("Rail Sub 1 Screen") }
+                composable("rail-sub-2") { Text("Rail Sub 2 Screen") }
+                composable("sub-toggle") { Text("Sub Toggle Screen") }
+                composable("sub-cycler") { Text("Sub Cycler Screen") }
+                composable("pack-rail") { Text("Pack Rail Screen") }
+                composable("profile") { Text("Profile Screen") }
+                composable("online") { Text("Online Screen") }
+                composable("dark-mode") { Text("Dark Mode Screen") }
+                composable("rail-cycler") { Text("Rail Cycler Screen") }
+                composable("menu-cycler") { Text("Menu Cycler Screen") }
+                composable("loading") { Text("Loading Screen") }
+            }
         }
     }
 }
