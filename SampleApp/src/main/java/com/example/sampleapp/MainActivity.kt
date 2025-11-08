@@ -34,6 +34,10 @@ import com.hereliesaz.aznavrail.AzNavRail
 import com.hereliesaz.aznavrail.AzTextBox
 import com.hereliesaz.aznavrail.AzTextBoxDefaults
 import com.hereliesaz.aznavrail.model.AzButtonShape
+import com.hereliesaz.aznavrail.AzForm
+import com.hereliesaz.aznavrail.AzButton
+import com.hereliesaz.aznavrail.AzToggle
+import com.hereliesaz.aznavrail.AzCycler
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -223,16 +227,100 @@ fun SampleScreen() {
 
         // Your app's main content goes here
         Column(modifier = Modifier.padding(16.dp)) {
+            // Uncontrolled AzTextBox with history context
             AzTextBox(
                 modifier = Modifier.padding(bottom = 16.dp),
-                hint = "Enter text...",
+                hint = "Uncontrolled (History: Search)",
+                historyContext = "search_history",
                 onSubmit = { text ->
-                    Log.d(TAG, "Submitted text: $text")
+                    Log.d(TAG, "Submitted text from uncontrolled AzTextBox: $text")
                 },
                 submitButtonContent = {
                     Text("Go")
                 }
             )
+
+            // Controlled AzTextBox with a different history context
+            var controlledText by remember { mutableStateOf("") }
+            AzTextBox(
+                modifier = Modifier.padding(bottom = 16.dp),
+                value = controlledText,
+                onValueChange = { controlledText = it },
+                hint = "Controlled (History: Usernames)",
+                historyContext = "username_history",
+                onSubmit = { text ->
+                    Log.d(TAG, "Submitted text from controlled AzTextBox: $text")
+                },
+                submitButtonContent = {
+                    Text("Go")
+                }
+            )
+
+            // AzTextBox with inverted outline
+            AzTextBox(
+                modifier = Modifier.padding(bottom = 16.dp),
+                hint = "Uncontrolled (No Outline)",
+                outlined = false,
+                onSubmit = { text ->
+                    Log.d(TAG, "Submitted text from no-outline AzTextBox: $text")
+                },
+                submitButtonContent = {
+                    Text("Go")
+                }
+            )
+
+            AzForm(
+                formName = "loginForm",
+                modifier = Modifier.padding(bottom = 16.dp),
+                onSubmit = { formData ->
+                    Log.d(TAG, "Form submitted: $formData")
+                },
+                submitButtonContent = {
+                    Text("Login")
+                }
+            ) {
+                entry(entryName = "username", hint = "Username")
+                entry(entryName = "password", hint = "Password", secret = true)
+                entry(entryName = "bio", hint = "Biography", multiline = true)
+            }
+
+            AzForm(
+                formName = "registrationForm",
+                outlined = false,
+                onSubmit = { formData ->
+                    Log.d(TAG, "Registration Form submitted: $formData")
+                },
+                submitButtonContent = {
+                    Text("Register")
+                }
+            ) {
+                entry(entryName = "email", hint = "Email")
+                entry(entryName = "confirm_password", hint = "Confirm Password", secret = true)
+            }
+
+            Row {
+                AzButton(onClick = { Log.d(TAG, "Standalone AzButton clicked") }, text = "Button", shape = AzButtonShape.SQUARE)
+                var isToggled by remember { mutableStateOf(false) }
+                AzToggle(
+                    isChecked = isToggled,
+                    onToggle = { isToggled = !isToggled },
+                    toggleOnText = "On",
+                    toggleOffText = "Off",
+                    shape = AzButtonShape.RECTANGLE
+                )
+                val cyclerOptions = remember { listOf("1", "2", "3") }
+                var selectedCyclerOption by remember { mutableStateOf(cyclerOptions.first()) }
+                AzCycler(
+                    options = cyclerOptions,
+                    selectedOption = selectedCyclerOption,
+                    onCycle = {
+                        val currentIndex = cyclerOptions.indexOf(selectedCyclerOption)
+                        val nextIndex = (currentIndex + 1) % cyclerOptions.size
+                        selectedCyclerOption = cyclerOptions[nextIndex]
+                    },
+                    shape = AzButtonShape.CIRCLE
+                )
+            }
 
             NavHost(navController = navController, startDestination = "home") {
                 composable("home") { Text("Home Screen") }
