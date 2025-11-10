@@ -15,6 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.snapshots.SnapshotStateMap
+import androidx.compose.runtime.toMutableStateMap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -56,7 +59,12 @@ fun AzForm(
     content: AzFormScope.() -> Unit
 ) {
     val scope = remember(formName, content) { AzFormScope().apply(content) }
-    val formData = rememberSaveable {
+    val formData = rememberSaveable(
+        saver = listSaver<SnapshotStateMap<String, String>, Pair<String, String>>(
+            save = { it.toList() },
+            restore = { it.toMutableStateMap() }
+        )
+    ) {
         mutableStateMapOf<String, String>().apply {
             scope.entries.forEach { entry ->
                 this[entry.entryName] = ""
