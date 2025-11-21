@@ -59,7 +59,7 @@ import com.hereliesaz.aznavrail.internal.CyclerTransientState
 import com.hereliesaz.aznavrail.internal.Footer
 import com.hereliesaz.aznavrail.internal.MenuItem
 import com.hereliesaz.aznavrail.internal.RailItems
-import com.hereliesaz.aznavrail.model.AzButtonShape
+import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -329,16 +329,16 @@ fun AzNavRail(
                         if (isAppIcon) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (appIcon != null) {
-                                    val iconShape = when (scope.headerIconShape) {
-                                        AzButtonShape.CIRCLE -> CircleShape
-                                        AzButtonShape.SQUARE, AzButtonShape.RECTANGLE, AzButtonShape.NONE -> RoundedCornerShape(0.dp)
+                                    val baseModifier = Modifier.size(AzNavRailDefaults.HeaderIconSize)
+                                    val finalModifier = when (scope.headerIconShape) {
+                                        AzHeaderIconShape.CIRCLE -> baseModifier.clip(CircleShape)
+                                        AzHeaderIconShape.ROUNDED -> baseModifier.clip(RoundedCornerShape(12.dp))
+                                        AzHeaderIconShape.NONE -> baseModifier
                                     }
                                     Image(
                                         painter = rememberAsyncImagePainter(model = appIcon),
                                         contentDescription = "Toggle menu, showing $appName icon",
-                                        modifier = Modifier
-                                            .size(AzNavRailDefaults.HeaderIconSize)
-                                            .clip(iconShape)
+                                        modifier = finalModifier
                                     )
                                 } else {
                                     Icon(
