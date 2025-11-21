@@ -82,10 +82,9 @@ fun AzNavRailButton(
         enabled = !disabled
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            val textModifier = if (shape == AzButtonShape.RECTANGLE || shape == AzButtonShape.NONE) {
-                Modifier
-            } else {
-                Modifier.weight(1f)
+            val textModifier = when (shape) {
+                AzButtonShape.RECTANGLE, AzButtonShape.NONE -> Modifier
+                AzButtonShape.CIRCLE, AzButtonShape.SQUARE -> Modifier.weight(1f)
             }
 
             AutoSizeText(
