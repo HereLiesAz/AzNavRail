@@ -50,6 +50,12 @@ jest.mock('react-native/Libraries/Animated/Animated', () => {
   };
 });
 
+// Mock Dimensions
+jest.mock('react-native/Libraries/Utilities/Dimensions', () => ({
+  get: jest.fn().mockReturnValue({ width: 375, height: 812 }),
+  addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+}));
+
 
 describe('AzNavRail Full Suite', () => {
   beforeEach(() => {
