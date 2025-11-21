@@ -8,8 +8,6 @@ import {
   PanResponder,
   Dimensions,
   ScrollView,
-  Image,
-  LayoutChangeEvent,
 } from 'react-native';
 import { AzNavRailContext } from './AzNavRailScope';
 import { AzNavItem, AzNavRailSettings, AzButtonShape } from './types';
@@ -22,7 +20,7 @@ import { AzLoad } from './components/AzLoad';
 
 interface AzNavRailProps extends AzNavRailSettings {
   children: React.ReactNode;
-  navController?: any; // For future integration
+  navController?: any;
   currentDestination?: string;
   isLandscape?: boolean;
   initiallyExpanded?: boolean;
@@ -30,14 +28,14 @@ interface AzNavRailProps extends AzNavRailSettings {
   onExpandedChange?: (expanded: boolean) => void;
 }
 
+const logInteraction = (action: string, details?: string) => {
+    console.log(`[AzNavRail] ${action} ${details || ''}`);
+};
+
 export const AzNavRail: React.FC<AzNavRailProps> = ({
   children,
-  currentDestination,
-  isLandscape,
   initiallyExpanded = false,
-  disableSwipeToOpen = false,
   displayAppNameInHeader = true,
-  packRailButtons = false,
   expandedRailWidth = AzNavRailDefaults.ExpandedRailWidth,
   collapsedRailWidth = AzNavRailDefaults.CollapsedRailWidth,
   showFooter = true,
@@ -56,17 +54,19 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
   const railWidthAnim = useRef(new Animated.Value(initiallyExpanded ? expandedRailWidth : collapsedRailWidth)).current;
   const pan = useRef(new Animated.ValueXY()).current;
   const panValue = useRef({ x: 0, y: 0 });
-  const opacityAnim = useRef(new Animated.Value(1)).current;
+  const dragStartPos = useRef({ x: 0, y: 0 });
 
   // Refs for PanResponder stale closures
   const isFloatingRef = useRef(isFloating);
   const enableRailDraggingRef = useRef(enableRailDragging);
   const showFloatingButtonsRef = useRef(showFloatingButtons);
   const wasVisibleOnDragStartRef = useRef(false);
+  const itemsRef = useRef(items);
 
   useEffect(() => { isFloatingRef.current = isFloating; }, [isFloating]);
   useEffect(() => { enableRailDraggingRef.current = enableRailDragging; }, [enableRailDragging]);
   useEffect(() => { showFloatingButtonsRef.current = showFloatingButtons; }, [showFloatingButtons]);
+  useEffect(() => { itemsRef.current = items; }, [items]);
 
   useEffect(() => {
       const id = pan.addListener((value) => { panValue.current = value; });
@@ -78,15 +78,13 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
     setItems((prev) => {
       const index = prev.findIndex((i) => i.id === item.id);
       if (index >= 0) {
-        // Update if changed
-        // Shallow compare props + options array
         const old = prev[index];
         const isSame =
           old.text === item.text &&
           old.disabled === item.disabled &&
           old.isChecked === item.isChecked &&
           old.selectedOption === item.selectedOption &&
-          old.isExpanded === item.isExpanded && // host expansion
+          old.isExpanded === item.isExpanded &&
           JSON.stringify(old.options) === JSON.stringify(item.options) &&
           old.shape === item.shape &&
           old.color === item.color &&
@@ -126,32 +124,62 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
         if (!isFloatingRef.current && Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10 && enableRailDraggingRef.current) {
             return true;
         }
-        // Dragging in FAB mode
         return isFloatingRef.current;
       },
       onPanResponderGrant: () => {
-        pan.setOffset({
-          x: panValue.current.x,
-          y: panValue.current.y,
-        });
-        pan.setValue({ x: 0, y: 0 });
-        if (!isFloatingRef.current) {
-             // Swipe down/up triggered
+        if (isFloatingRef.current) {
+             pan.setOffset({
+                 x: panValue.current.x,
+                 y: panValue.current.y
+             });
+             pan.setValue({ x: 0, y: 0 });
+             dragStartPos.current = { x: panValue.current.x, y: panValue.current.y };
+
+             wasVisibleOnDragStartRef.current = showFloatingButtonsRef.current;
+             setShowFloatingButtons(false);
+             logInteraction('Drag started', 'FAB mode');
+        } else {
              setIsFloating(true);
              setIsExpanded(false);
-        }
-        if (isFloatingRef.current) {
-            wasVisibleOnDragStartRef.current = showFloatingButtonsRef.current;
-            setShowFloatingButtons(false);
+             logInteraction('Swipe detected', 'Entering FAB mode');
+
+             // Reset to 0,0 for simplicity as we undock
+             pan.setOffset({ x: 0, y: 0 });
+             pan.setValue({ x: 0, y: 0 });
+             dragStartPos.current = { x: 0, y: 0 };
         }
       },
-      onPanResponderMove: Animated.event(
-        [null, { dx: pan.x, dy: pan.y }],
-        { useNativeDriver: false }
-      ),
-      onPanResponderRelease: (_, gestureState) => {
+      onPanResponderMove: (_, gestureState) => {
+          if (!isFloatingRef.current) return;
+
+          const { dx, dy } = gestureState;
+          const screenHeight = Dimensions.get('window').height;
+          const iconSize = AzNavRailDefaults.HeaderIconSize;
+
+          // 10% margin bounds
+          const minY = screenHeight * 0.1;
+          const maxY = screenHeight * 0.9 - iconSize;
+
+          // Calculate target absolute Y
+          // dragStartPos is the absolute position at start of drag (because we set offset to it)
+          // Wait, if we set offset, then pan.y (value) is deviation.
+          // So AbsoluteY = OffsetY + ValueY.
+          // Here ValueY should be dy.
+
+          const targetY = dragStartPos.current.y + dy;
+
+          // Clamp
+          let clampedY = Math.max(minY, Math.min(targetY, maxY));
+
+          // Apply as new value (remove offset to get delta)
+          pan.setValue({ x: dx, y: clampedY - dragStartPos.current.y });
+      },
+      onPanResponderRelease: () => {
         pan.flattenOffset();
+
         if (isFloatingRef.current) {
+            logInteraction('Drag ended');
+
             // Snap back logic
             const currentX = panValue.current.x;
             const currentY = panValue.current.y;
@@ -160,9 +188,33 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
              if (distance < AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
                  setIsFloating(false);
                  pan.setValue({ x: 0, y: 0 });
+                 logInteraction('Snap back', 'Docked');
              } else {
                  if (wasVisibleOnDragStartRef.current) {
+                     // Unfold logic
                      setShowFloatingButtons(true);
+
+                     // Check bottom bound
+                     const screenHeight = Dimensions.get('window').height;
+                     const railItemsCount = itemsRef.current.filter(i => i.isRailItem && !i.isSubItem).length;
+                     // Estimated height: Header + (Count * (48 + 8)) + Padding
+                     // 48 = button size, 8 = margin
+                     const contentHeight = headerHeight + (railItemsCount * 56) + 16;
+
+                     const bottomY = currentY + contentHeight;
+                     const limitY = screenHeight * 0.9;
+
+                     if (bottomY > limitY) {
+                         const shift = bottomY - limitY;
+                         const newY = currentY - shift;
+
+                         Animated.timing(pan, {
+                             toValue: { x: currentX, y: newY },
+                             duration: 200,
+                             useNativeDriver: false
+                         }).start();
+                         logInteraction('Adjusted position', `Shifted up by ${shift}`);
+                     }
                  }
              }
         }
@@ -170,22 +222,50 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
     })
   ).current;
 
-  // Long Press Handler for Header
   const handleHeaderLongPress = () => {
       if (enableRailDragging) {
           if (isFloating) {
               setIsFloating(false);
               pan.setValue({ x: 0, y: 0 });
+              logInteraction('Long press', 'Docked rail');
           } else {
               setIsFloating(true);
               setIsExpanded(false);
+              logInteraction('Long press', 'Undocked rail');
           }
       }
   };
 
   const handleHeaderTap = () => {
+      logInteraction('Header tapped');
       if (isFloating) {
-          setShowFloatingButtons(!showFloatingButtons);
+          // Unfold/Fold logic
+          const willShow = !showFloatingButtons;
+          setShowFloatingButtons(willShow);
+
+          if (willShow) {
+               // Check bottom bound (duplicated logic, could be refactored)
+               const currentX = panValue.current.x;
+               const currentY = panValue.current.y;
+               const screenHeight = Dimensions.get('window').height;
+               const railItemsCount = items.filter(i => i.isRailItem && !i.isSubItem).length;
+               const contentHeight = headerHeight + (railItemsCount * 56) + 16;
+
+               const bottomY = currentY + contentHeight;
+               const limitY = screenHeight * 0.9;
+
+               if (bottomY > limitY) {
+                   const shift = bottomY - limitY;
+                   const newY = currentY - shift;
+
+                   Animated.timing(pan, {
+                       toValue: { x: currentX, y: newY },
+                       duration: 200,
+                       useNativeDriver: false
+                   }).start();
+               }
+          }
+
       } else {
           setIsExpanded(!isExpanded);
       }
@@ -194,25 +274,29 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
   // --- Render Helpers ---
 
   const renderRailItem = (item: AzNavItem) => {
-      const isHost = item.isHost;
       const isExpandedHost = hostStates[item.id] || false;
       const subItems = items.filter(i => i.hostId === item.id);
+
+      const isRect = item.shape === AzButtonShape.RECTANGLE;
 
       const commonProps = {
           key: item.id,
           color: item.color,
           shape: item.shape || defaultShape,
           disabled: item.disabled,
-          style: { marginBottom: AzNavRailDefaults.RailContentVerticalArrangement }
+          style: { marginBottom: isRect ? 2 : AzNavRailDefaults.RailContentVerticalArrangement }
       };
 
-      if (isHost) {
+      if (item.isHost) {
            return (
              <View key={item.id} style={{ alignItems: 'center', width: '100%' }}>
                  <AzButton
                      {...commonProps}
                      text={item.text}
-                     onClick={() => setHostStates(prev => ({...prev, [item.id]: !prev[item.id]}))}
+                     onClick={() => {
+                         setHostStates(prev => ({...prev, [item.id]: !prev[item.id]}));
+                         logInteraction('Host toggled', item.text);
+                     }}
                  />
                  {isExpandedHost && subItems.map(renderRailItem)}
              </View>
@@ -225,7 +309,10 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
                   {...commonProps}
                   options={item.options || []}
                   selectedOption={item.selectedOption || ''}
-                  onCycle={() => item.onClick && item.onClick()}
+                  onCycle={() => {
+                      if (item.onClick) item.onClick();
+                      logInteraction('Cycler cycled', item.text);
+                  }}
               />
           );
       }
@@ -236,17 +323,20 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
                   isChecked={item.isChecked || false}
                   toggleOnText={item.toggleOnText}
                   toggleOffText={item.toggleOffText}
-                  onToggle={() => item.onClick && item.onClick()}
+                  onToggle={() => {
+                      if (item.onClick) item.onClick();
+                      logInteraction('Toggle toggled', item.text);
+                  }}
               />
           );
       }
 
-      // Standard Button
       return (
           <AzButton
               {...commonProps}
               text={item.text}
               onClick={() => {
+                  logInteraction('Item clicked', item.text);
                   if (item.onClick) item.onClick();
                   if (item.collapseOnClick) setIsExpanded(false);
               }}
@@ -255,7 +345,6 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
   };
 
   const renderMenuItem = (item: AzNavItem, depth = 0): React.ReactNode => {
-      const isHost = item.isHost;
       const isExpandedHost = hostStates[item.id] || false;
       const subItems = items.filter(i => i.hostId === item.id);
 
@@ -267,6 +356,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
               isExpandedHost={isExpandedHost}
               onToggleHost={() => setHostStates(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
               onItemClick={() => {
+                  logInteraction('Menu item clicked', item.text);
                   if (item.onClick) item.onClick();
                   if (item.collapseOnClick) setIsExpanded(false);
               }}
@@ -279,9 +369,8 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
       );
   };
 
-  // Filter items
   const railItems = items.filter(i => i.isRailItem && !i.isSubItem);
-  const menuItems = items.filter(i => !i.isSubItem); // Menu shows all top level items, sub items handled by recursion
+  const menuItems = items.filter(i => !i.isSubItem);
 
   return (
     <AzNavRailContext.Provider value={{ register, unregister }}>
@@ -310,7 +399,6 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
                 accessibilityLabel={isFloating ? "Undocked Rail" : (isExpanded ? "Collapse Menu" : "Expand Menu")}
                 accessibilityHint="Double tap to toggle, long press to drag"
             >
-                 {/* Placeholder for App Icon/Name */}
                  <View style={{ width: AzNavRailDefaults.HeaderIconSize, height: AzNavRailDefaults.HeaderIconSize, backgroundColor: 'gray', borderRadius: 24, alignItems: 'center', justifyContent: 'center' }}>
                      <Text style={{ color: 'white' }}>Icon</Text>
                  </View>
@@ -340,13 +428,13 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
                 </ScrollView>
             )}
 
+            </Animated.View>
+            {children}
             {isLoading && (
                  <View style={styles.loaderOverlay}>
                      <AzLoad />
                  </View>
             )}
-            </Animated.View>
-            {children}
         </View>
     </AzNavRailContext.Provider>
   );
@@ -398,5 +486,7 @@ const styles = StyleSheet.create({
       backgroundColor: 'rgba(255,255,255,0.5)',
       alignItems: 'center',
       justifyContent: 'center',
+      zIndex: 10000,
+      elevation: 10,
   }
 });

@@ -42,6 +42,7 @@ const useAzItem = (item: AzNavItem) => {
       if (context) {
           return () => context.unregister(item.id);
       }
+      return undefined;
   }, [context, item.id]);
 
   return null;
@@ -235,7 +236,7 @@ export const AzRailSubItem: React.FC<AzSubItemProps> = (props) => {
         isCycler: false,
         isDivider: false,
         collapseOnClick: true,
-        shape: props.shape || AzButtonShape.CIRCLE,
+        shape: AzButtonShape.NONE,
         disabled: props.disabled || false,
         isExpanded: false,
         toggleOnText: '',
@@ -254,7 +255,7 @@ export const AzMenuSubItem: React.FC<AzSubItemProps> = (props) => {
         isCycler: false,
         isDivider: false,
         collapseOnClick: true,
-        shape: props.shape || AzButtonShape.CIRCLE,
+        shape: AzButtonShape.NONE,
         disabled: props.disabled || false,
         isExpanded: false,
         toggleOnText: '',
@@ -273,7 +274,7 @@ export const AzRailSubToggle: React.FC<AzSubToggleProps> = (props) => {
         isCycler: false,
         isDivider: false,
         collapseOnClick: true,
-        shape: props.shape || AzButtonShape.CIRCLE,
+        shape: AzButtonShape.NONE,
         disabled: props.disabled || false,
         isExpanded: false,
     });
@@ -290,7 +291,7 @@ export const AzMenuSubToggle: React.FC<AzSubToggleProps> = (props) => {
         isCycler: false,
         isDivider: false,
         collapseOnClick: true,
-        shape: props.shape || AzButtonShape.CIRCLE,
+        shape: AzButtonShape.NONE,
         disabled: props.disabled || false,
         isExpanded: false,
     });
@@ -307,7 +308,7 @@ export const AzRailSubCycler: React.FC<AzSubCyclerProps> = (props) => {
         isCycler: true,
         isDivider: false,
         collapseOnClick: true,
-        shape: props.shape || AzButtonShape.CIRCLE,
+        shape: AzButtonShape.NONE,
         disabled: props.disabled || false,
         isExpanded: false,
         toggleOnText: '',
@@ -326,7 +327,7 @@ export const AzMenuSubCycler: React.FC<AzSubCyclerProps> = (props) => {
         isCycler: true,
         isDivider: false,
         collapseOnClick: true,
-        shape: props.shape || AzButtonShape.CIRCLE,
+        shape: AzButtonShape.NONE,
         disabled: props.disabled || false,
         isExpanded: false,
         toggleOnText: '',

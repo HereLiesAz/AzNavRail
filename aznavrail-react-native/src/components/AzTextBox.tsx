@@ -43,7 +43,6 @@ export const AzTextBox: React.FC<AzTextBoxProps> = ({
   submitButtonContent,
   onSubmit,
   showSubmitButton = true,
-  style,
   containerStyle,
   backgroundColor = 'transparent',
   backgroundOpacity = 1,
