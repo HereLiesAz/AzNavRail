@@ -82,13 +82,18 @@ fun AzNavRailButton(
         enabled = !disabled
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            val textModifier = when (shape) {
+                AzButtonShape.RECTANGLE, AzButtonShape.NONE -> Modifier
+                AzButtonShape.CIRCLE, AzButtonShape.SQUARE -> Modifier.weight(1f)
+            }
+
             AutoSizeText(
                 text = text,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     textAlign = TextAlign.Center,
                     color = if (disabled) disabledColor else finalColor
                 ),
-                modifier = Modifier.weight(1f),
+                modifier = textModifier,
                 maxLines = if (text.contains("\n")) Int.MAX_VALUE else 1,
                 softWrap = false,
                 alignment = Alignment.Center,
