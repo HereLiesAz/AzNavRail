@@ -211,4 +211,11 @@ class AzNavRailTest {
         assertEquals(expectedItem.isSubItem, scope.navItems[1].isSubItem)
         assertEquals(expectedItem.hostId, scope.navItems[1].hostId)
     }
+
+    @Test
+    fun `azSettings should update headerIconShape`() {
+        val scope = AzNavRailScopeImpl()
+        scope.azSettings(headerIconShape = com.hereliesaz.aznavrail.model.AzHeaderIconShape.ROUNDED)
+        assertEquals(com.hereliesaz.aznavrail.model.AzHeaderIconShape.ROUNDED, scope.headerIconShape)
+    }
 }
