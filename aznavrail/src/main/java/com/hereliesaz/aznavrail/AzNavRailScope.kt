@@ -29,7 +29,8 @@ interface AzNavRailScope {
         showFooter: Boolean = true,
         isLoading: Boolean = false,
         defaultShape: AzButtonShape = AzButtonShape.CIRCLE,
-        enableRailDragging: Boolean = false
+        enableRailDragging: Boolean = false,
+        headerIconShape: AzButtonShape = AzButtonShape.CIRCLE
     )
 
     /**
@@ -224,6 +225,7 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
     var isLoading: Boolean = false
     var defaultShape: AzButtonShape = AzButtonShape.CIRCLE
     var enableRailDragging: Boolean = false
+    var headerIconShape: AzButtonShape = AzButtonShape.CIRCLE
 
     override fun azSettings(
         displayAppNameInHeader: Boolean,
@@ -233,7 +235,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         showFooter: Boolean,
         isLoading: Boolean,
         defaultShape: AzButtonShape,
-        enableRailDragging: Boolean
+        enableRailDragging: Boolean,
+        headerIconShape: AzButtonShape
     ) {
         require(expandedRailWidth > collapsedRailWidth) {
             """
@@ -254,6 +257,7 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         this.isLoading = isLoading
         this.defaultShape = defaultShape
         this.enableRailDragging = enableRailDragging
+        this.headerIconShape = headerIconShape
     }
 
     override fun azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {

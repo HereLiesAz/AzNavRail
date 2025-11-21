@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
@@ -33,6 +35,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -56,8 +59,8 @@ import com.hereliesaz.aznavrail.internal.CyclerTransientState
 import com.hereliesaz.aznavrail.internal.Footer
 import com.hereliesaz.aznavrail.internal.MenuItem
 import com.hereliesaz.aznavrail.internal.RailItems
+import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzNavItem
-import com.hereliesaz.aznavrail.util.EqualWidthLayout
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.pow
@@ -326,10 +329,16 @@ fun AzNavRail(
                         if (isAppIcon) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (appIcon != null) {
+                                    val iconShape = when (scope.headerIconShape) {
+                                        AzButtonShape.CIRCLE -> CircleShape
+                                        AzButtonShape.SQUARE, AzButtonShape.RECTANGLE, AzButtonShape.NONE -> RoundedCornerShape(0.dp)
+                                    }
                                     Image(
                                         painter = rememberAsyncImagePainter(model = appIcon),
                                         contentDescription = "Toggle menu, showing $appName icon",
-                                        modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize)
+                                        modifier = Modifier
+                                            .size(AzNavRailDefaults.HeaderIconSize)
+                                            .clip(iconShape)
                                     )
                                 } else {
                                     Icon(
@@ -577,8 +586,11 @@ fun AzNavRail(
                                     }
                                 }
 
-                                EqualWidthLayout(
-                                    verticalSpacing = if (scope.packRailButtons) 0.dp else AzNavRailDefaults.RailContentVerticalArrangement
+                                Column(
+                                    verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(
+                                        if (scope.packRailButtons) 0.dp else AzNavRailDefaults.RailContentVerticalArrangement
+                                    ),
+                                    horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     RailItems(
                                         items = scope.navItems,
