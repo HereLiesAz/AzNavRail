@@ -66,6 +66,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.hereliesaz.aznavrail.AzNavRail
 import com.hereliesaz.aznavrail.model.AzButtonShape
+import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 
 @Composable
 fun SampleScreen() {
@@ -94,7 +95,7 @@ fun SampleScreen() {
                 isLoading = isLoading,
                 defaultShape = AzButtonShape.RECTANGLE, // Set a default shape for all rail items
                 enableRailDragging = true, // Enable the draggable rail feature
-                headerIconShape = AzButtonShape.SQUARE // Set the header icon shape to SQUARE
+                headerIconShape = AzHeaderIconShape.ROUNDED // Set the header icon shape to ROUNDED
             )
 
             // A standard menu item - only appears in the expanded menu
@@ -409,7 +410,7 @@ The DSL for configuring the `AzNavRail`.
 
 **Note:** Functions prefixed with `azMenu` will only appear in the expanded menu view. Functions prefixed with `azRail` will appear on the collapsed rail, and their text will be used as the label in the expanded menu.
 
--   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean, isLoading: Boolean, defaultShape: AzButtonShape, enableRailDragging: Boolean, headerIconShape: AzButtonShape)`: Configures the settings for the `AzNavRail`.
+-   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean, isLoading: Boolean, defaultShape: AzButtonShape, enableRailDragging: Boolean, headerIconShape: AzHeaderIconShape)`: Configures the settings for the `AzNavRail`. `headerIconShape` can be `CIRCLE` (default), `ROUNDED`, or `NONE` (no clipping).
 -   `azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
 -   `azMenuItem(id: String, text: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
 -   `azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text in the expanded menu.

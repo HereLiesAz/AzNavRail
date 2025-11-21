@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.model.AzButtonShape
+import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 
 /**
@@ -30,7 +31,7 @@ interface AzNavRailScope {
         isLoading: Boolean = false,
         defaultShape: AzButtonShape = AzButtonShape.CIRCLE,
         enableRailDragging: Boolean = false,
-        headerIconShape: AzButtonShape = AzButtonShape.CIRCLE
+        headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE
     )
 
     /**
@@ -225,7 +226,7 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
     var isLoading: Boolean = false
     var defaultShape: AzButtonShape = AzButtonShape.CIRCLE
     var enableRailDragging: Boolean = false
-    var headerIconShape: AzButtonShape = AzButtonShape.CIRCLE
+    var headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE
 
     override fun azSettings(
         displayAppNameInHeader: Boolean,
@@ -236,7 +237,7 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         isLoading: Boolean,
         defaultShape: AzButtonShape,
         enableRailDragging: Boolean,
-        headerIconShape: AzButtonShape
+        headerIconShape: AzHeaderIconShape
     ) {
         require(expandedRailWidth > collapsedRailWidth) {
             """

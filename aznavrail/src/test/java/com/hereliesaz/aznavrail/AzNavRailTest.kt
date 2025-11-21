@@ -215,7 +215,7 @@ class AzNavRailTest {
     @Test
     fun `azSettings should update headerIconShape`() {
         val scope = AzNavRailScopeImpl()
-        scope.azSettings(headerIconShape = com.hereliesaz.aznavrail.model.AzButtonShape.SQUARE)
-        assertEquals(com.hereliesaz.aznavrail.model.AzButtonShape.SQUARE, scope.headerIconShape)
+        scope.azSettings(headerIconShape = com.hereliesaz.aznavrail.model.AzHeaderIconShape.ROUNDED)
+        assertEquals(com.hereliesaz.aznavrail.model.AzHeaderIconShape.ROUNDED, scope.headerIconShape)
     }
 }
