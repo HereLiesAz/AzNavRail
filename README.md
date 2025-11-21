@@ -13,8 +13,7 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 - **Text-Only DSL API**: A simple, declarative API for building your navigation.
 - **Multi-line Menu Items**: Supports multi-line text with automatic indentation.
 - **Stateless and Observable**: Hoist and manage state in your own composables.
--   **Customizable Shapes**: Choose from `CIRCLE`, `SQUARE`, `RECTANGLE`, or `NONE` for rail buttons.
--   **Uniform Rectangle Width**: All rectangular buttons automatically share the same width, determined by the widest rectangle.
+-   **Customizable Shapes**: Choose from `CIRCLE`, `SQUARE`, `RECTANGLE`, or `NONE` for rail buttons. `RECTANGLE` and `NONE` shapes automatically size to fit their text content and have a fixed height of 36dp.
 - **Smart Collapse Behavior**: Menu items intelligently collapse the rail after interactions.
 - **Delayed Cycler Action**: Cycler items have a built-in delay to prevent accidental triggers.
 - **Customizable Colors**: Apply custom colors to individual rail buttons.
@@ -94,7 +93,8 @@ fun SampleScreen() {
                 packRailButtons = false,
                 isLoading = isLoading,
                 defaultShape = AzButtonShape.RECTANGLE, // Set a default shape for all rail items
-                enableRailDragging = true // Enable the draggable rail feature
+                enableRailDragging = true, // Enable the draggable rail feature
+                headerIconShape = AzButtonShape.SQUARE // Set the header icon shape to SQUARE
             )
 
             // A standard menu item - only appears in the expanded menu
@@ -409,7 +409,7 @@ The DSL for configuring the `AzNavRail`.
 
 **Note:** Functions prefixed with `azMenu` will only appear in the expanded menu view. Functions prefixed with `azRail` will appear on the collapsed rail, and their text will be used as the label in the expanded menu.
 
--   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean, isLoading: Boolean, defaultShape: AzButtonShape, enableRailDragging: Boolean)`: Configures the settings for the `AzNavRail`.
+-   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean, isLoading: Boolean, defaultShape: AzButtonShape, enableRailDragging: Boolean, headerIconShape: AzButtonShape)`: Configures the settings for the `AzNavRail`.
 -   `azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
 -   `azMenuItem(id: String, text: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
 -   `azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text in the expanded menu.
