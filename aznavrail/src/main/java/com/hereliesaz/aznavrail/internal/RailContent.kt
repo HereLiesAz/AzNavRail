@@ -2,6 +2,7 @@ package com.hereliesaz.aznavrail.internal
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -58,6 +59,7 @@ internal fun RailContent(
         AzNavRailButton(
             onClick = finalOnClick,
             text = textToShow,
+            modifier = Modifier.width(buttonSize),
             color = item.color ?: MaterialTheme.colorScheme.primary,
             size = buttonSize,
             shape = item.shape,
