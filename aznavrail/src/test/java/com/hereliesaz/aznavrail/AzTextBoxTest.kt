@@ -33,8 +33,9 @@ class AzTextBoxTest {
     @Before
     fun setup() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        HistoryManager.resetForTesting()
         HistoryManager.init(context, 5)
+        HistoryManager.resetForTesting()
+        HistoryManager.init(context, 5) // Re-init
         // Force synchronous scope for file IO to avoid leaks, though we don't care about file saving here
         HistoryManager.coroutineScope = CoroutineScope(Dispatchers.Unconfined)
 
@@ -44,9 +45,9 @@ class AzTextBoxTest {
     }
 
     @Test
-    fun azTextBox_whenInsideLazyColumn_doesNotCrashAndShowsSuggestions() {
+    fun azTextBox_inside_lazyColumn_renders_correctly_without_crash() {
         // This test places AzTextBox inside a LazyColumn.
-        // If AzTextBox uses a LazyColumn for suggestions, it should crash when suggestions are displayed
+        // If AzTextBox uses a LazyColumn for suggestions, it would crash when suggestions are displayed
         // because of nested vertically scrolling components with undefined height.
 
         composeTestRule.setContent {
@@ -70,11 +71,6 @@ class AzTextBoxTest {
 
         // "apple" should be visible if suggestions are showing.
         // If the crash prevents rendering, this might fail or the test runner will report the exception.
-        try {
-            composeTestRule.onNodeWithText("apple").assertIsDisplayed()
-        } catch (e: AssertionError) {
-            // If assertion fails, it might be because of crash or just not displayed.
-            // But if it crashes, the test fails with exception.
-        }
+        composeTestRule.onNodeWithText("apple").assertIsDisplayed()
     }
 }
