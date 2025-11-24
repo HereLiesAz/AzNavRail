@@ -45,7 +45,7 @@ class AzTextBoxTest {
     }
 
     @Test
-    fun azTextBox_inside_lazyColumn_crashes_with_nested_scroll_issue() {
+    fun azTextBox_inLazyColumn_showsSuggestions() {
         // This test places AzTextBox inside a LazyColumn.
         // If AzTextBox uses a LazyColumn for suggestions, it should crash when suggestions are displayed
         // because of nested vertically scrolling components with undefined height.
