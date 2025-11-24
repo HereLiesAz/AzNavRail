@@ -33,9 +33,8 @@ class AzTextBoxTest {
     @Before
     fun setup() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        HistoryManager.init(context, 5)
         HistoryManager.resetForTesting()
-        HistoryManager.init(context, 5) // Re-init
+        HistoryManager.init(context, 5)
         // Force synchronous scope for file IO to avoid leaks, though we don't care about file saving here
         HistoryManager.coroutineScope = CoroutineScope(Dispatchers.Unconfined)
 
