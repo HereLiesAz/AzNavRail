@@ -12,8 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
@@ -205,12 +203,12 @@ fun AzTextBox(
 
         if (suggestions.isNotEmpty()) {
             val surfaceColor = MaterialTheme.colorScheme.surface
-            LazyColumn(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 4.dp)
             ) {
-                itemsIndexed(suggestions) { index, suggestion ->
+                suggestions.forEachIndexed { index, suggestion ->
                     val suggestionBgColor = if (index % 2 == 0) {
                         surfaceColor.copy(alpha = 0.9f)
                     } else {
