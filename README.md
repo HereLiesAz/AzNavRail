@@ -377,6 +377,85 @@ The rail can be detached and moved around the screen by long-pressing the header
     - **Snapping**: Drag the FAB close to its original docked position to snap it back into place, exiting FAB mode.
     - **Long Press**: Long-pressing the FAB will also immediately re-dock the rail.
 
+### Android Bubble Support
+
+The `AzNavRail` is optimized to work as an Android Bubble overlay. When running in a bubble, the rail should typically be expanded by default and have rail dragging disabled (since the bubble window itself is draggable).
+
+#### Prerequisites
+
+To support bubbles, your Android app must be targeting Android 10 (API level 29) or higher.
+
+1.  **Manifest Declaration**: The Activity used for the bubble must be declared with `allowEmbedded="true"` and `resizeableActivity="true"`.
+
+    ```xml
+    <activity
+        android:name=".BubbleActivity"
+        android:label="My App Bubble"
+        android:allowEmbedded="true"
+        android:documentLaunchMode="always"
+        android:resizeableActivity="true" />
+    ```
+
+2.  **Bubble Activity Setup**: configure the `AzNavRail` to be initially expanded and disable its internal dragging logic.
+
+    ```kotlin
+    // Inside your BubbleActivity's content
+    AzNavRail(
+        // ...
+        initiallyExpanded = true // Expand by default in bubble
+    ) {
+        azSettings(
+            enableRailDragging = false, // Disable internal drag, let OS handle bubble drag
+            onUndock = { finish() } // Optional: close bubble on undock action
+            // ...
+        )
+        // ... menu items ...
+    }
+    ```
+
+3.  **Creating the Bubble**: You need to send a notification with `BubbleMetadata`.
+
+    ```kotlin
+    fun createBubble(context: Context) {
+        // Create Intent for the Bubble Activity
+        val target = Intent(context, BubbleActivity::class.java)
+        val bubbleIntent = PendingIntent.getActivity(context, 0, target, PendingIntent.FLAG_MUTABLE)
+
+        // Create Bubble Metadata
+        val icon = IconCompat.createWithResource(context, R.drawable.ic_notification)
+        val bubbleData = NotificationCompat.BubbleMetadata.Builder(bubbleIntent, icon)
+            .setDesiredHeight(600)
+            .setAutoExpandBubble(true)
+            .setSuppressNotification(true)
+            .build()
+
+        // Create Person (required for bubbles)
+        val person = Person.Builder().setName("My App").build()
+
+        // Create Notification
+        val channelId = "bubble_channel"
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        // Ensure channel allows bubbles
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+             val channel = NotificationChannel(channelId, "Bubbles", NotificationManager.IMPORTANCE_HIGH)
+             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                 channel.setAllowBubbles(true)
+             }
+             notificationManager.createNotificationChannel(channel)
+        }
+
+        val builder = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setBubbleMetadata(bubbleData)
+            .addPerson(person)
+            .setStyle(NotificationCompat.MessagingStyle(person).setConversationTitle("My App"))
+            .setShortcutId("my_shortcut_id") // Required for some Android versions
+
+        notificationManager.notify(1, builder.build())
+    }
+    ```
+
 ### API Reference
 
 #### `AzNavRail`
