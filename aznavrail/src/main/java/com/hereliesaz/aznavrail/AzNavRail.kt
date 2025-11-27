@@ -118,7 +118,7 @@ fun AzNavRail(
         }
     }
 
-    var isExpanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
+    var isExpanded by rememberSaveable(initiallyExpanded) { mutableStateOf(initiallyExpanded) }
     var railOffset by remember { mutableStateOf(IntOffset.Zero) }
     var isFloating by remember { mutableStateOf(false) }
     var showFloatingButtons by remember { mutableStateOf(false) }
@@ -500,9 +500,13 @@ fun AzNavRail(
                                 appName = appName,
                                 onToggle = { isExpanded = !isExpanded },
                                 onUndock = {
-                                    isFloating = true
-                                    isExpanded = false
-                                    if (scope.displayAppNameInHeader) isAppIcon = true
+                                    if (scope.onUndock != null) {
+                                        scope.onUndock?.invoke()
+                                    } else {
+                                        isFloating = true
+                                        isExpanded = false
+                                        if (scope.displayAppNameInHeader) isAppIcon = true
+                                    }
                                 },
                                 scope = scope
                             )
