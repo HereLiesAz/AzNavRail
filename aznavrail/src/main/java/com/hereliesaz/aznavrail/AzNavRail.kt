@@ -240,7 +240,7 @@ fun AzNavRail(
                 modifier = Modifier
                     .width(railWidth)
                     .offset { railOffset },
-                containerColor = Color.Transparent,
+                containerColor = if (isExpanded) MaterialTheme.colorScheme.surface.copy(alpha = 0.95f) else Color.Transparent,
                 header = {
                     Box(
                         modifier = Modifier
