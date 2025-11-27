@@ -26,6 +26,7 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 - **Jetpack Navigation Integration**: Seamlessly integrate with Jetpack Navigation using the `navController`.
 - **Hierarchical Navigation**: Create nested menus with host and sub-items.
 - **Draggable Rail (FAB Mode)**: The rail can be detached and moved around the screen.
+- **System Overlay (Bubbles)**: Use the rail as a system-wide overlay using Android Bubbles.
 - **Auto-sizing Text**: Text within rail buttons automatically resizes to fit without wrapping, unless a newline character is explicitly used.
 - **Toggle and Cycler Items**: `azRailToggle` and `azMenuToggle` provide a simple way to manage boolean states, while `azRailCycler` and `azMenuCycler` allow cycling through a list of options.
 - **Gesture Control**: Intuitive swipe and tap gestures for expanding, collapsing, and activating FAB mode.
@@ -377,6 +378,57 @@ The rail can be detached and moved around the screen by long-pressing the header
     - **Snapping**: Drag the FAB close to its original docked position to snap it back into place, exiting FAB mode.
     - **Long Press**: Long-pressing the FAB will also immediately re-dock the rail.
 
+### System Overlay (Bubbles)
+
+AzNavRail can function as a system-wide overlay using the Android Bubble API. This allows users to access the navigation menu from anywhere on their device.
+
+#### 1. Setup Bubble Activity
+
+Create an Activity that will serve as the content of the bubble. This activity should display your `AzNavRail` with `initiallyExpanded = true` and `enableRailDragging = false` (since the OS handles window dragging).
+
+**AndroidManifest.xml:**
+```xml
+<activity
+    android:name=".BubbleActivity"
+    android:label="My App Bubble"
+    android:allowEmbedded="true"
+    android:documentLaunchMode="always"
+    android:resizeableActivity="true" />
+```
+
+**BubbleActivity.kt:**
+```kotlin
+class BubbleActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            MyApplicationTheme {
+                AzNavRail(initiallyExpanded = true) {
+                    azSettings(enableRailDragging = false, onUndock = { finish() })
+                    // ... your items
+                }
+            }
+        }
+    }
+}
+```
+
+#### 2. Launch the Bubble
+
+Use the `onUndock` callback in your main activity's `AzNavRail` settings to trigger the bubble notification instead of the default internal floating mode.
+
+```kotlin
+AzNavRail {
+    azSettings(
+        enableRailDragging = true,
+        onUndock = { createBubbleNotification(context) }
+    )
+    // ...
+}
+```
+
+Ensure you construct a `Notification` with `BubbleMetadata` and a valid `ShortcutInfo`. See the `SampleApp` for a complete implementation example.
+
 ### API Reference
 
 #### `AzNavRail`
@@ -400,7 +452,7 @@ fun AzNavRail(
 -   **`navController`**: An optional `NavController` to enable integration with Jetpack Navigation.
 -   **`currentDestination`**: The route of the current destination, used to highlight the active item.
 -   **`isLandscape`**: A boolean to indicate if the device is in landscape mode.
--   **`initiallyExpanded`**: Whether the navigation rail is expanded by default.
+-   **`initiallyExpanded`**: Whether the navigation rail is expanded by default. Useful for Bubble activities.
 -   **`disableSwipeToOpen`**: Whether to disable the swipe-to-open gesture.
 -   **`content`**: The DSL content for the navigation rail.
 
@@ -410,7 +462,7 @@ The DSL for configuring the `AzNavRail`.
 
 **Note:** Functions prefixed with `azMenu` will only appear in the expanded menu view. Functions prefixed with `azRail` will appear on the collapsed rail, and their text will be used as the label in the expanded menu.
 
--   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean, isLoading: Boolean, defaultShape: AzButtonShape, enableRailDragging: Boolean, headerIconShape: AzHeaderIconShape)`: Configures the settings for the `AzNavRail`. `headerIconShape` can be `CIRCLE` (default), `ROUNDED`, or `NONE` (no clipping).
+-   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean, isLoading: Boolean, defaultShape: AzButtonShape, enableRailDragging: Boolean, headerIconShape: AzHeaderIconShape, onUndock: (() -> Unit)?)`: Configures the settings for the `AzNavRail`. `headerIconShape` can be `CIRCLE` (default), `ROUNDED`, or `NONE` (no clipping). `onUndock` allows overriding the default undock behavior (e.g., to launch a Bubble).
 -   `azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
 -   `azMenuItem(id: String, text: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
 -   `azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text in the expanded menu.

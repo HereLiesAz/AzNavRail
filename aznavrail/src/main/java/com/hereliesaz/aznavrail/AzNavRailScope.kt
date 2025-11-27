@@ -21,6 +21,10 @@ interface AzNavRailScope {
      * @param collapsedRailWidth The width of the rail when it is collapsed.
      * @param showFooter Whether to show the footer.
      * @param isLoading Whether to show the loading animation.
+     * @param defaultShape The default shape for the rail buttons.
+     * @param enableRailDragging Whether to enable the draggable rail (FAB mode).
+     * @param headerIconShape The shape of the header icon.
+     * @param onUndock An optional callback to override the default undock behavior (e.g., to launch a Bubble).
      */
     fun azSettings(
         displayAppNameInHeader: Boolean = false,

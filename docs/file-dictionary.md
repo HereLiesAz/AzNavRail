@@ -41,6 +41,7 @@ The `SampleApp` directory contains an Android application that demonstrates how 
 | --- | --- |
 | `build.gradle.kts` | The build script for the `SampleApp` module. |
 | `src/main/AndroidManifest.xml` | The manifest file for the `SampleApp`. |
+| `src/main/java/com/example/sampleapp/BubbleActivity.kt` | An activity configured to run as an Android Bubble, demonstrating overlay capabilities. |
 | `src/main/java/com/example/sampleapp/MainActivity.kt` | The main activity of the `SampleApp`, which contains the sample code for the `aznavrail` library. |
 | `src/main/res/` | Contains the resources for the `SampleApp`. |
 
