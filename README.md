@@ -403,10 +403,12 @@ class BubbleActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MyApplicationTheme {
-                AzNavRail(initiallyExpanded = true) {
-                    azSettings(enableRailDragging = false, onUndock = { finish() })
-                    // ... your items
-                }
+                // Reuse your screen content, ensuring it's configured for bubble mode
+                SampleScreen(
+                    enableRailDragging = false, // Bubble window handles dragging
+                    initiallyExpanded = true,   // Show expanded menu by default in bubble
+                    onUndockOverride = { finish() } // Undock in bubble closes it
+                )
             }
         }
     }
@@ -418,16 +420,70 @@ class BubbleActivity : ComponentActivity() {
 Use the `onUndock` callback in your main activity's `AzNavRail` settings to trigger the bubble notification instead of the default internal floating mode.
 
 ```kotlin
+fun createBubble(context: Context) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+
+    val target = Intent(context, BubbleActivity::class.java)
+    val bubbleIntent = PendingIntent.getActivity(context, 0, target, PendingIntent.FLAG_MUTABLE)
+
+    val icon = IconCompat.createWithResource(context, android.R.drawable.sym_def_app_icon)
+    val bubbleData = NotificationCompat.BubbleMetadata.Builder(bubbleIntent, icon)
+        .setDesiredHeight(600)
+        .setAutoExpandBubble(true)
+        .setSuppressNotification(true)
+        .build()
+
+    val person = Person.Builder()
+        .setName("NavRail")
+        .setImportant(true)
+        .build()
+
+    val channelId = "bubble_channel"
+    val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val channel = NotificationChannel(channelId, "Bubbles", NotificationManager.IMPORTANCE_HIGH)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            channel.setAllowBubbles(true)
+        }
+        notificationManager.createNotificationChannel(channel)
+    }
+
+    val shortcutId = "navrail_bubble"
+    val shortcut = ShortcutInfoCompat.Builder(context, shortcutId)
+        .setShortLabel("NavRail")
+        .setLongLabel("NavRail Bubble")
+        .setIcon(icon)
+        .setIntent(target.setAction(Intent.ACTION_MAIN))
+        .setPerson(person)
+        .build()
+    ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
+
+    val builder = NotificationCompat.Builder(context, channelId)
+        .setContentTitle("NavRail Overlay")
+        .setContentText("Tap to open")
+        .setSmallIcon(android.R.drawable.sym_def_app_icon)
+        .setBubbleMetadata(bubbleData)
+        .setShortcutId(shortcutId)
+        .addPerson(person)
+        .setCategory(Notification.CATEGORY_STATUS)
+        .setStyle(NotificationCompat.MessagingStyle(person).setConversationTitle("NavRail"))
+
+    notificationManager.notify(1, builder.build())
+}
+```
+
+Then in your `AzNavRail` configuration:
+
+```kotlin
 AzNavRail {
     azSettings(
         enableRailDragging = true,
-        onUndock = { createBubbleNotification(context) }
+        onUndock = { createBubble(context) }
     )
     // ...
 }
 ```
-
-Ensure you construct a `Notification` with `BubbleMetadata` and a valid `ShortcutInfo`. See the `SampleApp` for a complete implementation example.
 
 ### API Reference
 
@@ -655,6 +711,91 @@ This project is a monorepo containing the following packages:
 -   `aznavrail`: The core Android library.
 -   `SampleApp`: A sample Android application that demonstrates how to use the `aznavrail` library.
 -   `aznavrail-web`: The web version of the `aznavrail` library.
+
+### File Dictionary
+
+This document provides a brief but thorough description of what each file in the project is supposed to do.
+
+#### Root Directory
+
+| File/Directory | Description |
+| --- | --- |
+| `.github/` | Contains GitHub Actions workflows for CI/CD. |
+| `SampleApp/` | An Android application that demonstrates how to use the `aznavrail` library. |
+| `aznavrail/` | The core `aznavrail` Android library module. |
+| `aznavrail-web/` | The web version of the `aznavrail` library. |
+| `gradle/` | Contains the Gradle wrapper files. |
+| `.gitignore` | Specifies intentionally untracked files to ignore. |
+| `AGENTS.md` | Provides instructions for AI agents working with the codebase. |
+| `README.md` | The main README file for the project. |
+| `build.gradle.kts` | The main build script for the project. |
+| `gradle.properties` | Project-wide Gradle settings. |
+| `gradlew` | The Gradle wrapper script for Unix-based systems. |
+| `gradlew.bat` | The Gradle wrapper script for Windows. |
+| `settings.gradle.kts` | The settings script for the project. |
+
+#### .github Directory
+
+| File/Directory | Description |
+| --- | --- |
+| `workflows/` | Contains the GitHub Actions workflow files. |
+
+##### workflows
+
+| File | Description |
+| --- | --- |
+| `npm-publish.yml` | This workflow builds, tests, and publishes the `aznavrail-web` package to npm. |
+| `push.yml` | This workflow builds and tests the project on every push and pull request. |
+
+#### SampleApp Directory
+
+The `SampleApp` directory contains an Android application that demonstrates how to use the `aznavrail` library.
+
+| File/Directory | Description |
+| --- | --- |
+| `build.gradle.kts` | The build script for the `SampleApp` module. |
+| `src/main/AndroidManifest.xml` | The manifest file for the `SampleApp`. |
+| `src/main/java/com/example/sampleapp/BubbleActivity.kt` | An activity configured to run as an Android Bubble, demonstrating overlay capabilities. |
+| `src/main/java/com/example/sampleapp/MainActivity.kt` | The main activity of the `SampleApp`, which contains the sample code for the `aznavrail` library. |
+| `src/main/res/` | Contains the resources for the `SampleApp`. |
+
+#### aznavrail Directory
+
+The `aznavrail` directory contains the core `aznavrail` Android library module.
+
+| File/Directory | Description |
+| --- | --- |
+| `build.gradle.kts` | The build script for the `aznavrail` module. |
+| `consumer-rules.pro` | ProGuard rules for consumers of the library. |
+| `src/` | Contains the source code for the `aznavrail` library. |
+| `src/main/java/com/hereliesaz/aznavrail/AzNavRail.kt` | The main `AzNavRail` composable and logic. |
+| `src/main/java/com/hereliesaz/aznavrail/AzNavRailScope.kt` | The DSL scope definition for `AzNavRail`. |
+| `src/main/java/com/hereliesaz/aznavrail/AzTextBox.kt` | The `AzTextBox` composable. |
+| `src/main/java/com/hereliesaz/aznavrail/AzForm.kt` | The `AzForm` composable. |
+| `src/main/java/com/hereliesaz/aznavrail/AzButton.kt` | The standalone `AzButton` composable. |
+| `src/main/java/com/hereliesaz/aznavrail/AzNavRailButton.kt` | The button component used within the rail. |
+| `src/main/java/com/hereliesaz/aznavrail/AzLoad.kt` | The loading animation component. |
+| `src/main/java/com/hereliesaz/aznavrail/AzDivider.kt` | The divider component. |
+
+#### aznavrail-web Directory
+
+The `aznavrail-web` directory contains the web version of the `aznavrail` library.
+
+| File/Directory | Description |
+| --- | --- |
+| `public/` | Contains public assets that are served directly. |
+| `src/` | Contains the source code for the `aznavrail-web` library. |
+| `.gitignore` | Specifies intentionally untracked files to ignore. |
+| `README.md` | The README file for the `aznavrail-web` library. |
+| `eslint.config.js` | ESLint configuration file. |
+| `index.html` | The main HTML file for the web application. |
+| `package-lock.json` | Records the exact version of each dependency. |
+| `package.json` | Lists the project dependencies and scripts. |
+| `vite.config.js` | Vite configuration file. |
+
+#### gradle Directory
+
+The `gradle` directory contains the Gradle wrapper files, which allow the project to be built with a specific version of Gradle without having to install it system-wide.
 
 ## Contributing
 
