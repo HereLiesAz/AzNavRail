@@ -410,38 +410,40 @@ The DSL for configuring the `AzNavRail`.
 
 **Note:** Functions prefixed with `azMenu` will only appear in the expanded menu view. Functions prefixed with `azRail` will appear on the collapsed rail, and their text will be used as the label in the expanded menu.
 
--   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean, isLoading: Boolean, defaultShape: AzButtonShape, enableRailDragging: Boolean, headerIconShape: AzHeaderIconShape)`: Configures the settings for the `AzNavRail`. `headerIconShape` can be `CIRCLE` (default), `ROUNDED`, or `NONE` (no clipping).
--   `azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
--   `azMenuItem(id: String, text: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
--   `azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text in the expanded menu.
--   `azRailItem(id: String, text: String, route: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text in the expanded menu.
--   `azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a toggle item that only appears in the expanded menu. Tpping it executes the action and collapses the rail.
--   `azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a toggle item that only appears in the expanded menu. Tapping it executes the action and collapses the rail.
--   `azRailToggle(id: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a toggle item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail.
--   `azRailToggle(id: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a toggle item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail.
--   `azMenuCycler(id: String, options: List<String>, selectedOption: String, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`: Adds a cycler item that only appears in the expanded menu. Tapping it cycles through options and executes the `onClick` action for the final selection after a 1-second delay, then collapses the rail.
--   `azMenuCycler(id: String, options: List<String>, selectedOption: String, route: String, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`: Adds a cycler item that only appears in the expanded menu. Tapping it cycles through options and executes the `onClick` action for the final selection after a 1-second delay, then collapses the rail.
--   `azRailCycler(id: String, color: Color?, options: List<String>, selectedOption: String, shape: AzButtonShape?, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`: Adds a cycler item that appears in both the collapsed rail and the expanded menu. The behavior is the same as `azMenuCycler`.
--   `azRailCycler(id: String, color: Color?, options: List<String>, selectedOption: String, shape: AzButtonShape?, route: String, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`: Adds a cycler item that appears in both the collapsed rail and the expanded menu. The behavior is the same as `azMenuCycler`.
+-   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean, isLoading: Boolean, defaultShape: AzButtonShape, enableRailDragging: Boolean, headerIconShape: AzHeaderIconShape, onUndock: (() -> Unit)?)`: Configures the settings for the `AzNavRail`. `headerIconShape` can be `CIRCLE` (default), `ROUNDED`, or `NONE` (no clipping). `onUndock` is a callback invoked when the rail is undocked; if provided, it overrides the default internal floating behavior.
+-   `azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`
+-   `azMenuItem(id: String, text: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`
+-   `azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`
+-   `azRailItem(id: String, text: String, route: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`
+-   `azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`
+-   `azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`
+-   `azRailToggle(id: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`
+-   `azRailToggle(id: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`
+-   `azMenuCycler(id: String, options: List<String>, selectedOption: String, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`
+-   `azMenuCycler(id: String, options: List<String>, selectedOption: String, route: String, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`
+-   `azRailCycler(id: String, color: Color?, options: List<String>, selectedOption: String, shape: AzButtonShape?, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`
+-   `azRailCycler(id: String, color: Color?, options: List<String>, selectedOption: String, shape: AzButtonShape?, route: String, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`
 -   `azDivider()`: Adds a horizontal divider to the expanded menu.
--   **`screenTitle`**: An optional parameter for all `azMenuItem`, `azRailItem`, `azMenuToggle`, `azRailToggle`, `azMenuCycler`, and `azRailCycler` functions that displays a title on the screen when the item is selected. The title will be **force-aligned to the right** of the screen. If no `screenTitle` is provided, the item's `text` will be used instead. To prevent a title from being displayed, use `screenTitle = AzNavRail.noTitle`.
--    **`route`**: An optional parameter for all `azMenuItem`, `azRailItem`, `azMenuToggle`, `azRailToggle`, `azMenuCycler`, and `azRailCycler` functions that specifies the route to navigate to when the item is clicked. This is used for integration with Jetpack Navigation.
--   `azMenuHostItem(id: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a host item that only appears in the expanded menu.
--   `azMenuHostItem(id: String, text: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a host item that only appears in the expanded menu.
--   `azRailHostItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a host item that appears in both the collapsed rail and the expanded menu.
--   `azRailHostItem(id: String, text: String, route: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a host item that appears in both the collapsed rail and the expanded menu.
--   `azMenuSubItem(id: String, hostId: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a sub item that only appears in the expanded menu.
--   `azMenuSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a sub item that only appears in the expanded menu.
--   `azRailSubItem(id: String, hostId: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a sub item that appears in both the collapsed rail and the expanded menu.
--   `azRailSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a sub item that appears in both the collapsed rail and the expanded menu.
--   `azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a toggle sub-item that only appears in the expanded menu.
--   `azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a toggle sub-item that only appears in the expanded menu.
--   `azRailSubToggle(id: String, hostId: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a toggle sub-item that appears in both the collapsed rail and the expanded menu.
--   `azRailSubToggle(id: String, hostId: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a toggle sub-item that appears in both the collapsed rail and the expanded menu.
--   `azMenuSubCycler(id: String, hostId: String, options: List<String>, selectedOption: String, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`: Adds a cycler sub-item that only appears in the expanded menu.
--   `azMenuSubCycler(id: String, hostId: String, options: List<String>, selectedOption: String, route: String, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`: Adds a cycler sub-item that only appears in the expanded menu.
--   `azRailSubCycler(id: String, hostId: String, color: Color?, options: List<String>, selectedOption: String, shape: AzButtonShape?, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`: Adds a cycler sub-item that appears in both the collapsed rail and the expanded menu.
--   `azRailSubCycler(id: String, hostId: String, color: Color?, options: List<String>, selectedOption: String, shape: AzButtonShape?, route: String, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`: Adds a cycler sub-item that appears in both the collapsed rail and the expanded menu.
+-   `azMenuHostItem(id: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`
+-   `azMenuHostItem(id: String, text: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`
+-   `azRailHostItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`
+-   `azRailHostItem(id: String, text: String, route: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`
+-   `azMenuSubItem(id: String, hostId: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`
+-   `azMenuSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`
+-   `azRailSubItem(id: String, hostId: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`
+-   `azRailSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`
+-   `azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`
+-   `azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`
+-   `azRailSubToggle(id: String, hostId: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`
+-   `azRailSubToggle(id: String, hostId: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`
+-   `azMenuSubCycler(id: String, hostId: String, options: List<String>, selectedOption: String, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`
+-   `azMenuSubCycler(id: String, hostId: String, options: List<String>, selectedOption: String, route: String, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`
+-   `azRailSubCycler(id: String, hostId: String, color: Color?, options: List<String>, selectedOption: String, shape: AzButtonShape?, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`
+-   `azRailSubCycler(id: String, hostId: String, color: Color?, options: List<String>, selectedOption: String, shape: AzButtonShape?, route: String, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit)`
+
+**Common Parameters:**
+-   **`screenTitle`**: An optional parameter for all item functions that displays a title on the screen when the item is selected. The title will be **force-aligned to the right**. If no `screenTitle` is provided, the item's `text` (or `selectedOption` for cyclers, or active text for toggles) will be used. To prevent a title from being displayed, use `screenTitle = AzNavRail.noTitle`.
+-   **`route`**: An optional parameter for all item functions that specifies the route to navigate to when the item is clicked. Used for Jetpack Navigation integration.
 
 #### `AzTextBox`
 
@@ -582,27 +584,150 @@ fun AzCycler(
 -   **`color`**: The color of the button's border and text.
 -   **`shape`**: The shape of the button.
 
+## AzNavRail for React Native
+
+The React Native implementation provides a Compound Component API that closely mirrors the Android DSL.
+
+### Usage
+
+```tsx
+import { AzNavRail } from 'aznavrail-react-native';
+import { AzRailItem, AzMenuItem } from 'aznavrail-react-native'; // All components are exported from the root
+
+<AzNavRail
+  initiallyExpanded={false}
+  displayAppNameInHeader={true}
+  enableRailDragging={true}
+>
+    {/* Register items as children */}
+    <AzMenuItem id="home" text="Home" onClick={() => navigate('Home')} />
+    <AzRailItem id="settings" text="Settings" onClick={() => navigate('Settings')} />
+    {/* ... other items ... */}
+</AzNavRail>
+```
+
+### Components
+
+-   **`AzNavRail`**: The main container. Accepts props like `initiallyExpanded`, `displayAppNameInHeader`, `enableRailDragging`, `expandedRailWidth`, `collapsedRailWidth`, `isLoading`, `showFooter`.
+-   **`AzRailItem`, `AzMenuItem`**: Standard navigation items.
+-   **`AzRailToggle`, `AzMenuToggle`**: Toggle items.
+-   **`AzRailCycler`, `AzMenuCycler`**: Cycler items.
+-   **`AzRailHostItem`, `AzMenuHostItem`**: Host items for hierarchy.
+-   **`AzRailSubItem`, `AzMenuSubItem`**: Sub-items.
+-   **`AzRailSubToggle`, `AzMenuSubToggle`**: Sub-item toggles.
+-   **`AzRailSubCycler`, `AzMenuSubCycler`**: Sub-item cyclers.
+-   **`AzDivider`**: Adds a divider.
+-   **`AzTextBox`**: A standalone text box component with autocomplete, multiline, and secret mode support.
+-   **`AzForm`**: A container for multiple `AzFormEntry` components, providing a shared submit button and style context.
+
 ## AzNavRail for Web (React)
 
-`aznavrail-web` is a React component that provides a Material Design-style navigation rail, inspired by its counterpart in the Android ecosystem. It is designed to be a "batteries-included" solution, offering a highly configurable and easy-to-use navigation component for web applications.
+`aznavrail-web` is a React component that provides a Material Design-style navigation rail. It is designed to be a "batteries-included" solution, offering a highly configurable and easy-to-use navigation component for web applications.
 
-### Features
+### Usage
 
-All item functions are overloaded to support `route`-based navigation. The `route` parameter is a `String` that represents the destination in the navigation graph.
+```jsx
+import AzNavRail from 'aznavrail-web/src/components/AzNavRail';
 
--   **`screenTitle`**: An optional parameter for all item functions that displays a title on the screen when the item is selected. The title will be **force-aligned to the right** of the screen. If no `screenTitle` is provided, the item's `text` will be used instead. To prevent a title from being displayed, use `screenTitle = AzNavRail.noTitle`.
+const content = [
+  { id: 'home', text: 'Home', isRailItem: true, onClick: () => console.log('Home') },
+  // ...
+];
 
-## AzNavRail for Web (React)
+<AzNavRail content={content} />
+```
 
-(This section remains unchanged as no modifications were made to the React component)
+### Documentation
+Detailed JSDoc comments are provided in the source files for `AzNavRail`, `AzNavRailButton`, and `MenuItem` in the `aznavrail-web/src/components` directory.
 
-## Project Structure
+## File Dictionary
 
-This project is a monorepo containing the following packages:
+This section provides a brief but thorough description of what each file in the project is supposed to do.
 
--   `aznavrail`: The core Android library.
--   `SampleApp`: A sample Android application that demonstrates how to use the `aznavrail` library.
--   `aznavrail-web`: The web version of the `aznavrail` library.
+### Root Directory
+
+| File/Directory | Description |
+| --- | --- |
+| `.github/` | Contains GitHub Actions workflows for CI/CD. |
+| `SampleApp/` | An Android application that demonstrates how to use the `aznavrail` library. |
+| `aznavrail/` | The core `aznavrail` Android library module. |
+| `aznavrail-web/` | The web version of the `aznavrail` library. |
+| `aznavrail-react-native/` | The React Native version of the `aznavrail` library. |
+| `gradle/` | Contains the Gradle wrapper files. |
+| `.gitignore` | Specifies intentionally untracked files to ignore. |
+| `AGENTS.md` | Provides instructions for AI agents working with the codebase. |
+| `README.md` | The main README file for the project. |
+| `build.gradle.kts` | The main build script for the project. |
+| `gradle.properties` | Project-wide Gradle settings. |
+| `gradlew` | The Gradle wrapper script for Unix-based systems. |
+| `gradlew.bat` | The Gradle wrapper script for Windows. |
+| `settings.gradle.kts` | The settings script for the project. |
+
+### .github Directory
+
+| File/Directory | Description |
+| --- | --- |
+| `workflows/` | Contains the GitHub Actions workflow files. |
+
+#### workflows
+
+| File | Description |
+| --- | --- |
+| `npm-publish.yml` | This workflow builds, tests, and publishes the `aznavrail-web` package to npm. |
+| `push.yml` | This workflow builds and tests the project on every push and pull request. |
+
+### SampleApp Directory
+
+The `SampleApp` directory contains an Android application that demonstrates how to use the `aznavrail` library.
+
+| File/Directory | Description |
+| --- | --- |
+| `build.gradle.kts` | The build script for the `SampleApp` module. |
+| `src/main/AndroidManifest.xml` | The manifest file for the `SampleApp`. |
+| `src/main/java/com/example/sampleapp/MainActivity.kt` | The main activity of the `SampleApp`, which contains the sample code for the `aznavrail` library. |
+| `src/main/res/` | Contains the resources for the `SampleApp`. |
+
+### aznavrail Directory
+
+The `aznavrail` directory contains the core `aznavrail` Android library module.
+
+| File/Directory | Description |
+| --- | --- |
+| `build.gradle.kts` | The build script for the `aznavrail` module. |
+| `consumer-rules.pro` | ProGuard rules for consumers of the library. |
+| `src/` | Contains the source code for the `aznavrail` library. |
+| `src/main/java/com/hereliesaz/aznavrail/AzForm.kt` | The `AzForm` composable, which allows for the creation of forms with multiple `AzTextBox` fields. |
+
+### aznavrail-web Directory
+
+The `aznavrail-web` directory contains the web version of the `aznavrail` library.
+
+| File/Directory | Description |
+| --- | --- |
+| `public/` | Contains public assets that are served directly. |
+| `src/` | Contains the source code for the `aznavrail-web` library. |
+| `.gitignore` | Specifies intentionally untracked files to ignore. |
+| `eslint.config.js` | ESLint configuration file. |
+| `index.html` | The main HTML file for the web application. |
+| `package-lock.json` | Records the exact version of each dependency. |
+| `package.json` | Lists the project dependencies and scripts. |
+| `vite.config.js` | Vite configuration file. |
+
+### aznavrail-react-native Directory
+
+The `aznavrail-react-native` directory contains the React Native version of the `aznavrail` library.
+
+| File/Directory | Description |
+| --- | --- |
+| `src/` | Contains the source code for the library. |
+| `lib/` | Contains the compiled output. |
+| `babel.config.js` | Babel configuration file. |
+| `package.json` | Lists the project dependencies and scripts. |
+| `tsconfig.json` | TypeScript configuration file. |
+
+### gradle Directory
+
+The `gradle` directory contains the Gradle wrapper files, which allow the project to be built with a specific version of Gradle without having to install it system-wide.
 
 ## Contributing
 
