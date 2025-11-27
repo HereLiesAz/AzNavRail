@@ -1,19 +1,21 @@
 package com.example.sampleapp
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -26,18 +28,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationCompat
+import androidx.core.app.Person
+import androidx.core.content.pm.ShortcutInfoCompat
+import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.graphics.drawable.IconCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.hereliesaz.aznavrail.AzButton
+import com.hereliesaz.aznavrail.AzCycler
+import com.hereliesaz.aznavrail.AzForm
 import com.hereliesaz.aznavrail.AzNavRail
 import com.hereliesaz.aznavrail.AzTextBox
 import com.hereliesaz.aznavrail.AzTextBoxDefaults
-import com.hereliesaz.aznavrail.model.AzButtonShape
-import com.hereliesaz.aznavrail.AzForm
-import com.hereliesaz.aznavrail.AzButton
 import com.hereliesaz.aznavrail.AzToggle
-import com.hereliesaz.aznavrail.AzCycler
+import com.hereliesaz.aznavrail.model.AzButtonShape
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,15 +55,74 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    SampleScreen()
+                    SampleScreen(
+                        onUndockOverride = { createBubble(this) }
+                    )
                 }
             }
         }
     }
 }
 
+fun createBubble(context: Context) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+
+    val target = Intent(context, BubbleActivity::class.java)
+    val bubbleIntent = PendingIntent.getActivity(context, 0, target, PendingIntent.FLAG_MUTABLE)
+
+    val icon = IconCompat.createWithResource(context, android.R.drawable.sym_def_app_icon)
+    val bubbleData = NotificationCompat.BubbleMetadata.Builder(bubbleIntent, icon)
+        .setDesiredHeight(600)
+        .setAutoExpandBubble(true)
+        .setSuppressNotification(true)
+        .build()
+
+    val person = Person.Builder()
+        .setName("NavRail")
+        .setImportant(true)
+        .build()
+
+    val channelId = "bubble_channel"
+    val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val channel = NotificationChannel(channelId, "Bubbles", NotificationManager.IMPORTANCE_HIGH)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            channel.setAllowBubbles(true)
+        }
+        notificationManager.createNotificationChannel(channel)
+    }
+
+    val shortcutId = "navrail_bubble"
+    val shortcut = ShortcutInfoCompat.Builder(context, shortcutId)
+        .setShortLabel("NavRail")
+        .setLongLabel("NavRail Bubble")
+        .setIcon(icon)
+        .setIntent(target.setAction(Intent.ACTION_MAIN))
+        .setPerson(person)
+        .build()
+    ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
+
+    val builder = NotificationCompat.Builder(context, channelId)
+        .setContentTitle("NavRail Overlay")
+        .setContentText("Tap to open")
+        .setSmallIcon(android.R.drawable.sym_def_app_icon)
+        .setBubbleMetadata(bubbleData)
+        .setShortcutId(shortcutId)
+        .addPerson(person)
+        .setCategory(Notification.CATEGORY_STATUS)
+        .setStyle(NotificationCompat.MessagingStyle(person).setConversationTitle("NavRail"))
+
+    notificationManager.notify(1, builder.build())
+}
+
+
 @Composable
-fun SampleScreen() {
+fun SampleScreen(
+    enableRailDragging: Boolean = true,
+    initiallyExpanded: Boolean = false,
+    onUndockOverride: (() -> Unit)? = null
+) {
     val TAG = "SampleApp"
     val navController = rememberNavController()
     val currentDestination by navController.currentBackStackEntryAsState()
@@ -80,14 +146,16 @@ fun SampleScreen() {
             AzNavRail(
                 navController = navController,
                 currentDestination = currentDestination?.destination?.route,
-                isLandscape = isLandscape
+                isLandscape = isLandscape,
+                initiallyExpanded = initiallyExpanded
             ) {
                 azSettings(
                     // displayAppNameInHeader = true, // Set to true to display the app name instead of the icon
                     packRailButtons = packRailButtons,
                     isLoading = isLoading,
                     defaultShape = AzButtonShape.RECTANGLE, // Set a default shape for all rail items
-                    enableRailDragging = true
+                    enableRailDragging = enableRailDragging,
+                    onUndock = onUndockOverride
                 )
 
                 // A standard menu item - only appears in the expanded menu

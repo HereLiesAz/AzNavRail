@@ -500,9 +500,13 @@ fun AzNavRail(
                                 appName = appName,
                                 onToggle = { isExpanded = !isExpanded },
                                 onUndock = {
-                                    isFloating = true
-                                    isExpanded = false
-                                    if (scope.displayAppNameInHeader) isAppIcon = true
+                                    if (scope.onUndock != null) {
+                                        scope.onUndock?.invoke()
+                                    } else {
+                                        isFloating = true
+                                        isExpanded = false
+                                        if (scope.displayAppNameInHeader) isAppIcon = true
+                                    }
                                 },
                                 scope = scope
                             )
