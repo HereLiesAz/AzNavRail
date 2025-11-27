@@ -107,3 +107,7 @@ are visible when a drag begins, they must unfold downward when the drag ends
 In FAB mode, the rail items must also not be allowed above the top 10% of the screen nor the bottom
 10% of the screen. This means that the rail should unfold downward, and push the location of the app
 icon upward if necessary.
+
+The rail can also be used as a system-wide overlay using the Android Bubble API. This is activated via an
+`onUndock` callback in `azSettings` which overrides the default internal FAB mode. The Bubble Activity
+should be configured with `initiallyExpanded = true` and `enableRailDragging = false`.
