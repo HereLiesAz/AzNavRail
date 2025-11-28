@@ -118,7 +118,8 @@ fun AzNavRail(
         }
     }
 
-    var isExpanded by rememberSaveable(initiallyExpanded) { mutableStateOf(initiallyExpanded) }
+    val initialExpansion = if (scope.bubbleMode) true else initiallyExpanded
+    var isExpanded by rememberSaveable(initialExpansion) { mutableStateOf(initialExpansion) }
     var railOffset by remember { mutableStateOf(IntOffset.Zero) }
     var isFloating by remember { mutableStateOf(false) }
     var showFloatingButtons by remember { mutableStateOf(false) }
