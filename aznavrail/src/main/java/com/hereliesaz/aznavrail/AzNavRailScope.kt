@@ -25,6 +25,7 @@ interface AzNavRailScope {
      * @param enableRailDragging Whether to enable the draggable rail (FAB mode).
      * @param headerIconShape The shape of the header icon.
      * @param onUndock An optional callback to override the default undock behavior (e.g., to launch a Bubble).
+     * @param bubbleMode Whether to enable Bubble mode. If true, `enableRailDragging` is forced to false, and the rail is initially expanded.
      */
     fun azSettings(
         displayAppNameInHeader: Boolean = false,
@@ -36,7 +37,8 @@ interface AzNavRailScope {
         defaultShape: AzButtonShape = AzButtonShape.CIRCLE,
         enableRailDragging: Boolean = false,
         headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
-        onUndock: (() -> Unit)? = null
+        onUndock: (() -> Unit)? = null,
+        bubbleMode: Boolean = false
     )
 
     /**
@@ -233,6 +235,7 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
     var enableRailDragging: Boolean = false
     var headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE
     var onUndock: (() -> Unit)? = null
+    var bubbleMode: Boolean = false
 
     override fun azSettings(
         displayAppNameInHeader: Boolean,
@@ -244,7 +247,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         defaultShape: AzButtonShape,
         enableRailDragging: Boolean,
         headerIconShape: AzHeaderIconShape,
-        onUndock: (() -> Unit)?
+        onUndock: (() -> Unit)?,
+        bubbleMode: Boolean
     ) {
         require(expandedRailWidth > collapsedRailWidth) {
             """
@@ -264,9 +268,10 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         this.showFooter = showFooter
         this.isLoading = isLoading
         this.defaultShape = defaultShape
-        this.enableRailDragging = enableRailDragging
+        this.enableRailDragging = if (bubbleMode) false else enableRailDragging
         this.headerIconShape = headerIconShape
         this.onUndock = onUndock
+        this.bubbleMode = bubbleMode
     }
 
     override fun azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {

@@ -384,7 +384,7 @@ AzNavRail can function as a system-wide overlay using the Android Bubble API. Th
 
 #### 1. Setup Bubble Activity
 
-Create an Activity that will serve as the content of the bubble. This activity should display your `AzNavRail` with `initiallyExpanded = true` and `enableRailDragging = false` (since the OS handles window dragging).
+Create an Activity that will serve as the content of the bubble. This activity should display your `AzNavRail`. You can simply set `bubbleMode = true` in `azSettings` to configure it correctly (`initiallyExpanded = true` and `enableRailDragging = false`).
 
 **AndroidManifest.xml:**
 ```xml
@@ -405,8 +405,7 @@ class BubbleActivity : ComponentActivity() {
             MyApplicationTheme {
                 // Reuse your screen content, ensuring it's configured for bubble mode
                 SampleScreen(
-                    enableRailDragging = false, // Bubble window handles dragging
-                    initiallyExpanded = true,   // Show expanded menu by default in bubble
+                    bubbleMode = true,              // Enable bubble mode
                     onUndockOverride = { finish() } // Undock in bubble closes it
                 )
             }
@@ -518,7 +517,7 @@ The DSL for configuring the `AzNavRail`.
 
 **Note:** Functions prefixed with `azMenu` will only appear in the expanded menu view. Functions prefixed with `azRail` will appear on the collapsed rail, and their text will be used as the label in the expanded menu.
 
--   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean, isLoading: Boolean, defaultShape: AzButtonShape, enableRailDragging: Boolean, headerIconShape: AzHeaderIconShape, onUndock: (() -> Unit)?)`: Configures the settings for the `AzNavRail`. `headerIconShape` can be `CIRCLE` (default), `ROUNDED`, or `NONE` (no clipping). `onUndock` allows overriding the default undock behavior (e.g., to launch a Bubble).
+-   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean, isLoading: Boolean, defaultShape: AzButtonShape, enableRailDragging: Boolean, headerIconShape: AzHeaderIconShape, onUndock: (() -> Unit)?, bubbleMode: Boolean)`: Configures the settings for the `AzNavRail`. `headerIconShape` can be `CIRCLE` (default), `ROUNDED`, or `NONE` (no clipping). `onUndock` allows overriding the default undock behavior (e.g., to launch a Bubble). `bubbleMode` (default `false`) simplifies bubble configuration by setting `enableRailDragging` to `false` and ensuring the rail is initially expanded.
 -   `azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
 -   `azMenuItem(id: String, text: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
 -   `azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text in the expanded menu.

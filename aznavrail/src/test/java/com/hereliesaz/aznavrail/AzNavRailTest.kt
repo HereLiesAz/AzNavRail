@@ -218,4 +218,19 @@ class AzNavRailTest {
         scope.azSettings(headerIconShape = com.hereliesaz.aznavrail.model.AzHeaderIconShape.ROUNDED)
         assertEquals(com.hereliesaz.aznavrail.model.AzHeaderIconShape.ROUNDED, scope.headerIconShape)
     }
+
+    @Test
+    fun `azSettings should update bubbleMode`() {
+        val scope = AzNavRailScopeImpl()
+        scope.azSettings(bubbleMode = true)
+        assertEquals(true, scope.bubbleMode)
+    }
+
+    @Test
+    fun `azSettings with bubbleMode should disable enableRailDragging`() {
+        val scope = AzNavRailScopeImpl()
+        scope.azSettings(bubbleMode = true, enableRailDragging = true)
+        assertEquals(true, scope.bubbleMode)
+        assertEquals(false, scope.enableRailDragging)
+    }
 }
