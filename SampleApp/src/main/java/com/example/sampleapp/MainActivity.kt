@@ -1,12 +1,5 @@
 package com.example.sampleapp
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
-import android.content.Context
-import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -28,11 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.app.NotificationCompat
-import androidx.core.app.Person
-import androidx.core.content.pm.ShortcutInfoCompat
-import androidx.core.content.pm.ShortcutManagerCompat
-import androidx.core.graphics.drawable.IconCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -56,7 +44,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     SampleScreen(
-                        onUndockOverride = { createBubble(this) }
+                        bubbleTargetActivity = BubbleActivity::class.java
                     )
                 }
             }
@@ -64,64 +52,12 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-fun createBubble(context: Context) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
-
-    val target = Intent(context, BubbleActivity::class.java)
-    val bubbleIntent = PendingIntent.getActivity(context, 0, target, PendingIntent.FLAG_MUTABLE)
-
-    val icon = IconCompat.createWithResource(context, android.R.drawable.sym_def_app_icon)
-    val bubbleData = NotificationCompat.BubbleMetadata.Builder(bubbleIntent, icon)
-        .setDesiredHeight(600)
-        .setAutoExpandBubble(true)
-        .setSuppressNotification(true)
-        .build()
-
-    val person = Person.Builder()
-        .setName("NavRail")
-        .setImportant(true)
-        .build()
-
-    val channelId = "bubble_channel"
-    val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val channel = NotificationChannel(channelId, "Bubbles", NotificationManager.IMPORTANCE_HIGH)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            channel.setAllowBubbles(true)
-        }
-        notificationManager.createNotificationChannel(channel)
-    }
-
-    val shortcutId = "navrail_bubble"
-    val shortcut = ShortcutInfoCompat.Builder(context, shortcutId)
-        .setShortLabel("NavRail")
-        .setLongLabel("NavRail Bubble")
-        .setIcon(icon)
-        .setIntent(target.setAction(Intent.ACTION_MAIN))
-        .setPerson(person)
-        .build()
-    ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
-
-    val builder = NotificationCompat.Builder(context, channelId)
-        .setContentTitle("NavRail Overlay")
-        .setContentText("Tap to open")
-        .setSmallIcon(android.R.drawable.sym_def_app_icon)
-        .setBubbleMetadata(bubbleData)
-        .setShortcutId(shortcutId)
-        .addPerson(person)
-        .setCategory(Notification.CATEGORY_STATUS)
-        .setStyle(NotificationCompat.MessagingStyle(person).setConversationTitle("NavRail"))
-
-    notificationManager.notify(1, builder.build())
-}
-
-
 @Composable
 fun SampleScreen(
     enableRailDragging: Boolean = true,
     initiallyExpanded: Boolean = false,
-    onUndockOverride: (() -> Unit)? = null
+    onUndockOverride: (() -> Unit)? = null,
+    bubbleTargetActivity: Class<*>? = null
 ) {
     val TAG = "SampleApp"
     val navController = rememberNavController()
@@ -155,7 +91,8 @@ fun SampleScreen(
                     isLoading = isLoading,
                     defaultShape = AzButtonShape.RECTANGLE, // Set a default shape for all rail items
                     enableRailDragging = enableRailDragging,
-                    onUndock = onUndockOverride
+                    onUndock = onUndockOverride,
+                    bubbleTargetActivity = bubbleTargetActivity
                 )
 
                 // A standard menu item - only appears in the expanded menu
