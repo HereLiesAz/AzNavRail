@@ -725,10 +725,6 @@ The `aznavrail-web` directory contains the web version of the `aznavrail` librar
 
 The `gradle` directory contains the Gradle wrapper files, which allow the project to be built with a specific version of Gradle without having to install it system-wide.
 
-## Contributing
-
-Contributions are NOT welcome. They are at least not asked for.
-
 ## License
 
 ```
