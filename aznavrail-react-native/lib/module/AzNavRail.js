@@ -9,30 +9,6 @@ import { AzToggle } from './components/AzToggle';
 import { AzCycler } from './components/AzCycler';
 import { RailMenuItem } from './components/RailMenuItem';
 import { AzLoad } from './components/AzLoad';
-let interactionLogger = null;
-
-/**
- * Allows consumers to configure how AzNavRail interaction events are logged.
- *
- * Pass a logger function to handle logs (e.g., send to your own logging infra),
- * or pass null to disable logging entirely.
- */
-export const setAzNavRailInteractionLogger = logger => {
-  interactionLogger = logger;
-};
-const logInteraction = (action, details) => {
-  if (interactionLogger) {
-    interactionLogger(action, details);
-    return;
-  }
-
-  // Fallback to console logging only in development when no custom logger is configured
-  if (typeof __DEV__ !== 'undefined' && __DEV__) {
-    const suffix = details ? ` ${details}` : '';
-    // eslint-disable-next-line no-console
-    console.log(`[AzNavRail] ${action}${suffix}`);
-  }
-};
 export const AzNavRail = ({
   children,
   initiallyExpanded = false,
@@ -43,8 +19,22 @@ export const AzNavRail = ({
   isLoading = false,
   defaultShape = AzButtonShape.CIRCLE,
   enableRailDragging = false,
-  onExpandedChange
+  onExpandedChange,
+  onInteraction
 }) => {
+  const logInteraction = useCallback((action, details) => {
+    if (onInteraction) {
+      onInteraction(action, details);
+      return;
+    }
+
+    // Fallback to console logging only in development when no custom logger is configured
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      const suffix = details ? ` ${details}` : '';
+      // eslint-disable-next-line no-console
+      console.log(`[AzNavRail] ${action}${suffix}`);
+    }
+  }, [onInteraction]);
   const [items, setItems] = useState([]);
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
   const [isFloating, setIsFloating] = useState(false);
@@ -95,7 +85,16 @@ export const AzNavRail = ({
     }) => {
       screenHeightRef.current = window.height;
     });
-    return () => subscription === null || subscription === void 0 ? void 0 : subscription.remove();
+    return () => {
+      if (!subscription) return;
+      // @ts-ignore
+      if (typeof subscription === 'function') {
+        // @ts-ignore
+        subscription();
+      } else if (typeof subscription.remove === 'function') {
+        subscription.remove();
+      }
+    };
   }, []);
 
   // --- Item Management ---

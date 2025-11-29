@@ -26,35 +26,8 @@ interface AzNavRailProps extends AzNavRailSettings {
   initiallyExpanded?: boolean;
   disableSwipeToOpen?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
+  onInteraction?: (action: string, details?: string) => void;
 }
-
-let interactionLogger: ((action: string, details?: string) => void) | null = null;
-
-/**
- * Allows consumers to configure how AzNavRail interaction events are logged.
- *
- * Pass a logger function to handle logs (e.g., send to your own logging infra),
- * or pass null to disable logging entirely.
- */
-export const setAzNavRailInteractionLogger = (
-  logger: ((action: string, details?: string) => void) | null,
-) => {
-  interactionLogger = logger;
-};
-
-const logInteraction = (action: string, details?: string) => {
-  if (interactionLogger) {
-    interactionLogger(action, details);
-    return;
-  }
-
-  // Fallback to console logging only in development when no custom logger is configured
-  if (typeof __DEV__ !== 'undefined' && __DEV__) {
-    const suffix = details ? ` ${details}` : '';
-    // eslint-disable-next-line no-console
-    console.log(`[AzNavRail] ${action}${suffix}`);
-  }
-};
 
 export const AzNavRail: React.FC<AzNavRailProps> = ({
   children,
@@ -67,7 +40,24 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
   defaultShape = AzButtonShape.CIRCLE,
   enableRailDragging = false,
   onExpandedChange,
+  onInteraction,
 }) => {
+  const logInteraction = useCallback(
+    (action: string, details?: string) => {
+      if (onInteraction) {
+        onInteraction(action, details);
+        return;
+      }
+
+      // Fallback to console logging only in development when no custom logger is configured
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        const suffix = details ? ` ${details}` : '';
+        // eslint-disable-next-line no-console
+        console.log(`[AzNavRail] ${action}${suffix}`);
+      }
+    },
+    [onInteraction]
+  );
   const [items, setItems] = useState<AzNavItem[]>([]);
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
   const [isFloating, setIsFloating] = useState(false);
@@ -101,10 +91,19 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
   }, [pan]);
 
   useEffect(() => {
-      const subscription = Dimensions.addEventListener('change', ({ window }) => {
-          screenHeightRef.current = window.height;
-      });
-      return () => subscription?.remove();
+    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+      screenHeightRef.current = window.height;
+    });
+    return () => {
+      if (!subscription) return;
+      // @ts-ignore
+      if (typeof subscription === 'function') {
+        // @ts-ignore
+        subscription();
+      } else if (typeof (subscription as any).remove === 'function') {
+        (subscription as any).remove();
+      }
+    };
   }, []);
 
   // --- Item Management ---
