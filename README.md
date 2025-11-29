@@ -421,7 +421,7 @@ Use the `bubbleTargetActivity` parameter in your main activity's `AzNavRail` set
 ```kotlin
 AzNavRail {
     azSettings(
-        // Enable drag dragging so the Undock button appears
+        // Enable rail dragging so the Undock button appears
         enableRailDragging = true,
         // Provide the class of the Activity to launch as a bubble
         bubbleTargetActivity = BubbleActivity::class.java
