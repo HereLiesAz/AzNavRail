@@ -27,7 +27,7 @@ internal object BubbleHelper {
             context,
             0,
             target,
-            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
         // Try to get the app icon, fallback to system default
