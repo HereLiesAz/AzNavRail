@@ -6,6 +6,7 @@
   "module": "lib/module/index",
   "react-native": "src/index",
   "source": "src/index",
+  "types": "lib/typescript/index.d.ts",
   "files": [
     "src",
     "lib",
@@ -75,6 +76,7 @@
   "packageManager": "yarn@3.6.1",
   "jest": {
     "preset": "react-native",
+    "setupFiles": ["<rootDir>/jest.setup.js"],
     "modulePathIgnorePatterns": [
       "<rootDir>/example/node_modules",
       "<rootDir>/lib/"

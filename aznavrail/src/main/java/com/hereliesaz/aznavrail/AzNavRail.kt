@@ -54,6 +54,7 @@ import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.internal.AzNavRailLogger
+import com.hereliesaz.aznavrail.internal.BubbleHelper
 import com.hereliesaz.aznavrail.internal.CenteredPopupPositionProvider
 import com.hereliesaz.aznavrail.internal.CyclerTransientState
 import com.hereliesaz.aznavrail.internal.Footer
@@ -268,11 +269,18 @@ fun AzNavRail(
                                             if (scope.displayAppNameInHeader) isAppIcon = false
                                             hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                         } else if (scope.enableRailDragging) {
-                                            // Long press in docked mode -> FAB
-                                            isFloating = true
-                                            isExpanded = false
-                                            if (scope.displayAppNameInHeader) isAppIcon = true
-                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            val bubbleTarget = scope.bubbleTargetActivity
+                                            if (bubbleTarget != null) {
+                                                BubbleHelper.launch(context, bubbleTarget)
+                                            } else {
+                                                // Long press in docked mode -> FAB
+                                                isFloating = true
+                                                isExpanded = false
+                                                if (scope.displayAppNameInHeader) isAppIcon = true
+                                            }
+                                            hapticFeedback.performHapticFeedback(
+                                                HapticFeedbackType.LongPress
+                                            )
                                         }
                                     }
                                 )
@@ -501,8 +509,11 @@ fun AzNavRail(
                                 appName = appName,
                                 onToggle = { isExpanded = !isExpanded },
                                 onUndock = {
+                                    val bubbleTarget = scope.bubbleTargetActivity
                                     if (scope.onUndock != null) {
                                         scope.onUndock?.invoke()
+                                    } else if (bubbleTarget != null) {
+                                        BubbleHelper.launch(context, bubbleTarget)
                                     } else {
                                         isFloating = true
                                         isExpanded = false
@@ -534,10 +545,15 @@ fun AzNavRail(
                                                         change.consume()
                                                     }
                                                 } else if (scope.enableRailDragging) { // Vertical swipe
-                                                    isFloating = true
-                                                    isExpanded = false
-                                                    if (scope.displayAppNameInHeader) isAppIcon =
-                                                        true
+                                                    val bubbleTarget = scope.bubbleTargetActivity
+                                                    if (bubbleTarget != null) {
+                                                        BubbleHelper.launch(context, bubbleTarget)
+                                                    } else {
+                                                        isFloating = true
+                                                        isExpanded = false
+                                                        if (scope.displayAppNameInHeader) isAppIcon =
+                                                            true
+                                                    }
                                                     hapticFeedback.performHapticFeedback(
                                                         HapticFeedbackType.LongPress
                                                     )

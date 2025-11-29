@@ -44,7 +44,7 @@ const AzForm = ({
       backgroundColor: 'transparent',
       // Match main component background?
       borderColor: outlineColor,
-      borderWidth: !outlined ? 1 : 0 // Inverse
+      borderWidth: outlined ? 0 : 1 // Inverse
     }]
   }, submitButtonContent || /*#__PURE__*/_react.default.createElement(_reactNative.Text, {
     style: {

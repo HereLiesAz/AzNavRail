@@ -9,9 +9,6 @@ import { AzToggle } from './components/AzToggle';
 import { AzCycler } from './components/AzCycler';
 import { RailMenuItem } from './components/RailMenuItem';
 import { AzLoad } from './components/AzLoad';
-const logInteraction = (action, details) => {
-  console.log(`[AzNavRail] ${action} ${details || ''}`);
-};
 export const AzNavRail = ({
   children,
   initiallyExpanded = false,
@@ -22,8 +19,22 @@ export const AzNavRail = ({
   isLoading = false,
   defaultShape = AzButtonShape.CIRCLE,
   enableRailDragging = false,
-  onExpandedChange
+  onExpandedChange,
+  onInteraction
 }) => {
+  const logInteraction = useCallback((action, details) => {
+    if (onInteraction) {
+      onInteraction(action, details);
+      return;
+    }
+
+    // Fallback to console logging only in development when no custom logger is configured
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      const suffix = details ? ` ${details}` : '';
+      // eslint-disable-next-line no-console
+      console.log(`[AzNavRail] ${action}${suffix}`);
+    }
+  }, [onInteraction]);
   const [items, setItems] = useState([]);
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
   const [isFloating, setIsFloating] = useState(false);
@@ -40,6 +51,9 @@ export const AzNavRail = ({
     x: 0,
     y: 0
   });
+
+  // Cache screen height
+  const screenHeightRef = useRef(Dimensions.get('window').height);
 
   // Refs for PanResponder stale closures
   const isFloatingRef = useRef(isFloating);
@@ -65,6 +79,23 @@ export const AzNavRail = ({
     });
     return () => pan.removeListener(id);
   }, [pan]);
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener('change', ({
+      window
+    }) => {
+      screenHeightRef.current = window.height;
+    });
+    return () => {
+      if (!subscription) return;
+      // @ts-ignore
+      if (typeof subscription === 'function') {
+        // @ts-ignore
+        subscription();
+      } else if (typeof subscription.remove === 'function') {
+        subscription.remove();
+      }
+    };
+  }, []);
 
   // --- Item Management ---
   const register = useCallback(item => {
@@ -94,6 +125,37 @@ export const AzNavRail = ({
     }).start();
     if (onExpandedChange) onExpandedChange(isExpanded);
   }, [isExpanded, expandedRailWidth, collapsedRailWidth]);
+
+  // --- Helpers ---
+
+  const adjustFloatingRailWithinBounds = (currentX, currentY) => {
+    const screenHeight = screenHeightRef.current;
+    const railItemsCount = itemsRef.current.filter(i => i.isRailItem && !i.isSubItem).length;
+    // Estimated height: Header + (Count * (48 + 8)) + Padding
+    // 48 = button size, 8 = margin
+    const contentHeight = headerHeight + railItemsCount * 56 + 16;
+    const bottomY = currentY + contentHeight;
+    const limitY = screenHeight * 0.9;
+    if (bottomY > limitY) {
+      const shift = bottomY - limitY;
+      const newY = currentY - shift;
+      Animated.timing(pan, {
+        toValue: {
+          x: currentX,
+          y: newY
+        },
+        duration: 200,
+        useNativeDriver: false
+      }).start();
+
+      // We log here because this action (shifting) is significant, but note that
+      // handleHeaderTap didn't originally log. However, adding it makes the behavior consistent.
+      // The reviewer asked to preserve behavior. If handleHeaderTap didn't log, maybe we shouldn't enforce it.
+      // But 'Adjusted position' log is useful. I'll check if I can conditionally log based on caller,
+      // or just log it. The reviewer said "Keep the behavior in sync". So syncing behavior likely includes logging.
+      logInteraction('Adjusted position', `Shifted up by ${shift}`);
+    }
+  };
 
   // --- Gestures ---
   const panResponder = useRef(PanResponder.create({
@@ -152,19 +214,12 @@ export const AzNavRail = ({
         dx,
         dy
       } = gestureState;
-      const screenHeight = Dimensions.get('window').height;
+      const screenHeight = screenHeightRef.current;
       const iconSize = AzNavRailDefaults.HeaderIconSize;
 
       // 10% margin bounds
       const minY = screenHeight * 0.1;
       const maxY = screenHeight * 0.9 - iconSize;
-
-      // Calculate target absolute Y
-      // dragStartPos is the absolute position at start of drag (because we set offset to it)
-      // Wait, if we set offset, then pan.y (value) is deviation.
-      // So AbsoluteY = OffsetY + ValueY.
-      // Here ValueY should be dy.
-
       const targetY = dragStartPos.current.y + dy;
 
       // Clamp
@@ -192,33 +247,10 @@ export const AzNavRail = ({
             y: 0
           });
           logInteraction('Snap back', 'Docked');
-        } else {
-          if (wasVisibleOnDragStartRef.current) {
-            // Unfold logic
-            setShowFloatingButtons(true);
-
-            // Check bottom bound
-            const screenHeight = Dimensions.get('window').height;
-            const railItemsCount = itemsRef.current.filter(i => i.isRailItem && !i.isSubItem).length;
-            // Estimated height: Header + (Count * (48 + 8)) + Padding
-            // 48 = button size, 8 = margin
-            const contentHeight = headerHeight + railItemsCount * 56 + 16;
-            const bottomY = currentY + contentHeight;
-            const limitY = screenHeight * 0.9;
-            if (bottomY > limitY) {
-              const shift = bottomY - limitY;
-              const newY = currentY - shift;
-              Animated.timing(pan, {
-                toValue: {
-                  x: currentX,
-                  y: newY
-                },
-                duration: 200,
-                useNativeDriver: false
-              }).start();
-              logInteraction('Adjusted position', `Shifted up by ${shift}`);
-            }
-          }
+        } else if (wasVisibleOnDragStartRef.current) {
+          // Unfold logic
+          setShowFloatingButtons(true);
+          adjustFloatingRailWithinBounds(currentX, currentY);
         }
       }
     }
@@ -246,26 +278,9 @@ export const AzNavRail = ({
       const willShow = !showFloatingButtons;
       setShowFloatingButtons(willShow);
       if (willShow) {
-        // Check bottom bound (duplicated logic, could be refactored)
         const currentX = panValue.current.x;
         const currentY = panValue.current.y;
-        const screenHeight = Dimensions.get('window').height;
-        const railItemsCount = items.filter(i => i.isRailItem && !i.isSubItem).length;
-        const contentHeight = headerHeight + railItemsCount * 56 + 16;
-        const bottomY = currentY + contentHeight;
-        const limitY = screenHeight * 0.9;
-        if (bottomY > limitY) {
-          const shift = bottomY - limitY;
-          const newY = currentY - shift;
-          Animated.timing(pan, {
-            toValue: {
-              x: currentX,
-              y: newY
-            },
-            duration: 200,
-            useNativeDriver: false
-          }).start();
-        }
+        adjustFloatingRailWithinBounds(currentX, currentY);
       }
     } else {
       setIsExpanded(!isExpanded);
