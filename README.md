@@ -4,33 +4,33 @@
 
 A contemptably stubborn if not dictatorially restrictive navigation rail/menu--I call it a renu. Or maybe a mail. No, a navigrenuail--for Jetpack Compose with a streamlined, DSL-style API.
 
-This "navigrenuail" provides a vertical navigation rail that expands to a full menu drawer. It is designed to be highly configurable while providing sensible defaults that work out-of-the-box.
+It is NOT highly configurable. It is exactly what I want it to be. Its only benefits are the simplicity and extreme conciseness of the implementation code.
 
 ## Features
 
 - **Responsive Layout**: Automatically adjusts to orientation changes.
-- **Scrollable Content**: Both the rail and the expanded menu are scrollable.
-- **Text-Only DSL API**: A simple, declarative API for building your navigation.
-- **Multi-line Menu Items**: Supports multi-line text with automatic indentation.
-- **Stateless and Observable**: Hoist and manage state in your own composables.
--   **Customizable Shapes**: Choose from `CIRCLE`, `SQUARE`, `RECTANGLE`, or `NONE` for rail buttons. `RECTANGLE` and `NONE` shapes automatically size to fit their text content and have a fixed height of 36dp.
-- **Smart Collapse Behavior**: Menu items intelligently collapse the rail after interactions.
-- **Delayed Cycler Action**: Cycler items have a built-in delay to prevent accidental triggers.
-- **Customizable Colors**: Apply custom colors to individual rail buttons.
-- **Dividers**: Easily add dividers to your menu.
-- **Automatic Header**: Displays your app's icon or name by default.
-- **Configurable Layout**: Pack buttons together or preserve spacing.
-- **Disabled State**: Disable any item, including individual cycler options.
-- **Loading State**: Show a loading animation over the rail.
-- **Standalone Components**: Use `AzButton`, `AzToggle`, `AzCycler`, and `AzDivider` on their own.
-- **Jetpack Navigation Integration**: Seamlessly integrate with Jetpack Navigation using the `navController`.
-- **Hierarchical Navigation**: Create nested menus with host and sub-items.
-- **Draggable Rail (FAB Mode)**: The rail can be detached and moved around the screen.
-- **System Overlay (Bubbles)**: Use the rail as a system-wide overlay using Android Bubbles.
-- **Auto-sizing Text**: Text within rail buttons automatically resizes to fit without wrapping, unless a newline character is explicitly used.
-- **Toggle and Cycler Items**: `azRailToggle` and `azMenuToggle` provide a simple way to manage boolean states, while `azRailCycler` and `azMenuCycler` allow cycling through a list of options.
-- **Gesture Control**: Intuitive swipe and tap gestures for expanding, collapsing, and activating FAB mode.
-- **`AzTextBox`**: A modern, highly customizable text box with autocomplete and a built-in submit button.
+- **Scrollable**: Both rail and menu are scrollable.
+- **DSL API**: Simple, declarative API.
+- **Multi-line Items**: Supports multi-line text.
+- **Stateless**: Hoist and manage state yourself.
+- **Shapes**: `CIRCLE`, `SQUARE`, `RECTANGLE`, or `NONE`. `RECTANGLE`/`NONE` auto-size width (fixed 36dp height).
+- **Smart Collapse**: Items collapse the rail after interaction.
+- **Delayed Cycler**: Built-in delay prevents accidental triggers.
+- **Custom Colors**: Apply custom colors to buttons.
+- **Dividers**: Add menu dividers.
+- **Automatic Header**: Displays app icon or name.
+- **Layout**: Pack buttons or preserve spacing.
+- **Disabled State**: Disable items or options.
+- **Loading State**: Built-in loading animation.
+- **Standalone Components**: `AzButton`, `AzToggle`, `AzCycler`, `AzDivider`.
+- **Navigation**: seamless Jetpack Navigation integration.
+- **Hierarchy**: Nested menus with host and sub-items.
+- **Draggable (FAB Mode)**: Detach and move the rail.
+- **Bubbles**: System-wide overlay support.
+- **Auto-sizing Text**: Text fits without wrapping (unless explicit newline).
+- **Toggles/Cyclers**: Simple state management.
+- **Gestures**: Swipe/tap to expand, collapse, or undock.
+- **`AzTextBox`**: Modern text box with autocomplete and submit button.
 
 ## AzNavRail for Android (Jetpack Compose)
 
@@ -635,19 +635,41 @@ fun AzCycler(
 -   **`color`**: The color of the button's border and text.
 -   **`shape`**: The shape of the button.
 
+#### `AzNavRailScope`
+
+For the full DSL reference, see [DSL.md](DSL.md).
+
 ## AzNavRail for Web (React)
 
-`aznavrail-web` is a React component that provides a Material Design-style navigation rail, inspired by its counterpart in the Android ecosystem. It is designed to be a "batteries-included" solution, offering a highly configurable and easy-to-use navigation component for web applications.
+`aznavrail-web` is a React component that provides a Material Design-style navigation rail.
 
 ### Features
 
-All item functions are overloaded to support `route`-based navigation. The `route` parameter is a `String` that represents the destination in the navigation graph.
+All item functions are overloaded to support `route`-based navigation.
 
--   **`screenTitle`**: An optional parameter for all item functions that displays a title on the screen when the item is selected. The title will be **force-aligned to the right** of the screen. If no `screenTitle` is provided, the item's `text` will be used instead. To prevent a title from being displayed, use `screenTitle = AzNavRail.noTitle`.
+## AzNavRail for React Native
 
-## AzNavRail for Web (React)
+`aznavrail-react-native` provides the navigation rail for React Native applications.
 
-(This section remains unchanged as no modifications were made to the React component)
+### Installation
+
+```bash
+npm install aznavrail-react-native
+# or
+yarn add aznavrail-react-native
+```
+
+### Usage
+
+```tsx
+import { AzNavRail } from 'aznavrail-react-native';
+import { AzRailItem, AzMenuItem } from 'aznavrail-react-native';
+
+<AzNavRail>
+  <AzRailItem id="home" text="Home" onClick={() => {}} />
+  <AzMenuItem id="settings" text="Settings" onClick={() => {}} />
+</AzNavRail>
+```
 
 ## Project Structure
 
@@ -744,7 +766,7 @@ The `gradle` directory contains the Gradle wrapper files, which allow the projec
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a pull request or open an issue.
+Contributions are NOT welcome. They are at least not asked for.
 
 ## License
 

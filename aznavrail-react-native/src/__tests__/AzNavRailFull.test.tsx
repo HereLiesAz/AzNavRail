@@ -6,55 +6,6 @@ import { AzRailHostItem, AzRailSubItem } from '../AzNavRailScope';
 import { AzButtonShape } from '../types';
 import { AzButton } from '../components/AzButton';
 
-// Mock Animated
-jest.mock('react-native/Libraries/Animated/Animated', () => {
-  const React = require('react');
-
-  // Mock Value class
-  class Value {
-    val: any;
-    constructor(val: any) { this.val = val; }
-    setValue = jest.fn();
-    interpolate = jest.fn();
-    addListener = jest.fn();
-    removeListener = jest.fn();
-  }
-  class ValueXY {
-      x: any; y: any;
-      constructor(val: any) { this.x = new Value(val?.x || 0); this.y = new Value(val?.y || 0); }
-      setValue = jest.fn();
-      setOffset = jest.fn();
-      flattenOffset = jest.fn();
-      addListener = jest.fn();
-      removeListener = jest.fn();
-  }
-  const timing = jest.fn(() => ({ start: jest.fn() }));
-  const event = jest.fn();
-
-  // Mock Animated.View - render children directly
-  const MockView = (props: any) => <>{props.children}</>;
-
-  return {
-    Value: Value,
-    ValueXY: ValueXY,
-    timing: timing,
-    event: event,
-    View: MockView,
-    default: {
-        Value: Value,
-        ValueXY: ValueXY,
-        timing: timing,
-        event: event,
-        View: MockView,
-    }
-  };
-});
-
-// Mock Dimensions
-jest.mock('react-native/Libraries/Utilities/Dimensions', () => ({
-  get: jest.fn().mockReturnValue({ width: 375, height: 812 }),
-  addEventListener: jest.fn(() => ({ remove: jest.fn() })),
-}));
 
 
 describe('AzNavRail Full Suite', () => {
