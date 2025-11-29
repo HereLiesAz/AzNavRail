@@ -4,7 +4,7 @@
 
 A contemptably stubborn if not dictatorially restrictive navigation rail/menu--I call it a renu. Or maybe a mail. No, a navigrenuail--for Jetpack Compose with a streamlined, DSL-style API.
 
-It is NOT highly configurable. It is exactly what I want it to be. Its only benefits are the simplicity and extreme conciseness of the implementation code.
+This "navigrenuail" provides a vertical navigation rail that expands to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
 
 ## Features
 
