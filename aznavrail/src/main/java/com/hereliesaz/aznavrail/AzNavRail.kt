@@ -54,6 +54,7 @@ import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.internal.AzNavRailLogger
+import com.hereliesaz.aznavrail.internal.BubbleHelper
 import com.hereliesaz.aznavrail.internal.CenteredPopupPositionProvider
 import com.hereliesaz.aznavrail.internal.CyclerTransientState
 import com.hereliesaz.aznavrail.internal.Footer
@@ -268,11 +269,23 @@ fun AzNavRail(
                                             if (scope.displayAppNameInHeader) isAppIcon = false
                                             hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                         } else if (scope.enableRailDragging) {
-                                            // Long press in docked mode -> FAB
-                                            isFloating = true
-                                            isExpanded = false
-                                            if (scope.displayAppNameInHeader) isAppIcon = true
-                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            if (scope.bubbleTargetActivity != null) {
+                                                BubbleHelper.launch(
+                                                    context,
+                                                    scope.bubbleTargetActivity!!
+                                                )
+                                                hapticFeedback.performHapticFeedback(
+                                                    HapticFeedbackType.LongPress
+                                                )
+                                            } else {
+                                                // Long press in docked mode -> FAB
+                                                isFloating = true
+                                                isExpanded = false
+                                                if (scope.displayAppNameInHeader) isAppIcon = true
+                                                hapticFeedback.performHapticFeedback(
+                                                    HapticFeedbackType.LongPress
+                                                )
+                                            }
                                         }
                                     }
                                 )
@@ -503,6 +516,8 @@ fun AzNavRail(
                                 onUndock = {
                                     if (scope.onUndock != null) {
                                         scope.onUndock?.invoke()
+                                    } else if (scope.bubbleTargetActivity != null) {
+                                        BubbleHelper.launch(context, scope.bubbleTargetActivity!!)
                                     } else {
                                         isFloating = true
                                         isExpanded = false
@@ -534,14 +549,25 @@ fun AzNavRail(
                                                         change.consume()
                                                     }
                                                 } else if (scope.enableRailDragging) { // Vertical swipe
-                                                    isFloating = true
-                                                    isExpanded = false
-                                                    if (scope.displayAppNameInHeader) isAppIcon =
-                                                        true
-                                                    hapticFeedback.performHapticFeedback(
-                                                        HapticFeedbackType.LongPress
-                                                    )
-                                                    change.consume()
+                                                    if (scope.bubbleTargetActivity != null) {
+                                                        BubbleHelper.launch(
+                                                            context,
+                                                            scope.bubbleTargetActivity!!
+                                                        )
+                                                        hapticFeedback.performHapticFeedback(
+                                                            HapticFeedbackType.LongPress
+                                                        )
+                                                        change.consume()
+                                                    } else {
+                                                        isFloating = true
+                                                        isExpanded = false
+                                                        if (scope.displayAppNameInHeader) isAppIcon =
+                                                            true
+                                                        hapticFeedback.performHapticFeedback(
+                                                            HapticFeedbackType.LongPress
+                                                        )
+                                                        change.consume()
+                                                    }
                                                 }
                                             }
                                         )

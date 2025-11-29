@@ -416,69 +416,15 @@ class BubbleActivity : ComponentActivity() {
 
 #### 2. Launch the Bubble
 
-Use the `onUndock` callback in your main activity's `AzNavRail` settings to trigger the bubble notification instead of the default internal floating mode.
-
-```kotlin
-fun createBubble(context: Context) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
-
-    val target = Intent(context, BubbleActivity::class.java)
-    val bubbleIntent = PendingIntent.getActivity(context, 0, target, PendingIntent.FLAG_MUTABLE)
-
-    val icon = IconCompat.createWithResource(context, android.R.drawable.sym_def_app_icon)
-    val bubbleData = NotificationCompat.BubbleMetadata.Builder(bubbleIntent, icon)
-        .setDesiredHeight(600)
-        .setAutoExpandBubble(true)
-        .setSuppressNotification(true)
-        .build()
-
-    val person = Person.Builder()
-        .setName("NavRail")
-        .setImportant(true)
-        .build()
-
-    val channelId = "bubble_channel"
-    val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val channel = NotificationChannel(channelId, "Bubbles", NotificationManager.IMPORTANCE_HIGH)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            channel.setAllowBubbles(true)
-        }
-        notificationManager.createNotificationChannel(channel)
-    }
-
-    val shortcutId = "navrail_bubble"
-    val shortcut = ShortcutInfoCompat.Builder(context, shortcutId)
-        .setShortLabel("NavRail")
-        .setLongLabel("NavRail Bubble")
-        .setIcon(icon)
-        .setIntent(target.setAction(Intent.ACTION_MAIN))
-        .setPerson(person)
-        .build()
-    ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
-
-    val builder = NotificationCompat.Builder(context, channelId)
-        .setContentTitle("NavRail Overlay")
-        .setContentText("Tap to open")
-        .setSmallIcon(android.R.drawable.sym_def_app_icon)
-        .setBubbleMetadata(bubbleData)
-        .setShortcutId(shortcutId)
-        .addPerson(person)
-        .setCategory(Notification.CATEGORY_STATUS)
-        .setStyle(NotificationCompat.MessagingStyle(person).setConversationTitle("NavRail"))
-
-    notificationManager.notify(1, builder.build())
-}
-```
-
-Then in your `AzNavRail` configuration:
+Use the `bubbleTargetActivity` parameter in your main activity's `AzNavRail` settings to trigger the bubble notification automatically. This overrides the default internal floating mode.
 
 ```kotlin
 AzNavRail {
     azSettings(
+        // Enable drag dragging so the Undock button appears
         enableRailDragging = true,
-        onUndock = { createBubble(context) }
+        // Provide the class of the Activity to launch as a bubble
+        bubbleTargetActivity = BubbleActivity::class.java
     )
     // ...
 }
@@ -517,7 +463,7 @@ The DSL for configuring the `AzNavRail`.
 
 **Note:** Functions prefixed with `azMenu` will only appear in the expanded menu view. Functions prefixed with `azRail` will appear on the collapsed rail, and their text will be used as the label in the expanded menu.
 
--   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean, isLoading: Boolean, defaultShape: AzButtonShape, enableRailDragging: Boolean, headerIconShape: AzHeaderIconShape, onUndock: (() -> Unit)?, bubbleMode: Boolean)`: Configures the settings for the `AzNavRail`. `headerIconShape` can be `CIRCLE` (default), `ROUNDED`, or `NONE` (no clipping). `onUndock` allows overriding the default undock behavior (e.g., to launch a Bubble). `bubbleMode` (default `false`) simplifies bubble configuration by setting `enableRailDragging` to `false` and ensuring the rail is initially expanded.
+-   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean, isLoading: Boolean, defaultShape: AzButtonShape, enableRailDragging: Boolean, headerIconShape: AzHeaderIconShape, onUndock: (() -> Unit)?, bubbleMode: Boolean, bubbleTargetActivity: Class<*>?)`: Configures the settings for the `AzNavRail`. `headerIconShape` can be `CIRCLE` (default), `ROUNDED`, or `NONE` (no clipping). `onUndock` allows overriding the default undock behavior. `bubbleMode` (default `false`) simplifies bubble configuration by setting `enableRailDragging` to `false` and ensuring the rail is initially expanded. `bubbleTargetActivity` allows specifying the Activity to launch as a bubble when undocked.
 -   `azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
 -   `azMenuItem(id: String, text: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
 -   `azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text in the expanded menu.

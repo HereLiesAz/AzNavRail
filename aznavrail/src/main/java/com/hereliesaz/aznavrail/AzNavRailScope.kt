@@ -24,8 +24,9 @@ interface AzNavRailScope {
      * @param defaultShape The default shape for the rail buttons.
      * @param enableRailDragging Whether to enable the draggable rail (FAB mode).
      * @param headerIconShape The shape of the header icon.
-     * @param onUndock An optional callback to override the default undock behavior (e.g., to launch a Bubble).
+     * @param onUndock An optional callback to override the default undock behavior.
      * @param bubbleMode Whether to enable Bubble mode. If true, `enableRailDragging` is forced to false, and the rail is initially expanded.
+     * @param bubbleTargetActivity The activity class to launch as a bubble when undocked. If provided, overrides default undock behavior.
      */
     fun azSettings(
         displayAppNameInHeader: Boolean = false,
@@ -38,7 +39,8 @@ interface AzNavRailScope {
         enableRailDragging: Boolean = false,
         headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
         onUndock: (() -> Unit)? = null,
-        bubbleMode: Boolean = false
+        bubbleMode: Boolean = false,
+        bubbleTargetActivity: Class<*>? = null
     )
 
     /**
@@ -236,6 +238,7 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
     var headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE
     var onUndock: (() -> Unit)? = null
     var bubbleMode: Boolean = false
+    var bubbleTargetActivity: Class<*>? = null
 
     override fun azSettings(
         displayAppNameInHeader: Boolean,
@@ -248,7 +251,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         enableRailDragging: Boolean,
         headerIconShape: AzHeaderIconShape,
         onUndock: (() -> Unit)?,
-        bubbleMode: Boolean
+        bubbleMode: Boolean,
+        bubbleTargetActivity: Class<*>?
     ) {
         require(expandedRailWidth > collapsedRailWidth) {
             """
@@ -268,10 +272,11 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         this.showFooter = showFooter
         this.isLoading = isLoading
         this.defaultShape = defaultShape
-        this.enableRailDragging = if (bubbleMode) false else enableRailDragging
+        this.enableRailDragging = if (bubbleMode) false else (enableRailDragging || bubbleTargetActivity != null)
         this.headerIconShape = headerIconShape
         this.onUndock = onUndock
         this.bubbleMode = bubbleMode
+        this.bubbleTargetActivity = bubbleTargetActivity
     }
 
     override fun azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
