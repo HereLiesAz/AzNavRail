@@ -16,6 +16,8 @@ import androidx.core.graphics.drawable.toBitmap
 
 internal object BubbleHelper {
 
+    const val DISMISS_ACTION_SUFFIX = ".AZNAVRAIL_DISMISS_BUBBLE"
+
     fun launch(context: Context, targetActivity: Class<*>) {
         // Bubbles are supported on Android 10 (API 29) and higher.
         // However, the Bubble API was developer preview in 10 and finalized in 11.
@@ -27,6 +29,15 @@ internal object BubbleHelper {
             context,
             0,
             target,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val dismissIntent = Intent("${context.packageName}$DISMISS_ACTION_SUFFIX")
+        dismissIntent.setPackage(context.packageName)
+        val dismissPendingIntent = PendingIntent.getBroadcast(
+            context,
+            1,
+            dismissIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
@@ -44,8 +55,13 @@ internal object BubbleHelper {
             .setSuppressNotification(true)
             .build()
 
-        val person = Person.Builder()
+        val currentUser = Person.Builder()
+            .setName("You")
+            .build()
+
+        val chatPartner = Person.Builder()
             .setName("NavRail")
+            .setIcon(icon)
             .setImportant(true)
             .build()
 
@@ -66,19 +82,26 @@ internal object BubbleHelper {
             .setLongLabel("NavRail Bubble")
             .setIcon(icon)
             .setIntent(target.setAction(Intent.ACTION_MAIN))
-            .setPerson(person)
+            .setPerson(chatPartner)
+            .setLongLived(true)
             .build()
         ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
 
         val builder = NotificationCompat.Builder(context, channelId)
             .setContentTitle("NavRail Overlay")
-            .setContentText("Tap to open")
+            .setContentText("Tap to access")
             .setSmallIcon(android.R.drawable.sym_def_app_icon)
             .setBubbleMetadata(bubbleData)
             .setShortcutId(shortcutId)
-            .addPerson(person)
-            .setCategory(Notification.CATEGORY_STATUS)
-            .setStyle(NotificationCompat.MessagingStyle(person).setConversationTitle("NavRail"))
+            .addPerson(chatPartner)
+            .setCategory(Notification.CATEGORY_MESSAGE)
+            .setDeleteIntent(dismissPendingIntent)
+            .setStyle(
+                NotificationCompat.MessagingStyle(currentUser)
+                    .setConversationTitle("NavRail")
+                    .setGroupConversation(false)
+                    .addMessage("Tap to access", System.currentTimeMillis(), chatPartner)
+            )
 
         notificationManager.notify(1, builder.build())
     }
