@@ -45,8 +45,14 @@ internal object BubbleHelper {
 
         // Try to get the app icon, fallback to system default
         val icon = try {
-            val appIconDrawable = context.packageManager.getApplicationIcon(context.packageName)
-            IconCompat.createWithBitmap(appIconDrawable.toBitmap())
+            val pm = context.packageManager
+            val appInfo = pm.getApplicationInfo(context.packageName, 0)
+            if (appInfo.icon != 0) {
+                IconCompat.createWithResource(context, appInfo.icon)
+            } else {
+                val appIconDrawable = pm.getApplicationIcon(context.packageName)
+                IconCompat.createWithBitmap(appIconDrawable.toBitmap())
+            }
         } catch (e: Exception) {
             IconCompat.createWithResource(context, android.R.drawable.sym_def_app_icon)
         }
