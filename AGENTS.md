@@ -112,3 +112,7 @@ The rail can also be used as a system-wide overlay using the Android Bubble API.
 providing the `bubbleTargetActivity` class in `azSettings`, which overrides the default internal FAB mode.
 The Bubble Activity should be configured with `bubbleMode = true` (which sets `initiallyExpanded = true`
 and `enableRailDragging = false`).
+
+Note: To successfully display as a bubble on Android 11+, the notification must use `MessagingStyle`,
+reference a long-lived shortcut, and include a message from a `Person`. The `BubbleHelper` handles
+this by creating a "You" person and a "NavRail" chat partner to spoof a conversation.
