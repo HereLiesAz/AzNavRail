@@ -434,11 +434,11 @@ AzNavRail {
 
 When a bubble is launched, the docked `AzNavRail` in the main activity will automatically hide to prevent duplication. When the user dismisses the bubble (by dragging it to the close target), the docked rail will reappear in the main activity.
 
-[##API Reference](/API.md)
+[API Reference](/API.md)
 
-[##Full DSL](/DSL.md)
+[Full DSL](/DSL.md)
 
-[##Project Structure](/PROJECT_STRUCTURE.md)
+[Project Structure](/PROJECT_STRUCTURE.md)
 
 ## License
 
