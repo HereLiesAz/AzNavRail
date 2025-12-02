@@ -6,6 +6,8 @@ import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 object HistoryManager {
@@ -16,9 +18,10 @@ object HistoryManager {
     private var maxSuggestions = 5
 
     private var isInitialized = false
-    private lateinit var context: Context
+    private var context: Context? = null
     private val histories = mutableMapOf<String, MutableList<String>>()
     internal var coroutineScope = CoroutineScope(Dispatchers.IO)
+    private val fileMutex = Mutex()
 
     fun init(context: Context, suggestionLimit: Int = 5) {
         if (isInitialized) {
@@ -44,81 +47,86 @@ object HistoryManager {
         }
     }
 
-    private fun getHistoryFile(historyContext: String): File {
-        return File(context.filesDir, "$HISTORY_FILE_PREFIX$historyContext.txt")
+    private fun getHistoryFile(historyContext: String): File? {
+        return context?.let { File(it.filesDir, "$HISTORY_FILE_PREFIX$historyContext.txt") }
     }
 
     private suspend fun loadHistory(historyContext: String) = withContext(Dispatchers.IO) {
-        val historyFile = getHistoryFile(historyContext)
-        if (!historyFile.exists()) return@withContext
+        fileMutex.withLock {
+            val historyFile = getHistoryFile(historyContext) ?: return@withLock
+            if (!historyFile.exists()) return@withLock
 
-        try {
-            val lines = historyFile.readLines(Charsets.UTF_8)
-            synchronized(histories) {
-                histories.getOrPut(historyContext) { mutableListOf() }.apply {
-                    clear()
-                    addAll(lines)
+            try {
+                val lines = historyFile.readLines(Charsets.UTF_8)
+                synchronized(histories) {
+                    histories.getOrPut(historyContext) { mutableListOf() }.apply {
+                        clear()
+                        addAll(lines)
+                    }
                 }
+            } catch (e: IOException) {
+                // Silently ignore, no history will be loaded.
             }
-        } catch (e: IOException) {
-            // Silently ignore, no history will be loaded.
         }
     }
 
     private suspend fun saveHistory(historyContext: String) = withContext(Dispatchers.IO) {
-        val historyFile = getHistoryFile(historyContext)
-        try {
-            historyFile.writer(Charsets.UTF_8).use { writer ->
-                var currentSize = 0
-                val entriesToWrite: List<String>
-                synchronized(histories) {
-                    entriesToWrite = histories[historyContext]?.toList() ?: emptyList()
-                }
+        fileMutex.withLock {
+            val historyFile = getHistoryFile(historyContext) ?: return@withLock
+            try {
+                historyFile.writer(Charsets.UTF_8).use { writer ->
+                    var currentSize = 0
+                    val entriesToWrite: List<String>
+                    synchronized(histories) {
+                        entriesToWrite = histories[historyContext]?.toList() ?: emptyList()
+                    }
 
-                for (entry in entriesToWrite) {
-                    val entryWithNewline = entry + System.lineSeparator()
-                    val entrySize = entryWithNewline.toByteArray(Charsets.UTF_8).size
-                    if (maxSizeBytes == 0) break // Do not save if limit is 0KB
-                    if (currentSize + entrySize <= maxSizeBytes) {
-                        writer.write(entryWithNewline)
-                        currentSize += entrySize
-                    } else {
-                        break
+                    for (entry in entriesToWrite) {
+                        val entryWithNewline = entry + System.lineSeparator()
+                        val entrySize = entryWithNewline.toByteArray(Charsets.UTF_8).size
+                        if (maxSizeBytes == 0) break // Do not save if limit is 0KB
+                        if (currentSize + entrySize <= maxSizeBytes) {
+                            writer.write(entryWithNewline)
+                            currentSize += entrySize
+                        } else {
+                            break
+                        }
                     }
                 }
+            } catch (e: IOException) {
+                // Silently ignore, history not saved.
             }
-        } catch (e: IOException) {
-            // Silently ignore, history not saved.
         }
     }
 
     fun addEntry(text: String, historyContext: String?) {
-        val context = historyContext ?: DEFAULT_HISTORY_CONTEXT
+        val safeContext = historyContext ?: DEFAULT_HISTORY_CONTEXT
         if (!isInitialized || text.isBlank() || maxSizeBytes == 0) return
 
         synchronized(histories) {
-            val history = histories.getOrPut(context) { mutableListOf() }
+            val history = histories.getOrPut(safeContext) { mutableListOf() }
             history.remove(text)
             history.add(0, text)
         }
         coroutineScope.launch {
-            saveHistory(context)
+            saveHistory(safeContext)
         }
     }
 
     suspend fun getSuggestions(query: String, historyContext: String?): List<String> {
-        val context = historyContext ?: DEFAULT_HISTORY_CONTEXT
+        val safeContext = historyContext ?: DEFAULT_HISTORY_CONTEXT
         if (!isInitialized || maxSuggestions == 0) {
             return emptyList()
         }
 
         // Lazy load history if not already in memory for this context
-        if (!histories.containsKey(context)) {
-            loadHistory(context)
+        val needsLoad = synchronized(histories) { !histories.containsKey(safeContext) }
+        if (needsLoad) {
+            loadHistory(safeContext)
         }
 
         return synchronized(histories) {
-            val history = histories[context] ?: return@synchronized emptyList()
+            val history = histories[safeContext] ?: return@synchronized emptyList()
 
             if (query.isBlank()) {
                 history.take(maxSuggestions)
@@ -137,5 +145,6 @@ object HistoryManager {
             histories.clear()
         }
         isInitialized = false
+        context = null
     }
 }
