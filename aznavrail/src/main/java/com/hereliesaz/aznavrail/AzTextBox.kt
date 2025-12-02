@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -35,13 +36,18 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import com.hereliesaz.aznavrail.util.HistoryManager
 
 object AzTextBoxDefaults {
@@ -85,14 +91,25 @@ fun AzTextBox(
     }
 
     var internalText by remember { mutableStateOf("") }
+    
+    // Determine effective text
     val text = value ?: internalText
-    val onTextChange = onValueChange ?: { internalText = it }
+    
+    // Logic Fix: Ensure internal text updates if we are in uncontrolled mode (value == null),
+    // but allow the developer's onValueChange to handle it if in controlled mode.
+    val onTextChange: (String) -> Unit = { newText ->
+        if (value == null) {
+            internalText = newText
+        }
+        onValueChange?.invoke(newText)
+    }
 
     var suggestions by remember { mutableStateOf<List<String>>(emptyList()) }
     val context = LocalContext.current
     val suggestionLimit = AzTextBoxDefaults.getSuggestionLimit()
     val backgroundColor = AzTextBoxDefaults.getBackgroundColor().copy(alpha = AzTextBoxDefaults.getBackgroundOpacity())
     var isPasswordVisible by remember { mutableStateOf(false) }
+    var componentHeight by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(suggestionLimit) {
         HistoryManager.init(context, suggestionLimit)
@@ -106,9 +123,11 @@ fun AzTextBox(
         }
     }
 
-    Column(modifier = modifier) {
+    Box(modifier = modifier) {
         Row(
-            modifier = Modifier.background(backgroundColor),
+            modifier = Modifier
+                .background(backgroundColor)
+                .onSizeChanged { componentHeight = it.height },
             verticalAlignment = if (multiline) Alignment.Bottom else Alignment.CenterVertically
         ) {
             Box(
@@ -202,34 +221,45 @@ fun AzTextBox(
         }
 
         if (suggestions.isNotEmpty()) {
-            val surfaceColor = MaterialTheme.colorScheme.surface
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp)
+            val density = LocalDensity.current
+            val offsetY = with(density) { componentHeight.toDp() }
+            
+            Popup(
+                alignment = Alignment.TopStart,
+                offset = IntOffset(0, componentHeight),
+                properties = PopupProperties(focusable = false, dismissOnBackPress = true, dismissOnClickOutside = true),
+                onDismissRequest = { suggestions = emptyList() }
             ) {
-                suggestions.forEachIndexed { index, suggestion ->
-                    val suggestionBgColor = if (index % 2 == 0) {
-                        surfaceColor.copy(alpha = 0.9f)
-                    } else {
-                        surfaceColor.copy(alpha = 0.8f)
+                val surfaceColor = MaterialTheme.colorScheme.surface
+                Column(
+                    modifier = Modifier
+                        .width(200.dp) // Or match parent width if possible, but Popup breaks context constraints
+                        .background(surfaceColor)
+                        .border(1.dp, outlineColor.copy(alpha = 0.5f))
+                ) {
+                    suggestions.forEachIndexed { index, suggestion ->
+                        val suggestionBgColor = if (index % 2 == 0) {
+                            surfaceColor.copy(alpha = 0.9f)
+                        } else {
+                            surfaceColor.copy(alpha = 0.8f)
+                        }
+                        Text(
+                            text = suggestion,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(suggestionBgColor)
+                                .clickable {
+                                    onTextChange(suggestion)
+                                    suggestions = emptyList()
+                                }
+                                .padding(vertical = 8.dp, horizontal = 12.dp)
+                                .fadeRight(),
+                            maxLines = 1,
+                            overflow = TextOverflow.Clip,
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
                     }
-                    Text(
-                        text = suggestion,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(suggestionBgColor)
-                            .clickable {
-                                onTextChange(suggestion)
-                                suggestions = emptyList()
-                            }
-                            .padding(vertical = 8.dp, horizontal = 12.dp)
-                            .fadeRight(),
-                        maxLines = 1,
-                        overflow = TextOverflow.Clip,
-                        fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
                 }
             }
         }
@@ -241,7 +271,7 @@ private fun Modifier.fadeRight(): Modifier = this.drawWithContent {
     drawRect(
         brush = Brush.horizontalGradient(
             colors = listOf(Color.Transparent, Color.Black),
-            startX = size.width - 50f, // Start fading from 50px from the right
+            startX = size.width - 50f,
             endX = size.width
         ),
         blendMode = BlendMode.DstIn
