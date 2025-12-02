@@ -6,6 +6,8 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
@@ -46,14 +48,28 @@ internal object BubbleHelper {
         // Try to get the app icon, fallback to system default
         val icon = try {
             val pm = context.packageManager
-            val appInfo = pm.getApplicationInfo(context.packageName, 0)
-            if (appInfo.icon != 0) {
-                IconCompat.createWithResource(context, appInfo.icon)
+            val appInfo: ApplicationInfo = pm.getApplicationInfo(context.packageName, 0)
+
+            // Prefer roundIcon if available (API 25+), otherwise use standard icon
+            val iconResId = try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    val field = ApplicationInfo::class.java.getField("roundIcon")
+                    val roundIcon = field.getInt(appInfo)
+                    if (roundIcon != 0) roundIcon else appInfo.icon
+                } else {
+                    appInfo.icon
+                }
+            } catch (e: Exception) {
+                appInfo.icon
+            }
+
+            if (iconResId != 0) {
+                IconCompat.createWithResource(context, iconResId)
             } else {
-                val appIconDrawable = pm.getApplicationIcon(context.packageName)
+                val appIconDrawable = appInfo.loadIcon(pm)
                 IconCompat.createWithBitmap(appIconDrawable.toBitmap())
             }
-        } catch (e: Exception) {
+        } catch (e: PackageManager.NameNotFoundException) {
             IconCompat.createWithResource(context, android.R.drawable.sym_def_app_icon)
         }
 
