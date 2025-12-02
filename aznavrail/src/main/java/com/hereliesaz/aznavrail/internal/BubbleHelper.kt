@@ -29,11 +29,17 @@ internal object BubbleHelper {
         val target = Intent(context, targetActivity)
         target.setAction(Intent.ACTION_MAIN)
 
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        } else {
+            PendingIntent.FLAG_UPDATE_CURRENT
+        }
+
         val bubbleIntent = PendingIntent.getActivity(
             context,
             0,
             target,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            flags
         )
 
         val dismissIntent = Intent("${context.packageName}$DISMISS_ACTION_SUFFIX")
