@@ -51,6 +51,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.navigation.NavController
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import androidx.core.content.ContextCompat
+import androidx.compose.runtime.DisposableEffect
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.internal.AzNavRailLogger
@@ -121,6 +127,7 @@ fun AzNavRail(
 
     val initialExpansion = if (scope.bubbleMode) true else initiallyExpanded
     var isExpanded by rememberSaveable(initialExpansion) { mutableStateOf(initialExpansion) }
+    var isBubbled by rememberSaveable { mutableStateOf(false) }
     var railOffset by remember { mutableStateOf(IntOffset.Zero) }
     var isFloating by remember { mutableStateOf(false) }
     var showFloatingButtons by remember { mutableStateOf(false) }
@@ -189,6 +196,27 @@ fun AzNavRail(
         }
     }
 
+    if (!scope.bubbleMode) {
+        val currentContext = LocalContext.current
+        DisposableEffect(currentContext) {
+            val receiver = object : BroadcastReceiver() {
+                override fun onReceive(context: Context?, intent: Intent?) {
+                    isBubbled = false
+                }
+            }
+            val filter = IntentFilter("${currentContext.packageName}.AZNAVRAIL_DISMISS_BUBBLE")
+            ContextCompat.registerReceiver(
+                currentContext,
+                receiver,
+                filter,
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+            onDispose {
+                currentContext.unregisterReceiver(receiver)
+            }
+        }
+    }
+
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
     val density = LocalDensity.current
@@ -206,43 +234,46 @@ fun AzNavRail(
     }
 
     Box(modifier = modifier) {
-        val buttonSize = AzNavRailDefaults.HeaderIconSize
-        selectedItem?.screenTitle?.let { screenTitle ->
-            if (screenTitle.isNotEmpty()) {
-                Popup(alignment = Alignment.TopEnd) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(end = 16.dp, top = 16.dp),
-                        contentAlignment = Alignment.CenterEnd
-                    ) {
-                        Text(
-                            text = screenTitle,
-                            style = MaterialTheme.typography.headlineMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
+        if (!isBubbled) {
+            val buttonSize = AzNavRailDefaults.HeaderIconSize
+            selectedItem?.screenTitle?.let { screenTitle ->
+                if (screenTitle.isNotEmpty()) {
+                    Popup(alignment = Alignment.TopEnd) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(end = 16.dp, top = 16.dp),
+                            contentAlignment = Alignment.CenterEnd
+                        ) {
+                            Text(
+                                text = screenTitle,
+                                style = MaterialTheme.typography.headlineMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
                             )
-                        )
+                        }
                     }
                 }
             }
-        }
-        if (scope.isLoading) {
-            Popup(
-                popupPositionProvider = CenteredPopupPositionProvider,
-                properties = PopupProperties(focusable = false)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    AzLoad()
+            if (scope.isLoading) {
+                Popup(
+                    popupPositionProvider = CenteredPopupPositionProvider,
+                    properties = PopupProperties(focusable = false)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        AzLoad()
+                    }
                 }
             }
-        }
-        Box {
-            NavigationRail(
-                modifier = Modifier
-                    .width(railWidth)
-                    .offset { railOffset },
-                containerColor = if (isExpanded) MaterialTheme.colorScheme.surface.copy(alpha = 0.95f) else Color.Transparent,
+            Box {
+                NavigationRail(
+                    modifier = Modifier
+                        .width(railWidth)
+                        .offset { railOffset },
+                    containerColor = if (isExpanded) MaterialTheme.colorScheme.surface.copy(
+                        alpha = 0.95f
+                    ) else Color.Transparent,
                 header = {
                     Box(
                         modifier = Modifier
@@ -272,6 +303,7 @@ fun AzNavRail(
                                             val bubbleTarget = scope.bubbleTargetActivity
                                             if (bubbleTarget != null) {
                                                 BubbleHelper.launch(context, bubbleTarget)
+                                                isBubbled = true
                                             } else {
                                                 // Long press in docked mode -> FAB
                                                 isFloating = true
@@ -514,6 +546,7 @@ fun AzNavRail(
                                         scope.onUndock?.invoke()
                                     } else if (bubbleTarget != null) {
                                         BubbleHelper.launch(context, bubbleTarget)
+                                        isBubbled = true
                                     } else {
                                         isFloating = true
                                         isExpanded = false
@@ -548,6 +581,7 @@ fun AzNavRail(
                                                     val bubbleTarget = scope.bubbleTargetActivity
                                                     if (bubbleTarget != null) {
                                                         BubbleHelper.launch(context, bubbleTarget)
+                                                        isBubbled = true
                                                     } else {
                                                         isFloating = true
                                                         isExpanded = false
@@ -632,4 +666,4 @@ fun AzNavRail(
             }
         }
     }
-}
+}}
