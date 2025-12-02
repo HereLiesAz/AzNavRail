@@ -67,6 +67,7 @@ internal object BubbleHelper {
             .setIcon(icon)
             .setIntent(target.setAction(Intent.ACTION_MAIN))
             .setPerson(person)
+            .setLongLived(true)
             .build()
         ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
 
@@ -77,8 +78,12 @@ internal object BubbleHelper {
             .setBubbleMetadata(bubbleData)
             .setShortcutId(shortcutId)
             .addPerson(person)
-            .setCategory(Notification.CATEGORY_STATUS)
-            .setStyle(NotificationCompat.MessagingStyle(person).setConversationTitle("NavRail"))
+            .setCategory(Notification.CATEGORY_MESSAGE)
+            .setStyle(
+                NotificationCompat.MessagingStyle(person)
+                    .setConversationTitle("NavRail")
+                    .addMessage("Tap to open", System.currentTimeMillis(), person)
+            )
 
         notificationManager.notify(1, builder.build())
     }

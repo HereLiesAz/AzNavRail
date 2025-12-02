@@ -18,12 +18,9 @@ class BubbleActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     // Reuse the SampleScreen, but configure it for Bubble mode
-                    // We assume SampleScreen is refactored to accept these parameters.
-                    // If not yet, this will fail compilation until we refactor MainActivity.kt
                     SampleScreen(
-                        enableRailDragging = false, // Bubble window handles dragging
-                        initiallyExpanded = true,   // Show expanded menu by default in bubble
-                        onUndockOverride = { finish() } // Undock in bubble closes it? Or maybe re-docks?
+                        bubbleMode = true,
+                        onUndockOverride = { finish() }
                     )
                 }
             }
