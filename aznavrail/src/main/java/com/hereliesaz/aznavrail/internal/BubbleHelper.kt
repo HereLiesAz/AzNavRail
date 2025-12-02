@@ -25,6 +25,8 @@ internal object BubbleHelper {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
 
         val target = Intent(context, targetActivity)
+        target.setAction(Intent.ACTION_MAIN)
+
         val bubbleIntent = PendingIntent.getActivity(
             context,
             0,
@@ -81,7 +83,7 @@ internal object BubbleHelper {
             .setShortLabel("NavRail")
             .setLongLabel("NavRail Bubble")
             .setIcon(icon)
-            .setIntent(target.setAction(Intent.ACTION_MAIN))
+            .setIntent(target)
             .setPerson(chatPartner)
             .setLongLived(true)
             .build()
