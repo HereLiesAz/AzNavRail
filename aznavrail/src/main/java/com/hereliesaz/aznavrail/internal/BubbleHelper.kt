@@ -16,6 +16,8 @@ import androidx.core.graphics.drawable.toBitmap
 
 internal object BubbleHelper {
 
+    const val DISMISS_ACTION_SUFFIX = ".AZNAVRAIL_DISMISS_BUBBLE"
+
     fun launch(context: Context, targetActivity: Class<*>) {
         // Bubbles are supported on Android 10 (API 29) and higher.
         // However, the Bubble API was developer preview in 10 and finalized in 11.
@@ -30,7 +32,7 @@ internal object BubbleHelper {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        val dismissIntent = Intent("${context.packageName}.AZNAVRAIL_DISMISS_BUBBLE")
+        val dismissIntent = Intent("${context.packageName}$DISMISS_ACTION_SUFFIX")
         dismissIntent.setPackage(context.packageName)
         val dismissPendingIntent = PendingIntent.getBroadcast(
             context,

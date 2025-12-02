@@ -127,7 +127,10 @@ fun AzNavRail(
 
     val initialExpansion = if (scope.bubbleMode) true else initiallyExpanded
     var isExpanded by rememberSaveable(initialExpansion) { mutableStateOf(initialExpansion) }
-    var isBubbled by rememberSaveable { mutableStateOf(false) }
+    // Using remember instead of rememberSaveable to avoid stale state across process death.
+    // This may cause the rail to reappear on configuration changes (e.g. rotation) if the bubble is active,
+    // but ensures the rail is never permanently stuck in a hidden state.
+    var isBubbled by remember { mutableStateOf(false) }
     var railOffset by remember { mutableStateOf(IntOffset.Zero) }
     var isFloating by remember { mutableStateOf(false) }
     var showFloatingButtons by remember { mutableStateOf(false) }
@@ -204,7 +207,7 @@ fun AzNavRail(
                     isBubbled = false
                 }
             }
-            val filter = IntentFilter("${currentContext.packageName}.AZNAVRAIL_DISMISS_BUBBLE")
+            val filter = IntentFilter("${currentContext.packageName}${BubbleHelper.DISMISS_ACTION_SUFFIX}")
             ContextCompat.registerReceiver(
                 currentContext,
                 receiver,
@@ -212,7 +215,11 @@ fun AzNavRail(
                 ContextCompat.RECEIVER_NOT_EXPORTED
             )
             onDispose {
-                currentContext.unregisterReceiver(receiver)
+                try {
+                    currentContext.unregisterReceiver(receiver)
+                } catch (e: Exception) {
+                    // Ignore if not registered or already unregistered
+                }
             }
         }
     }
