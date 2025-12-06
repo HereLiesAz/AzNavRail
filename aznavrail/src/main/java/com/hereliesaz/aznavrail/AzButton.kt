@@ -81,7 +81,7 @@ fun AzToggle(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
     colors: ButtonColors? = null,
-    shape: AzButtonShape = AzButtonShape.CIRCLE
+    shape: AzButtonShape = AzButtonShape.CIRCLE,
     enabled: Boolean = true
 ) {
     val text = if (isChecked) toggleOnText else toggleOffText

@@ -32,6 +32,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
+import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 
 class AzFormScope {
     internal val entries = mutableListOf<AzFormEntry>()
@@ -47,7 +48,18 @@ class AzFormScope {
         keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
         keyboardActions: KeyboardActions = KeyboardActions.Default
     ) {
-        entries.add(AzFormEntry(entryName, hint, multiline, secret, enabled, leadingIcon, isError, keyboardOptions, keyboardActions))
+        entries.add(AzFormEntry(
+            entryName = entryName,
+            hint = hint,
+            multiline = multiline,
+            secret = secret,
+            leadingIcon = leadingIcon,
+            isError = isError,
+            keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions,
+            enabled = enabled
+        ))
+    }
 }
 
 internal data class AzFormEntry(
@@ -58,7 +70,7 @@ internal data class AzFormEntry(
     val leadingIcon: @Composable (() -> Unit)?,
     val isError: Boolean,
     val keyboardOptions: KeyboardOptions,
-    val keyboardActions: KeyboardActions
+    val keyboardActions: KeyboardActions,
     val enabled: Boolean
 )
 
@@ -89,10 +101,6 @@ fun AzForm(
             }
         }
     }
-
-    // Check if all fields are valid/enabled logic? No, just render them.
-    // If any field is disabled, should submit be disabled? User just said "disable AzForm input fields".
-    // I will assume submit is always enabled unless I add a form-level enabled flag, but user asked for "input fields".
 
     Column(modifier = modifier) {
         scope.entries.forEachIndexed { index, entry ->
