@@ -39,6 +39,11 @@ fun AzTextBox(
     outlined: Boolean = true,
     multiline: Boolean = false,
     secret: Boolean = false,
+    isError: Boolean = false,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
     outlineColor: Color = MaterialTheme.colorScheme.primary,
     historyContext: String? = null,
     submitButtonContent: (@Composable () -> Unit)? = null,
@@ -53,6 +58,11 @@ fun AzTextBox(
 -   **`outlined`**: Whether the text box has an outline. The submit button's outline will be the inverse of this value.
 -   **`multiline`**: Enables multiline input, which expands the text box vertically.
 -   **`secret`**: Masks the input for password fields and replaces the clear button with a reveal icon.
+-   **`isError`**: Indicates if the input is in an error state, changing the outline and icon color to the error color.
+-   **`keyboardOptions`**: Configuration for the keyboard, such as `ImeAction`.
+-   **`keyboardActions`**: Actions to take when keyboard events occur, such as when the 'Enter' key is pressed.
+-   **`leadingIcon`**: An optional composable to display at the start of the text box.
+-   **`trailingIcon`**: An optional composable to display at the end of the text box (before the clear/submit buttons).
 -   **`outlineColor`**: Sets the color for the outline, input text, and all icons.
 -   **`historyContext`**: An optional string to provide a unique context for the autocomplete history. If provided, suggestions will be drawn only from entries saved with the same context.
 -   **`submitButtonContent`**: A composable lambda for the content of the submit button.
@@ -69,6 +79,9 @@ fun AzForm(
     modifier: Modifier = Modifier,
     outlined: Boolean = true,
     outlineColor: Color = MaterialTheme.colorScheme.primary,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
     onSubmit: (Map<String, String>) -> Unit,
     submitButtonContent: @Composable () -> Unit = { Text("Submit") },
     content: AzFormScope.() -> Unit
@@ -79,13 +92,16 @@ fun AzForm(
 -   **`modifier`**: The modifier to be applied to the form.
 -   **`outlined`**: Whether the text fields in the form have an outline. The submit button's outline will be the inverse of this value.
 -   **`outlineColor`**: Sets the color for the outline, input text, and all icons for all fields in the form.
+-   **`trailingIcon`**: An optional composable to display at the end of every text box in the form.
+-   **`keyboardOptions`**: Default keyboard options for the form.
+-   **`keyboardActions`**: Default keyboard actions for the form. By default, 'Enter' moves to the next field, and sends the form on the last field.
 -   **`onSubmit`**: A callback that is invoked when the form's submit button is clicked, providing a map of the form data.
 -   **`submitButtonContent`**: A composable lambda for the content of the submit button.
 -   **`content`**: The DSL content for the form, where you define the `entry` fields.
 
 #### `AzFormScope`
 
--   `entry(entryName: String, hint: String, multiline: Boolean, secret: Boolean)`: Adds a text field to the form.
+-   `entry(entryName: String, hint: String, multiline: Boolean, secret: Boolean, leadingIcon: @Composable (() -> Unit)?, isError: Boolean, keyboardOptions: KeyboardOptions, keyboardActions: KeyboardActions)`: Adds a text field to the form. `leadingIcon` allows adding an icon to the start of the field. `isError` sets the error state. `keyboardOptions` and `keyboardActions` allow overriding the form defaults.
 
 #### `AzTextBoxDefaults`
 
@@ -106,6 +122,7 @@ fun AzButton(
     text: String,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
+    colors: ButtonColors? = null,
     shape: AzButtonShape = AzButtonShape.CIRCLE
 )
 ```
@@ -114,6 +131,7 @@ fun AzButton(
 -   **`text`**: The text to display on the button.
 -   **`modifier`**: The modifier to be applied to the button.
 -   **`color`**: The color of the button's border and text.
+-   **`colors`**: The colors of the button, overriding `color` if provided.
 -   **`shape`**: The shape of the button.
 
 #### `AzToggle`
@@ -129,6 +147,7 @@ fun AzToggle(
     toggleOffText: String,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
+    colors: ButtonColors? = null,
     shape: AzButtonShape = AzButtonShape.CIRCLE
 )
 ```
@@ -139,6 +158,7 @@ fun AzToggle(
 -   **`toggleOffText`**: The text to display when the toggle is off.
 -   **`modifier`**: The modifier to be applied to the button.
 -   **`color`**: The color of the button's border and text.
+-   **`colors`**: The colors of the button, overriding `color` if provided.
 -   **`shape`**: The shape of the button.
 
 #### `AzCycler`
@@ -153,6 +173,7 @@ fun AzCycler(
     onCycle: () -> Unit,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
+    colors: ButtonColors? = null,
     shape: AzButtonShape = AzButtonShape.CIRCLE
 )
 ```
@@ -162,6 +183,7 @@ fun AzCycler(
 -   **`onCycle`**: The callback to be invoked for the final selected option after a 1-second delay.
 -   **`modifier`**: The modifier to be applied to the button.
 -   **`color`**: The color of the button's border and text.
+-   **`colors`**: The colors of the button, overriding `color` if provided.
 -   **`shape`**: The shape of the button.
 
 #### `AzNavRailScope`

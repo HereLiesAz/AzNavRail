@@ -1,5 +1,6 @@
 package com.hereliesaz.aznavrail
 
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
@@ -26,6 +27,7 @@ import kotlinx.coroutines.launch
  * @param text The text to display on the button.
  * @param modifier The modifier to be applied to the button.
  * @param color The color of the button's border and text.
+ * @param colors The colors of the button, overriding `color` if provided.
  * @param shape The shape of the button.
  * @param enabled Whether the button is enabled.
  * @param isLoading Whether the button is in a loading state.
@@ -37,6 +39,7 @@ fun AzButton(
     text: String,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
+    colors: ButtonColors? = null,
     shape: AzButtonShape = AzButtonShape.CIRCLE,
     enabled: Boolean = true,
     isLoading: Boolean = false,
@@ -46,6 +49,7 @@ fun AzButton(
         onClick = onClick,
         text = text,
         color = color,
+        colors = colors,
         size = AzNavRailDefaults.HeaderIconSize,
         shape = shape,
         enabled = enabled,
@@ -64,6 +68,7 @@ fun AzButton(
  * @param toggleOffText The text to display when the toggle is off.
  * @param modifier The modifier to be applied to the button.
  * @param color The color of the button's border and text.
+ * @param colors The colors of the button, overriding `color` if provided.
  * @param shape The shape of the button.
  * @param enabled Whether the button is enabled.
  */
@@ -75,7 +80,8 @@ fun AzToggle(
     toggleOffText: String,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
-    shape: AzButtonShape = AzButtonShape.CIRCLE,
+    colors: ButtonColors? = null,
+    shape: AzButtonShape = AzButtonShape.CIRCLE
     enabled: Boolean = true
 ) {
     val text = if (isChecked) toggleOnText else toggleOffText
@@ -83,6 +89,7 @@ fun AzToggle(
         onClick = onToggle,
         text = text,
         color = color,
+        colors = colors,
         size = AzNavRailDefaults.HeaderIconSize,
         shape = shape,
         enabled = enabled,
@@ -104,8 +111,7 @@ fun AzToggle(
  *    after a 1-second delay.
  * @param modifier The modifier to be applied to the button.
  * @param color The color of the button's border and text.
- * @param shape The shape of the button.
- * @param enabled Whether the button is enabled.
+ * @param colors The colors of the button, overriding `color` if provided.
  */
 @Composable
 fun AzCycler(
@@ -114,6 +120,7 @@ fun AzCycler(
     onCycle: () -> Unit,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
+    colors: ButtonColors? = null,
     shape: AzButtonShape = AzButtonShape.CIRCLE,
     enabled: Boolean = true
 ) {
@@ -151,6 +158,7 @@ fun AzCycler(
         },
         text = displayedOption,
         color = color,
+        colors = colors,
         size = AzNavRailDefaults.HeaderIconSize,
         shape = shape,
         enabled = enabled,

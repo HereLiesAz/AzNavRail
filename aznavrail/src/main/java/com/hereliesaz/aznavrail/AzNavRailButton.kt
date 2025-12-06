@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -34,6 +35,7 @@ import com.hereliesaz.aznavrail.util.text.AutoSizeText
  * @param modifier The modifier to be applied to the button.
  * @param size The diameter of the circular button.
  * @param color The color of the button's border and text.
+ * @param colors The colors of the button, overriding `color` if provided.
  * @param shape The shape of the button.
  * @param enabled Whether the button is enabled.
  * @param isSelected Whether the button is selected.
@@ -49,6 +51,7 @@ fun AzNavRailButton(
     modifier: Modifier = Modifier,
     size: Dp = 72.dp,
     color: Color = MaterialTheme.colorScheme.primary,
+    colors: ButtonColors? = null,
     shape: AzButtonShape = AzButtonShape.CIRCLE,
     enabled: Boolean = true,
     isSelected: Boolean = false,
@@ -75,11 +78,21 @@ fun AzNavRailButton(
 
     val disabledColor = color.copy(alpha = 0.5f)
     val finalColor = if (isSelected) MaterialTheme.colorScheme.primary else color
+    val defaultColors = ButtonDefaults.outlinedButtonColors(
+        containerColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent,
+        contentColor = if (disabled) disabledColor else finalColor,
+        disabledContainerColor = Color.Transparent,
+        disabledContentColor = disabledColor
+    )
 
     OutlinedButton(
         onClick = onClick,
         modifier = buttonModifier,
         shape = buttonShape,
+        border = if (shape == AzButtonShape.NONE) BorderStroke(0.dp, Color.Transparent) else BorderStroke(3.dp, if (disabled) disabledColor else finalColor),
+        colors = colors ?: defaultColors,
+        contentPadding = PaddingValues(8.dp),
+        enabled = !disabled
         border = if (shape == AzButtonShape.NONE) BorderStroke(0.dp, Color.Transparent) else BorderStroke(3.dp, if (!enabled) disabledColor else finalColor),
         colors = ButtonDefaults.outlinedButtonColors(
             containerColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent,

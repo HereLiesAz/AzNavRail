@@ -27,6 +27,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 
 class AzFormScope {
     internal val entries = mutableListOf<AzFormEntry>()
@@ -36,10 +41,13 @@ class AzFormScope {
         hint: String,
         multiline: Boolean = false,
         secret: Boolean = false,
-        enabled: Boolean = true
+        leadingIcon: @Composable (() -> Unit)? = null,
+        isError: Boolean = false,       
+        enabled: Boolean = true,
+        keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+        keyboardActions: KeyboardActions = KeyboardActions.Default
     ) {
-        entries.add(AzFormEntry(entryName, hint, multiline, secret, enabled))
-    }
+        entries.add(AzFormEntry(entryName, hint, multiline, secret, enabled, leadingIcon, isError, keyboardOptions, keyboardActions))
 }
 
 internal data class AzFormEntry(
@@ -47,6 +55,10 @@ internal data class AzFormEntry(
     val hint: String,
     val multiline: Boolean,
     val secret: Boolean,
+    val leadingIcon: @Composable (() -> Unit)?,
+    val isError: Boolean,
+    val keyboardOptions: KeyboardOptions,
+    val keyboardActions: KeyboardActions
     val enabled: Boolean
 )
 
@@ -56,11 +68,15 @@ fun AzForm(
     modifier: Modifier = Modifier,
     outlined: Boolean = true,
     outlineColor: Color = MaterialTheme.colorScheme.primary,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
     onSubmit: (Map<String, String>) -> Unit,
     submitButtonContent: @Composable () -> Unit = { Text("Submit") },
     content: AzFormScope.() -> Unit
 ) {
     val scope = remember(formName, content) { AzFormScope().apply(content) }
+    val focusManager = LocalFocusManager.current
     val formData = rememberSaveable(
         saver = listSaver<SnapshotStateMap<String, String>, Pair<String, String>>(
             save = { it.toList() },
@@ -80,6 +96,31 @@ fun AzForm(
 
     Column(modifier = modifier) {
         scope.entries.forEachIndexed { index, entry ->
+            // Determine ImeAction
+            val defaultImeAction = if (index == scope.entries.lastIndex) ImeAction.Send else ImeAction.Next
+            val imeAction = if (entry.keyboardOptions.imeAction == ImeAction.Default) {
+                if (keyboardOptions.imeAction == ImeAction.Default) defaultImeAction else keyboardOptions.imeAction
+            } else {
+                entry.keyboardOptions.imeAction
+            }
+
+            // Determine KeyboardActions
+            val finalKeyboardActions = if (entry.keyboardActions == KeyboardActions.Default && keyboardActions == KeyboardActions.Default) {
+                 if (imeAction == ImeAction.Next) {
+                     KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
+                 } else if (imeAction == ImeAction.Send) {
+                     KeyboardActions(onSend = { onSubmit(formData.toMap()) })
+                 } else {
+                     KeyboardActions.Default
+                 }
+            } else if (entry.keyboardActions != KeyboardActions.Default) {
+                entry.keyboardActions
+            } else {
+                keyboardActions
+            }
+
+            val finalKeyboardOptions = entry.keyboardOptions.copy(imeAction = imeAction)
+
             if (index == scope.entries.lastIndex) {
                 Row(verticalAlignment = Alignment.Bottom) {
                     Box(modifier = Modifier.weight(1f)) {
@@ -89,7 +130,10 @@ fun AzForm(
                             onValueChange = { formData[entry.entryName] = it },
                             outlined = outlined,
                             outlineColor = outlineColor,
-                            historyContext = formName
+                            historyContext = formName,
+                            trailingIcon = trailingIcon,
+                            keyboardOptions = finalKeyboardOptions,
+                            keyboardActions = finalKeyboardActions
                         )
                     }
                     Spacer(modifier = Modifier.width(8.dp))
@@ -118,7 +162,10 @@ fun AzForm(
                     onValueChange = { formData[entry.entryName] = it },
                     outlined = outlined,
                     outlineColor = outlineColor,
-                    historyContext = formName
+                    historyContext = formName,
+                    trailingIcon = trailingIcon,
+                    keyboardOptions = finalKeyboardOptions,
+                    keyboardActions = finalKeyboardActions
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -133,7 +180,10 @@ private fun FormEntryTextBox(
     onValueChange: (String) -> Unit,
     outlined: Boolean,
     outlineColor: Color,
-    historyContext: String
+    historyContext: String,
+    trailingIcon: @Composable (() -> Unit)?,
+    keyboardOptions: KeyboardOptions,
+    keyboardActions: KeyboardActions
 ) {
     AzTextBox(
         value = value,
@@ -143,6 +193,11 @@ private fun FormEntryTextBox(
         outlined = outlined,
         multiline = entry.multiline,
         secret = entry.secret,
+        leadingIcon = entry.leadingIcon,
+        trailingIcon = trailingIcon,
+        isError = entry.isError,
+        keyboardOptions = keyboardOptions,
+        keyboardActions = keyboardActions,
         enabled = entry.enabled,
         outlineColor = outlineColor,
         submitButtonContent = null,
