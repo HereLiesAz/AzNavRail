@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Visibility
@@ -82,6 +84,11 @@ fun AzTextBox(
     outlined: Boolean = true,
     multiline: Boolean = false,
     secret: Boolean = false,
+    isError: Boolean = false,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
     outlineColor: Color = MaterialTheme.colorScheme.primary,
     submitButtonContent: (@Composable () -> Unit)? = null,
     onSubmit: (String) -> Unit
@@ -91,7 +98,7 @@ fun AzTextBox(
     }
 
     var internalText by remember { mutableStateOf("") }
-    
+
     // Determine effective text
     val text = value ?: internalText
     
@@ -110,6 +117,7 @@ fun AzTextBox(
     val backgroundColor = AzTextBoxDefaults.getBackgroundColor().copy(alpha = AzTextBoxDefaults.getBackgroundOpacity())
     var isPasswordVisible by remember { mutableStateOf(false) }
     var componentHeight by remember { mutableIntStateOf(0) }
+    val effectiveColor = if (isError) MaterialTheme.colorScheme.error else outlineColor
 
     LaunchedEffect(suggestionLimit) {
         HistoryManager.init(context, suggestionLimit)
@@ -136,7 +144,7 @@ fun AzTextBox(
                     .then(if (!multiline) Modifier.height(36.dp) else Modifier)
                     .then(
                         if (outlined) {
-                            Modifier.border(1.dp, outlineColor)
+                            Modifier.border(1.dp, effectiveColor)
                         } else {
                             Modifier
                         }
@@ -149,20 +157,34 @@ fun AzTextBox(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 8.dp),
-                    textStyle = TextStyle(fontSize = 10.sp, color = outlineColor),
+                    textStyle = TextStyle(fontSize = 10.sp, color = effectiveColor),
                     singleLine = !multiline,
-                    cursorBrush = SolidColor(outlineColor),
-                    visualTransformation = if (secret && !isPasswordVisible) PasswordVisualTransformation() else VisualTransformation.None
+                    cursorBrush = SolidColor(effectiveColor),
+                    visualTransformation = if (secret && !isPasswordVisible) PasswordVisualTransformation() else VisualTransformation.None,
+                    keyboardOptions = keyboardOptions,
+                    keyboardActions = keyboardActions
                 ) { innerTextField ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        if (leadingIcon != null) {
+                            CompositionLocalProvider(LocalContentColor provides effectiveColor) {
+                                leadingIcon()
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
+                        }
                         Box(modifier = Modifier.weight(1f)) {
                             if (text.isEmpty()) {
                                 Text(text = hint, fontSize = 10.sp, color = Color.Gray)
                             }
                             innerTextField()
+                        }
+                        if (trailingIcon != null) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            CompositionLocalProvider(LocalContentColor provides effectiveColor) {
+                                trailingIcon()
+                            }
                         }
                         if (text.isNotEmpty()) {
                             val icon = when {
@@ -175,6 +197,7 @@ fun AzTextBox(
                                 secret && !isPasswordVisible -> "Show password"
                                 else -> "Clear text"
                             }
+                            Spacer(modifier = Modifier.width(8.dp))
                             Icon(
                                 imageVector = icon,
                                 contentDescription = contentDescription,
@@ -187,7 +210,7 @@ fun AzTextBox(
                                             onTextChange("")
                                         }
                                     },
-                                tint = outlineColor
+                                tint = effectiveColor
                             )
                         }
                     }
@@ -195,7 +218,7 @@ fun AzTextBox(
             }
             if (submitButtonContent != null) {
                 Spacer(modifier = Modifier.width(8.dp))
-                CompositionLocalProvider(LocalContentColor provides outlineColor) {
+                CompositionLocalProvider(LocalContentColor provides effectiveColor) {
                     Box(
                         modifier = Modifier
                             .clickable {
@@ -207,7 +230,7 @@ fun AzTextBox(
                             }
                             .then(
                                 if (!outlined) {
-                                    Modifier.border(1.dp, outlineColor)
+                                    Modifier.border(1.dp, effectiveColor)
                                 } else {
                                     Modifier
                                 }
@@ -235,7 +258,7 @@ fun AzTextBox(
                     modifier = Modifier
                         .width(200.dp) // Or match parent width if possible, but Popup breaks context constraints
                         .background(surfaceColor)
-                        .border(1.dp, outlineColor.copy(alpha = 0.5f))
+                        .border(1.dp, effectiveColor.copy(alpha = 0.5f))
                 ) {
                     suggestions.forEachIndexed { index, suggestion ->
                         val suggestionBgColor = if (index % 2 == 0) {
