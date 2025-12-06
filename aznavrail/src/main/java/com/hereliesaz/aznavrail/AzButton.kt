@@ -2,6 +2,7 @@ package com.hereliesaz.aznavrail
 
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -12,6 +13,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import kotlinx.coroutines.Job
@@ -26,6 +28,10 @@ import kotlinx.coroutines.launch
  * @param modifier The modifier to be applied to the button.
  * @param color The color of the button's border and text.
  * @param colors The colors of the button, overriding `color` if provided.
+ * @param shape The shape of the button.
+ * @param enabled Whether the button is enabled.
+ * @param isLoading Whether the button is in a loading state.
+ * @param contentPadding The padding to be applied to the button's content.
  */
 @Composable
 fun AzButton(
@@ -34,7 +40,10 @@ fun AzButton(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
     colors: ButtonColors? = null,
-    shape: AzButtonShape = AzButtonShape.CIRCLE
+    shape: AzButtonShape = AzButtonShape.CIRCLE,
+    enabled: Boolean = true,
+    isLoading: Boolean = false,
+    contentPadding: PaddingValues? = null
 ) {
     AzNavRailButton(
         onClick = onClick,
@@ -43,8 +52,10 @@ fun AzButton(
         colors = colors,
         size = AzNavRailDefaults.HeaderIconSize,
         shape = shape,
-        disabled = false,
-        isSelected = false
+        enabled = enabled,
+        isSelected = false,
+        isLoading = isLoading,
+        contentPadding = contentPadding ?: PaddingValues(8.dp)
     )
 }
 
@@ -58,6 +69,8 @@ fun AzButton(
  * @param modifier The modifier to be applied to the button.
  * @param color The color of the button's border and text.
  * @param colors The colors of the button, overriding `color` if provided.
+ * @param shape The shape of the button.
+ * @param enabled Whether the button is enabled.
  */
 @Composable
 fun AzToggle(
@@ -69,6 +82,7 @@ fun AzToggle(
     color: Color = MaterialTheme.colorScheme.primary,
     colors: ButtonColors? = null,
     shape: AzButtonShape = AzButtonShape.CIRCLE
+    enabled: Boolean = true
 ) {
     val text = if (isChecked) toggleOnText else toggleOffText
     AzNavRailButton(
@@ -78,7 +92,7 @@ fun AzToggle(
         colors = colors,
         size = AzNavRailDefaults.HeaderIconSize,
         shape = shape,
-        disabled = false,
+        enabled = enabled,
         isSelected = false
     )
 }
@@ -107,7 +121,8 @@ fun AzCycler(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
     colors: ButtonColors? = null,
-    shape: AzButtonShape = AzButtonShape.CIRCLE
+    shape: AzButtonShape = AzButtonShape.CIRCLE,
+    enabled: Boolean = true
 ) {
     var displayedOption by rememberSaveable(selectedOption) { mutableStateOf(selectedOption) }
     var job by remember { mutableStateOf<Job?>(null) }
@@ -146,7 +161,7 @@ fun AzCycler(
         colors = colors,
         size = AzNavRailDefaults.HeaderIconSize,
         shape = shape,
-        disabled = false,
+        enabled = enabled,
         isSelected = false
     )
 }

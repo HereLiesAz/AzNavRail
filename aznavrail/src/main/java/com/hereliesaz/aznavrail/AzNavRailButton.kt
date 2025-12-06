@@ -2,11 +2,13 @@ package com.hereliesaz.aznavrail
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonColors
@@ -16,6 +18,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -34,7 +37,11 @@ import com.hereliesaz.aznavrail.util.text.AutoSizeText
  * @param color The color of the button's border and text.
  * @param colors The colors of the button, overriding `color` if provided.
  * @param shape The shape of the button.
- * @param disabled Whether the button is disabled.
+ * @param enabled Whether the button is enabled.
+ * @param isSelected Whether the button is selected.
+ * @param isLoading Whether the button is in a loading state.
+ * @param contentPadding The padding to be applied to the button's content.
+ * @param content Optional content to be displayed alongside the text.
  */
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
@@ -46,8 +53,10 @@ fun AzNavRailButton(
     color: Color = MaterialTheme.colorScheme.primary,
     colors: ButtonColors? = null,
     shape: AzButtonShape = AzButtonShape.CIRCLE,
-    disabled: Boolean = false,
+    enabled: Boolean = true,
     isSelected: Boolean = false,
+    isLoading: Boolean = false,
+    contentPadding: PaddingValues = PaddingValues(8.dp),
     content: @Composable () -> Unit = {}
 ) {
     val buttonShape = when (shape) {
@@ -84,26 +93,50 @@ fun AzNavRailButton(
         colors = colors ?: defaultColors,
         contentPadding = PaddingValues(8.dp),
         enabled = !disabled
+        border = if (shape == AzButtonShape.NONE) BorderStroke(0.dp, Color.Transparent) else BorderStroke(3.dp, if (!enabled) disabledColor else finalColor),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent,
+            contentColor = if (!enabled) disabledColor else finalColor,
+            disabledContainerColor = Color.Transparent,
+            disabledContentColor = disabledColor
+        ),
+        contentPadding = contentPadding,
+        enabled = enabled
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            val textModifier = when (shape) {
-                AzButtonShape.RECTANGLE, AzButtonShape.NONE -> Modifier
-                AzButtonShape.CIRCLE, AzButtonShape.SQUARE -> Modifier.weight(1f)
+        Box(contentAlignment = Alignment.Center) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.alpha(if (isLoading) 0f else 1f)
+            ) {
+                val textModifier = when (shape) {
+                    AzButtonShape.RECTANGLE, AzButtonShape.NONE -> Modifier
+                    AzButtonShape.CIRCLE, AzButtonShape.SQUARE -> Modifier.weight(1f)
+                }
+
+                AutoSizeText(
+                    text = text,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        textAlign = TextAlign.Center,
+                        color = if (!enabled) disabledColor else finalColor
+                    ),
+                    modifier = textModifier,
+                    maxLines = if (text.contains("\n")) Int.MAX_VALUE else 1,
+                    softWrap = false,
+                    alignment = Alignment.Center,
+                    lineSpaceRatio = 0.9f
+                )
+                content()
             }
 
-            AutoSizeText(
-                text = text,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    textAlign = TextAlign.Center,
-                    color = if (disabled) disabledColor else finalColor
-                ),
-                modifier = textModifier,
-                maxLines = if (text.contains("\n")) Int.MAX_VALUE else 1,
-                softWrap = false,
-                alignment = Alignment.Center,
-                lineSpaceRatio = 0.9f
-            )
-            content()
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .wrapContentSize(align = Alignment.Center, unbounded = true)
+                ) {
+                    AzLoad()
+                }
+            }
         }
     }
 }

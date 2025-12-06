@@ -42,12 +42,12 @@ class AzFormScope {
         multiline: Boolean = false,
         secret: Boolean = false,
         leadingIcon: @Composable (() -> Unit)? = null,
-        isError: Boolean = false,
+        isError: Boolean = false,       
+        enabled: Boolean = true,
         keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
         keyboardActions: KeyboardActions = KeyboardActions.Default
     ) {
-        entries.add(AzFormEntry(entryName, hint, multiline, secret, leadingIcon, isError, keyboardOptions, keyboardActions))
-    }
+        entries.add(AzFormEntry(entryName, hint, multiline, secret, enabled, leadingIcon, isError, keyboardOptions, keyboardActions))
 }
 
 internal data class AzFormEntry(
@@ -59,6 +59,7 @@ internal data class AzFormEntry(
     val isError: Boolean,
     val keyboardOptions: KeyboardOptions,
     val keyboardActions: KeyboardActions
+    val enabled: Boolean
 )
 
 @Composable
@@ -88,6 +89,10 @@ fun AzForm(
             }
         }
     }
+
+    // Check if all fields are valid/enabled logic? No, just render them.
+    // If any field is disabled, should submit be disabled? User just said "disable AzForm input fields".
+    // I will assume submit is always enabled unless I add a form-level enabled flag, but user asked for "input fields".
 
     Column(modifier = modifier) {
         scope.entries.forEachIndexed { index, entry ->
@@ -193,6 +198,7 @@ private fun FormEntryTextBox(
         isError = entry.isError,
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
+        enabled = entry.enabled,
         outlineColor = outlineColor,
         submitButtonContent = null,
         onSubmit = { /* Individual onSubmit is not used in a form context */ }
