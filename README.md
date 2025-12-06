@@ -271,6 +271,7 @@ fun SampleScreen() {
     -   Group multiple text fields into a single form with a shared submit button.
     -   Each field within the form has its own clear or reveal button.
     -   Styling (outline, background) is applied consistently to all fields within the form.
+-   **Disabled State**: Both `AzTextBox` and `AzForm` entries support an `enabled` parameter. When disabled, the input is non-interactive and visual elements are dimmed.
 
 #### Usage
 
@@ -337,6 +338,14 @@ AzTextBox(
         Text("Go")
     }
 )
+
+// Disabled Text Box
+AzTextBox(
+    modifier = Modifier.padding(16.dp),
+    hint = "Cannot edit...",
+    enabled = false,
+    onSubmit = { /* No-op */ }
+)
 ```
 
 Here is an example of the `AzForm` component:
@@ -355,8 +364,28 @@ AzForm(
     entry(entryName = "username", hint = "Username")
     entry(entryName = "password", hint = "Password", secret = true)
     entry(entryName = "bio", hint = "Biography", multiline = true)
+    entry(entryName = "readonly", hint = "Read only", enabled = false)
 }
 ```
+
+### Standalone Buttons
+
+The `AzButton` component (and `AzToggle`, `AzCycler`) can be used independently of the rail.
+
+```kotlin
+AzButton(
+    onClick = { /* ... */ },
+    text = "Save",
+    shape = AzButtonShape.RECTANGLE,
+    enabled = true, // Can be disabled
+    isLoading = false, // Shows loading spinner without resizing button
+    contentPadding = PaddingValues(16.dp) // Custom padding
+)
+```
+
+- **`enabled`**: Disables interaction and dims the button.
+- **`isLoading`**: Replaces the text with a loading animation (`AzLoad`). The button maintains its original size, and the animation is allowed to overflow if necessary.
+- **`contentPadding`**: Allows customizing the internal padding of the button (defaults to 8dp for rail buttons, but can be overridden for standalone use).
 
 ### Hierarchical Navigation
 
@@ -456,4 +485,3 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-```

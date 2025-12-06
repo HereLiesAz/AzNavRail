@@ -31,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
@@ -82,6 +83,7 @@ fun AzTextBox(
     outlined: Boolean = true,
     multiline: Boolean = false,
     secret: Boolean = false,
+    enabled: Boolean = true,
     outlineColor: Color = MaterialTheme.colorScheme.primary,
     submitButtonContent: (@Composable () -> Unit)? = null,
     onSubmit: (String) -> Unit
@@ -111,12 +113,14 @@ fun AzTextBox(
     var isPasswordVisible by remember { mutableStateOf(false) }
     var componentHeight by remember { mutableIntStateOf(0) }
 
+    val effectiveOutlineColor = if (enabled) outlineColor else outlineColor.copy(alpha = 0.5f)
+
     LaunchedEffect(suggestionLimit) {
         HistoryManager.init(context, suggestionLimit)
     }
 
     LaunchedEffect(text) {
-        suggestions = if (text.isNotBlank()) {
+        suggestions = if (text.isNotBlank() && enabled) {
             HistoryManager.getSuggestions(text, historyContext)
         } else {
             emptyList()
@@ -136,7 +140,7 @@ fun AzTextBox(
                     .then(if (!multiline) Modifier.height(36.dp) else Modifier)
                     .then(
                         if (outlined) {
-                            Modifier.border(1.dp, outlineColor)
+                            Modifier.border(1.dp, effectiveOutlineColor)
                         } else {
                             Modifier
                         }
@@ -149,10 +153,11 @@ fun AzTextBox(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 8.dp),
-                    textStyle = TextStyle(fontSize = 10.sp, color = outlineColor),
+                    textStyle = TextStyle(fontSize = 10.sp, color = effectiveOutlineColor),
                     singleLine = !multiline,
-                    cursorBrush = SolidColor(outlineColor),
-                    visualTransformation = if (secret && !isPasswordVisible) PasswordVisualTransformation() else VisualTransformation.None
+                    cursorBrush = SolidColor(effectiveOutlineColor),
+                    visualTransformation = if (secret && !isPasswordVisible) PasswordVisualTransformation() else VisualTransformation.None,
+                    enabled = enabled
                 ) { innerTextField ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -160,11 +165,11 @@ fun AzTextBox(
                     ) {
                         Box(modifier = Modifier.weight(1f)) {
                             if (text.isEmpty()) {
-                                Text(text = hint, fontSize = 10.sp, color = Color.Gray)
+                                Text(text = hint, fontSize = 10.sp, color = if(enabled) Color.Gray else Color.Gray.copy(alpha = 0.5f))
                             }
                             innerTextField()
                         }
-                        if (text.isNotEmpty()) {
+                        if (text.isNotEmpty() && enabled) {
                             val icon = when {
                                 secret && isPasswordVisible -> Icons.Default.VisibilityOff
                                 secret && !isPasswordVisible -> Icons.Default.Visibility
@@ -187,7 +192,7 @@ fun AzTextBox(
                                             onTextChange("")
                                         }
                                     },
-                                tint = outlineColor
+                                tint = effectiveOutlineColor
                             )
                         }
                     }
@@ -195,19 +200,19 @@ fun AzTextBox(
             }
             if (submitButtonContent != null) {
                 Spacer(modifier = Modifier.width(8.dp))
-                CompositionLocalProvider(LocalContentColor provides outlineColor) {
+                CompositionLocalProvider(LocalContentColor provides effectiveOutlineColor) {
                     Box(
                         modifier = Modifier
-                            .clickable {
+                            .then(if (enabled) Modifier.clickable {
                                 onSubmit(text)
                                 HistoryManager.addEntry(text, historyContext)
                                 if (onValueChange == null) {
                                     onTextChange("")
                                 }
-                            }
+                            } else Modifier)
                             .then(
                                 if (!outlined) {
-                                    Modifier.border(1.dp, outlineColor)
+                                    Modifier.border(1.dp, effectiveOutlineColor)
                                 } else {
                                     Modifier
                                 }
@@ -220,7 +225,7 @@ fun AzTextBox(
             }
         }
 
-        if (suggestions.isNotEmpty()) {
+        if (suggestions.isNotEmpty() && enabled) {
             val density = LocalDensity.current
             val offsetY = with(density) { componentHeight.toDp() }
             
