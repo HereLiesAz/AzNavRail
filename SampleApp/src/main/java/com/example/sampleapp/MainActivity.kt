@@ -10,6 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -298,6 +299,14 @@ fun SampleScreen(
                 }
             )
 
+            // Disabled AzTextBox
+            AzTextBox(
+                modifier = Modifier.padding(bottom = 16.dp),
+                hint = "Disabled",
+                enabled = false,
+                onSubmit = { Log.d(TAG, "Submitted disabled") }
+            )
+
             AzForm(
                 formName = "loginForm",
                 modifier = Modifier.padding(bottom = 16.dp),
@@ -323,12 +332,29 @@ fun SampleScreen(
                     Text("Register")
                 }
             ) {
-                entry(entryName = "email", hint = "Email")
+                entry(entryName = "email", hint = "Email", enabled = false)
                 entry(entryName = "confirm_password", hint = "Confirm Password", secret = true)
             }
 
             Row {
-                AzButton(onClick = { Log.d(TAG, "Standalone AzButton clicked") }, text = "Button", shape = AzButtonShape.SQUARE)
+                var buttonLoading by remember { mutableStateOf(false) }
+                AzButton(
+                    onClick = {
+                        Log.d(TAG, "Standalone AzButton clicked")
+                        buttonLoading = !buttonLoading
+                    },
+                    text = "Button",
+                    shape = AzButtonShape.SQUARE,
+                    isLoading = buttonLoading,
+                    contentPadding = PaddingValues(16.dp)
+                )
+
+                AzButton(
+                    onClick = { Log.d(TAG, "Disabled clicked") },
+                    text = "Disabled",
+                    enabled = false
+                )
+
                 var isToggled by remember { mutableStateOf(false) }
                 AzToggle(
                     isChecked = isToggled,

@@ -63,7 +63,7 @@ internal fun RailContent(
             color = item.color ?: MaterialTheme.colorScheme.primary,
             size = buttonSize,
             shape = item.shape,
-            disabled = item.disabled,
+            enabled = !item.disabled,
             isSelected = isSelected
         )
     }
