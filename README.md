@@ -368,6 +368,8 @@ AzForm(
 }
 ```
 
+The `onSubmit` callback provides a map where keys are the entry names defined in `entry()`, and values are the user's input.
+
 ### Standalone Buttons
 
 The `AzButton` component (and `AzToggle`, `AzCycler`) can be used independently of the rail.
