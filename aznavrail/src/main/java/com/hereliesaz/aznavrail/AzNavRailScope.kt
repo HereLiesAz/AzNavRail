@@ -25,8 +25,8 @@ interface AzNavRailScope {
      * @param enableRailDragging Whether to enable the draggable rail (FAB mode).
      * @param headerIconShape The shape of the header icon.
      * @param onUndock An optional callback to override the default undock behavior.
-     * @param bubbleMode Whether to enable Bubble mode. If true, `enableRailDragging` is forced to false, and the rail is initially expanded.
-     * @param bubbleTargetActivity The activity class to launch as a bubble when undocked. If provided, overrides default undock behavior.
+     * @param overlayService The service class to launch as a system overlay when undocked. If provided, overrides default undock behavior.
+     * @param onOverlayDrag A callback to handle drag events when in overlay mode.
      */
     fun azSettings(
         displayAppNameInHeader: Boolean = false,
@@ -39,8 +39,8 @@ interface AzNavRailScope {
         enableRailDragging: Boolean = false,
         headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
         onUndock: (() -> Unit)? = null,
-        bubbleMode: Boolean = false,
-        bubbleTargetActivity: Class<*>? = null
+        overlayService: Class<out android.app.Service>? = null,
+        onOverlayDrag: ((Float, Float) -> Unit)? = null
     )
 
     /**
@@ -237,8 +237,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
     var enableRailDragging: Boolean = false
     var headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE
     var onUndock: (() -> Unit)? = null
-    var bubbleMode: Boolean = false
-    var bubbleTargetActivity: Class<*>? = null
+    var overlayService: Class<out android.app.Service>? = null
+    var onOverlayDrag: ((Float, Float) -> Unit)? = null
 
     override fun azSettings(
         displayAppNameInHeader: Boolean,
@@ -251,8 +251,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         enableRailDragging: Boolean,
         headerIconShape: AzHeaderIconShape,
         onUndock: (() -> Unit)?,
-        bubbleMode: Boolean,
-        bubbleTargetActivity: Class<*>?
+        overlayService: Class<out android.app.Service>?,
+        onOverlayDrag: ((Float, Float) -> Unit)?
     ) {
         require(expandedRailWidth > collapsedRailWidth) {
             """
@@ -272,11 +272,11 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         this.showFooter = showFooter
         this.isLoading = isLoading
         this.defaultShape = defaultShape
-        this.enableRailDragging = if (bubbleMode) false else (enableRailDragging || bubbleTargetActivity != null)
+        this.enableRailDragging = enableRailDragging || overlayService != null || onOverlayDrag != null
         this.headerIconShape = headerIconShape
         this.onUndock = onUndock
-        this.bubbleMode = bubbleMode
-        this.bubbleTargetActivity = bubbleTargetActivity
+        this.overlayService = overlayService
+        this.onOverlayDrag = onOverlayDrag
     }
 
     override fun azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
