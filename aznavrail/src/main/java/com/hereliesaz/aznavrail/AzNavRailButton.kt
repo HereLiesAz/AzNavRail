@@ -80,7 +80,7 @@ fun AzNavRailButton(
     val finalColor = if (isSelected) MaterialTheme.colorScheme.primary else color
     val defaultColors = ButtonDefaults.outlinedButtonColors(
         containerColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent,
-        contentColor = if (disabled) disabledColor else finalColor,
+        contentColor = if (!enabled) disabledColor else finalColor,
         disabledContainerColor = Color.Transparent,
         disabledContentColor = disabledColor
     )
@@ -89,17 +89,8 @@ fun AzNavRailButton(
         onClick = onClick,
         modifier = buttonModifier,
         shape = buttonShape,
-        border = if (shape == AzButtonShape.NONE) BorderStroke(0.dp, Color.Transparent) else BorderStroke(3.dp, if (disabled) disabledColor else finalColor),
-        colors = colors ?: defaultColors,
-        contentPadding = PaddingValues(8.dp),
-        enabled = !disabled
         border = if (shape == AzButtonShape.NONE) BorderStroke(0.dp, Color.Transparent) else BorderStroke(3.dp, if (!enabled) disabledColor else finalColor),
-        colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent,
-            contentColor = if (!enabled) disabledColor else finalColor,
-            disabledContainerColor = Color.Transparent,
-            disabledContentColor = disabledColor
-        ),
+        colors = colors ?: defaultColors,
         contentPadding = contentPadding,
         enabled = enabled
     ) {

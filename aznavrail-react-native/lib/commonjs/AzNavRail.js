@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.setAzNavRailInteractionLogger = exports.AzNavRail = void 0;
+exports.AzNavRail = void 0;
 var _react = _interopRequireWildcard(require("react"));
 var _reactNative = require("react-native");
 var _AzNavRailScope = require("./AzNavRailScope");

@@ -119,9 +119,14 @@ fun AzTextBox(
     val backgroundColor = AzTextBoxDefaults.getBackgroundColor().copy(alpha = AzTextBoxDefaults.getBackgroundOpacity())
     var isPasswordVisible by remember { mutableStateOf(false) }
     var componentHeight by remember { mutableIntStateOf(0) }
-    val effectiveColor = if (isError) MaterialTheme.colorScheme.error else outlineColor
 
-    val effectiveOutlineColor = if (enabled) outlineColor else outlineColor.copy(alpha = 0.5f)
+    val effectiveColor = if (isError) {
+        MaterialTheme.colorScheme.error
+    } else if (!enabled) {
+        outlineColor.copy(alpha = 0.5f)
+    } else {
+        outlineColor
+    }
 
     LaunchedEffect(suggestionLimit) {
         HistoryManager.init(context, suggestionLimit)
@@ -149,7 +154,6 @@ fun AzTextBox(
                     .then(
                         if (outlined) {
                             Modifier.border(1.dp, effectiveColor)
-                            Modifier.border(1.dp, effectiveOutlineColor)
                         } else {
                             Modifier
                         }
@@ -167,11 +171,7 @@ fun AzTextBox(
                     cursorBrush = SolidColor(effectiveColor),
                     visualTransformation = if (secret && !isPasswordVisible) PasswordVisualTransformation() else VisualTransformation.None,
                     keyboardOptions = keyboardOptions,
-                    keyboardActions = keyboardActions
-                    textStyle = TextStyle(fontSize = 10.sp, color = effectiveOutlineColor),
-                    singleLine = !multiline,
-                    cursorBrush = SolidColor(effectiveOutlineColor),
-                    visualTransformation = if (secret && !isPasswordVisible) PasswordVisualTransformation() else VisualTransformation.None,
+                    keyboardActions = keyboardActions,
                     enabled = enabled
                 ) { innerTextField ->
                     Row(
@@ -221,7 +221,6 @@ fun AzTextBox(
                                         }
                                     },
                                 tint = effectiveColor
-                                tint = effectiveOutlineColor
                             )
                         }
                     }
@@ -230,7 +229,6 @@ fun AzTextBox(
             if (submitButtonContent != null) {
                 Spacer(modifier = Modifier.width(8.dp))
                 CompositionLocalProvider(LocalContentColor provides effectiveColor) {
-                CompositionLocalProvider(LocalContentColor provides effectiveOutlineColor) {
                     Box(
                         modifier = Modifier
                             .then(if (enabled) Modifier.clickable {
@@ -243,7 +241,6 @@ fun AzTextBox(
                             .then(
                                 if (!outlined) {
                                     Modifier.border(1.dp, effectiveColor)
-                                    Modifier.border(1.dp, effectiveOutlineColor)
                                 } else {
                                     Modifier
                                 }
@@ -258,7 +255,6 @@ fun AzTextBox(
 
         if (suggestions.isNotEmpty() && enabled) {
             val density = LocalDensity.current
-            val offsetY = with(density) { componentHeight.toDp() }
             
             Popup(
                 alignment = Alignment.TopStart,
