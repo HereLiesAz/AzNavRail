@@ -60,7 +60,6 @@ import androidx.compose.runtime.DisposableEffect
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.internal.AzNavRailLogger
-import com.hereliesaz.aznavrail.internal.BubbleHelper
 import com.hereliesaz.aznavrail.internal.CenteredPopupPositionProvider
 import com.hereliesaz.aznavrail.internal.CyclerTransientState
 import com.hereliesaz.aznavrail.internal.Footer
@@ -125,14 +124,23 @@ fun AzNavRail(
         }
     }
 
-    val initialExpansion = if (scope.bubbleMode) true else initiallyExpanded
-    var isExpanded by rememberSaveable(initialExpansion) { mutableStateOf(initialExpansion) }
-    // Using remember instead of rememberSaveable to avoid stale state across process death.
-    // This may cause the rail to reappear on configuration changes (e.g. rotation) if the bubble is active,
-    // but ensures the rail is never permanently stuck in a hidden state.
-    var isBubbled by remember { mutableStateOf(false) }
+    var isExpanded by rememberSaveable(initiallyExpanded) { mutableStateOf(initiallyExpanded) }
     var railOffset by remember { mutableStateOf(IntOffset.Zero) }
+    // If initially expanded, we are not floating. But if initially NOT expanded, we might be?
+    // Actually, FAB mode is triggered by user action or specific config.
+    // If the rail is meant to be in FAB mode initially (e.g. for Overlay), the user should use `onUndock` logic
+    // or just start in a state that looks like FAB.
+    // However, `isFloating` state determines if we show just the header (FAB) or the rail.
+    // For Overlay, we likely want `isFloating = true` initially if it's "undocked".
+    // But `initiallyExpanded` handles "Expanded vs Collapsed".
+    // "Floating" is "Collapsed to just a FAB".
+    // Since we removed bubbleMode, we rely on defaults.
+
+    // Logic: If onRailDrag is provided, we might assume we are in a 'floating window' context.
+    // In floating window context, 'isFloating' usually means 'collapsed to FAB'.
+    // If 'initiallyExpanded' is true, we show full rail.
     var isFloating by remember { mutableStateOf(false) }
+
     var showFloatingButtons by remember { mutableStateOf(false) }
     var wasVisibleOnDragStart by remember { mutableStateOf(false) }
     var isAppIcon by remember { mutableStateOf(!scope.displayAppNameInHeader) }
@@ -199,88 +207,65 @@ fun AzNavRail(
         }
     }
 
-    if (!scope.bubbleMode) {
-        val currentContext = LocalContext.current
-        DisposableEffect(currentContext) {
-            val receiver = object : BroadcastReceiver() {
-                override fun onReceive(context: Context?, intent: Intent?) {
-                    isBubbled = false
-                }
-            }
-            val filter = IntentFilter("${currentContext.packageName}${BubbleHelper.DISMISS_ACTION_SUFFIX}")
-            ContextCompat.registerReceiver(
-                currentContext,
-                receiver,
-                filter,
-                ContextCompat.RECEIVER_NOT_EXPORTED
-            )
-            onDispose {
-                try {
-                    currentContext.unregisterReceiver(receiver)
-                } catch (e: Exception) {
-                    // Ignore if not registered or already unregistered
-                }
-            }
-        }
-    }
-
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
     val density = LocalDensity.current
 
     LaunchedEffect(showFloatingButtons) {
         if (showFloatingButtons) {
-            val screenHeightPx = with(density) { screenHeight.toPx() }
-            val bottomBound = screenHeightPx * 0.9f
-            val railBottom = railOffset.y + headerHeight + railItemsHeight
-            if (railBottom > bottomBound) {
-                val newY = bottomBound - headerHeight - railItemsHeight
-                railOffset = IntOffset(railOffset.x, newY.roundToInt())
+            // Only apply screen bounds clamping if we are NOT using external drag (Overlay mode might have its own bounds)
+            if (scope.onRailDrag == null) {
+                val screenHeightPx = with(density) { screenHeight.toPx() }
+                val bottomBound = screenHeightPx * 0.9f
+                val railBottom = railOffset.y + headerHeight + railItemsHeight
+                if (railBottom > bottomBound) {
+                    val newY = bottomBound - headerHeight - railItemsHeight
+                    railOffset = IntOffset(railOffset.x, newY.roundToInt())
+                }
             }
         }
     }
 
     Box(modifier = modifier) {
-        if (!isBubbled) {
-            val buttonSize = AzNavRailDefaults.HeaderIconSize
-            selectedItem?.screenTitle?.let { screenTitle ->
-                if (screenTitle.isNotEmpty()) {
-                    Popup(alignment = Alignment.TopEnd) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(end = 16.dp, top = 16.dp),
-                            contentAlignment = Alignment.CenterEnd
-                        ) {
-                            Text(
-                                text = screenTitle,
-                                style = MaterialTheme.typography.headlineMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
+        val buttonSize = AzNavRailDefaults.HeaderIconSize
+        selectedItem?.screenTitle?.let { screenTitle ->
+            if (screenTitle.isNotEmpty()) {
+                Popup(alignment = Alignment.TopEnd) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = 16.dp, top = 16.dp),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        Text(
+                            text = screenTitle,
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
                             )
-                        }
+                        )
                     }
                 }
             }
-            if (scope.isLoading) {
-                Popup(
-                    popupPositionProvider = CenteredPopupPositionProvider,
-                    properties = PopupProperties(focusable = false)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        AzLoad()
-                    }
+        }
+        if (scope.isLoading) {
+            Popup(
+                popupPositionProvider = CenteredPopupPositionProvider,
+                properties = PopupProperties(focusable = false)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    AzLoad()
                 }
             }
-            Box {
-                NavigationRail(
-                    modifier = Modifier
-                        .width(railWidth)
-                        .offset { railOffset },
-                    containerColor = if (isExpanded) MaterialTheme.colorScheme.surface.copy(
-                        alpha = 0.95f
-                    ) else Color.Transparent,
+        }
+        Box {
+            NavigationRail(
+                modifier = Modifier
+                    .width(railWidth)
+                    .offset { railOffset },
+                containerColor = if (isExpanded) MaterialTheme.colorScheme.surface.copy(
+                    alpha = 0.95f
+                ) else Color.Transparent,
                 header = {
                     Box(
                         modifier = Modifier
@@ -289,7 +274,8 @@ fun AzNavRail(
                             .pointerInput(
                                 isFloating,
                                 scope.enableRailDragging,
-                                scope.displayAppNameInHeader
+                                scope.displayAppNameInHeader,
+                                scope.onRailDrag
                             ) {
                                 detectTapGestures(
                                     onTap = {
@@ -302,21 +288,26 @@ fun AzNavRail(
                                     onLongPress = {
                                         if (isFloating) {
                                             // Long press in FAB mode -> dock
-                                            railOffset = IntOffset.Zero
+                                            // If dragging externally, we might not want to reset railOffset to Zero relative to container?
+                                            // But let's keep behavior consistent: Docking means exiting FAB mode.
+
+                                            // If onRailDrag is set, we probably shouldn't reset railOffset because we are moving the window.
+                                            // But 'docking' usually implies returning to the side of the screen.
+                                            // In Overlay mode, 'docking' might not make sense or might mean 'stick to edge'.
+                                            // For now, if onRailDrag is present, we assume the user controls position.
+
+                                            if (scope.onRailDrag == null) {
+                                                railOffset = IntOffset.Zero
+                                            }
+
                                             isFloating = false
                                             if (scope.displayAppNameInHeader) isAppIcon = false
                                             hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                         } else if (scope.enableRailDragging) {
-                                            val bubbleTarget = scope.bubbleTargetActivity
-                                            if (bubbleTarget != null) {
-                                                BubbleHelper.launch(context, bubbleTarget)
-                                                isBubbled = true
-                                            } else {
-                                                // Long press in docked mode -> FAB
-                                                isFloating = true
-                                                isExpanded = false
-                                                if (scope.displayAppNameInHeader) isAppIcon = true
-                                            }
+                                            // Long press in docked mode -> FAB
+                                            isFloating = true
+                                            isExpanded = false
+                                            if (scope.displayAppNameInHeader) isAppIcon = true
                                             hapticFeedback.performHapticFeedback(
                                                 HapticFeedbackType.LongPress
                                             )
@@ -324,7 +315,7 @@ fun AzNavRail(
                                     }
                                 )
                             }
-                            .pointerInput(isFloating, scope.enableRailDragging) {
+                            .pointerInput(isFloating, scope.enableRailDragging, scope.onRailDrag) {
                                 detectDragGestures(
                                     onDragStart = { _ ->
                                         if (isFloating) {
@@ -335,38 +326,49 @@ fun AzNavRail(
                                     onDrag = { change, dragAmount ->
                                         if (isFloating) {
                                             change.consume()
-                                            val newY = railOffset.y + dragAmount.y
-                                            val screenHeightPx =
-                                                with(density) { screenHeight.toPx() }
-                                            val topBound = 0f
-                                            val bottomBound = screenHeightPx * 0.9f - headerHeight
-                                            val clampedY = newY.coerceIn(topBound, bottomBound)
-                                            railOffset = IntOffset(
-                                                railOffset.x + dragAmount.x.roundToInt(),
-                                                clampedY.roundToInt()
-                                            )
+
+                                            val onDrag = scope.onRailDrag
+                                            if (onDrag != null) {
+                                                onDrag(dragAmount.x, dragAmount.y)
+                                                // Do not update internal railOffset
+                                            } else {
+                                                val newY = railOffset.y + dragAmount.y
+                                                val screenHeightPx =
+                                                    with(density) { screenHeight.toPx() }
+                                                val topBound = 0f
+                                                val bottomBound = screenHeightPx * 0.9f - headerHeight
+                                                val clampedY = newY.coerceIn(topBound, bottomBound)
+                                                railOffset = IntOffset(
+                                                    railOffset.x + dragAmount.x.roundToInt(),
+                                                    clampedY.roundToInt()
+                                                )
+                                            }
                                         }
-                                        // **REMOVED CONFLICTING LOGIC**:
-                                        // The 'else if (scope.enableRailDragging)' block that
-                                        // handled vertical swipe-to-undock was here, causing
-                                        // the gesture conflict with detectTapGestures.
-                                        // That logic is correctly handled by the rail's pointerInput.
                                     },
                                     onDragEnd = {
                                         if (isFloating) {
-                                            val distance = kotlin.math.sqrt(
-                                                railOffset.x.toFloat()
-                                                    .pow(2) + railOffset.y.toFloat().pow(2)
-                                            )
-                                            if (distance < AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
-                                                railOffset = IntOffset.Zero
-                                                isFloating = false
-                                                if (scope.displayAppNameInHeader) isAppIcon = false
-                                                hapticFeedback.performHapticFeedback(
-                                                    HapticFeedbackType.LongPress
+                                            // If dragging externally, we don't snap back to dock on release near origin
+                                            // because the origin of the Window is top-left of screen, not rail container.
+                                            if (scope.onRailDrag == null) {
+                                                val distance = kotlin.math.sqrt(
+                                                    railOffset.x.toFloat()
+                                                        .pow(2) + railOffset.y.toFloat().pow(2)
                                                 )
-                                            } else if (wasVisibleOnDragStart) {
-                                                showFloatingButtons = true
+                                                if (distance < AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
+                                                    railOffset = IntOffset.Zero
+                                                    isFloating = false
+                                                    if (scope.displayAppNameInHeader) isAppIcon = false
+                                                    hapticFeedback.performHapticFeedback(
+                                                        HapticFeedbackType.LongPress
+                                                    )
+                                                } else if (wasVisibleOnDragStart) {
+                                                    showFloatingButtons = true
+                                                }
+                                            } else {
+                                                // External drag end
+                                                if (wasVisibleOnDragStart) {
+                                                    showFloatingButtons = true
+                                                }
                                             }
                                         }
                                     }
@@ -548,12 +550,8 @@ fun AzNavRail(
                                 appName = appName,
                                 onToggle = { isExpanded = !isExpanded },
                                 onUndock = {
-                                    val bubbleTarget = scope.bubbleTargetActivity
                                     if (scope.onUndock != null) {
                                         scope.onUndock?.invoke()
-                                    } else if (bubbleTarget != null) {
-                                        BubbleHelper.launch(context, bubbleTarget)
-                                        isBubbled = true
                                     } else {
                                         isFloating = true
                                         isExpanded = false
@@ -585,16 +583,10 @@ fun AzNavRail(
                                                         change.consume()
                                                     }
                                                 } else if (scope.enableRailDragging) { // Vertical swipe
-                                                    val bubbleTarget = scope.bubbleTargetActivity
-                                                    if (bubbleTarget != null) {
-                                                        BubbleHelper.launch(context, bubbleTarget)
-                                                        isBubbled = true
-                                                    } else {
-                                                        isFloating = true
-                                                        isExpanded = false
-                                                        if (scope.displayAppNameInHeader) isAppIcon =
-                                                            true
-                                                    }
+                                                    isFloating = true
+                                                    isExpanded = false
+                                                    if (scope.displayAppNameInHeader) isAppIcon =
+                                                        true
                                                     hapticFeedback.performHapticFeedback(
                                                         HapticFeedbackType.LongPress
                                                     )
@@ -673,4 +665,4 @@ fun AzNavRail(
             }
         }
     }
-}}
+}
