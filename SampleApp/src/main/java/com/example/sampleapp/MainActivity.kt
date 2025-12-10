@@ -50,7 +50,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     SampleScreen(
-                        bubbleTargetActivity = BubbleActivity::class.java
+                        overlayService = SampleOverlayService::class.java
                     )
                 }
             }
@@ -63,8 +63,8 @@ fun SampleScreen(
     enableRailDragging: Boolean = true,
     initiallyExpanded: Boolean = false,
     onUndockOverride: (() -> Unit)? = null,
-    bubbleTargetActivity: Class<*>? = null,
-    bubbleMode: Boolean = false
+    overlayService: Class<out android.app.Service>? = null,
+    onOverlayDrag: ((Float, Float) -> Unit)? = null
 ) {
     val TAG = "SampleApp"
     val navController = rememberNavController()
@@ -116,8 +116,8 @@ fun SampleScreen(
                     defaultShape = AzButtonShape.RECTANGLE, // Set a default shape for all rail items
                     enableRailDragging = enableRailDragging,
                     onUndock = onUndockOverride,
-                    bubbleTargetActivity = bubbleTargetActivity,
-                    bubbleMode = bubbleMode
+                    overlayService = overlayService,
+                    onOverlayDrag = onOverlayDrag
                 )
 
                 // A standard menu item - only appears in the expanded menu
