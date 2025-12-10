@@ -39,7 +39,7 @@ interface AzNavRailScope {
         enableRailDragging: Boolean = false,
         headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
         onUndock: (() -> Unit)? = null,
-        onRailDrag: ((Float, Float) -> Unit)? = null
+        onRailDrag: ((Float, Float) -> Unit)? = null,
         overlayService: Class<out android.app.Service>? = null,
         onOverlayDrag: ((Float, Float) -> Unit)? = null
     )
@@ -253,7 +253,7 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         enableRailDragging: Boolean,
         headerIconShape: AzHeaderIconShape,
         onUndock: (() -> Unit)?,
-        onRailDrag: ((Float, Float) -> Unit)?
+        onRailDrag: ((Float, Float) -> Unit)?,
         overlayService: Class<out android.app.Service>?,
         onOverlayDrag: ((Float, Float) -> Unit)?
     ) {
