@@ -108,11 +108,11 @@ In FAB mode, the rail items must also not be allowed above the top 10% of the sc
 10% of the screen. This means that the rail should unfold downward, and push the location of the app
 icon upward if necessary.
 
-The rail can also be used as a system-wide overlay using the Android Bubble API. This is activated by
-providing the `bubbleTargetActivity` class in `azSettings`, which overrides the default internal FAB mode.
-The Bubble Activity should be configured with `bubbleMode = true` (which sets `initiallyExpanded = true`
-and `enableRailDragging = false`).
+The rail can also be used as a system-wide overlay using a System Alert Window. This is activated by
+providing the `overlayService` class in `azSettings`, which overrides the default internal FAB mode.
+The Service should extend `AzNavRailOverlayService` and call `AzNavRail` within its content.
+When undocked, the library will request the `SYSTEM_ALERT_WINDOW` permission if needed and start the service.
 
-Note: To successfully display as a bubble on Android 11+, the notification must use `MessagingStyle`,
-reference a long-lived shortcut, and include a message from a `Person`. The `BubbleHelper` handles
-this by creating a "You" person and a "NavRail" chat partner to spoof a conversation.
+**Note:** The app must declare the `SYSTEM_ALERT_WINDOW` and `FOREGROUND_SERVICE` (and `FOREGROUND_SERVICE_SPECIAL_USE` if targeting API 34+) permissions in `AndroidManifest.xml`.
+The Service extending `AzNavRailOverlayService` must also be declared in the manifest.
+The subclass must implement `getNotification()` to return a notification for the foreground service, and may override `getNotificationId()`.

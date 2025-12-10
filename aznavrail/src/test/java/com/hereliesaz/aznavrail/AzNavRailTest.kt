@@ -220,17 +220,17 @@ class AzNavRailTest {
     }
 
     @Test
-    fun `azSettings should update bubbleMode`() {
+    fun `azSettings should update overlayService`() {
         val scope = AzNavRailScopeImpl()
-        scope.azSettings(bubbleMode = true)
-        assertEquals(true, scope.bubbleMode)
+        scope.azSettings(overlayService = android.app.Service::class.java)
+        assertEquals(android.app.Service::class.java, scope.overlayService)
     }
 
     @Test
-    fun `azSettings with bubbleMode should disable enableRailDragging`() {
+    fun `azSettings with overlayService should enable enableRailDragging`() {
         val scope = AzNavRailScopeImpl()
-        scope.azSettings(bubbleMode = true, enableRailDragging = true)
-        assertEquals(true, scope.bubbleMode)
-        assertEquals(false, scope.enableRailDragging)
+        scope.azSettings(overlayService = android.app.Service::class.java, enableRailDragging = false)
+        assertEquals(android.app.Service::class.java, scope.overlayService)
+        assertEquals(true, scope.enableRailDragging)
     }
 }

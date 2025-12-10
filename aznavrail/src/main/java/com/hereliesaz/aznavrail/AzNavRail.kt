@@ -60,7 +60,7 @@ import androidx.compose.runtime.DisposableEffect
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.internal.AzNavRailLogger
-import com.hereliesaz.aznavrail.internal.BubbleHelper
+import com.hereliesaz.aznavrail.internal.OverlayHelper
 import com.hereliesaz.aznavrail.internal.CenteredPopupPositionProvider
 import com.hereliesaz.aznavrail.internal.CyclerTransientState
 import com.hereliesaz.aznavrail.internal.Footer
@@ -125,12 +125,7 @@ fun AzNavRail(
         }
     }
 
-    val initialExpansion = if (scope.bubbleMode) true else initiallyExpanded
-    var isExpanded by rememberSaveable(initialExpansion) { mutableStateOf(initialExpansion) }
-    // Using remember instead of rememberSaveable to avoid stale state across process death.
-    // This may cause the rail to reappear on configuration changes (e.g. rotation) if the bubble is active,
-    // but ensures the rail is never permanently stuck in a hidden state.
-    var isBubbled by remember { mutableStateOf(false) }
+    var isExpanded by rememberSaveable(initiallyExpanded) { mutableStateOf(initiallyExpanded) }
     var railOffset by remember { mutableStateOf(IntOffset.Zero) }
     var isFloating by remember { mutableStateOf(false) }
     var showFloatingButtons by remember { mutableStateOf(false) }
@@ -199,31 +194,6 @@ fun AzNavRail(
         }
     }
 
-    if (!scope.bubbleMode) {
-        val currentContext = LocalContext.current
-        DisposableEffect(currentContext) {
-            val receiver = object : BroadcastReceiver() {
-                override fun onReceive(context: Context?, intent: Intent?) {
-                    isBubbled = false
-                }
-            }
-            val filter = IntentFilter("${currentContext.packageName}${BubbleHelper.DISMISS_ACTION_SUFFIX}")
-            ContextCompat.registerReceiver(
-                currentContext,
-                receiver,
-                filter,
-                ContextCompat.RECEIVER_NOT_EXPORTED
-            )
-            onDispose {
-                try {
-                    currentContext.unregisterReceiver(receiver)
-                } catch (e: Exception) {
-                    // Ignore if not registered or already unregistered
-                }
-            }
-        }
-    }
-
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
     val density = LocalDensity.current
@@ -241,9 +211,8 @@ fun AzNavRail(
     }
 
     Box(modifier = modifier) {
-        if (!isBubbled) {
-            val buttonSize = AzNavRailDefaults.HeaderIconSize
-            selectedItem?.screenTitle?.let { screenTitle ->
+        val buttonSize = AzNavRailDefaults.HeaderIconSize
+        selectedItem?.screenTitle?.let { screenTitle ->
                 if (screenTitle.isNotEmpty()) {
                     Popup(alignment = Alignment.TopEnd) {
                         Box(
@@ -307,10 +276,9 @@ fun AzNavRail(
                                             if (scope.displayAppNameInHeader) isAppIcon = false
                                             hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                         } else if (scope.enableRailDragging) {
-                                            val bubbleTarget = scope.bubbleTargetActivity
-                                            if (bubbleTarget != null) {
-                                                BubbleHelper.launch(context, bubbleTarget)
-                                                isBubbled = true
+                                            val overlayService = scope.overlayService
+                                            if (overlayService != null) {
+                                                OverlayHelper.launch(context, overlayService)
                                             } else {
                                                 // Long press in docked mode -> FAB
                                                 isFloating = true
@@ -333,7 +301,10 @@ fun AzNavRail(
                                         }
                                     },
                                     onDrag = { change, dragAmount ->
-                                        if (isFloating) {
+                                        if (scope.onOverlayDrag != null) {
+                                            change.consume()
+                                            scope.onOverlayDrag?.invoke(dragAmount.x, dragAmount.y)
+                                        } else if (isFloating) {
                                             change.consume()
                                             val newY = railOffset.y + dragAmount.y
                                             val screenHeightPx =
@@ -346,11 +317,6 @@ fun AzNavRail(
                                                 clampedY.roundToInt()
                                             )
                                         }
-                                        // **REMOVED CONFLICTING LOGIC**:
-                                        // The 'else if (scope.enableRailDragging)' block that
-                                        // handled vertical swipe-to-undock was here, causing
-                                        // the gesture conflict with detectTapGestures.
-                                        // That logic is correctly handled by the rail's pointerInput.
                                     },
                                     onDragEnd = {
                                         if (isFloating) {
@@ -548,12 +514,11 @@ fun AzNavRail(
                                 appName = appName,
                                 onToggle = { isExpanded = !isExpanded },
                                 onUndock = {
-                                    val bubbleTarget = scope.bubbleTargetActivity
+                                    val overlayService = scope.overlayService
                                     if (scope.onUndock != null) {
                                         scope.onUndock?.invoke()
-                                    } else if (bubbleTarget != null) {
-                                        BubbleHelper.launch(context, bubbleTarget)
-                                        isBubbled = true
+                                    } else if (overlayService != null) {
+                                        OverlayHelper.launch(context, overlayService)
                                     } else {
                                         isFloating = true
                                         isExpanded = false
@@ -585,10 +550,9 @@ fun AzNavRail(
                                                         change.consume()
                                                     }
                                                 } else if (scope.enableRailDragging) { // Vertical swipe
-                                                    val bubbleTarget = scope.bubbleTargetActivity
-                                                    if (bubbleTarget != null) {
-                                                        BubbleHelper.launch(context, bubbleTarget)
-                                                        isBubbled = true
+                                                    val overlayService = scope.overlayService
+                                                    if (overlayService != null) {
+                                                        OverlayHelper.launch(context, overlayService)
                                                     } else {
                                                         isFloating = true
                                                         isExpanded = false
@@ -673,4 +637,4 @@ fun AzNavRail(
             }
         }
     }
-}}
+}
