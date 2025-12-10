@@ -35,7 +35,8 @@ fun SampleScreen(
     enableRailDragging: Boolean = true,
     initiallyExpanded: Boolean = false,
     onUndockOverride: (() -> Unit)? = null,
-    onRailDrag: ((Float, Float) -> Unit)? = null
+    onRailDrag: ((Float, Float) -> Unit)? = null,
+    showContent: Boolean = true
 ) {
     val TAG = "SampleApp"
     val navController = rememberNavController()
@@ -209,9 +210,10 @@ fun SampleScreen(
         }
 
         // Your app's main content goes here
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Uncontrolled AzTextBox with history context
-            AzTextBox(
+        if (showContent) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                // Uncontrolled AzTextBox with history context
+                AzTextBox(
                 modifier = Modifier.padding(bottom = 16.dp),
                 hint = "Uncontrolled (History: Search)",
                 historyContext = "search_history",
@@ -347,7 +349,8 @@ fun SampleScreen(
                 composable("dark-mode") { Text("Dark Mode Screen") }
                 composable("rail-cycler") { Text("Rail Cycler Screen") }
                 composable("menu-cycler") { Text("Menu Cycler Screen") }
-                composable("loading") { Text("Loading Screen") }
+                    composable("loading") { Text("Loading Screen") }
+                }
             }
         }
     }

@@ -10,6 +10,7 @@ import android.content.pm.ServiceInfo
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
+import android.view.ContextThemeWrapper
 import android.view.Gravity
 import android.view.View
 import android.view.ViewTreeObserver
@@ -89,7 +90,8 @@ class OverlayService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         params.x = 100
         params.y = 100
 
-        overlayView = ComposeView(this).apply {
+        val contextThemeWrapper = ContextThemeWrapper(this, R.style.Theme_SampleApp)
+        overlayView = ComposeView(contextThemeWrapper).apply {
             setContent {
                 MyApplicationTheme {
                      // Pass onRailDrag to control window position
@@ -100,7 +102,8 @@ class OverlayService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                          },
                          onUndockOverride = {
                              stopSelf() // Closing overlay on undock (redock?)
-                         }
+                         },
+                         showContent = false
                      )
                 }
             }
