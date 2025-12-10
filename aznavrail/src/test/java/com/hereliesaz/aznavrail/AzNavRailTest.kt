@@ -218,4 +218,19 @@ class AzNavRailTest {
         scope.azSettings(headerIconShape = com.hereliesaz.aznavrail.model.AzHeaderIconShape.ROUNDED)
         assertEquals(com.hereliesaz.aznavrail.model.AzHeaderIconShape.ROUNDED, scope.headerIconShape)
     }
+
+    @Test
+    fun `azSettings should update overlayService`() {
+        val scope = AzNavRailScopeImpl()
+        scope.azSettings(overlayService = android.app.Service::class.java)
+        assertEquals(android.app.Service::class.java, scope.overlayService)
+    }
+
+    @Test
+    fun `azSettings with overlayService should enable enableRailDragging`() {
+        val scope = AzNavRailScopeImpl()
+        scope.azSettings(overlayService = android.app.Service::class.java, enableRailDragging = false)
+        assertEquals(android.app.Service::class.java, scope.overlayService)
+        assertEquals(true, scope.enableRailDragging)
+    }
 }

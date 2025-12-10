@@ -25,8 +25,8 @@ interface AzNavRailScope {
      * @param enableRailDragging Whether to enable the draggable rail (FAB mode).
      * @param headerIconShape The shape of the header icon.
      * @param onUndock An optional callback to override the default undock behavior.
-     * @param onRailDrag An optional callback to handle rail dragging externally (e.g. for window movement).
-     *        It receives x and y delta. If provided, internal rail offset is NOT updated during drag.
+     * @param overlayService The service class to launch as a system overlay when undocked. If provided, overrides default undock behavior.
+     * @param onOverlayDrag A callback to handle drag events when in overlay mode.
      */
     fun azSettings(
         displayAppNameInHeader: Boolean = false,
@@ -40,6 +40,8 @@ interface AzNavRailScope {
         headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
         onUndock: (() -> Unit)? = null,
         onRailDrag: ((Float, Float) -> Unit)? = null
+        overlayService: Class<out android.app.Service>? = null,
+        onOverlayDrag: ((Float, Float) -> Unit)? = null
     )
 
     /**
@@ -237,6 +239,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
     var headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE
     var onUndock: (() -> Unit)? = null
     var onRailDrag: ((Float, Float) -> Unit)? = null
+    var overlayService: Class<out android.app.Service>? = null
+    var onOverlayDrag: ((Float, Float) -> Unit)? = null
 
     override fun azSettings(
         displayAppNameInHeader: Boolean,
@@ -250,6 +254,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         headerIconShape: AzHeaderIconShape,
         onUndock: (() -> Unit)?,
         onRailDrag: ((Float, Float) -> Unit)?
+        overlayService: Class<out android.app.Service>?,
+        onOverlayDrag: ((Float, Float) -> Unit)?
     ) {
         require(expandedRailWidth > collapsedRailWidth) {
             """
@@ -269,10 +275,11 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         this.showFooter = showFooter
         this.isLoading = isLoading
         this.defaultShape = defaultShape
-        this.enableRailDragging = enableRailDragging
+        this.enableRailDragging = enableRailDragging || overlayService != null || onOverlayDrag != null
         this.headerIconShape = headerIconShape
         this.onUndock = onUndock
-        this.onRailDrag = onRailDrag
+        this.overlayService = overlayService
+        this.onOverlayDrag = onOverlayDrag
     }
 
     override fun azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {

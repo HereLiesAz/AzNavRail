@@ -60,6 +60,7 @@ import androidx.compose.runtime.DisposableEffect
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.internal.AzNavRailLogger
+import com.hereliesaz.aznavrail.internal.OverlayHelper
 import com.hereliesaz.aznavrail.internal.CenteredPopupPositionProvider
 import com.hereliesaz.aznavrail.internal.CyclerTransientState
 import com.hereliesaz.aznavrail.internal.Footer
@@ -304,10 +305,15 @@ fun AzNavRail(
                                             if (scope.displayAppNameInHeader) isAppIcon = false
                                             hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                         } else if (scope.enableRailDragging) {
-                                            // Long press in docked mode -> FAB
-                                            isFloating = true
-                                            isExpanded = false
-                                            if (scope.displayAppNameInHeader) isAppIcon = true
+                                            val overlayService = scope.overlayService
+                                            if (overlayService != null) {
+                                                OverlayHelper.launch(context, overlayService)
+                                            } else {
+                                                // Long press in docked mode -> FAB
+                                                isFloating = true
+                                                isExpanded = false
+                                                if (scope.displayAppNameInHeader) isAppIcon = true
+                                            }
                                             hapticFeedback.performHapticFeedback(
                                                 HapticFeedbackType.LongPress
                                             )
@@ -324,7 +330,10 @@ fun AzNavRail(
                                         }
                                     },
                                     onDrag = { change, dragAmount ->
-                                        if (isFloating) {
+                                        if (scope.onOverlayDrag != null) {
+                                            change.consume()
+                                            scope.onOverlayDrag?.invoke(dragAmount.x, dragAmount.y)
+                                        } else if (isFloating) {
                                             change.consume()
 
                                             val onDrag = scope.onRailDrag
@@ -550,8 +559,11 @@ fun AzNavRail(
                                 appName = appName,
                                 onToggle = { isExpanded = !isExpanded },
                                 onUndock = {
+                                    val overlayService = scope.overlayService
                                     if (scope.onUndock != null) {
                                         scope.onUndock?.invoke()
+                                    } else if (overlayService != null) {
+                                        OverlayHelper.launch(context, overlayService)
                                     } else {
                                         isFloating = true
                                         isExpanded = false
@@ -583,10 +595,15 @@ fun AzNavRail(
                                                         change.consume()
                                                     }
                                                 } else if (scope.enableRailDragging) { // Vertical swipe
-                                                    isFloating = true
-                                                    isExpanded = false
-                                                    if (scope.displayAppNameInHeader) isAppIcon =
-                                                        true
+                                                    val overlayService = scope.overlayService
+                                                    if (overlayService != null) {
+                                                        OverlayHelper.launch(context, overlayService)
+                                                    } else {
+                                                        isFloating = true
+                                                        isExpanded = false
+                                                        if (scope.displayAppNameInHeader) isAppIcon =
+                                                            true
+                                                    }
                                                     hapticFeedback.performHapticFeedback(
                                                         HapticFeedbackType.LongPress
                                                     )
