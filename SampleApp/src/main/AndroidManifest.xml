@@ -24,9 +24,12 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".OverlayService"
+        <service android:name=".SampleOverlayService"
                  android:foregroundServiceType="specialUse"
-                 android:exported="false" />
+                 android:exported="false">
+            <property android:name="android.app.property.FOREGROUND_SERVICE_TYPE_SPECIAL_USE_DESCRIPTION"
+                      android:value="Overlay for navigation"/>
+        </service>
     </application>
 
 </manifest>

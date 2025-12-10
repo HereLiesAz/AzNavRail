@@ -135,7 +135,6 @@ fun AzNavRail(
     // For Overlay, we likely want `isFloating = true` initially if it's "undocked".
     // But `initiallyExpanded` handles "Expanded vs Collapsed".
     // "Floating" is "Collapsed to just a FAB".
-    // Since we removed bubbleMode, we rely on defaults.
 
     // Logic: If onRailDrag is provided, we might assume we are in a 'floating window' context.
     // In floating window context, 'isFloating' usually means 'collapsed to FAB'.

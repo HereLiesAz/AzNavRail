@@ -31,12 +31,18 @@ class SampleOverlayService : AzNavRailOverlayService() {
 
     @Composable
     override fun OverlayContent() {
-        SampleScreen(
-            enableRailDragging = true,
-            initiallyExpanded = false,
-            onUndockOverride = { /* Already undocked */ },
-            overlayService = null,
-            onOverlayDrag = { x, y -> updatePosition(x, y) }
-        )
+        MyApplicationTheme {
+            SampleScreen(
+                enableRailDragging = true,
+                initiallyExpanded = false,
+                onUndockOverride = {
+                     // Clicking undock in overlay mode should close the overlay
+                     stopSelf()
+                },
+                overlayService = null,
+                onOverlayDrag = { x, y -> updatePosition(x, y) },
+                showContent = false
+            )
+        }
     }
 }

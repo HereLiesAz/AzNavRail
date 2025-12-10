@@ -26,7 +26,7 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 - **Navigation**: seamless Jetpack Navigation integration.
 - **Hierarchy**: Nested menus with host and sub-items.
 - **Draggable (FAB Mode)**: Detach and move the rail.
-- **Bubbles**: System-wide overlay support.
+- **System Overlay**: System-wide overlay support.
 - **Auto-sizing Text**: Text fits without wrapping (unless explicit newline).
 - **Toggles/Cyclers**: Simple state management.
 - **Gestures**: Swipe/tap to expand, collapse, or undock.
@@ -409,61 +409,95 @@ The rail can be detached and moved around the screen by long-pressing the header
     - **Snapping**: Drag the FAB close to its original docked position to snap it back into place, exiting FAB mode.
     - **Long Press**: Long-pressing the FAB will also immediately re-dock the rail.
 
-### System Overlay (Bubbles)
+### System Overlay
 
-AzNavRail can function as a system-wide overlay using the Android Bubble API. This allows users to access the navigation menu from anywhere on their device.
+AzNavRail can function as a system-wide overlay (using `SYSTEM_ALERT_WINDOW`). This allows users to access the navigation menu from anywhere on their device.
 
-#### 1. Setup Bubble Activity
+#### 1. Create an Overlay Service
 
-Create an Activity that will serve as the content of the bubble. This activity should display your `AzNavRail`. You can simply set `bubbleMode = true` in `azSettings` to configure it correctly (`initiallyExpanded = true` and `enableRailDragging = false`).
+Extend `AzNavRailOverlayService` to create a service that renders the overlay content.
 
-**AndroidManifest.xml:**
-```xml
-<activity
-    android:name=".BubbleActivity"
-    android:label="My App Bubble"
-    android:allowEmbedded="true"
-    android:documentLaunchMode="always"
-    android:resizeableActivity="true" />
-```
-
-**BubbleActivity.kt:**
+**OverlayService.kt:**
 ```kotlin
-class BubbleActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            MyApplicationTheme {
-                // Reuse your screen content, ensuring it's configured for bubble mode
-                SampleScreen(
-                    bubbleMode = true,              // Enable bubble mode
-                    onUndockOverride = { finish() } // Undock in bubble closes it
-                )
-            }
+class OverlayService : AzNavRailOverlayService() {
+
+    override fun getNotification(): Notification {
+        // Create and return a persistent notification for the foreground service
+        // ...
+    }
+
+    @Composable
+    override fun OverlayContent() {
+        // Wrap content in your theme
+        MyApplicationTheme {
+             AzNavRail(
+                 // ...
+             ) {
+                 azSettings(
+                     enableRailDragging = true,
+                     onUndock = { stopSelf() }, // Close overlay on undock
+                     onOverlayDrag = { x, y -> updatePosition(x, y) } // Handle window movement
+                 )
+                 // ... add items
+             }
         }
     }
 }
 ```
 
-#### 2. Launch the Bubble
+#### 2. Configure Manifest
 
-Use the `bubbleTargetActivity` parameter in your main activity's `AzNavRail` settings to trigger the bubble notification automatically. This overrides the default internal floating mode.
+Declare the service and required permissions in `AndroidManifest.xml`.
 
+```xml
+<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+<!-- For Android 14+ -->
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
+
+<application ...>
+    <service
+        android:name=".OverlayService"
+        android:foregroundServiceType="specialUse">
+        <property android:name="android.app.property.FOREGROUND_SERVICE_TYPE_SPECIAL_USE_DESCRIPTION"
+                  android:value="Overlay for navigation"/>
+    </service>
+</application>
+```
+
+#### 3. Launch the Overlay
+
+You can launch the overlay automatically by providing the service class to `azSettings`, or handle it manually via `onUndock`.
+
+**Option A: Automatic Launch**
 ```kotlin
 AzNavRail {
     azSettings(
-        // Enable drag dragging so the Undock button appears
-        enableRailDragging = true,
-        // Provide the class of the Activity to launch as a bubble
-        bubbleTargetActivity = BubbleActivity::class.java
+        overlayService = OverlayService::class.java
     )
     // ...
 }
 ```
+*Note: The library will attempt to launch the service. You must ensure `Settings.canDrawOverlays(context)` is true before this happens, or the launch will fail.*
 
-#### 3. Automatic State Management
+**Option B: Manual Launch (Recommended)**
+Use `onUndock` to handle permission checks and service launching.
 
-When a bubble is launched, the docked `AzNavRail` in the main activity will automatically hide to prevent duplication. When the user dismisses the bubble (by dragging it to the close target), the docked rail will reappear in the main activity.
+```kotlin
+AzNavRail {
+    azSettings(
+        onUndock = {
+            if (Settings.canDrawOverlays(context)) {
+                val intent = Intent(context, OverlayService::class.java)
+                ContextCompat.startForegroundService(context, intent)
+            } else {
+                // Request permission
+            }
+        }
+    )
+    // ...
+}
+```
 
 [API Reference](/API.md)
 

@@ -2,9 +2,11 @@ package com.hereliesaz.aznavrail.service
 
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
+import android.view.ContextThemeWrapper
 import android.view.Gravity
 import android.view.WindowManager
 import androidx.compose.runtime.Composable
@@ -20,7 +22,15 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.hereliesaz.aznavrail.internal.AzNavRailLogger
 
+/**
+ * Base service class for creating a system overlay with AzNavRail.
+ *
+ * To use this, extend this class and implement [OverlayContent] and [getNotification].
+ * You must also declare the [android.permission.SYSTEM_ALERT_WINDOW] and [android.permission.FOREGROUND_SERVICE] permissions in your manifest.
+ * For Android 14+, you must also declare [android.permission.FOREGROUND_SERVICE_SPECIAL_USE] and the service type in the manifest.
+ */
 abstract class AzNavRailOverlayService : Service(), LifecycleOwner, SavedStateRegistryOwner, ViewModelStoreOwner {
 
     private val lifecycleRegistry = LifecycleRegistry(this)
@@ -34,11 +44,21 @@ abstract class AzNavRailOverlayService : Service(), LifecycleOwner, SavedStateRe
     override val savedStateRegistry: SavedStateRegistry get() = savedStateRegistryController.savedStateRegistry
     override val viewModelStore: ViewModelStore get() = store
 
+    /**
+     * The Composable content to display in the overlay.
+     * Note: You should wrap your content in your app's Theme to ensure proper styling.
+     */
     @Composable
     abstract fun OverlayContent()
 
+    /**
+     * Returns the notification to be displayed while the service is running.
+     */
     abstract fun getNotification(): android.app.Notification
 
+    /**
+     * Returns the ID for the notification. Defaults to 1234.
+     */
     open fun getNotificationId(): Int = 1234
 
     protected open val windowParams: WindowManager.LayoutParams by lazy {
@@ -59,12 +79,24 @@ abstract class AzNavRailOverlayService : Service(), LifecycleOwner, SavedStateRe
 
     override fun onCreate() {
         super.onCreate()
-        startForeground(getNotificationId(), getNotification())
+
+        try {
+            if (Build.VERSION.SDK_INT >= 34) {
+                startForeground(getNotificationId(), getNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+            } else {
+                startForeground(getNotificationId(), getNotification())
+            }
+        } catch (e: Exception) {
+             AzNavRailLogger.e("AzNavRailOverlayService", "Failed to start foreground service", e)
+        }
+
         savedStateRegistryController.performRestore(null)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
 
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
+        // Create a ComposeView. We don't apply a theme wrapper here because we don't know the app's theme.
+        // The user should wrap their content in their theme.
         composeView = ComposeView(this).apply {
             setViewTreeLifecycleOwner(this@AzNavRailOverlayService)
             setViewTreeSavedStateRegistryOwner(this@AzNavRailOverlayService)
