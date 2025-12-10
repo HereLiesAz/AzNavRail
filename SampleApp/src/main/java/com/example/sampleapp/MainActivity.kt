@@ -1,44 +1,24 @@
 package com.example.sampleapp
 
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
-import com.hereliesaz.aznavrail.AzButton
-import com.hereliesaz.aznavrail.AzCycler
-import com.hereliesaz.aznavrail.AzForm
-import com.hereliesaz.aznavrail.AzNavRail
-import com.hereliesaz.aznavrail.AzTextBox
-import com.hereliesaz.aznavrail.AzTextBoxDefaults
-import com.hereliesaz.aznavrail.AzToggle
-import com.hereliesaz.aznavrail.model.AzButtonShape
+import androidx.core.content.ContextCompat
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,6 +29,20 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    val context = LocalContext.current
+
+                    // Logic to request overlay permission if needed when undocking
+                    val startOverlay = {
+                        if (Settings.canDrawOverlays(context)) {
+                            val intent = Intent(context, OverlayService::class.java)
+                            ContextCompat.startForegroundService(context, intent)
+                        } else {
+                            val intent = Intent(
+                                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                Uri.parse("package:${context.packageName}")
+                            )
+                            context.startActivity(intent)
+                        }
                     SampleScreen(
                         overlayService = SampleOverlayService::class.java
                     )
@@ -206,195 +200,27 @@ fun SampleScreen(
                         menuSelectedOption = menuCycleOptions[nextIndex]
                         Log.d(TAG, "Menu cycler clicked, new option: $menuSelectedOption")
                     }
-                )
 
-
-                // A button to demonstrate the loading state
-                azRailItem(id = "loading", text = "Load", route = "loading", onClick = {
-                    isLoading = !isLoading
-                    Log.d(TAG, "Loading toggled to: $isLoading")
-                })
-
-                azDivider()
-
-                azMenuHostItem(id = "menu-host", text = "Menu Host", route = "menu-host", onClick = { Log.d(TAG, "Menu host item clicked") })
-                azMenuSubItem(id = "menu-sub-1", hostId = "menu-host", text = "Menu Sub 1", route = "menu-sub-1", onClick = { Log.d(TAG, "Menu sub item 1 clicked") })
-                azMenuSubItem(id = "menu-sub-2", hostId = "menu-host", text = "Menu Sub 2", route = "menu-sub-2", onClick = { Log.d(TAG, "Menu sub item 2 clicked") })
-
-                azRailHostItem(id = "rail-host", text = "Rail Host", route = "rail-host", onClick = { Log.d(TAG, "Rail host item clicked") })
-                azRailSubItem(id = "rail-sub-1", hostId = "rail-host", text = "Rail Sub 1", route = "rail-sub-1", onClick = { Log.d(TAG, "Rail sub item 1 clicked") })
-                azMenuSubItem(id = "rail-sub-2", hostId = "rail-host", text = "Menu Sub 2", route = "rail-sub-2", onClick = { Log.d(TAG, "Menu sub item 2 (from rail host) clicked") })
-
-                azMenuSubToggle(
-                    id = "sub-toggle",
-                    hostId = "menu-host",
-                    isChecked = isDarkMode,
-                    toggleOnText = "Sub Toggle On",
-                    toggleOffText = "Sub Toggle Off",
-                    route = "sub-toggle",
-                    onClick = {
-                        isDarkMode = !isDarkMode
-                        Log.d(TAG, "Sub toggle clicked, dark mode is now: $isDarkMode")
+                    // Request Notification Permission for Android 13+
+                    val permissionLauncher = rememberLauncherForActivityResult(
+                        ActivityResultContracts.RequestPermission()
+                    ) { isGranted ->
+                         Log.d("MainActivity", "Notification permission granted: $isGranted")
                     }
-                )
 
-                azRailSubCycler(
-                    id = "sub-cycler",
-                    hostId = "rail-host",
-                    options = menuCycleOptions,
-                    selectedOption = menuSelectedOption,
-                    route = "sub-cycler",
-                    shape = null,
-                    onClick = {
-                        val currentIndex = menuCycleOptions.indexOf(menuSelectedOption)
-                        val nextIndex = (currentIndex + 1) % menuCycleOptions.size
-                        menuSelectedOption = menuCycleOptions[nextIndex]
-                        Log.d(TAG, "Sub cycler clicked, new option: $menuSelectedOption")
+                    LaunchedEffect(Unit) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
                     }
-                )
-            }
-        }
 
-        // Your app's main content goes here
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Uncontrolled AzTextBox with history context
-            AzTextBox(
-                modifier = Modifier.padding(bottom = 16.dp),
-                hint = "Uncontrolled (History: Search)",
-                historyContext = "search_history",
-                onSubmit = { text ->
-                    Log.d(TAG, "Submitted text from uncontrolled AzTextBox: $text")
-                },
-                submitButtonContent = {
-                    Text("Go")
+                    SampleScreen(
+                        onUndockOverride = {
+                            startOverlay()
+                            // finish() // Optional: close activity when undocked?
+                        }
+                    )
                 }
-            )
-
-            // Controlled AzTextBox with a different history context
-            var controlledText by remember { mutableStateOf("") }
-            AzTextBox(
-                modifier = Modifier.padding(bottom = 16.dp),
-                value = controlledText,
-                onValueChange = { controlledText = it },
-                hint = "Controlled (History: Usernames)",
-                historyContext = "username_history",
-                onSubmit = { text ->
-                    Log.d(TAG, "Submitted text from controlled AzTextBox: $text")
-                },
-                submitButtonContent = {
-                    Text("Go")
-                }
-            )
-
-            // AzTextBox with inverted outline
-            AzTextBox(
-                modifier = Modifier.padding(bottom = 16.dp),
-                hint = "Uncontrolled (No Outline)",
-                outlined = false,
-                onSubmit = { text ->
-                    Log.d(TAG, "Submitted text from no-outline AzTextBox: $text")
-                },
-                submitButtonContent = {
-                    Text("Go")
-                }
-            )
-
-            // Disabled AzTextBox
-            AzTextBox(
-                modifier = Modifier.padding(bottom = 16.dp),
-                hint = "Disabled",
-                enabled = false,
-                onSubmit = { Log.d(TAG, "Submitted disabled") }
-            )
-
-            AzForm(
-                formName = "loginForm",
-                modifier = Modifier.padding(bottom = 16.dp),
-                onSubmit = { formData ->
-                    Log.d(TAG, "Form submitted: $formData")
-                },
-                submitButtonContent = {
-                    Text("Login")
-                }
-            ) {
-                entry(entryName = "username", hint = "Username")
-                entry(entryName = "password", hint = "Password", secret = true)
-                entry(entryName = "bio", hint = "Biography", multiline = true)
-            }
-
-            AzForm(
-                formName = "registrationForm",
-                outlined = false,
-                onSubmit = { formData ->
-                    Log.d(TAG, "Registration Form submitted: $formData")
-                },
-                submitButtonContent = {
-                    Text("Register")
-                }
-            ) {
-                entry(entryName = "email", hint = "Email", enabled = false)
-                entry(entryName = "confirm_password", hint = "Confirm Password", secret = true)
-            }
-
-            Row {
-                var buttonLoading by remember { mutableStateOf(false) }
-                AzButton(
-                    onClick = {
-                        Log.d(TAG, "Standalone AzButton clicked")
-                        buttonLoading = !buttonLoading
-                    },
-                    text = "Button",
-                    shape = AzButtonShape.SQUARE,
-                    isLoading = buttonLoading,
-                    contentPadding = PaddingValues(16.dp)
-                )
-
-                AzButton(
-                    onClick = { Log.d(TAG, "Disabled clicked") },
-                    text = "Disabled",
-                    enabled = false
-                )
-
-                var isToggled by remember { mutableStateOf(false) }
-                AzToggle(
-                    isChecked = isToggled,
-                    onToggle = { isToggled = !isToggled },
-                    toggleOnText = "On",
-                    toggleOffText = "Off",
-                    shape = AzButtonShape.RECTANGLE
-                )
-                val cyclerOptions = remember { listOf("1", "2", "3") }
-                var selectedCyclerOption by remember { mutableStateOf(cyclerOptions.first()) }
-                AzCycler(
-                    options = cyclerOptions,
-                    selectedOption = selectedCyclerOption,
-                    onCycle = {
-                        val currentIndex = cyclerOptions.indexOf(selectedCyclerOption)
-                        val nextIndex = (currentIndex + 1) % cyclerOptions.size
-                        selectedCyclerOption = cyclerOptions[nextIndex]
-                    },
-                    shape = AzButtonShape.CIRCLE
-                )
-            }
-
-            NavHost(navController = navController, startDestination = "home") {
-                composable("home") { Text("Home Screen") }
-                composable("multi-line") { Text("Multi-line Screen") }
-                composable("menu-host") { Text("Menu Host Screen") }
-                composable("menu-sub-1") { Text("Menu Sub 1 Screen") }
-                composable("menu-sub-2") { Text("Menu Sub 2 Screen") }
-                composable("rail-host") { Text("Rail Host Screen") }
-                composable("rail-sub-1") { Text("Rail Sub 1 Screen") }
-                composable("rail-sub-2") { Text("Rail Sub 2 Screen") }
-                composable("sub-toggle") { Text("Sub Toggle Screen") }
-                composable("sub-cycler") { Text("Sub Cycler Screen") }
-                composable("pack-rail") { Text("Pack Rail Screen") }
-                composable("profile") { Text("Profile Screen") }
-                composable("online") { Text("Online Screen") }
-                composable("dark-mode") { Text("Dark Mode Screen") }
-                composable("rail-cycler") { Text("Rail Cycler Screen") }
-                composable("menu-cycler") { Text("Menu Cycler Screen") }
-                composable("loading") { Text("Loading Screen") }
             }
         }
     }

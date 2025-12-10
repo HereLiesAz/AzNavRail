@@ -39,6 +39,7 @@ interface AzNavRailScope {
         enableRailDragging: Boolean = false,
         headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
         onUndock: (() -> Unit)? = null,
+        onRailDrag: ((Float, Float) -> Unit)? = null
         overlayService: Class<out android.app.Service>? = null,
         onOverlayDrag: ((Float, Float) -> Unit)? = null
     )
@@ -237,6 +238,7 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
     var enableRailDragging: Boolean = false
     var headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE
     var onUndock: (() -> Unit)? = null
+    var onRailDrag: ((Float, Float) -> Unit)? = null
     var overlayService: Class<out android.app.Service>? = null
     var onOverlayDrag: ((Float, Float) -> Unit)? = null
 
@@ -251,6 +253,7 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         enableRailDragging: Boolean,
         headerIconShape: AzHeaderIconShape,
         onUndock: (() -> Unit)?,
+        onRailDrag: ((Float, Float) -> Unit)?
         overlayService: Class<out android.app.Service>?,
         onOverlayDrag: ((Float, Float) -> Unit)?
     ) {
@@ -481,6 +484,38 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         addItem(id = id, text = text, route = route, screenTitle = screenTitle, isRailItem = true, disabled = disabled, isSubItem = true, hostId = hostId, shape = AzButtonShape.NONE, onClick = onClick)
     }
 
+    override fun azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
+        addMenuSubToggle(id, hostId, isChecked, toggleOnText, toggleOffText, null, disabled, screenTitle, onClick)
+    }
+
+    override fun azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
+        addMenuSubToggle(id, hostId, isChecked, toggleOnText, toggleOffText, route, disabled, screenTitle, onClick)
+    }
+
+    override fun azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String, disabled: Boolean, screenTitle: String?) {
+        addMenuSubToggle(id, hostId, isChecked, toggleOnText, toggleOffText, route, disabled, screenTitle) {}
+    }
+
+    private fun addMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
+        addToggle(id = id, hostId = hostId, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, route = route, disabled = disabled, screenTitle = screenTitle, isRailItem = false, isSubItem = true, shape = AzButtonShape.NONE, onClick = onClick)
+    }
+
+    override fun azRailSubToggle(id: String, hostId: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
+        addRailSubToggle(id, hostId, color, isChecked, toggleOnText, toggleOffText, shape, null, disabled, screenTitle, onClick)
+    }
+
+    override fun azRailSubToggle(id: String, hostId: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
+        addRailSubToggle(id, hostId, color, isChecked, toggleOnText, toggleOffText, shape, route, disabled, screenTitle, onClick)
+    }
+
+    override fun azRailSubToggle(id: String, hostId: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, route: String, disabled: Boolean, screenTitle: String?) {
+        addRailSubToggle(id, hostId, color, isChecked, toggleOnText, toggleOffText, shape, route, disabled, screenTitle) {}
+    }
+
+    private fun addRailSubToggle(id: String, hostId: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, route: String?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
+        addToggle(id = id, hostId = hostId, color = color, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, route = route, disabled = disabled, screenTitle = screenTitle, isRailItem = true, isSubItem = true, shape = shape, onClick = onClick)
+    }
+
     override fun azMenuSubCycler(id: String, hostId: String, options: List<String>, selectedOption: String, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, onClick: () -> Unit) {
         addMenuSubCycler(id, hostId, options, selectedOption, null, disabled, disabledOptions, screenTitle, onClick)
     }
@@ -553,38 +588,6 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
                 hostId = hostId
             )
         )
-    }
-
-    override fun azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
-        addMenuSubToggle(id, hostId, isChecked, toggleOnText, toggleOffText, null, disabled, screenTitle, onClick)
-    }
-
-    override fun azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
-        addMenuSubToggle(id, hostId, isChecked, toggleOnText, toggleOffText, route, disabled, screenTitle, onClick)
-    }
-
-    override fun azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String, disabled: Boolean, screenTitle: String?) {
-        addMenuSubToggle(id, hostId, isChecked, toggleOnText, toggleOffText, route, disabled, screenTitle) {}
-    }
-
-    private fun addMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
-        addToggle(id = id, hostId = hostId, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, route = route, disabled = disabled, screenTitle = screenTitle, isRailItem = false, isSubItem = true, shape = AzButtonShape.NONE, onClick = onClick)
-    }
-
-    override fun azRailSubToggle(id: String, hostId: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
-        addRailSubToggle(id, hostId, color, isChecked, toggleOnText, toggleOffText, shape, null, disabled, screenTitle, onClick)
-    }
-
-    override fun azRailSubToggle(id: String, hostId: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, route: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
-        addRailSubToggle(id, hostId, color, isChecked, toggleOnText, toggleOffText, shape, route, disabled, screenTitle, onClick)
-    }
-
-    override fun azRailSubToggle(id: String, hostId: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, route: String, disabled: Boolean, screenTitle: String?) {
-        addRailSubToggle(id, hostId, color, isChecked, toggleOnText, toggleOffText, shape, route, disabled, screenTitle) {}
-    }
-
-    private fun addRailSubToggle(id: String, hostId: String, color: Color?, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape?, route: String?, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
-        addToggle(id = id, hostId = hostId, color = color, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, route = route, disabled = disabled, screenTitle = screenTitle, isRailItem = true, isSubItem = true, shape = shape, onClick = onClick)
     }
 
     private fun addToggle(
