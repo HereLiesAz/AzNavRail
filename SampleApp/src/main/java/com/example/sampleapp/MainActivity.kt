@@ -11,11 +11,17 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -25,13 +31,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.hereliesaz.aznavrail.AzNavRail
+import com.hereliesaz.aznavrail.*
 import com.hereliesaz.aznavrail.model.AzButtonShape
-import com.hereliesaz.aznavrail.AzTextBoxDefaults
-import com.hereliesaz.aznavrail.AzNavRailScope
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,7 +66,6 @@ class MainActivity : ComponentActivity() {
                         if (Settings.canDrawOverlays(context)) {
                             val intent = Intent(context, SampleOverlayService::class.java)
                             ContextCompat.startForegroundService(context, intent)
-                            // Optionally finish() or minimize app
                         } else {
                             val intent = Intent(
                                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
@@ -98,10 +102,13 @@ fun SampleScreen(
     var isDarkMode by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var packRailButtons by remember { mutableStateOf(false) }
+    var disableSwipeToOpen by remember { mutableStateOf(false) }
+
     val railCycleOptions = remember { listOf("A", "B", "C", "D") }
     var railSelectedOption by remember { mutableStateOf(railCycleOptions.first()) }
     val menuCycleOptions = remember { listOf("X", "Y", "Z") }
     var menuSelectedOption by remember { mutableStateOf(menuCycleOptions.first()) }
+
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.screenWidthDp > configuration.screenHeightDp
 
@@ -114,7 +121,8 @@ fun SampleScreen(
                 navController = navController,
                 currentDestination = currentDestination?.destination?.route,
                 isLandscape = isLandscape,
-                initiallyExpanded = initiallyExpanded
+                initiallyExpanded = initiallyExpanded,
+                disableSwipeToOpen = disableSwipeToOpen
             ) {
                 azSettings(
                     packRailButtons = packRailButtons,
@@ -139,6 +147,14 @@ fun SampleScreen(
                         packRailButtons = !packRailButtons
                         Log.d(TAG, "Pack rail toggled to: $packRailButtons")
                     }
+                )
+
+                azRailToggle(
+                    id = "swipe-toggle",
+                    isChecked = !disableSwipeToOpen,
+                    toggleOnText = "Swipe Open: ON",
+                    toggleOffText = "Swipe Open: OFF",
+                    onClick = { disableSwipeToOpen = !disableSwipeToOpen }
                 )
 
                 azRailItem(
@@ -227,16 +243,108 @@ fun SampleScreen(
                      route = "settings/security",
                      onClick = { Log.d(TAG, "Security Settings clicked") }
                 )
+
+                azRailSubToggle(
+                    id = "sub-toggle",
+                    hostId = "settings",
+                    isChecked = isDarkMode,
+                    toggleOnText = "Sub Toggle On",
+                    toggleOffText = "Sub Toggle Off",
+                    shape = AzButtonShape.RECTANGLE,
+                    onClick = { isDarkMode = !isDarkMode }
+                )
+
+                azRailSubCycler(
+                    id = "sub-cycler",
+                    hostId = "settings",
+                    options = menuCycleOptions,
+                    selectedOption = menuSelectedOption,
+                    shape = AzButtonShape.RECTANGLE,
+                    onClick = {
+                         val currentIndex = menuCycleOptions.indexOf(menuSelectedOption)
+                        val nextIndex = (currentIndex + 1) % menuCycleOptions.size
+                        menuSelectedOption = menuCycleOptions[nextIndex]
+                    }
+                )
+
+                azMenuHostItem(
+                    id = "menu-host",
+                    text = "Menu Host",
+                    route = "menu-host"
+                )
+
+                azMenuSubToggle(
+                    id = "menu-sub-toggle",
+                    hostId = "menu-host",
+                    isChecked = isDarkMode,
+                    toggleOnText = "Menu Toggle On",
+                    toggleOffText = "Menu Toggle Off",
+                    onClick = { isDarkMode = !isDarkMode }
+                )
+
+                azMenuSubCycler(
+                    id = "menu-sub-cycler",
+                    hostId = "menu-host",
+                    options = menuCycleOptions,
+                    selectedOption = menuSelectedOption,
+                    onClick = {
+                        val currentIndex = menuCycleOptions.indexOf(menuSelectedOption)
+                        val nextIndex = (currentIndex + 1) % menuCycleOptions.size
+                        menuSelectedOption = menuCycleOptions[nextIndex]
+                    }
+                )
             }
         }
 
         if (showContent) {
-            // Main content area placeholder
-             Surface(
+            Surface(
                 modifier = Modifier.weight(1f).fillMaxSize(),
                 color = MaterialTheme.colorScheme.background
             ) {
-                // NavHost or other content would go here
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text("Standalone Components", style = MaterialTheme.typography.headlineMedium)
+
+                    Text("AzTextBox", style = MaterialTheme.typography.titleMedium)
+                    AzTextBox(hint = "Standard input", onSubmit = {})
+                    AzTextBox(hint = "Secret input", secret = true, onSubmit = {})
+                    AzTextBox(hint = "Multiline input", multiline = true, onSubmit = {})
+
+                    AzForm(formName = "demoForm", onSubmit = { Log.d(TAG, "Form submitted: $it") }) {
+                        entry("name", "Name")
+                        entry("email", "Email")
+                    }
+
+                    AzDivider()
+
+                    Text("AzButton", style = MaterialTheme.typography.titleMedium)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        AzButton(text = "Circle", shape = AzButtonShape.CIRCLE, onClick = {})
+                        AzButton(text = "Rect", shape = AzButtonShape.RECTANGLE, onClick = {})
+                        AzButton(text = "Loading", isLoading = true, onClick = {})
+                    }
+
+                    AzDivider()
+
+                    Text("AzToggle & AzCycler", style = MaterialTheme.typography.titleMedium)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        AzToggle(isChecked = isOnline, onToggle = { isOnline = !isOnline }, toggleOnText = "Online", toggleOffText = "Offline", shape = AzButtonShape.RECTANGLE)
+                        AzCycler(options = listOf("1", "2", "3"), selectedOption = "1", onCycle = {}, shape = AzButtonShape.RECTANGLE)
+                    }
+
+                    AzDivider()
+
+                    Text("AzLoad (Standalone)", style = MaterialTheme.typography.titleMedium)
+                    AzLoad()
+
+                    // Space at bottom
+                    Box(Modifier.padding(32.dp))
+                }
             }
         }
     }
