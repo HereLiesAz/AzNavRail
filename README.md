@@ -273,6 +273,36 @@ fun SampleScreen() {
     -   Styling (outline, background) is applied consistently to all fields within the form.
 -   **Disabled State**: Both `AzTextBox` and `AzForm` entries support an `enabled` parameter. When disabled, the input is non-interactive and visual elements are dimmed.
 
+### AzLoad Animation
+
+The `AzLoad` component provides a loading animation. It can be used as a full-screen overlay managed by `AzNavRail` or as a standalone component.
+
+#### Full-Screen Overlay
+
+To show a loading animation in the middle of the screen (overlaying the rail and content), use the `isLoading` parameter in `azSettings`.
+
+```kotlin
+AzNavRail(...) {
+    azSettings(
+        isLoading = true // Shows the AzLoad animation in the center of the screen
+        // ...
+    )
+}
+```
+
+This renders the animation in a non-focusable `Popup`, ensuring it appears on top of other UI elements.
+
+#### Standalone Usage
+
+You can also use `AzLoad` directly in your composables. It is a composable function that renders the animation. To center it, place it within a container with appropriate alignment (e.g., `Box` with `contentAlignment = Alignment.Center`).
+
+```kotlin
+// In any Composable
+Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    AzLoad()
+}
+```
+
 #### Usage
 
 Here is an example of how to use the standalone `AzTextBox` for multiline and secret inputs:
