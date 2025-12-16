@@ -83,7 +83,7 @@ internal fun Footer(
                 isSelected = false,
                 onClick = onUndock,
                 onCyclerClick = null,
-                onToggle = {}, // This is the fix: prevent onToggle from being called
+                onToggle = {},
                 onItemClick = {}
             )
         }
