@@ -26,7 +26,7 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 - **Navigation**: seamless Jetpack Navigation integration.
 - **Hierarchy**: Nested menus with host and sub-items.
 - **Draggable (FAB Mode)**: Detach and move the rail.
-- **System Overlay**: System-wide overlay support.
+- **System Overlay**: System-wide overlay support with automatic resizing.
 - **Auto-sizing Text**: Text fits without wrapping (unless explicit newline).
 - **Toggles/Cyclers**: Simple state management.
 - **Gestures**: Swipe/tap to expand, collapse, or undock.
@@ -425,6 +425,7 @@ AzButton(
 
 -   **Host Items**: These are top-level items that can contain sub-items. They can be placed in the rail or the menu.
 -   **Sub-Items**: These are nested items that are only visible when their host item is expanded. They can also be placed in the rail or the menu.
+-   **Exclusive Expansion**: Only one host item can be expanded at a time. Expanding a host item automatically collapses any other open host items.
 
 ### Draggable Rail (FAB Mode)
 
@@ -445,7 +446,7 @@ AzNavRail can function as a system-wide overlay (using `SYSTEM_ALERT_WINDOW`). T
 
 #### 1. Create an Overlay Service
 
-Extend `AzNavRailOverlayService` to create a service that renders the overlay content.
+Extend `AzNavRailOverlayService` to create a service that renders the overlay content. The service automatically handles the overlay window layout: it fills the screen during drags for smooth movement and shrinks to wrap its content when stationary.
 
 **OverlayService.kt:**
 ```kotlin
@@ -460,13 +461,14 @@ class OverlayService : AzNavRailOverlayService() {
     override fun OverlayContent() {
         // Wrap content in your theme
         MyApplicationTheme {
+             // Simply render AzNavRail. The service automatically manages
+             // window resizing and drag events via an internal controller.
              AzNavRail(
                  // ...
              ) {
                  azSettings(
                      enableRailDragging = true,
-                     onUndock = { stopSelf() }, // Close overlay on undock
-                     onOverlayDrag = { x, y -> updatePosition(x, y) } // Handle window movement
+                     onUndock = { stopSelf() } // Close overlay on undock
                  )
                  // ... add items
              }
