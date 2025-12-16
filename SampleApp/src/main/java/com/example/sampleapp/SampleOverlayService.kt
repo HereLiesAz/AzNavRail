@@ -39,8 +39,8 @@ class SampleOverlayService : AzNavRailOverlayService() {
                      // Clicking undock in overlay mode should close the overlay
                      stopSelf()
                 },
-                overlayService = null,
-                onOverlayDrag = { x, y -> updatePosition(x, y) },
+                // Removed manual onOverlayDrag, relying on automatic behavior from AzNavRailOverlayService
+                onRailDrag = null,
                 showContent = false
             )
         }

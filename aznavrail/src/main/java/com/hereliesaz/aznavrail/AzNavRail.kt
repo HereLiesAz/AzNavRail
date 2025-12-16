@@ -68,6 +68,7 @@ import com.hereliesaz.aznavrail.internal.MenuItem
 import com.hereliesaz.aznavrail.internal.RailItems
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
+import com.hereliesaz.aznavrail.service.LocalAzNavRailOverlayController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.pow
@@ -105,6 +106,7 @@ fun AzNavRail(
     val context = LocalContext.current
     val packageManager = context.packageManager
     val packageName = context.packageName
+    val overlayController = LocalAzNavRailOverlayController.current
 
     val appName = remember(packageName) {
         try {
@@ -214,7 +216,7 @@ fun AzNavRail(
     LaunchedEffect(showFloatingButtons) {
         if (showFloatingButtons) {
             // Only apply screen bounds clamping if we are NOT using external drag (Overlay mode might have its own bounds)
-            if (scope.onRailDrag == null) {
+            if (scope.onRailDrag == null && overlayController == null) {
                 val screenHeightPx = with(density) { screenHeight.toPx() }
                 val bottomBound = screenHeightPx * 0.9f
                 val railBottom = railOffset.y + headerHeight + railItemsHeight
@@ -262,7 +264,13 @@ fun AzNavRail(
             NavigationRail(
                 modifier = Modifier
                     .width(railWidth)
-                    .offset { railOffset },
+                    .offset {
+                         if (overlayController != null) {
+                             overlayController.contentOffset.value
+                         } else {
+                             railOffset
+                         }
+                    },
                 containerColor = if (isExpanded) MaterialTheme.colorScheme.surface.copy(
                     alpha = 0.95f
                 ) else Color.Transparent,
@@ -275,7 +283,8 @@ fun AzNavRail(
                                 isFloating,
                                 scope.enableRailDragging,
                                 scope.displayAppNameInHeader,
-                                scope.onRailDrag
+                                scope.onRailDrag,
+                                overlayController
                             ) {
                                 detectTapGestures(
                                     onTap = {
@@ -296,7 +305,7 @@ fun AzNavRail(
                                             // In Overlay mode, 'docking' might not make sense or might mean 'stick to edge'.
                                             // For now, if onRailDrag is present, we assume the user controls position.
 
-                                            if (scope.onRailDrag == null) {
+                                            if (scope.onRailDrag == null && overlayController == null) {
                                                 railOffset = IntOffset.Zero
                                             }
 
@@ -320,16 +329,25 @@ fun AzNavRail(
                                     }
                                 )
                             }
-                            .pointerInput(isFloating, scope.enableRailDragging, scope.onRailDrag) {
+                            .pointerInput(isFloating, scope.enableRailDragging, scope.onRailDrag, overlayController) {
                                 detectDragGestures(
                                     onDragStart = { _ ->
-                                        if (isFloating) {
+                                        if (overlayController != null) {
+                                            overlayController.onDragStart()
+                                            if (isFloating) {
+                                                wasVisibleOnDragStart = showFloatingButtons
+                                                showFloatingButtons = false
+                                            }
+                                        } else if (isFloating) {
                                             wasVisibleOnDragStart = showFloatingButtons
                                             showFloatingButtons = false
                                         }
                                     },
                                     onDrag = { change, dragAmount ->
-                                        if (scope.onOverlayDrag != null) {
+                                        if (overlayController != null) {
+                                            change.consume()
+                                            overlayController.onDrag(dragAmount)
+                                        } else if (scope.onOverlayDrag != null) {
                                             change.consume()
                                             scope.onOverlayDrag?.invoke(dragAmount.x, dragAmount.y)
                                         } else if (isFloating) {
@@ -354,10 +372,17 @@ fun AzNavRail(
                                         }
                                     },
                                     onDragEnd = {
-                                        if (isFloating) {
-                                            // If dragging externally, we don't snap back to dock on release near origin
-                                            // because the origin of the Window is top-left of screen, not rail container.
+                                        if (overlayController != null) {
+                                            overlayController.onDragEnd()
+                                            // Always show buttons on drag end in overlay mode, as requested.
+                                            // This ensures the rail expands when dropped.
+                                            if (isFloating) {
+                                                showFloatingButtons = true
+                                            }
+                                        } else if (isFloating) {
                                             if (scope.onRailDrag == null) {
+                                                // If dragging externally, we don't snap back to dock on release near origin
+                                                // because the origin of the Window is top-left of screen, not rail container.
                                                 val distance = kotlin.math.sqrt(
                                                     railOffset.x.toFloat()
                                                         .pow(2) + railOffset.y.toFloat().pow(2)
@@ -527,7 +552,14 @@ fun AzNavRail(
                                         onToggle = { isExpanded = !isExpanded },
                                         onItemClick = { selectedItem = finalItem },
                                         onHostClick = {
-                                            hostStates[item.id] = !(hostStates[item.id] ?: false)
+                                            // Close other hosts
+                                            val wasExpanded = hostStates[item.id] ?: false
+                                            val keys = hostStates.keys.toList()
+                                            keys.forEach { key ->
+                                                hostStates[key] = false
+                                            }
+                                            // Toggle current (if it was expanded, it's now collapsed; if collapsed, now expanded)
+                                            hostStates[item.id] = !wasExpanded
                                         }
                                     )
 
