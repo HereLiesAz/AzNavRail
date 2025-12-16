@@ -40,7 +40,8 @@ class SampleOverlayService : AzNavRailOverlayService() {
                      stopSelf()
                 },
                 overlayService = null,
-                onOverlayDrag = { x, y -> updatePosition(x, y) },
+                // Removed manual onOverlayDrag, relying on automatic behavior from AzNavRailOverlayService
+                onRailDrag = null,
                 showContent = false
             )
         }
