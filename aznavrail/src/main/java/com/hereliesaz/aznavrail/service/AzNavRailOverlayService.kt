@@ -136,12 +136,10 @@ abstract class AzNavRailOverlayService : Service(), LifecycleOwner, SavedStateRe
                 val margin = 100 // px
                 // Ensure the window is not lost off-screen.
                 // Assuming standard gravity (Top|Start), (x,y) is the top-left corner.
-                // We clamp so the top-left corner is at least somewhat visible or within reach.
-                // Restricting to 0..screenWidth-margin ensures the left edge is on screen or close to right edge.
-                // Allowing negative up to -margin (if width was known) would be better, but without width,
-                // clamping to [0, screenWidth - margin] is safest to prevent losing it to the left.
-                val safeX = _contentOffset.value.x.coerceIn(0, screenWidth - margin)
-                val safeY = _contentOffset.value.y.coerceIn(0, screenHeight - margin)
+                // We allow negative coordinates up to -margin to let the user drag the rail partially off-screen (left/top).
+                // We also cap at screenWidth/Height - margin to ensure it doesn't disappear off the bottom/right.
+                val safeX = _contentOffset.value.x.coerceIn(-margin, screenWidth - margin)
+                val safeY = _contentOffset.value.y.coerceIn(-margin, screenHeight - margin)
 
                 val finalX = safeX
                 val finalY = safeY

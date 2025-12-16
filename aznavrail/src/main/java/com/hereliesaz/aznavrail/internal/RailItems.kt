@@ -21,7 +21,8 @@ internal fun RailItems(
     onRailCyclerClick: (AzNavItem) -> Unit,
     onItemSelected: (AzNavItem) -> Unit,
     hostStates: MutableMap<String, Boolean>,
-    packRailButtons: Boolean
+    packRailButtons: Boolean,
+    onClickOverride: ((AzNavItem) -> Unit)? = null
 ) {
     val topLevelItems = items.filter { !it.isSubItem }
     val itemsToRender =
@@ -34,7 +35,7 @@ internal fun RailItems(
                 navController = navController,
                 isSelected = item.route == currentDestination,
                 buttonSize = buttonSize,
-                onClick = scope.onClickMap[item.id],
+                onClick = if (onClickOverride != null) { { onClickOverride(item) } } else scope.onClickMap[item.id],
                 onRailCyclerClick = onRailCyclerClick,
                 onItemClick = { onItemSelected(item) },
                 onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) }
@@ -48,7 +49,7 @@ internal fun RailItems(
                             navController = navController,
                             isSelected = subItem.route == currentDestination,
                             buttonSize = buttonSize,
-                            onClick = scope.onClickMap[subItem.id],
+                            onClick = if (onClickOverride != null) { { onClickOverride(subItem) } } else scope.onClickMap[subItem.id],
                             onRailCyclerClick = onRailCyclerClick,
                             onItemClick = { onItemSelected(subItem) }
                         )

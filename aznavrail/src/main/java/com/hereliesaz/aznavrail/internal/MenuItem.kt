@@ -76,7 +76,7 @@ internal fun MenuItem(
     val textColor = when {
         isSelected -> MaterialTheme.colorScheme.primary
         item.disabled -> MaterialTheme.typography.bodyMedium.color.copy(alpha = 0.5f)
-        else -> MaterialTheme.typography.bodyMedium.color
+        else -> item.color ?: MaterialTheme.typography.bodyMedium.color
     }
 
     Row(
