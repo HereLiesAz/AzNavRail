@@ -76,6 +76,7 @@ import kotlin.math.roundToInt
 
 object AzNavRail {
     const val noTitle = "AZNAVRAIL_NO_TITLE"
+    const val EXTRA_ROUTE = "com.hereliesaz.aznavrail.extra.ROUTE"
 }
 
 @Composable
@@ -127,7 +128,28 @@ fun AzNavRail(
         }
     }
 
-    var isExpanded by rememberSaveable(initiallyExpanded) { mutableStateOf(initiallyExpanded) }
+    // Force Footer Text Color: use color of first item, or primary if not set/available
+    val footerColor = remember(scope.navItems) {
+        scope.navItems.firstOrNull()?.color ?: Color.Unspecified
+    }
+
+    var isExpandedInternal by rememberSaveable(initiallyExpanded) { mutableStateOf(initiallyExpanded) }
+    // If overlayController is present, isExpanded is always false.
+    // Use a derived boolean for read operations to enforce logic, but write to internal state (or ignore if blocked).
+
+    val isExpandedState = remember(overlayController) {
+        object : androidx.compose.runtime.MutableState<Boolean> {
+            override var value: Boolean
+                get() = if (overlayController != null) false else isExpandedInternal
+                set(v) {
+                     if (overlayController == null) isExpandedInternal = v
+                }
+            override fun component1() = value
+            override fun component2(): (Boolean) -> Unit = { value = it }
+        }
+    }
+    var isExpanded by isExpandedState
+
     var railOffset by remember { mutableStateOf(IntOffset.Zero) }
     // If initially expanded, we are not floating. But if initially NOT expanded, we might be?
     // Actually, FAB mode is triggered by user action or specific config.
@@ -199,14 +221,14 @@ fun AzNavRail(
                                     repeat(clicksToCatchUp) {
                                         onClick()
                                     }
+                                                }
+                                            }
+                                            cyclerStates[id] = state.copy(job = null)
+                                        }
+                                    }
                                 }
                             }
-                            cyclerStates[id] = state.copy(job = null)
                         }
-                    }
-                }
-            }
-        }
     }
 
     val configuration = LocalConfiguration.current
@@ -223,6 +245,19 @@ fun AzNavRail(
                 if (railBottom > bottomBound) {
                     val newY = bottomBound - headerHeight - railItemsHeight
                     railOffset = IntOffset(railOffset.x, newY.roundToInt())
+                }
+            }
+        }
+    }
+
+    val activity = LocalContext.current as? androidx.activity.ComponentActivity
+    LaunchedEffect(activity) {
+        activity?.intent?.let { intent ->
+            if (intent.hasExtra(AzNavRail.EXTRA_ROUTE)) {
+                val route = intent.getStringExtra(AzNavRail.EXTRA_ROUTE)
+                if (route != null) {
+                    navController?.navigate(route)
+                    intent.removeExtra(AzNavRail.EXTRA_ROUTE)
                 }
             }
         }
@@ -291,7 +326,10 @@ fun AzNavRail(
                                         if (isFloating) {
                                             showFloatingButtons = !showFloatingButtons
                                         } else {
-                                            isExpanded = !isExpanded
+                                            // Only allow expanding if NOT in overlay mode
+                                            if (overlayController == null) {
+                                                isExpanded = !isExpanded
+                                            }
                                         }
                                     },
                                     onLongPress = {
@@ -601,10 +639,32 @@ fun AzNavRail(
                                         if (scope.displayAppNameInHeader) isAppIcon = true
                                     }
                                 },
-                                scope = scope
+                                scope = scope,
+                                footerColor = if (footerColor != Color.Unspecified) footerColor else MaterialTheme.colorScheme.primary
                             )
                         }
                     } else {
+                        // Prepare custom click handling for Overlay mode
+                        val handleOverlayClick: (AzNavItem) -> Unit = { item ->
+                            if (overlayController != null && item.route != null) {
+                                val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+                                if (launchIntent != null) {
+                                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    launchIntent.putExtra(AzNavRail.EXTRA_ROUTE, item.route)
+                                    context.startActivity(launchIntent)
+                                } else {
+                                    // Fallback if no launch intent
+                                    AzNavRailLogger.e("AzNavRail", "Could not find launch intent for package $packageName")
+                                }
+                            } else {
+                                // Standard behavior
+                                scope.onClickMap[item.id]?.invoke()
+                            }
+                        }
+
+                        // If in Overlay Mode, pass null for navController to intercept routing via onClick.
+                        val effectiveNavController = if (overlayController != null) null else navController
+
                         AnimatedVisibility(visible = !isFloating || showFloatingButtons) {
                             Column(
                                 modifier = Modifier
@@ -697,13 +757,14 @@ fun AzNavRail(
                                     RailItems(
                                         items = scope.navItems,
                                         scope = scope,
-                                        navController = navController,
+                                        navController = effectiveNavController,
                                         currentDestination = currentDestination,
                                         buttonSize = buttonSize,
                                         onRailCyclerClick = onRailCyclerClick,
                                         onItemSelected = { navItem -> selectedItem = navItem },
                                         hostStates = hostStates,
-                                        packRailButtons = if (isFloating) true else scope.packRailButtons
+                                        packRailButtons = if (isFloating) true else scope.packRailButtons,
+                                        onClickOverride = if (overlayController != null) handleOverlayClick else null
                                     )
                                 }
                             }

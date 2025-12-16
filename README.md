@@ -26,7 +26,7 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 - **Navigation**: seamless Jetpack Navigation integration.
 - **Hierarchy**: Nested menus with host and sub-items.
 - **Draggable (FAB Mode)**: Detach and move the rail.
-- **System Overlay**: System-wide overlay support with automatic resizing.
+- **System Overlay**: System-wide overlay support with automatic resizing and activity launching.
 - **Auto-sizing Text**: Text fits without wrapping (unless explicit newline).
 - **Toggles/Cyclers**: Simple state management.
 - **Gestures**: Swipe/tap to expand, collapse, or undock.
@@ -443,6 +443,14 @@ The rail can be detached and moved around the screen by long-pressing the header
 ### System Overlay
 
 AzNavRail can function as a system-wide overlay (using `SYSTEM_ALERT_WINDOW`). This allows users to access the navigation menu from anywhere on their device.
+
+#### Features
+
+*   **Dynamic Resizing**: The overlay window automatically expands to fill the screen during drag operations (for smooth movement) and shrinks to wrap its content when stationary (to unblock the underlying screen).
+*   **Automatic Expansion**: When dropped, the rail items automatically expand.
+*   **Automatic Activity Launching**: Clicking a navigation item in the overlay automatically brings the main application to the foreground and navigates to the associated route.
+*   **Exclusive Host Expansion**: Expanding a host item collapses all other host items, ensuring the overlay size remains manageable.
+*   **Footer Color Enforcement**: The footer text color matches the primary or first item color for consistency.
 
 #### 1. Create an Overlay Service
 

@@ -22,12 +22,15 @@ import com.hereliesaz.aznavrail.model.AzNavItem
  * @param onToggle The click handler for toggling the rail's expanded
  *    state.
  */
+import androidx.compose.ui.graphics.Color
+
 @Composable
 internal fun Footer(
     appName: String,
     onToggle: () -> Unit,
     onUndock: () -> Unit,
-    scope: AzNavRailScopeImpl
+    scope: AzNavRailScopeImpl,
+    footerColor: Color
 ) {
     val context = LocalContext.current
     val onAboutClick: () -> Unit = remember(context, appName) {
@@ -75,7 +78,7 @@ internal fun Footer(
         AzDivider()
         if (scope.enableRailDragging) {
             MenuItem(
-                item = AzNavItem(id = "undock", text = "Undock", isRailItem = false),
+                item = AzNavItem(id = "undock", text = "Undock", isRailItem = false, color = footerColor),
                 navController = null,
                 isSelected = false,
                 onClick = onUndock,
@@ -85,7 +88,7 @@ internal fun Footer(
             )
         }
         MenuItem(
-            item = AzNavItem(id = "about", text = "About", isRailItem = false),
+            item = AzNavItem(id = "about", text = "About", isRailItem = false, color = footerColor),
             navController = null,
             isSelected = false,
             onClick = onAboutClick,
@@ -93,7 +96,7 @@ internal fun Footer(
             onToggle = onToggle,
             onItemClick = {})
         MenuItem(
-            item = AzNavItem(id = "feedback", text = "Feedback", isRailItem = false),
+            item = AzNavItem(id = "feedback", text = "Feedback", isRailItem = false, color = footerColor),
             navController = null,
             isSelected = false,
             onClick = onFeedbackClick,
@@ -104,7 +107,8 @@ internal fun Footer(
             item = AzNavItem(
                 id = "credit",
                 text = "@HereLiesAz",
-                isRailItem = false
+                isRailItem = false,
+                color = footerColor
             ),
             navController = null,
             isSelected = false,
