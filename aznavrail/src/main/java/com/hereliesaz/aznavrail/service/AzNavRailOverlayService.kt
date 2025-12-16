@@ -10,7 +10,14 @@ import android.view.ContextThemeWrapper
 import android.view.Gravity
 import android.view.WindowManager
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.State
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.unit.IntOffset
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -23,6 +30,16 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.hereliesaz.aznavrail.internal.AzNavRailLogger
+import kotlin.math.roundToInt
+
+val LocalAzNavRailOverlayController = compositionLocalOf<AzNavRailOverlayController?> { null }
+
+interface AzNavRailOverlayController {
+    val contentOffset: State<IntOffset>
+    fun onDragStart()
+    fun onDrag(dragAmount: Offset)
+    fun onDragEnd()
+}
 
 /**
  * Base service class for creating a system overlay with AzNavRail.
@@ -77,6 +94,71 @@ abstract class AzNavRailOverlayService : Service(), LifecycleOwner, SavedStateRe
         }
     }
 
+    private inner class ControllerImpl : AzNavRailOverlayController {
+        private val _contentOffset = mutableStateOf(IntOffset.Zero)
+        override val contentOffset: State<IntOffset> = _contentOffset
+
+        override fun onDragStart() {
+            if (composeView != null && windowManager != null) {
+                // Save current position
+                val currentX = windowParams.x
+                val currentY = windowParams.y
+
+                // Set content offset to current position so it doesn't jump
+                _contentOffset.value = IntOffset(currentX, currentY)
+
+                // Make window full screen
+                windowParams.width = WindowManager.LayoutParams.MATCH_PARENT
+                windowParams.height = WindowManager.LayoutParams.MATCH_PARENT
+                windowParams.x = 0
+                windowParams.y = 0
+                windowManager?.updateViewLayout(composeView, windowParams)
+            }
+        }
+
+        override fun onDrag(dragAmount: Offset) {
+            val current = _contentOffset.value
+            _contentOffset.value = IntOffset(
+                (current.x + dragAmount.x).roundToInt(),
+                (current.y + dragAmount.y).roundToInt()
+            )
+        }
+
+        override fun onDragEnd() {
+            if (composeView != null && windowManager != null) {
+                // Get final position
+                val displayMetrics = resources.displayMetrics
+                val screenWidth = displayMetrics.widthPixels
+                val screenHeight = displayMetrics.heightPixels
+
+                // Clamp final position to ensure at least some part of the window is visible
+                // Allow dragging mostly off-screen but keep a margin visible
+                val margin = 100 // px
+                // Ensure the window is not lost off-screen.
+                // Assuming standard gravity (Top|Start), (x,y) is the top-left corner.
+                // We clamp so the top-left corner is at least somewhat visible or within reach.
+                // Restricting to 0..screenWidth-margin ensures the left edge is on screen or close to right edge.
+                // Allowing negative up to -margin (if width was known) would be better, but without width,
+                // clamping to [0, screenWidth - margin] is safest to prevent losing it to the left.
+                val safeX = _contentOffset.value.x.coerceIn(0, screenWidth - margin)
+                val safeY = _contentOffset.value.y.coerceIn(0, screenHeight - margin)
+
+                val finalX = safeX
+                val finalY = safeY
+
+                // Reset content offset
+                _contentOffset.value = IntOffset.Zero
+
+                // Set window back to WRAP_CONTENT at new position
+                windowParams.width = WindowManager.LayoutParams.WRAP_CONTENT
+                windowParams.height = WindowManager.LayoutParams.WRAP_CONTENT
+                windowParams.x = finalX
+                windowParams.y = finalY
+                windowManager?.updateViewLayout(composeView, windowParams)
+            }
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
 
@@ -102,7 +184,10 @@ abstract class AzNavRailOverlayService : Service(), LifecycleOwner, SavedStateRe
             setViewTreeSavedStateRegistryOwner(this@AzNavRailOverlayService)
             setViewTreeViewModelStoreOwner(this@AzNavRailOverlayService)
             setContent {
-                OverlayContent()
+                val controller = remember { ControllerImpl() }
+                CompositionLocalProvider(LocalAzNavRailOverlayController provides controller) {
+                    OverlayContent()
+                }
             }
         }
 
