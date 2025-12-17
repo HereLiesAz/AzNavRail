@@ -56,6 +56,8 @@ fun SampleScreen(
     // Set the global suggestion limit for all AzTextBox instances
     AzTextBoxDefaults.setSuggestionLimit(3)
 
+    var useBasicOverlay by remember { mutableStateOf(false) }
+
     Row {
         Box {
             AzNavRail(
@@ -71,7 +73,8 @@ fun SampleScreen(
                     defaultShape = AzButtonShape.RECTANGLE, // Set a default shape for all rail items
                     enableRailDragging = enableRailDragging,
                     onUndock = onUndockOverride,
-                    onRailDrag = onRailDrag
+                    onRailDrag = onRailDrag,
+                    overlayService = if (useBasicOverlay) SampleBasicOverlayService::class.java else SampleOverlayService::class.java
                 )
 
                 // A standard menu item - only appears in the expanded menu
@@ -128,6 +131,18 @@ fun SampleScreen(
                     onClick = {
                         isDarkMode = !isDarkMode
                         Log.d(TAG, "Dark mode toggled to: $isDarkMode")
+                    }
+                )
+
+                azMenuToggle(
+                    id = "overlay-mode",
+                    isChecked = useBasicOverlay,
+                    toggleOnText = "Using Basic Overlay",
+                    toggleOffText = "Using Foreground Overlay",
+                    route = "overlay-mode",
+                    onClick = {
+                        useBasicOverlay = !useBasicOverlay
+                        Log.d(TAG, "Overlay mode toggled to: $useBasicOverlay")
                     }
                 )
 
