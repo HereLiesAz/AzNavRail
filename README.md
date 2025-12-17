@@ -454,7 +454,11 @@ AzNavRail can function as a system-wide overlay (using `SYSTEM_ALERT_WINDOW`). T
 
 #### 1. Create an Overlay Service
 
-Extend `AzNavRailOverlayService` to create a service that renders the overlay content. The service automatically handles the overlay window layout: it fills the screen during drags for smooth movement and shrinks to wrap its content when stationary.
+You have two options for creating an overlay service:
+
+**Option A: Foreground Service (Recommended for persistence)**
+
+Extend `AzNavRailOverlayService` to create a foreground service that renders the overlay content. This is more resilient to being killed by the system.
 
 **OverlayService.kt:**
 ```kotlin
@@ -485,10 +489,25 @@ class OverlayService : AzNavRailOverlayService() {
 }
 ```
 
+**Option B: Basic Service (Simpler setup)**
+
+Extend `AzNavRailSimpleOverlayService` if you do not want to use a foreground service. This relies solely on `SYSTEM_ALERT_WINDOW` but may be killed by the system if the app is in the background.
+
+**BasicOverlayService.kt:**
+```kotlin
+class BasicOverlayService : AzNavRailSimpleOverlayService() {
+    @Composable
+    override fun OverlayContent() {
+        // ... same content as above
+    }
+}
+```
+
 #### 2. Configure Manifest
 
 Declare the service and required permissions in `AndroidManifest.xml`.
 
+For **Option A (Foreground Service)**:
 ```xml
 <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
@@ -502,6 +521,15 @@ Declare the service and required permissions in `AndroidManifest.xml`.
         <property android:name="android.app.property.FOREGROUND_SERVICE_TYPE_SPECIAL_USE_DESCRIPTION"
                   android:value="Overlay for navigation"/>
     </service>
+</application>
+```
+
+For **Option B (Basic Service)**:
+```xml
+<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+
+<application ...>
+    <service android:name=".BasicOverlayService"/>
 </application>
 ```
 
