@@ -1,0 +1,25 @@
+.az-cycler-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 2px solid;
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+  min-width: 120px;
+}
+
+.az-cycler-container.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.az-cycler-label {
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.az-cycler-value {
+  flex: 1;
+  text-align: right;
+}

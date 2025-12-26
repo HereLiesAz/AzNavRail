@@ -1,57 +1,142 @@
 import React, { useState } from 'react';
-import AzNavRail from './components/AzNavRail';
+import {
+  AzNavRail,
+  AzButton,
+  AzTextBox,
+  AzToggle,
+  AzCycler,
+  AzForm
+} from './components';
 import './App.css';
 
 function App() {
-  const [isChecked, setIsChecked] = useState(false);
-  const [selectedOption, setSelectedOption] = useState('Option A');
+  const [currentPage, setCurrentPage] = useState('Home');
+  const [toggleState, setToggleState] = useState(false);
+  const [cyclerVal, setCyclerVal] = useState('Option 1');
+  const [textVal, setTextVal] = useState('');
+  const [formSubmitted, setFormSubmitted] = useState(null);
 
   const navItems = [
     {
       id: 'home',
       text: 'Home',
       isRailItem: true,
-      onClick: () => console.log('Home clicked'),
+      onClick: () => setCurrentPage('Home')
     },
     {
-      id: 'toggle',
+      id: 'features',
+      text: 'Features',
       isRailItem: true,
-      isToggle: true,
-      isChecked: isChecked,
-      toggleOnText: 'On',
-      toggleOffText: 'Off',
-      onClick: () => setIsChecked(!isChecked),
-      color: 'green',
+      items: [
+          { id: 'buttons', text: 'Buttons', onClick: () => setCurrentPage('Buttons') },
+          { id: 'inputs', text: 'Inputs', onClick: () => setCurrentPage('Inputs') },
+          { id: 'forms', text: 'Forms', onClick: () => setCurrentPage('Forms') },
+      ]
     },
     {
-      id: 'cycler',
-      isRailItem: true,
-      isCycler: true,
-      options: ['Option A', 'Option B', 'Option C'],
-      selectedOption: selectedOption,
-      onClick: (option) => setSelectedOption(option),
-      color: 'purple',
-    },
-    {
-      id: 'about',
-      text: 'About',
-      onClick: () => console.log('About clicked'),
-    },
+        id: 'settings',
+        text: 'Settings',
+        isRailItem: true,
+        items: [
+            {
+                id: 'theme',
+                text: 'Theme',
+                isCycler: true,
+                options: ['Light', 'Dark', 'System'],
+                selectedOption: 'System',
+                onClick: (val) => console.log('Theme:', val)
+            }
+        ]
+    }
   ];
 
-  const settings = {
-    appName: 'My Web App',
-    displayAppNameInHeader: true,
-    // Add other settings as needed
-  };
-
   return (
-    <div className="App">
-      <AzNavRail content={navItems} settings={settings} />
-      <main className="main-content">
-        <h1>Welcome to the App</h1>
-        <p>The toggle is currently: {isChecked ? 'On' : 'Off'}</p>
-        <p>The selected cycler option is: {selectedOption}</p>
+    <div className="app-container" style={{ display: 'flex', height: '100vh' }}>
+      <AzNavRail
+        initiallyExpanded={false}
+        content={navItems}
+        settings={{ appName: 'Demo App' }}
+      />
+      <main style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
+        <h1>{currentPage}</h1>
+
+        {currentPage === 'Home' && (
+            <div className="demo-section">
+                <p>Welcome to the AzNavRail Web Demo.</p>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <AzButton text="Click Me" onClick={() => alert('Clicked!')} />
+                    <AzButton text="Loading" isLoading={true} />
+                    <AzButton text="Square" shape="SQUARE" onClick={() => {}} />
+                </div>
+            </div>
+        )}
+
+        {currentPage === 'Buttons' && (
+             <div className="demo-section">
+                 <h3>Standalone Buttons</h3>
+                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                     <AzButton text="Rectangle" shape="RECTANGLE" onClick={() => {}} />
+                     <AzButton text="Rounded" shape="ROUNDED" onClick={() => {}} />
+                     <AzButton text="None" shape="NONE" onClick={() => {}} />
+                     <AzButton text="Circle" shape="CIRCLE" onClick={() => {}} />
+                     <AzButton text="Disabled" enabled={false} onClick={() => {}} />
+                 </div>
+                 <h3>Toggles & Cyclers</h3>
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                     <AzToggle
+                        value={toggleState}
+                        onValueChange={setToggleState}
+                        label={`Toggle is ${toggleState ? 'ON' : 'OFF'}`}
+                     />
+                     <AzCycler
+                        label="Cycler:"
+                        options={['Option 1', 'Option 2', 'Option 3']}
+                        value={cyclerVal}
+                        onValueChange={setCyclerVal}
+                     />
+                 </div>
+             </div>
+        )}
+
+        {currentPage === 'Inputs' && (
+            <div className="demo-section">
+                <h3>Text Boxes</h3>
+                <AzTextBox
+                    value={textVal}
+                    onValueChange={setTextVal}
+                    hint="Type something..."
+                    suggestions={['Hello', 'World', 'AzNavRail', 'React']}
+                />
+                <AzTextBox
+                    value="Password123"
+                    onValueChange={() => {}}
+                    secret={true}
+                    hint="Password"
+                />
+                <AzTextBox
+                    value="Multiline text..."
+                    onValueChange={() => {}}
+                    multiline={true}
+                />
+            </div>
+        )}
+
+        {currentPage === 'Forms' && (
+            <div className="demo-section">
+                <h3>AzForm</h3>
+                <AzForm
+                    entries={[
+                        { name: 'username', hint: 'Username' },
+                        { name: 'password', hint: 'Password', secret: true }
+                    ]}
+                    onSubmit={setFormSubmitted}
+                />
+                {formSubmitted && (
+                    <pre>{JSON.stringify(formSubmitted, null, 2)}</pre>
+                )}
+            </div>
+        )}
+
       </main>
     </div>
   );

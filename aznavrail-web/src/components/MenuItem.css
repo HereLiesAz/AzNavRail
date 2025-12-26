@@ -1,14 +1,35 @@
-.menu-item {
-  padding: 12px 24px;
+.az-menu-item {
+  padding: 12px 16px;
   cursor: pointer;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.az-menu-item:hover {
+  background-color: rgba(0,0,0,0.05);
+}
+
+.az-menu-divider {
+  height: 1px;
+  margin: 8px 0;
+  width: 100%;
+}
+
+.az-menu-item-content {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
-.menu-item:hover {
-  background-color: #e0e0e0;
+.az-menu-item-text {
+  font-size: 16px;
+  font-weight: 500;
 }
 
-.menu-item .indented {
-  padding-left: 16px;
+.az-menu-item-value {
+  font-size: 14px;
+  opacity: 0.7;
 }
+
+/* Indent for sub-items would be handled by parent logic or extra class */
