@@ -1,0 +1,23 @@
+.az-load-container {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none; /* Do not block interaction */
+}
+
+.az-load-spinner {
+  border-radius: 50%;
+  border-style: solid;
+  border-width: 4px;
+  animation: az-spin 1s linear infinite;
+  box-sizing: border-box;
+}
+
+@keyframes az-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

@@ -1,0 +1,63 @@
+.az-button {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  border-style: solid;
+  border-width: 2px;
+  background-color: transparent;
+  padding: 0;
+  overflow: hidden;
+  transition: opacity 0.2s;
+}
+
+.az-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.az-button-shape-circle {
+  border-radius: 50%;
+  width: 48px; /* Default size */
+  height: 48px;
+}
+
+.az-button-shape-square {
+  border-radius: 0;
+  width: 48px;
+  height: 48px;
+}
+
+.az-button-shape-rectangle {
+  border-radius: 0;
+  height: 36px; /* Fixed height for rectangle */
+  padding: 0 12px;
+  min-width: 64px;
+}
+
+.az-button-shape-rounded {
+  border-radius: 12px;
+  height: 36px;
+  padding: 0 12px;
+  min-width: 64px;
+}
+
+.az-button-shape-none {
+  border: none;
+  height: 36px;
+  padding: 0 12px;
+}
+
+.az-button-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.az-button-text {
+  /* Text styling */
+  white-space: nowrap;
+}

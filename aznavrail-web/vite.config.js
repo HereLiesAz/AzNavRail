@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react()],
   build: {
     lib: {
-      entry: path.resolve(__dirname, 'src/index.js'),
+      entry: path.resolve('src/index.js'),
       name: 'AzNavRailWeb',
       fileName: (format) => `aznavrail-web.${format}.js`
     },
