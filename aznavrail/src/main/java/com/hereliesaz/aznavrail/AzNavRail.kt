@@ -764,7 +764,8 @@ fun AzNavRail(
                                         onItemSelected = { navItem -> selectedItem = navItem },
                                         hostStates = hostStates,
                                         packRailButtons = if (isFloating) true else scope.packRailButtons,
-                                        onClickOverride = if (overlayController != null) handleOverlayClick else null
+                                        onClickOverride = if (overlayController != null) handleOverlayClick else null,
+                                        onItemGloballyPositioned = scope.onItemGloballyPositioned
                                     )
                                 }
                             }

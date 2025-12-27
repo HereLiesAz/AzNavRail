@@ -1,5 +1,6 @@
 package com.hereliesaz.aznavrail
 
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.runtime.mutableStateListOf
@@ -27,6 +28,7 @@ interface AzNavRailScope {
      * @param onUndock An optional callback to override the default undock behavior.
      * @param overlayService The service class to launch as a system overlay when undocked. If provided, overrides default undock behavior.
      * @param onOverlayDrag A callback to handle drag events when in overlay mode.
+     * @param onItemGloballyPositioned A callback to report the global position of rail items.
      */
     fun azSettings(
         displayAppNameInHeader: Boolean = false,
@@ -41,7 +43,8 @@ interface AzNavRailScope {
         onUndock: (() -> Unit)? = null,
         onRailDrag: ((Float, Float) -> Unit)? = null,
         overlayService: Class<out android.app.Service>? = null,
-        onOverlayDrag: ((Float, Float) -> Unit)? = null
+        onOverlayDrag: ((Float, Float) -> Unit)? = null,
+        onItemGloballyPositioned: ((String, Rect) -> Unit)? = null
     )
 
     /**
@@ -241,6 +244,7 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
     var onRailDrag: ((Float, Float) -> Unit)? = null
     var overlayService: Class<out android.app.Service>? = null
     var onOverlayDrag: ((Float, Float) -> Unit)? = null
+    var onItemGloballyPositioned: ((String, Rect) -> Unit)? = null
 
     override fun azSettings(
         displayAppNameInHeader: Boolean,
@@ -255,7 +259,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         onUndock: (() -> Unit)?,
         onRailDrag: ((Float, Float) -> Unit)?,
         overlayService: Class<out android.app.Service>?,
-        onOverlayDrag: ((Float, Float) -> Unit)?
+        onOverlayDrag: ((Float, Float) -> Unit)?,
+        onItemGloballyPositioned: ((String, Rect) -> Unit)?
     ) {
         require(expandedRailWidth > collapsedRailWidth) {
             """
@@ -280,6 +285,7 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         this.onUndock = onUndock
         this.overlayService = overlayService
         this.onOverlayDrag = onOverlayDrag
+        this.onItemGloballyPositioned = onItemGloballyPositioned
     }
 
     override fun azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, onClick: () -> Unit) {
