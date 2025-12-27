@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -28,7 +31,8 @@ internal fun RailContent(
     onClick: (() -> Unit)?,
     onRailCyclerClick: (AzNavItem) -> Unit,
     onItemClick: () -> Unit,
-    onHostClick: () -> Unit = {}
+    onHostClick: () -> Unit = {},
+    onItemGloballyPositioned: ((String, Rect) -> Unit)? = null
 ) {
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
@@ -54,7 +58,10 @@ internal fun RailContent(
     }
 
     Box(
-        modifier = if (item.shape == AzButtonShape.RECTANGLE) Modifier.padding(vertical = 2.dp) else Modifier
+        modifier = (if (item.shape == AzButtonShape.RECTANGLE) Modifier.padding(vertical = 2.dp) else Modifier)
+            .onGloballyPositioned { coordinates ->
+                onItemGloballyPositioned?.invoke(item.id, coordinates.boundsInWindow())
+            }
     ) {
         AzNavRailButton(
             onClick = finalOnClick,

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.Dp
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.AzNavRailScopeImpl
@@ -22,7 +23,8 @@ internal fun RailItems(
     onItemSelected: (AzNavItem) -> Unit,
     hostStates: MutableMap<String, Boolean>,
     packRailButtons: Boolean,
-    onClickOverride: ((AzNavItem) -> Unit)? = null
+    onClickOverride: ((AzNavItem) -> Unit)? = null,
+    onItemGloballyPositioned: ((String, Rect) -> Unit)? = null
 ) {
     val topLevelItems = items.filter { !it.isSubItem }
     val itemsToRender =
@@ -38,7 +40,8 @@ internal fun RailItems(
                 onClick = if (onClickOverride != null) { { onClickOverride(item) } } else scope.onClickMap[item.id],
                 onRailCyclerClick = onRailCyclerClick,
                 onItemClick = { onItemSelected(item) },
-                onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) }
+                onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
+                onItemGloballyPositioned = onItemGloballyPositioned
             )
             AnimatedVisibility(visible = item.isHost && (hostStates[item.id] ?: false)) {
                 Column {
@@ -51,7 +54,8 @@ internal fun RailItems(
                             buttonSize = buttonSize,
                             onClick = if (onClickOverride != null) { { onClickOverride(subItem) } } else scope.onClickMap[subItem.id],
                             onRailCyclerClick = onRailCyclerClick,
-                            onItemClick = { onItemSelected(subItem) }
+                            onItemClick = { onItemSelected(subItem) },
+                            onItemGloballyPositioned = onItemGloballyPositioned
                         )
                     }
                 }

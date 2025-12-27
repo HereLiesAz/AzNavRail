@@ -131,7 +131,10 @@ fun SampleScreen(
                     enableRailDragging = enableRailDragging,
                     onUndock = onUndockOverride,
                     overlayService = overlayService,
-                    onOverlayDrag = onOverlayDrag
+                    onOverlayDrag = onOverlayDrag,
+                    onItemGloballyPositioned = { id, bounds ->
+                        Log.d(TAG, "Item '$id' positioned at $bounds")
+                    }
                 )
 
                 azMenuItem(id = "home", text = "Home", route = "home", onClick = { Log.d(TAG, "Home menu item clicked") })
