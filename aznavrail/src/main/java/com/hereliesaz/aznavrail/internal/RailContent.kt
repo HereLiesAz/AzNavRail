@@ -1,16 +1,22 @@
 package com.hereliesaz.aznavrail.internal
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.AzNavRailButton
 import com.hereliesaz.aznavrail.model.AzButtonShape
@@ -32,7 +38,8 @@ internal fun RailContent(
     onRailCyclerClick: (AzNavItem) -> Unit,
     onItemClick: () -> Unit,
     onHostClick: () -> Unit = {},
-    onItemGloballyPositioned: ((String, Rect) -> Unit)? = null
+    onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
+    infoScreen: Boolean = false
 ) {
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
@@ -40,20 +47,28 @@ internal fun RailContent(
         else -> item.text
     }
 
-    val finalOnClick = if (item.isHost) {
-        {
-            handleHostItemClick(item, navController, onClick, onItemClick, onHostClick)
-        }
-    } else if (item.isCycler) {
-        {
-            onRailCyclerClick(item)
-            onItemClick()
+    val finalOnClick: () -> Unit = if (infoScreen) {
+        if (item.isHost) {
+            { onHostClick() }
+        } else {
+            {}
         }
     } else {
-        {
-            item.route?.let { navController?.navigate(it) }
-            onClick?.invoke()
-            onItemClick()
+        if (item.isHost) {
+            {
+                handleHostItemClick(item, navController, onClick, onItemClick, onHostClick)
+            }
+        } else if (item.isCycler) {
+            {
+                onRailCyclerClick(item)
+                onItemClick()
+            }
+        } else {
+            {
+                item.route?.let { navController?.navigate(it) }
+                onClick?.invoke()
+                onItemClick()
+            }
         }
     }
 
@@ -73,6 +88,28 @@ internal fun RailContent(
             enabled = !item.disabled,
             isSelected = isSelected
         )
+        if (infoScreen && !item.info.isNullOrBlank()) {
+            Popup(
+                alignment = Alignment.CenterEnd,
+                offset = IntOffset(x = 16, y = 0)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                        .background(
+                            MaterialTheme.colorScheme.inverseSurface,
+                            RoundedCornerShape(8.dp)
+                        )
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        text = item.info,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.inverseOnSurface
+                    )
+                }
+            }
+        }
     }
 }
 

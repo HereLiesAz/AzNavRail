@@ -24,7 +24,8 @@ internal fun RailItems(
     hostStates: MutableMap<String, Boolean>,
     packRailButtons: Boolean,
     onClickOverride: ((AzNavItem) -> Unit)? = null,
-    onItemGloballyPositioned: ((String, Rect) -> Unit)? = null
+    onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
+    infoScreen: Boolean = false
 ) {
     val topLevelItems = items.filter { !it.isSubItem }
     val itemsToRender =
@@ -41,7 +42,8 @@ internal fun RailItems(
                 onRailCyclerClick = onRailCyclerClick,
                 onItemClick = { onItemSelected(item) },
                 onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
-                onItemGloballyPositioned = onItemGloballyPositioned
+                onItemGloballyPositioned = onItemGloballyPositioned,
+                infoScreen = infoScreen
             )
             AnimatedVisibility(visible = item.isHost && (hostStates[item.id] ?: false)) {
                 Column {
@@ -55,7 +57,8 @@ internal fun RailItems(
                             onClick = if (onClickOverride != null) { { onClickOverride(subItem) } } else scope.onClickMap[subItem.id],
                             onRailCyclerClick = onRailCyclerClick,
                             onItemClick = { onItemSelected(subItem) },
-                            onItemGloballyPositioned = onItemGloballyPositioned
+                            onItemGloballyPositioned = onItemGloballyPositioned,
+                            infoScreen = infoScreen
                         )
                     }
                 }
