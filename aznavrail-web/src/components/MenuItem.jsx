@@ -4,7 +4,7 @@ import './MenuItem.css';
 /**
  * A menu item component for the expanded navigation rail.
  */
-const MenuItem = ({ item, depth = 0, onToggle, onCyclerClick, isHost, isExpanded, onHostClick }) => {
+const MenuItem = ({ item, depth = 0, onToggle, onCyclerClick, isHost, isExpanded, onHostClick, infoScreen }) => {
   const {
     text,
     isToggle,
@@ -15,7 +15,8 @@ const MenuItem = ({ item, depth = 0, onToggle, onCyclerClick, isHost, isExpanded
     selectedOption,
     onClick,
     isDivider,
-    color = 'currentColor'
+    color = 'currentColor',
+    info
   } = item;
 
   if (isDivider) {
@@ -23,6 +24,13 @@ const MenuItem = ({ item, depth = 0, onToggle, onCyclerClick, isHost, isExpanded
   }
 
   const handleClick = () => {
+    if (infoScreen) {
+        if (isHost) {
+            onHostClick();
+        }
+        return;
+    }
+
     if (isHost) {
         onHostClick();
     } else if (isToggle) {
@@ -40,7 +48,7 @@ const MenuItem = ({ item, depth = 0, onToggle, onCyclerClick, isHost, isExpanded
   return (
     <div
         className="az-menu-item"
-        style={{ color: color, paddingLeft: `${paddingLeft}px` }}
+        style={{ color: color, paddingLeft: `${paddingLeft}px`, position: 'relative' }}
         onClick={handleClick}
     >
         {isToggle ? (
@@ -62,6 +70,22 @@ const MenuItem = ({ item, depth = 0, onToggle, onCyclerClick, isHost, isExpanded
                         {isExpanded ? '▼' : '▶'}
                     </span>
                 )}
+            </div>
+        )}
+        {infoScreen && info && (
+            <div style={{
+                position: 'absolute',
+                left: '16px',
+                bottom: '100%',
+                backgroundColor: '#333',
+                color: 'white',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                fontSize: '12px',
+                zIndex: 100,
+                pointerEvents: 'none'
+            }}>
+                {info}
             </div>
         )}
     </div>

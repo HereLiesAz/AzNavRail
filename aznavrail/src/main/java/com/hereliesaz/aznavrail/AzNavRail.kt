@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -19,7 +20,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
@@ -598,7 +601,8 @@ fun AzNavRail(
                                             }
                                             // Toggle current (if it was expanded, it's now collapsed; if collapsed, now expanded)
                                             hostStates[item.id] = !wasExpanded
-                                        }
+                                        },
+                                        infoScreen = scope.infoScreen
                                     )
 
                                     AnimatedVisibility(
@@ -615,7 +619,8 @@ fun AzNavRail(
                                                     onClick = scope.onClickMap[subItem.id],
                                                     onCyclerClick = null,
                                                     onToggle = { isExpanded = !isExpanded },
-                                                    onItemClick = { selectedItem = subItem }
+                                                    onItemClick = { selectedItem = subItem },
+                                                    infoScreen = scope.infoScreen
                                                 )
                                             }
                                         }
@@ -764,12 +769,26 @@ fun AzNavRail(
                                         onItemSelected = { navItem -> selectedItem = navItem },
                                         hostStates = hostStates,
                                         packRailButtons = if (isFloating) true else scope.packRailButtons,
-                                        onClickOverride = if (overlayController != null) handleOverlayClick else null
+                                        onClickOverride = if (overlayController != null) handleOverlayClick else null,
+                                        onItemGloballyPositioned = scope.onItemGloballyPositioned,
+                                        infoScreen = scope.infoScreen
                                     )
                                 }
                             }
                         }
                     }
+                }
+            }
+        }
+        if (scope.infoScreen) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.BottomEnd
+            ) {
+                FloatingActionButton(onClick = { scope.onDismissInfoScreen?.invoke() }) {
+                    Icon(Icons.Default.Close, contentDescription = "Exit Help")
                 }
             }
         }

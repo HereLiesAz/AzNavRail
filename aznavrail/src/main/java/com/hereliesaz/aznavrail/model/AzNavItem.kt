@@ -47,5 +47,6 @@ data class AzNavItem(
     val isHost: Boolean = false,
     val isSubItem: Boolean = false,
     val hostId: String? = null,
-    val isExpanded: Boolean = false
+    val isExpanded: Boolean = false,
+    val info: String? = null
 ) : Parcelable

@@ -31,6 +31,7 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 - **Toggles/Cyclers**: Simple state management.
 - **Gestures**: Swipe/tap to expand, collapse, or undock.
 - **`AzTextBox`**: Modern text box with autocomplete and submit button.
+- **Info Screen**: Interactive help mode for onboarding.
 
 ## AzNavRail for Android (Jetpack Compose)
 
@@ -562,6 +563,35 @@ AzNavRail {
                 // Request permission
             }
         }
+    )
+    // ...
+}
+```
+
+### Info Screen
+
+`AzNavRail` includes an interactive "Info Screen" mode, ideal for onboarding or help sections.
+
+- **Activation**: Set `infoScreen = true` in `azSettings`.
+- **Behavior**:
+    - Normal navigation and callbacks (`onClick`) are disabled.
+    - Host items can still be expanded to explore the menu hierarchy.
+    - If an item has an `info` string, it is displayed in a popup when the item is visible.
+- **Exit**: A Floating Action Button (FAB) appears to exit the mode. You must handle the `onDismissInfoScreen` callback in `azSettings` to set `infoScreen = false`.
+
+```kotlin
+var showHelp by remember { mutableStateOf(false) }
+
+AzNavRail(...) {
+    azSettings(
+        infoScreen = showHelp,
+        onDismissInfoScreen = { showHelp = false }
+    )
+
+    azRailItem(
+        id = "home",
+        text = "Home",
+        info = "Go to the home screen." // Text displayed in help mode
     )
     // ...
 }
