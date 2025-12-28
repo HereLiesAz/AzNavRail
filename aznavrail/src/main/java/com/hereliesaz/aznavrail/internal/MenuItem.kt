@@ -1,6 +1,5 @@
 package com.hereliesaz.aznavrail.internal
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,14 +7,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.model.AzNavItem
 
@@ -43,6 +43,7 @@ internal fun MenuItem(
     onToggle: () -> Unit = {},
     onItemClick: () -> Unit = {},
     onHostClick: () -> Unit = {},
+    onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
     infoScreen: Boolean = false
 ) {
     val textToShow = when {
@@ -51,14 +52,22 @@ internal fun MenuItem(
         else -> item.text
     }
 
-    val modifier = if (item.disabled) Modifier else {
+    // Interaction Logic:
+    // If infoScreen: only Host items are interactive.
+    // If normal: depends on item.disabled.
+
+    // Visual Logic:
+    // If infoScreen: non-Host items look disabled (grey).
+    // If normal: disabled items look disabled.
+
+    val isDisabled = if (infoScreen) !item.isHost else item.disabled
+
+    val modifier = if (isDisabled) Modifier else {
         if (infoScreen) {
-            if (item.isHost) {
-                Modifier.clickable { onHostClick() }
-            } else {
-                Modifier.clickable { /* No-op for info screen */ }
-            }
+             // Host item in infoScreen is interactive
+             Modifier.clickable { onHostClick() }
         } else {
+            // Normal mode
             if (item.isToggle) {
                 Modifier.toggleable(
                     value = item.isChecked ?: false,
@@ -88,11 +97,15 @@ internal fun MenuItem(
 
     val textColor = when {
         isSelected -> MaterialTheme.colorScheme.primary
-        item.disabled -> MaterialTheme.typography.bodyMedium.color.copy(alpha = 0.5f)
+        isDisabled -> MaterialTheme.typography.bodyMedium.color.copy(alpha = 0.5f)
         else -> item.color ?: MaterialTheme.typography.bodyMedium.color
     }
 
-    Box {
+    Box(
+        modifier = Modifier.onGloballyPositioned { coordinates ->
+            onItemGloballyPositioned?.invoke(item.id, coordinates.boundsInWindow())
+        }
+    ) {
         Row(
             modifier = modifier
                 .fillMaxWidth()
@@ -110,28 +123,6 @@ internal fun MenuItem(
                         style = MaterialTheme.typography.bodyMedium,
                         color = textColor,
                         modifier = if (index > 0) Modifier.padding(start = 16.dp) else Modifier
-                    )
-                }
-            }
-        }
-
-        if (infoScreen && !item.info.isNullOrBlank()) {
-            Popup(
-                alignment = Alignment.BottomStart
-            ) {
-                Box(
-                    modifier = Modifier
-                        .padding(start = 16.dp, top = 4.dp)
-                        .background(
-                            MaterialTheme.colorScheme.inverseSurface,
-                            RoundedCornerShape(8.dp)
-                        )
-                        .padding(8.dp)
-                ) {
-                    Text(
-                        text = item.info,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.inverseOnSurface
                     )
                 }
             }

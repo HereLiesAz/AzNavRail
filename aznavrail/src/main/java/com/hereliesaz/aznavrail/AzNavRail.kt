@@ -67,6 +67,7 @@ import com.hereliesaz.aznavrail.internal.OverlayHelper
 import com.hereliesaz.aznavrail.internal.CenteredPopupPositionProvider
 import com.hereliesaz.aznavrail.internal.CyclerTransientState
 import com.hereliesaz.aznavrail.internal.Footer
+import com.hereliesaz.aznavrail.internal.HelpOverlay
 import com.hereliesaz.aznavrail.internal.MenuItem
 import com.hereliesaz.aznavrail.internal.RailItems
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
@@ -185,6 +186,7 @@ fun AzNavRail(
     val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
     var selectedItem by rememberSaveable { mutableStateOf<AzNavItem?>(null) }
     val hostStates = remember { mutableStateMapOf<String, Boolean>() }
+    val itemPositions = remember { mutableStateMapOf<String, androidx.compose.ui.geometry.Rect>() }
 
     LaunchedEffect(scope.navItems) {
         val initialSelectedItem = if (currentDestination != null) {
@@ -602,6 +604,7 @@ fun AzNavRail(
                                             // Toggle current (if it was expanded, it's now collapsed; if collapsed, now expanded)
                                             hostStates[item.id] = !wasExpanded
                                         },
+                                        onItemGloballyPositioned = { id, rect -> itemPositions[id] = rect },
                                         infoScreen = scope.infoScreen
                                     )
 
@@ -620,6 +623,7 @@ fun AzNavRail(
                                                     onCyclerClick = null,
                                                     onToggle = { isExpanded = !isExpanded },
                                                     onItemClick = { selectedItem = subItem },
+                                                    onItemGloballyPositioned = { id, rect -> itemPositions[id] = rect },
                                                     infoScreen = scope.infoScreen
                                                 )
                                             }
@@ -770,7 +774,10 @@ fun AzNavRail(
                                         hostStates = hostStates,
                                         packRailButtons = if (isFloating) true else scope.packRailButtons,
                                         onClickOverride = if (overlayController != null) handleOverlayClick else null,
-                                        onItemGloballyPositioned = scope.onItemGloballyPositioned,
+                                        onItemGloballyPositioned = { id, rect ->
+                                            itemPositions[id] = rect
+                                            scope.onItemGloballyPositioned?.invoke(id, rect)
+                                        },
                                         infoScreen = scope.infoScreen
                                     )
                                 }
@@ -781,16 +788,13 @@ fun AzNavRail(
             }
         }
         if (scope.infoScreen) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                contentAlignment = Alignment.BottomEnd
-            ) {
-                FloatingActionButton(onClick = { scope.onDismissInfoScreen?.invoke() }) {
-                    Icon(Icons.Default.Close, contentDescription = "Exit Help")
-                }
-            }
+            HelpOverlay(
+                items = scope.navItems,
+                itemPositions = itemPositions,
+                hostStates = hostStates,
+                railWidth = railWidth,
+                onDismiss = { scope.onDismissInfoScreen?.invoke() }
+            )
         }
     }
 }
