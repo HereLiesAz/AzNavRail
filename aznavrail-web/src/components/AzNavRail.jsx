@@ -24,10 +24,14 @@ const AzNavRail = ({
     collapsedRailWidth = '80px',
     showFooter = true,
     isLoading = false,
-    appName = 'App'
+    appName = 'App',
+    infoScreen = false,
+    onDismissInfoScreen
   } = settings;
 
-  const onToggle = () => setIsExpanded(!isExpanded);
+  const onToggle = () => {
+      setIsExpanded(!isExpanded);
+  };
 
   const [cyclerStates, setCyclerStates] = useState({});
   const [hostStates, setHostStates] = useState({});
@@ -106,6 +110,7 @@ const AzNavRail = ({
                   isHost={isHost}
                   isExpanded={isHostExpanded}
                   onHostClick={() => toggleHost(item)}
+                  infoScreen={infoScreen}
               />
               {isHost && isHostExpanded && (
                   <div className="az-nav-rail-subitems">
@@ -155,6 +160,7 @@ const AzNavRail = ({
                             setIsExpanded(true);
                             setHostStates(prev => ({ ...prev, [item.id]: true }));
                         } : undefined}
+                        infoScreen={infoScreen}
                     />
                   );
                 })}
@@ -170,6 +176,32 @@ const AzNavRail = ({
                  Footer
              </div>
         </div>
+      )}
+
+      {infoScreen && (
+          <button
+            className="az-fab-exit"
+            onClick={onDismissInfoScreen}
+            style={{
+                position: 'absolute',
+                bottom: '16px',
+                right: '16px',
+                width: '56px',
+                height: '56px',
+                borderRadius: '28px',
+                backgroundColor: 'var(--md-sys-color-primary, #6200ee)',
+                color: 'white',
+                border: 'none',
+                boxShadow: '0 4px 5px 0 rgba(0,0,0,0.14)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1000
+            }}
+          >
+              ✕
+          </button>
       )}
     </div>
   );

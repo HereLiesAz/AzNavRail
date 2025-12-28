@@ -1,17 +1,21 @@
 package com.hereliesaz.aznavrail.internal
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.model.AzNavItem
 
@@ -38,7 +42,8 @@ internal fun MenuItem(
     onCyclerClick: (() -> Unit)? = null,
     onToggle: () -> Unit = {},
     onItemClick: () -> Unit = {},
-    onHostClick: () -> Unit = {}
+    onHostClick: () -> Unit = {},
+    infoScreen: Boolean = false
 ) {
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
@@ -47,27 +52,35 @@ internal fun MenuItem(
     }
 
     val modifier = if (item.disabled) Modifier else {
-        if (item.isToggle) {
-            Modifier.toggleable(
-                value = item.isChecked ?: false,
-                onValueChange = {
-                    item.route?.let { navController?.navigate(it) }
-                    onClick?.invoke()
-                    onToggle()
-                    onItemClick()
-                }
-            )
+        if (infoScreen) {
+            if (item.isHost) {
+                Modifier.clickable { onHostClick() }
+            } else {
+                Modifier.clickable { /* No-op for info screen */ }
+            }
         } else {
-            Modifier.clickable {
-                if (item.isHost) {
-                    handleHostItemClick(item, navController, onClick, onItemClick, onHostClick)
-                } else if (item.isCycler) {
-                    onCyclerClick?.invoke()
-                } else {
-                    item.route?.let { navController?.navigate(it) }
-                    onClick?.invoke()
-                    onToggle()
-                    onItemClick()
+            if (item.isToggle) {
+                Modifier.toggleable(
+                    value = item.isChecked ?: false,
+                    onValueChange = {
+                        item.route?.let { navController?.navigate(it) }
+                        onClick?.invoke()
+                        onToggle()
+                        onItemClick()
+                    }
+                )
+            } else {
+                Modifier.clickable {
+                    if (item.isHost) {
+                        handleHostItemClick(item, navController, onClick, onItemClick, onHostClick)
+                    } else if (item.isCycler) {
+                        onCyclerClick?.invoke()
+                    } else {
+                        item.route?.let { navController?.navigate(it) }
+                        onClick?.invoke()
+                        onToggle()
+                        onItemClick()
+                    }
                 }
             }
         }
@@ -79,24 +92,48 @@ internal fun MenuItem(
         else -> item.color ?: MaterialTheme.typography.bodyMedium.color
     }
 
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(
-                horizontal = AzNavRailDefaults.MenuItemHorizontalPadding,
-                vertical = AzNavRailDefaults.MenuItemVerticalPadding
-            ),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        val lines = textToShow.split('\n')
-        Column(modifier = Modifier.weight(1f)) {
-            lines.forEachIndexed { index, line ->
-                Text(
-                    text = line,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = textColor,
-                    modifier = if (index > 0) Modifier.padding(start = 16.dp) else Modifier
-                )
+    Box {
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = AzNavRailDefaults.MenuItemHorizontalPadding,
+                    vertical = AzNavRailDefaults.MenuItemVerticalPadding
+                ),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val lines = textToShow.split('\n')
+            Column(modifier = Modifier.weight(1f)) {
+                lines.forEachIndexed { index, line ->
+                    Text(
+                        text = line,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = textColor,
+                        modifier = if (index > 0) Modifier.padding(start = 16.dp) else Modifier
+                    )
+                }
+            }
+        }
+
+        if (infoScreen && !item.info.isNullOrBlank()) {
+            Popup(
+                alignment = Alignment.BottomStart
+            ) {
+                Box(
+                    modifier = Modifier
+                        .padding(start = 16.dp, top = 4.dp)
+                        .background(
+                            MaterialTheme.colorScheme.inverseSurface,
+                            RoundedCornerShape(8.dp)
+                        )
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        text = item.info,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.inverseOnSurface
+                    )
+                }
             }
         }
     }

@@ -103,6 +103,7 @@ fun SampleScreen(
     var isLoading by remember { mutableStateOf(false) }
     var packRailButtons by remember { mutableStateOf(false) }
     var disableSwipeToOpen by remember { mutableStateOf(false) }
+    var showHelp by remember { mutableStateOf(false) }
 
     val railCycleOptions = remember { listOf("A", "B", "C", "D") }
     var railSelectedOption by remember { mutableStateOf(railCycleOptions.first()) }
@@ -134,11 +135,13 @@ fun SampleScreen(
                     onOverlayDrag = onOverlayDrag,
                     onItemGloballyPositioned = { id, bounds ->
                         Log.d(TAG, "Item '$id' positioned at $bounds")
-                    }
+                    },
+                    infoScreen = showHelp,
+                    onDismissInfoScreen = { showHelp = false }
                 )
 
-                azMenuItem(id = "home", text = "Home", route = "home", onClick = { Log.d(TAG, "Home menu item clicked") })
-                azMenuItem(id = "multi-line", text = "This is a\nmulti-line item", route = "multi-line", onClick = { Log.d(TAG, "Multi-line menu item clicked") })
+                azMenuItem(id = "home", text = "Home", route = "home", info = "Navigates to the home screen.", onClick = { Log.d(TAG, "Home menu item clicked") })
+                azMenuItem(id = "multi-line", text = "This is a\nmulti-line item", route = "multi-line", info = "Demonstrates multi-line text support.", onClick = { Log.d(TAG, "Multi-line menu item clicked") })
 
                 azRailToggle(
                     id = "pack-rail",
@@ -146,6 +149,7 @@ fun SampleScreen(
                     toggleOnText = "Pack Rail",
                     toggleOffText = "Unpack Rail",
                     route = "pack-rail",
+                    info = "Toggles between packed and spaced rail items.",
                     onClick = {
                         packRailButtons = !packRailButtons
                         Log.d(TAG, "Pack rail toggled to: $packRailButtons")
@@ -331,6 +335,7 @@ fun SampleScreen(
                         AzButton(text = "Rect", shape = AzButtonShape.RECTANGLE, onClick = {})
                         AzButton(text = "Loading", isLoading = true, onClick = {})
                     }
+                    AzButton(text = "Toggle Help Mode", shape = AzButtonShape.RECTANGLE, onClick = { showHelp = !showHelp })
 
                     AzDivider()
 
