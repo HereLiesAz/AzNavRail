@@ -1,205 +1,107 @@
-import React, { useState, useLayoutEffect, useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import './HelpOverlay.css';
-import './AzTextBox.css'; // Reuse style
 
-const HelpOverlay = ({ items }) => {
-  const [layout, setLayout] = useState([]);
+const HelpOverlay = ({ items, railWidth, onDismiss }) => {
   const canvasRef = useRef(null);
+  const descriptionsRef = useRef(null);
 
-  // Helper to find visible elements and calculate layout
-  useLayoutEffect(() => {
-    // 1. Find all visible elements with [data-az-nav-id]
-    const elements = Array.from(document.querySelectorAll('[data-az-nav-id]'));
+  const drawArrows = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    // 2. Map them to item info
-    // Flatten items to lookup info by id
-    const itemMap = {};
-    const flatten = (list) => {
-        list.forEach(i => {
-            itemMap[i.id] = i;
-            if (i.items) flatten(i.items);
-        });
-    };
-    flatten(items);
+    // Use full window size for the overlay
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-    const visibleItems = elements.map(el => {
-        const id = el.getAttribute('data-az-nav-id');
-        const item = itemMap[id];
-        if (!item || !item.info) return null;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = 'gray';
+    ctx.lineWidth = 2;
 
-        const rect = el.getBoundingClientRect();
-        return {
-            id,
-            info: item.info,
-            targetRect: rect,
-            targetY: rect.top + rect.height / 2,
-            targetRight: rect.right
-        };
-    }).filter(Boolean);
+    items.forEach(item => {
+        if (!item.info) return;
 
-    // 3. Layout Algorithm
-    // Sort by Y position
-    visibleItems.sort((a, b) => a.targetY - b.targetY);
+        // Find rail button or menu item
+        const itemEl = document.querySelector(`[data-az-nav-id="${item.id}"]`);
+        const descEl = document.querySelector(`[data-az-desc-id="${item.id}"]`);
 
-    const layouts = [];
-    const TOP_MARGIN = window.innerHeight * 0.2; // 20%
-    const SPACING = 32; // Double space
-    let currentY = TOP_MARGIN;
+        if (itemEl && descEl) {
+            const itemRect = itemEl.getBoundingClientRect();
+            const descRect = descEl.getBoundingClientRect();
 
-    visibleItems.forEach((item, index) => {
-        // First pass rough estimate, used to seed the state
-        let idealY = item.targetY - 24;
-        let top = Math.max(currentY, idealY);
+            // Calculate points
+            // Button Point: Right-Center
+            const buttonX = itemRect.right;
+            const buttonY = itemRect.top + itemRect.height / 2;
 
-        layouts.push({
-            ...item,
-            top,
-            left: item.targetRight + 100, // This is overridden by absolute positioning later if needed, but we keep it safe
-            index // Add index for lane calculation
-        });
+            // Desc Point: Left-Center
+            const descX = descRect.left;
+            const descY = descRect.top + descRect.height / 2;
 
-        currentY = top + 80;
+            const elbowX = (buttonX + descX) / 2;
+
+            ctx.beginPath();
+            ctx.moveTo(descX, descY);
+            ctx.lineTo(elbowX, descY);
+            ctx.lineTo(elbowX, buttonY);
+            ctx.lineTo(buttonX, buttonY);
+            ctx.stroke();
+
+            // Arrowhead
+            const arrowSize = 8;
+            ctx.beginPath();
+            ctx.moveTo(buttonX, buttonY);
+            ctx.lineTo(buttonX + arrowSize, buttonY - arrowSize / 2);
+            ctx.lineTo(buttonX + arrowSize, buttonY + arrowSize / 2);
+            ctx.closePath();
+            ctx.fillStyle = 'gray';
+            ctx.fill();
+        }
     });
+  };
 
-    setLayout(layouts);
+  useEffect(() => {
+    drawArrows();
 
-  }, [items]);
+    // Add scroll listeners to update arrows
+    const descContainer = descriptionsRef.current;
+    // We also need to listen to the rail scroll if it's separate.
+    // The rail is in a separate component tree structure (AzNavRail -> .rail).
+    // We can try to find it via DOM or pass a ref?
+    // Finding via class is easiest here.
+    const railContainer = document.querySelector('.rail');
 
-  const descriptionRefs = useRef({});
+    const handleScroll = () => {
+        requestAnimationFrame(drawArrows);
+    };
 
-  useLayoutEffect(() => {
-      // 2nd pass: Adjustment
-      if (layout.length === 0) return;
+    window.addEventListener('resize', handleScroll);
+    if (descContainer) descContainer.addEventListener('scroll', handleScroll);
+    if (railContainer) railContainer.addEventListener('scroll', handleScroll);
 
-      const newLayout = [...layout];
-      let changed = false;
-      const TOP_MARGIN = window.innerHeight * 0.2;
-      const SPACING = 32;
-      let currentBottom = TOP_MARGIN;
+    return () => {
+        window.removeEventListener('resize', handleScroll);
+        if (descContainer) descContainer.removeEventListener('scroll', handleScroll);
+        if (railContainer) railContainer.removeEventListener('scroll', handleScroll);
+    };
 
-      newLayout.forEach((item) => {
-          const el = descriptionRefs.current[item.id];
-          if (!el) return;
-          const height = el.getBoundingClientRect().height;
-
-          let idealTop = item.targetY - (height / 2);
-          let top = Math.max(currentBottom, idealTop);
-
-          if (top !== item.top) {
-              item.top = top;
-              changed = true;
-          }
-
-          currentBottom = top + height + SPACING;
-      });
-
-      if (changed) {
-          setLayout(newLayout);
-      }
-
-      // Draw canvas
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.strokeStyle = 'red';
-      ctx.fillStyle = 'red';
-      ctx.lineWidth = 2;
-
-      newLayout.forEach((item) => {
-          const el = descriptionRefs.current[item.id];
-          if (!el) return;
-          const boxRect = el.getBoundingClientRect();
-
-          const startX = item.targetRight;
-          const startY = item.targetY;
-          const endX = boxRect.left;
-          const endY = boxRect.top + boxRect.height / 2;
-
-          ctx.beginPath();
-          ctx.moveTo(startX, startY);
-
-          // Elbow logic (Lanes)
-          const railRight = startX;
-          const laneStep = 8; // Match Android 8dp
-          const basePadding = 16; // Match Android 16dp
-
-          const elbowX = railRight + basePadding + (item.index * laneStep);
-
-          ctx.lineTo(elbowX, startY); // Should this be from startX?
-          // Wait, path is: Description -> Elbow -> Button.
-          // Or Button -> Elbow -> Description.
-          // My canvas code starts at startX (Button).
-          // Android code:
-          /*
-            path.moveTo(descPoint.x, descPoint.y) // Description
-            path.lineTo(elbowX, descPoint.y)
-            path.lineTo(elbowX, buttonPoint.y)
-            path.lineTo(buttonPoint.x, buttonPoint.y) // Button
-          */
-          // Let's match Android order to be safe, although visual result is same.
-          // Start from Description (endX, endY)
-
-          ctx.beginPath();
-          ctx.moveTo(endX, endY);
-          ctx.lineTo(elbowX, endY);
-          ctx.lineTo(elbowX, startY);
-          ctx.lineTo(startX, startY);
-          ctx.stroke();
-
-          // Arrowhead at Button (startX, startY)
-          // Solid triangle pointing left.
-          // Tip at startX. Base at startX + size.
-          const arrowSize = 12; // Match Android
-          ctx.beginPath();
-          ctx.moveTo(startX, startY);
-          ctx.lineTo(startX + arrowSize, startY - arrowSize/2);
-          ctx.lineTo(startX + arrowSize, startY + arrowSize/2);
-          ctx.closePath();
-          ctx.fill();
-      });
-
-  }, [layout, items]);
+  }, [items, railWidth]);
 
   return (
     <div className="az-help-overlay">
-        <canvas ref={canvasRef} className="az-help-canvas" />
-        {layout.map(item => (
-            <div
-                key={item.id}
-                ref={el => descriptionRefs.current[item.id] = el}
-                className="az-help-description az-textbox-wrapper multiline"
-                style={{
-                    position: 'absolute',
-                    top: item.top,
-                    // Left offset needs to be enough to clear the widest lane.
-                    // Max lane offset = railRight + 16 + (N * 8).
-                    // If we assume N < 10, that's ~100px from rail.
-                    // We set left: item.targetRight + 100 in initial layout, but let's enforce it here.
-                    left: 200, // Fixed left margin to keep boxes aligned? Or flexible?
-                    // User said "info boxes should resize their width".
-                    // Let's set `left` to a safe distance, e.g. 200px or dynamic based on lanes.
-                    // Android used `railWidth + 64.dp`.
-                    // Here we don't know rail width easily without measuring, but `item.targetRight` gives us the rail edge.
-                    // Let's us `item.targetRight + 64 + (item.index * 8)`.
-                    // No, boxes should probably align left? Or flow?
-                    // Android code: offset x = railWidth + 64.dp. Constant.
-                    // Let's stick to a constant large enough margin.
-                    // item.targetRight is ~80px (collapsed rail) or 260px (expanded).
-                    // But rail collapses in help mode? Not necessarily, but usually.
-                    // Let's use `left: item.targetRight + 100`.
-                    left: item.targetRight + 100,
-                    right: 32,
-                    width: 'auto',
-                    maxWidth: '400px',
-                }}
-            >
+      <div
+        className="az-help-descriptions"
+        style={{ marginLeft: railWidth }}
+        ref={descriptionsRef}
+      >
+        {items.filter(i => i.info).map(item => (
+            <div key={item.id} className="az-help-card" data-az-desc-id={item.id}>
                 {item.info}
             </div>
         ))}
+      </div>
+      <canvas ref={canvasRef} className="az-help-canvas" />
+      <button className="az-fab-exit" onClick={onDismiss}>✕</button>
     </div>
   );
 };

@@ -1,23 +1,26 @@
 package com.hereliesaz.aznavrail.internal
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -27,15 +30,12 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.model.AzNavItem
-import kotlin.math.roundToInt
 
 @Composable
 internal fun HelpOverlay(
@@ -45,108 +45,96 @@ internal fun HelpOverlay(
     railWidth: Dp,
     onDismiss: () -> Unit
 ) {
-    // We need to layout items manually to avoid overlap and respect top margin.
-    // Compose Layout system makes absolute positioning tricky with LazyColumn.
-    // Instead, we will use a Box and explicit offsets for each item.
-
-    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
-    val topMargin = screenHeight * 0.2f
-    val spacing = 32.dp
-    val density = LocalDensity.current
-
     val descriptionPositions = remember { mutableStateMapOf<String, Rect>() }
-    // Store calculated top offsets for each item
-    val itemTopOffsets = remember { mutableStateMapOf<String, Dp>() }
+
+    // Filter items to only those that are logically visible.
+    // 1. Must be in the rail (isRailItem).
+    // 2. If it's a sub-item, its host must be expanded.
+    // 3. Must have info text.
+    // 4. Ideally, we should also check if it's currently rendered/positioned (in itemPositions),
+    //    but rely on logical visibility first to avoid stale positions.
 
     val itemsWithInfo = items.filter { item ->
         val hasInfo = !item.info.isNullOrBlank()
         val isRailItem = item.isRailItem
         val isVisible = if (item.isSubItem) {
+            // Check if host is expanded
             hostStates[item.hostId] == true
         } else {
+            // Top level item
             true
         }
         hasInfo && isRailItem && isVisible
     }
 
-    // Sort items by their target Y position (if known) to layout them in order
-    val sortedItems = itemsWithInfo.sortedBy { item ->
-        itemPositions[item.id]?.center?.y ?: 0f
-    }
-
-    // Layout Calculation Effect
-    LaunchedEffect(itemsWithInfo, itemPositions, descriptionPositions.toMap()) {
-        var currentY = with(density) { topMargin.toPx() }
-        val spacingPx = with(density) { spacing.toPx() }
-
-        sortedItems.forEach { item ->
-            val targetRect = itemPositions[item.id] ?: return@forEach
-            val descRect = descriptionPositions[item.id]
-            val descHeight = descRect?.height ?: 0f // Height might be 0 on first frame
-
-            // Ideal Top: Center aligned with button center
-            val buttonCenterY = targetRect.center.y
-            val idealTop = buttonCenterY - (descHeight / 2)
-
-            // Push down logic
-            // Ensure we are at least below currentY
-            val finalTop = maxOf(currentY, idealTop)
-
-            itemTopOffsets[item.id] = with(density) { finalTop.toDp() }
-
-            // Update currentY for next item
-            currentY = finalTop + descHeight + spacingPx
-        }
-    }
-
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Draw Descriptions
-        sortedItems.forEach { item ->
-            val topOffset = itemTopOffsets[item.id] ?: topMargin // Default to topMargin if not yet calculated
+        Row(Modifier.fillMaxSize()) {
+            // Spacer to keep descriptions off the rail
+            // This spacer allows clicks/scrolls to pass through to the underlying Rail
+            Spacer(modifier = Modifier.width(railWidth))
 
-            // We use a Box with offset to position absolutely
-            Box(
+            LazyColumn(
                 modifier = Modifier
-                    .offset { IntOffset(x = with(density) { (railWidth + 64.dp).toPx().roundToInt() }, y = with(density) { topOffset.toPx().roundToInt() }) } // Increased left offset for lanes
-                    .width(300.dp)
-                    .onGloballyPositioned { coordinates ->
-                         descriptionPositions[item.id] = coordinates.boundsInWindow()
-                    }
+                    .weight(1f)
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.Start
             ) {
-                DescriptionCard(text = item.info!!)
+                items(itemsWithInfo, key = { it.id }) { item ->
+                    DescriptionCard(
+                        text = item.info!!,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp)
+                            .onGloballyPositioned { coordinates ->
+                                descriptionPositions[item.id] = coordinates.boundsInWindow()
+                            }
+                    )
+                }
             }
         }
 
-        // Canvas for arrows
+        // Canvas for arrows. Needs to be on top of everything to draw over spacers/margins.
+        // It must NOT block touches. `Canvas` does not consume touches by default.
         Canvas(modifier = Modifier.fillMaxSize()) {
-            sortedItems.forEachIndexed { index, item ->
+            itemsWithInfo.forEach { item ->
+                // Only draw if we have a valid position for both item and description
                 val itemRect = itemPositions[item.id]
                 val descRect = descriptionPositions[item.id]
-                val isVisible = if (item.isSubItem) hostStates[item.hostId] == true else true
+
+                // Also double check logical visibility to be safe against stale itemPositions
+                val isVisible = if (item.isSubItem) {
+                    hostStates[item.hostId] == true
+                } else {
+                    true
+                }
 
                 if (isVisible && itemRect != null && descRect != null) {
-                    val arrowColor = Color.Red // Matching web implementation
+                    val arrowColor = Color.Gray
                     val strokeWidth = 2.dp.toPx()
 
+                    // Button Point: Right-Center of the button
                     val buttonPoint = Offset(itemRect.right, itemRect.center.y)
-                    val descPoint = Offset(descRect.left, descRect.center.y) // Connect to left center
+
+                    // Description Point: Left-Center of the description card
+                    val descPoint = Offset(descRect.left, descRect.center.y)
 
                     val path = Path()
                     path.moveTo(descPoint.x, descPoint.y)
 
-                    // Lane Logic
-                    // Base padding from rail right
-                    val basePadding = 16.dp.toPx()
-                    // Lane step
-                    val laneStep = 8.dp.toPx()
+                    // Path Logic:
+                    // 1. Move Left from Description
+                    // 2. Move Vertically to Button Y
+                    // 3. Move Left to Button X
+                    // We use the midpoint between Button Right Edge and Description Left Edge for the vertical segment.
 
-                    val elbowX = buttonPoint.x + basePadding + (index * laneStep)
+                    val elbowX = (buttonPoint.x + descPoint.x) / 2
 
-                    path.lineTo(elbowX, descPoint.y)
-                    path.lineTo(elbowX, buttonPoint.y)
-                    path.lineTo(buttonPoint.x, buttonPoint.y)
+                    path.lineTo(elbowX, descPoint.y) // Left
+                    path.lineTo(elbowX, buttonPoint.y) // Up/Down
+                    path.lineTo(buttonPoint.x, buttonPoint.y) // To Button
 
                     drawPath(
                         path = path,
@@ -155,15 +143,17 @@ internal fun HelpOverlay(
                     )
 
                     // Draw Arrowhead at ButtonPoint
-                    val arrowSize = 12.dp.toPx()
+                    // Simple triangle pointing Left (towards button)
+                    val arrowSize = 8.dp.toPx()
                     val arrowPath = Path()
                     arrowPath.moveTo(buttonPoint.x, buttonPoint.y)
-                    // Tip at buttonPoint. Base to the right.
+                    // The line comes from Right, so arrow points Left.
+                    // Vertices: Tip (buttonPoint), TopRight, BottomRight
                     arrowPath.lineTo(buttonPoint.x + arrowSize, buttonPoint.y - arrowSize/2)
                     arrowPath.lineTo(buttonPoint.x + arrowSize, buttonPoint.y + arrowSize/2)
                     arrowPath.close()
 
-                    drawPath(arrowPath, arrowColor) // Fill
+                    drawPath(arrowPath, arrowColor)
                 }
             }
         }
@@ -200,7 +190,7 @@ fun DescriptionCard(text: String, modifier: Modifier = Modifier) {
         Text(
             text = text,
             style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(4.dp)
+            modifier = Modifier.padding(16.dp)
         )
     }
 }
