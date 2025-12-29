@@ -31,9 +31,9 @@ function App() {
       isRailItem: true,
       info: 'Explore the various UI components provided by the library.',
       items: [
-          { id: 'buttons', text: 'Buttons', onClick: () => setCurrentPage('Buttons') },
-          { id: 'inputs', text: 'Inputs', onClick: () => setCurrentPage('Inputs') },
-          { id: 'forms', text: 'Forms', onClick: () => setCurrentPage('Forms') },
+          { id: 'buttons', text: 'Buttons', info: 'View Button demos', onClick: () => setCurrentPage('Buttons') },
+          { id: 'inputs', text: 'Inputs', info: 'View Input demos', onClick: () => setCurrentPage('Inputs') },
+          { id: 'forms', text: 'Forms', info: 'View Form demos', onClick: () => setCurrentPage('Forms') },
       ]
     },
     {
@@ -46,6 +46,7 @@ function App() {
                 id: 'theme',
                 text: 'Theme',
                 isCycler: true,
+                info: 'Change app theme',
                 options: ['Light', 'Dark', 'System'],
                 selectedOption: 'System',
                 onClick: (val) => console.log('Theme:', val)

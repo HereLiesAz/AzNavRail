@@ -165,7 +165,12 @@ internal fun HelpOverlay(
                 .padding(16.dp),
             contentAlignment = Alignment.BottomEnd
         ) {
-            FloatingActionButton(onClick = onDismiss) {
+            FloatingActionButton(
+                onClick = onDismiss,
+                shape = androidx.compose.foundation.shape.CircleShape,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = Color.White
+            ) {
                 Icon(Icons.Default.Close, contentDescription = "Exit Help")
             }
         }
@@ -174,10 +179,13 @@ internal fun HelpOverlay(
 
 @Composable
 fun DescriptionCard(text: String, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier,
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    val borderColor = MaterialTheme.colorScheme.onSurface
+
+    Box(
+        modifier = modifier
+            .border(width = 2.dp, color = borderColor)
+            .background(Color.White)
+            .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
         Text(
             text = text,
