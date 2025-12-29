@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import './AzNavRail.css';
 import MenuItem from './MenuItem';
 import AzNavRailButton from './AzNavRailButton';
+import HelpOverlay from './HelpOverlay';
 
 /**
  * An M3-style navigation rail that expands into a menu drawer for web applications.
@@ -179,6 +180,8 @@ const AzNavRail = ({
       )}
 
       {infoScreen && (
+        <>
+          <HelpOverlay items={navItems} />
           <button
             className="az-fab-exit"
             onClick={onDismissInfoScreen}
@@ -188,20 +191,22 @@ const AzNavRail = ({
                 right: '16px',
                 width: '56px',
                 height: '56px',
-                borderRadius: '28px',
+                borderRadius: '50%',
                 backgroundColor: 'var(--md-sys-color-primary, #6200ee)',
                 color: 'white',
                 border: 'none',
-                boxShadow: '0 4px 5px 0 rgba(0,0,0,0.14)',
+                boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                zIndex: 1000
+                zIndex: 10000,
+                fontSize: '24px'
             }}
           >
               ✕
           </button>
+        </>
       )}
     </div>
   );

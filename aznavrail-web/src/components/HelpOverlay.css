@@ -1,0 +1,35 @@
+.az-help-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    pointer-events: none; /* Let clicks pass through to FAB and rail items */
+}
+
+.az-help-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.az-help-description {
+    pointer-events: auto; /* Allow interaction if needed, though help is usually static */
+    background-color: white; /* Or variable */
+    color: black;
+    border-color: var(--md-sys-color-outline, #79747e);
+    z-index: 10000;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    /* Font styles from AzTextBox handled by class reuse */
+}
+
+/* Ensure dark mode support if variables are used */
+@media (prefers-color-scheme: dark) {
+    .az-help-description {
+        background-color: #333;
+        color: white;
+    }
+}

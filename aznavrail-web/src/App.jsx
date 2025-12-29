@@ -15,33 +15,38 @@ function App() {
   const [cyclerVal, setCyclerVal] = useState('Option 1');
   const [textVal, setTextVal] = useState('');
   const [formSubmitted, setFormSubmitted] = useState(null);
+  const [showHelp, setShowHelp] = useState(false);
 
   const navItems = [
     {
       id: 'home',
       text: 'Home',
       isRailItem: true,
+      info: 'Go to Home screen',
       onClick: () => setCurrentPage('Home')
     },
     {
       id: 'features',
       text: 'Features',
       isRailItem: true,
+      info: 'Explore features',
       items: [
-          { id: 'buttons', text: 'Buttons', onClick: () => setCurrentPage('Buttons') },
-          { id: 'inputs', text: 'Inputs', onClick: () => setCurrentPage('Inputs') },
-          { id: 'forms', text: 'Forms', onClick: () => setCurrentPage('Forms') },
+          { id: 'buttons', text: 'Buttons', info: 'View Button demos', onClick: () => setCurrentPage('Buttons') },
+          { id: 'inputs', text: 'Inputs', info: 'View Input demos', onClick: () => setCurrentPage('Inputs') },
+          { id: 'forms', text: 'Forms', info: 'View Form demos', onClick: () => setCurrentPage('Forms') },
       ]
     },
     {
         id: 'settings',
         text: 'Settings',
         isRailItem: true,
+        info: 'App Settings',
         items: [
             {
                 id: 'theme',
                 text: 'Theme',
                 isCycler: true,
+                info: 'Change app theme',
                 options: ['Light', 'Dark', 'System'],
                 selectedOption: 'System',
                 onClick: (val) => console.log('Theme:', val)
@@ -55,10 +60,17 @@ function App() {
       <AzNavRail
         initiallyExpanded={false}
         content={navItems}
-        settings={{ appName: 'Demo App' }}
+        settings={{
+            appName: 'Demo App',
+            infoScreen: showHelp,
+            onDismissInfoScreen: () => setShowHelp(false)
+        }}
       />
       <main style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
-        <h1>{currentPage}</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+             <h1>{currentPage}</h1>
+             <AzButton text="Help Mode" onClick={() => setShowHelp(true)} />
+        </div>
 
         {currentPage === 'Home' && (
             <div className="demo-section">
