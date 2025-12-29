@@ -15,8 +15,7 @@ const MenuItem = ({ item, depth = 0, onToggle, onCyclerClick, isHost, isExpanded
     selectedOption,
     onClick,
     isDivider,
-    color = 'currentColor',
-    info
+    color = 'currentColor'
   } = item;
 
   if (isDivider) {
@@ -50,6 +49,7 @@ const MenuItem = ({ item, depth = 0, onToggle, onCyclerClick, isHost, isExpanded
         className="az-menu-item"
         style={{ color: color, paddingLeft: `${paddingLeft}px`, position: 'relative' }}
         onClick={handleClick}
+        data-az-nav-id={item.id}
     >
         {isToggle ? (
             <div className="az-menu-item-content toggle">
@@ -70,22 +70,6 @@ const MenuItem = ({ item, depth = 0, onToggle, onCyclerClick, isHost, isExpanded
                         {isExpanded ? '▼' : '▶'}
                     </span>
                 )}
-            </div>
-        )}
-        {infoScreen && info && (
-            <div style={{
-                position: 'absolute',
-                left: '16px',
-                bottom: '100%',
-                backgroundColor: '#333',
-                color: 'white',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                fontSize: '12px',
-                zIndex: 100,
-                pointerEvents: 'none'
-            }}>
-                {info}
             </div>
         )}
     </div>
