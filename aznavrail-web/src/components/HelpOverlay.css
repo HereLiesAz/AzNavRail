@@ -1,0 +1,60 @@
+.az-help-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 2000; /* Above rail */
+    pointer-events: none; /* Let clicks pass through to rail */
+    display: flex;
+}
+
+.az-help-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2001;
+    pointer-events: none;
+}
+
+.az-help-descriptions {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    z-index: 2002;
+    pointer-events: auto; /* Allow scrolling descriptions */
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.az-help-card {
+    background-color: var(--md-sys-color-surface-variant, #e7e0ec);
+    color: var(--md-sys-color-on-surface-variant, #49454f);
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 5px 0 rgba(0,0,0,0.14);
+    max-width: 400px;
+}
+
+.az-fab-exit {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    width: 56px;
+    height: 56px;
+    border-radius: 28px;
+    backgroundColor: var(--md-sys-color-primary, #6200ee);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 5px 0 rgba(0,0,0,0.14);
+    cursor: pointer;
+    display: flex;
+    alignItems: center;
+    justifyContent: center;
+    z-index: 3000;
+    pointer-events: auto;
+    font-size: 24px;
+}

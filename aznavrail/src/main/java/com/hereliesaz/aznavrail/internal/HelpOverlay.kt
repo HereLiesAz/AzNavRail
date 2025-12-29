@@ -1,0 +1,188 @@
+package com.hereliesaz.aznavrail.internal
+
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import com.hereliesaz.aznavrail.model.AzNavItem
+
+@Composable
+internal fun HelpOverlay(
+    items: List<AzNavItem>,
+    itemPositions: Map<String, Rect>,
+    hostStates: Map<String, Boolean>,
+    railWidth: Dp,
+    onDismiss: () -> Unit
+) {
+    val descriptionPositions = remember { mutableStateMapOf<String, Rect>() }
+
+    // Filter items to only those that are logically visible.
+    // 1. Must be in the rail (isRailItem).
+    // 2. If it's a sub-item, its host must be expanded.
+    // 3. Must have info text.
+    // 4. Ideally, we should also check if it's currently rendered/positioned (in itemPositions),
+    //    but rely on logical visibility first to avoid stale positions.
+
+    val itemsWithInfo = items.filter { item ->
+        val hasInfo = !item.info.isNullOrBlank()
+        val isRailItem = item.isRailItem
+        val isVisible = if (item.isSubItem) {
+            // Check if host is expanded
+            hostStates[item.hostId] == true
+        } else {
+            // Top level item
+            true
+        }
+        hasInfo && isRailItem && isVisible
+    }
+
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Row(Modifier.fillMaxSize()) {
+            // Spacer to keep descriptions off the rail
+            // This spacer allows clicks/scrolls to pass through to the underlying Rail
+            Spacer(modifier = Modifier.width(railWidth))
+
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.Start
+            ) {
+                items(itemsWithInfo, key = { it.id }) { item ->
+                    DescriptionCard(
+                        text = item.info!!,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp)
+                            .onGloballyPositioned { coordinates ->
+                                descriptionPositions[item.id] = coordinates.boundsInWindow()
+                            }
+                    )
+                }
+            }
+        }
+
+        // Canvas for arrows. Needs to be on top of everything to draw over spacers/margins.
+        // It must NOT block touches. `Canvas` does not consume touches by default.
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            itemsWithInfo.forEach { item ->
+                // Only draw if we have a valid position for both item and description
+                val itemRect = itemPositions[item.id]
+                val descRect = descriptionPositions[item.id]
+
+                // Also double check logical visibility to be safe against stale itemPositions
+                val isVisible = if (item.isSubItem) {
+                    hostStates[item.hostId] == true
+                } else {
+                    true
+                }
+
+                if (isVisible && itemRect != null && descRect != null) {
+                    val arrowColor = Color.Gray
+                    val strokeWidth = 2.dp.toPx()
+
+                    // Button Point: Right-Center of the button
+                    val buttonPoint = Offset(itemRect.right, itemRect.center.y)
+
+                    // Description Point: Left-Center of the description card
+                    val descPoint = Offset(descRect.left, descRect.center.y)
+
+                    val path = Path()
+                    path.moveTo(descPoint.x, descPoint.y)
+
+                    // Path Logic:
+                    // 1. Move Left from Description
+                    // 2. Move Vertically to Button Y
+                    // 3. Move Left to Button X
+                    // We use the midpoint between Button Right Edge and Description Left Edge for the vertical segment.
+
+                    val elbowX = (buttonPoint.x + descPoint.x) / 2
+
+                    path.lineTo(elbowX, descPoint.y) // Left
+                    path.lineTo(elbowX, buttonPoint.y) // Up/Down
+                    path.lineTo(buttonPoint.x, buttonPoint.y) // To Button
+
+                    drawPath(
+                        path = path,
+                        color = arrowColor,
+                        style = Stroke(width = strokeWidth)
+                    )
+
+                    // Draw Arrowhead at ButtonPoint
+                    // Simple triangle pointing Left (towards button)
+                    val arrowSize = 8.dp.toPx()
+                    val arrowPath = Path()
+                    arrowPath.moveTo(buttonPoint.x, buttonPoint.y)
+                    // The line comes from Right, so arrow points Left.
+                    // Vertices: Tip (buttonPoint), TopRight, BottomRight
+                    arrowPath.lineTo(buttonPoint.x + arrowSize, buttonPoint.y - arrowSize/2)
+                    arrowPath.lineTo(buttonPoint.x + arrowSize, buttonPoint.y + arrowSize/2)
+                    arrowPath.close()
+
+                    drawPath(arrowPath, arrowColor)
+                }
+            }
+        }
+
+        // FAB to exit
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            contentAlignment = Alignment.BottomEnd
+        ) {
+            FloatingActionButton(onClick = onDismiss) {
+                Icon(Icons.Default.Close, contentDescription = "Exit Help")
+            }
+        }
+    }
+}
+
+@Composable
+fun DescriptionCard(text: String, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier,
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(16.dp)
+        )
+    }
+}

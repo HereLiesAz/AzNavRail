@@ -15,18 +15,21 @@ function App() {
   const [cyclerVal, setCyclerVal] = useState('Option 1');
   const [textVal, setTextVal] = useState('');
   const [formSubmitted, setFormSubmitted] = useState(null);
+  const [infoScreen, setInfoScreen] = useState(false);
 
   const navItems = [
     {
       id: 'home',
       text: 'Home',
       isRailItem: true,
-      onClick: () => setCurrentPage('Home')
+      onClick: () => setCurrentPage('Home'),
+      info: 'Go to the home screen.'
     },
     {
       id: 'features',
       text: 'Features',
       isRailItem: true,
+      info: 'Explore the various UI components provided by the library.',
       items: [
           { id: 'buttons', text: 'Buttons', onClick: () => setCurrentPage('Buttons') },
           { id: 'inputs', text: 'Inputs', onClick: () => setCurrentPage('Inputs') },
@@ -37,6 +40,7 @@ function App() {
         id: 'settings',
         text: 'Settings',
         isRailItem: true,
+        info: 'Configure application settings.',
         items: [
             {
                 id: 'theme',
@@ -55,10 +59,19 @@ function App() {
       <AzNavRail
         initiallyExpanded={false}
         content={navItems}
-        settings={{ appName: 'Demo App' }}
+        settings={{
+            appName: 'Demo App',
+            infoScreen: infoScreen,
+            onDismissInfoScreen: () => setInfoScreen(false)
+        }}
       />
       <main style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
-        <h1>{currentPage}</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h1>{currentPage}</h1>
+            <button onClick={() => setInfoScreen(!infoScreen)}>
+                {infoScreen ? 'Exit Help' : 'Help Mode'}
+            </button>
+        </div>
 
         {currentPage === 'Home' && (
             <div className="demo-section">

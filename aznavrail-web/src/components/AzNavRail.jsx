@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import './AzNavRail.css';
 import MenuItem from './MenuItem';
 import AzNavRailButton from './AzNavRailButton';
+import HelpOverlay from './HelpOverlay';
 
 /**
  * An M3-style navigation rail that expands into a menu drawer for web applications.
@@ -30,7 +31,7 @@ const AzNavRail = ({
   } = settings;
 
   const onToggle = () => {
-      setIsExpanded(!isExpanded);
+      if (!infoScreen) setIsExpanded(!isExpanded);
   };
 
   const [cyclerStates, setCyclerStates] = useState({});
@@ -40,7 +41,6 @@ const AzNavRail = ({
   const navItems = useMemo(() => content || [], [content]);
 
   // Flatten items for cycler initialization (simple recursive helper could be used if needed deep)
-  // For now, assuming only top-level or 1-level deep cyclers for simplicity or checking both.
   useEffect(() => {
     const initialCyclerStates = {};
     const processItem = (item) => {
@@ -79,11 +79,6 @@ const AzNavRail = ({
 
     cyclerTimers.current[item.id] = setTimeout(() => {
       if (item.onClick) item.onClick(nextOption);
-      // onToggle(); // Standard cyclers might not collapse menu, but AzNavRail logic says they generally do?
-      // Memory says: "The standalone AzCycler component has the same 1-second delayed action behavior..."
-      // Memory also says: "Toggle items in the expanded menu should collapse the menu when tapped."
-      // But Cyclers? Maybe not. Let's keep it open to see the change.
-      // Actually, if it triggers navigation, it might close. I'll leave onToggle out for cycler for now.
       delete cyclerTimers.current[item.id];
     }, 1000);
   };
@@ -121,7 +116,44 @@ const AzNavRail = ({
       );
   };
 
+  // Prepare flat list of currently visible rail items for HelpOverlay
+  const getVisibleItems = () => {
+    const visible = [];
+    navItems.forEach(item => {
+        if (item.isRailItem || item.items) { // Top level rail items or hosts
+            visible.push(item);
+            if (item.items && hostStates[item.id]) {
+               // If host is expanded, sub items are visible?
+               // Wait, sub items are only shown in Menu mode?
+               // "Rail Sub Item" - does it appear in rail?
+               // Android: `azRailSubItem` appears in both.
+               // In this simplified web version, we might not render sub items in collapsed rail unless logic supports it.
+               // Looking at render loop below:
+               // .map(item => ... AzNavRailButton ...)
+               // It maps top level items.
+               // If item has `items` (isHost), we render a button for it.
+               // If we click it, it expands rail.
+               // So in collapsed mode, we don't see subitems.
+               // But Help Mode description says: "And when sub items are exposed, they too should have their descriptions shown and be pointed at."
+               // Sub items are exposed when Host is expanded.
+               // If Host is expanded, does the Rail expand?
+               // In Android: "And when sub items are exposed... Host items should still expand and collapse their sub items."
+               // In Android `RailItems` composable, we iterate subItems if host is expanded.
+
+               // So we need to support rendering sub-items in the Rail if host is expanded.
+               item.items.forEach(sub => {
+                   if (sub.isRailItem) visible.push(sub);
+               });
+            }
+        }
+    });
+    return visible;
+  };
+
+  const visibleItems = getVisibleItems();
+
   return (
+    <>
     <div
       className={`az-nav-rail ${isExpanded ? 'expanded' : 'collapsed'}`}
       style={{ width: isExpanded ? expandedRailWidth : collapsedRailWidth }}
@@ -143,25 +175,45 @@ const AzNavRail = ({
               {navItems.map(item => renderMenuItem(item))}
             </div>
           ) : (
-            <div className="rail">
+            <div className="rail" style={{overflowY: 'auto', maxHeight: '100%'}}>
               {navItems
-                .filter(item => item.isRailItem || item.items) // Show rail items or hosts
+                .filter(item => item.isRailItem || item.items)
                 .map(item => {
                   const finalItem = item.isCycler
                     ? { ...item, selectedOption: cyclerStates[item.id]?.displayedOption }
                     : item;
 
+                  // If host is expanded, we should render its sub-items too?
+                  // Currently the loop just renders top-level.
+                  // We need to inject sub-items if expanded.
+
                   return (
-                    <AzNavRailButton
-                        key={item.id}
-                        item={finalItem}
-                        onCyclerClick={() => handleCyclerClick(item)}
-                        onClickOverride={item.items ? () => {
-                            setIsExpanded(true);
-                            setHostStates(prev => ({ ...prev, [item.id]: true }));
-                        } : undefined}
-                        infoScreen={infoScreen}
-                    />
+                    <React.Fragment key={item.id}>
+                        <AzNavRailButton
+                            item={finalItem}
+                            onCyclerClick={() => handleCyclerClick(item)}
+                            onClickOverride={item.items ? () => {
+                                // If infoScreen, just toggle state locally without expanding rail
+                                if (infoScreen) {
+                                    toggleHost(item);
+                                } else {
+                                    setIsExpanded(true);
+                                    setHostStates(prev => ({ ...prev, [item.id]: true }));
+                                }
+                            } : undefined}
+                            infoScreen={infoScreen}
+                        />
+                        {item.items && hostStates[item.id] && (
+                            item.items.filter(sub => sub.isRailItem).map(sub => (
+                                <AzNavRailButton
+                                    key={sub.id}
+                                    item={sub}
+                                    onCyclerClick={() => handleCyclerClick(sub)}
+                                    infoScreen={infoScreen}
+                                />
+                            ))
+                        )}
+                    </React.Fragment>
                   );
                 })}
             </div>
@@ -171,39 +223,21 @@ const AzNavRail = ({
 
       {showFooter && isExpanded && (
         <div className="footer">
-             {/* Footer placeholder */}
              <div style={{padding: '16px', fontSize: '12px', opacity: 0.5}}>
                  Footer
              </div>
         </div>
       )}
-
-      {infoScreen && (
-          <button
-            className="az-fab-exit"
-            onClick={onDismissInfoScreen}
-            style={{
-                position: 'absolute',
-                bottom: '16px',
-                right: '16px',
-                width: '56px',
-                height: '56px',
-                borderRadius: '28px',
-                backgroundColor: 'var(--md-sys-color-primary, #6200ee)',
-                color: 'white',
-                border: 'none',
-                boxShadow: '0 4px 5px 0 rgba(0,0,0,0.14)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 1000
-            }}
-          >
-              ✕
-          </button>
-      )}
     </div>
+
+    {infoScreen && (
+        <HelpOverlay
+            items={visibleItems}
+            railWidth={collapsedRailWidth}
+            onDismiss={onDismissInfoScreen}
+        />
+    )}
+    </>
   );
 };
 

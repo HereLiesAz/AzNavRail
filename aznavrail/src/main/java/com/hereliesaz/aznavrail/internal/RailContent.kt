@@ -1,22 +1,16 @@
 package com.hereliesaz.aznavrail.internal
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.AzNavRailButton
 import com.hereliesaz.aznavrail.model.AzButtonShape
@@ -47,11 +41,19 @@ internal fun RailContent(
         else -> item.text
     }
 
+    // In infoScreen mode, only Host items are interactive.
+    // Others are disabled.
+    val isInteractive = if (infoScreen) item.isHost else !item.disabled
+
+    // If infoScreen is true, we force enabled=false for non-hosts to give visual cue (greyed out).
+    // If not infoScreen, we respect item.disabled.
+    val isEnabled = if (infoScreen) item.isHost else !item.disabled
+
     val finalOnClick: () -> Unit = if (infoScreen) {
         if (item.isHost) {
             { onHostClick() }
         } else {
-            {}
+            {} // No-op
         }
     } else {
         if (item.isHost) {
@@ -85,31 +87,9 @@ internal fun RailContent(
             color = item.color ?: MaterialTheme.colorScheme.primary,
             size = buttonSize,
             shape = item.shape,
-            enabled = !item.disabled,
+            enabled = isEnabled,
             isSelected = isSelected
         )
-        if (infoScreen && !item.info.isNullOrBlank()) {
-            Popup(
-                alignment = Alignment.CenterEnd,
-                offset = IntOffset(x = 16, y = 0)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .padding(start = 8.dp)
-                        .background(
-                            MaterialTheme.colorScheme.inverseSurface,
-                            RoundedCornerShape(8.dp)
-                        )
-                        .padding(8.dp)
-                ) {
-                    Text(
-                        text = item.info,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.inverseOnSurface
-                    )
-                }
-            }
-        }
     }
 }
 
