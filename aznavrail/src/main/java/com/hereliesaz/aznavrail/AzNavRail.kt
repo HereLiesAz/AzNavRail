@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -493,15 +494,13 @@ fun AzNavRail(
                                 .weight(1f)
                                 .verticalScroll(rememberScrollState())
                                 .pointerInput(isExpanded) {
-                                    detectDragGestures(
+                                    detectHorizontalDragGestures(
                                         onDragStart = { _ -> },
-                                        onDrag = { change, dragAmount ->
-                                            val (x, y) = dragAmount
-                                            if (kotlin.math.abs(x) > kotlin.math.abs(y)) { // Horizontal swipe
-                                                if (isExpanded && x < -AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
-                                                    isExpanded = false
-                                                    change.consume()
-                                                }
+                                        onHorizontalDrag = { change, dragAmount ->
+                                            // Horizontal swipe to close
+                                            if (isExpanded && dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
+                                                isExpanded = false
+                                                change.consume()
                                             }
                                         }
                                     )
@@ -674,7 +673,10 @@ fun AzNavRail(
                         // If in Overlay Mode, pass null for navController to intercept routing via onClick.
                         val effectiveNavController = if (overlayController != null) null else navController
 
-                        AnimatedVisibility(visible = !isFloating || showFloatingButtons) {
+                        AnimatedVisibility(
+                            visible = !isFloating || showFloatingButtons,
+                            modifier = Modifier.weight(1f)
+                        ) {
                             Column(
                                 modifier = Modifier
                                     .padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding)
@@ -682,31 +684,14 @@ fun AzNavRail(
                                     .onSizeChanged { railItemsHeight = it.height }
                                     .pointerInput(
                                         isExpanded,
-                                        disableSwipeToOpen,
-                                        scope.enableRailDragging
+                                        disableSwipeToOpen
                                     ) {
-                                        detectDragGestures(
+                                        detectHorizontalDragGestures(
                                             onDragStart = { _ -> },
-                                            onDrag = { change, dragAmount ->
-                                                val (x, y) = dragAmount
-                                                if (kotlin.math.abs(x) > kotlin.math.abs(y)) { // Horizontal swipe
-                                                    if (!isExpanded && !disableSwipeToOpen && x > AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
-                                                        isExpanded = true
-                                                        change.consume()
-                                                    }
-                                                } else if (scope.enableRailDragging) { // Vertical swipe
-                                                    val overlayService = scope.overlayService
-                                                    if (overlayService != null) {
-                                                        OverlayHelper.launch(context, overlayService)
-                                                    } else {
-                                                        isFloating = true
-                                                        isExpanded = false
-                                                        if (scope.displayAppNameInHeader) isAppIcon =
-                                                            true
-                                                    }
-                                                    hapticFeedback.performHapticFeedback(
-                                                        HapticFeedbackType.LongPress
-                                                    )
+                                            onHorizontalDrag = { change, dragAmount ->
+                                                // Horizontal swipe to open
+                                                if (!isExpanded && !disableSwipeToOpen && dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
+                                                    isExpanded = true
                                                     change.consume()
                                                 }
                                             }
