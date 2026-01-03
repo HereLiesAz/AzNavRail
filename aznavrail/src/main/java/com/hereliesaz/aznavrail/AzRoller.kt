@@ -86,10 +86,6 @@ fun AzRoller(
 
     // Internal state for text input to support typing
     val text = selectedOption ?: selectedIndex?.let { options.getOrNull(it) } ?: ""
-    val originalText = remember(expanded) { if(expanded) text else "" }
-
-    // Internal state for text input to support typing
-    val text = selectedOption ?: selectedIndex?.let { options.getOrNull(it) } ?: ""
 
     val effectiveColor = if (!enabled) {
         outlineColor.copy(alpha = 0.5f)
@@ -206,7 +202,7 @@ fun AzRoller(
                     .distinctUntilChanged()
                     .collect { index ->
                         if (!listState.isScrollInProgress && !isTyping) {
-                            val slotIndex = index + visibleItemsAbove
+                            val slotIndex = index + 2
                             val item = fullList.getOrNull(slotIndex)
 
                             if (item != null) {
@@ -223,7 +219,7 @@ fun AzRoller(
                 onDismissRequest = {
                     if (!isTyping) {
                         val index = listState.firstVisibleItemIndex
-                        val slotIndex = index + visibleItemsAbove
+                        val slotIndex = index + 2
                         val item = fullList.getOrNull(slotIndex)
                         if (item != null) {
                             onOptionSelected(item)
