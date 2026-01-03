@@ -223,7 +223,7 @@ fun AzRoller(
                 onDismissRequest = {
                     if (!isTyping) {
                         val index = listState.firstVisibleItemIndex
-                        val slotIndex = index + 2
+                        val slotIndex = index + visibleItemsAbove
                         val item = fullList.getOrNull(slotIndex)
                         if (item != null) {
                             onOptionSelected(item)
