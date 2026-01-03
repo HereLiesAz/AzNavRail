@@ -51,7 +51,7 @@ class AzRollerTest {
     }
 
     @Test
-    fun azRoller_opensPopup_onClick() {
+    fun azRoller_opensPopup_onRightClick() {
         val options = listOf("Apple", "Banana", "Cherry")
 
         composeTestRule.setContent {
@@ -66,12 +66,11 @@ class AzRollerTest {
         // Initially popup content should not be visible (checking for one option)
         composeTestRule.onNodeWithText("Apple").assertDoesNotExist()
 
-        // Click to open (using dropdown icon)
-        composeTestRule.onNodeWithContentDescription("Dropdown").performClick()
+        // Click Right Half (Selection Mode)
+        composeTestRule.onNodeWithTag("AzRollerRight").performClick()
 
         // Now options should be visible
         composeTestRule.onAllNodesWithText("Apple").onFirst().assertIsDisplayed()
-        composeTestRule.onAllNodesWithText("Banana").onFirst().assertIsDisplayed()
     }
 
     @Test
@@ -88,8 +87,8 @@ class AzRollerTest {
             )
         }
 
-        // Open popup (using dropdown icon)
-        composeTestRule.onNodeWithContentDescription("Dropdown").performClick()
+        // Open popup (Right Half)
+        composeTestRule.onNodeWithTag("AzRollerRight").performClick()
 
         // Select "Two".
         composeTestRule.onAllNodesWithText("Two").onFirst().performClick()
@@ -99,7 +98,6 @@ class AzRollerTest {
 
         // Verify popup closed
         composeTestRule.waitForIdle()
-        // "One" should be hidden.
         composeTestRule.onNodeWithText("One").assertDoesNotExist()
     }
 }

@@ -6,6 +6,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -30,9 +33,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -55,6 +61,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
  * @param onOptionSelected Called when an option is selected or text is entered.
  * @param hint The text to display when no option is selected.
  * @param enabled Controls the enabled state of the component.
+ * @param isError Whether the input is in an error state.
  * @param outlineColor The color of the border and text.
  */
 @Composable
@@ -66,11 +73,20 @@ fun AzRoller(
     onOptionSelected: (String) -> Unit,
     hint: String = "",
     enabled: Boolean = true,
+    isError: Boolean = false,
     outlineColor: Color = MaterialTheme.colorScheme.primary
 ) {
     var expanded by remember { mutableStateOf(false) }
     var componentHeight by remember { mutableIntStateOf(0) }
     var componentWidth by remember { mutableIntStateOf(0) }
+    var isTyping by remember { mutableStateOf(false) }
+
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+
+    // Internal state for text input to support typing
+    val text = selectedOption ?: selectedIndex?.let { options.getOrNull(it) } ?: ""
+    val originalText = remember(expanded) { if(expanded) text else "" }
 
     // Internal state for text input to support typing
     val text = selectedOption ?: selectedIndex?.let { options.getOrNull(it) } ?: ""
@@ -85,108 +101,136 @@ fun AzRoller(
         componentHeight = it.height
         componentWidth = it.width
     }) {
+        // Core TextBox
         AzTextBox(
             modifier = Modifier.fillMaxWidth(),
             value = text,
-            onValueChange = onOptionSelected,
+            onValueChange = {
+                if (isTyping) {
+                   onOptionSelected(it)
+                }
+            },
             hint = hint,
             enabled = enabled,
+            isError = isError,
             outlineColor = outlineColor,
+            showClearButton = false, // Controlled by Split Click logic
+            focusRequester = focusRequester,
             trailingIcon = {
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
                     contentDescription = "Dropdown",
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable(enabled = enabled) { expanded = !expanded },
+                    modifier = Modifier.size(24.dp), // Click handled by Overlay
                     tint = effectiveColor
                 )
             },
             onSubmit = { expanded = false }
         )
 
+        // Split Click Overlay
+        if (enabled && !isTyping) {
+            Row(
+                modifier = Modifier
+                    .matchParentSize()
+            ) {
+                // Left Half: Text Edit Mode
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .testTag("AzRollerLeft")
+                        .clickable {
+                            isTyping = true
+                            expanded = true // Show filtered list
+                            focusRequester.requestFocus()
+                        }
+                )
+
+                // Right Half: Dropdown Selection Mode
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .testTag("AzRollerRight")
+                        .clickable {
+                            isTyping = false
+                            expanded = true
+                            focusManager.clearFocus() // Hide keyboard
+                        }
+                )
+            }
+
         if (expanded && enabled) {
             val density = LocalDensity.current
             val itemHeight = with(density) { componentHeight.toDp() }
-
-            // "displaying an entry in the text box and another two or three entries above the box, in addition to below."
             val visibleItemsAbove = 2
             val visibleItemsBelow = 2
-
-            // Layout Strategy:
-            // 1. Popup starts 'visibleItemsAbove' height *above* the AzTextBox.
-            //    Popup Y = -(visibleItemsAbove * componentHeight) relative to AzTextBox top.
-            // 2. We want the list to appear *below* initially.
-            //    So initial scroll position should be such that the first item is at AzTextBox Bottom.
-            //    AzTextBox Bottom is at relative Y = (visibleItemsAbove + 1) * componentHeight in Popup space.
-            //    So we add Top Padding to LazyColumn = (visibleItemsAbove + 1) * itemHeight.
-            //    Items start after this padding.
-            // 3. User can scroll UP. Items move into the padding area.
-            //    The padding area covers the AzTextBox and the space above it.
-
             val popupYOffset = -(componentHeight * visibleItemsAbove)
 
-            // Initial scroll: If we want it to start "below", we just let it start at index 0
-            // with the massive top padding.
-            // But if there is a selected item, we might want to snap to it?
-            // User said: "When the drop down list is first opened, it should appear as it currently does."
-            // "But when the user scrolls up, each entry should be shown in the text box and continue up above it"
-            // This implies the default position is fully below.
+            val filteredOptions = remember(text, options, isTyping) {
+                if (isTyping && text.isNotEmpty()) {
+                     options.filter { it.contains(text, ignoreCase = true) }
+                } else {
+                     options
+                }
+            }
 
-            val initialIndex = 0 // Always start at top (below box) if "appearing as currently does"
-            // However, usually dropdowns show the selected item.
-            // If we strictly follow "appear as currently does", it means list is below.
+            val fullList = remember(filteredOptions) {
+                val topSpacers = List(visibleItemsAbove + 1) { null }
+                val bottomSpacers = List(visibleItemsBelow) { null }
+                topSpacers + filteredOptions + bottomSpacers
+            }
+
+            // Initial Scroll: Start at index 0 (Top Spacer visible, List Below)
+            // Or jump to selection if NOT typing.
+            val initialIndex = remember(options, text, isTyping) {
+                if (isTyping) 0 else {
+                    val idx = options.indexOf(text)
+                    if (idx != -1) idx + 1 else 0
+                }
+            }
 
             val listState = rememberLazyListState(initialFirstVisibleItemIndex = initialIndex)
             val snapBehavior = rememberSnapFlingBehavior(lazyListState = listState)
 
+            // Fix Scroll Reset: When typing (filtering changes), reset scroll to top.
+            LaunchedEffect(filteredOptions) {
+                if (isTyping) {
+                    listState.scrollToItem(0)
+                }
+            }
+
             // Auto-select item when scrolling stops
-            LaunchedEffect(listState) {
+            LaunchedEffect(listState, isTyping) {
                 snapshotFlow { listState.firstVisibleItemIndex }
                     .distinctUntilChanged()
                     .collect { index ->
-                        if (!listState.isScrollInProgress) {
-                           // Logic to determine which item is "in the slot"
-                           // The slot is at index corresponding to the visible window.
-                           // With snapping, one item will be centered.
-                           // But since we have padding, index 0 is at the bottom.
-                           // If user scrolls, index increases?
-                           // Actually, LazyColumn items flow down.
-                           // To "scroll up" (move items up), we scroll down the list (index increases).
-                           // If we scroll down, items move up.
+                        if (!listState.isScrollInProgress && !isTyping) {
+                            val slotIndex = index + visibleItemsAbove
+                            val item = fullList.getOrNull(slotIndex)
 
-                           // If we scroll so that item X is in the text box:
-                           // Text Box is at Y = visibleItemsAbove * itemHeight.
-                           // Item X is at Y = Padding + (X * itemHeight) - ScrollOffset.
-                           // We want Item Y = Text Box Y.
-                           // (visibleItemsAbove + 1) * itemHeight + (X * itemHeight) - ScrollOffset = visibleItemsAbove * itemHeight
-                           // itemHeight + X * itemHeight = ScrollOffset
-                           // ScrollOffset = (X + 1) * itemHeight.
-
-                           // So if ScrollOffset matches, we select.
-                           // We can use the center item.
+                            if (item != null) {
+                                onOptionSelected(item)
+                            }
                         }
                     }
-            }
-
-            // To ensure visibility of typing, we make the "slot" semi-transparent or allow the underlying box to show.
-            // If the popup is on top, we can use a transparent background for the slot area.
-
-            // Support typing: Jump to match.
-            LaunchedEffect(text) {
-                val matchIndex = options.indexOfFirst { it.startsWith(text, ignoreCase = true) }
-                if (matchIndex != -1) {
-                    // Logic to scroll item to "slot" or just to top?
-                    // If we want "standard dropdown" feel initially, just scroll to it?
-                    listState.scrollToItem(matchIndex)
-                }
             }
 
             Popup(
                 alignment = Alignment.TopStart,
                 offset = IntOffset(0, popupYOffset),
                 properties = PopupProperties(focusable = false, dismissOnBackPress = true, dismissOnClickOutside = true),
-                onDismissRequest = { expanded = false }
+                onDismissRequest = {
+                    if (!isTyping) {
+                        val index = listState.firstVisibleItemIndex
+                        val slotIndex = index + visibleItemsAbove
+                        val item = fullList.getOrNull(slotIndex)
+                        if (item != null) {
+                            onOptionSelected(item)
+                        }
+                    }
+                    expanded = false
+                }
             ) {
                 val surfaceColor = MaterialTheme.colorScheme.surface
 
@@ -206,47 +250,50 @@ fun AzRoller(
                     LazyColumn(
                         state = listState,
                         flingBehavior = snapBehavior,
-                        modifier = Modifier.fillMaxWidth().background(surfaceColor), // Background for the list itself
-                        contentPadding = PaddingValues(top = itemHeight * (visibleItemsAbove + 1))
-                        // Top padding pushes the first item below the text box.
+                        modifier = Modifier.fillMaxWidth().background(Color.Transparent),
                     ) {
-                        itemsIndexed(options) { index, option ->
+                        itemsIndexed(fullList) { index, option ->
                             val isSelected = option == text
+                            val isSpacer = option == null
 
-                            Box(
-                                modifier = Modifier
-                                    .height(itemHeight)
-                                    .fillMaxWidth()
-                                    .background(if (isSelected) effectiveColor.copy(alpha = 0.1f) else Color.Transparent)
-                                    .clickable {
-                                        onOptionSelected(option)
-                                        expanded = false
-                                    },
-                                contentAlignment = Alignment.CenterStart
-                            ) {
-                                Text(
-                                    text = option,
-                                    modifier = Modifier.padding(horizontal = 12.dp),
-                                    fontSize = 10.sp,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
+                            if (isSpacer) {
+                                Box(modifier = Modifier.height(itemHeight).fillMaxWidth())
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .height(itemHeight)
+                                        .fillMaxWidth()
+                                        .background(if (isSelected && !isTyping) effectiveColor.copy(alpha = 0.1f) else surfaceColor)
+                                        .clickable {
+                                            if (option != null) {
+                                                onOptionSelected(option)
+                                                expanded = false
+                                            }
+                                        },
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
+                                    if (option != null) {
+                                        Text(
+                                            text = option,
+                                            modifier = Modifier.padding(horizontal = 12.dp),
+                                            fontSize = 10.sp,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
 
                     // Selection indicator (The "Slot")
-                    // It should highlight the text box area.
-                    // Position: Y = visibleItemsAbove * itemHeight
                     Box(
                         modifier = Modifier
                             .padding(top = itemHeight * visibleItemsAbove)
                             .height(itemHeight)
                             .fillMaxWidth()
-                            .border(2.dp, effectiveColor.copy(alpha = 0.5f))
-                            // Important: No background so we can see through to the AzTextBox if needed
-                            // OR we rely on the List item being in this slot.
+                            .border(2.dp, if (!isTyping) effectiveColor.copy(alpha = 0.5f) else Color.Transparent)
                     )
                 }
             }

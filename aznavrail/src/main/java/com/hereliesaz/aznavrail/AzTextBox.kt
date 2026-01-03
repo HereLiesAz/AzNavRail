@@ -47,6 +47,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -94,6 +95,8 @@ fun AzTextBox(
     trailingIcon: @Composable (() -> Unit)? = null,
     enabled: Boolean = true,
     outlineColor: Color = MaterialTheme.colorScheme.primary,
+    showClearButton: Boolean = true,
+    focusRequester: androidx.compose.ui.focus.FocusRequester? = null,
     submitButtonContent: (@Composable () -> Unit)? = null,
     onSubmit: (String) -> Unit
 ) {
@@ -168,7 +171,8 @@ fun AzTextBox(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 8.dp)
-                        .testTag(hint),
+                        .testTag(hint)
+                        .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier),
                     textStyle = TextStyle(fontSize = 10.sp, color = effectiveColor),
                     singleLine = !multiline,
                     cursorBrush = SolidColor(effectiveColor),
@@ -208,7 +212,7 @@ fun AzTextBox(
                                 tint = effectiveColor
                             )
                         }
-                        if (text.isNotEmpty() && enabled) {
+                        if (text.isNotEmpty() && enabled && showClearButton) {
                             val icon = when {
                                 secret && isPasswordVisible -> Icons.Default.VisibilityOff
                                 secret && !isPasswordVisible -> Icons.Default.Visibility
