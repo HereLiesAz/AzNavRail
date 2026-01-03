@@ -6,4 +6,5 @@ export * from './components/AzCycler';
 export * from './components/AzTextBox';
 export * from './components/AzForm';
 export * from './components/AzLoad';
+export * from './components/AzRoller';
 export * from './types';
