@@ -157,7 +157,6 @@ fun AzRoller(
                         }
                 )
             }
-        }
 
         if (expanded && enabled) {
             val density = LocalDensity.current
@@ -242,6 +241,13 @@ fun AzRoller(
                         .height(itemHeight * (1 + visibleItemsAbove + visibleItemsBelow))
                         .background(Color.Transparent)
                 ) {
+                    // We only want the background for the items, not the empty space above?
+                    // Or maybe the whole track has a background?
+                    // User said "appear as currently does" (below).
+                    // If we draw background everywhere, it looks like a huge bar.
+                    // Let's make the background follow the list content?
+                    // Or just transparent?
+
                     LazyColumn(
                         state = listState,
                         flingBehavior = snapBehavior,
