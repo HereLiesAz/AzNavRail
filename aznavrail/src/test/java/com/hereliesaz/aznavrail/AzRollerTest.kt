@@ -66,8 +66,8 @@ class AzRollerTest {
         // Initially popup content should not be visible (checking for one option)
         composeTestRule.onNodeWithText("Apple").assertDoesNotExist()
 
-        // Click to open
-        composeTestRule.onNodeWithText("Select Fruit").performClick()
+        // Click to open (using dropdown icon)
+        composeTestRule.onNodeWithContentDescription("Dropdown").performClick()
 
         // Now options should be visible
         composeTestRule.onAllNodesWithText("Apple").onFirst().assertIsDisplayed()
@@ -88,25 +88,18 @@ class AzRollerTest {
             )
         }
 
-        // Open popup
-        composeTestRule.onNodeWithText("Pick Number").performClick()
+        // Open popup (using dropdown icon)
+        composeTestRule.onNodeWithContentDescription("Dropdown").performClick()
 
-        // Select "Two". Might be multiple due to infinite list. Pick first.
+        // Select "Two".
         composeTestRule.onAllNodesWithText("Two").onFirst().performClick()
 
         // Verify selection callback
         assert(selected == "Two")
 
-        // Verify popup closed (option "One" or "Three" should not be visible in main tree,
-        // though strictly they might exist in a closed popup state depending on implementation.
-        // Usually assertDoesNotExist checks semantic tree.)
-        // However, since "Two" is now selected, it might be displayed in the box.
-        // Let's check if "One" (unselected option) is gone.
-
-        // Need to wait for composition update if relying on state change driving UI
+        // Verify popup closed
         composeTestRule.waitForIdle()
-
-        // Re-assert: "One" should not be visible anymore as popup is closed
+        // "One" should be hidden.
         composeTestRule.onNodeWithText("One").assertDoesNotExist()
     }
 }
