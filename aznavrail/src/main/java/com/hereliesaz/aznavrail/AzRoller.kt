@@ -157,6 +157,7 @@ fun AzRoller(
                         }
                 )
             }
+        }
 
         if (expanded && enabled) {
             val density = LocalDensity.current
@@ -266,23 +267,19 @@ fun AzRoller(
                                         .fillMaxWidth()
                                         .background(if (isSelected && !isTyping) effectiveColor.copy(alpha = 0.1f) else surfaceColor)
                                         .clickable {
-                                            if (option != null) {
-                                                onOptionSelected(option)
-                                                expanded = false
-                                            }
+                                            onOptionSelected(option)
+                                            expanded = false
                                         },
                                     contentAlignment = Alignment.CenterStart
                                 ) {
-                                    if (option != null) {
-                                        Text(
-                                            text = option,
-                                            modifier = Modifier.padding(horizontal = 12.dp),
-                                            fontSize = 10.sp,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
+                                    Text(
+                                        text = option,
+                                        modifier = Modifier.padding(horizontal = 12.dp),
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
                                 }
                             }
                         }
