@@ -350,6 +350,17 @@ fun SampleScreen(
                     Text("AzLoad (Standalone)", style = MaterialTheme.typography.titleMedium)
                     AzLoad()
 
+                    AzDivider()
+
+                    Text("AzRoller", style = MaterialTheme.typography.titleMedium)
+                    val rollerOptions = listOf("Cherry", "Bell", "Bar", "Seven", "Lemon", "Melon")
+                    var selectedRollerOption by remember { mutableStateOf(rollerOptions.first()) }
+                    AzRoller(
+                        options = rollerOptions,
+                        selectedOption = selectedRollerOption,
+                        onOptionSelected = { selectedRollerOption = it }
+                    )
+
                     // Space at bottom
                     Box(Modifier.padding(32.dp))
                 }

@@ -5,7 +5,8 @@ import {
   AzTextBox,
   AzToggle,
   AzCycler,
-  AzForm
+  AzForm,
+  AzRoller
 } from './components';
 import './App.css';
 
@@ -13,6 +14,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState('Home');
   const [toggleState, setToggleState] = useState(false);
   const [cyclerVal, setCyclerVal] = useState('Option 1');
+  const [rollerVal, setRollerVal] = useState('Cherry');
   const [textVal, setTextVal] = useState('');
   const [formSubmitted, setFormSubmitted] = useState(null);
   const [infoScreen, setInfoScreen] = useState(false);
@@ -81,6 +83,15 @@ function App() {
                     <AzButton text="Click Me" onClick={() => alert('Clicked!')} />
                     <AzButton text="Loading" isLoading={true} />
                     <AzButton text="Square" shape="SQUARE" onClick={() => {}} />
+                </div>
+                <h3>AzRoller</h3>
+                <div style={{ width: '200px' }}>
+                    <AzRoller
+                        options={['Cherry', 'Bell', 'Bar', 'Seven', 'Lemon', 'Melon']}
+                        selectedOption={rollerVal}
+                        onOptionSelected={setRollerVal}
+                        hint="Select Slot"
+                    />
                 </div>
             </div>
         )}
