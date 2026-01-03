@@ -118,7 +118,13 @@ fun AzRoller(
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
                     contentDescription = "Dropdown",
-                    modifier = Modifier.size(24.dp), // Click handled by Overlay
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable {
+                            isTyping = false
+                            expanded = true
+                            focusManager.clearFocus() // Hide keyboard
+                        },
                     tint = effectiveColor
                 )
             },
@@ -157,6 +163,7 @@ fun AzRoller(
                         }
                 )
             }
+        }
 
         if (expanded && enabled) {
             val density = LocalDensity.current

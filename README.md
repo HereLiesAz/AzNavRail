@@ -444,7 +444,8 @@ AzRoller(
     - **Left Click**: Activates text edit mode for typing and filtering.
     - **Right Click**: Opens the dropdown in "Slot Machine" mode for browsing.
 - **Slot Machine Experience**: The dropdown list visually overlaps the input field, allowing users to "scroll" items into the selection slot. Items snap into place.
-- **Typing Support**: Users can type to filter or find options, or enter a value not present in the list. The list automatically manages transparency to ensure the input is visible while typing.
+- **Typing Support**: Users can type to filter or find options, or enter a value not present in the list. As you type, the dropdown automatically filters to show only matching options. The list automatically manages transparency to ensure the input is visible while typing.
+- **Dropdown Reset**: Clicking the dropdown arrow while typing exits "Text Mode" and re-opens the full list in "Slot Machine" mode.
 - **Index Support**: Gracefully handles `selectedIndex` in addition to `selectedOption`.
 - **Styling**: Uses `AzTextBox` as its core, ensuring consistent styling (outlines, colors, errors).
 - **Validation**: Propagates `isError` state to the underlying `AzTextBox` for visual feedback.
