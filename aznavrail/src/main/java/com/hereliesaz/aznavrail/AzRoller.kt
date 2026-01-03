@@ -206,7 +206,7 @@ fun AzRoller(
                     .distinctUntilChanged()
                     .collect { index ->
                         if (!listState.isScrollInProgress && !isTyping) {
-                            val slotIndex = index + 2
+                            val slotIndex = index + visibleItemsAbove
                             val item = fullList.getOrNull(slotIndex)
 
                             if (item != null) {
