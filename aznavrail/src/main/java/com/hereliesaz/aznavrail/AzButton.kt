@@ -48,6 +48,7 @@ fun AzButton(
     AzNavRailButton(
         onClick = onClick,
         text = text,
+        modifier = modifier,
         color = color,
         colors = colors,
         size = AzNavRailDefaults.HeaderIconSize,
