@@ -425,7 +425,7 @@ AzButton(
 
 ### AzRoller
 
-The `AzRoller` component is a versatile dropdown that behaves like a slot machine but also supports typing and filtering. It extends the functionality of `AzTextBox`.
+The `AzRoller` component is a versatile dropdown that behaves like a slot machine but also supports typing and filtering. It extends the functionality of `AzTextBox` with a unique split-click interaction model.
 
 ```kotlin
 AzRoller(
@@ -435,14 +435,19 @@ AzRoller(
     // selectedIndex = 0,
     onOptionSelected = { /* handle selection (String) */ },
     hint = "Select Item",
-    enabled = true
+    enabled = true,
+    isError = false
 )
 ```
 
-- **Slot Machine Experience**: The dropdown list visually overlaps the input field, allowing users to "scroll" items into the selection slot.
-- **Typing Support**: Users can type to filter or find options, or enter a value not present in the list.
-- **Index Support**: gracefully handles `selectedIndex` in addition to `selectedOption`.
+- **Split Interaction**:
+    - **Left Click**: Activates text edit mode for typing and filtering.
+    - **Right Click**: Opens the dropdown in "Slot Machine" mode for browsing.
+- **Slot Machine Experience**: The dropdown list visually overlaps the input field, allowing users to "scroll" items into the selection slot. Items snap into place.
+- **Typing Support**: Users can type to filter or find options, or enter a value not present in the list. The list automatically manages transparency to ensure the input is visible while typing.
+- **Index Support**: Gracefully handles `selectedIndex` in addition to `selectedOption`.
 - **Styling**: Uses `AzTextBox` as its core, ensuring consistent styling (outlines, colors, errors).
+- **Validation**: Propagates `isError` state to the underlying `AzTextBox` for visual feedback.
 
 ### Hierarchical Navigation
 

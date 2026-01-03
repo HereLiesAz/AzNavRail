@@ -125,7 +125,7 @@ fun AzRoller(
         )
 
         // Split Click Overlay
-        if (enabled) {
+        if (enabled && !isTyping) {
             Row(
                 modifier = Modifier
                     .matchParentSize()
