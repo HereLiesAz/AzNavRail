@@ -410,6 +410,7 @@ The `AzButton` component (and `AzToggle`, `AzCycler`) can be used independently 
 AzButton(
     onClick = { /* ... */ },
     text = "Save",
+    modifier = Modifier.fillMaxWidth(), // Now supports modifiers
     shape = AzButtonShape.RECTANGLE,
     enabled = true, // Can be disabled
     isLoading = false, // Shows loading spinner without resizing button
@@ -417,26 +418,31 @@ AzButton(
 )
 ```
 
+- **`modifier`**: Supports `Modifier` for layout customization (e.g., `weight`, `fillMaxWidth`).
 - **`enabled`**: Disables interaction and dims the button.
 - **`isLoading`**: Replaces the text with a loading animation (`AzLoad`). The button maintains its original size, and the animation is allowed to overflow if necessary.
 - **`contentPadding`**: Allows customizing the internal padding of the button (defaults to 8dp for rail buttons, but can be overridden for standalone use).
 
 ### AzRoller
 
-The `AzRoller` component is a dropdown menu that behaves like a slot machine, allowing infinite cycling through options.
+The `AzRoller` component is a versatile dropdown that behaves like a slot machine but also supports typing and filtering. It extends the functionality of `AzTextBox`.
 
 ```kotlin
 AzRoller(
     options = listOf("Cherry", "Bell", "Bar"),
     selectedOption = "Cherry",
-    onOptionSelected = { /* handle selection */ },
+    // Or use selectedIndex for index-based selection
+    // selectedIndex = 0,
+    onOptionSelected = { /* handle selection (String) */ },
     hint = "Select Item",
     enabled = true
 )
 ```
 
-- **Infinite Cycling**: The dropdown list simulates an infinite loop of the provided options.
-- **Styling**: Matches the look and feel of `AzTextBox` and other components.
+- **Slot Machine Experience**: The dropdown list visually overlaps the input field, allowing users to "scroll" items into the selection slot.
+- **Typing Support**: Users can type to filter or find options, or enter a value not present in the list.
+- **Index Support**: gracefully handles `selectedIndex` in addition to `selectedOption`.
+- **Styling**: Uses `AzTextBox` as its core, ensuring consistent styling (outlines, colors, errors).
 
 ### Hierarchical Navigation
 

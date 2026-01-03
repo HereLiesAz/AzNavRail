@@ -17,6 +17,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
@@ -197,6 +198,15 @@ fun AzTextBox(
                             CompositionLocalProvider(LocalContentColor provides effectiveColor) {
                                 trailingIcon()
                             }
+                        }
+                        if (isError) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = "Error",
+                                modifier = Modifier.size(16.dp),
+                                tint = effectiveColor
+                            )
                         }
                         if (text.isNotEmpty() && enabled) {
                             val icon = when {
