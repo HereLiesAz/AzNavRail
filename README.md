@@ -22,7 +22,7 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 - **Layout**: Pack buttons or preserve spacing.
 - **Disabled State**: Disable items or options.
 - **Loading State**: Built-in loading animation.
-- **Standalone Components**: `AzButton`, `AzToggle`, `AzCycler`, `AzDivider`.
+- **Standalone Components**: `AzButton`, `AzToggle`, `AzCycler`, `AzDivider`, `AzRoller`.
 - **Navigation**: seamless Jetpack Navigation integration.
 - **Hierarchy**: Nested menus with host and sub-items.
 - **Draggable (FAB Mode)**: Detach and move the rail.
@@ -31,6 +31,7 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 - **Toggles/Cyclers**: Simple state management.
 - **Gestures**: Swipe/tap to expand, collapse, or undock.
 - **`AzTextBox`**: Modern text box with autocomplete and submit button.
+- **`AzRoller`**: A dropdown menu that works like a roller or slot machine, cycling through options infinitely.
 - **Info Screen**: Interactive help mode for onboarding with visual guides.
 
 ## AzNavRail for Android (Jetpack Compose)
@@ -419,6 +420,23 @@ AzButton(
 - **`enabled`**: Disables interaction and dims the button.
 - **`isLoading`**: Replaces the text with a loading animation (`AzLoad`). The button maintains its original size, and the animation is allowed to overflow if necessary.
 - **`contentPadding`**: Allows customizing the internal padding of the button (defaults to 8dp for rail buttons, but can be overridden for standalone use).
+
+### AzRoller
+
+The `AzRoller` component is a dropdown menu that behaves like a slot machine, allowing infinite cycling through options.
+
+```kotlin
+AzRoller(
+    options = listOf("Cherry", "Bell", "Bar"),
+    selectedOption = "Cherry",
+    onOptionSelected = { /* handle selection */ },
+    hint = "Select Item",
+    enabled = true
+)
+```
+
+- **Infinite Cycling**: The dropdown list simulates an infinite loop of the provided options.
+- **Styling**: Matches the look and feel of `AzTextBox` and other components.
 
 ### Hierarchical Navigation
 
