@@ -19,6 +19,8 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -160,7 +162,7 @@ fun AzRoller(
             val density = LocalDensity.current
             val itemHeight = with(density) { componentHeight.toDp() }
             val visibleItemsAbove = 2
-            val visibleItemsBelow = 2
+            val visibleItemsBelow = 4
             val popupYOffset = -(componentHeight * visibleItemsAbove)
 
             val filteredOptions = remember(text, options, isTyping) {
@@ -188,6 +190,9 @@ fun AzRoller(
 
             val listState = rememberLazyListState(initialFirstVisibleItemIndex = initialIndex)
             val snapBehavior = rememberSnapFlingBehavior(lazyListState = listState)
+
+            val showTopIndicator by remember { derivedStateOf { listState.canScrollBackward } }
+            val showBottomIndicator by remember { derivedStateOf { listState.canScrollForward } }
 
             // Fix Scroll Reset: When typing (filtering changes), reset scroll to top.
             LaunchedEffect(filteredOptions) {
@@ -291,6 +296,30 @@ fun AzRoller(
                             .fillMaxWidth()
                             .border(2.dp, if (!isTyping) effectiveColor.copy(alpha = 0.5f) else Color.Transparent)
                     )
+
+                    // Scroll Indicators
+                    if (showTopIndicator) {
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowUp,
+                            contentDescription = "Scroll Up",
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .size(24.dp)
+                                .background(surfaceColor.copy(alpha = 0.5f)),
+                            tint = effectiveColor
+                        )
+                    }
+                    if (showBottomIndicator) {
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowDown,
+                            contentDescription = "Scroll Down",
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .size(24.dp)
+                                .background(surfaceColor.copy(alpha = 0.5f)),
+                            tint = effectiveColor
+                        )
+                    }
                 }
             }
         }
