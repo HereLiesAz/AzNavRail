@@ -3,6 +3,8 @@ import './AzNavRail.css';
 import MenuItem from './MenuItem';
 import AzNavRailButton from './AzNavRailButton';
 import HelpOverlay from './HelpOverlay';
+import { RelocItemHandler } from '../utils/RelocItemHandler';
+import AzTextBox from './AzTextBox';
 
 /**
  * An M3-style navigation rail that expands into a menu drawer for web applications.
@@ -36,9 +38,24 @@ const AzNavRail = ({
 
   const [cyclerStates, setCyclerStates] = useState({});
   const [hostStates, setHostStates] = useState({});
+  const [draggedItemId, setDraggedItemId] = useState(null);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [localNavItems, setLocalNavItems] = useState([]);
+  const [hiddenMenuOpenId, setHiddenMenuOpenId] = useState(null);
   const cyclerTimers = useRef({});
+  const dragStartY = useRef(0);
+  const longPressTimer = useRef(null);
+  const itemsRef = useRef([]);
 
-  const navItems = useMemo(() => content || [], [content]);
+  useEffect(() => {
+      setLocalNavItems(content || []);
+  }, [content]);
+
+  useEffect(() => {
+      itemsRef.current = localNavItems;
+  }, [localNavItems]);
+
+  const navItems = localNavItems;
 
   // Flatten items for cycler initialization (simple recursive helper could be used if needed deep)
   useEffect(() => {
@@ -87,6 +104,76 @@ const AzNavRail = ({
       setHostStates(prev => ({ ...prev, [item.id]: !prev[item.id] }));
   };
 
+  const handleMouseDown = (e, item) => {
+      if (!item.isRelocItem || infoScreen) return;
+
+      dragStartY.current = e.clientY;
+      const initialIndex = itemsRef.current.findIndex(it => it.id === item.id);
+
+      longPressTimer.current = setTimeout(() => {
+          setHiddenMenuOpenId(item.id);
+          longPressTimer.current = null;
+      }, 500);
+
+      const onMouseMove = (moveEvent) => {
+          const diff = moveEvent.clientY - dragStartY.current;
+          if (Math.abs(diff) > 5) {
+              if (longPressTimer.current) {
+                  clearTimeout(longPressTimer.current);
+                  longPressTimer.current = null;
+              }
+              setDraggedItemId(item.id);
+              setDragOffset(diff);
+
+              const itemHeight = 56; // Approximation
+              const slotsMoved = Math.round(diff / itemHeight);
+              const currentItems = itemsRef.current;
+
+              if (slotsMoved !== 0) {
+                  const currentIndex = currentItems.findIndex(it => it.id === item.id);
+                  if (currentIndex !== -1) {
+                      const targetIndex = currentIndex + slotsMoved;
+                      if (targetIndex >= 0 && targetIndex < currentItems.length) {
+                          const cluster = RelocItemHandler.findCluster(currentItems, item.id);
+                          if (cluster && targetIndex >= cluster.start && targetIndex <= cluster.end) {
+                              const newItems = RelocItemHandler.updateOrder(currentItems, item.id, targetIndex);
+                              // Comparison needs deep check or just ID check if reference changed
+                              // updateOrder returns new array
+                              if (newItems !== currentItems) {
+                                  setLocalNavItems(newItems);
+                                  dragStartY.current = moveEvent.clientY; // Reset reference
+                                  setDragOffset(0);
+                              }
+                          }
+                      }
+                  }
+              }
+          }
+      };
+
+      const onMouseUp = () => {
+          if (longPressTimer.current) {
+              clearTimeout(longPressTimer.current);
+          }
+          // Access ref for final state
+          const finalItems = itemsRef.current;
+          // We can't check draggedItemId state reliably inside closure if it's stale,
+          // but we set it. However, simpler to just check if we were dragging.
+          // Or rely on closure variable 'item'.
+          const finalIndex = finalItems.findIndex(it => it.id === item.id);
+          if (item.onRelocate && initialIndex !== -1 && finalIndex !== -1) {
+                item.onRelocate(initialIndex, finalIndex, finalItems.map(it => it.id));
+          }
+          setDraggedItemId(null);
+          setDragOffset(0);
+          window.removeEventListener('mousemove', onMouseMove);
+          window.removeEventListener('mouseup', onMouseUp);
+      };
+
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+  };
+
   const renderMenuItem = (item, depth = 0) => {
       const finalItem = item.isCycler
         ? { ...item, selectedOption: cyclerStates[item.id]?.displayedOption }
@@ -123,24 +210,6 @@ const AzNavRail = ({
         if (item.isRailItem || item.items) { // Top level rail items or hosts
             visible.push(item);
             if (item.items && hostStates[item.id]) {
-               // If host is expanded, sub items are visible?
-               // Wait, sub items are only shown in Menu mode?
-               // "Rail Sub Item" - does it appear in rail?
-               // Android: `azRailSubItem` appears in both.
-               // In this simplified web version, we might not render sub items in collapsed rail unless logic supports it.
-               // Looking at render loop below:
-               // .map(item => ... AzNavRailButton ...)
-               // It maps top level items.
-               // If item has `items` (isHost), we render a button for it.
-               // If we click it, it expands rail.
-               // So in collapsed mode, we don't see subitems.
-               // But Help Mode description says: "And when sub items are exposed, they too should have their descriptions shown and be pointed at."
-               // Sub items are exposed when Host is expanded.
-               // If Host is expanded, does the Rail expand?
-               // In Android: "And when sub items are exposed... Host items should still expand and collapse their sub items."
-               // In Android `RailItems` composable, we iterate subItems if host is expanded.
-
-               // So we need to support rendering sub-items in the Rail if host is expanded.
                item.items.forEach(sub => {
                    if (sub.isRailItem) visible.push(sub);
                });
@@ -176,6 +245,9 @@ const AzNavRail = ({
             </div>
           ) : (
             <div className="rail" style={{overflowY: 'auto', maxHeight: '100%'}}>
+              {/* DEBUG */}
+              {/* <div style={{fontSize: '8px'}}>{JSON.stringify(navItems.map(i => i.id))}</div> */}
+
               {navItems
                 .filter(item => item.isRailItem || item.items)
                 .map(item => {
@@ -183,9 +255,32 @@ const AzNavRail = ({
                     ? { ...item, selectedOption: cyclerStates[item.id]?.displayedOption }
                     : item;
 
-                  // If host is expanded, we should render its sub-items too?
-                  // Currently the loop just renders top-level.
-                  // We need to inject sub-items if expanded.
+                  // Render logic...
+                  // For reloc items, we must wrap them to handle mouse events
+                  if (item.isRelocItem) {
+                       return (
+                          <div key={item.id} onMouseDown={(e) => handleMouseDown(e, item)} style={{position: 'relative', width: '100%', display: 'flex', justifyContent: 'center'}}>
+                              <AzNavRailButton
+                                  item={finalItem}
+                                  onCyclerClick={() => handleCyclerClick(item)}
+                                  infoScreen={infoScreen}
+                                  style={{ transform: draggedItemId === item.id ? `translateY(${dragOffset}px)` : 'none', zIndex: draggedItemId === item.id ? 100 : 1 }}
+                              />
+                              {hiddenMenuOpenId === item.id && item.hiddenMenu && (
+                                  <div className="hidden-menu-popup" style={{position: 'absolute', left: '100%', top: 0, zIndex: 1000, background: 'white', border: '1px solid black', padding: '8px', width: '150px'}}>
+                                      {item.hiddenMenu.map((menuItem, idx) => (
+                                          <div key={idx} style={{padding: '8px', borderBottom: '1px solid #eee', cursor: 'pointer'}} onClick={() => {
+                                              if(menuItem.onClick) menuItem.onClick();
+                                              setHiddenMenuOpenId(null);
+                                          }}>
+                                              {menuItem.text}
+                                          </div>
+                                      ))}
+                                  </div>
+                              )}
+                          </div>
+                       );
+                  }
 
                   return (
                     <React.Fragment key={item.id}>
@@ -193,7 +288,6 @@ const AzNavRail = ({
                             item={finalItem}
                             onCyclerClick={() => handleCyclerClick(item)}
                             onClickOverride={item.items ? () => {
-                                // If infoScreen, just toggle state locally without expanding rail
                                 if (infoScreen) {
                                     toggleHost(item);
                                 } else {
@@ -203,14 +297,18 @@ const AzNavRail = ({
                             } : undefined}
                             infoScreen={infoScreen}
                         />
+                        {/* Sub items rendering */}
                         {item.items && hostStates[item.id] && (
                             item.items.filter(sub => sub.isRailItem).map(sub => (
-                                <AzNavRailButton
-                                    key={sub.id}
-                                    item={sub}
-                                    onCyclerClick={() => handleCyclerClick(sub)}
-                                    infoScreen={infoScreen}
-                                />
+                                <div key={sub.id} onMouseDown={(e) => handleMouseDown(e, sub)} style={{position: 'relative'}}>
+                                    <AzNavRailButton
+                                        item={sub}
+                                        onCyclerClick={() => handleCyclerClick(sub)}
+                                        infoScreen={infoScreen}
+                                        style={{ transform: draggedItemId === sub.id ? `translateY(${dragOffset}px)` : 'none', zIndex: draggedItemId === sub.id ? 100 : 1 }}
+                                    />
+                                    {/* ... hidden menu for sub items ... */}
+                                </div>
                             ))
                         )}
                     </React.Fragment>

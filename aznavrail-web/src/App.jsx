@@ -19,6 +19,13 @@ function App() {
   const [formSubmitted, setFormSubmitted] = useState(null);
   const [infoScreen, setInfoScreen] = useState(false);
 
+  // Example Reloc Items (simulating a cluster)
+  const [relocItems, setRelocItems] = useState([
+      { id: 'reloc1', text: 'R1', isRailItem: true, isRelocItem: true, hostId: 'home', hiddenMenu: [{ text: 'Hidden 1', onClick: () => alert('Hidden 1') }] },
+      { id: 'reloc2', text: 'R2', isRailItem: true, isRelocItem: true, hostId: 'home' },
+      { id: 'reloc3', text: 'R3', isRailItem: true, isRelocItem: true, hostId: 'home' }
+  ]);
+
   const navItems = [
     {
       id: 'home',
@@ -27,6 +34,7 @@ function App() {
       onClick: () => setCurrentPage('Home'),
       info: 'Go to the home screen.'
     },
+    ...relocItems,
     {
       id: 'features',
       text: 'Features',

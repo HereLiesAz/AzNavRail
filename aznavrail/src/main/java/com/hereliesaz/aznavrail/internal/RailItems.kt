@@ -31,6 +31,9 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.zIndex
@@ -103,7 +106,8 @@ internal fun RailItems(
                                     val currentIdx = scope.navItems.indexOfFirst { it.id == draggedItemId }
                                     if (currentIdx != -1 && currentDropTargetIndex != -1 && currentIdx != currentDropTargetIndex) {
                                         RelocItemHandler.updateOrder(scope.navItems, draggedItemId!!, currentDropTargetIndex!!)
-                                        scope.onRelocateMap[draggedItemId!!]?.invoke(currentIdx, currentDropTargetIndex!!)
+                                        val currentOrder = scope.navItems.map { it.id }
+                                        scope.onRelocateMap[draggedItemId!!]?.invoke(currentIdx, currentDropTargetIndex!!, currentOrder)
                                     }
                                 }
                                 draggedItemId = null
@@ -151,7 +155,8 @@ internal fun RailItems(
                                                     val currentIdx = scope.navItems.indexOfFirst { it.id == draggedItemId }
                                                     if (currentIdx != -1 && currentDropTargetIndex != -1 && currentIdx != currentDropTargetIndex) {
                                                         RelocItemHandler.updateOrder(scope.navItems, draggedItemId!!, currentDropTargetIndex!!)
-                                                        scope.onRelocateMap[draggedItemId!!]?.invoke(currentIdx, currentDropTargetIndex!!)
+                                                        val currentOrder = scope.navItems.map { it.id }
+                                                        scope.onRelocateMap[draggedItemId!!]?.invoke(currentIdx, currentDropTargetIndex!!, currentOrder)
                                                     }
                                                 }
                                                 draggedItemId = null
@@ -444,12 +449,23 @@ private fun HiddenMenuPopup(
         ) {
             items.forEach { menuItem ->
                 if (menuItem.isInput) {
+                    // Local state for the input
+                    var text by remember { mutableStateOf("") }
+
                     com.hereliesaz.aznavrail.AzTextBox(
                         modifier = Modifier.padding(8.dp),
                         hint = menuItem.hint ?: "",
-                        value = null, // Use internal state
-                        onValueChange = null,
+                        value = text,
+                        onValueChange = { text = it },
                         onSubmit = { value -> onInputSubmit(menuItem, value) },
+                        submitButtonContent = {
+                            androidx.compose.material3.Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = "Submit",
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        },
                         outlineColor = MaterialTheme.colorScheme.onSurface
                     )
                 } else {

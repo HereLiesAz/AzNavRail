@@ -40,6 +40,10 @@ export interface AzNavItem {
   hostId?: string;
   isExpanded: boolean;
   onClick?: () => void;
+  // Reloc Item properties
+  isRelocItem?: boolean;
+  hiddenMenu?: { text: string; onClick: () => void }[];
+  onRelocate?: (fromIndex: number, toIndex: number, newOrder: string[]) => void;
 }
 
 export interface AzNavItemProps {
