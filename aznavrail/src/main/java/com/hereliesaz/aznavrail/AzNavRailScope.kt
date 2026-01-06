@@ -87,11 +87,35 @@ interface AzNavRailScope {
     fun azRailSubCycler(id: String, hostId: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
     fun azRailSubCycler(id: String, hostId: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, route: String, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
     fun azRailSubCycler(id: String, hostId: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, route: String, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null)
+
+    fun azRailRelocItem(id: String, hostId: String, text: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, hiddenMenu: HiddenMenuScope.() -> Unit = {})
+}
+
+interface HiddenMenuScope {
+    fun listItem(text: String, onClick: () -> Unit)
+    fun listItem(text: String, route: String)
+}
+
+internal class HiddenMenuScopeImpl : HiddenMenuScope {
+    val items = mutableListOf<com.hereliesaz.aznavrail.model.HiddenMenuItem>()
+    val onClickMap = mutableMapOf<String, () -> Unit>()
+
+    override fun listItem(text: String, onClick: () -> Unit) {
+        val id = "hidden_item_${items.size}"
+        items.add(com.hereliesaz.aznavrail.model.HiddenMenuItem(id = id, text = text))
+        onClickMap[id] = onClick
+    }
+
+    override fun listItem(text: String, route: String) {
+        val id = "hidden_item_${items.size}"
+        items.add(com.hereliesaz.aznavrail.model.HiddenMenuItem(id = id, text = text, route = route))
+    }
 }
 
 internal class AzNavRailScopeImpl : AzNavRailScope {
     val navItems = mutableStateListOf<AzNavItem>()
     val onClickMap = mutableMapOf<String, () -> Unit>()
+    val hiddenMenuOnClickMap = mutableMapOf<String, () -> Unit>()
     var navController: NavController? = null
     var displayAppNameInHeader: Boolean = false
     var packRailButtons: Boolean = false
@@ -419,6 +443,31 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
 
     private fun addRailSubCycler(id: String, hostId: String, color: Color?, options: List<String>, selectedOption: String, shape: AzButtonShape?, route: String?, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, info: String?, onClick: () -> Unit) {
         addCycler(id = id, hostId = hostId, color = color, options = options, selectedOption = selectedOption, route = route, disabled = disabled, disabledOptions = disabledOptions, screenTitle = screenTitle, info = info, isRailItem = true, isSubItem = true, shape = shape, onClick = onClick)
+    }
+
+    override fun azRailRelocItem(id: String, hostId: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, hiddenMenu: HiddenMenuScope.() -> Unit) {
+        val hiddenMenuScope = HiddenMenuScopeImpl()
+        hiddenMenuScope.hiddenMenu()
+        hiddenMenuOnClickMap.putAll(hiddenMenuScope.onClickMap)
+
+        val finalScreenTitle = if (screenTitle == AzNavRail.noTitle) null else screenTitle ?: text
+
+        navItems.add(
+            AzNavItem(
+                id = id,
+                text = text,
+                isRailItem = true,
+                isSubItem = true,
+                hostId = hostId,
+                isRelocItem = true,
+                color = color,
+                shape = shape ?: defaultShape,
+                disabled = disabled,
+                screenTitle = finalScreenTitle,
+                info = info,
+                hiddenMenuItems = hiddenMenuScope.items
+            )
+        )
     }
 
     private fun addCycler(
