@@ -33,7 +33,8 @@ internal fun RailContent(
     onItemClick: () -> Unit,
     onHostClick: () -> Unit = {},
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
-    infoScreen: Boolean = false
+    infoScreen: Boolean = false,
+    dragModifier: Modifier = Modifier
 ) {
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
@@ -79,6 +80,7 @@ internal fun RailContent(
             .onGloballyPositioned { coordinates ->
                 onItemGloballyPositioned?.invoke(item.id, coordinates.boundsInWindow())
             }
+            .then(dragModifier)
     ) {
         AzNavRailButton(
             onClick = finalOnClick,
