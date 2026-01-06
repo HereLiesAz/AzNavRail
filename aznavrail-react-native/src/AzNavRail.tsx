@@ -17,6 +17,8 @@ import { AzToggle } from './components/AzToggle';
 import { AzCycler } from './components/AzCycler';
 import { RailMenuItem } from './components/RailMenuItem';
 import { AzLoad } from './components/AzLoad';
+import { DraggableRailItemWrapper } from './components/DraggableRailItemWrapper';
+import { RelocItemHandler } from './util/RelocItemHandler';
 
 interface AzNavRailProps extends AzNavRailSettings {
   children: React.ReactNode;
@@ -70,6 +72,9 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
   const panValue = useRef({ x: 0, y: 0 });
   const dragStartPos = useRef({ x: 0, y: 0 });
 
+  // Animation values for item displacement
+  const itemOffsets = useRef<Record<string, Animated.Value>>({});
+
   // Cache screen height
   const screenHeightRef = useRef(Dimensions.get('window').height);
 
@@ -121,7 +126,9 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
           JSON.stringify(old.options) === JSON.stringify(item.options) &&
           old.shape === item.shape &&
           old.color === item.color &&
-          old.route === item.route;
+          old.route === item.route &&
+          old.isRelocItem === item.isRelocItem &&
+          old.hiddenMenu === item.hiddenMenu; // Simplistic check
 
         if (isSame) return prev;
         const newItems = [...prev];
@@ -134,6 +141,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
 
   const unregister = useCallback((id: string) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
+    if (itemOffsets.current[id]) delete itemOffsets.current[id];
   }, []);
 
   // --- Animation & Effects ---
@@ -146,6 +154,94 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
 
     if (onExpandedChange) onExpandedChange(isExpanded);
   }, [isExpanded, expandedRailWidth, collapsedRailWidth]);
+
+  // Initialize animation values for new items
+  useEffect(() => {
+      items.forEach(item => {
+          if (!itemOffsets.current[item.id]) {
+              itemOffsets.current[item.id] = new Animated.Value(0);
+          }
+      });
+  }, [items]);
+
+  // --- Reloc Item Logic ---
+  const handleRelocDragStart = (draggedItemIndex: number) => {
+      logInteraction('Reloc drag started', items[draggedItemIndex].text);
+  };
+
+  const handleRelocDragEnd = (draggedItemIndex: number) => {
+      // Reset all offsets
+      Object.values(itemOffsets.current).forEach(anim => anim.setValue(0));
+      logInteraction('Reloc drag ended');
+  };
+
+  const handleRelocDragMove = (dy: number, draggedItemIndex: number) => {
+      const draggedItem = items[draggedItemIndex];
+      if (!draggedItem.isRelocItem || !draggedItem.hostId) return;
+
+      const cluster = RelocItemHandler.getCluster(items, draggedItem.hostId);
+      const itemHeight = 48 + 8; // Approx height + margin
+
+      const draggedClusterIndex = cluster.findIndex(i => i.id === draggedItem.id);
+      const targetClusterIndex = RelocItemHandler.calculateTargetIndex(dy, draggedClusterIndex, cluster.length, itemHeight);
+
+      const targetItem = cluster[targetClusterIndex];
+
+      // Animate offsets
+      cluster.forEach((item, index) => {
+          if (item.id === draggedItem.id) return;
+
+          let offset = 0;
+          // Logic similar to Android/Web implementation
+          if (draggedClusterIndex < targetClusterIndex) {
+              // Dragging down
+              if (index > draggedClusterIndex && index <= targetClusterIndex) {
+                  offset = -itemHeight; // Move up
+              }
+          } else if (draggedClusterIndex > targetClusterIndex) {
+              // Dragging up
+              if (index >= targetClusterIndex && index < draggedClusterIndex) {
+                  offset = itemHeight; // Move down
+              }
+          }
+
+          Animated.spring(itemOffsets.current[item.id], {
+              toValue: offset,
+              useNativeDriver: false
+          }).start();
+      });
+
+      // If dropped here (simulated), update state?
+      // In React Native PanResponder, we update state only on release to avoid jank,
+      // or we can throttle updates.
+      // However, we need to know the final order on release.
+      // We can store the calculated target index in a ref.
+      (panValue as any).targetIndex = targetClusterIndex;
+  };
+
+  const handleRelocDrop = (draggedItemIndex: number) => {
+       const draggedItem = items[draggedItemIndex];
+       const cluster = RelocItemHandler.getCluster(items, draggedItem.hostId!);
+       const draggedClusterIndex = cluster.findIndex(i => i.id === draggedItem.id);
+       const targetClusterIndex = (panValue as any).targetIndex ?? draggedClusterIndex; // Default to self if no move
+
+       if (draggedClusterIndex !== targetClusterIndex) {
+           const newItems = RelocItemHandler.reorderItems(items, draggedItem.id, draggedItem.hostId!, targetClusterIndex);
+           setItems(newItems);
+
+           // Fire callback
+           const newCluster = RelocItemHandler.getCluster(newItems, draggedItem.hostId!);
+           const newOrder = newCluster.map(i => i.id);
+           if (draggedItem.onRelocate) {
+               draggedItem.onRelocate(draggedClusterIndex, targetClusterIndex, newOrder);
+           }
+       }
+
+       // Clean up
+       delete (panValue as any).targetIndex;
+       handleRelocDragEnd(draggedItemIndex);
+  };
+
 
   // --- Helpers ---
 
@@ -169,11 +265,6 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
               useNativeDriver: false
           }).start();
 
-          // We log here because this action (shifting) is significant, but note that
-          // handleHeaderTap didn't originally log. However, adding it makes the behavior consistent.
-          // The reviewer asked to preserve behavior. If handleHeaderTap didn't log, maybe we shouldn't enforce it.
-          // But 'Adjusted position' log is useful. I'll check if I can conditionally log based on caller,
-          // or just log it. The reviewer said "Keep the behavior in sync". So syncing behavior likely includes logging.
           logInteraction('Adjusted position', `Shifted up by ${shift}`);
       }
   };
@@ -291,7 +382,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
 
   // --- Render Helpers ---
 
-  const renderRailItem = (item: AzNavItem) => {
+  const renderRailItem = (item: AzNavItem, index: number) => {
       const isExpandedHost = hostStates[item.id] || false;
       const subItems = items.filter(i => i.hostId === item.id);
 
@@ -305,6 +396,22 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
           style: { marginBottom: isRect ? 2 : AzNavRailDefaults.RailContentVerticalArrangement }
       };
 
+      if (item.isRelocItem) {
+          return (
+              <DraggableRailItemWrapper
+                  key={item.id}
+                  item={item}
+                  index={items.indexOf(item)} // Global index
+                  totalItems={items.length}
+                  onDragStart={handleRelocDragStart}
+                  onDragEnd={handleRelocDrop}
+                  onDragMove={handleRelocDragMove}
+                  offsetY={itemOffsets.current[item.id] || new Animated.Value(0)}
+                  style={commonProps.style}
+              />
+          );
+      }
+
       if (item.isHost) {
            return (
              <View key={item.id} style={{ alignItems: 'center', width: '100%' }}>
@@ -316,7 +423,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
                          logInteraction('Host toggled', item.text);
                      }}
                  />
-                 {isExpandedHost && subItems.map(renderRailItem)}
+                 {isExpandedHost && subItems.map((sub, i) => renderRailItem(sub, items.indexOf(sub)))}
              </View>
            );
       }
@@ -442,7 +549,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
                 </ScrollView>
             ) : (
                 <ScrollView contentContainerStyle={styles.railContent}>
-                     {(isFloating && !showFloatingButtons) ? null : railItems.map(renderRailItem)}
+                     {(isFloating && !showFloatingButtons) ? null : railItems.map((item, index) => renderRailItem(item, index))}
                 </ScrollView>
             )}
 

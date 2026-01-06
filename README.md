@@ -26,6 +26,7 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 - **Navigation**: seamless Jetpack Navigation integration.
 - **Hierarchy**: Nested menus with host and sub-items.
 - **Draggable (FAB Mode)**: Detach and move the rail.
+-   **Reorderable Items**: `AzRailRelocItem` allows user drag-and-drop reordering within clusters.
 - **System Overlay**: System-wide overlay support with automatic resizing and activity launching.
 - **Auto-sizing Text**: Text fits without wrapping (unless explicit newline).
 - **Toggles/Cyclers**: Simple state management.
@@ -469,6 +470,34 @@ The rail can be detached and moved around the screen by long-pressing the header
 - **Deactivation**:
     - **Snapping**: Drag the FAB close to its original docked position to snap it back into place, exiting FAB mode.
     - **Long Press**: Long-pressing the FAB will also immediately re-dock the rail.
+
+### Reorderable Items (AzRailRelocItem)
+
+`AzRailRelocItem` is a specialized sub-item that users can reorder via drag-and-drop. This feature is supported on Android, Web, and React Native.
+
+```kotlin
+azRailRelocItem(
+    id = "reloc-1",
+    hostId = "host-1",
+    text = "Item 1",
+    onRelocate = { from, to, newOrder ->
+        // Handle new order (List<String>)
+    }
+) {
+    // Hidden Menu (Long Press)
+    listItem("Action 1") { /* ... */ }
+    inputItem("Rename") { newName -> /* ... */ }
+}
+```
+
+- **Drag-and-Drop**: Hold and drag an item to move it. Other items will animate to create an empty slot at the potential drop target.
+- **Cluster Constraints**: Items can only be moved within their "cluster" — a contiguous group of relocation items under the same host. They cannot jump over standard items or move to a different host.
+- **Hidden Menu**: Long-pressing the item (without dragging) opens a contextual menu. This menu supports:
+    - **List Items**: Standard clickable actions.
+    - **Input Items**: Text input fields (e.g., for renaming).
+- **Callbacks**:
+    - `onClick`: Standard tap action.
+    - `onRelocate`: Called when a drag operation completes. Provides the `fromIndex`, `toIndex`, and the complete `newOrder` list of item IDs.
 
 ### System Overlay
 
