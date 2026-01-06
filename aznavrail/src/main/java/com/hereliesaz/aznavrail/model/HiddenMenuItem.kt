@@ -7,5 +7,7 @@ import kotlinx.parcelize.Parcelize
 data class HiddenMenuItem(
     val id: String,
     val text: String,
-    val route: String? = null
+    val route: String? = null,
+    val isInput: Boolean = false,
+    val hint: String? = null
 ) : Parcelable

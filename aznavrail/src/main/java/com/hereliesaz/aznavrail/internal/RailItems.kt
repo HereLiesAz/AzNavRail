@@ -103,6 +103,7 @@ internal fun RailItems(
                                     val currentIdx = scope.navItems.indexOfFirst { it.id == draggedItemId }
                                     if (currentIdx != -1 && currentDropTargetIndex != -1 && currentIdx != currentDropTargetIndex) {
                                         RelocItemHandler.updateOrder(scope.navItems, draggedItemId!!, currentDropTargetIndex!!)
+                                        scope.onRelocateMap[draggedItemId!!]?.invoke(currentIdx, currentDropTargetIndex!!)
                                     }
                                 }
                                 draggedItemId = null
@@ -150,6 +151,7 @@ internal fun RailItems(
                                                     val currentIdx = scope.navItems.indexOfFirst { it.id == draggedItemId }
                                                     if (currentIdx != -1 && currentDropTargetIndex != -1 && currentIdx != currentDropTargetIndex) {
                                                         RelocItemHandler.updateOrder(scope.navItems, draggedItemId!!, currentDropTargetIndex!!)
+                                                        scope.onRelocateMap[draggedItemId!!]?.invoke(currentIdx, currentDropTargetIndex!!)
                                                     }
                                                 }
                                                 draggedItemId = null
@@ -303,24 +305,40 @@ private fun DraggableRailItemWrapper(
                             // Calculate Target Index
                             val currentIdx = scope.navItems.indexOfFirst { it.id == item.id }
                             if (currentIdx != -1) {
-                                val myHeight = itemHeights[item.id] ?: 0
-                                // Calculate absolute drag distance relative to start
-                                // dragOffset is cumulative.
-                                // We need to determine how many "slots" we moved.
-                                // Assuming uniform height for RelocItems is safest, but we have `itemHeights`.
+                                // Calculate cumulative drag target
+                                val cluster = RelocItemHandler.findCluster(scope.navItems, item.id)
+                                if (cluster != null) {
+                                    var target = currentIdx
+                                    var remainingOffset = dragOffset
 
-                                // Simple approximation: distance / height
-                                if (myHeight > 0) {
-                                    val slotsMoved = (dragOffset / myHeight).roundToInt()
-                                    var target = currentIdx + slotsMoved
-
-                                    // Clamp to cluster
-                                    val cluster = RelocItemHandler.findCluster(scope.navItems, item.id)
-                                    if (cluster != null) {
-                                        target = target.coerceIn(cluster)
-                                        if (target != currentDropTargetIndex) {
-                                            onDragTargetChange(target)
+                                    if (remainingOffset > 0) {
+                                        // Dragging down
+                                        while (target < cluster.last) {
+                                            val nextItem = scope.navItems[target + 1]
+                                            val nextHeight = itemHeights[nextItem.id] ?: 0
+                                            if (remainingOffset > nextHeight / 2) {
+                                                remainingOffset -= nextHeight
+                                                target++
+                                            } else {
+                                                break
+                                            }
                                         }
+                                    } else {
+                                        // Dragging up
+                                        while (target > cluster.first) {
+                                            val prevItem = scope.navItems[target - 1]
+                                            val prevHeight = itemHeights[prevItem.id] ?: 0
+                                            if (remainingOffset < -(prevHeight / 2)) {
+                                                remainingOffset += prevHeight
+                                                target--
+                                            } else {
+                                                break
+                                            }
+                                        }
+                                    }
+
+                                    if (target != currentDropTargetIndex) {
+                                        onDragTargetChange(target)
                                     }
                                 }
                             }
@@ -371,6 +389,10 @@ private fun DraggableRailItemWrapper(
                       menuItem.route?.let { navController?.navigate(it) }
                       onHiddenMenuDismiss()
                  },
+                 onInputSubmit = { menuItem, value ->
+                      scope.hiddenMenuOnValueChangeMap[menuItem.id]?.invoke(value)
+                      onHiddenMenuDismiss()
+                 },
                  backgroundColor = AzTextBoxDefaults.getBackgroundColor(),
                  backgroundOpacity = AzTextBoxDefaults.getBackgroundOpacity(),
                  anchorWidth = itemWidths[item.id] ?: 0
@@ -400,6 +422,7 @@ private fun HiddenMenuPopup(
     items: List<com.hereliesaz.aznavrail.model.HiddenMenuItem>,
     onDismiss: () -> Unit,
     onItemClick: (com.hereliesaz.aznavrail.model.HiddenMenuItem) -> Unit,
+    onInputSubmit: (com.hereliesaz.aznavrail.model.HiddenMenuItem, String) -> Unit,
     backgroundColor: androidx.compose.ui.graphics.Color,
     backgroundOpacity: Float,
     anchorWidth: Int
@@ -420,14 +443,25 @@ private fun HiddenMenuPopup(
                 .padding(8.dp)
         ) {
             items.forEach { menuItem ->
-                Text(
-                    text = menuItem.text,
-                    modifier = Modifier
-                        .clickable { onItemClick(menuItem) }
-                        .padding(vertical = 8.dp, horizontal = 12.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                if (menuItem.isInput) {
+                    com.hereliesaz.aznavrail.AzTextBox(
+                        modifier = Modifier.padding(8.dp),
+                        hint = menuItem.hint ?: "",
+                        value = null, // Use internal state
+                        onValueChange = null,
+                        onSubmit = { value -> onInputSubmit(menuItem, value) },
+                        outlineColor = MaterialTheme.colorScheme.onSurface
+                    )
+                } else {
+                    Text(
+                        text = menuItem.text,
+                        modifier = Modifier
+                            .clickable { onItemClick(menuItem) }
+                            .padding(vertical = 8.dp, horizontal = 12.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
         }
     }
