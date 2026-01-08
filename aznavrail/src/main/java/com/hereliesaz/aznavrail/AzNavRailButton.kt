@@ -14,8 +14,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -51,6 +55,7 @@ fun AzNavRailButton(
     modifier: Modifier = Modifier,
     size: Dp = 72.dp,
     color: Color = MaterialTheme.colorScheme.primary,
+    activeColor: Color = MaterialTheme.colorScheme.primary,
     colors: ButtonColors? = null,
     shape: AzButtonShape = AzButtonShape.CIRCLE,
     enabled: Boolean = true,
@@ -59,6 +64,9 @@ fun AzNavRailButton(
     contentPadding: PaddingValues = PaddingValues(8.dp),
     content: @Composable () -> Unit = {}
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
     val buttonShape = when (shape) {
         AzButtonShape.CIRCLE -> CircleShape
         AzButtonShape.SQUARE -> RoundedCornerShape(0.dp)
@@ -77,9 +85,15 @@ fun AzNavRailButton(
     }
 
     val disabledColor = color.copy(alpha = 0.5f)
-    val finalColor = if (isSelected) MaterialTheme.colorScheme.primary else color
+    val targetColor = if (isPressed) {
+        if (isSelected) color else activeColor
+    } else {
+        if (isSelected) activeColor else color
+    }
+
+    val finalColor = targetColor
     val defaultColors = ButtonDefaults.outlinedButtonColors(
-        containerColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent,
+        containerColor = if (isSelected && !isPressed) activeColor.copy(alpha = 0.1f) else Color.Transparent,
         contentColor = if (!enabled) disabledColor else finalColor,
         disabledContainerColor = Color.Transparent,
         disabledContentColor = disabledColor
@@ -92,7 +106,8 @@ fun AzNavRailButton(
         border = if (shape == AzButtonShape.NONE) BorderStroke(0.dp, Color.Transparent) else BorderStroke(3.dp, if (!enabled) disabledColor else finalColor),
         colors = colors ?: defaultColors,
         contentPadding = contentPadding,
-        enabled = enabled
+        enabled = enabled,
+        interactionSource = interactionSource
     ) {
         Box(contentAlignment = Alignment.Center) {
             Row(
