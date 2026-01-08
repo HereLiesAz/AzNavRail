@@ -65,6 +65,7 @@ internal fun RailItems(
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
     infoScreen: Boolean = false
 ) {
+    val density = androidx.compose.ui.platform.LocalDensity.current
     val topLevelItems = items.filter { !it.isSubItem }
     val itemsToRender =
         if (packRailButtons) topLevelItems.filter { it.isRailItem } else topLevelItems
@@ -116,20 +117,23 @@ internal fun RailItems(
                                     val currentIdx = scope.navItems.indexOfFirst { it.id == draggedItemId }
                                     if (currentIdx != -1 && currentDropTargetIndex != -1 && currentIdx != currentDropTargetIndex) {
                                         // Calculate snap offset
-                                        // Total distance item moved physically = Sum of heights of intervening items
+                                        // Total distance item moved physically = Sum of heights of intervening items + spacing
                                         // Current visual offset = dragOffset
                                         // To be seamless at new position, initial offset at new pos = dragOffset - distance moved
+
+                                        val spacingDp = if (packRailButtons) 0.dp else AzNavRailDefaults.RailContentVerticalArrangement
+                                        val spacingPx = with(density) { spacingDp.roundToPx() }
 
                                         var movedDistance = 0
                                         if (currentDropTargetIndex!! > currentIdx) {
                                             // Moving Down: Sum items from currentIdx + 1 to target
                                             for (i in (currentIdx + 1)..currentDropTargetIndex!!) {
-                                                movedDistance += itemHeights[scope.navItems[i].id] ?: 0
+                                                movedDistance += (itemHeights[scope.navItems[i].id] ?: 0) + spacingPx
                                             }
                                         } else if (currentDropTargetIndex!! < currentIdx) {
                                             // Moving Up: Sum items from target to currentIdx - 1
                                             for (i in currentDropTargetIndex!! until currentIdx) {
-                                                movedDistance -= itemHeights[scope.navItems[i].id] ?: 0
+                                                movedDistance -= ((itemHeights[scope.navItems[i].id] ?: 0) + spacingPx)
                                             }
                                         }
 
@@ -197,16 +201,19 @@ internal fun RailItems(
                                                     val currentIdx = scope.navItems.indexOfFirst { it.id == draggedItemId }
                                                     if (currentIdx != -1 && currentDropTargetIndex != -1 && currentIdx != currentDropTargetIndex) {
 
+                                                        val spacingDp = if (packRailButtons) 0.dp else AzNavRailDefaults.RailContentVerticalArrangement
+                                                        val spacingPx = with(density) { spacingDp.roundToPx() }
+
                                                         var movedDistance = 0
                                                         if (currentDropTargetIndex!! > currentIdx) {
                                                             // Moving Down: Sum items from currentIdx + 1 to target
                                                             for (i in (currentIdx + 1)..currentDropTargetIndex!!) {
-                                                                movedDistance += itemHeights[scope.navItems[i].id] ?: 0
+                                                                movedDistance += (itemHeights[scope.navItems[i].id] ?: 0) + spacingPx
                                                             }
                                                         } else if (currentDropTargetIndex!! < currentIdx) {
                                                             // Moving Up: Sum items from target to currentIdx - 1
                                                             for (i in currentDropTargetIndex!! until currentIdx) {
-                                                                movedDistance -= itemHeights[scope.navItems[i].id] ?: 0
+                                                                movedDistance -= ((itemHeights[scope.navItems[i].id] ?: 0) + spacingPx)
                                                             }
                                                         }
 
