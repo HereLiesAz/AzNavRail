@@ -1,6 +1,8 @@
 package com.hereliesaz.aznavrail.internal
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +12,8 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
@@ -47,6 +51,9 @@ internal fun MenuItem(
     infoScreen: Boolean = false,
     activeColor: androidx.compose.ui.graphics.Color? = null
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
         item.isCycler -> item.selectedOption ?: ""
@@ -66,12 +73,14 @@ internal fun MenuItem(
     val modifier = if (isDisabled) Modifier else {
         if (infoScreen) {
              // Host item in infoScreen is interactive
-             Modifier.clickable { onHostClick() }
+             Modifier.clickable(interactionSource = interactionSource, indication = null) { onHostClick() }
         } else {
             // Normal mode
             if (item.isToggle) {
                 Modifier.toggleable(
                     value = item.isChecked ?: false,
+                    interactionSource = interactionSource,
+                    indication = null,
                     onValueChange = {
                         item.route?.let { navController?.navigate(it) }
                         onClick?.invoke()
@@ -80,7 +89,7 @@ internal fun MenuItem(
                     }
                 )
             } else {
-                Modifier.clickable {
+                Modifier.clickable(interactionSource = interactionSource, indication = null) {
                     if (item.isHost) {
                         handleHostItemClick(item, navController, onClick, onItemClick, onHostClick)
                     } else if (item.isCycler) {
@@ -96,10 +105,19 @@ internal fun MenuItem(
         }
     }
 
-    val textColor = when {
-        isSelected -> activeColor ?: MaterialTheme.colorScheme.primary
-        isDisabled -> MaterialTheme.typography.bodyMedium.color.copy(alpha = 0.5f)
-        else -> item.color ?: MaterialTheme.typography.bodyMedium.color
+    val effectiveActiveColor = activeColor ?: MaterialTheme.colorScheme.primary
+    val effectiveDefaultColor = item.color ?: MaterialTheme.typography.bodyMedium.color
+
+    val targetColor = if (isPressed) {
+        if (isSelected) effectiveDefaultColor else effectiveActiveColor
+    } else {
+        if (isSelected) effectiveActiveColor else effectiveDefaultColor
+    }
+
+    val textColor = if (isDisabled) {
+        MaterialTheme.typography.bodyMedium.color.copy(alpha = 0.5f)
+    } else {
+        targetColor
     }
 
     Box(

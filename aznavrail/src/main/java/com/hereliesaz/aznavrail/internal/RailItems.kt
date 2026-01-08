@@ -1,6 +1,8 @@
 package com.hereliesaz.aznavrail.internal
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -75,6 +77,9 @@ internal fun RailItems(
     var hiddenMenuOpenId by remember { mutableStateOf<String?>(null) }
     var currentDropTargetIndex by remember { mutableStateOf<Int?>(null) }
 
+    // State for snapping animations
+    val snappingOffsets = remember { androidx.compose.runtime.mutableStateMapOf<String, Animatable<Float, androidx.compose.animation.core.AnimationVector1D>>() }
+
     // Track last tapped item for double-tap logic (backward compatibility)
     var lastTappedId by remember { mutableStateOf<String?>(null) }
 
@@ -110,11 +115,40 @@ internal fun RailItems(
                                 if (draggedItemId != null && currentDropTargetIndex != null) {
                                     val currentIdx = scope.navItems.indexOfFirst { it.id == draggedItemId }
                                     if (currentIdx != -1 && currentDropTargetIndex != -1 && currentIdx != currentDropTargetIndex) {
+                                        // Calculate snap offset
+                                        // Total distance item moved physically = Sum of heights of intervening items
+                                        // Current visual offset = dragOffset
+                                        // To be seamless at new position, initial offset at new pos = dragOffset - distance moved
+
+                                        var movedDistance = 0
+                                        if (currentDropTargetIndex!! > currentIdx) {
+                                            // Moving Down: Sum items from currentIdx + 1 to target
+                                            for (i in (currentIdx + 1)..currentDropTargetIndex!!) {
+                                                movedDistance += itemHeights[scope.navItems[i].id] ?: 0
+                                            }
+                                        } else if (currentDropTargetIndex!! < currentIdx) {
+                                            // Moving Up: Sum items from target to currentIdx - 1
+                                            for (i in currentDropTargetIndex!! until currentIdx) {
+                                                movedDistance -= itemHeights[scope.navItems[i].id] ?: 0
+                                            }
+                                        }
+
+                                        val startSnapOffset = dragOffset - movedDistance
+
+                                        val animatable = Animatable(startSnapOffset, Float.VectorConverter)
+                                        snappingOffsets[draggedItemId!!] = animatable
+
+                                        coroutineScope.launch {
+                                            animatable.animateTo(0f)
+                                            snappingOffsets.remove(draggedItemId!!)
+                                        }
+
                                         RelocItemHandler.updateOrder(scope.navItems, draggedItemId!!, currentDropTargetIndex!!)
                                         val currentOrder = scope.navItems.map { it.id }
                                         scope.onRelocateMap[draggedItemId!!]?.invoke(currentIdx, currentDropTargetIndex!!, currentOrder)
                                     }
                                 }
+                                // Reset state
                                 draggedItemId = null
                                 dragOffset = 0f
                                 currentDropTargetIndex = null
@@ -130,7 +164,8 @@ internal fun RailItems(
                             hiddenMenuOpenId = hiddenMenuOpenId,
                             onHiddenMenuDismiss = { hiddenMenuOpenId = null },
                             lastTappedId = lastTappedId,
-                            onUpdateLastTappedId = { id -> lastTappedId = id }
+                            onUpdateLastTappedId = { id -> lastTappedId = id },
+                            snappingOffset = snappingOffsets[item.id]?.value
                         )
 
                         AnimatedVisibility(visible = item.isHost && (hostStates[item.id] ?: false)) {
@@ -161,6 +196,30 @@ internal fun RailItems(
                                                 if (draggedItemId != null && currentDropTargetIndex != null) {
                                                     val currentIdx = scope.navItems.indexOfFirst { it.id == draggedItemId }
                                                     if (currentIdx != -1 && currentDropTargetIndex != -1 && currentIdx != currentDropTargetIndex) {
+
+                                                        var movedDistance = 0
+                                                        if (currentDropTargetIndex!! > currentIdx) {
+                                                            // Moving Down: Sum items from currentIdx + 1 to target
+                                                            for (i in (currentIdx + 1)..currentDropTargetIndex!!) {
+                                                                movedDistance += itemHeights[scope.navItems[i].id] ?: 0
+                                                            }
+                                                        } else if (currentDropTargetIndex!! < currentIdx) {
+                                                            // Moving Up: Sum items from target to currentIdx - 1
+                                                            for (i in currentDropTargetIndex!! until currentIdx) {
+                                                                movedDistance -= itemHeights[scope.navItems[i].id] ?: 0
+                                                            }
+                                                        }
+
+                                                        val startSnapOffset = dragOffset - movedDistance
+
+                                                        val animatable = Animatable(startSnapOffset, Float.VectorConverter)
+                                                        snappingOffsets[draggedItemId!!] = animatable
+
+                                                        coroutineScope.launch {
+                                                            animatable.animateTo(0f)
+                                                            snappingOffsets.remove(draggedItemId!!)
+                                                        }
+
                                                         RelocItemHandler.updateOrder(scope.navItems, draggedItemId!!, currentDropTargetIndex!!)
                                                         val currentOrder = scope.navItems.map { it.id }
                                                         scope.onRelocateMap[draggedItemId!!]?.invoke(currentIdx, currentDropTargetIndex!!, currentOrder)
@@ -181,7 +240,8 @@ internal fun RailItems(
                                             hiddenMenuOpenId = hiddenMenuOpenId,
                                             onHiddenMenuDismiss = { hiddenMenuOpenId = null },
                                             lastTappedId = lastTappedId,
-                                            onUpdateLastTappedId = { id -> lastTappedId = id }
+                                            onUpdateLastTappedId = { id -> lastTappedId = id },
+                                            snappingOffset = snappingOffsets[subItem.id]?.value
                                         )
                                     }
                                 }
@@ -225,7 +285,8 @@ private fun DraggableRailItemWrapper(
     hiddenMenuOpenId: String?,
     onHiddenMenuDismiss: () -> Unit,
     lastTappedId: String?,
-    onUpdateLastTappedId: (String) -> Unit
+    onUpdateLastTappedId: (String) -> Unit,
+    snappingOffset: Float?
 ) {
     val isDragging = draggedItemId == item.id
 
@@ -282,7 +343,15 @@ private fun DraggableRailItemWrapper(
 
     // Ghost effect: Opacity 0 if dragging. But wait, if we use offset logic, the "Hole" stays at original position.
     // So the item at `draggedStartIdx` should be invisible.
+    // Also handle snapping visibility
     val alpha = if (isDragging) 0f else 1f
+
+    // If snapping, we override offset
+    val finalOffsetY = if (snappingOffset != null) {
+        with(density) { snappingOffset.toDp() }
+    } else {
+        animatedOffsetY
+    }
 
     val hapticFeedback = LocalHapticFeedback.current
     val viewConfiguration = androidx.compose.ui.platform.LocalViewConfiguration.current
@@ -355,37 +424,14 @@ private fun DraggableRailItemWrapper(
                                 // Logic for target index (same as before)
                                 val currentIdx = scope.navItems.indexOfFirst { it.id == item.id }
                                 if (currentIdx != -1) {
-                                    val cluster = RelocItemHandler.findCluster(scope.navItems, item.id)
-                                    if (cluster != null) {
-                                        var target = currentIdx
-                                        var remainingOffset = dragOffset
-
-                                        if (remainingOffset > 0) {
-                                            while (target < cluster.last) {
-                                                val nextItem = scope.navItems[target + 1]
-                                                val nextHeight = itemHeights[nextItem.id] ?: 0
-                                                if (remainingOffset > nextHeight / 2) {
-                                                    remainingOffset -= nextHeight
-                                                    target++
-                                                } else {
-                                                    break
-                                                }
-                                            }
-                                        } else {
-                                            while (target > cluster.first) {
-                                                val prevItem = scope.navItems[target - 1]
-                                                val prevHeight = itemHeights[prevItem.id] ?: 0
-                                                if (remainingOffset < -(prevHeight / 2)) {
-                                                    remainingOffset += prevHeight
-                                                    target--
-                                                } else {
-                                                    break
-                                                }
-                                            }
-                                        }
-                                        if (target != currentDropTargetIndex) {
-                                            onDragTargetChange(target)
-                                        }
+                                    val target = RelocItemHandler.calculateTargetIndex(
+                                        items = scope.navItems,
+                                        draggedItemId = item.id,
+                                        currentDragOffset = dragOffset,
+                                        itemHeights = itemHeights
+                                    )
+                                    if (target != null && target != currentDropTargetIndex) {
+                                        onDragTargetChange(target)
                                     }
                                 }
                             }
@@ -440,7 +486,7 @@ private fun DraggableRailItemWrapper(
 
     Box(modifier = Modifier.zIndex(if (isDragging) 1f else 0f)) {
          Box(modifier = Modifier
-             .offset(y = animatedOffsetY)
+             .offset(y = finalOffsetY)
              .alpha(alpha)
          ) {
              RailContent(

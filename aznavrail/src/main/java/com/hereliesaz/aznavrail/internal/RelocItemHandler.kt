@@ -85,4 +85,54 @@ object RelocItemHandler {
         val item = items.removeAt(currentIndex)
         items.add(targetIndex, item)
     }
+
+    /**
+     * Calculates the target index for a dragged item based on its drag offset and item heights.
+     */
+    fun calculateTargetIndex(
+        items: List<AzNavItem>,
+        draggedItemId: String,
+        currentDragOffset: Float,
+        itemHeights: Map<String, Int>
+    ): Int? {
+        val currentIndex = items.indexOfFirst { it.id == draggedItemId }
+        if (currentIndex == -1) return null
+
+        val cluster = findCluster(items, draggedItemId) ?: return null
+
+        var target = currentIndex
+        var remainingOffset = currentDragOffset
+
+        if (remainingOffset > 0) {
+            while (target < cluster.last) {
+                val nextItem = items[target + 1]
+                val nextHeight = itemHeights[nextItem.id] ?: 0
+                if (nextHeight == 0) break // Safety check
+
+                // User requested 40% overlap threshold
+                // If remaining offset covers > 40% of next item height, swap.
+                if (remainingOffset > nextHeight * 0.4f) {
+                    remainingOffset -= nextHeight
+                    target++
+                } else {
+                    break
+                }
+            }
+        } else {
+            while (target > cluster.first) {
+                val prevItem = items[target - 1]
+                val prevHeight = itemHeights[prevItem.id] ?: 0
+                if (prevHeight == 0) break // Safety check
+
+                // User requested 40% overlap threshold (negative direction)
+                if (remainingOffset < -(prevHeight * 0.4f)) {
+                    remainingOffset += prevHeight
+                    target--
+                } else {
+                    break
+                }
+            }
+        }
+        return target
+    }
 }
