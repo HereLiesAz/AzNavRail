@@ -44,7 +44,8 @@ internal fun MenuItem(
     onItemClick: () -> Unit = {},
     onHostClick: () -> Unit = {},
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
-    infoScreen: Boolean = false
+    infoScreen: Boolean = false,
+    activeColor: androidx.compose.ui.graphics.Color? = null
 ) {
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
@@ -96,7 +97,7 @@ internal fun MenuItem(
     }
 
     val textColor = when {
-        isSelected -> MaterialTheme.colorScheme.primary
+        isSelected -> activeColor ?: MaterialTheme.colorScheme.primary
         isDisabled -> MaterialTheme.typography.bodyMedium.color.copy(alpha = 0.5f)
         else -> item.color ?: MaterialTheme.typography.bodyMedium.color
     }

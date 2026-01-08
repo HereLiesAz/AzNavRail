@@ -27,6 +27,8 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 - **Hierarchy**: Nested menus with host and sub-items.
 - **Draggable (FAB Mode)**: Detach and move the rail.
 -   **Reorderable Items**: `AzRailRelocItem` allows user drag-and-drop reordering within clusters.
+    -   **Drag**: Long press (with vibration feedback) to start dragging.
+    -   **Hidden Menu**: Tap to focus/select. If already focused, tap again to open the hidden menu.
 - **System Overlay**: System-wide overlay support with automatic resizing and activity launching.
 - **Auto-sizing Text**: Text fits without wrapping (unless explicit newline).
 - **Toggles/Cyclers**: Simple state management.
@@ -99,7 +101,9 @@ fun SampleScreen() {
                 isLoading = isLoading,
                 defaultShape = AzButtonShape.RECTANGLE, // Set a default shape for all rail items
                 enableRailDragging = true, // Enable the draggable rail feature
-                headerIconShape = AzHeaderIconShape.ROUNDED // Set the header icon shape to ROUNDED
+                headerIconShape = AzHeaderIconShape.ROUNDED, // Set the header icon shape to ROUNDED
+                activeColor = MaterialTheme.colorScheme.tertiary, // Optional: Secondary color for the selected item
+                vibrate = true // Optional: Enable haptic feedback for gestures
             )
 
             // A standard menu item - only appears in the expanded menu
@@ -485,19 +489,19 @@ azRailRelocItem(
         // Handle new order (List<String>)
     }
 ) {
-    // Hidden Menu (Long Press)
+    // Hidden Menu (Tap to select -> Tap again to open)
     listItem("Action 1") { /* ... */ }
     inputItem("Rename") { newName -> /* ... */ }
 }
 ```
 
-- **Drag-and-Drop**: Hold and drag an item to move it. Other items will animate to create an empty slot at the potential drop target.
+- **Drag-and-Drop**: Long-press (triggers a vibration) and drag an item to move it. Other items will animate to create an empty slot at the potential drop target.
 - **Cluster Constraints**: Items can only be moved within their "cluster" — a contiguous group of relocation items under the same host. They cannot jump over standard items or move to a different host.
-- **Hidden Menu**: Long-pressing the item (without dragging) opens a contextual menu. This menu supports:
+- **Hidden Menu**: Tapping the item brings it into focus (selects it). Tapping the item *again* while it is already focused opens the contextual menu. This menu supports:
     - **List Items**: Standard clickable actions.
     - **Input Items**: Text input fields (e.g., for renaming).
 - **Callbacks**:
-    - `onClick`: Standard tap action.
+    - `onClick`: Triggered on the first tap (selection).
     - `onRelocate`: Called when a drag operation completes. Provides the `fromIndex`, `toIndex`, and the complete `newOrder` list of item IDs.
 
 ### System Overlay
