@@ -21,3 +21,9 @@ jobs:
 
     - name: Build SampleApp Debug
       run: ./gradlew :SampleApp:assembleDebug
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: sample-app-debug
+        path: SampleApp/build/outputs/apk/debug/*.apk
