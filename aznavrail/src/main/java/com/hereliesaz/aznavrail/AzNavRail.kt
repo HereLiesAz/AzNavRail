@@ -604,7 +604,8 @@ fun AzNavRail(
                                             hostStates[item.id] = !wasExpanded
                                         },
                                         onItemGloballyPositioned = { id, rect -> itemPositions[id] = rect },
-                                        infoScreen = scope.infoScreen
+                                        infoScreen = scope.infoScreen,
+                                        activeColor = scope.activeColor
                                     )
 
                                     AnimatedVisibility(
@@ -623,7 +624,8 @@ fun AzNavRail(
                                                     onToggle = { isExpanded = !isExpanded },
                                                     onItemClick = { selectedItem = subItem },
                                                     onItemGloballyPositioned = { id, rect -> itemPositions[id] = rect },
-                                                    infoScreen = scope.infoScreen
+                                                    infoScreen = scope.infoScreen,
+                                                    activeColor = scope.activeColor
                                                 )
                                             }
                                         }

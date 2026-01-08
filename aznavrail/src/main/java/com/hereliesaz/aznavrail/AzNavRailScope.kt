@@ -27,7 +27,9 @@ interface AzNavRailScope {
         onOverlayDrag: ((Float, Float) -> Unit)? = null,
         onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
         infoScreen: Boolean = false,
-        onDismissInfoScreen: (() -> Unit)? = null
+        onDismissInfoScreen: (() -> Unit)? = null,
+        activeColor: Color? = null,
+        vibrate: Boolean = false
     )
 
     fun azMenuItem(id: String, text: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
@@ -89,6 +91,7 @@ interface AzNavRailScope {
     fun azRailSubCycler(id: String, hostId: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, route: String, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null)
 
     fun azRailRelocItem(id: String, hostId: String, text: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null, onRelocate: ((Int, Int, List<String>) -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit = {})
+    fun azRailRelocItem(id: String, hostId: String, text: String, route: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null, onRelocate: ((Int, Int, List<String>) -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit)
 }
 
 interface HiddenMenuScope {
@@ -143,6 +146,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
     var onItemGloballyPositioned: ((String, Rect) -> Unit)? = null
     var infoScreen: Boolean = false
     var onDismissInfoScreen: (() -> Unit)? = null
+    var activeColor: Color? = null
+    var vibrate: Boolean = false
 
     override fun azSettings(
         displayAppNameInHeader: Boolean,
@@ -160,7 +165,9 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         onOverlayDrag: ((Float, Float) -> Unit)?,
         onItemGloballyPositioned: ((String, Rect) -> Unit)?,
         infoScreen: Boolean,
-        onDismissInfoScreen: (() -> Unit)?
+        onDismissInfoScreen: (() -> Unit)?,
+        activeColor: Color?,
+        vibrate: Boolean
     ) {
         require(expandedRailWidth > collapsedRailWidth) {
             """
@@ -182,6 +189,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         this.onItemGloballyPositioned = onItemGloballyPositioned
         this.infoScreen = infoScreen
         this.onDismissInfoScreen = onDismissInfoScreen
+        this.activeColor = activeColor
+        this.vibrate = vibrate
     }
 
     override fun azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit) {
@@ -456,6 +465,14 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
     }
 
     override fun azRailRelocItem(id: String, hostId: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, onClick: (() -> Unit)?, onRelocate: ((Int, Int, List<String>) -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
+        addRailRelocItem(id, hostId, text, null, color, shape, disabled, screenTitle, info, onClick, onRelocate, hiddenMenu)
+    }
+
+    override fun azRailRelocItem(id: String, hostId: String, text: String, route: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, onClick: (() -> Unit)?, onRelocate: ((Int, Int, List<String>) -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
+        addRailRelocItem(id, hostId, text, route, color, shape, disabled, screenTitle, info, onClick, onRelocate, hiddenMenu)
+    }
+
+    private fun addRailRelocItem(id: String, hostId: String, text: String, route: String?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, onClick: (() -> Unit)?, onRelocate: ((Int, Int, List<String>) -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
         val hiddenMenuScope = HiddenMenuScopeImpl()
         hiddenMenuScope.hiddenMenu()
 
@@ -482,6 +499,7 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
             AzNavItem(
                 id = id,
                 text = text,
+                route = route,
                 isRailItem = true,
                 isSubItem = true,
                 hostId = hostId,

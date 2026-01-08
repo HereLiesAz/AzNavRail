@@ -37,6 +37,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.zIndex
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.AzNavRailScopeImpl
 import com.hereliesaz.aznavrail.AzTextBoxDefaults
@@ -72,6 +74,9 @@ internal fun RailItems(
     var itemWidths by remember { mutableStateOf(mapOf<String, Int>()) }
     var hiddenMenuOpenId by remember { mutableStateOf<String?>(null) }
     var currentDropTargetIndex by remember { mutableStateOf<Int?>(null) }
+
+    // Track last tapped item for double-tap logic (backward compatibility)
+    var lastTappedId by remember { mutableStateOf<String?>(null) }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -123,7 +128,9 @@ internal fun RailItems(
                             onWidthReported = { id, width -> itemWidths = itemWidths + (id to width) },
                             coroutineScope = coroutineScope,
                             hiddenMenuOpenId = hiddenMenuOpenId,
-                            onHiddenMenuDismiss = { hiddenMenuOpenId = null }
+                            onHiddenMenuDismiss = { hiddenMenuOpenId = null },
+                            lastTappedId = lastTappedId,
+                            onUpdateLastTappedId = { id -> lastTappedId = id }
                         )
 
                         AnimatedVisibility(visible = item.isHost && (hostStates[item.id] ?: false)) {
@@ -172,7 +179,9 @@ internal fun RailItems(
                                             onWidthReported = { id, width -> itemWidths = itemWidths + (id to width) },
                                             coroutineScope = coroutineScope,
                                             hiddenMenuOpenId = hiddenMenuOpenId,
-                                            onHiddenMenuDismiss = { hiddenMenuOpenId = null }
+                                            onHiddenMenuDismiss = { hiddenMenuOpenId = null },
+                                            lastTappedId = lastTappedId,
+                                            onUpdateLastTappedId = { id -> lastTappedId = id }
                                         )
                                     }
                                 }
@@ -214,7 +223,9 @@ private fun DraggableRailItemWrapper(
     onWidthReported: (String, Int) -> Unit,
     coroutineScope: kotlinx.coroutines.CoroutineScope,
     hiddenMenuOpenId: String?,
-    onHiddenMenuDismiss: () -> Unit
+    onHiddenMenuDismiss: () -> Unit,
+    lastTappedId: String?,
+    onUpdateLastTappedId: (String) -> Unit
 ) {
     val isDragging = draggedItemId == item.id
 
@@ -273,86 +284,142 @@ private fun DraggableRailItemWrapper(
     // So the item at `draggedStartIdx` should be invisible.
     val alpha = if (isDragging) 0f else 1f
 
+    val hapticFeedback = LocalHapticFeedback.current
+    val viewConfiguration = androidx.compose.ui.platform.LocalViewConfiguration.current
+
     val dragModifier = if (item.isRelocItem && !infoScreen) {
         Modifier.pointerInput(item.id) {
             awaitEachGesture {
                 val down = awaitFirstDown(requireUnconsumed = false)
-                var menuJob: Job? = null
-                var isMenuOpen = false
+                val longPressTimeout = viewConfiguration.longPressTimeoutMillis
 
-                menuJob = coroutineScope.launch {
-                    delay(500)
-                    isMenuOpen = true
-                    onMenuOpen(item.id)
+                var longPressJob: Job? = null
+                var isLongPress = false
+
+                // Start long press timer
+                longPressJob = coroutineScope.launch {
+                    delay(longPressTimeout)
+                    isLongPress = true
+                    if (scope.vibrate) {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                    }
+                    onDragStart(item.id)
                 }
 
                 var totalDragY = 0f
+                var hasMoved = false
+                var gestureCompletedSuccessfully = false
 
                 try {
-                    drag(down.id) { change ->
-                        if (isMenuOpen) {
+                    // We need to loop until the gesture is finished (up or cancelled)
+                    // If we move before timeout -> Cancel long press (it's not a drag yet).
+                    // If we timeout -> It's a drag.
+
+                    // We use `drag` block only if we are dragging.
+                    // But we are in `awaitEachGesture` which is low level.
+                    // We can loop consuming events.
+
+                    var pointerId = down.id
+                    var currentPosition = down.position
+
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        val change = event.changes.firstOrNull { it.id == pointerId }
+
+                        if (change == null) break // Pointer lost
+
+                        val changedToUp = !change.pressed && change.previousPressed
+                        if (changedToUp) {
+                            // Released
                             change.consume()
-                            return@drag
+                            gestureCompletedSuccessfully = true
+                            break
                         }
 
-                        val dragY = (change.position - change.previousPosition).y
-                        totalDragY += dragY
+                        val positionChange = change.position - change.previousPosition
+                        if (positionChange != androidx.compose.ui.geometry.Offset.Zero) {
+                            if (!isLongPress) {
+                                // Moved before long press triggers
+                                // If movement is significant, cancel long press and mark as moved
+                                if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
+                                    hasMoved = true
+                                    longPressJob?.cancel()
+                                }
+                            } else {
+                                // Dragging logic
+                                change.consume()
+                                val dragY = (change.position - currentPosition).y
+                                totalDragY += dragY
+                                onDragDelta(dragY)
 
-                        if (Math.abs(totalDragY) > 10 && menuJob?.isActive == true) {
-                            menuJob?.cancel()
-                            onDragStart(item.id)
-                        }
+                                // Logic for target index (same as before)
+                                val currentIdx = scope.navItems.indexOfFirst { it.id == item.id }
+                                if (currentIdx != -1) {
+                                    val cluster = RelocItemHandler.findCluster(scope.navItems, item.id)
+                                    if (cluster != null) {
+                                        var target = currentIdx
+                                        var remainingOffset = dragOffset
 
-                        if (draggedItemId == item.id) {
-                            change.consume()
-                            onDragDelta(dragY)
-
-                            // Calculate Target Index
-                            val currentIdx = scope.navItems.indexOfFirst { it.id == item.id }
-                            if (currentIdx != -1) {
-                                // Calculate cumulative drag target
-                                val cluster = RelocItemHandler.findCluster(scope.navItems, item.id)
-                                if (cluster != null) {
-                                    var target = currentIdx
-                                    var remainingOffset = dragOffset
-
-                                    if (remainingOffset > 0) {
-                                        // Dragging down
-                                        while (target < cluster.last) {
-                                            val nextItem = scope.navItems[target + 1]
-                                            val nextHeight = itemHeights[nextItem.id] ?: 0
-                                            if (remainingOffset > nextHeight / 2) {
-                                                remainingOffset -= nextHeight
-                                                target++
-                                            } else {
-                                                break
+                                        if (remainingOffset > 0) {
+                                            while (target < cluster.last) {
+                                                val nextItem = scope.navItems[target + 1]
+                                                val nextHeight = itemHeights[nextItem.id] ?: 0
+                                                if (remainingOffset > nextHeight / 2) {
+                                                    remainingOffset -= nextHeight
+                                                    target++
+                                                } else {
+                                                    break
+                                                }
+                                            }
+                                        } else {
+                                            while (target > cluster.first) {
+                                                val prevItem = scope.navItems[target - 1]
+                                                val prevHeight = itemHeights[prevItem.id] ?: 0
+                                                if (remainingOffset < -(prevHeight / 2)) {
+                                                    remainingOffset += prevHeight
+                                                    target--
+                                                } else {
+                                                    break
+                                                }
                                             }
                                         }
-                                    } else {
-                                        // Dragging up
-                                        while (target > cluster.first) {
-                                            val prevItem = scope.navItems[target - 1]
-                                            val prevHeight = itemHeights[prevItem.id] ?: 0
-                                            if (remainingOffset < -(prevHeight / 2)) {
-                                                remainingOffset += prevHeight
-                                                target--
-                                            } else {
-                                                break
-                                            }
+                                        if (target != currentDropTargetIndex) {
+                                            onDragTargetChange(target)
                                         }
-                                    }
-
-                                    if (target != currentDropTargetIndex) {
-                                        onDragTargetChange(target)
                                     }
                                 }
                             }
                         }
+                        currentPosition = change.position
                     }
                 } finally {
-                    menuJob?.cancel()
-                    if (draggedItemId == item.id) {
+                    longPressJob?.cancel()
+                    if (isLongPress) {
                         onDragEnd()
+                    } else if (!hasMoved && gestureCompletedSuccessfully) {
+                        // It was a tap, and gestures completed successfully (not cancelled)
+
+                        // Check if item is selected
+                        // Either by route matching OR by lastTappedId (for items without route)
+                        val isRouteSelected = item.route != null && item.route == currentDestination
+                        val isIdSelected = lastTappedId == item.id
+
+                        if (isRouteSelected || isIdSelected) {
+                             // Already selected -> Open Hidden Menu
+                             onMenuOpen(item.id)
+                             onUpdateLastTappedId(item.id)
+                        } else {
+                             // Not selected -> Select (and onClick)
+                             // We invoke the click handler which handles navigation and onItemSelected
+                             onUpdateLastTappedId(item.id)
+                             if (onClickOverride != null) {
+                                 onClickOverride(item)
+                             } else {
+                                 scope.onClickMap[item.id]?.invoke()
+                                 item.route?.let { navController?.navigate(it) }
+                                 onItemSelected(item)
+                             }
+                        }
                     }
                 }
             }
@@ -365,6 +432,12 @@ private fun DraggableRailItemWrapper(
         Modifier
     }
 
+    val isSelected = if (item.route != null) {
+        item.route == currentDestination
+    } else {
+        lastTappedId == item.id
+    }
+
     Box(modifier = Modifier.zIndex(if (isDragging) 1f else 0f)) {
          Box(modifier = Modifier
              .offset(y = animatedOffsetY)
@@ -373,7 +446,7 @@ private fun DraggableRailItemWrapper(
              RailContent(
                  item = item,
                  navController = navController,
-                 isSelected = item.route == currentDestination,
+                 isSelected = isSelected,
                  buttonSize = buttonSize,
                  onClick = if (onClickOverride != null) { { onClickOverride(item) } } else scope.onClickMap[item.id],
                  onRailCyclerClick = onRailCyclerClick,
@@ -381,7 +454,8 @@ private fun DraggableRailItemWrapper(
                  onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
                  onItemGloballyPositioned = onItemGloballyPositioned,
                  infoScreen = infoScreen,
-                 dragModifier = dragModifier
+                 dragModifier = dragModifier,
+                 activeColor = scope.activeColor
              )
          }
 
@@ -410,12 +484,13 @@ private fun DraggableRailItemWrapper(
                  RailContent(
                      item = item,
                      navController = navController,
-                     isSelected = item.route == currentDestination,
+                     isSelected = isSelected,
                      buttonSize = buttonSize,
                      onClick = null,
                      onRailCyclerClick = {},
                      onItemClick = {},
-                     infoScreen = infoScreen
+                     infoScreen = infoScreen,
+                     activeColor = scope.activeColor
                  )
              }
          }
