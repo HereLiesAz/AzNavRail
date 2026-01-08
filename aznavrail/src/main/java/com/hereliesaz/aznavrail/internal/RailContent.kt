@@ -34,7 +34,8 @@ internal fun RailContent(
     onHostClick: () -> Unit = {},
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
     infoScreen: Boolean = false,
-    dragModifier: Modifier = Modifier
+    dragModifier: Modifier = Modifier,
+    activeColor: androidx.compose.ui.graphics.Color? = null
 ) {
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
@@ -86,7 +87,7 @@ internal fun RailContent(
             onClick = finalOnClick,
             text = textToShow,
             modifier = Modifier.width(buttonSize),
-            color = item.color ?: MaterialTheme.colorScheme.primary,
+            color = if (isSelected && activeColor != null) activeColor else (item.color ?: MaterialTheme.colorScheme.primary),
             size = buttonSize,
             shape = item.shape,
             enabled = isEnabled,
