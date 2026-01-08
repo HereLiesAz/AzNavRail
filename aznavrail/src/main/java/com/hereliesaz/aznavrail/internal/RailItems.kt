@@ -116,11 +116,23 @@ internal fun RailItems(
                                     val currentIdx = scope.navItems.indexOfFirst { it.id == draggedItemId }
                                     if (currentIdx != -1 && currentDropTargetIndex != -1 && currentIdx != currentDropTargetIndex) {
                                         // Calculate snap offset
-                                        // Total distance item moved physically = (targetIndex - originalIndex) * height
+                                        // Total distance item moved physically = Sum of heights of intervening items
                                         // Current visual offset = dragOffset
                                         // To be seamless at new position, initial offset at new pos = dragOffset - distance moved
 
-                                        val movedDistance = (itemHeights[draggedItemId!!] ?: 0) * (currentDropTargetIndex!! - currentIdx)
+                                        var movedDistance = 0
+                                        if (currentDropTargetIndex!! > currentIdx) {
+                                            // Moving Down: Sum items from currentIdx + 1 to target
+                                            for (i in (currentIdx + 1)..currentDropTargetIndex!!) {
+                                                movedDistance += itemHeights[scope.navItems[i].id] ?: 0
+                                            }
+                                        } else if (currentDropTargetIndex!! < currentIdx) {
+                                            // Moving Up: Sum items from target to currentIdx - 1
+                                            for (i in currentDropTargetIndex!! until currentIdx) {
+                                                movedDistance -= itemHeights[scope.navItems[i].id] ?: 0
+                                            }
+                                        }
+
                                         val startSnapOffset = dragOffset - movedDistance
 
                                         val animatable = Animatable(startSnapOffset, Float.VectorConverter)
@@ -185,7 +197,19 @@ internal fun RailItems(
                                                     val currentIdx = scope.navItems.indexOfFirst { it.id == draggedItemId }
                                                     if (currentIdx != -1 && currentDropTargetIndex != -1 && currentIdx != currentDropTargetIndex) {
 
-                                                        val movedDistance = (itemHeights[draggedItemId!!] ?: 0) * (currentDropTargetIndex!! - currentIdx)
+                                                        var movedDistance = 0
+                                                        if (currentDropTargetIndex!! > currentIdx) {
+                                                            // Moving Down: Sum items from currentIdx + 1 to target
+                                                            for (i in (currentIdx + 1)..currentDropTargetIndex!!) {
+                                                                movedDistance += itemHeights[scope.navItems[i].id] ?: 0
+                                                            }
+                                                        } else if (currentDropTargetIndex!! < currentIdx) {
+                                                            // Moving Up: Sum items from target to currentIdx - 1
+                                                            for (i in currentDropTargetIndex!! until currentIdx) {
+                                                                movedDistance -= itemHeights[scope.navItems[i].id] ?: 0
+                                                            }
+                                                        }
+
                                                         val startSnapOffset = dragOffset - movedDistance
 
                                                         val animatable = Animatable(startSnapOffset, Float.VectorConverter)
