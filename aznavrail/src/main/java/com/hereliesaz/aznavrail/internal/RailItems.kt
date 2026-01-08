@@ -142,9 +142,10 @@ internal fun RailItems(
                                         val animatable = Animatable(startSnapOffset, Float.VectorConverter)
                                         snappingOffsets[draggedItemId!!] = animatable
 
+                                        val capturedId = draggedItemId!!
                                         coroutineScope.launch {
                                             animatable.animateTo(0f)
-                                            snappingOffsets.remove(draggedItemId!!)
+                                            snappingOffsets.remove(capturedId)
                                         }
 
                                         RelocItemHandler.updateOrder(scope.navItems, draggedItemId!!, currentDropTargetIndex!!)
@@ -222,9 +223,10 @@ internal fun RailItems(
                                                         val animatable = Animatable(startSnapOffset, Float.VectorConverter)
                                                         snappingOffsets[draggedItemId!!] = animatable
 
+                                                        val capturedId = draggedItemId!!
                                                         coroutineScope.launch {
                                                             animatable.animateTo(0f)
-                                                            snappingOffsets.remove(draggedItemId!!)
+                                                            snappingOffsets.remove(capturedId)
                                                         }
 
                                                         RelocItemHandler.updateOrder(scope.navItems, draggedItemId!!, currentDropTargetIndex!!)
