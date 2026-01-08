@@ -1,7 +1,7 @@
 name: Auto-assign Jules
 on:
   issues:
-    types: [opened]
+    types: [opened, reopened, edited]
 
 jobs:
   add-jules-label:
