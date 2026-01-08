@@ -432,6 +432,12 @@ private fun DraggableRailItemWrapper(
         Modifier
     }
 
+    val isSelected = if (item.route != null) {
+        item.route == currentDestination
+    } else {
+        lastTappedId == item.id
+    }
+
     Box(modifier = Modifier.zIndex(if (isDragging) 1f else 0f)) {
          Box(modifier = Modifier
              .offset(y = animatedOffsetY)
@@ -440,7 +446,7 @@ private fun DraggableRailItemWrapper(
              RailContent(
                  item = item,
                  navController = navController,
-                 isSelected = item.route == currentDestination,
+                 isSelected = isSelected,
                  buttonSize = buttonSize,
                  onClick = if (onClickOverride != null) { { onClickOverride(item) } } else scope.onClickMap[item.id],
                  onRailCyclerClick = onRailCyclerClick,
@@ -478,7 +484,7 @@ private fun DraggableRailItemWrapper(
                  RailContent(
                      item = item,
                      navController = navController,
-                     isSelected = item.route == currentDestination,
+                     isSelected = isSelected,
                      buttonSize = buttonSize,
                      onClick = null,
                      onRailCyclerClick = {},
