@@ -300,6 +300,33 @@ fun SampleScreen(
                         menuSelectedOption = menuCycleOptions[nextIndex]
                     }
                 )
+
+                azRailHostItem(
+                    id = "reloc-host",
+                    text = "Relocators",
+                    route = "reloc-host",
+                    shape = AzButtonShape.SQUARE
+                )
+
+                // Demo items for relocation
+                val relocItems = listOf("Layer 1", "Layer 2", "Layer 3")
+                relocItems.forEachIndexed { index, name ->
+                    val id = "layer_${index + 1}"
+                    azRailRelocItem(
+                        id = id,
+                        hostId = "reloc-host",
+                        text = name,
+                        route = id,
+                        onRelocate = { from, to, list ->
+                             Log.d(TAG, "Relocated $name from $from to $to. New order: $list")
+                        },
+                        hiddenMenu = {
+                            listItem("Rename") { Log.d(TAG, "Rename $name clicked") }
+                            inputItem("New Name") { newValue -> Log.d(TAG, "Renamed $name to $newValue") }
+                            listItem("Delete") { Log.d(TAG, "Delete $name clicked") }
+                        }
+                    )
+                }
             }
         }
 
