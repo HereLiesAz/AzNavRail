@@ -310,6 +310,9 @@ private fun DraggableRailItemWrapper(
     val density = androidx.compose.ui.platform.LocalDensity.current
     val myHeightDp = with(density) { myHeightPx.toDp() }
 
+    // Use rememberUpdatedState to ensure the gesture handler sees the latest itemHeights
+    val itemHeightsState = androidx.compose.runtime.rememberUpdatedState(itemHeights)
+
     if (draggedItemId != null && !isDragging && item.isRelocItem && currentDropTargetIndex != null) {
         val currentIdx = scope.navItems.indexOfFirst { it.id == item.id }
         val draggedStartIdx = scope.navItems.indexOfFirst { it.id == draggedItemId }
@@ -434,8 +437,8 @@ private fun DraggableRailItemWrapper(
                                     val target = RelocItemHandler.calculateTargetIndex(
                                         items = scope.navItems,
                                         draggedItemId = item.id,
-                                        currentDragOffset = dragOffset,
-                                        itemHeights = itemHeights
+                                        currentDragOffset = totalDragY,
+                                        itemHeights = itemHeightsState.value
                                     )
                                     if (target != null && target != currentDropTargetIndex) {
                                         onDragTargetChange(target)

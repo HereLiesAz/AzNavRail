@@ -2,98 +2,138 @@ package com.hereliesaz.aznavrail
 
 import com.hereliesaz.aznavrail.internal.RelocItemHandler
 import com.hereliesaz.aznavrail.model.AzNavItem
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Test
+import org.junit.Assert.*
 
 class RelocItemHandlerTest {
 
-    private fun createItem(id: String, isReloc: Boolean, hostId: String?): AzNavItem {
-        return AzNavItem(
-            id = id,
-            text = "Item $id",
-            isRailItem = true,
-            isRelocItem = isReloc,
-            hostId = hostId,
-            shape = com.hereliesaz.aznavrail.model.AzButtonShape.CIRCLE
-        )
-    }
+    // --- findCluster Tests ---
 
     @Test
-    fun `findCluster - single item cluster`() {
+    fun findCluster_returnsNullForNonRelocItem() {
         val items = listOf(
-            createItem("1", false, null),
-            createItem("2", true, "host1"),
-            createItem("3", false, null)
+            AzNavItem(id = "1", text = "1", isRailItem = true, isRelocItem = false, hostId = "host")
         )
-        val range = RelocItemHandler.findCluster(items, "2")
-        assertEquals(1..1, range)
+        val cluster = RelocItemHandler.findCluster(items, "1")
+        assertNull(cluster)
     }
 
     @Test
-    fun `findCluster - multi item cluster`() {
+    fun findCluster_returnsSingleItemRange() {
         val items = listOf(
-            createItem("1", false, null),
-            createItem("2", true, "host1"),
-            createItem("3", true, "host1"),
-            createItem("4", true, "host1"),
-            createItem("5", false, null)
+            AzNavItem(id = "1", text = "1", isRailItem = true, isRelocItem = true, hostId = "host")
         )
-        val range = RelocItemHandler.findCluster(items, "3")
-        assertEquals(1..3, range)
+        val cluster = RelocItemHandler.findCluster(items, "1")
+        assertEquals(0..0, cluster)
     }
 
     @Test
-    fun `findCluster - mixed hosts`() {
+    fun findCluster_identifiesContiguousItems() {
         val items = listOf(
-            createItem("1", true, "host1"),
-            createItem("2", true, "host1"),
-            createItem("3", true, "host2"),
-            createItem("4", true, "host2")
+            AzNavItem(id = "A", text = "A", isRailItem = true, isRelocItem = false),
+            AzNavItem(id = "1", text = "1", isRailItem = true, isRelocItem = true, hostId = "host"),
+            AzNavItem(id = "2", text = "2", isRailItem = true, isRelocItem = true, hostId = "host"),
+            AzNavItem(id = "3", text = "3", isRailItem = true, isRelocItem = true, hostId = "host"),
+            AzNavItem(id = "B", text = "B", isRailItem = true, isRelocItem = false)
         )
-        val range1 = RelocItemHandler.findCluster(items, "2")
-        assertEquals(0..1, range1)
 
-        val range2 = RelocItemHandler.findCluster(items, "3")
-        assertEquals(2..3, range2)
+        // Test middle item
+        val cluster2 = RelocItemHandler.findCluster(items, "2")
+        assertEquals(1..3, cluster2)
+
+        // Test start item
+        val cluster1 = RelocItemHandler.findCluster(items, "1")
+        assertEquals(1..3, cluster1)
+
+        // Test end item
+        val cluster3 = RelocItemHandler.findCluster(items, "3")
+        assertEquals(1..3, cluster3)
     }
 
     @Test
-    fun `findCluster - not reloc item returns null`() {
+    fun findCluster_stopsAtDifferentHost() {
         val items = listOf(
-            createItem("1", false, null)
+            AzNavItem(id = "1", text = "1", isRailItem = true, isRelocItem = true, hostId = "host1"),
+            AzNavItem(id = "2", text = "2", isRailItem = true, isRelocItem = true, hostId = "host2")
         )
-        val range = RelocItemHandler.findCluster(items, "1")
-        assertNull(range)
+
+        val cluster1 = RelocItemHandler.findCluster(items, "1")
+        assertEquals(0..0, cluster1)
+
+        val cluster2 = RelocItemHandler.findCluster(items, "2")
+        assertEquals(1..1, cluster2)
     }
 
+    // --- updateOrder Tests ---
+
     @Test
-    fun `updateOrder - swaps items correctly within cluster`() {
+    fun updateOrder_swapsItemsCorrectly() {
         val items = mutableListOf(
-            createItem("1", true, "host1"),
-            createItem("2", true, "host1"),
-            createItem("3", true, "host1")
+            AzNavItem(id = "1", text = "1", isRailItem = true, isRelocItem = true, hostId = "host"),
+            AzNavItem(id = "2", text = "2", isRailItem = true, isRelocItem = true, hostId = "host"),
+            AzNavItem(id = "3", text = "3", isRailItem = true, isRelocItem = true, hostId = "host")
         )
 
-        // Swap 1 and 2
-        RelocItemHandler.updateOrder(items, "1", 1)
+        // Move "1" to index 2 (end)
+        RelocItemHandler.updateOrder(items, "1", 2)
+
         assertEquals("2", items[0].id)
-        assertEquals("1", items[1].id)
-        assertEquals("3", items[2].id)
+        assertEquals("3", items[1].id)
+        assertEquals("1", items[2].id)
     }
 
     @Test
-    fun `updateOrder - prevents swap outside cluster`() {
+    fun updateOrder_doesNothingIfTargetOutsideCluster() {
         val items = mutableListOf(
-            createItem("1", true, "host1"),
-            createItem("2", false, null)
+            AzNavItem(id = "1", text = "1", isRailItem = true, isRelocItem = true, hostId = "host"),
+            AzNavItem(id = "A", text = "A", isRailItem = true, isRelocItem = false)
         )
 
+        // Try to move "1" to index 1 (which is "A", not in cluster)
         RelocItemHandler.updateOrder(items, "1", 1)
-        // Should not change because index 1 is not part of cluster
-        // Actually findCluster for "1" is 0..0. So target 1 is outside.
 
+        // Order should remain unchanged
         assertEquals("1", items[0].id)
-        assertEquals("2", items[1].id)
+        assertEquals("A", items[1].id)
+    }
+
+    // --- calculateTargetIndex Tests ---
+
+    @Test
+    fun calculateTargetIndex_returnsNullForInvalidItem() {
+        val items = listOf(AzNavItem(id = "1", text = "1", isRailItem = true, isRelocItem = true, hostId = "host"))
+        val target = RelocItemHandler.calculateTargetIndex(
+            items = items,
+            draggedItemId = "nonexistent",
+            currentDragOffset = 100f,
+            itemHeights = mapOf("1" to 100)
+        )
+        assertNull(target)
+    }
+
+    @Test
+    fun calculateTargetIndex_movesDownCorrectly() {
+        val items = listOf(
+            AzNavItem(id = "1", text = "1", isRailItem = true, isRelocItem = true, hostId = "host"),
+            AzNavItem(id = "2", text = "2", isRailItem = true, isRelocItem = true, hostId = "host"),
+            AzNavItem(id = "3", text = "3", isRailItem = true, isRelocItem = true, hostId = "host")
+        )
+        val heights = mapOf("1" to 100, "2" to 100, "3" to 100)
+
+        // Drag item "1" down by 50px. Next item "2" is 100px.
+        // 50 > 0.4 * 100 (40). So it should swap.
+        val target1 = RelocItemHandler.calculateTargetIndex(items, "1", 50f, heights)
+        assertEquals(1, target1)
+
+        // Drag item "1" down by 150px.
+        // Swap with "2" (consumes 100, remaining 50).
+        // 50 > 0.4 * 100 (40). Swap with "3".
+        val target2 = RelocItemHandler.calculateTargetIndex(items, "1", 150f, heights)
+        assertEquals(2, target2)
+
+         // Drag item "1" down by 30px.
+        // 30 < 40. No swap.
+        val target3 = RelocItemHandler.calculateTargetIndex(items, "1", 30f, heights)
+        assertEquals(0, target3)
     }
 }
