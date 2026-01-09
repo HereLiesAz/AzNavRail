@@ -389,6 +389,7 @@ private fun DraggableRailItemWrapper(
 
                 var totalDragY = 0f
                 var hasMoved = false
+                var hasDragged = false
                 var gestureCompletedSuccessfully = false
 
                 try {
@@ -433,6 +434,11 @@ private fun DraggableRailItemWrapper(
                                 totalDragY += dragY
                                 onDragDelta(dragY)
 
+                                // Check for significant drag
+                                if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
+                                    hasDragged = true
+                                }
+
                                 // Logic for target index (same as before)
                                 val currentIdx = scope.navItems.indexOfFirst { it.id == item.id }
                                 if (currentIdx != -1) {
@@ -454,6 +460,9 @@ private fun DraggableRailItemWrapper(
                     longPressJob?.cancel()
                     if (isLongPress) {
                         onDragEnd()
+                        if (!hasDragged) {
+                            onMenuOpen(item.id)
+                        }
                     } else if (!hasMoved && gestureCompletedSuccessfully) {
                         // It was a tap, and gestures completed successfully (not cancelled)
 
