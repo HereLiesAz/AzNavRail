@@ -57,6 +57,10 @@ internal fun RailContent(
         } else {
             {} // No-op
         }
+    } else if (item.isRelocItem) {
+        // Reloc items do not support navigation/clicking via RailContent;
+        // logic is handled by DraggableRailItemWrapper.
+        {}
     } else {
         if (item.isHost) {
             {
