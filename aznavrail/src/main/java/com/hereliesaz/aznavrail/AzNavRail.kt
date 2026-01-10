@@ -95,7 +95,7 @@ fun AzNavRail(
     content: AzNavRailScope.() -> Unit
 ) {
     val scope = remember { AzNavRailScopeImpl() }
-    scope.navItems.clear()
+    scope.reset()
     navController?.let { scope.navController = it }
 
     scope.apply(content)

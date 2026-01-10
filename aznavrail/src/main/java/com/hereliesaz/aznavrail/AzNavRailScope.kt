@@ -8,6 +8,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
+import com.hereliesaz.aznavrail.model.AzItemConfig
 import com.hereliesaz.aznavrail.model.AzNavItem
 
 interface AzNavRailScope {
@@ -40,6 +41,10 @@ interface AzNavRailScope {
     fun azRailItem(id: String, text: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: () -> Unit)
     fun azRailItem(id: String, text: String, route: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null)
     fun azRailItem(id: String, text: String, route: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: () -> Unit)
+
+    fun azRailItem(id: String, text: String, config: AzItemConfig, onClick: () -> Unit)
+    fun azRailItem(id: String, text: String, route: String, config: AzItemConfig = AzItemConfig())
+    fun azRailItem(id: String, text: String, route: String, config: AzItemConfig, onClick: () -> Unit)
 
     fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
     fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
@@ -132,6 +137,15 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
     val hiddenMenuOnValueChangeMap = mutableMapOf<String, (String) -> Unit>()
     val onRelocateMap = mutableMapOf<String, (Int, Int, List<String>) -> Unit>()
     var navController: NavController? = null
+
+    fun reset() {
+        navItems.clear()
+        onClickMap.clear()
+        onFocusMap.clear()
+        hiddenMenuOnClickMap.clear()
+        hiddenMenuOnValueChangeMap.clear()
+        onRelocateMap.clear()
+    }
     var displayAppNameInHeader: Boolean = false
     var packRailButtons: Boolean = false
     var expandedRailWidth: Dp = 260.dp
@@ -224,6 +238,24 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
 
     override fun azRailItem(id: String, text: String, route: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: () -> Unit) {
         addRailItem(id, text, route, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick)
+    }
+
+    override fun azRailItem(id: String, text: String, config: AzItemConfig, onClick: () -> Unit) {
+        addRailItem(
+            id, text, null, config.color, config.shape, config.disabled, config.screenTitle, config.info, config.classifiers, config.onFocus, onClick
+        )
+    }
+
+    override fun azRailItem(id: String, text: String, route: String, config: AzItemConfig) {
+        addRailItem(
+            id, text, route, config.color, config.shape, config.disabled, config.screenTitle, config.info, config.classifiers, config.onFocus
+        ) {}
+    }
+
+    override fun azRailItem(id: String, text: String, route: String, config: AzItemConfig, onClick: () -> Unit) {
+        addRailItem(
+            id, text, route, config.color, config.shape, config.disabled, config.screenTitle, config.info, config.classifiers, config.onFocus, onClick
+        )
     }
 
     private fun addRailItem(id: String, text: String, route: String?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: () -> Unit) {
