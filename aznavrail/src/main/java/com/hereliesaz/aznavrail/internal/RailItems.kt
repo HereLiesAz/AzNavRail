@@ -389,6 +389,7 @@ private fun DraggableRailItemWrapper(
 
                 var totalDragY = 0f
                 var hasMoved = false
+                var hasDragged = false
                 var gestureCompletedSuccessfully = false
 
                 try {
@@ -433,6 +434,11 @@ private fun DraggableRailItemWrapper(
                                 totalDragY += dragY
                                 onDragDelta(dragY)
 
+                                // Check for significant drag
+                                if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
+                                    hasDragged = true
+                                }
+
                                 // Logic for target index (same as before)
                                 val currentIdx = scope.navItems.indexOfFirst { it.id == item.id }
                                 if (currentIdx != -1) {
@@ -454,6 +460,9 @@ private fun DraggableRailItemWrapper(
                     longPressJob?.cancel()
                     if (isLongPress) {
                         onDragEnd()
+                        if (!hasDragged) {
+                            onMenuOpen(item.id)
+                        }
                     } else if (!hasMoved && gestureCompletedSuccessfully) {
                         // It was a tap, and gestures completed successfully (not cancelled)
 
@@ -461,6 +470,9 @@ private fun DraggableRailItemWrapper(
                         // Either by route matching OR by lastTappedId (for items without route)
                         val isRouteSelected = item.route != null && item.route == currentDestination
                         val isIdSelected = lastTappedId == item.id
+
+                        // Invoke onFocus if defined
+                        scope.onFocusMap[item.id]?.invoke()
 
                         if (isRouteSelected || isIdSelected) {
                              // Already selected -> Open Hidden Menu
@@ -496,6 +508,10 @@ private fun DraggableRailItemWrapper(
         lastTappedId == item.id
     }
 
+    // Determine visual active state based on selection OR custom classifiers
+    val isClassifierActive = item.classifiers.any { it in scope.activeClassifiers }
+    val isVisuallyActive = isSelected || isClassifierActive
+
     Box(modifier = Modifier.zIndex(if (isDragging) 1f else 0f)) {
          Box(modifier = Modifier
              .offset(y = finalOffsetY)
@@ -504,9 +520,16 @@ private fun DraggableRailItemWrapper(
              RailContent(
                  item = item,
                  navController = navController,
-                 isSelected = isSelected,
+                 isSelected = isVisuallyActive,
                  buttonSize = buttonSize,
-                 onClick = if (onClickOverride != null) { { onClickOverride(item) } } else scope.onClickMap[item.id],
+                 onClick = {
+                     scope.onFocusMap[item.id]?.invoke()
+                     if (onClickOverride != null) {
+                         onClickOverride(item)
+                     } else {
+                         scope.onClickMap[item.id]?.invoke()
+                     }
+                 },
                  onRailCyclerClick = onRailCyclerClick,
                  onItemClick = { onItemSelected(item) },
                  onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
