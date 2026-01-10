@@ -471,6 +471,9 @@ private fun DraggableRailItemWrapper(
                         val isRouteSelected = item.route != null && item.route == currentDestination
                         val isIdSelected = lastTappedId == item.id
 
+                        // Invoke onFocus if defined
+                        scope.onFocusMap[item.id]?.invoke()
+
                         if (isRouteSelected || isIdSelected) {
                              // Already selected -> Open Hidden Menu
                              onMenuOpen(item.id)
@@ -505,6 +508,10 @@ private fun DraggableRailItemWrapper(
         lastTappedId == item.id
     }
 
+    // Determine visual active state based on selection OR custom classifiers
+    val isClassifierActive = item.classifiers.any { it in scope.activeClassifiers }
+    val isVisuallyActive = isSelected || isClassifierActive
+
     Box(modifier = Modifier.zIndex(if (isDragging) 1f else 0f)) {
          Box(modifier = Modifier
              .offset(y = finalOffsetY)
@@ -513,9 +520,16 @@ private fun DraggableRailItemWrapper(
              RailContent(
                  item = item,
                  navController = navController,
-                 isSelected = isSelected,
+                 isSelected = isVisuallyActive,
                  buttonSize = buttonSize,
-                 onClick = if (onClickOverride != null) { { onClickOverride(item) } } else scope.onClickMap[item.id],
+                 onClick = {
+                     scope.onFocusMap[item.id]?.invoke()
+                     if (onClickOverride != null) {
+                         onClickOverride(item)
+                     } else {
+                         scope.onClickMap[item.id]?.invoke()
+                     }
+                 },
                  onRailCyclerClick = onRailCyclerClick,
                  onItemClick = { onItemSelected(item) },
                  onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
