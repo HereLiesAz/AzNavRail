@@ -29,16 +29,17 @@ interface AzNavRailScope {
         infoScreen: Boolean = false,
         onDismissInfoScreen: (() -> Unit)? = null,
         activeColor: Color? = null,
-        vibrate: Boolean = false
+        vibrate: Boolean = false,
+        activeClassifiers: Set<String> = emptySet()
     )
 
     fun azMenuItem(id: String, text: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
     fun azMenuItem(id: String, text: String, route: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null)
     fun azMenuItem(id: String, text: String, route: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
 
-    fun azRailItem(id: String, text: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
-    fun azRailItem(id: String, text: String, route: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null)
-    fun azRailItem(id: String, text: String, route: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
+    fun azRailItem(id: String, text: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: () -> Unit)
+    fun azRailItem(id: String, text: String, route: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null)
+    fun azRailItem(id: String, text: String, route: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: () -> Unit)
 
     fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
     fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
@@ -70,9 +71,9 @@ interface AzNavRailScope {
     fun azMenuSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null)
     fun azMenuSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
 
-    fun azRailSubItem(id: String, hostId: String, text: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
-    fun azRailSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null)
-    fun azRailSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
+    fun azRailSubItem(id: String, hostId: String, text: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: () -> Unit)
+    fun azRailSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null)
+    fun azRailSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: () -> Unit)
 
     fun azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
     fun azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
@@ -90,8 +91,8 @@ interface AzNavRailScope {
     fun azRailSubCycler(id: String, hostId: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, route: String, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
     fun azRailSubCycler(id: String, hostId: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, route: String, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null)
 
-    fun azRailRelocItem(id: String, hostId: String, text: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null, onRelocate: ((Int, Int, List<String>) -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit = {})
-    fun azRailRelocItem(id: String, hostId: String, text: String, route: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null, onRelocate: ((Int, Int, List<String>) -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit)
+    fun azRailRelocItem(id: String, hostId: String, text: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null, onRelocate: ((Int, Int, List<String>) -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit = {})
+    fun azRailRelocItem(id: String, hostId: String, text: String, route: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null, onRelocate: ((Int, Int, List<String>) -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit)
 }
 
 interface HiddenMenuScope {
@@ -126,6 +127,7 @@ internal class HiddenMenuScopeImpl : HiddenMenuScope {
 internal class AzNavRailScopeImpl : AzNavRailScope {
     val navItems = mutableStateListOf<AzNavItem>()
     val onClickMap = mutableMapOf<String, () -> Unit>()
+    val onFocusMap = mutableMapOf<String, () -> Unit>()
     val hiddenMenuOnClickMap = mutableMapOf<String, () -> Unit>()
     val hiddenMenuOnValueChangeMap = mutableMapOf<String, (String) -> Unit>()
     val onRelocateMap = mutableMapOf<String, (Int, Int, List<String>) -> Unit>()
@@ -148,6 +150,7 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
     var onDismissInfoScreen: (() -> Unit)? = null
     var activeColor: Color? = null
     var vibrate: Boolean = false
+    var activeClassifiers: Set<String> = emptySet()
 
     override fun azSettings(
         displayAppNameInHeader: Boolean,
@@ -167,7 +170,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         infoScreen: Boolean,
         onDismissInfoScreen: (() -> Unit)?,
         activeColor: Color?,
-        vibrate: Boolean
+        vibrate: Boolean,
+        activeClassifiers: Set<String>
     ) {
         require(expandedRailWidth > collapsedRailWidth) {
             """
@@ -191,6 +195,7 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         this.onDismissInfoScreen = onDismissInfoScreen
         this.activeColor = activeColor
         this.vibrate = vibrate
+        this.activeClassifiers = activeClassifiers
     }
 
     override fun azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit) {
@@ -209,20 +214,20 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         addItem(id = id, text = text, route = route, screenTitle = screenTitle, info = info, isRailItem = false, disabled = disabled, onClick = onClick)
     }
 
-    override fun azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit) {
-        addRailItem(id, text, null, color, shape, disabled, screenTitle, info, onClick)
+    override fun azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: () -> Unit) {
+        addRailItem(id, text, null, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick)
     }
 
-    override fun azRailItem(id: String, text: String, route: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?) {
-        addRailItem(id, text, route, color, shape, disabled, screenTitle, info) {}
+    override fun azRailItem(id: String, text: String, route: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?) {
+        addRailItem(id, text, route, color, shape, disabled, screenTitle, info, classifiers, onFocus) {}
     }
 
-    override fun azRailItem(id: String, text: String, route: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit) {
-        addRailItem(id, text, route, color, shape, disabled, screenTitle, info, onClick)
+    override fun azRailItem(id: String, text: String, route: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: () -> Unit) {
+        addRailItem(id, text, route, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick)
     }
 
-    private fun addRailItem(id: String, text: String, route: String?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit) {
-        addItem(id = id, text = text, route = route, screenTitle = screenTitle, info = info, isRailItem = true, color = color, shape = shape, disabled = disabled, onClick = onClick)
+    private fun addRailItem(id: String, text: String, route: String?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: () -> Unit) {
+        addItem(id = id, text = text, route = route, screenTitle = screenTitle, info = info, isRailItem = true, color = color, shape = shape, disabled = disabled, classifiers = classifiers, onFocus = onFocus, onClick = onClick)
     }
 
     override fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit) {
@@ -369,20 +374,20 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         addItem(id = id, text = text, route = route, screenTitle = screenTitle, info = info, isRailItem = false, disabled = disabled, isSubItem = true, hostId = hostId, shape = AzButtonShape.NONE, onClick = onClick)
     }
 
-    override fun azRailSubItem(id: String, hostId: String, text: String, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit) {
-        addRailSubItem(id, hostId, text, null, disabled, screenTitle, info, onClick)
+    override fun azRailSubItem(id: String, hostId: String, text: String, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: () -> Unit) {
+        addRailSubItem(id, hostId, text, null, disabled, screenTitle, info, classifiers, onFocus, onClick)
     }
 
-    override fun azRailSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean, screenTitle: String?, info: String?) {
-        addRailSubItem(id, hostId, text, route, disabled, screenTitle, info) {}
+    override fun azRailSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?) {
+        addRailSubItem(id, hostId, text, route, disabled, screenTitle, info, classifiers, onFocus) {}
     }
 
-    override fun azRailSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit) {
-        addRailSubItem(id, hostId, text, route, disabled, screenTitle, info, onClick)
+    override fun azRailSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: () -> Unit) {
+        addRailSubItem(id, hostId, text, route, disabled, screenTitle, info, classifiers, onFocus, onClick)
     }
 
-    private fun addRailSubItem(id: String, hostId: String, text: String, route: String?, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit) {
-        addItem(id = id, text = text, route = route, screenTitle = screenTitle, info = info, isRailItem = true, disabled = disabled, isSubItem = true, hostId = hostId, shape = AzButtonShape.NONE, onClick = onClick)
+    private fun addRailSubItem(id: String, hostId: String, text: String, route: String?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: () -> Unit) {
+        addItem(id = id, text = text, route = route, screenTitle = screenTitle, info = info, isRailItem = true, disabled = disabled, isSubItem = true, hostId = hostId, shape = AzButtonShape.NONE, classifiers = classifiers, onFocus = onFocus, onClick = onClick)
     }
 
     override fun azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit) {
@@ -464,15 +469,15 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         addCycler(id = id, hostId = hostId, color = color, options = options, selectedOption = selectedOption, route = route, disabled = disabled, disabledOptions = disabledOptions, screenTitle = screenTitle, info = info, isRailItem = true, isSubItem = true, shape = shape, onClick = onClick)
     }
 
-    override fun azRailRelocItem(id: String, hostId: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, onClick: (() -> Unit)?, onRelocate: ((Int, Int, List<String>) -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
-        addRailRelocItem(id, hostId, text, null, color, shape, disabled, screenTitle, info, onClick, onRelocate, hiddenMenu)
+    override fun azRailRelocItem(id: String, hostId: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: (() -> Unit)?, onRelocate: ((Int, Int, List<String>) -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
+        addRailRelocItem(id, hostId, text, null, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick, onRelocate, hiddenMenu)
     }
 
-    override fun azRailRelocItem(id: String, hostId: String, text: String, route: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, onClick: (() -> Unit)?, onRelocate: ((Int, Int, List<String>) -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
-        addRailRelocItem(id, hostId, text, route, color, shape, disabled, screenTitle, info, onClick, onRelocate, hiddenMenu)
+    override fun azRailRelocItem(id: String, hostId: String, text: String, route: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: (() -> Unit)?, onRelocate: ((Int, Int, List<String>) -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
+        addRailRelocItem(id, hostId, text, route, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick, onRelocate, hiddenMenu)
     }
 
-    private fun addRailRelocItem(id: String, hostId: String, text: String, route: String?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, onClick: (() -> Unit)?, onRelocate: ((Int, Int, List<String>) -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
+    private fun addRailRelocItem(id: String, hostId: String, text: String, route: String?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: (() -> Unit)?, onRelocate: ((Int, Int, List<String>) -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
         val hiddenMenuScope = HiddenMenuScopeImpl()
         hiddenMenuScope.hiddenMenu()
 
@@ -492,6 +497,9 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         if (onRelocate != null) {
             onRelocateMap[id] = onRelocate
         }
+        if (onFocus != null) {
+            onFocusMap[id] = onFocus
+        }
 
         val finalScreenTitle = if (screenTitle == AzNavRail.noTitle) null else screenTitle ?: text
 
@@ -509,7 +517,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
                 disabled = disabled,
                 screenTitle = finalScreenTitle,
                 info = info,
-                hiddenMenuItems = prefixedItems
+                hiddenMenuItems = prefixedItems,
+                classifiers = classifiers
             )
         )
     }
@@ -616,6 +625,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         isHost: Boolean = false,
         isSubItem: Boolean = false,
         hostId: String? = null,
+        classifiers: Set<String> = emptySet(),
+        onFocus: (() -> Unit)? = null,
         onClick: () -> Unit
     ) {
         require(text.isNotEmpty()) {
@@ -625,6 +636,9 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         }
         val finalScreenTitle = if (screenTitle == AzNavRail.noTitle) null else screenTitle ?: text
         onClickMap[id] = onClick
+        if (onFocus != null) {
+            onFocusMap[id] = onFocus
+        }
         navItems.add(
             AzNavItem(
                 id = id,
@@ -638,7 +652,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
                 isHost = isHost,
                 isSubItem = isSubItem,
                 hostId = hostId,
-                info = info
+                info = info,
+                classifiers = classifiers
             )
         )
     }
