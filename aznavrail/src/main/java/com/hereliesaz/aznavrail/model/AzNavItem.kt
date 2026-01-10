@@ -51,5 +51,5 @@ data class AzNavItem(
     val info: String? = null,
     val isRelocItem: Boolean = false,
     val hiddenMenuItems: List<HiddenMenuItem>? = null,
-    val classifiers: List<String> = emptyList()
+    val classifiers: Set<String> = emptySet()
 ) : Parcelable

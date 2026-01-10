@@ -461,6 +461,7 @@ private fun DraggableRailItemWrapper(
                     if (isLongPress) {
                         onDragEnd()
                         if (!hasDragged) {
+                            scope.onFocusMap[item.id]?.invoke()
                             onMenuOpen(item.id)
                         }
                     } else if (!hasMoved && gestureCompletedSuccessfully) {
@@ -517,27 +518,49 @@ private fun DraggableRailItemWrapper(
              .offset(y = finalOffsetY)
              .alpha(alpha)
          ) {
-             RailContent(
-                 item = item,
-                 navController = navController,
-                 isSelected = isVisuallyActive,
-                 buttonSize = buttonSize,
-                 onClick = {
-                     scope.onFocusMap[item.id]?.invoke()
-                     if (onClickOverride != null) {
-                         onClickOverride(item)
-                     } else {
-                         scope.onClickMap[item.id]?.invoke()
-                     }
-                 },
-                 onRailCyclerClick = onRailCyclerClick,
-                 onItemClick = { onItemSelected(item) },
-                 onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
-                 onItemGloballyPositioned = onItemGloballyPositioned,
-                 infoScreen = infoScreen,
-                 dragModifier = dragModifier,
-                 activeColor = scope.activeColor
-             )
+             if (item.isRelocItem) {
+                 // For RelocItems, DraggableRailItemWrapper handles all gestures (Tap, Long Press, Drag).
+                 // We pass empty/null handlers to RailContent to prevent double invocation or conflict.
+                 // Visuals (ripple) are handled by AzNavRailButton inside RailContent consuming the click event.
+                 RailContent(
+                     item = item,
+                     navController = null,
+                     isSelected = isVisuallyActive,
+                     buttonSize = buttonSize,
+                     onClick = {}, // Disable logic, but allow ripple
+                     onRailCyclerClick = {},
+                     onItemClick = {},
+                     onHostClick = {},
+                     onItemGloballyPositioned = onItemGloballyPositioned,
+                     infoScreen = infoScreen,
+                     dragModifier = dragModifier,
+                     activeColor = scope.activeColor
+                 )
+             } else {
+                 // For Normal items, RailContent handles the click logic.
+                 RailContent(
+                     item = item,
+                     navController = navController,
+                     isSelected = isVisuallyActive,
+                     buttonSize = buttonSize,
+                     onClick = {
+                         // Wrap the click logic to include onFocus
+                         scope.onFocusMap[item.id]?.invoke()
+                         if (onClickOverride != null) {
+                             onClickOverride(item)
+                         } else {
+                             scope.onClickMap[item.id]?.invoke()
+                         }
+                     },
+                     onRailCyclerClick = onRailCyclerClick,
+                     onItemClick = { onItemSelected(item) },
+                     onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
+                     onItemGloballyPositioned = onItemGloballyPositioned,
+                     infoScreen = infoScreen,
+                     dragModifier = dragModifier, // Empty for normal items
+                     activeColor = scope.activeColor
+                 )
+             }
          }
 
          if (hiddenMenuOpenId == item.id && !item.hiddenMenuItems.isNullOrEmpty()) {
