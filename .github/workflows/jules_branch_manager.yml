@@ -1,0 +1,32 @@
+name: Jules Branch Manager
+on:
+  create:
+
+jobs:
+  jules-manager:
+    if: ${{ github.event.ref_type == 'branch' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Invoke Jules
+        uses: google-labs-code/jules-invoke@v1
+        with:
+          jules_api_key: ${{ secrets.JULES_API_KEY }}
+          prompt: |
+            You have been invoked because a new branch '${{ github.event.ref }}' was created.
+
+            Your mission is to manage the lifecycle of this branch.
+
+            Please perform the following steps:
+            1. Create a pull request for branch '${{ github.event.ref }}' merging into '${{ github.event.repository.default_branch }}'.
+            2. Examine and evaluate the validity and necessity of the pull request.
+            3. Review the code changes in the pull request.
+            4. Fix any issues identified in your review or suggested by other reviewers (if any).
+            5. Handle and resolve any merge conflicts.
+            6. Once the pull request is valid, reviewed, and conflicts are resolved, merge it into '${{ github.event.repository.default_branch }}'.
+            7. Close the pull request and delete the branch '${{ github.event.ref }}'.
+
+            If the pull request is determined to be invalid or unnecessary, close it and delete the branch.
