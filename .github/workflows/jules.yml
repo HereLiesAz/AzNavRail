@@ -4,13 +4,30 @@ on:
     types: [opened, reopened, edited]
 
 jobs:
-  add-jules-label:
+  jules-agent:
     runs-on: ubuntu-latest
     permissions:
       issues: write
+      contents: read
     steps:
       - name: 'Auto-add "jules" label'
         uses: andymckay/labeler@1.0.2
         with:
           add-labels: 'jules'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Invoke Jules
+        uses: google-labs-code/jules-invoke@v1
+        with:
+          jules_api_key: ${{ secrets.JULES_API_KEY }}
+          prompt: |
+            You are an expert software engineer.
+            Your task is to resolve the following issue:
+
+            Title: ${{ github.event.issue.title }}
+
+            Body:
+            ${{ github.event.issue.body }}
+
+            Please analyze the codebase, implement the necessary changes, and verify them.
+            Once you have completed the task and verified the fix, please close the issue #${{ github.event.issue.number }}.
