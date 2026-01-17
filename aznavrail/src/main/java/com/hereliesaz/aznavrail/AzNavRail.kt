@@ -106,13 +106,15 @@ fun AzNavRail(
     val effectiveNoMenu = scope.noMenu && overlayController == null
     val isRightDocked = scope.dockingSide == AzDockingSide.RIGHT
 
-    if (effectiveNoMenu) {
-        val newItems = scope.navItems.map { it.copy(isRailItem = true) }
-        scope.navItems.clear()
-        scope.navItems.addAll(newItems)
+    val displayedNavItems = remember(scope.navItems, effectiveNoMenu) {
+        if (effectiveNoMenu) {
+            scope.navItems.map { it.copy(isRailItem = true) }
+        } else {
+            scope.navItems
+        }
     }
 
-    scope.navItems.forEach { item ->
+    displayedNavItems.forEach { item ->
         if (item.isSubItem && item.isRailItem) {
             val host = scope.navItems.find { it.id == item.hostId }
             require(host != null && host.isRailItem) {
@@ -145,8 +147,8 @@ fun AzNavRail(
     }
 
     // Force Footer Text Color: use color of first item, or primary if not set/available
-    val footerColor = remember(scope.navItems) {
-        scope.navItems.firstOrNull()?.color ?: Color.Unspecified
+    val footerColor = remember(displayedNavItems) {
+        displayedNavItems.firstOrNull()?.color ?: Color.Unspecified
     }
 
     var isExpandedInternal by rememberSaveable(initiallyExpanded) { mutableStateOf(initiallyExpanded) }
@@ -202,15 +204,15 @@ fun AzNavRail(
     val hostStates = remember { mutableStateMapOf<String, Boolean>() }
     val itemPositions = remember { mutableStateMapOf<String, androidx.compose.ui.geometry.Rect>() }
 
-    LaunchedEffect(scope.navItems) {
+    LaunchedEffect(displayedNavItems) {
         val initialSelectedItem = if (currentDestination != null) {
-            scope.navItems.find { it.route == currentDestination }
+            displayedNavItems.find { it.route == currentDestination }
         } else {
-            scope.navItems.firstOrNull()
+            displayedNavItems.firstOrNull()
         }
         selectedItem = initialSelectedItem
 
-        scope.navItems.forEach { item ->
+        displayedNavItems.forEach { item ->
             if (item.isCycler) {
                 cyclerStates.putIfAbsent(item.id, CyclerTransientState(item.selectedOption ?: ""))
             }
@@ -222,7 +224,7 @@ fun AzNavRail(
             cyclerStates.forEach { (id, state) ->
                 if (state.job != null) {
                     state.job.cancel()
-                    val item = scope.navItems.find { it.id == id }
+                    val item = displayedNavItems.find { it.id == id }
                     if (item != null) {
                         coroutineScope.launch {
                             val options = requireNotNull(item.options)
@@ -532,7 +534,7 @@ fun AzNavRail(
                                     )
                                 }
                         ) {
-                            val itemsToShow = scope.navItems.filter { !it.isSubItem }
+                            val itemsToShow = displayedNavItems.filter { !it.isSubItem }
                             itemsToShow.forEach { item ->
                                 if (item.isDivider) {
                                     AzDivider()
@@ -570,7 +572,7 @@ fun AzNavRail(
                                                             delay(1000L)
 
                                                             val finalItemState =
-                                                                scope.navItems.find { it.id == item.id }
+                                                                displayedNavItems.find { it.id == item.id }
                                                                     ?: item
                                                             val currentStateInVm =
                                                                 finalItemState.selectedOption
@@ -639,7 +641,7 @@ fun AzNavRail(
                                     ) {
                                         Column {
                                             val subItems =
-                                                scope.navItems.filter { it.hostId == item.id }
+                                                displayedNavItems.filter { it.hostId == item.id }
                                             subItems.forEach { subItem ->
                                                 MenuItem(
                                                     item = subItem,
@@ -754,7 +756,7 @@ fun AzNavRail(
                                             val nextOption = enabledOptions[nextIndex]
 
                                             val finalItemState =
-                                                scope.navItems.find { it.id == item.id } ?: item
+                                                displayedNavItems.find { it.id == item.id } ?: item
                                             val currentStateInVm = finalItemState.selectedOption
                                             val targetState = nextOption
 
@@ -782,7 +784,7 @@ fun AzNavRail(
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     RailItems(
-                                        items = scope.navItems,
+                                        items = displayedNavItems,
                                         scope = scope,
                                         navController = effectiveNavController,
                                         currentDestination = currentDestination,
@@ -843,7 +845,7 @@ fun AzNavRail(
 
         if (scope.infoScreen) {
             HelpOverlay(
-                items = scope.navItems,
+                items = displayedNavItems,
                 itemPositions = itemPositions,
                 hostStates = hostStates,
                 railWidth = railWidth,
