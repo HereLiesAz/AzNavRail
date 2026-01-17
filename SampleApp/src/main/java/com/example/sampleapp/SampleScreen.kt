@@ -29,6 +29,7 @@ import com.hereliesaz.aznavrail.AzTextBox
 import com.hereliesaz.aznavrail.AzTextBoxDefaults
 import com.hereliesaz.aznavrail.AzToggle
 import com.hereliesaz.aznavrail.model.AzButtonShape
+import com.hereliesaz.aznavrail.model.AzDockingSide
 
 @Composable
 fun SampleScreen(
@@ -77,7 +78,7 @@ fun SampleScreen(
                     onUndock = onUndockOverride,
                     onRailDrag = onRailDrag,
                     overlayService = if (useBasicOverlay) SampleBasicOverlayService::class.java else SampleOverlayService::class.java,
-                    dockingSide = if (isDockingRight) "right" else "left",
+                    dockingSide = if (isDockingRight) AzDockingSide.RIGHT else AzDockingSide.LEFT,
                     noMenu = noMenu
                 )
 

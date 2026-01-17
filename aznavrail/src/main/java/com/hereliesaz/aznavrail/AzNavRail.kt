@@ -72,6 +72,7 @@ import com.hereliesaz.aznavrail.internal.Footer
 import com.hereliesaz.aznavrail.internal.HelpOverlay
 import com.hereliesaz.aznavrail.internal.MenuItem
 import com.hereliesaz.aznavrail.internal.RailItems
+import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.service.LocalAzNavRailOverlayController
@@ -103,7 +104,7 @@ fun AzNavRail(
 
     val overlayController = LocalAzNavRailOverlayController.current
     val effectiveNoMenu = scope.noMenu && overlayController == null
-    val isRightDocked = scope.dockingSide.equals("right", ignoreCase = true)
+    val isRightDocked = scope.dockingSide == AzDockingSide.RIGHT
 
     if (effectiveNoMenu) {
         val newItems = scope.navItems.map { it.copy(isRailItem = true) }

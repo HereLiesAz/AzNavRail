@@ -2,6 +2,7 @@ package com.hereliesaz.aznavrail
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzNavItem
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -237,8 +238,8 @@ class AzNavRailTest {
     @Test
     fun `azSettings should update dockingSide and noMenu`() {
         val scope = AzNavRailScopeImpl()
-        scope.azSettings(dockingSide = "right", noMenu = true)
-        assertEquals("right", scope.dockingSide)
+        scope.azSettings(dockingSide = AzDockingSide.RIGHT, noMenu = true)
+        assertEquals(AzDockingSide.RIGHT, scope.dockingSide)
         assertEquals(true, scope.noMenu)
     }
 }

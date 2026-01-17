@@ -106,7 +106,7 @@ fun SampleScreen() {
                 headerIconShape = AzHeaderIconShape.ROUNDED, // Set the header icon shape to ROUNDED
                 activeColor = MaterialTheme.colorScheme.tertiary, // Optional: Secondary color for the selected item
                 vibrate = true, // Optional: Enable haptic feedback for gestures
-                dockingSide = "left", // Optional: "left" (default) or "right"
+                dockingSide = AzDockingSide.LEFT, // Optional: AzDockingSide.LEFT (default) or AzDockingSide.RIGHT
                 noMenu = false // Optional: If true, all items are displayed on the rail and the menu is disabled
             )
 
