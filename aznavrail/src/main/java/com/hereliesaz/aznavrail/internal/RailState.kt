@@ -47,6 +47,9 @@ internal data class CyclerTransientState(
     val job: Job? = null
 )
 
+/**
+ * A [PopupPositionProvider] that positions the popup in the center of the window.
+ */
 internal object CenteredPopupPositionProvider : PopupPositionProvider {
     override fun calculatePosition(
         anchorBounds: IntRect,

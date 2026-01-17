@@ -36,6 +36,8 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 - **`AzTextBox`**: Modern text box with autocomplete and submit button.
 - **`AzRoller`**: A dropdown menu that works like a roller or slot machine, cycling through options infinitely.
 - **Info Screen**: Interactive help mode for onboarding with visual guides.
+- **Left/Right Docking**: Position the rail on the left or right side of the screen.
+- **No Menu Mode**: Treat all items as rail items, removing the side drawer.
 
 ## AzNavRail for Android (Jetpack Compose)
 
@@ -103,7 +105,9 @@ fun SampleScreen() {
                 enableRailDragging = true, // Enable the draggable rail feature
                 headerIconShape = AzHeaderIconShape.ROUNDED, // Set the header icon shape to ROUNDED
                 activeColor = MaterialTheme.colorScheme.tertiary, // Optional: Secondary color for the selected item
-                vibrate = true // Optional: Enable haptic feedback for gestures
+                vibrate = true, // Optional: Enable haptic feedback for gestures
+                dockingSide = AzDockingSide.LEFT, // Optional: AzDockingSide.LEFT (default) or AzDockingSide.RIGHT
+                noMenu = false // Optional: If true, all items are displayed on the rail and the menu is disabled
             )
 
             // A standard menu item - only appears in the expanded menu

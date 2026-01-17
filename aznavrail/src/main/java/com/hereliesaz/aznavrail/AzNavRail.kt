@@ -3,6 +3,7 @@ package com.hereliesaz.aznavrail
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -65,12 +66,14 @@ import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.internal.AzNavRailLogger
 import com.hereliesaz.aznavrail.internal.OverlayHelper
+// CenteredPopupPositionProvider is used for the no-menu footer popup
 import com.hereliesaz.aznavrail.internal.CenteredPopupPositionProvider
 import com.hereliesaz.aznavrail.internal.CyclerTransientState
 import com.hereliesaz.aznavrail.internal.Footer
 import com.hereliesaz.aznavrail.internal.HelpOverlay
 import com.hereliesaz.aznavrail.internal.MenuItem
 import com.hereliesaz.aznavrail.internal.RailItems
+import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.service.LocalAzNavRailOverlayController
@@ -100,7 +103,19 @@ fun AzNavRail(
 
     scope.apply(content)
 
-    scope.navItems.forEach { item ->
+    val overlayController = LocalAzNavRailOverlayController.current
+    val effectiveNoMenu = scope.noMenu && overlayController == null
+    val isRightDocked = scope.dockingSide == AzDockingSide.RIGHT
+
+    val displayedNavItems = remember(scope.navItems, effectiveNoMenu) {
+        if (effectiveNoMenu) {
+            scope.navItems.map { it.copy(isRailItem = true) }
+        } else {
+            scope.navItems
+        }
+    }
+
+    displayedNavItems.forEach { item ->
         if (item.isSubItem && item.isRailItem) {
             val host = scope.navItems.find { it.id == item.hostId }
             require(host != null && host.isRailItem) {
@@ -112,7 +127,6 @@ fun AzNavRail(
     val context = LocalContext.current
     val packageManager = context.packageManager
     val packageName = context.packageName
-    val overlayController = LocalAzNavRailOverlayController.current
 
     val appName = remember(packageName) {
         try {
@@ -134,26 +148,28 @@ fun AzNavRail(
     }
 
     // Force Footer Text Color: use color of first item, or primary if not set/available
-    val footerColor = remember(scope.navItems) {
-        scope.navItems.firstOrNull()?.color ?: Color.Unspecified
+    val footerColor = remember(displayedNavItems) {
+        displayedNavItems.firstOrNull()?.color ?: Color.Unspecified
     }
 
     var isExpandedInternal by rememberSaveable(initiallyExpanded) { mutableStateOf(initiallyExpanded) }
     // If overlayController is present, isExpanded is always false.
     // Use a derived boolean for read operations to enforce logic, but write to internal state (or ignore if blocked).
 
-    val isExpandedState = remember(overlayController) {
+    val isExpandedState = remember(overlayController, effectiveNoMenu) {
         object : androidx.compose.runtime.MutableState<Boolean> {
             override var value: Boolean
-                get() = if (overlayController != null) false else isExpandedInternal
+                get() = if (overlayController != null || effectiveNoMenu) false else isExpandedInternal
                 set(v) {
-                     if (overlayController == null) isExpandedInternal = v
+                     if (overlayController == null && !effectiveNoMenu) isExpandedInternal = v
                 }
             override fun component1() = value
             override fun component2(): (Boolean) -> Unit = { value = it }
         }
     }
     var isExpanded by isExpandedState
+
+    var showFooterPopup by remember { mutableStateOf(false) }
 
     var railOffset by remember { mutableStateOf(IntOffset.Zero) }
     // If initially expanded, we are not floating. But if initially NOT expanded, we might be?
@@ -189,15 +205,15 @@ fun AzNavRail(
     val hostStates = remember { mutableStateMapOf<String, Boolean>() }
     val itemPositions = remember { mutableStateMapOf<String, androidx.compose.ui.geometry.Rect>() }
 
-    LaunchedEffect(scope.navItems) {
+    LaunchedEffect(displayedNavItems) {
         val initialSelectedItem = if (currentDestination != null) {
-            scope.navItems.find { it.route == currentDestination }
+            displayedNavItems.find { it.route == currentDestination }
         } else {
-            scope.navItems.firstOrNull()
+            displayedNavItems.firstOrNull()
         }
         selectedItem = initialSelectedItem
 
-        scope.navItems.forEach { item ->
+        displayedNavItems.forEach { item ->
             if (item.isCycler) {
                 cyclerStates.putIfAbsent(item.id, CyclerTransientState(item.selectedOption ?: ""))
             }
@@ -209,7 +225,7 @@ fun AzNavRail(
             cyclerStates.forEach { (id, state) ->
                 if (state.job != null) {
                     state.job.cancel()
-                    val item = scope.navItems.find { it.id == id }
+                    val item = displayedNavItems.find { it.id == id }
                     if (item != null) {
                         coroutineScope.launch {
                             val options = requireNotNull(item.options)
@@ -269,7 +285,10 @@ fun AzNavRail(
         }
     }
 
-    Box(modifier = modifier) {
+    Box(
+        modifier = modifier,
+        contentAlignment = if (isRightDocked) Alignment.TopEnd else Alignment.TopStart
+    ) {
         val buttonSize = AzNavRailDefaults.HeaderIconSize
         selectedItem?.screenTitle?.let { screenTitle ->
             if (screenTitle.isNotEmpty()) {
@@ -301,7 +320,10 @@ fun AzNavRail(
                 }
             }
         }
-        Box {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = if (isRightDocked) Alignment.TopEnd else Alignment.TopStart
+        ) {
             NavigationRail(
                 modifier = Modifier
                     .width(railWidth)
@@ -329,7 +351,9 @@ fun AzNavRail(
                             ) {
                                 detectTapGestures(
                                     onTap = {
-                                        if (isFloating) {
+                                        if (effectiveNoMenu) {
+                                            showFooterPopup = !showFooterPopup
+                                        } else if (isFloating) {
                                             showFloatingButtons = !showFloatingButtons
                                         } else {
                                             // Only allow expanding if NOT in overlay mode
@@ -498,7 +522,12 @@ fun AzNavRail(
                                         onDragStart = { _ -> },
                                         onHorizontalDrag = { change, dragAmount ->
                                             // Horizontal swipe to close
-                                            if (isExpanded && dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
+                                            val shouldClose = if (isRightDocked) {
+                                                dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX
+                                            } else {
+                                                dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX
+                                            }
+                                            if (isExpanded && shouldClose) {
                                                 isExpanded = false
                                                 change.consume()
                                             }
@@ -506,7 +535,7 @@ fun AzNavRail(
                                     )
                                 }
                         ) {
-                            val itemsToShow = scope.navItems.filter { !it.isSubItem }
+                            val itemsToShow = displayedNavItems.filter { !it.isSubItem }
                             itemsToShow.forEach { item ->
                                 if (item.isDivider) {
                                     AzDivider()
@@ -544,7 +573,7 @@ fun AzNavRail(
                                                             delay(1000L)
 
                                                             val finalItemState =
-                                                                scope.navItems.find { it.id == item.id }
+                                                                displayedNavItems.find { it.id == item.id }
                                                                     ?: item
                                                             val currentStateInVm =
                                                                 finalItemState.selectedOption
@@ -613,7 +642,7 @@ fun AzNavRail(
                                     ) {
                                         Column {
                                             val subItems =
-                                                scope.navItems.filter { it.hostId == item.id }
+                                                displayedNavItems.filter { it.hostId == item.id }
                                             subItems.forEach { subItem ->
                                                 MenuItem(
                                                     item = subItem,
@@ -692,7 +721,12 @@ fun AzNavRail(
                                             onDragStart = { _ -> },
                                             onHorizontalDrag = { change, dragAmount ->
                                                 // Horizontal swipe to open
-                                                if (!isExpanded && !disableSwipeToOpen && dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
+                                                val shouldOpen = if (isRightDocked) {
+                                                    dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX
+                                                } else {
+                                                    dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX
+                                                }
+                                                if (!isExpanded && !disableSwipeToOpen && shouldOpen) {
                                                     isExpanded = true
                                                     change.consume()
                                                 }
@@ -723,7 +757,7 @@ fun AzNavRail(
                                             val nextOption = enabledOptions[nextIndex]
 
                                             val finalItemState =
-                                                scope.navItems.find { it.id == item.id } ?: item
+                                                displayedNavItems.find { it.id == item.id } ?: item
                                             val currentStateInVm = finalItemState.selectedOption
                                             val targetState = nextOption
 
@@ -751,7 +785,7 @@ fun AzNavRail(
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     RailItems(
-                                        items = scope.navItems,
+                                        items = displayedNavItems,
                                         scope = scope,
                                         navController = effectiveNavController,
                                         currentDestination = currentDestination,
@@ -774,13 +808,50 @@ fun AzNavRail(
                 }
             }
         }
+
+        if (showFooterPopup && effectiveNoMenu) {
+            Popup(
+                onDismissRequest = { showFooterPopup = false },
+                popupPositionProvider = CenteredPopupPositionProvider
+            ) {
+                Box(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(16.dp)
+                ) {
+                    Footer(
+                        appName = appName,
+                        onToggle = { showFooterPopup = false },
+                        onUndock = {
+                            val overlayService = scope.overlayService
+                            if (scope.onUndock != null) {
+                                scope.onUndock?.invoke()
+                            } else if (overlayService != null) {
+                                OverlayHelper.launch(context, overlayService)
+                            } else {
+                                isFloating = true
+                                isExpanded = false
+                                if (scope.displayAppNameInHeader) isAppIcon = true
+                                showFooterPopup = false
+                            }
+                        },
+                        scope = scope,
+                        footerColor = if (footerColor != Color.Unspecified) footerColor else MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+
         if (scope.infoScreen) {
             HelpOverlay(
-                items = scope.navItems,
+                items = displayedNavItems,
                 itemPositions = itemPositions,
                 hostStates = hostStates,
                 railWidth = railWidth,
-                onDismiss = { scope.onDismissInfoScreen?.invoke() }
+                onDismiss = { scope.onDismissInfoScreen?.invoke() },
+                isRightDocked = isRightDocked
             )
         }
     }

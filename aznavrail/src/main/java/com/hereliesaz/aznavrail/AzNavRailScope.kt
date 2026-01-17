@@ -7,11 +7,37 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.model.AzButtonShape
+import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzItemConfig
 import com.hereliesaz.aznavrail.model.AzNavItem
 
 interface AzNavRailScope {
+    /**
+     * Configures global settings for the navigation rail.
+     *
+     * @param displayAppNameInHeader If true, the app name is displayed in the header instead of the icon.
+     * @param packRailButtons If true, rail buttons are packed together without spacing.
+     * @param expandedRailWidth The width of the expanded rail/menu.
+     * @param collapsedRailWidth The width of the collapsed rail.
+     * @param showFooter If true, the footer is displayed in the expanded menu.
+     * @param isLoading If true, a full-screen loading overlay is shown.
+     * @param defaultShape The default shape for rail items.
+     * @param enableRailDragging If true, enables FAB mode (draggable rail).
+     * @param headerIconShape The shape of the header icon.
+     * @param onUndock Callback triggered when the rail is undocked (e.g., long-press header).
+     * @param onRailDrag Callback for custom drag handling in FAB mode.
+     * @param overlayService The class of the service to start for system overlay mode.
+     * @param onOverlayDrag Callback for custom drag handling in overlay mode.
+     * @param onItemGloballyPositioned Callback for getting item positions (used for Info Screen).
+     * @param infoScreen If true, activates the interactive help overlay.
+     * @param onDismissInfoScreen Callback to dismiss the info screen.
+     * @param activeColor Custom color for the active/selected item.
+     * @param vibrate If true, enables haptic feedback for gestures.
+     * @param activeClassifiers Set of classifiers to mark items as active aside from route/selection.
+     * @param dockingSide The side of the screen to dock the rail (LEFT or RIGHT).
+     * @param noMenu If true, all items are treated as rail items and the side drawer is disabled.
+     */
     fun azSettings(
         displayAppNameInHeader: Boolean = false,
         packRailButtons: Boolean = false,
@@ -31,7 +57,9 @@ interface AzNavRailScope {
         onDismissInfoScreen: (() -> Unit)? = null,
         activeColor: Color? = null,
         vibrate: Boolean = false,
-        activeClassifiers: Set<String> = emptySet()
+        activeClassifiers: Set<String> = emptySet(),
+        dockingSide: AzDockingSide = AzDockingSide.LEFT,
+        noMenu: Boolean = false
     )
 
     fun azMenuItem(id: String, text: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
@@ -165,6 +193,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
     var activeColor: Color? = null
     var vibrate: Boolean = false
     var activeClassifiers: Set<String> = emptySet()
+    var dockingSide: AzDockingSide = AzDockingSide.LEFT
+    var noMenu: Boolean = false
 
     override fun azSettings(
         displayAppNameInHeader: Boolean,
@@ -185,7 +215,9 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         onDismissInfoScreen: (() -> Unit)?,
         activeColor: Color?,
         vibrate: Boolean,
-        activeClassifiers: Set<String>
+        activeClassifiers: Set<String>,
+        dockingSide: AzDockingSide,
+        noMenu: Boolean
     ) {
         require(expandedRailWidth > collapsedRailWidth) {
             """
@@ -210,6 +242,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         this.activeColor = activeColor
         this.vibrate = vibrate
         this.activeClassifiers = activeClassifiers
+        this.dockingSide = dockingSide
+        this.noMenu = noMenu
     }
 
     override fun azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit) {
