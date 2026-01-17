@@ -47,7 +47,8 @@ internal fun HelpOverlay(
     itemPositions: Map<String, Rect>,
     hostStates: Map<String, Boolean>,
     railWidth: Dp,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    isRightDocked: Boolean = false
 ) {
     val descriptionPositions = remember { mutableStateMapOf<String, Rect>() }
 
@@ -75,9 +76,11 @@ internal fun HelpOverlay(
         modifier = Modifier.fillMaxSize()
     ) {
         Row(Modifier.fillMaxSize()) {
-            // Spacer to keep descriptions off the rail
-            // This spacer allows clicks/scrolls to pass through to the underlying Rail
-            Spacer(modifier = Modifier.width(railWidth))
+            if (!isRightDocked) {
+                // Spacer to keep descriptions off the rail
+                // This spacer allows clicks/scrolls to pass through to the underlying Rail
+                Spacer(modifier = Modifier.width(railWidth))
+            }
 
             LazyColumn(
                 modifier = Modifier
@@ -97,6 +100,10 @@ internal fun HelpOverlay(
                             }
                     )
                 }
+            }
+
+            if (isRightDocked) {
+                Spacer(modifier = Modifier.width(railWidth))
             }
         }
 
@@ -119,26 +126,33 @@ internal fun HelpOverlay(
                     val arrowColor = Color.Gray
                     val strokeWidth = 2.dp.toPx()
 
-                    // Button Point: Right-Center of the button
-                    val buttonPoint = Offset(itemRect.right, itemRect.center.y)
+                    val buttonPoint: Offset
+                    val descPoint: Offset
 
-                    // Description Point: Left-Center of the description card
-                    val descPoint = Offset(descRect.left, descRect.center.y)
+                    if (isRightDocked) {
+                        // Button is on Right. Description is on Left.
+                        buttonPoint = Offset(itemRect.left, itemRect.center.y)
+                        descPoint = Offset(descRect.right, descRect.center.y)
+                    } else {
+                        // Button is on Left. Description is on Right.
+                        buttonPoint = Offset(itemRect.right, itemRect.center.y)
+                        descPoint = Offset(descRect.left, descRect.center.y)
+                    }
 
                     val path = Path()
                     path.moveTo(descPoint.x, descPoint.y)
 
                     // Path Logic:
-                    // 1. Move Left from Description
+                    // 1. Move Horizontally from Description
                     // 2. Move Vertically to Button Y
-                    // 3. Move Left to Button X
-                    // We use the midpoint between Button Right Edge and Description Left Edge for the vertical segment.
+                    // 3. Move Horizontally to Button X
+                    // We use the midpoint between Button Edge and Description Edge for the vertical segment.
 
                     val elbowX = (buttonPoint.x + descPoint.x) / 2
 
-                    path.lineTo(elbowX, descPoint.y) // Left
-                    path.lineTo(elbowX, buttonPoint.y) // Up/Down
-                    path.lineTo(buttonPoint.x, buttonPoint.y) // To Button
+                    path.lineTo(elbowX, descPoint.y) // Horiz
+                    path.lineTo(elbowX, buttonPoint.y) // Vert
+                    path.lineTo(buttonPoint.x, buttonPoint.y) // Horiz to Button
 
                     drawPath(
                         path = path,
@@ -147,14 +161,21 @@ internal fun HelpOverlay(
                     )
 
                     // Draw Arrowhead at ButtonPoint
-                    // Simple triangle pointing Left (towards button)
                     val arrowSize = 8.dp.toPx()
                     val arrowPath = Path()
                     arrowPath.moveTo(buttonPoint.x, buttonPoint.y)
-                    // The line comes from Right, so arrow points Left.
-                    // Vertices: Tip (buttonPoint), TopRight, BottomRight
-                    arrowPath.lineTo(buttonPoint.x + arrowSize, buttonPoint.y - arrowSize/2)
-                    arrowPath.lineTo(buttonPoint.x + arrowSize, buttonPoint.y + arrowSize/2)
+
+                    if (isRightDocked) {
+                        // Arrow points Right.
+                        // Vertices: Tip (buttonPoint), TopLeft, BottomLeft
+                        arrowPath.lineTo(buttonPoint.x - arrowSize, buttonPoint.y - arrowSize / 2)
+                        arrowPath.lineTo(buttonPoint.x - arrowSize, buttonPoint.y + arrowSize / 2)
+                    } else {
+                        // Arrow points Left.
+                        // Vertices: Tip (buttonPoint), TopRight, BottomRight
+                        arrowPath.lineTo(buttonPoint.x + arrowSize, buttonPoint.y - arrowSize / 2)
+                        arrowPath.lineTo(buttonPoint.x + arrowSize, buttonPoint.y + arrowSize / 2)
+                    }
                     arrowPath.close()
 
                     drawPath(arrowPath, arrowColor)

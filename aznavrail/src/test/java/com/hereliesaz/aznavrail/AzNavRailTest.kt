@@ -233,4 +233,12 @@ class AzNavRailTest {
         assertEquals(android.app.Service::class.java, scope.overlayService)
         assertEquals(true, scope.enableRailDragging)
     }
+
+    @Test
+    fun `azSettings should update dockingSide and noMenu`() {
+        val scope = AzNavRailScopeImpl()
+        scope.azSettings(dockingSide = "right", noMenu = true)
+        assertEquals("right", scope.dockingSide)
+        assertEquals(true, scope.noMenu)
+    }
 }

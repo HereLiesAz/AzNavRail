@@ -31,7 +31,9 @@ interface AzNavRailScope {
         onDismissInfoScreen: (() -> Unit)? = null,
         activeColor: Color? = null,
         vibrate: Boolean = false,
-        activeClassifiers: Set<String> = emptySet()
+        activeClassifiers: Set<String> = emptySet(),
+        dockingSide: String = "left",
+        noMenu: Boolean = false
     )
 
     fun azMenuItem(id: String, text: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
@@ -165,6 +167,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
     var activeColor: Color? = null
     var vibrate: Boolean = false
     var activeClassifiers: Set<String> = emptySet()
+    var dockingSide: String = "left"
+    var noMenu: Boolean = false
 
     override fun azSettings(
         displayAppNameInHeader: Boolean,
@@ -185,7 +189,9 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         onDismissInfoScreen: (() -> Unit)?,
         activeColor: Color?,
         vibrate: Boolean,
-        activeClassifiers: Set<String>
+        activeClassifiers: Set<String>,
+        dockingSide: String,
+        noMenu: Boolean
     ) {
         require(expandedRailWidth > collapsedRailWidth) {
             """
@@ -210,6 +216,8 @@ internal class AzNavRailScopeImpl : AzNavRailScope {
         this.activeColor = activeColor
         this.vibrate = vibrate
         this.activeClassifiers = activeClassifiers
+        this.dockingSide = dockingSide
+        this.noMenu = noMenu
     }
 
     override fun azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit) {

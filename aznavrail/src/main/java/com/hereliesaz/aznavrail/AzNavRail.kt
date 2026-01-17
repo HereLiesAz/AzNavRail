@@ -3,6 +3,7 @@ package com.hereliesaz.aznavrail
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -100,6 +101,16 @@ fun AzNavRail(
 
     scope.apply(content)
 
+    val overlayController = LocalAzNavRailOverlayController.current
+    val effectiveNoMenu = scope.noMenu && overlayController == null
+    val isRightDocked = scope.dockingSide.equals("right", ignoreCase = true)
+
+    if (effectiveNoMenu) {
+        val newItems = scope.navItems.map { it.copy(isRailItem = true) }
+        scope.navItems.clear()
+        scope.navItems.addAll(newItems)
+    }
+
     scope.navItems.forEach { item ->
         if (item.isSubItem && item.isRailItem) {
             val host = scope.navItems.find { it.id == item.hostId }
@@ -112,7 +123,6 @@ fun AzNavRail(
     val context = LocalContext.current
     val packageManager = context.packageManager
     val packageName = context.packageName
-    val overlayController = LocalAzNavRailOverlayController.current
 
     val appName = remember(packageName) {
         try {
@@ -142,18 +152,20 @@ fun AzNavRail(
     // If overlayController is present, isExpanded is always false.
     // Use a derived boolean for read operations to enforce logic, but write to internal state (or ignore if blocked).
 
-    val isExpandedState = remember(overlayController) {
+    val isExpandedState = remember(overlayController, effectiveNoMenu) {
         object : androidx.compose.runtime.MutableState<Boolean> {
             override var value: Boolean
-                get() = if (overlayController != null) false else isExpandedInternal
+                get() = if (overlayController != null || effectiveNoMenu) false else isExpandedInternal
                 set(v) {
-                     if (overlayController == null) isExpandedInternal = v
+                     if (overlayController == null && !effectiveNoMenu) isExpandedInternal = v
                 }
             override fun component1() = value
             override fun component2(): (Boolean) -> Unit = { value = it }
         }
     }
     var isExpanded by isExpandedState
+
+    var showFooterPopup by remember { mutableStateOf(false) }
 
     var railOffset by remember { mutableStateOf(IntOffset.Zero) }
     // If initially expanded, we are not floating. But if initially NOT expanded, we might be?
@@ -269,7 +281,10 @@ fun AzNavRail(
         }
     }
 
-    Box(modifier = modifier) {
+    Box(
+        modifier = modifier,
+        contentAlignment = if (isRightDocked) Alignment.TopEnd else Alignment.TopStart
+    ) {
         val buttonSize = AzNavRailDefaults.HeaderIconSize
         selectedItem?.screenTitle?.let { screenTitle ->
             if (screenTitle.isNotEmpty()) {
@@ -301,7 +316,10 @@ fun AzNavRail(
                 }
             }
         }
-        Box {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = if (isRightDocked) Alignment.TopEnd else Alignment.TopStart
+        ) {
             NavigationRail(
                 modifier = Modifier
                     .width(railWidth)
@@ -329,7 +347,9 @@ fun AzNavRail(
                             ) {
                                 detectTapGestures(
                                     onTap = {
-                                        if (isFloating) {
+                                        if (effectiveNoMenu) {
+                                            showFooterPopup = !showFooterPopup
+                                        } else if (isFloating) {
                                             showFloatingButtons = !showFloatingButtons
                                         } else {
                                             // Only allow expanding if NOT in overlay mode
@@ -498,7 +518,12 @@ fun AzNavRail(
                                         onDragStart = { _ -> },
                                         onHorizontalDrag = { change, dragAmount ->
                                             // Horizontal swipe to close
-                                            if (isExpanded && dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
+                                            val shouldClose = if (isRightDocked) {
+                                                dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX
+                                            } else {
+                                                dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX
+                                            }
+                                            if (isExpanded && shouldClose) {
                                                 isExpanded = false
                                                 change.consume()
                                             }
@@ -692,7 +717,12 @@ fun AzNavRail(
                                             onDragStart = { _ -> },
                                             onHorizontalDrag = { change, dragAmount ->
                                                 // Horizontal swipe to open
-                                                if (!isExpanded && !disableSwipeToOpen && dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
+                                                val shouldOpen = if (isRightDocked) {
+                                                    dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX
+                                                } else {
+                                                    dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX
+                                                }
+                                                if (!isExpanded && !disableSwipeToOpen && shouldOpen) {
                                                     isExpanded = true
                                                     change.consume()
                                                 }
@@ -774,13 +804,50 @@ fun AzNavRail(
                 }
             }
         }
+
+        if (showFooterPopup && effectiveNoMenu) {
+            Popup(
+                onDismissRequest = { showFooterPopup = false },
+                popupPositionProvider = CenteredPopupPositionProvider
+            ) {
+                Box(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(16.dp)
+                ) {
+                    Footer(
+                        appName = appName,
+                        onToggle = { showFooterPopup = false },
+                        onUndock = {
+                            val overlayService = scope.overlayService
+                            if (scope.onUndock != null) {
+                                scope.onUndock?.invoke()
+                            } else if (overlayService != null) {
+                                OverlayHelper.launch(context, overlayService)
+                            } else {
+                                isFloating = true
+                                isExpanded = false
+                                if (scope.displayAppNameInHeader) isAppIcon = true
+                                showFooterPopup = false
+                            }
+                        },
+                        scope = scope,
+                        footerColor = if (footerColor != Color.Unspecified) footerColor else MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+
         if (scope.infoScreen) {
             HelpOverlay(
                 items = scope.navItems,
                 itemPositions = itemPositions,
                 hostStates = hostStates,
                 railWidth = railWidth,
-                onDismiss = { scope.onDismissInfoScreen?.invoke() }
+                onDismiss = { scope.onDismissInfoScreen?.invoke() },
+                isRightDocked = isRightDocked
             )
         }
     }

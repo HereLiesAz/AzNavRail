@@ -57,6 +57,8 @@ fun SampleScreen(
     AzTextBoxDefaults.setSuggestionLimit(3)
 
     var useBasicOverlay by remember { mutableStateOf(false) }
+    var isDockingRight by remember { mutableStateOf(false) }
+    var noMenu by remember { mutableStateOf(false) }
 
     Row {
         Box {
@@ -74,7 +76,9 @@ fun SampleScreen(
                     enableRailDragging = enableRailDragging,
                     onUndock = onUndockOverride,
                     onRailDrag = onRailDrag,
-                    overlayService = if (useBasicOverlay) SampleBasicOverlayService::class.java else SampleOverlayService::class.java
+                    overlayService = if (useBasicOverlay) SampleBasicOverlayService::class.java else SampleOverlayService::class.java,
+                    dockingSide = if (isDockingRight) "right" else "left",
+                    noMenu = noMenu
                 )
 
                 // A standard menu item - only appears in the expanded menu
@@ -143,6 +147,30 @@ fun SampleScreen(
                     onClick = {
                         useBasicOverlay = !useBasicOverlay
                         Log.d(TAG, "Overlay mode toggled to: $useBasicOverlay")
+                    }
+                )
+
+                azMenuToggle(
+                    id = "docking-side",
+                    isChecked = isDockingRight,
+                    toggleOnText = "Dock: Right",
+                    toggleOffText = "Dock: Left",
+                    route = "docking-side",
+                    onClick = {
+                        isDockingRight = !isDockingRight
+                        Log.d(TAG, "Docking side toggled to: ${if (isDockingRight) "Right" else "Left"}")
+                    }
+                )
+
+                azMenuToggle(
+                    id = "no-menu",
+                    isChecked = noMenu,
+                    toggleOnText = "No Menu: On",
+                    toggleOffText = "No Menu: Off",
+                    route = "no-menu",
+                    onClick = {
+                        noMenu = !noMenu
+                        Log.d(TAG, "No Menu toggled to: $noMenu")
                     }
                 )
 
