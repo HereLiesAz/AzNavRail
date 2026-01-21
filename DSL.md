@@ -4,6 +4,18 @@ The DSL for configuring the `AzNavRail`.
 
 **Note:** Functions prefixed with `azMenu` will only appear in the expanded menu view. Functions prefixed with `azRail` will appear on the collapsed rail, and their text will be used as the label in the expanded menu.
 
+## AzNavHost Scope
+
+When using `AzNavHost`, the following additional DSL functions are available:
+
+-   `background(weight: Int, content: @Composable () -> Unit)`: Adds a background layer. Backgrounds ignore strict layout rules (safe zones) and fill the screen. Layers are stacked based on `weight` (lower weights are drawn first).
+-   `onscreen(alignment: Alignment, content: @Composable () -> Unit)`: Adds content to the safe area.
+    -   **Safe Zones**: Content is restricted from the top 20% and bottom 10% of the screen.
+    -   **Rail Avoidance**: Content is padded to avoid the rail.
+    -   **Alignment Flipping**: If the rail is docked to the Right, horizontal alignments are flipped (e.g., `Start` becomes `End`).
+
+## AzNavRail Scope
+
 -   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean, isLoading: Boolean, defaultShape: AzButtonShape, enableRailDragging: Boolean, headerIconShape: AzHeaderIconShape, onUndock: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, infoScreen: Boolean, onDismissInfoScreen: (() -> Unit)?, activeColor: Color?, vibrate: Boolean)`: Configures the settings for the `AzNavRail`. `headerIconShape` can be `CIRCLE` (default), `ROUNDED`, or `NONE` (no clipping). `onUndock` allows overriding the default undock behavior. `overlayService` specifies the Service class to launch as a system overlay when undocked. `onOverlayDrag` is used to handle drag events when running in an overlay. `onItemGloballyPositioned` reports the global position of rail items. `infoScreen` enables the interactive help mode. `onDismissInfoScreen` is called when the help mode exit FAB is clicked. `activeColor` sets an optional secondary color for the selected item. `vibrate` enables tactile feedback for gestures.
 -   `azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
 -   `azMenuItem(id: String, text: String, route: String, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
