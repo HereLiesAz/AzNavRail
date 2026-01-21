@@ -1,6 +1,6 @@
 import React from 'react';
 import renderer from 'react-test-renderer';
-import { AzRoller } from '../components/AzRoller';
+import { AzRoller } from '../src/components/AzRoller';
 
 describe('AzRoller', () => {
   it('renders correctly', () => {

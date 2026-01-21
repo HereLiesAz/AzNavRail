@@ -8,6 +8,9 @@ import {
   PanResponder,
   Dimensions,
   ScrollView,
+  Linking,
+  Alert,
+  Vibration,
 } from 'react-native';
 import { AzNavRailContext } from './AzNavRailScope';
 import { AzNavItem, AzNavRailSettings, AzButtonShape, AzDockingSide, AzHeaderIconShape } from './types';
@@ -33,6 +36,8 @@ interface AzNavRailProps extends AzNavRailSettings {
 
 export const AzNavRail: React.FC<AzNavRailProps> = ({
   children,
+  navController: _navController,
+  currentDestination,
   initiallyExpanded = false,
   displayAppNameInHeader = true,
   expandedRailWidth = AzNavRailDefaults.ExpandedRailWidth,
@@ -48,6 +53,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
   activeColor,
   headerIconShape = AzHeaderIconShape.CIRCLE,
   vibrate = false,
+  secLoc,
   onExpandedChange,
   onInteraction,
 }) => {
@@ -166,10 +172,11 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
 
   // Reloc Item Logic
   const handleRelocDragStart = (draggedItemIndex: number) => {
+      if (vibrate) Vibration.vibrate(50);
       logInteraction('Reloc drag started', items[draggedItemIndex].text);
   };
 
-  const handleRelocDragEnd = (draggedItemIndex: number) => {
+  const handleRelocDragEnd = (_draggedItemIndex: number) => {
       Object.values(itemOffsets.current).forEach(anim => anim.setValue(0));
       logInteraction('Reloc drag ended');
   };
@@ -251,6 +258,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
              setShowFloatingButtons(false);
              logInteraction('Drag started', 'FAB mode');
         } else {
+             if (vibrate) Vibration.vibrate(50);
              setIsFloating(true);
              setIsExpanded(false);
              logInteraction('Swipe detected', 'Entering FAB mode');
@@ -292,6 +300,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
 
   const handleHeaderLongPress = () => {
       if (enableRailDragging) {
+          if (vibrate) Vibration.vibrate(50);
           if (isFloating) {
               setIsFloating(false);
               pan.setValue({ x: 0, y: 0 });
@@ -320,7 +329,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
       }
   };
 
-  const renderRailItem = (item: AzNavItem, index: number) => {
+  const renderRailItem = (item: AzNavItem, _index: number) => {
       const isExpandedHost = hostStates[item.id] || false;
       const subItems = items.filter(i => i.hostId === item.id);
       const isRect = item.shape === AzButtonShape.RECTANGLE;
@@ -359,7 +368,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
                          logInteraction('Host toggled', item.text);
                      }}
                  />
-                 {isExpandedHost && subItems.map((sub, i) => renderRailItem(sub, items.indexOf(sub)))}
+                 {isExpandedHost && subItems.map((sub, _i) => renderRailItem(sub, items.indexOf(sub)))}
              </View>
            );
       }
@@ -430,6 +439,80 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
       );
   };
 
+  const renderFooter = () => {
+      const footerColor = activeColor || '#6200ee';
+
+      const handleUndock = () => {
+        if (enableRailDragging) {
+            setIsFloating(true);
+            setIsExpanded(false);
+            logInteraction('Footer undock clicked');
+        }
+      };
+
+      const handleAbout = () => {
+        Linking.openURL('https://github.com/HereLiesAz/AzNavRail').catch(e => console.error("Could not open About", e));
+      };
+
+      const handleFeedback = () => {
+         Linking.openURL('mailto:hereliesaz@gmail.com?subject=Feedback for AzNavRail').catch(e => console.error("Could not open Mail", e));
+      };
+
+      const handleCredit = () => {
+          Linking.openURL('https://www.instagram.com/hereliesaz').catch(e => console.error("Could not open Credit", e));
+      };
+
+      const handleSecLocTrigger = () => {
+          if (secLoc) {
+              if (vibrate) Vibration.vibrate(100);
+              Alert.alert("Secret Screens", "This feature relies on native Android location services and is not currently available in the React Native version.");
+          }
+      };
+
+      // Dummy props for flat footer items
+      const dummyProps = {
+          depth: 0,
+          isExpandedHost: false,
+          onToggleHost: () => {},
+          renderSubItems: () => null,
+      };
+
+      return (
+        <View style={styles.footer}>
+             <View style={styles.divider} />
+             {enableRailDragging && (
+                 <RailMenuItem
+                    item={{ id: 'undock', text: 'Undock', isRailItem: false, color: footerColor } as AzNavItem}
+                    onItemClick={handleUndock}
+                    {...dummyProps}
+                 />
+             )}
+             <RailMenuItem
+                item={{ id: 'about', text: 'About', isRailItem: false, color: footerColor } as AzNavItem}
+                onItemClick={handleAbout}
+                {...dummyProps}
+             />
+             <RailMenuItem
+                 item={{ id: 'feedback', text: 'Feedback', isRailItem: false, color: footerColor } as AzNavItem}
+                 onItemClick={handleFeedback}
+                 {...dummyProps}
+             />
+             <TouchableOpacity
+                onPress={handleCredit}
+                onLongPress={handleSecLocTrigger}
+                delayLongPress={500}
+             >
+                 <RailMenuItem
+                     item={{ id: 'credit', text: '@HereLiesAz', isRailItem: false, color: footerColor } as AzNavItem}
+                     onItemClick={handleCredit} // Just to reuse styling
+                     {...dummyProps}
+                 />
+             </TouchableOpacity>
+        </View>
+      );
+  };
+
+
   const effectiveRailItems = items.filter(i => {
       if (i.isSubItem) return false;
       if (noMenu) return true;
@@ -489,11 +572,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
                          }
                          return renderMenuItem(item);
                     })}
-                    {showFooter && (
-                        <View style={styles.footer}>
-                            <Text>Footer</Text>
-                        </View>
-                    )}
+                    {showFooter && renderFooter()}
                 </ScrollView>
             ) : (
                 <ScrollView contentContainerStyle={styles.railContent}>

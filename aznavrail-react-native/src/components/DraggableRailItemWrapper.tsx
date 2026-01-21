@@ -7,11 +7,9 @@ import {
   TouchableOpacity,
   Text,
   Modal,
-  Dimensions,
 } from 'react-native';
-import { AzNavItem, AzButtonShape } from '../types';
+import { AzNavItem } from '../types';
 import { AzButton } from './AzButton';
-import { AzTextBox } from './AzTextBox';
 
 interface DraggableRailItemWrapperProps {
   item: AzNavItem;
@@ -27,7 +25,6 @@ interface DraggableRailItemWrapperProps {
 export const DraggableRailItemWrapper: React.FC<DraggableRailItemWrapperProps> = ({
   item,
   index,
-  totalItems,
   onDragStart,
   onDragEnd,
   onDragMove,

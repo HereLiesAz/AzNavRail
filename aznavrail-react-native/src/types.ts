@@ -32,6 +32,7 @@ export interface AzNavRailSettings {
   activeColor?: string;
   vibrate?: boolean;
   headerIconShape?: AzHeaderIconShape;
+  secLoc?: string;
 }
 
 export interface AzNavItem {
