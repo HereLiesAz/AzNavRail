@@ -8,8 +8,6 @@ import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -51,7 +49,34 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-internal fun SecretCredentialsDialog(
+internal fun SecretScreens(
+    secLoc: String?,
+): () -> Unit {
+    if (secLoc.isNullOrEmpty()) return {}
+
+    var showCredentials by remember { mutableStateOf(false) }
+    var showHistory by remember { mutableStateOf(false) }
+
+    if (showCredentials) {
+        SecretCredentialsDialog(
+            secLoc = secLoc,
+            onDismiss = { showCredentials = false },
+            onUnlock = {
+                showCredentials = false
+                showHistory = true
+            }
+        )
+    }
+
+    if (showHistory) {
+        SecLocHistoryDialog(onDismiss = { showHistory = false })
+    }
+
+    return { showCredentials = true }
+}
+
+@Composable
+private fun SecretCredentialsDialog(
     secLoc: String?,
     onDismiss: () -> Unit,
     onUnlock: () -> Unit
@@ -114,39 +139,20 @@ data class SecLocEntry(
 
 @SuppressLint("MissingPermission")
 @Composable
-internal fun SecLocHistoryDialog(
+private fun SecLocHistoryDialog(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
     val secLocHistory = remember { mutableStateListOf<SecLocEntry>() }
-    var hasPermission by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        )
-    }
-
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-            permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-        ) {
-            hasPermission = true
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        if (!hasPermission) {
-            launcher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
-        }
+    val hasPermission = remember(context) {
+        ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED ||
+        ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
     }
 
     DisposableEffect(hasPermission) {
