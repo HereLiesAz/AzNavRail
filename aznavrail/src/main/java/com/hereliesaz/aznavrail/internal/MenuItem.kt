@@ -1,6 +1,8 @@
 package com.hereliesaz.aznavrail.internal
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
@@ -37,12 +39,14 @@ import com.hereliesaz.aznavrail.model.AzNavItem
  *    state. This is called immediately for standard and toggle items, and
  *    with a delay for cycler items.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun MenuItem(
     item: AzNavItem,
     navController: NavController?,
     isSelected: Boolean,
     onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
     onCyclerClick: (() -> Unit)? = null,
     onToggle: () -> Unit = {},
     onItemClick: () -> Unit = {},
@@ -89,18 +93,23 @@ internal fun MenuItem(
                     }
                 )
             } else {
-                Modifier.clickable(interactionSource = interactionSource, indication = null) {
-                    if (item.isHost) {
-                        handleHostItemClick(item, navController, onClick, onItemClick, onHostClick)
-                    } else if (item.isCycler) {
-                        onCyclerClick?.invoke()
-                    } else {
-                        item.route?.let { navController?.navigate(it) }
-                        onClick?.invoke()
-                        onToggle()
-                        onItemClick()
+                Modifier.combinedClickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onLongClick = onLongClick,
+                    onClick = {
+                        if (item.isHost) {
+                            handleHostItemClick(item, navController, onClick, onItemClick, onHostClick)
+                        } else if (item.isCycler) {
+                            onCyclerClick?.invoke()
+                        } else {
+                            item.route?.let { navController?.navigate(it) }
+                            onClick?.invoke()
+                            onToggle()
+                            onItemClick()
+                        }
                     }
-                }
+                )
             }
         }
     }

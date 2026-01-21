@@ -59,7 +59,8 @@ interface AzNavRailScope {
         vibrate: Boolean = false,
         activeClassifiers: Set<String> = emptySet(),
         dockingSide: AzDockingSide = AzDockingSide.LEFT,
-        noMenu: Boolean = false
+        noMenu: Boolean = false,
+        secLoc: String? = null
     )
 
     fun azMenuItem(id: String, text: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
@@ -195,6 +196,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     var activeClassifiers: Set<String> = emptySet()
     var dockingSide: AzDockingSide = AzDockingSide.LEFT
     var noMenu: Boolean = false
+    var secLoc: String? = null
 
     override fun azSettings(
         displayAppNameInHeader: Boolean,
@@ -217,7 +219,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
         vibrate: Boolean,
         activeClassifiers: Set<String>,
         dockingSide: AzDockingSide,
-        noMenu: Boolean
+        noMenu: Boolean,
+        secLoc: String?
     ) {
         require(expandedRailWidth > collapsedRailWidth) {
             """
@@ -244,6 +247,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         this.activeClassifiers = activeClassifiers
         this.dockingSide = dockingSide
         this.noMenu = noMenu
+        this.secLoc = secLoc
     }
 
     override fun azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit) {
