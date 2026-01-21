@@ -1,36 +1,308 @@
+# AzNavRail Complete Guide
+
+Welcome to the comprehensive guide for **AzNavRail**. This document contains everything you need to know to use the library, including setup instructions, a full API and DSL reference, layout rules, and complete sample code.
+
+---
+
+## Table of Contents
+
+1.  [Getting Started](#getting-started)
+2.  [AzNavHost Layout Rules](#aznavhost-layout-rules)
+3.  [DSL Reference](#dsl-reference)
+4.  [API Reference](#api-reference)
+5.  [Sample Application Source Code](#sample-application-source-code)
+
+---
+
+## Getting Started
+
+### Installation
+
+To use AzNavRail, add JitPack to your project's `settings.gradle.kts`:
+
+```kotlin
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
+}
+```
+
+Add the dependency to your app's `build.gradle.kts`:
+
+```kotlin
+dependencies {
+    implementation("com.github.HereLiesAz:AzNavRail:VERSION") // Replace VERSION with the latest release
+}
+```
+
+### Basic Usage
+
+**IMPORTANT:** `AzNavRail` **MUST** be used within an `AzNavHost` container.
+
+```kotlin
+AzNavHost(navController = navController) {
+    azSettings(
+        displayAppNameInHeader = true,
+        dockingSide = AzDockingSide.LEFT
+    )
+
+    // Define Rail Items (Visible on collapsed rail)
+    azRailItem(id = "home", text = "Home", route = "home", onClick = { /* navigate */ })
+
+    // Define Menu Items (Visible only when expanded)
+    azMenuItem(id = "settings", text = "Settings", route = "settings", onClick = { /* navigate */ })
+
+    // Define Content
+    onscreen(Alignment.Center) {
+        Text("My Content")
+    }
+}
+```
+
+---
+
+## AzNavHost Layout Rules
+
+`AzNavHost` enforces a "Strict Mode" layout system to ensure consistent UX and prevent overlap.
+
+1.  **Rail Avoidance**: Content in the `onscreen` block is automatically padded to avoid the rail.
+2.  **Safe Zones**: Content is restricted from the **Top 20%** and **Bottom 10%** of the screen.
+3.  **Automatic Flipping**: Alignments passed to `onscreen` (e.g., `TopStart`) are mirrored if the rail is docked to the Right.
+4.  **Backgrounds**: Use the `background(weight)` DSL to place full-screen content (e.g., maps) behind the UI. Backgrounds **ignore safe zones**.
+
+**Example:**
+
+```kotlin
+AzNavHost(navController = navController) {
+    // Full screen background
+    background(weight = 0) {
+        GoogleMap(...)
+    }
+
+    // Safe UI content
+    onscreen(Alignment.TopEnd) {
+        Text("Overlay")
+    }
+}
+```
+
+---
+
+## DSL Reference
+
+The DSL is used inside `AzNavHost` to configure the rail and items.
+
+### AzNavHost Scope
+
+-   `background(weight: Int, content: @Composable () -> Unit)`: Adds a background layer ignoring safe zones.
+-   `onscreen(alignment: Alignment, content: @Composable () -> Unit)`: Adds content to the safe area.
+
+### AzNavRail Scope
+
+**Settings:**
+-   `azSettings(...)`: Configures global settings. Parameters:
+    - `displayAppNameInHeader`: Boolean
+    - `packRailButtons`: Boolean
+    - `expandedRailWidth`: Dp
+    - `collapsedRailWidth`: Dp
+    - `showFooter`: Boolean
+    - `isLoading`: Boolean
+    - `defaultShape`: AzButtonShape
+    - `enableRailDragging`: Boolean
+    - `headerIconShape`: AzHeaderIconShape
+    - `onUndock`: (() -> Unit)?
+    - `overlayService`: Class<out Service>?
+    - `onOverlayDrag`: ((Float, Float) -> Unit)?
+    - `onItemGloballyPositioned`: ((String, Rect) -> Unit)?
+    - `infoScreen`: Boolean
+    - `onDismissInfoScreen`: (() -> Unit)?
+    - `activeColor`: Color?
+    - `vibrate`: Boolean
+    - `dockingSide`: AzDockingSide (LEFT/RIGHT)
+    - `noMenu`: Boolean
+
+**Items:**
+-   `azMenuItem(...)`: Item visible only in expanded menu.
+-   `azRailItem(...)`: Item visible in rail and menu.
+-   `azMenuToggle(...)` / `azRailToggle(...)`: Toggle buttons.
+-   `azMenuCycler(...)` / `azRailCycler(...)`: Cycle through options.
+-   `azDivider()`: Horizontal divider.
+-   `azMenuHostItem(...)` / `azRailHostItem(...)`: Parent items for nested menus.
+-   `azMenuSubItem(...)` / `azRailSubItem(...)`: Child items.
+-   `azRailRelocItem(...)`: Reorderable drag-and-drop items.
+
+**Common Parameters:**
+-   `id`: Unique identifier.
+-   `text`: Display label.
+-   `route`: Navigation route (optional).
+-   `icon`: (Implicitly handled by shapes/text in this library).
+-   `disabled`: Boolean state.
+-   `info`: Help text for Info Screen mode.
+-   `onClick`: Lambda action.
+
+---
+
+## API Reference
+
+### `AzNavHost`
+```kotlin
+@Composable
+fun AzNavHost(
+    modifier: Modifier = Modifier,
+    navController: NavHostController = rememberNavController(),
+    currentDestination: String? = null,
+    isLandscape: Boolean? = null,
+    initiallyExpanded: Boolean = false,
+    disableSwipeToOpen: Boolean = false,
+    content: AzNavHostScope.() -> Unit
+)
+```
+
+### `AzTextBox`
+A versatile text input component.
+```kotlin
+@Composable
+fun AzTextBox(
+    modifier: Modifier = Modifier,
+    value: String? = null,
+    onValueChange: ((String) -> Unit)? = null,
+    hint: String = "",
+    outlined: Boolean = true,
+    multiline: Boolean = false,
+    secret: Boolean = false,
+    isError: Boolean = false,
+    historyContext: String? = null,
+    submitButtonContent: (@Composable () -> Unit)? = null,
+    onSubmit: (String) -> Unit
+)
+```
+
+### `AzForm`
+Groups `AzTextBox` fields.
+```kotlin
+@Composable
+fun AzForm(
+    formName: String,
+    onSubmit: (Map<String, String>) -> Unit,
+    content: AzFormScope.() -> Unit
+)
+```
+
+### `AzButton`, `AzToggle`, `AzCycler`
+Standalone versions of the rail components are available for general UI use.
+
+---
+
+## Sample Application Source Code
+
+Below is the complete source code for a functional Sample App demonstrating all features.
+
+### `MainActivity.kt`
+
+```kotlin
+package com.example.sampleapp
+
+import android.Manifest
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.os.Bundle
+import android.provider.Settings
+import android.util.Log
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.hereliesaz.aznavrail.*
+import com.hereliesaz.aznavrail.model.AzButtonShape
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            MyApplicationTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    val context = LocalContext.current
+
+                    // Request Notification Permission for Android 13+
+                    val permissionLauncher = rememberLauncherForActivityResult(
+                        ActivityResultContracts.RequestPermission()
+                    ) { isGranted ->
+                         Log.d("MainActivity", "Notification permission granted: $isGranted")
+                    }
+
+                    LaunchedEffect(Unit) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
+
+                    val startOverlay = {
+                        if (Settings.canDrawOverlays(context)) {
+                            val intent = Intent(context, SampleOverlayService::class.java)
+                            ContextCompat.startForegroundService(context, intent)
+                        } else {
+                            val intent = Intent(
+                                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                Uri.parse("package:${context.packageName}")
+                            )
+                            context.startActivity(intent)
+                        }
+                    }
+
+                    SampleScreen(
+                        onUndockOverride = {
+                            startOverlay()
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+```
+
+### `SampleScreen.kt`
+
+```kotlin
 package com.example.sampleapp
 
 import android.util.Log
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.hereliesaz.aznavrail.AzButton
-import com.hereliesaz.aznavrail.AzCycler
-import com.hereliesaz.aznavrail.AzForm
-import com.hereliesaz.aznavrail.AzHostActivityLayout
-import com.hereliesaz.aznavrail.AzNavHost
-import com.hereliesaz.aznavrail.AzTextBox
-import com.hereliesaz.aznavrail.AzTextBoxDefaults
-import com.hereliesaz.aznavrail.AzToggle
+import com.hereliesaz.aznavrail.*
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
 
@@ -65,7 +337,7 @@ fun SampleScreen(
     var noMenu by remember { mutableStateOf(false) }
     var showHelp by remember { mutableStateOf(false) }
 
-    AzHostActivityLayout(
+    AzNavHost(
         navController = navController,
         modifier = Modifier.fillMaxSize(),
         currentDestination = currentDestination?.destination?.route,
@@ -73,10 +345,9 @@ fun SampleScreen(
         initiallyExpanded = initiallyExpanded
     ) {
         azSettings(
-            // displayAppNameInHeader = true, // Set to true to display the app name instead of the icon
             packRailButtons = packRailButtons,
             isLoading = isLoading,
-            defaultShape = AzButtonShape.RECTANGLE, // Set a default shape for all rail items
+            defaultShape = AzButtonShape.RECTANGLE,
             enableRailDragging = enableRailDragging,
             onUndock = onUndockOverride,
             onRailDrag = onRailDrag,
@@ -400,7 +671,7 @@ fun SampleScreen(
                         )
                     }
 
-                    AzNavHost(navController = navController, startDestination = "home") {
+                    NavHost(navController = navController, startDestination = "home") {
                         composable("home") { Text("Home Screen") }
                         composable("multi-line") { Text("Multi-line Screen") }
                         composable("menu-host") { Text("Menu Host Screen") }
@@ -418,16 +689,10 @@ fun SampleScreen(
                         composable("rail-cycler") { Text("Rail Cycler Screen") }
                         composable("menu-cycler") { Text("Menu Cycler Screen") }
                         composable("loading") { Text("Loading Screen") }
-                        composable("overlay-mode") { Text("Overlay Mode") }
-                        composable("docking-side") { Text("Docking Side") }
-                        composable("no-menu") { Text("No Menu") }
-                        composable("reloc-host") { Text("Relocators") }
-                        composable("layer_1") { Text("Layer 1") }
-                        composable("layer_2") { Text("Layer 2") }
-                        composable("layer_3") { Text("Layer 3") }
                     }
                 }
             }
         }
     }
 }
+```
