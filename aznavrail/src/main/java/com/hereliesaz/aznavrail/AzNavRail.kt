@@ -95,15 +95,28 @@ fun AzNavRail(
     isLandscape: Boolean = false,
     initiallyExpanded: Boolean = false,
     disableSwipeToOpen: Boolean = false,
+    providedScope: AzNavRailScopeImpl? = null,
     content: AzNavRailScope.() -> Unit
 ) {
-    val scope = remember { AzNavRailScopeImpl() }
-    scope.reset()
+    val isHostPresent = LocalAzNavHostPresent.current
+    val overlayController = LocalAzNavRailOverlayController.current
+
+    // Only enforce if not an overlay (overlays might run outside the standard host)
+    // But even overlays should probably use the host if strictness is the goal.
+    // However, overlay service renders AzNavRail directly.
+    // Let's assume strictness applies to normal screen composition.
+    if (!isHostPresent && overlayController == null) {
+        error("AzNavRail must be used within an AzNavHost. Please wrap your AzNavRail in an AzNavHost composable.")
+    }
+
+    val scope = providedScope ?: remember { AzNavRailScopeImpl() }
+
+    if (providedScope == null) {
+        scope.reset()
+    }
     navController?.let { scope.navController = it }
 
     scope.apply(content)
-
-    val overlayController = LocalAzNavRailOverlayController.current
     val effectiveNoMenu = scope.noMenu && overlayController == null
     val isRightDocked = scope.dockingSide == AzDockingSide.RIGHT
 

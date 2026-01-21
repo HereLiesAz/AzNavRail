@@ -157,7 +157,7 @@ internal class HiddenMenuScopeImpl : HiddenMenuScope {
     }
 }
 
-internal class AzNavRailScopeImpl : AzNavRailScope {
+class AzNavRailScopeImpl : AzNavRailScope {
     val navItems = mutableStateListOf<AzNavItem>()
     val onClickMap = mutableMapOf<String, () -> Unit>()
     val onFocusMap = mutableMapOf<String, () -> Unit>()
