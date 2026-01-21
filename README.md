@@ -608,81 +608,12 @@ class OverlayService : AzNavRailOverlayService() {
 
 **Option B: Basic Service (Simpler setup)**
 
-Extend `AzNavRailSimpleOverlayService` if you do not want to use a foreground service. This relies solely on `SYSTEM_ALERT_WINDOW` but may be killed by the system if the app is in the background.
+`AzNavHost` enforces a "Strict Mode" layout system:
 
-**BasicOverlayService.kt:**
-```kotlin
-class BasicOverlayService : AzNavRailSimpleOverlayService() {
-    @Composable
-    override fun OverlayContent() {
-        // ... same content as above
-    }
-}
-```
-
-#### 2. Configure Manifest
-
-Declare the service and required permissions in `AndroidManifest.xml`.
-
-For **Option A (Foreground Service)**:
-```xml
-<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-<!-- For Android 14+ -->
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
-
-<application ...>
-    <service
-        android:name=".OverlayService"
-        android:foregroundServiceType="specialUse">
-        <property android:name="android.app.property.FOREGROUND_SERVICE_TYPE_SPECIAL_USE_DESCRIPTION"
-                  android:value="Overlay for navigation"/>
-    </service>
-</application>
-```
-
-For **Option B (Basic Service)**:
-```xml
-<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
-
-<application ...>
-    <service android:name=".BasicOverlayService"/>
-</application>
-```
-
-#### 3. Launch the Overlay
-
-You can launch the overlay automatically by providing the service class to `azSettings`, or handle it manually via `onUndock`.
-
-**Option A: Automatic Launch**
-```kotlin
-AzNavRail {
-    azSettings(
-        overlayService = OverlayService::class.java
-    )
-    // ...
-}
-```
-*Note: The library will attempt to launch the service. You must ensure `Settings.canDrawOverlays(context)` is true before this happens, or the launch will fail.*
-
-**Option B: Manual Launch (Recommended)**
-Use `onUndock` to handle permission checks and service launching.
-
-```kotlin
-AzNavRail {
-    azSettings(
-        onUndock = {
-            if (Settings.canDrawOverlays(context)) {
-                val intent = Intent(context, OverlayService::class.java)
-                ContextCompat.startForegroundService(context, intent)
-            } else {
-                // Request permission
-            }
-        }
-    )
-    // ...
-}
-```
+1.  **Rail Avoidance**: No content in the `onscreen` block will overlap the rail. Padding is automatically applied based on the docking side.
+2.  **Vertical Safe Zones**: Content is restricted from the top 20% and bottom 10% of the screen.
+3.  **Automatic Flipping**: Alignments passed to `onscreen` (e.g., `TopStart`) are automatically mirrored if the rail is docked to the right.
+4.  **Backgrounds**: Use the `background(weight)` DSL to place full-screen content behind the UI (e.g., maps, camera feeds). Backgrounds ignore safe zones.
 
 [API Reference](/API.md)
 
