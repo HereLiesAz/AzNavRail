@@ -72,8 +72,8 @@ fun AzNavHost(
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val maxHeight = maxHeight
-        val safeTop = maxHeight * 0.2f
-        val safeBottom = maxHeight * 0.1f
+        val safeTop = maxHeight * 0.2f // TODO: Replace with SAFE_AREA_TOP_RATIO
+        val safeBottom = maxHeight * 0.1f // TODO: Replace with SAFE_AREA_BOTTOM_RATIO
 
         // Layer 1: Backgrounds
         scope.backgrounds.sortedBy { it.weight }.forEach { item ->
