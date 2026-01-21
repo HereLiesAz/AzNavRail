@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -12,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.model.AzDockingSide
+
+val LocalAzNavHostPresent = compositionLocalOf { false }
 
 interface AzNavHostScope : AzNavRailScope {
     fun background(weight: Int = 0, content: @Composable () -> Unit)
@@ -50,6 +54,10 @@ class AzNavHostScopeImpl(
 fun AzNavHost(
     modifier: Modifier = Modifier,
     navController: NavController? = null,
+    currentDestination: String? = null,
+    isLandscape: Boolean = false,
+    initiallyExpanded: Boolean = false,
+    disableSwipeToOpen: Boolean = false,
     content: AzNavHostScope.() -> Unit
 ) {
     val scope = remember { AzNavHostScopeImpl() }
@@ -64,8 +72,8 @@ fun AzNavHost(
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val maxHeight = maxHeight
-        val safeTop = maxHeight * 0.2f
-        val safeBottom = maxHeight * 0.1f
+        val safeTop = maxHeight * 0.2f // TODO: Replace with SAFE_AREA_TOP_RATIO
+        val safeBottom = maxHeight * 0.1f // TODO: Replace with SAFE_AREA_BOTTOM_RATIO
 
         // Layer 1: Backgrounds
         scope.backgrounds.sortedBy { it.weight }.forEach { item ->
@@ -101,11 +109,17 @@ fun AzNavHost(
         }
 
         // Layer 3: AzNavRail
-        AzNavRail(
-            modifier = Modifier.fillMaxSize(),
-            navController = navController,
-            providedScope = railScope
-        ) {}
+        CompositionLocalProvider(LocalAzNavHostPresent provides true) {
+            AzNavRail(
+                modifier = Modifier.fillMaxSize(),
+                navController = navController,
+                currentDestination = currentDestination,
+                isLandscape = isLandscape,
+                initiallyExpanded = initiallyExpanded,
+                disableSwipeToOpen = disableSwipeToOpen,
+                providedScope = railScope
+            ) {}
+        }
     }
 }
 

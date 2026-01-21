@@ -67,7 +67,10 @@ fun SampleScreen(
 
     AzNavHost(
         navController = navController,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        currentDestination = currentDestination?.destination?.route,
+        isLandscape = isLandscape,
+        initiallyExpanded = initiallyExpanded
     ) {
         azSettings(
             // displayAppNameInHeader = true, // Set to true to display the app name instead of the icon
@@ -249,8 +252,8 @@ fun SampleScreen(
 
         background(weight = 10) {
              // Example overlay background
-             Box(Modifier.fillMaxSize().padding(50.dp).background(Color.Blue.copy(alpha = 0.1f))) {
-                 Text("Background Layer (Weight 10)", color = Color.Blue)
+             Box(Modifier.fillMaxSize().padding(50.dp).background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.1f))) {
+                 Text("Background Layer (Weight 10)", color = MaterialTheme.colorScheme.onSecondaryContainer)
              }
         }
 
