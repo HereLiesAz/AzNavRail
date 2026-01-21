@@ -35,23 +35,8 @@ internal fun Footer(
     scope: AzNavRailScopeImpl,
     footerColor: Color
 ) {
-    var showCredentials by remember { mutableStateOf(false) }
-    var showHistory by remember { mutableStateOf(false) }
-
-    if (showCredentials) {
-        SecretCredentialsDialog(
-            secLoc = scope.secLoc,
-            onDismiss = { showCredentials = false },
-            onUnlock = {
-                showCredentials = false
-                showHistory = true
-            }
-        )
-    }
-
-    if (showHistory) {
-        LocationHistoryDialog(onDismiss = { showHistory = false })
-    }
+    // Initialize secret screens functionality
+    val onSecretTrigger = SecretScreens(secLoc = scope.secLoc)
 
     val context = LocalContext.current
     val onAboutClick: () -> Unit = remember(context, appName) {
@@ -134,7 +119,7 @@ internal fun Footer(
             navController = null,
             isSelected = false,
             onClick = onCreditClick,
-            onLongClick = if (scope.secLoc.isNullOrEmpty()) null else { { showCredentials = true } },
+            onLongClick = if (scope.secLoc.isNullOrEmpty()) null else onSecretTrigger,
             onCyclerClick = null,
             onToggle = onToggle,
             onItemClick = {}
