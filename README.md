@@ -69,25 +69,26 @@ dependencies {
 The recommended way to use `AzNavRail` is via the `AzNavHost` wrapper, which enforces layout best practices.
 
 ```kotlin
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.hereliesaz.aznavrail.AzNavHost
-import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
 
 @Composable
 fun SampleScreen() {
     val navController = rememberNavController()
-    val currentDestination by navController.currentBackStackEntryAsState()
-    val isLandscape = // ... your landscape detection logic
 
-    AzNavHost(
-        navController = navController,
-        currentDestination = currentDestination?.destination?.route,
-        isLandscape = isLandscape
-    ) {
+    AzNavHost(navController = navController) {
         // Configure Rail Settings
         azSettings(
             dockingSide = AzDockingSide.LEFT,

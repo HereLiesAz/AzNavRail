@@ -8,11 +8,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.hereliesaz.aznavrail.model.AzDockingSide
 
 val LocalAzNavHostPresent = compositionLocalOf { false }
@@ -55,11 +60,21 @@ fun AzNavHost(
     modifier: Modifier = Modifier,
     navController: NavController? = null,
     currentDestination: String? = null,
-    isLandscape: Boolean = false,
+    isLandscape: Boolean? = null,
     initiallyExpanded: Boolean = false,
     disableSwipeToOpen: Boolean = false,
     content: AzNavHostScope.() -> Unit
 ) {
+    val configuration = LocalConfiguration.current
+    val effectiveIsLandscape = isLandscape ?: (configuration.screenWidthDp > configuration.screenHeightDp)
+
+    val effectiveCurrentDestination = if (currentDestination != null) {
+        currentDestination
+    } else {
+        val navBackStackEntry by navController?.currentBackStackEntryAsState() ?: remember { mutableStateOf(null) }
+        navBackStackEntry?.destination?.route
+    }
+
     val scope = remember { AzNavHostScopeImpl() }
     scope.resetHost()
 
@@ -72,8 +87,8 @@ fun AzNavHost(
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val maxHeight = maxHeight
-        val safeTop = maxHeight * 0.2f // TODO: Replace with SAFE_AREA_TOP_RATIO
-        val safeBottom = maxHeight * 0.1f // TODO: Replace with SAFE_AREA_BOTTOM_RATIO
+        val safeTop = maxHeight * 0.2f
+        val safeBottom = maxHeight * 0.1f
 
         // Layer 1: Backgrounds
         scope.backgrounds.sortedBy { it.weight }.forEach { item ->
@@ -113,8 +128,8 @@ fun AzNavHost(
             AzNavRail(
                 modifier = Modifier.fillMaxSize(),
                 navController = navController,
-                currentDestination = currentDestination,
-                isLandscape = isLandscape,
+                currentDestination = effectiveCurrentDestination,
+                isLandscape = effectiveIsLandscape,
                 initiallyExpanded = initiallyExpanded,
                 disableSwipeToOpen = disableSwipeToOpen,
                 providedScope = railScope
@@ -125,15 +140,10 @@ fun AzNavHost(
 
 private fun flipAlignment(alignment: Alignment): Alignment {
     return when (alignment) {
-        Alignment.TopStart -> Alignment.TopEnd
-        Alignment.TopEnd -> Alignment.TopStart
-        Alignment.TopCenter -> Alignment.TopCenter
-        Alignment.CenterStart -> Alignment.CenterEnd
-        Alignment.CenterEnd -> Alignment.CenterStart
-        Alignment.Center -> Alignment.Center
-        Alignment.BottomStart -> Alignment.BottomEnd
-        Alignment.BottomEnd -> Alignment.BottomStart
-        Alignment.BottomCenter -> Alignment.BottomCenter
+        is BiasAlignment -> BiasAlignment(
+            horizontalBias = -alignment.horizontalBias,
+            verticalBias = alignment.verticalBias
+        )
         else -> alignment
     }
 }
