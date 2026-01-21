@@ -54,7 +54,16 @@ class AzNavHostScopeImpl(
     }
 
     override fun background(weight: Int, content: @Composable () -> Unit) {
-        error("Content outside the safe area is restricted to AzNavRail.")
+        error(
+            """
+            The `background` DSL is currently restricted.
+
+            To ensure strict adherence to safe zones, only the AzNavRail component is permitted to render outside the defined safe area (Top 20%, Bottom 10%).
+            External background content is disabled in this version.
+
+            See: https://github.com/HereLiesAz/AzNavRail/blob/main/README.md#aznavhost-layout-rules
+            """.trimIndent()
+        )
     }
 
     override fun onscreen(alignment: Alignment, content: @Composable () -> Unit) {

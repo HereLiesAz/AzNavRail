@@ -66,7 +66,7 @@ dependencies {
 
 ### Usage
 
-The recommended way to use `AzNavRail` is via the `AzNavHost` wrapper, which enforces layout best practices. Below is a comprehensive example demonstrating various features including cyclers, toggles, and hierarchical navigation.
+**IMPORTANT:** `AzNavRail` **MUST** be used within an `AzNavHost` container. The library enforces strict layout rules (safe zones, padding, z-ordering) and will throw a runtime error if `AzNavRail` is instantiated directly without a host wrapper (except when running as a system overlay service).
 
 ```kotlin
 import androidx.compose.foundation.background

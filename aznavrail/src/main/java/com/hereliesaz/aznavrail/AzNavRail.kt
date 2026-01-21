@@ -106,7 +106,16 @@ fun AzNavRail(
     // However, overlay service renders AzNavRail directly.
     // Let's assume strictness applies to normal screen composition.
     if (!isHostPresent && overlayController == null) {
-        error("AzNavRail must be used within an AzNavHost. Please wrap your AzNavRail in an AzNavHost composable.")
+        error(
+            """
+            AzNavRail must be used within an AzNavHost.
+
+            The AzNavHost container is mandatory to enforce safe zones, automatic padding, and correct layout behavior.
+            Please wrap your AzNavRail implementation inside an AzNavHost composable.
+
+            For more details, see: https://github.com/HereLiesAz/AzNavRail/blob/main/README.md#aznavhost-layout-rules
+            """.trimIndent()
+        )
     }
 
     val scope = providedScope ?: remember { AzNavRailScopeImpl() }

@@ -6,6 +6,8 @@ The DSL for configuring the `AzNavRail`.
 
 ## AzNavHost Scope
 
+**Note:** The `AzNavHost` is the mandatory entry point for the library. It establishes the `AzNavHostScope` which extends `AzNavRailScope`.
+
 When using `AzNavHost`, the following additional DSL functions are available:
 
 -   `background(weight: Int, content: @Composable () -> Unit)`: Adds a background layer. Backgrounds ignore strict layout rules (safe zones) and fill the screen. Layers are stacked based on `weight` (lower weights are drawn first).
