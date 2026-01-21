@@ -18,7 +18,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -299,6 +298,14 @@ private fun SecLocViewerDialog(onDismiss: () -> Unit) {
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(errorMsg!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                         }
+                    }
+                } else {
+                    if (history.isEmpty()) {
+                         Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                            Text("No remote logs found (or sync not implemented).")
+                         }
+                    } else {
+                        HistoryList(history = history)
                     }
                 }
 
@@ -631,6 +638,66 @@ private object SecLocNetworkUtils {
                 socket?.close()
             } catch (e: Exception) { }
         }
+        list.reversed()
+    }
+}
+
+@SuppressLint("MissingPermission")
+private fun getDevicePhoneNumber(context: Context): String? {
+    return try {
+        val tm = context.getSystemService(Context.TELEPHONY_SERVICE) as? TelephonyManager
+        @Suppress("DEPRECATION")
+        tm?.line1Number
+    } catch (e: SecurityException) {
+        null
+    } catch (e: Exception) {
+        null
+    }
+}
+
+data class SecLocEntry(
+    val timestamp: Long,
+    val lat: Double,
+    val lng: Double,
+    val provider: String
+)
+
+private object SecLocLogManager {
+    private const val FILE_NAME = "secloc_history.log"
+
+    suspend fun appendLog(context: Context, entry: SecLocEntry) = withContext(Dispatchers.IO) {
+        try {
+            val file = File(context.filesDir, FILE_NAME)
+            val line = "${entry.timestamp},${entry.lat},${entry.lng},${entry.provider}\n"
+            file.appendText(line)
+        } catch (e: Exception) {
+            AzNavRailLogger.e("SecLocLogManager", "Error saving log", e)
+        }
+    }
+
+    suspend fun readLog(context: Context): List<SecLocEntry> = withContext(Dispatchers.IO) {
+        val list = mutableListOf<SecLocEntry>()
+        try {
+            val file = File(context.filesDir, FILE_NAME)
+            if (file.exists()) {
+                file.forEachLine { line ->
+                    val parts = line.split(",")
+                    if (parts.size >= 4) {
+                        list.add(
+                            SecLocEntry(
+                                timestamp = parts[0].toLongOrNull() ?: 0L,
+                                lat = parts[1].toDoubleOrNull() ?: 0.0,
+                                lng = parts[2].toDoubleOrNull() ?: 0.0,
+                                provider = parts[3]
+                            )
+                        )
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            AzNavRailLogger.e("SecLocLogManager", "Error reading log", e)
+        }
+        // Return reversed to show newest first
         list.reversed()
     }
 }
