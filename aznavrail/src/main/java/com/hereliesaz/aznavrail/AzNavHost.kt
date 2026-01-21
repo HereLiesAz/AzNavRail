@@ -17,7 +17,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.hereliesaz.aznavrail.internal.AzLayoutConfig
 import com.hereliesaz.aznavrail.internal.AzSafeZones
 import com.hereliesaz.aznavrail.model.AzDockingSide
@@ -26,6 +28,7 @@ val LocalAzNavHostPresent = compositionLocalOf { false }
 val LocalAzSafeZones = compositionLocalOf { AzSafeZones() }
 
 interface AzNavHostScope : AzNavRailScope {
+    val navController: NavHostController
     fun background(weight: Int = 0, content: @Composable () -> Unit)
     fun onscreen(alignment: Alignment = Alignment.TopStart, content: @Composable () -> Unit)
 }
@@ -37,8 +40,18 @@ class AzNavHostScopeImpl(
     private val railScope: AzNavRailScopeImpl = AzNavRailScopeImpl()
 ) : AzNavHostScope, AzNavRailScope by railScope {
 
+    private var _navController: NavHostController? = null
+
+    override val navController: NavHostController
+        get() = _navController ?: error("NavController not initialized. Ensure this scope is used within AzNavHost.")
+
     val backgrounds = mutableStateListOf<AzBackgroundItem>()
     val onscreenItems = mutableStateListOf<AzOnscreenItem>()
+
+    fun setController(controller: NavHostController) {
+        _navController = controller
+        railScope.navController = controller
+    }
 
     override fun background(weight: Int, content: @Composable () -> Unit) {
         error("Content outside the safe area is restricted to AzNavRail.")
@@ -61,7 +74,7 @@ class AzNavHostScopeImpl(
 @Composable
 fun AzNavHost(
     modifier: Modifier = Modifier,
-    navController: NavController? = null,
+    navController: NavHostController = rememberNavController(),
     currentDestination: String? = null,
     isLandscape: Boolean? = null,
     initiallyExpanded: Boolean = false,
@@ -74,12 +87,13 @@ fun AzNavHost(
     val effectiveCurrentDestination = if (currentDestination != null) {
         currentDestination
     } else {
-        val navBackStackEntry by navController?.currentBackStackEntryAsState() ?: remember { mutableStateOf(null) }
+        val navBackStackEntry by navController.currentBackStackEntryAsState()
         navBackStackEntry?.destination?.route
     }
 
     val scope = remember { AzNavHostScopeImpl() }
     scope.resetHost()
+    scope.setController(navController)
 
     scope.apply(content)
 
