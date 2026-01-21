@@ -455,77 +455,39 @@ class OverlayService : AzNavRailOverlayService() {
 
 **Option B: Basic Service (Simpler setup)**
 
-Extend `AzNavRailSimpleOverlayService` if you do not want to use a foreground service. This relies solely on `SYSTEM_ALERT_WINDOW` but may be killed by the system if the app is in the background.
+`AzNavHost` enforces a "Strict Mode" layout system:
 
-**BasicOverlayService.kt:**
+1.  **Rail Avoidance**: No content in the `onscreen` block will overlap the rail. Padding is automatically applied based on the docking side.
+2.  **Vertical Safe Zones**: Content is restricted from the top 20% and bottom 10% of the screen.
+3.  **Automatic Flipping**: Alignments passed to `onscreen` (e.g., `TopStart`) are automatically mirrored if the rail is docked to the right.
+4.  **Backgrounds**: Use the `background(weight)` DSL to place full-screen content behind the UI (e.g., maps, camera feeds). Backgrounds ignore safe zones.
+
+### Info Screen (Help Mode)
+
+`AzNavRail` includes an interactive "Info Screen" mode, ideal for onboarding or help sections.
+
+- **Activation**: Set `infoScreen = true` in `azSettings`.
+- **Behavior**:
+    - **Visual Guides**: Drawn arrows connect description text to the corresponding rail items.
+    - **Coordinates**: The overlay displays the on-screen coordinates of each item in the description, aiding in debugging and layout verification.
+    - **Independent Scrolling**: Both the description list and the rail are independently scrollable. Arrows update dynamically to maintain the connection.
+    - **Interactivity**: Normal navigation items are disabled and greyed out. However, **Host Items** remain interactive, allowing users to expand and collapse sub-menus to view help for nested items.
+    - **Content**: If an item has an `info` string, it is displayed in the scrollable list.
+- **Exit**: A Floating Action Button (FAB) appears in the bottom-right corner to exit the mode. You must handle the `onDismissInfoScreen` callback in `azSettings` to set `infoScreen = false`.
+
 ```kotlin
-class BasicOverlayService : AzNavRailSimpleOverlayService() {
-    @Composable
-    override fun OverlayContent() {
-        // ... same content as above
-    }
-}
-```
+var showHelp by remember { mutableStateOf(false) }
 
-#### 2. Configure Manifest
-
-Declare the service and required permissions in `AndroidManifest.xml`.
-
-For **Option A (Foreground Service)**:
-```xml
-<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-<!-- For Android 14+ -->
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
-
-<application ...>
-    <service
-        android:name=".OverlayService"
-        android:foregroundServiceType="specialUse">
-        <property android:name="android.app.property.FOREGROUND_SERVICE_TYPE_SPECIAL_USE_DESCRIPTION"
-                  android:value="Overlay for navigation"/>
-    </service>
-</application>
-```
-
-For **Option B (Basic Service)**:
-```xml
-<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
-
-<application ...>
-    <service android:name=".BasicOverlayService"/>
-</application>
-```
-
-#### 3. Launch the Overlay
-
-You can launch the overlay automatically by providing the service class to `azSettings`, or handle it manually via `onUndock`.
-
-**Option A: Automatic Launch**
-```kotlin
-AzNavRail {
+AzNavRail(...) {
     azSettings(
-        overlayService = OverlayService::class.java
+        infoScreen = showHelp,
+        onDismissInfoScreen = { showHelp = false }
     )
-    // ...
-}
-```
-*Note: The library will attempt to launch the service. You must ensure `Settings.canDrawOverlays(context)` is true before this happens, or the launch will fail.*
 
-**Option B: Manual Launch (Recommended)**
-Use `onUndock` to handle permission checks and service launching.
-
-```kotlin
-AzNavRail {
-    azSettings(
-        onUndock = {
-            if (Settings.canDrawOverlays(context)) {
-                val intent = Intent(context, OverlayService::class.java)
-                ContextCompat.startForegroundService(context, intent)
-            } else {
-                // Request permission
-            }
-        }
+    azRailItem(
+        id = "home",
+        text = "Home",
+        info = "Go to the home screen." // Text displayed in help mode
     )
     // ...
 }

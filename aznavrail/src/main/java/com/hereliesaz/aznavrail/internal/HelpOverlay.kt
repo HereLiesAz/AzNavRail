@@ -220,10 +220,11 @@ fun DescriptionCard(text: String, modifier: Modifier = Modifier) {
             .background(Color.White)
             .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(16.dp)
-        )
+        androidx.compose.foundation.layout.Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
     }
 }
