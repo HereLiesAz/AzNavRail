@@ -270,6 +270,16 @@ fun SampleScreen() {
 }
 ```
 
+### AzNavHost Configuration
+
+`AzNavHost` accepts several parameters to customize its behavior:
+
+*   **`navController`**: The `NavHostController` to use. Defaults to `rememberNavController()`.
+*   **`currentDestination`**: Explicitly set the current route. If null, it is automatically derived from the `navController`.
+*   **`isLandscape`**: Explicitly set the orientation. If null, it is automatically derived from the screen configuration.
+*   **`initiallyExpanded`**: Set to `true` to have the rail expanded by default (e.g., for bubble activities).
+*   **`disableSwipeToOpen`**: Set to `true` to disable the swipe gesture that opens the menu.
+
 ### AzNavHost Layout Rules
 
 `AzNavHost` enforces a "Strict Mode" layout system:
@@ -278,6 +288,27 @@ fun SampleScreen() {
 2.  **Vertical Safe Zones**: Content is restricted from the top 20% and bottom 10% of the screen.
 3.  **Automatic Flipping**: Alignments passed to `onscreen` (e.g., `TopStart`) are automatically mirrored if the rail is docked to the right.
 4.  **Backgrounds**: Use the `background(weight)` DSL to place full-screen content behind the UI (e.g., maps, camera feeds). Backgrounds ignore safe zones.
+
+**Example: Setting a Background**
+
+```kotlin
+AzNavHost(navController = navController) {
+    // This map will fill the entire screen, ignoring safe zones.
+    background(weight = 0) {
+        GoogleMap(
+            modifier = Modifier.fillMaxSize(),
+            cameraPositionState = cameraPositionState
+        )
+    }
+
+    // Your UI content goes here, respecting safe zones.
+    onscreen(Alignment.TopEnd) {
+        Text("Map Overlay")
+    }
+
+    // ... rail items ...
+}
+```
 
 ### Info Screen (Help Mode)
 
@@ -620,6 +651,54 @@ class OverlayService : AzNavRailOverlayService() {
 [Full DSL](/DSL.md)
 
 [Project Structure](/PROJECT_STRUCTURE.md)
+
+## Documentation
+
+The library includes a comprehensive **Complete Guide** (`AZNAVRAIL_COMPLETE_GUIDE.md`) containing:
+*   Full Getting Started instructions.
+*   Complete API and DSL references.
+*   Layout rules and best practices.
+*   Complete Sample App source code.
+
+### Auto-Generate Documentation
+
+To automatically extract this guide into your project's `docs/` folder whenever you build, add the following task to your app's `build.gradle.kts`:
+
+```kotlin
+// In app/build.gradle.kts
+
+tasks.register("updateAzNavDocs") {
+    group = "documentation"
+    description = "Extracts AzNavRail documentation from the dependency."
+
+    doLast {
+        // Find the AzNavRail AAR in the runtime classpath
+        val artifact = configurations.getByName("debugRuntimeClasspath").files
+            .find { it.name.contains("AzNavRail") && it.extension == "aar" }
+
+        if (artifact != null) {
+            copy {
+                from(zipTree(artifact))
+                include("assets/AZNAVRAIL_COMPLETE_GUIDE.md")
+                into(layout.projectDirectory.dir("docs"))
+                // Remove the 'assets/' prefix from the output file
+                eachFile {
+                    path = name
+                }
+                includeEmptyDirs = false
+            }
+            println("AzNavRail documentation updated: docs/AZNAVRAIL_COMPLETE_GUIDE.md")
+        } else {
+            println("AzNavRail AAR not found. Make sure the dependency is added.")
+        }
+    }
+}
+
+// Optional: Run this task automatically before every build
+// tasks.named("preBuild") { dependsOn("updateAzNavDocs") }
+```
+
+Once added, run `./gradlew updateAzNavDocs` (or just build your app if you uncommented the last line) to generate the documentation.
 
 ## License
 

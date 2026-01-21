@@ -102,6 +102,20 @@ afterEvaluate {
     }
 }
 
+tasks.register<Copy>("extractDocs") {
+    description = "Extracts the AzNavRail Complete Guide to the project's docs directory."
+    group = "documentation"
+    from("src/main/assets/AZNAVRAIL_COMPLETE_GUIDE.md")
+    into("${project.rootDir}/docs")
+}
+
+// Automatically extract docs when assembling the library
+afterEvaluate {
+    tasks.findByName("assemble")?.finalizedBy("extractDocs")
+    tasks.findByName("assembleDebug")?.finalizedBy("extractDocs")
+    tasks.findByName("assembleRelease")?.finalizedBy("extractDocs")
+}
+
 afterEvaluate {
     publishing {
         publications {
