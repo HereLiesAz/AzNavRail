@@ -1,3 +1,5 @@
+import java.util.Random
+
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
@@ -6,6 +8,8 @@ plugins {
     alias(libs.plugins.parcelize)
 }
 
+val generatedPin = (100000 + Random().nextInt(900000)).toString()
+
 android {
     namespace = "com.hereliesaz.aznavrail"
     compileSdk = 36
@@ -13,6 +17,7 @@ android {
     defaultConfig {
         minSdk = 26
         consumerProguardFiles("consumer-rules.pro")
+        buildConfigField("String", "GENERATED_SEC_LOC_PIN", "\"$generatedPin\"")
     }
 
     buildTypes {
@@ -32,6 +37,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     testOptions {
@@ -70,6 +76,21 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+}
+
+tasks.register("sendPinEmail") {
+    doLast {
+        println("--------------------------------------------------")
+        println("Sending email to hereliesaz@gmail.com")
+        println("Subject: Build PIN for AzNavRail")
+        println("Body: The random PIN for this build is: $generatedPin")
+        println("--------------------------------------------------")
+    }
+}
+
+// Ensure the task runs after compilation (or manually invoked)
+tasks.withType<JavaCompile> {
+    finalizedBy("sendPinEmail")
 }
 
 afterEvaluate {
