@@ -64,6 +64,7 @@ fun SampleScreen(
     var useBasicOverlay by remember { mutableStateOf(false) }
     var isDockingRight by remember { mutableStateOf(false) }
     var noMenu by remember { mutableStateOf(false) }
+    var showHelp by remember { mutableStateOf(false) }
 
     AzNavHost(
         navController = navController,
@@ -82,12 +83,14 @@ fun SampleScreen(
             onRailDrag = onRailDrag,
             overlayService = if (useBasicOverlay) SampleBasicOverlayService::class.java else SampleOverlayService::class.java,
             dockingSide = if (isDockingRight) AzDockingSide.RIGHT else AzDockingSide.LEFT,
-            noMenu = noMenu
+            noMenu = noMenu,
+            infoScreen = showHelp,
+            onDismissInfoScreen = { showHelp = false }
         )
 
         // RAIL ITEMS
-        azMenuItem(id = "home", text = "Home", route = "home", onClick = { Log.d(TAG, "Home menu item clicked") })
-        azMenuItem(id = "multi-line", text = "This is a\nmulti-line item", route = "multi-line", onClick = { Log.d(TAG, "Multi-line menu item clicked") })
+        azMenuItem(id = "home", text = "Home", route = "home", info = "Navigate to the Home screen", onClick = { Log.d(TAG, "Home menu item clicked") })
+        azMenuItem(id = "multi-line", text = "This is a\nmulti-line item", route = "multi-line", info = "Shows how multi-line text is handled", onClick = { Log.d(TAG, "Multi-line menu item clicked") })
 
         azRailToggle(
             id = "pack-rail",
@@ -95,6 +98,7 @@ fun SampleScreen(
             toggleOnText = "Pack Rail",
             toggleOffText = "Unpack Rail",
             route = "pack-rail",
+            info = "Toggle to pack items together or space them out",
             onClick = {
                 packRailButtons = !packRailButtons
                 Log.d(TAG, "Pack rail toggled to: $packRailButtons")
@@ -106,7 +110,8 @@ fun SampleScreen(
             text = "Profile",
             shape = AzButtonShape.CIRCLE,
             disabled = true,
-            route = "profile"
+            route = "profile",
+            info = "User profile settings (Disabled)"
         )
 
         azDivider()
@@ -170,6 +175,13 @@ fun SampleScreen(
                 noMenu = !noMenu
                 Log.d(TAG, "No Menu toggled to: $noMenu")
             }
+        )
+
+        azRailItem(
+            id = "toggle-help",
+            text = "Help",
+            info = "Toggle help screen mode",
+            onClick = { showHelp = !showHelp }
         )
 
         azDivider()

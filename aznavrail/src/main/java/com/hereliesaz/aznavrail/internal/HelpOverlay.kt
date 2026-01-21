@@ -66,13 +66,15 @@ internal fun HelpOverlay(
         hasInfo && isRailItem && isVisible
     }
 
-    // Smart Placement Calculation
+    // Restore safe zone calculations
     val screenHeight = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp
-    val density = androidx.compose.ui.platform.LocalDensity.current
-    val screenHeightPx = with(density) { screenHeight.toPx() }
+    val safeTop = screenHeight * 0.2f
+    val safeBottom = screenHeight * 0.1f
 
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(top = safeTop, bottom = safeBottom)
     ) {
         Row(Modifier.fillMaxSize()) {
             if (!isRightDocked) {
