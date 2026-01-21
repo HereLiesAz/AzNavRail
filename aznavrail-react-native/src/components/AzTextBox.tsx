@@ -29,6 +29,7 @@ export interface AzTextBoxProps {
   containerStyle?: ViewStyle;
   backgroundColor?: string;
   backgroundOpacity?: number;
+  enabled?: boolean;
 }
 
 export const AzTextBox: React.FC<AzTextBoxProps> = ({
@@ -46,6 +47,7 @@ export const AzTextBox: React.FC<AzTextBoxProps> = ({
   containerStyle,
   backgroundColor = 'transparent',
   backgroundOpacity = 1,
+  enabled = true,
 }) => {
   const isControlled = controlledValue !== undefined;
   const [internalValue, setInternalValue] = useState('');
@@ -55,7 +57,11 @@ export const AzTextBox: React.FC<AzTextBoxProps> = ({
 
   const currentValue = isControlled ? controlledValue : internalValue;
 
+  // Mutual exclusivity: A field cannot be multiline and secret.
+  const effectiveMultiline = secret ? false : multiline;
+
   const handleChange = (text: string) => {
+    if (!enabled) return;
     if (!isControlled) {
       setInternalValue(text);
     }
@@ -73,6 +79,7 @@ export const AzTextBox: React.FC<AzTextBoxProps> = ({
   };
 
   const handleSubmit = () => {
+    if (!enabled) return;
     historyManager.addEntry(historyContext, currentValue);
     if (onSubmit) onSubmit(currentValue);
     setShowSuggestions(false);
@@ -82,6 +89,7 @@ export const AzTextBox: React.FC<AzTextBoxProps> = ({
   };
 
   const handleSuggestionClick = (suggestion: string) => {
+    if (!enabled) return;
     if (!isControlled) {
       setInternalValue(suggestion);
     }
@@ -91,24 +99,55 @@ export const AzTextBox: React.FC<AzTextBoxProps> = ({
     setShowSuggestions(false);
   };
 
-  const toggleSecret = () => setIsSecretVisible(!isSecretVisible);
+  const toggleSecret = () => {
+      if (!enabled) return;
+      setIsSecretVisible(!isSecretVisible);
+  };
   const clearText = () => handleChange('');
 
   return (
-    <View style={[styles.container, containerStyle, { zIndex: showSuggestions ? 1000 : 1 }]}>
-      <View style={[styles.inputRow, { borderColor: outlineColor, borderWidth: outlined ? 1 : 0, backgroundColor: backgroundColor, opacity: backgroundOpacity }]}>
+    <View style={[
+        styles.container,
+        containerStyle,
+        {
+            zIndex: showSuggestions ? 1000 : 1,
+            opacity: enabled ? 1 : 0.5
+        }
+    ]}>
+      <View style={[
+          styles.inputRow,
+          {
+              borderColor: outlineColor,
+              borderWidth: outlined ? 1 : 0,
+              backgroundColor: backgroundColor,
+              opacity: backgroundOpacity
+          }
+      ]}>
         <TextInput
           value={currentValue}
           onChangeText={handleChange}
           placeholder={hint}
           placeholderTextColor={outlineColor + '80'}
           secureTextEntry={secret && !isSecretVisible}
-          multiline={multiline}
-          style={[styles.input, { color: outlineColor, minHeight: multiline ? 40 : 40, height: multiline ? undefined : 40 }]}
+          multiline={effectiveMultiline}
+          editable={enabled}
+          style={[
+              styles.input,
+              {
+                  color: outlineColor,
+                  minHeight: effectiveMultiline ? 40 : 40,
+                  height: effectiveMultiline ? undefined : 40,
+                  textAlignVertical: effectiveMultiline ? 'top' : 'center'
+              }
+          ]}
         />
 
         {(currentValue.length > 0) && (
-          <TouchableOpacity onPress={secret ? toggleSecret : clearText} style={styles.iconButton}>
+          <TouchableOpacity
+              onPress={secret ? toggleSecret : clearText}
+              style={styles.iconButton}
+              disabled={!enabled}
+          >
             <Text style={{ color: outlineColor, fontSize: 10 }}>
               {secret ? (isSecretVisible ? 'HIDE' : 'SHOW') : 'X'}
             </Text>
@@ -118,6 +157,7 @@ export const AzTextBox: React.FC<AzTextBoxProps> = ({
         {showSubmitButton && (
             <TouchableOpacity
                 onPress={handleSubmit}
+                disabled={!enabled}
                 style={[
                     styles.submitButton,
                     {

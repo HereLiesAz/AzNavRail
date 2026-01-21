@@ -5,6 +5,17 @@ export enum AzButtonShape {
   NONE = 'NONE',
 }
 
+export enum AzDockingSide {
+  LEFT = 'LEFT',
+  RIGHT = 'RIGHT',
+}
+
+export enum AzHeaderIconShape {
+  CIRCLE = 'CIRCLE',
+  SQUARE = 'SQUARE',
+  ROUNDED = 'ROUNDED',
+}
+
 export interface AzNavRailSettings {
   displayAppNameInHeader?: boolean;
   packRailButtons?: boolean;
@@ -14,6 +25,13 @@ export interface AzNavRailSettings {
   isLoading?: boolean;
   defaultShape?: AzButtonShape;
   enableRailDragging?: boolean;
+  dockingSide?: AzDockingSide;
+  noMenu?: boolean;
+  infoScreen?: boolean;
+  onDismissInfoScreen?: () => void;
+  activeColor?: string;
+  vibrate?: boolean;
+  headerIconShape?: AzHeaderIconShape;
 }
 
 export interface AzNavItem {
@@ -44,6 +62,8 @@ export interface AzNavItem {
   isRelocItem?: boolean;
   hiddenMenu?: { text: string; onClick: () => void }[];
   onRelocate?: (fromIndex: number, toIndex: number, newOrder: string[]) => void;
+  // Info/Help
+  info?: string;
 }
 
 export interface AzNavItemProps {
@@ -55,6 +75,7 @@ export interface AzNavItemProps {
   onClick?: () => void;
   color?: string;
   shape?: AzButtonShape;
+  info?: string;
 }
 
 export interface AzToggleProps extends AzNavItemProps {
@@ -81,4 +102,9 @@ export interface AzSubToggleProps extends AzToggleProps {
 
 export interface AzSubCyclerProps extends AzCyclerProps {
   hostId: string;
+}
+
+export interface AzRailRelocItemProps extends AzSubItemProps {
+    onRelocate: (fromIndex: number, toIndex: number, newOrder: string[]) => void;
+    hiddenMenu?: { text: string; onClick: () => void }[];
 }

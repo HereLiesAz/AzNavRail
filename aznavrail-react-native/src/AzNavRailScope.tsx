@@ -1,5 +1,5 @@
 import React, { useEffect, useContext, useRef } from 'react';
-import { AzNavItem, AzButtonShape, AzNavItemProps, AzToggleProps, AzCyclerProps, AzHostItemProps, AzSubItemProps, AzSubToggleProps, AzSubCyclerProps } from './types';
+import { AzNavItem, AzButtonShape, AzNavItemProps, AzToggleProps, AzCyclerProps, AzHostItemProps, AzSubItemProps, AzSubToggleProps, AzSubCyclerProps, AzRailRelocItemProps } from './types';
 
 export const AzNavRailContext = React.createContext<{
   register: (item: AzNavItem) => void;
@@ -24,7 +24,11 @@ const useAzItem = (item: AzNavItem) => {
                    // Compare arrays
                    JSON.stringify(prev.options) === JSON.stringify(item.options) &&
                    prev.shape === item.shape &&
-                   prev.color === item.color;
+                   prev.color === item.color &&
+                   prev.info === item.info &&
+                   prev.isRelocItem === item.isRelocItem &&
+                   // Reloc props
+                   JSON.stringify(prev.hiddenMenu) === JSON.stringify(item.hiddenMenu);
 
     if (!isSame) {
         context.register(item);
@@ -166,13 +170,7 @@ export const AzDivider: React.FC = () => {
     useAzItem({
         id,
         text: '',
-        isRailItem: false, // Dividers usually in menu only? Kotlin: azDivider() adds to menu.
-        // Wait, "Easily add dividers to your menu".
-        // Are dividers on rail? "Rectangular rail items have 2.dp of vertical padding...".
-        // I'll assume dividers are menu only unless specified.
-        // Kotlin azDivider() implementation creates AzNavItem with isDivider=true.
-        // And it seems it's added to the list. The Rail rendering logic decides if it shows.
-        // Usually dividers are horizontal lines in menu.
+        isRailItem: false,
         isToggle: false,
         isCycler: false,
         isDivider: true,
@@ -327,6 +325,26 @@ export const AzMenuSubCycler: React.FC<AzSubCyclerProps> = (props) => {
         isCycler: true,
         isDivider: false,
         collapseOnClick: true,
+        shape: AzButtonShape.NONE,
+        disabled: props.disabled || false,
+        isExpanded: false,
+        toggleOnText: '',
+        toggleOffText: '',
+    });
+    return null;
+};
+
+export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
+    useAzItem({
+        ...props,
+        isRailItem: true,
+        isHost: false,
+        isSubItem: true,
+        isRelocItem: true,
+        isToggle: false,
+        isCycler: false,
+        isDivider: false,
+        collapseOnClick: false,
         shape: AzButtonShape.NONE,
         disabled: props.disabled || false,
         isExpanded: false,
