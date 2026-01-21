@@ -5,8 +5,13 @@ import './AzNavRailButton.css';
 /**
  * A circular button for the collapsed navigation rail.
  */
-const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen }) => {
-  const { text, isToggle, isChecked, toggleOnText, toggleOffText, isCycler, selectedOption, onClick, color, id, disabled } = item;
+const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen, style }) => {
+  const {
+      text, isToggle, isChecked, toggleOnText, toggleOffText,
+      isCycler, selectedOption, onClick, onFocus,
+      color, id, disabled
+  } = item;
+
   const fitTextRef = useFitText();
   const textRef = fitTextRef; // Always fit text in rail button
 
@@ -17,7 +22,6 @@ const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen }) =
   })();
 
   const isInteractive = infoScreen ? !!onClickOverride : !disabled;
-  // If infoScreen is active, only items with onClickOverride (hosts) are interactive.
 
   const handleClick = () => {
     if (!isInteractive) return;
@@ -27,6 +31,11 @@ const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen }) =
             onClickOverride(); // Allow host expansion
         }
         return;
+    }
+
+    // Always trigger onFocus if present (parity with Android)
+    if (onFocus) {
+        onFocus();
     }
 
     if (onClickOverride) {
@@ -46,13 +55,13 @@ const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen }) =
             style={{
                 borderColor: color || 'blue',
                 opacity: isInteractive ? 1 : 0.5,
-                cursor: isInteractive ? 'pointer' : 'default'
+                cursor: isInteractive ? 'pointer' : 'default',
+                ...style
             }}
             disabled={!isInteractive}
         >
           <span className="button-text" ref={textRef}>{textToShow}</span>
         </button>
-        {/* Removed inline info popup, now handled by HelpOverlay */}
     </div>
   );
 };
