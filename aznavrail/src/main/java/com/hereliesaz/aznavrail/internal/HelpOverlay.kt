@@ -66,6 +66,11 @@ internal fun HelpOverlay(
         hasInfo && isRailItem && isVisible
     }
 
+    // Smart Placement Calculation
+    val screenHeight = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val screenHeightPx = with(density) { screenHeight.toPx() }
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -213,10 +218,11 @@ fun DescriptionCard(text: String, modifier: Modifier = Modifier) {
             .background(Color.White)
             .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(16.dp)
-        )
+        androidx.compose.foundation.layout.Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
     }
 }
