@@ -88,9 +88,18 @@ tasks.register("sendPinEmail") {
     }
 }
 
-// Ensure the task runs after compilation (or manually invoked)
-tasks.withType<JavaCompile> {
-    finalizedBy("sendPinEmail")
+// Ensure the PIN email task runs at most once per main build variant
+// Using whenTaskAdded/afterEvaluate logic to avoid issues with dynamic task creation order
+afterEvaluate {
+    val debugTask = tasks.findByName("assembleDebug")
+    if (debugTask != null) {
+        debugTask.finalizedBy("sendPinEmail")
+    }
+
+    val releaseTask = tasks.findByName("assembleRelease")
+    if (releaseTask != null) {
+        releaseTask.finalizedBy("sendPinEmail")
+    }
 }
 
 afterEvaluate {
