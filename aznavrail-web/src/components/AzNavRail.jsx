@@ -33,7 +33,9 @@ const AzNavRail = ({
     dockingSide = 'LEFT',
     noMenu = false,
     activeClassifiers = [], // Array of strings
-    activeColor
+    activeColor,
+    packRailButtons = false,
+    headerIconShape = 'CIRCLE'
   } = settings;
 
   // If noMenu is true, we force expanded to false, unless infoScreen overrides (which it doesn't really)
@@ -268,6 +270,15 @@ const AzNavRail = ({
 
   const visibleItems = getVisibleItems();
 
+  const getHeaderIconClass = () => {
+      switch (headerIconShape) {
+          case 'ROUNDED': return 'app-icon rounded';
+          case 'NONE': return 'app-icon none';
+          case 'CIRCLE':
+          default: return 'app-icon circle';
+      }
+  };
+
   return (
     <>
     <div
@@ -278,7 +289,7 @@ const AzNavRail = ({
         {displayAppNameInHeader ? (
           <span>{appName}</span>
         ) : (
-          <img src="/app-icon.png" alt="App Icon" className="app-icon" />
+          <img src="/app-icon.png" alt="App Icon" className={getHeaderIconClass()} />
         )}
       </div>
 
@@ -291,7 +302,7 @@ const AzNavRail = ({
               {navItems.map(item => renderMenuItem(item))}
             </div>
           ) : (
-            <div className="rail" style={{overflowY: 'auto', maxHeight: '100%'}}>
+            <div className={`rail ${packRailButtons ? 'packed' : ''}`} style={{overflowY: 'auto', maxHeight: '100%'}}>
               {navItems
                 .filter(item => item.isRailItem || item.items)
                 .map(item => {
@@ -398,7 +409,7 @@ const AzNavRail = ({
       {showFooter && isExpanded && (
         <div className="footer">
              <div style={{padding: '16px', fontSize: '12px', opacity: 0.5}}>
-                 Footer
+                 {appName}
              </div>
         </div>
       )}
@@ -417,7 +428,7 @@ const AzNavRail = ({
               zIndex: 2000,
               boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
           }}>
-              <div>Footer Popup Content</div>
+              <div>{appName}</div>
               <button onClick={() => setShowFooterPopup(false)} style={{marginTop: '8px'}}>Close</button>
           </div>
       )}
