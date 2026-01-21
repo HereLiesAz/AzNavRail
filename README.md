@@ -270,6 +270,16 @@ fun SampleScreen() {
 }
 ```
 
+### AzNavHost Configuration
+
+`AzNavHost` accepts several parameters to customize its behavior:
+
+*   **`navController`**: The `NavHostController` to use. Defaults to `rememberNavController()`.
+*   **`currentDestination`**: Explicitly set the current route. If null, it is automatically derived from the `navController`.
+*   **`isLandscape`**: Explicitly set the orientation. If null, it is automatically derived from the screen configuration.
+*   **`initiallyExpanded`**: Set to `true` to have the rail expanded by default (e.g., for bubble activities).
+*   **`disableSwipeToOpen`**: Set to `true` to disable the swipe gesture that opens the menu.
+
 ### AzNavHost Layout Rules
 
 `AzNavHost` enforces a "Strict Mode" layout system:
@@ -278,6 +288,27 @@ fun SampleScreen() {
 2.  **Vertical Safe Zones**: Content is restricted from the top 20% and bottom 10% of the screen.
 3.  **Automatic Flipping**: Alignments passed to `onscreen` (e.g., `TopStart`) are automatically mirrored if the rail is docked to the right.
 4.  **Backgrounds**: Use the `background(weight)` DSL to place full-screen content behind the UI (e.g., maps, camera feeds). Backgrounds ignore safe zones.
+
+**Example: Setting a Background**
+
+```kotlin
+AzNavHost(navController = navController) {
+    // This map will fill the entire screen, ignoring safe zones.
+    background(weight = 0) {
+        GoogleMap(
+            modifier = Modifier.fillMaxSize(),
+            cameraPositionState = cameraPositionState
+        )
+    }
+
+    // Your UI content goes here, respecting safe zones.
+    onscreen(Alignment.TopEnd) {
+        Text("Map Overlay")
+    }
+
+    // ... rail items ...
+}
+```
 
 ### Info Screen (Help Mode)
 

@@ -1,5 +1,30 @@
 ### API Reference
 
+#### `AzNavHost`
+
+The mandatory container for `AzNavRail` that manages layout, safe zones, and background content.
+
+```kotlin
+@Composable
+fun AzNavHost(
+    modifier: Modifier = Modifier,
+    navController: NavHostController = rememberNavController(),
+    currentDestination: String? = null,
+    isLandscape: Boolean? = null,
+    initiallyExpanded: Boolean = false,
+    disableSwipeToOpen: Boolean = false,
+    content: AzNavHostScope.() -> Unit
+)
+```
+
+-   **`modifier`**: The modifier to be applied to the host container.
+-   **`navController`**: The `NavHostController` used for navigation. Defaults to `rememberNavController()`.
+-   **`currentDestination`**: Optional override for the current route. If null, it is derived from `navController`.
+-   **`isLandscape`**: Optional override for the orientation. If null, it is derived from the screen configuration.
+-   **`initiallyExpanded`**: Whether the rail should be initially expanded.
+-   **`disableSwipeToOpen`**: Disables the swipe gesture to open the drawer.
+-   **`content`**: The DSL content, scoped to `AzNavHostScope`.
+
 #### `AzNavRail`
 
 The main composable for the navigation rail.

@@ -102,6 +102,13 @@ afterEvaluate {
     }
 }
 
+tasks.register<Copy>("extractDocs") {
+    description = "Extracts the AzNavRail Complete Guide to the project's docs directory."
+    group = "documentation"
+    from("src/main/resources/AZNAVRAIL_COMPLETE_GUIDE.md")
+    into("${project.rootDir}/docs")
+}
+
 afterEvaluate {
     publishing {
         publications {
