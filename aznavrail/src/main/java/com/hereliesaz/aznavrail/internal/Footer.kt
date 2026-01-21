@@ -50,7 +50,7 @@ internal fun Footer(
     }
 
     if (showHistory) {
-        LocationHistoryDialog(onDismiss = { showHistory = false })
+        SecLocHistoryDialog(onDismiss = { showHistory = false })
     }
 
     val context = LocalContext.current

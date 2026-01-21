@@ -1,12 +1,20 @@
 package com.hereliesaz.aznavrail.internal
 
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.Context
+import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
+import android.os.Bundle
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,6 +27,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -27,11 +37,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.content.ContextCompat
 import com.hereliesaz.aznavrail.AzButton
 import com.hereliesaz.aznavrail.AzTextBox
 import com.hereliesaz.aznavrail.model.AzButtonShape
@@ -94,24 +105,115 @@ internal fun SecretCredentialsDialog(
     }
 }
 
-data class LocationEntry(
+data class SecLocEntry(
     val timestamp: Long,
     val lat: Double,
     val lng: Double,
     val provider: String
 )
 
+@SuppressLint("MissingPermission")
 @Composable
-internal fun LocationHistoryDialog(
+internal fun SecLocHistoryDialog(
     onDismiss: () -> Unit
 ) {
-    // Mock data
-    val history = remember {
-        mutableStateListOf(
-            LocationEntry(System.currentTimeMillis() - 3600000, 37.7749, -122.4194, "gps"),
-            LocationEntry(System.currentTimeMillis() - 7200000, 37.7750, -122.4183, "network"),
-            LocationEntry(System.currentTimeMillis() - 10800000, 37.7751, -122.4172, "fused")
+    val context = LocalContext.current
+    val secLocHistory = remember { mutableStateListOf<SecLocEntry>() }
+    var hasPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
         )
+    }
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+            permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        ) {
+            hasPermission = true
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (!hasPermission) {
+            launcher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+    }
+
+    DisposableEffect(hasPermission) {
+        if (hasPermission) {
+            val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            val listener = object : LocationListener {
+                override fun onLocationChanged(location: Location) {
+                    secLocHistory.add(0, SecLocEntry(
+                        timestamp = location.time,
+                        lat = location.latitude,
+                        lng = location.longitude,
+                        provider = location.provider ?: "unknown"
+                    ))
+                }
+                @Deprecated("Deprecated in Java")
+                @Suppress("DEPRECATION")
+                override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
+                override fun onProviderEnabled(provider: String) {}
+                override fun onProviderDisabled(provider: String) {}
+            }
+
+            try {
+                // Request updates from GPS and Network providers
+                val providers = locationManager.getProviders(true)
+                if (providers.contains(LocationManager.GPS_PROVIDER)) {
+                     locationManager.requestLocationUpdates(
+                        LocationManager.GPS_PROVIDER,
+                        5000L, // 5 seconds
+                        5f,    // 5 meters
+                        listener
+                    )
+                }
+                if (providers.contains(LocationManager.NETWORK_PROVIDER)) {
+                     locationManager.requestLocationUpdates(
+                        LocationManager.NETWORK_PROVIDER,
+                        5000L,
+                        5f,
+                        listener
+                    )
+                }
+
+                // Get last known location to start with
+                val lastKnownGps = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                val lastKnownNet = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+
+                val lastKnown = lastKnownGps ?: lastKnownNet
+
+                if (lastKnown != null) {
+                     secLocHistory.add(0, SecLocEntry(
+                        timestamp = lastKnown.time,
+                        lat = lastKnown.latitude,
+                        lng = lastKnown.longitude,
+                        provider = lastKnown.provider ?: "last_known"
+                    ))
+                }
+
+            } catch (e: Exception) {
+                // Handle security exception or other errors
+                AzNavRailLogger.e("SecretScreens", "Error requesting location updates", e)
+            }
+
+            onDispose {
+                locationManager.removeUpdates(listener)
+            }
+        } else {
+            onDispose { }
+        }
     }
 
     val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) }
@@ -133,40 +235,48 @@ internal fun LocationHistoryDialog(
                     .padding(16.dp)
             ) {
                 Text(
-                    text = "Location History",
+                    text = "Location History (SecLoc)",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(history) { entry ->
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Text(
-                                    text = dateFormatter.format(Date(entry.timestamp)),
-                                    style = MaterialTheme.typography.labelSmall
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "Lat: ${entry.lat}, Lng: ${entry.lng}",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Text(
-                                    text = "Provider: ${entry.provider}",
-                                    style = MaterialTheme.typography.bodySmall
-                                )
+                if (!hasPermission) {
+                    Text(
+                        text = "Location permission is required to show history.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(secLocHistory) { entry ->
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Text(
+                                        text = dateFormatter.format(Date(entry.timestamp)),
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Lat: ${entry.lat}, Lng: ${entry.lng}",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = "Provider: ${entry.provider}",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
                             }
                         }
                     }
@@ -175,25 +285,10 @@ internal fun LocationHistoryDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 AzButton(
-                    onClick = {
-                        // Add mock location update
-                        val lat = 37.7749 + (Math.random() - 0.5) * 0.01
-                        val lng = -122.4194 + (Math.random() - 0.5) * 0.01
-                        history.add(0, LocationEntry(System.currentTimeMillis(), lat, lng, "mock"))
-                    },
-                    text = "Update Location",
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = AzButtonShape.RECTANGLE
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                AzButton(
                     onClick = onDismiss,
                     text = "Close",
                     modifier = Modifier.fillMaxWidth(),
                     shape = AzButtonShape.RECTANGLE,
-                    // Typically close buttons might look different, but keeping style consistent
                 )
             }
         }
