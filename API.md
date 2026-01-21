@@ -1,12 +1,12 @@
 ### API Reference
 
-#### `AzNavHost`
+#### `AzHostActivityLayout`
 
-The mandatory container for `AzNavRail` that manages layout, safe zones, and background content.
+The mandatory top-level container for `AzNavRail` that manages the rail, safe zones, background content, and layout flipping.
 
 ```kotlin
 @Composable
-fun AzNavHost(
+fun AzHostActivityLayout(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
     currentDestination: String? = null,
@@ -25,9 +25,34 @@ fun AzNavHost(
 -   **`disableSwipeToOpen`**: Disables the swipe gesture to open the drawer.
 -   **`content`**: The DSL content, scoped to `AzNavHostScope`.
 
+#### `AzNavHost`
+
+A wrapper around `androidx.navigation.compose.NavHost` designed to be used within the `onscreen` block of `AzHostActivityLayout`.
+
+```kotlin
+@Composable
+fun AzNavHost(
+    navController: NavHostController,
+    startDestination: String,
+    modifier: Modifier = Modifier,
+    contentAlignment: Alignment = Alignment.Center,
+    route: String? = null,
+    enterTransition: ... = { fadeIn(...) },
+    exitTransition: ... = { fadeOut(...) },
+    popEnterTransition: ... = enterTransition,
+    popExitTransition: ... = exitTransition,
+    builder: NavGraphBuilder.() -> Unit
+)
+```
+
+-   **`navController`**: The navigation controller.
+-   **`startDestination`**: The route of the start destination.
+-   **`builder`**: The builder for the navigation graph.
+-   *(Standard NavHost parameters are supported)*.
+
 #### `AzNavRail`
 
-The main composable for the navigation rail.
+The main composable for the navigation rail. (Usually instantiated implicitly by `AzHostActivityLayout`).
 
 ```kotlin
 @Composable
@@ -246,4 +271,3 @@ import { AzRailItem, AzMenuItem } from 'aznavrail-react-native';
   <AzMenuItem id="settings" text="Settings" onClick={() => {}} />
 </AzNavRail>
 ```
-
