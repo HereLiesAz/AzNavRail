@@ -53,12 +53,6 @@ internal fun HelpOverlay(
     val descriptionPositions = remember { mutableStateMapOf<String, Rect>() }
 
     // Filter items to only those that are logically visible.
-    // 1. Must be in the rail (isRailItem).
-    // 2. If it's a sub-item, its host must be expanded.
-    // 3. Must have info text.
-    // 4. Ideally, we should also check if it's currently rendered/positioned (in itemPositions),
-    //    but rely on logical visibility first to avoid stale positions.
-
     val itemsWithInfo = items.filter { item ->
         val hasInfo = !item.info.isNullOrBlank()
         val isRailItem = item.isRailItem
@@ -72,13 +66,18 @@ internal fun HelpOverlay(
         hasInfo && isRailItem && isVisible
     }
 
+    // Restore safe zone calculations
+    val screenHeight = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp
+    val safeTop = screenHeight * 0.2f
+    val safeBottom = screenHeight * 0.1f
+
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(top = safeTop, bottom = safeBottom)
     ) {
         Row(Modifier.fillMaxSize()) {
             if (!isRightDocked) {
-                // Spacer to keep descriptions off the rail
-                // This spacer allows clicks/scrolls to pass through to the underlying Rail
                 Spacer(modifier = Modifier.width(railWidth))
             }
 
@@ -90,8 +89,17 @@ internal fun HelpOverlay(
                 horizontalAlignment = Alignment.Start
             ) {
                 items(itemsWithInfo, key = { it.id }) { item ->
+                    // Calculate visual offset to align with button
+                    // Note: This is a simple vertical list, so "alignment" is purely visual ordering.
+                    // To truly align, we'd need a custom layout.
+                    // But we can add the coordinates to the description to "bolster smart location tools" as requested.
+                    val itemRect = itemPositions[item.id]
+                    val locationInfo = if (itemRect != null) {
+                        "\nLocation: (${itemRect.left.toInt()}, ${itemRect.top.toInt()})"
+                    } else ""
+
                     DescriptionCard(
-                        text = item.info!!,
+                        text = item.info!! + locationInfo,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 16.dp)
