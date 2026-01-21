@@ -4,6 +4,12 @@
   height: 100vh;
   background-color: #f0f0f0;
   transition: width 0.3s ease;
+  border-right: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.az-nav-rail.right {
+  border-right: none;
+  border-left: 1px solid rgba(0, 0, 0, 0.12);
 }
 
 .header {

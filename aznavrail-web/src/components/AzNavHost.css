@@ -1,0 +1,45 @@
+.az-nav-host {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.az-nav-host-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+.az-nav-host-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    overflow: auto;
+    box-sizing: border-box;
+    /* Enforce Safe Zones */
+    padding-top: 20vh;
+    padding-bottom: 10vh;
+}
+
+.az-nav-host-rail-wrapper {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    z-index: 2;
+    /* Width is determined by the AzNavRail component's internal state */
+}
+
+.az-nav-host-rail-wrapper.left {
+    left: 0;
+}
+
+.az-nav-host-rail-wrapper.right {
+    right: 0;
+}

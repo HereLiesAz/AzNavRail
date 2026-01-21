@@ -1,0 +1,7 @@
+.az-divider {
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.12); /* Default outline variant opacity */
+  margin: 8px 16px;
+  width: calc(100% - 32px);
+  flex-shrink: 0;
+}

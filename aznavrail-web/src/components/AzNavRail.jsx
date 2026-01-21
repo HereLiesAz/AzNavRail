@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './AzNavRail.css';
 import MenuItem from './MenuItem';
 import AzNavRailButton from './AzNavRailButton';
 import HelpOverlay from './HelpOverlay';
 import { RelocItemHandler } from '../utils/RelocItemHandler';
-import AzTextBox from './AzTextBox';
+import AzDivider from './AzDivider';
 
 /**
  * An M3-style navigation rail that expands into a menu drawer for web applications.
@@ -13,14 +13,14 @@ import AzTextBox from './AzTextBox';
  * @param {boolean} [props.initiallyExpanded=false] - Whether the navigation rail is expanded by default.
  * @param {Array<object>} props.content - An array of navigation item objects (tree structure).
  * @param {object} [props.settings={}] - An object containing settings.
+ * @param {string} [props.currentDestination] - The current route/destination ID to determine active state.
  */
 const AzNavRail = ({
   initiallyExpanded = false,
-  // disableSwipeToOpen,
   content,
-  settings = {}
+  settings = {},
+  currentDestination
 }) => {
-  const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
   const {
     displayAppNameInHeader = false,
     expandedRailWidth = '260px',
@@ -29,11 +29,35 @@ const AzNavRail = ({
     isLoading = false,
     appName = 'App',
     infoScreen = false,
-    onDismissInfoScreen
+    onDismissInfoScreen,
+    dockingSide = 'LEFT',
+    noMenu = false,
+    activeClassifiers = [], // Array of strings
+    activeColor
   } = settings;
 
+  // If noMenu is true, we force expanded to false, unless infoScreen overrides (which it doesn't really)
+  // Logic: effectiveNoMenu prevents expansion.
+  const effectiveNoMenu = noMenu;
+
+  const [isExpanded, setIsExpanded] = useState(initiallyExpanded && !effectiveNoMenu);
+
+  // Update expansion state if noMenu changes
+  useEffect(() => {
+      if (effectiveNoMenu && isExpanded) {
+          setIsExpanded(false);
+      }
+  }, [effectiveNoMenu, isExpanded]);
+
+  const [showFooterPopup, setShowFooterPopup] = useState(false);
+
   const onToggle = () => {
-      if (!infoScreen) setIsExpanded(!isExpanded);
+      if (infoScreen) return;
+      if (effectiveNoMenu) {
+          setShowFooterPopup(!showFooterPopup);
+      } else {
+          setIsExpanded(!isExpanded);
+      }
   };
 
   const [cyclerStates, setCyclerStates] = useState({});
@@ -57,7 +81,7 @@ const AzNavRail = ({
 
   const navItems = localNavItems;
 
-  // Flatten items for cycler initialization (simple recursive helper could be used if needed deep)
+  // Flatten items for cycler initialization
   useEffect(() => {
     const initialCyclerStates = {};
     const processItem = (item) => {
@@ -104,6 +128,15 @@ const AzNavRail = ({
       setHostStates(prev => ({ ...prev, [item.id]: !prev[item.id] }));
   };
 
+  const checkIsActive = (item) => {
+      if (item.route && item.route === currentDestination) return true;
+      if (item.classifiers && activeClassifiers.length > 0) {
+          // Check intersection
+          return item.classifiers.some(c => activeClassifiers.includes(c));
+      }
+      return false;
+  };
+
   const handleMouseDown = (e, item) => {
       if (!item.isRelocItem || infoScreen) return;
 
@@ -111,8 +144,9 @@ const AzNavRail = ({
       const initialIndex = itemsRef.current.findIndex(it => it.id === item.id);
 
       longPressTimer.current = setTimeout(() => {
-          setHiddenMenuOpenId(item.id);
+          setHiddenMenuOpenId(null); // Close menu if dragging starts
           longPressTimer.current = null;
+          // Start drag indication if needed
       }, 500);
 
       const onMouseMove = (moveEvent) => {
@@ -137,11 +171,9 @@ const AzNavRail = ({
                           const cluster = RelocItemHandler.findCluster(currentItems, item.id);
                           if (cluster && targetIndex >= cluster.start && targetIndex <= cluster.end) {
                               const newItems = RelocItemHandler.updateOrder(currentItems, item.id, targetIndex);
-                              // Comparison needs deep check or just ID check if reference changed
-                              // updateOrder returns new array
                               if (newItems !== currentItems) {
                                   setLocalNavItems(newItems);
-                                  dragStartY.current = moveEvent.clientY; // Reset reference
+                                  dragStartY.current = moveEvent.clientY;
                                   setDragOffset(0);
                               }
                           }
@@ -155,13 +187,13 @@ const AzNavRail = ({
           if (longPressTimer.current) {
               clearTimeout(longPressTimer.current);
           }
-          // Access ref for final state
           const finalItems = itemsRef.current;
-          // We can't check draggedItemId state reliably inside closure if it's stale,
-          // but we set it. However, simpler to just check if we were dragging.
-          // Or rely on closure variable 'item'.
+          const initialIdx = itemsRef.current.findIndex(it => it.id === item.id); // Re-find in case index changed?
+          // Actually itemsRef updates on state change, so finding by ID is safer.
           const finalIndex = finalItems.findIndex(it => it.id === item.id);
-          if (item.onRelocate && initialIndex !== -1 && finalIndex !== -1) {
+
+          if (item.onRelocate && initialIndex !== -1 && finalIndex !== -1 && initialIndex !== finalIndex) {
+                // Trigger relocate only if moved
                 item.onRelocate(initialIndex, finalIndex, finalItems.map(it => it.id));
           }
           setDraggedItemId(null);
@@ -174,13 +206,27 @@ const AzNavRail = ({
       window.addEventListener('mouseup', onMouseUp);
   };
 
+  const handleDoubleTap = (item) => {
+      if (item.hiddenMenu) {
+          setHiddenMenuOpenId(prev => prev === item.id ? null : item.id);
+      }
+  };
+
   const renderMenuItem = (item, depth = 0) => {
+      if (item.isDivider) {
+          return <AzDivider key={item.id} />;
+      }
+
       const finalItem = item.isCycler
         ? { ...item, selectedOption: cyclerStates[item.id]?.displayedOption }
         : item;
 
       const isHost = item.items && item.items.length > 0;
       const isHostExpanded = hostStates[item.id];
+      const isActive = checkIsActive(item);
+
+      // Inject isActive into item for MenuItem (if it supported it) or pass as prop
+      // MenuItem logic update would be needed to use isActive prop visually
 
       return (
           <React.Fragment key={item.id}>
@@ -193,6 +239,8 @@ const AzNavRail = ({
                   isExpanded={isHostExpanded}
                   onHostClick={() => toggleHost(item)}
                   infoScreen={infoScreen}
+                  // Pass active state if MenuItem supports it, or modify item color?
+                  // Currently simple pass-through.
               />
               {isHost && isHostExpanded && (
                   <div className="az-nav-rail-subitems">
@@ -203,11 +251,10 @@ const AzNavRail = ({
       );
   };
 
-  // Prepare flat list of currently visible rail items for HelpOverlay
   const getVisibleItems = () => {
     const visible = [];
     navItems.forEach(item => {
-        if (item.isRailItem || item.items) { // Top level rail items or hosts
+        if (item.isRailItem || item.items) {
             visible.push(item);
             if (item.items && hostStates[item.id]) {
                item.items.forEach(sub => {
@@ -224,7 +271,7 @@ const AzNavRail = ({
   return (
     <>
     <div
-      className={`az-nav-rail ${isExpanded ? 'expanded' : 'collapsed'}`}
+      className={`az-nav-rail ${isExpanded ? 'expanded' : 'collapsed'} ${dockingSide === 'RIGHT' ? 'right' : ''}`}
       style={{ width: isExpanded ? expandedRailWidth : collapsedRailWidth }}
     >
       <div className="header" onClick={onToggle}>
@@ -245,31 +292,52 @@ const AzNavRail = ({
             </div>
           ) : (
             <div className="rail" style={{overflowY: 'auto', maxHeight: '100%'}}>
-              {/* DEBUG */}
-              {/* <div style={{fontSize: '8px'}}>{JSON.stringify(navItems.map(i => i.id))}</div> */}
-
               {navItems
                 .filter(item => item.isRailItem || item.items)
                 .map(item => {
+                  if (item.isDivider) return <AzDivider key={item.id} />;
+
                   const finalItem = item.isCycler
                     ? { ...item, selectedOption: cyclerStates[item.id]?.displayedOption }
                     : item;
 
-                  // Render logic...
-                  // For reloc items, we must wrap them to handle mouse events
+                  const isActive = checkIsActive(item);
+
+                  // For reloc items
                   if (item.isRelocItem) {
                        return (
-                          <div key={item.id} onMouseDown={(e) => handleMouseDown(e, item)} style={{position: 'relative', width: '100%', display: 'flex', justifyContent: 'center'}}>
+                          <div
+                            key={item.id}
+                            onMouseDown={(e) => handleMouseDown(e, item)}
+                            onDoubleClick={() => handleDoubleTap(item)}
+                            style={{position: 'relative', width: '100%', display: 'flex', justifyContent: 'center'}}
+                          >
                               <AzNavRailButton
-                                  item={finalItem}
+                                  item={{...finalItem, isActive}} // Pass isActive if Button supports it
                                   onCyclerClick={() => handleCyclerClick(item)}
                                   infoScreen={infoScreen}
-                                  style={{ transform: draggedItemId === item.id ? `translateY(${dragOffset}px)` : 'none', zIndex: draggedItemId === item.id ? 100 : 1 }}
+                                  style={{
+                                      transform: draggedItemId === item.id ? `translateY(${dragOffset}px)` : 'none',
+                                      zIndex: draggedItemId === item.id ? 100 : 1,
+                                      // Apply active color override if active
+                                      borderColor: isActive && activeColor ? activeColor : (item.color || 'blue')
+                                  }}
                               />
                               {hiddenMenuOpenId === item.id && item.hiddenMenu && (
-                                  <div className="hidden-menu-popup" style={{position: 'absolute', left: '100%', top: 0, zIndex: 1000, background: 'white', border: '1px solid black', padding: '8px', width: '150px'}}>
+                                  <div className="hidden-menu-popup" style={{
+                                      position: 'absolute',
+                                      left: dockingSide === 'RIGHT' ? 'auto' : '100%',
+                                      right: dockingSide === 'RIGHT' ? '100%' : 'auto',
+                                      top: 0,
+                                      zIndex: 1000,
+                                      background: 'white',
+                                      border: '1px solid black',
+                                      padding: '8px',
+                                      width: '150px'
+                                  }}>
                                       {item.hiddenMenu.map((menuItem, idx) => (
-                                          <div key={idx} style={{padding: '8px', borderBottom: '1px solid #eee', cursor: 'pointer'}} onClick={() => {
+                                          <div key={idx} style={{padding: '8px', borderBottom: '1px solid #eee', cursor: 'pointer'}} onClick={(e) => {
+                                              e.stopPropagation(); // Prevent parent clicks
                                               if(menuItem.onClick) menuItem.onClick();
                                               setHiddenMenuOpenId(null);
                                           }}>
@@ -285,7 +353,7 @@ const AzNavRail = ({
                   return (
                     <React.Fragment key={item.id}>
                         <AzNavRailButton
-                            item={finalItem}
+                            item={{...finalItem, isActive}}
                             onCyclerClick={() => handleCyclerClick(item)}
                             onClickOverride={item.items ? () => {
                                 if (infoScreen) {
@@ -296,20 +364,28 @@ const AzNavRail = ({
                                 }
                             } : undefined}
                             infoScreen={infoScreen}
+                            style={{
+                                borderColor: isActive && activeColor ? activeColor : (item.color || 'blue')
+                            }}
                         />
                         {/* Sub items rendering */}
                         {item.items && hostStates[item.id] && (
-                            item.items.filter(sub => sub.isRailItem).map(sub => (
+                            item.items.filter(sub => sub.isRailItem).map(sub => {
+                                const subActive = checkIsActive(sub);
+                                return (
                                 <div key={sub.id} onMouseDown={(e) => handleMouseDown(e, sub)} style={{position: 'relative'}}>
                                     <AzNavRailButton
-                                        item={sub}
+                                        item={{...sub, isActive: subActive}}
                                         onCyclerClick={() => handleCyclerClick(sub)}
                                         infoScreen={infoScreen}
-                                        style={{ transform: draggedItemId === sub.id ? `translateY(${dragOffset}px)` : 'none', zIndex: draggedItemId === sub.id ? 100 : 1 }}
+                                        style={{
+                                            transform: draggedItemId === sub.id ? `translateY(${dragOffset}px)` : 'none',
+                                            zIndex: draggedItemId === sub.id ? 100 : 1,
+                                            borderColor: subActive && activeColor ? activeColor : (sub.color || 'blue')
+                                        }}
                                     />
-                                    {/* ... hidden menu for sub items ... */}
                                 </div>
-                            ))
+                            )})
                         )}
                     </React.Fragment>
                   );
@@ -325,6 +401,25 @@ const AzNavRail = ({
                  Footer
              </div>
         </div>
+      )}
+
+      {/* No Menu Footer Popup */}
+      {showFooterPopup && effectiveNoMenu && (
+          <div style={{
+              position: 'fixed',
+              bottom: '20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'white',
+              border: '1px solid #ccc',
+              padding: '16px',
+              borderRadius: '8px',
+              zIndex: 2000,
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+          }}>
+              <div>Footer Popup Content</div>
+              <button onClick={() => setShowFooterPopup(false)} style={{marginTop: '8px'}}>Close</button>
+          </div>
       )}
     </div>
 
