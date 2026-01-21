@@ -1,5 +1,11 @@
 package com.hereliesaz.aznavrail
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,15 +14,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -72,7 +79,7 @@ class AzNavHostScopeImpl(
 }
 
 @Composable
-fun AzNavHost(
+fun AzHostActivityLayout(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
     currentDestination: String? = null,
@@ -114,31 +121,18 @@ fun AzNavHost(
             }
         }
 
-        // Layer 2: Restricted Content
+        // Layer 2: Restricted Content (AzHostFragmentLayout)
         val startPadding = if (dockingSide == AzDockingSide.LEFT) railWidth else 0.dp
         val endPadding = if (dockingSide == AzDockingSide.RIGHT) railWidth else 0.dp
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = safeTop, bottom = safeBottom, start = startPadding, end = endPadding)
-        ) {
-            scope.onscreenItems.forEach { item ->
-                // Flip alignment if Right Docked
-                val finalAlignment = if (dockingSide == AzDockingSide.RIGHT) {
-                    flipAlignment(item.alignment)
-                } else {
-                    item.alignment
-                }
-
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = finalAlignment
-                ) {
-                    item.content()
-                }
-            }
-        }
+        AzHostFragmentLayout(
+            safeTop = safeTop,
+            safeBottom = safeBottom,
+            startPadding = startPadding,
+            endPadding = endPadding,
+            items = scope.onscreenItems,
+            dockingSide = dockingSide
+        )
 
         // Layer 3: AzNavRail
         CompositionLocalProvider(
@@ -156,6 +150,75 @@ fun AzNavHost(
             ) {}
         }
     }
+}
+
+@Composable
+fun AzHostFragmentLayout(
+    safeTop: Dp,
+    safeBottom: Dp,
+    startPadding: Dp,
+    endPadding: Dp,
+    items: List<AzOnscreenItem>,
+    dockingSide: AzDockingSide
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(top = safeTop, bottom = safeBottom, start = startPadding, end = endPadding)
+    ) {
+        items.forEach { item ->
+            // Flip alignment if Right Docked
+            val finalAlignment = if (dockingSide == AzDockingSide.RIGHT) {
+                flipAlignment(item.alignment)
+            } else {
+                item.alignment
+            }
+
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = finalAlignment
+            ) {
+                item.content()
+            }
+        }
+    }
+}
+
+/**
+ * A wrapper around [androidx.navigation.compose.NavHost] to provide a consistent
+ * naming convention within the AzNavRail ecosystem.
+ *
+ * Use this component to define your navigation graph inside [AzHostActivityLayout].
+ */
+@Composable
+fun AzNavHost(
+    navController: NavHostController,
+    startDestination: String,
+    modifier: Modifier = Modifier,
+    contentAlignment: Alignment = Alignment.Center,
+    route: String? = null,
+    enterTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) =
+        { fadeIn(animationSpec = tween(700)) },
+    exitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
+        { fadeOut(animationSpec = tween(700)) },
+    popEnterTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) =
+        enterTransition,
+    popExitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
+        exitTransition,
+    builder: NavGraphBuilder.() -> Unit
+) {
+    androidx.navigation.compose.NavHost(
+        navController = navController,
+        startDestination = startDestination,
+        modifier = modifier,
+        contentAlignment = contentAlignment,
+        route = route,
+        enterTransition = enterTransition,
+        exitTransition = exitTransition,
+        popEnterTransition = popEnterTransition,
+        popExitTransition = popExitTransition,
+        builder = builder
+    )
 }
 
 private fun flipAlignment(alignment: Alignment): Alignment {

@@ -38,7 +38,8 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 - **Info Screen**: Interactive help mode for onboarding with visual guides and coordinate display.
 - **Left/Right Docking**: Position the rail on the left or right side of the screen.
 - **No Menu Mode**: Treat all items as rail items, removing the side drawer.
-- **AzNavHost**: A layout container that enforces strict safe zones and automatic alignment rules.
+- **AzHostActivityLayout**: A layout container that enforces strict safe zones and automatic alignment rules.
+- **AzNavHost**: A wrapper around `androidx.navigation.compose.NavHost` for seamless integration.
 
 ## AzNavRail for Android (Jetpack Compose)
 
@@ -66,7 +67,7 @@ dependencies {
 
 ### Usage
 
-**IMPORTANT:** `AzNavRail` **MUST** be used within an `AzNavHost` container. The library enforces strict layout rules (safe zones, padding, z-ordering) and will throw a runtime error if `AzNavRail` is instantiated directly without a host wrapper (except when running as a system overlay service).
+**IMPORTANT:** `AzNavRail` **MUST** be used within an `AzHostActivityLayout` container. The library enforces strict layout rules (safe zones, padding, z-ordering) and will throw a runtime error if `AzNavRail` is instantiated directly without a host wrapper (except when running as a system overlay service).
 
 ```kotlin
 import androidx.compose.foundation.background
@@ -86,10 +87,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.hereliesaz.aznavrail.AzHostActivityLayout
 import com.hereliesaz.aznavrail.AzNavHost
 import com.hereliesaz.aznavrail.AzTextBox
 import com.hereliesaz.aznavrail.model.AzButtonShape
@@ -99,7 +100,7 @@ import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 @Composable
 fun SampleScreen() {
     val navController = rememberNavController()
-    // currentDestination and isLandscape are automatically derived by AzNavHost
+    // currentDestination and isLandscape are automatically derived by AzHostActivityLayout
     // but can be overridden if needed.
 
     var isOnline by remember { mutableStateOf(true) }
@@ -110,7 +111,7 @@ fun SampleScreen() {
     val menuCycleOptions = remember { listOf("X", "Y", "Z") }
     var menuSelectedOption by remember { mutableStateOf(menuCycleOptions.first()) }
 
-    AzNavHost(navController = navController) {
+    AzHostActivityLayout(navController = navController) {
         azSettings(
             // displayAppNameInHeader = true, // Set to true to display the app name instead of the icon
             packRailButtons = false,
@@ -245,7 +246,7 @@ fun SampleScreen() {
                     }
                 )
 
-                NavHost(navController = navController, startDestination = "home") {
+                AzNavHost(navController = navController, startDestination = "home") {
                     composable("home") { Text("Home Screen") }
                     composable("multi-line") { Text("Multi-line Screen") }
                     composable("favorites") { Text("Favorites Screen") }
@@ -270,9 +271,9 @@ fun SampleScreen() {
 }
 ```
 
-### AzNavHost Configuration
+### AzHostActivityLayout Configuration
 
-`AzNavHost` accepts several parameters to customize its behavior:
+`AzHostActivityLayout` accepts several parameters to customize its behavior:
 
 *   **`navController`**: The `NavHostController` to use. Defaults to `rememberNavController()`.
 *   **`currentDestination`**: Explicitly set the current route. If null, it is automatically derived from the `navController`.
@@ -280,9 +281,9 @@ fun SampleScreen() {
 *   **`initiallyExpanded`**: Set to `true` to have the rail expanded by default (e.g., for bubble activities).
 *   **`disableSwipeToOpen`**: Set to `true` to disable the swipe gesture that opens the menu.
 
-### AzNavHost Layout Rules
+### AzHostActivityLayout Layout Rules
 
-`AzNavHost` enforces a "Strict Mode" layout system:
+`AzHostActivityLayout` enforces a "Strict Mode" layout system:
 
 1.  **Rail Avoidance**: No content in the `onscreen` block will overlap the rail. Padding is automatically applied based on the docking side.
 2.  **Vertical Safe Zones**: Content is restricted from the top 20% and bottom 10% of the screen.
@@ -292,7 +293,7 @@ fun SampleScreen() {
 **Example: Setting a Background**
 
 ```kotlin
-AzNavHost(navController = navController) {
+AzHostActivityLayout(navController = navController) {
     // This map will fill the entire screen, ignoring safe zones.
     background(weight = 0) {
         GoogleMap(
@@ -639,7 +640,7 @@ class OverlayService : AzNavRailOverlayService() {
 
 **Option B: Basic Service (Simpler setup)**
 
-`AzNavHost` enforces a "Strict Mode" layout system:
+`AzHostActivityLayout` enforces a "Strict Mode" layout system:
 
 1.  **Rail Avoidance**: No content in the `onscreen` block will overlap the rail. Padding is automatically applied based on the docking side.
 2.  **Vertical Safe Zones**: Content is restricted from the top 20% and bottom 10% of the screen.

@@ -4,11 +4,11 @@ The DSL for configuring the `AzNavRail`.
 
 **Note:** Functions prefixed with `azMenu` will only appear in the expanded menu view. Functions prefixed with `azRail` will appear on the collapsed rail, and their text will be used as the label in the expanded menu.
 
-## AzNavHost Scope
+## AzHostActivityLayout Scope
 
-**Note:** The `AzNavHost` is the mandatory entry point for the library. It establishes the `AzNavHostScope` which extends `AzNavRailScope`.
+**Note:** The `AzHostActivityLayout` is the mandatory entry point for the library. It establishes the `AzNavHostScope` which extends `AzNavRailScope`.
 
-When using `AzNavHost`, the following additional DSL functions are available:
+When using `AzHostActivityLayout`, the following additional DSL functions are available:
 
 -   `background(weight: Int, content: @Composable () -> Unit)`: Adds a background layer. Backgrounds ignore strict layout rules (safe zones) and fill the screen. Layers are stacked based on `weight` (lower weights are drawn first).
 -   `onscreen(alignment: Alignment, content: @Composable () -> Unit)`: Adds content to the safe area.
