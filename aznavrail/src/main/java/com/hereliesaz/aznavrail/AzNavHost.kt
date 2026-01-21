@@ -41,7 +41,7 @@ class AzNavHostScopeImpl(
     val onscreenItems = mutableStateListOf<AzOnscreenItem>()
 
     override fun background(weight: Int, content: @Composable () -> Unit) {
-        backgrounds.add(AzBackgroundItem(weight, content))
+        error("Content outside the safe area is restricted to AzNavRail.")
     }
 
     override fun onscreen(alignment: Alignment, content: @Composable () -> Unit) {
