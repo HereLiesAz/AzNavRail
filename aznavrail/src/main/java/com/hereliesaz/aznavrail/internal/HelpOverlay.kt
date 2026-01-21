@@ -48,7 +48,8 @@ internal fun HelpOverlay(
     hostStates: Map<String, Boolean>,
     railWidth: Dp,
     onDismiss: () -> Unit,
-    isRightDocked: Boolean = false
+    isRightDocked: Boolean = false,
+    safeZones: AzSafeZones = AzSafeZones()
 ) {
     val descriptionPositions = remember { mutableStateMapOf<String, Rect>() }
 
@@ -85,7 +86,12 @@ internal fun HelpOverlay(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxSize()
-                    .padding(16.dp),
+                    .padding(
+                        top = safeZones.top,
+                        bottom = safeZones.bottom,
+                        start = 16.dp,
+                        end = 16.dp
+                    ),
                 horizontalAlignment = Alignment.Start
             ) {
                 items(itemsWithInfo, key = { it.id }) { item ->

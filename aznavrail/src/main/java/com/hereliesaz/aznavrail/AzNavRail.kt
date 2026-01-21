@@ -864,7 +864,8 @@ fun AzNavRail(
                 hostStates = hostStates,
                 railWidth = railWidth,
                 onDismiss = { scope.onDismissInfoScreen?.invoke() },
-                isRightDocked = isRightDocked
+                isRightDocked = isRightDocked,
+                safeZones = LocalAzSafeZones.current
             )
         }
     }

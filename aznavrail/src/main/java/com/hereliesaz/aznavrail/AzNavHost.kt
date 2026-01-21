@@ -18,9 +18,12 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.hereliesaz.aznavrail.internal.AzLayoutConfig
+import com.hereliesaz.aznavrail.internal.AzSafeZones
 import com.hereliesaz.aznavrail.model.AzDockingSide
 
 val LocalAzNavHostPresent = compositionLocalOf { false }
+val LocalAzSafeZones = compositionLocalOf { AzSafeZones() }
 
 interface AzNavHostScope : AzNavRailScope {
     fun background(weight: Int = 0, content: @Composable () -> Unit)
@@ -87,8 +90,8 @@ fun AzNavHost(
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val maxHeight = maxHeight
-        val safeTop = maxHeight * 0.2f
-        val safeBottom = maxHeight * 0.1f
+        val safeTop = maxHeight * AzLayoutConfig.SafeTopPercent
+        val safeBottom = maxHeight * AzLayoutConfig.SafeBottomPercent
 
         // Layer 1: Backgrounds
         scope.backgrounds.sortedBy { it.weight }.forEach { item ->
@@ -124,7 +127,10 @@ fun AzNavHost(
         }
 
         // Layer 3: AzNavRail
-        CompositionLocalProvider(LocalAzNavHostPresent provides true) {
+        CompositionLocalProvider(
+            LocalAzNavHostPresent provides true,
+            LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom)
+        ) {
             AzNavRail(
                 modifier = Modifier.fillMaxSize(),
                 navController = navController,
