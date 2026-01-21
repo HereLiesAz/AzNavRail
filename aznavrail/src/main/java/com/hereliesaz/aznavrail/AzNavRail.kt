@@ -95,10 +95,14 @@ fun AzNavRail(
     isLandscape: Boolean = false,
     initiallyExpanded: Boolean = false,
     disableSwipeToOpen: Boolean = false,
+    providedScope: AzNavRailScopeImpl? = null,
     content: AzNavRailScope.() -> Unit
 ) {
-    val scope = remember { AzNavRailScopeImpl() }
-    scope.reset()
+    val scope = providedScope ?: remember { AzNavRailScopeImpl() }
+
+    if (providedScope == null) {
+        scope.reset()
+    }
     navController?.let { scope.navController = it }
 
     scope.apply(content)

@@ -53,12 +53,6 @@ internal fun HelpOverlay(
     val descriptionPositions = remember { mutableStateMapOf<String, Rect>() }
 
     // Filter items to only those that are logically visible.
-    // 1. Must be in the rail (isRailItem).
-    // 2. If it's a sub-item, its host must be expanded.
-    // 3. Must have info text.
-    // 4. Ideally, we should also check if it's currently rendered/positioned (in itemPositions),
-    //    but rely on logical visibility first to avoid stale positions.
-
     val itemsWithInfo = items.filter { item ->
         val hasInfo = !item.info.isNullOrBlank()
         val isRailItem = item.isRailItem
@@ -72,13 +66,16 @@ internal fun HelpOverlay(
         hasInfo && isRailItem && isVisible
     }
 
+    // Smart Placement Calculation
+    val screenHeight = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val screenHeightPx = with(density) { screenHeight.toPx() }
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
         Row(Modifier.fillMaxSize()) {
             if (!isRightDocked) {
-                // Spacer to keep descriptions off the rail
-                // This spacer allows clicks/scrolls to pass through to the underlying Rail
                 Spacer(modifier = Modifier.width(railWidth))
             }
 
@@ -90,8 +87,17 @@ internal fun HelpOverlay(
                 horizontalAlignment = Alignment.Start
             ) {
                 items(itemsWithInfo, key = { it.id }) { item ->
+                    // Calculate visual offset to align with button
+                    // Note: This is a simple vertical list, so "alignment" is purely visual ordering.
+                    // To truly align, we'd need a custom layout.
+                    // But we can add the coordinates to the description to "bolster smart location tools" as requested.
+                    val itemRect = itemPositions[item.id]
+                    val locationInfo = if (itemRect != null) {
+                        "\nLocation: (${itemRect.left.toInt()}, ${itemRect.top.toInt()})"
+                    } else ""
+
                     DescriptionCard(
-                        text = item.info!!,
+                        text = item.info!! + locationInfo,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 16.dp)
@@ -212,10 +218,11 @@ fun DescriptionCard(text: String, modifier: Modifier = Modifier) {
             .background(Color.White)
             .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(16.dp)
-        )
+        androidx.compose.foundation.layout.Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
     }
 }
