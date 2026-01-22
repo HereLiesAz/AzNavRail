@@ -2,12 +2,14 @@ package com.example.sampleapp
 
 import androidx.compose.runtime.Composable
 import com.hereliesaz.aznavrail.service.AzNavRailSimpleOverlayService
+import androidx.compose.material3.MaterialTheme
 
 class SampleBasicOverlayService : AzNavRailSimpleOverlayService() {
 
     @Composable
     override fun OverlayContent() {
-        MyApplicationTheme {
+        // Fallback to MaterialTheme if MyApplicationTheme is missing in this context
+        MaterialTheme {
             SampleScreen(
                 enableRailDragging = true,
                 initiallyExpanded = false,

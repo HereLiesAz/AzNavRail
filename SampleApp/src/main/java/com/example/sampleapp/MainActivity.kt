@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.hereliesaz.aznavrail.AzHostActivityLayout
@@ -23,6 +24,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 val navController = rememberNavController()
+                val primaryColor = MaterialTheme.colorScheme.primary
                 
                 // THE BUREAUCRACY: Strict Layout Usage
                 AzHostActivityLayout(
@@ -31,7 +33,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     // SECTOR 1: THEME
                     azTheme(
-                        activeColor = MaterialTheme.colorScheme.primary,
+                        activeColor = primaryColor,
                         expandedWidth = 300.dp
                     )
 
