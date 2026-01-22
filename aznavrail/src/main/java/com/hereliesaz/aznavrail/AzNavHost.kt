@@ -40,6 +40,7 @@ val LocalAzNavHostScope = staticCompositionLocalOf<AzNavHostScope?> { null }
 
 interface AzNavHostScope : AzNavRailScope {
     val navController: NavHostController
+    val dockingSide: AzDockingSide
     fun background(weight: Int = 0, content: @Composable () -> Unit)
     fun onscreen(alignment: Alignment = Alignment.TopStart, content: @Composable () -> Unit)
 }
@@ -55,6 +56,9 @@ class AzNavHostScopeImpl(
 
     override val navController: NavHostController
         get() = _navController ?: error("NavController not initialized. Ensure this scope is used within AzNavHost.")
+
+    override val dockingSide: AzDockingSide
+        get() = railScope.dockingSide
 
     val backgrounds = mutableStateListOf<AzBackgroundItem>()
     val onscreenItems = mutableStateListOf<AzOnscreenItem>()
