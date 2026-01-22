@@ -2,7 +2,9 @@ package com.hereliesaz.aznavrail
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
+import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -10,28 +12,49 @@ import org.junit.Test
 class AzNavRailTest {
 
     @Test
-    fun `azSettings should update scope properties`() {
+    fun `azTheme should update visual properties`() {
         val scope = AzNavRailScopeImpl()
 
-        scope.azSettings(
-            displayAppNameInHeader = true,
-            packRailButtons = true,
-            expandedRailWidth = 300.dp,
-            collapsedRailWidth = 100.dp,
+        scope.azTheme(
+            activeColor = Color.Red,
+            defaultShape = AzButtonShape.SQUARE,
+            headerIconShape = AzHeaderIconShape.SQUARE,
+            expandedWidth = 300.dp,
+            collapsedWidth = 100.dp,
             showFooter = false
         )
 
-        assertEquals(true, scope.displayAppNameInHeader)
-        assertEquals(true, scope.packRailButtons)
-        assertEquals(300.dp, scope.expandedRailWidth)
-        assertEquals(100.dp, scope.collapsedRailWidth)
+        assertEquals(Color.Red, scope.activeColor)
+        assertEquals(AzButtonShape.SQUARE, scope.defaultShape)
+        assertEquals(AzHeaderIconShape.SQUARE, scope.headerIconShape)
+        assertEquals(300.dp, scope.expandedWidth)
+        assertEquals(100.dp, scope.collapsedWidth)
         assertEquals(false, scope.showFooter)
     }
 
-    @Test(expected = IllegalArgumentException::class)
-    fun `azSettings with invalid widths should throw exception`() {
+    @Test
+    fun `azConfig should update behavioral properties`() {
         val scope = AzNavRailScopeImpl()
-        scope.azSettings(expandedRailWidth = 100.dp, collapsedRailWidth = 200.dp)
+
+        scope.azConfig(
+            dockingSide = AzDockingSide.RIGHT,
+            packButtons = true,
+            noMenu = true,
+            vibrate = true,
+            displayAppName = true
+        )
+
+        assertEquals(AzDockingSide.RIGHT, scope.dockingSide)
+        assertEquals(true, scope.packButtons)
+        assertEquals(true, scope.noMenu)
+        assertEquals(true, scope.vibrate)
+        assertEquals(true, scope.displayAppName)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `azTheme with invalid widths should throw exception`() {
+        val scope = AzNavRailScopeImpl()
+        scope.azTheme(expandedWidth = 100.dp, collapsedWidth = 200.dp)
     }
 
     @Test
@@ -71,7 +94,7 @@ class AzNavRailTest {
     fun `azMenuToggle should add a menu toggle item`() {
         val scope = AzNavRailScopeImpl()
         scope.azMenuToggle("toggle", true, "On", "Off") {}
-        val expectedItem = AzNavItem("toggle", "", isRailItem = false, isToggle = true, isChecked = true, toggleOnText = "On", toggleOffText = "Off")
+        val expectedItem = AzNavItem("toggle", "", isRailItem = false, isToggle = true, isChecked = true, toggleOnText = "On", toggleOffText = "Off", shape = AzButtonShape.NONE)
         assertEquals(expectedItem.id, scope.navItems[0].id)
         assertEquals(expectedItem.text, scope.navItems[0].text)
         assertEquals(expectedItem.isRailItem, scope.navItems[0].isRailItem)
@@ -113,7 +136,7 @@ class AzNavRailTest {
         val scope = AzNavRailScopeImpl()
         val options = listOf("A", "B", "C")
         scope.azMenuCycler("cycler", options, "A") {}
-        val expectedItem = AzNavItem("cycler", "", isRailItem = false, isCycler = true, options = options, selectedOption = "A")
+        val expectedItem = AzNavItem("cycler", "", isRailItem = false, isCycler = true, options = options, selectedOption = "A", shape = AzButtonShape.NONE)
         assertEquals(expectedItem.id, scope.navItems[0].id)
         assertEquals(expectedItem.text, scope.navItems[0].text)
         assertEquals(expectedItem.isRailItem, scope.navItems[0].isRailItem)
@@ -170,7 +193,7 @@ class AzNavRailTest {
         val scope = AzNavRailScopeImpl()
         scope.azMenuHostItem("host", "Host", onClick = {})
         scope.azMenuSubToggle("sub_toggle", "host", true, "On", "Off") {}
-        val expectedItem = AzNavItem("sub_toggle", "", isRailItem = false, isToggle = true, isChecked = true, toggleOnText = "On", toggleOffText = "Off", isSubItem = true, hostId = "host")
+        val expectedItem = AzNavItem("sub_toggle", "", isRailItem = false, isToggle = true, isChecked = true, toggleOnText = "On", toggleOffText = "Off", isSubItem = true, hostId = "host", shape = AzButtonShape.NONE)
         assertEquals(expectedItem.id, scope.navItems[1].id)
         assertEquals(expectedItem.isSubItem, scope.navItems[1].isSubItem)
         assertEquals(expectedItem.hostId, scope.navItems[1].hostId)
@@ -194,7 +217,7 @@ class AzNavRailTest {
         val options = listOf("A", "B", "C")
         scope.azMenuHostItem("host", "Host", onClick = {})
         scope.azMenuSubCycler("sub_cycler", "host", options, "A") {}
-        val expectedItem = AzNavItem("sub_cycler", "", isRailItem = false, isCycler = true, options = options, selectedOption = "A", isSubItem = true, hostId = "host")
+        val expectedItem = AzNavItem("sub_cycler", "", isRailItem = false, isCycler = true, options = options, selectedOption = "A", isSubItem = true, hostId = "host", shape = AzButtonShape.NONE)
         assertEquals(expectedItem.id, scope.navItems[1].id)
         assertEquals(expectedItem.isSubItem, scope.navItems[1].isSubItem)
         assertEquals(expectedItem.hostId, scope.navItems[1].hostId)
@@ -214,31 +237,31 @@ class AzNavRailTest {
     }
 
     @Test
-    fun `azSettings should update headerIconShape`() {
+    fun `azTheme should update headerIconShape`() {
         val scope = AzNavRailScopeImpl()
-        scope.azSettings(headerIconShape = com.hereliesaz.aznavrail.model.AzHeaderIconShape.ROUNDED)
-        assertEquals(com.hereliesaz.aznavrail.model.AzHeaderIconShape.ROUNDED, scope.headerIconShape)
+        scope.azTheme(headerIconShape = AzHeaderIconShape.ROUNDED)
+        assertEquals(AzHeaderIconShape.ROUNDED, scope.headerIconShape)
     }
 
     @Test
-    fun `azSettings should update overlayService`() {
+    fun `azAdvanced should update overlayService`() {
         val scope = AzNavRailScopeImpl()
-        scope.azSettings(overlayService = android.app.Service::class.java)
+        scope.azAdvanced(overlayService = android.app.Service::class.java)
         assertEquals(android.app.Service::class.java, scope.overlayService)
     }
 
     @Test
-    fun `azSettings with overlayService should enable enableRailDragging`() {
+    fun `azAdvanced with overlayService should enable enableRailDragging`() {
         val scope = AzNavRailScopeImpl()
-        scope.azSettings(overlayService = android.app.Service::class.java, enableRailDragging = false)
+        scope.azAdvanced(overlayService = android.app.Service::class.java, enableRailDragging = false)
         assertEquals(android.app.Service::class.java, scope.overlayService)
         assertEquals(true, scope.enableRailDragging)
     }
 
     @Test
-    fun `azSettings should update dockingSide and noMenu`() {
+    fun `azConfig should update dockingSide and noMenu`() {
         val scope = AzNavRailScopeImpl()
-        scope.azSettings(dockingSide = AzDockingSide.RIGHT, noMenu = true)
+        scope.azConfig(dockingSide = AzDockingSide.RIGHT, noMenu = true)
         assertEquals(AzDockingSide.RIGHT, scope.dockingSide)
         assertEquals(true, scope.noMenu)
     }
