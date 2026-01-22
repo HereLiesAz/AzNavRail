@@ -1,18 +1,17 @@
 package com.hereliesaz.aznavrail
 
 import androidx.compose.ui.graphics.Color
-import com.hereliesaz.aznavrail.model.AzNavItem
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class AzNavRailInfoTest {
 
     @Test
-    fun `azSettings should update infoScreen properties`() {
+    fun `azAdvanced should update infoScreen properties`() {
         val scope = AzNavRailScopeImpl()
         val onDismiss = {}
 
-        scope.azSettings(
+        scope.azAdvanced(
             infoScreen = true,
             onDismissInfoScreen = onDismiss
         )
