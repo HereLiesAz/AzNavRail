@@ -520,6 +520,54 @@ class OverlayService : AzNavRailOverlayService() {
 
 [Project Structure](/PROJECT_STRUCTURE.md)
 
+## Documentation
+
+The library includes a comprehensive **Complete Guide** (`AZNAVRAIL_COMPLETE_GUIDE.md`) containing:
+*   Full Getting Started instructions.
+*   Complete API and DSL references.
+*   Layout rules and best practices.
+*   Complete Sample App source code.
+
+### Auto-Generate Documentation
+
+To automatically extract this guide into your project's `docs/` folder whenever you build, add the following task to your app's `build.gradle.kts`:
+
+```kotlin
+// In app/build.gradle.kts
+
+tasks.register("updateAzNavDocs") {
+    group = "documentation"
+    description = "Extracts AzNavRail documentation from the dependency."
+
+    doLast {
+        // Find the AzNavRail AAR in the runtime classpath
+        val artifact = configurations.getByName("debugRuntimeClasspath").files
+            .find { it.name.contains("AzNavRail") && it.extension == "aar" }
+
+        if (artifact != null) {
+            copy {
+                from(zipTree(artifact))
+                include("assets/AZNAVRAIL_COMPLETE_GUIDE.md")
+                into(layout.projectDirectory.dir("docs"))
+                // Remove the 'assets/' prefix from the output file
+                eachFile {
+                    path = name
+                }
+                includeEmptyDirs = false
+            }
+            println("AzNavRail documentation updated: docs/AZNAVRAIL_COMPLETE_GUIDE.md")
+        } else {
+            println("AzNavRail AAR not found. Make sure the dependency is added.")
+        }
+    }
+}
+
+// Optional: Run this task automatically before every build
+// tasks.named("preBuild") { dependsOn("updateAzNavDocs") }
+```
+
+Once added, run `./gradlew updateAzNavDocs` (or just build your app if you uncommented the last line) to generate the documentation.
+
 ## License
 
 ```
