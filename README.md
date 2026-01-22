@@ -568,9 +568,12 @@ tasks.register("updateAzNavDocs") {
         }
     }
 }
- // Optional: Run this task automatically before every build
- tasks.named("preBuild") { dependsOn("updateAzNavDocs") }
+
+// Optional: Run this task automatically before every build
+tasks.named("preBuild") { dependsOn("updateAzNavDocs") }
+ 
 '''
+
 Once added, run `./gradlew updateAzNavDocs` (or just build your app if you uncommented the last line) to generate the documentation.
 
 ## License
