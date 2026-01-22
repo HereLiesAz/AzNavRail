@@ -438,7 +438,7 @@ The rail can be detached and moved around the screen by long-pressing the header
 
 `AzRailRelocItem` is a specialized sub-item that users can reorder via drag-and-drop. This feature is supported on Android, Web, and React Native.
 
-'''kotlin
+''kotlin
 azRailRelocItem(
     id = "reloc-1",
     hostId = "host-1",
@@ -451,7 +451,7 @@ azRailRelocItem(
     listItem("Action 1") { /* ... */ }
     inputItem("Rename") { newName -> /* ... */ }
 }
-'''
+''
 
 - **Drag-and-Drop**: Long-press (triggers a vibration) and drag an item to move it. Other items will animate to create an empty slot at the potential drop target.
 - **Cluster Constraints**: Items can only be moved within their "cluster" — a contiguous group of relocation items under the same host. They cannot jump over standard items or move to a different host.
@@ -539,9 +539,10 @@ The library includes a comprehensive **Complete Guide** (`AZNAVRAIL_COMPLETE_GUI
 ### Auto-Generate Documentation
 
 To automatically extract this guide into your project's `docs/` folder whenever you build, add the following task to your app's `build.gradle.kts`:
- 
- In app/build.gradle.kts
+
 '''kotlin
+// In app/build.gradle.kts
+
 tasks.register("updateAzNavDocs") {
     group = "documentation"
     description = "Extracts AzNavRail documentation from the dependency."
@@ -570,15 +571,14 @@ tasks.register("updateAzNavDocs") {
 }
 
 // Optional: Run this task automatically before every build
-tasks.named("preBuild") { dependsOn("updateAzNavDocs") }
- 
+// tasks.named("preBuild") { dependsOn("updateAzNavDocs") }
 '''
 
 Once added, run `./gradlew updateAzNavDocs` (or just build your app if you uncommented the last line) to generate the documentation.
 
 ## License
 
-'''
+
 Copyright 2024 The AzNavRail Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -592,4 +592,3 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-'''
