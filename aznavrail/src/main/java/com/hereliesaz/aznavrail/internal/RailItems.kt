@@ -4,20 +4,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -33,11 +24,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.foundation.layout.size
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -49,6 +35,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 
 @Composable
 internal fun RailItems(
@@ -298,21 +286,12 @@ private fun DraggableRailItemWrapper(
     snappingOffset: Float?
 ) {
     val isDragging = draggedItemId == item.id
-
-    // Calculate Animation Offset
-    // If I am NOT the dragged item, I might need to shift.
-    // Logic:
-    // val currentIdx = scope.navItems.indexOfFirst { it.id == item.id }
-    // val draggedIdx = scope.navItems.indexOfFirst { it.id == draggedItemId } (This is stable because we don't swap list yet)
-    // Actually we need the *original* dragged index. But draggedItemId is stable.
-
     var visualOffsetY by remember { mutableStateOf(0.dp) }
 
     val myHeightPx = itemHeights[item.id] ?: 0
     val density = androidx.compose.ui.platform.LocalDensity.current
     val myHeightDp = with(density) { myHeightPx.toDp() }
 
-    // Use rememberUpdatedState to ensure the gesture handler sees the latest itemHeights
     val itemHeightsState = androidx.compose.runtime.rememberUpdatedState(itemHeights)
 
     if (draggedItemId != null && !isDragging && item.isRelocItem && currentDropTargetIndex != null) {
@@ -320,19 +299,15 @@ private fun DraggableRailItemWrapper(
         val draggedStartIdx = scope.navItems.indexOfFirst { it.id == draggedItemId }
 
         if (currentIdx != -1 && draggedStartIdx != -1) {
-            // Check if in same cluster
             val draggedItem = scope.navItems[draggedStartIdx]
             if (item.hostId == draggedItem.hostId) {
-                // If item is between draggedStart and target
                 if (draggedStartIdx < currentDropTargetIndex!!) {
-                     // Dragging DOWN. Items between start+1 and target should move UP (-height)
                      if (currentIdx > draggedStartIdx && currentIdx <= currentDropTargetIndex!!) {
                          visualOffsetY = -myHeightDp
                      } else {
                          visualOffsetY = 0.dp
                      }
                 } else if (draggedStartIdx > currentDropTargetIndex!!) {
-                     // Dragging UP. Items between target and start-1 should move DOWN (+height)
                      if (currentIdx >= currentDropTargetIndex!! && currentIdx < draggedStartIdx) {
                          visualOffsetY = myHeightDp
                      } else {
@@ -352,13 +327,7 @@ private fun DraggableRailItemWrapper(
     }
 
     val animatedOffsetY by animateDpAsState(targetValue = visualOffsetY)
-
-    // Ghost effect: Opacity 0 if dragging. But wait, if we use offset logic, the "Hole" stays at original position.
-    // So the item at `draggedStartIdx` should be invisible.
-    // Also handle snapping visibility
     val alpha = if (isDragging) 0f else 1f
-
-    // If snapping, we override offset
     val finalOffsetY = if (snappingOffset != null) {
         with(density) { snappingOffset.toDp() }
     } else {
@@ -377,7 +346,6 @@ private fun DraggableRailItemWrapper(
                 var longPressJob: Job? = null
                 var isLongPress = false
 
-                // Start long press timer
                 longPressJob = coroutineScope.launch {
                     delay(longPressTimeout)
                     isLongPress = true
@@ -393,14 +361,6 @@ private fun DraggableRailItemWrapper(
                 var gestureCompletedSuccessfully = false
 
                 try {
-                    // We need to loop until the gesture is finished (up or cancelled)
-                    // If we move before timeout -> Cancel long press (it's not a drag yet).
-                    // If we timeout -> It's a drag.
-
-                    // We use `drag` block only if we are dragging.
-                    // But we are in `awaitEachGesture` which is low level.
-                    // We can loop consuming events.
-
                     var pointerId = down.id
                     var currentPosition = down.position
 
@@ -408,11 +368,10 @@ private fun DraggableRailItemWrapper(
                         val event = awaitPointerEvent()
                         val change = event.changes.firstOrNull { it.id == pointerId }
 
-                        if (change == null) break // Pointer lost
+                        if (change == null) break
 
                         val changedToUp = !change.pressed && change.previousPressed
                         if (changedToUp) {
-                            // Released
                             change.consume()
                             gestureCompletedSuccessfully = true
                             break
@@ -421,25 +380,20 @@ private fun DraggableRailItemWrapper(
                         val positionChange = change.position - change.previousPosition
                         if (positionChange != androidx.compose.ui.geometry.Offset.Zero) {
                             if (!isLongPress) {
-                                // Moved before long press triggers
-                                // If movement is significant, cancel long press and mark as moved
                                 if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
                                     hasMoved = true
                                     longPressJob?.cancel()
                                 }
                             } else {
-                                // Dragging logic
                                 change.consume()
                                 val dragY = (change.position - currentPosition).y
                                 totalDragY += dragY
                                 onDragDelta(dragY)
 
-                                // Check for significant drag
                                 if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
                                     hasDragged = true
                                 }
 
-                                // Logic for target index (same as before)
                                 val currentIdx = scope.navItems.indexOfFirst { it.id == item.id }
                                 if (currentIdx != -1) {
                                     val target = RelocItemHandler.calculateTargetIndex(
@@ -465,23 +419,15 @@ private fun DraggableRailItemWrapper(
                             onMenuOpen(item.id)
                         }
                     } else if (!hasMoved && gestureCompletedSuccessfully) {
-                        // It was a tap, and gestures completed successfully (not cancelled)
-
-                        // Check if item is selected
-                        // Either by route matching OR by lastTappedId (for items without route)
                         val isRouteSelected = item.route != null && item.route == currentDestination
                         val isIdSelected = lastTappedId == item.id
 
-                        // Invoke onFocus if defined
                         scope.onFocusMap[item.id]?.invoke()
 
                         if (isRouteSelected || isIdSelected) {
-                             // Already selected -> Open Hidden Menu
                              onMenuOpen(item.id)
                              onUpdateLastTappedId(item.id)
                         } else {
-                             // Not selected -> Select (and onClick)
-                             // We invoke the click handler which handles navigation and onItemSelected
                              onUpdateLastTappedId(item.id)
                              if (onClickOverride != null) {
                                  onClickOverride(item)
@@ -509,7 +455,6 @@ private fun DraggableRailItemWrapper(
         lastTappedId == item.id
     }
 
-    // Determine visual active state based on selection OR custom classifiers
     val isClassifierActive = item.classifiers.any { it in scope.activeClassifiers }
     val isVisuallyActive = isSelected || isClassifierActive
 
@@ -519,15 +464,12 @@ private fun DraggableRailItemWrapper(
              .alpha(alpha)
          ) {
              if (item.isRelocItem) {
-                 // For RelocItems, DraggableRailItemWrapper handles all gestures (Tap, Long Press, Drag).
-                 // We pass empty/null handlers to RailContent to prevent double invocation or conflict.
-                 // Visuals (ripple) are handled by AzNavRailButton inside RailContent consuming the click event.
                  RailContent(
                      item = item,
                      navController = null,
                      isSelected = isVisuallyActive,
                      buttonSize = buttonSize,
-                     onClick = {}, // Disable logic, but allow ripple
+                     onClick = {},
                      onRailCyclerClick = {},
                      onItemClick = {},
                      onHostClick = {},
@@ -537,14 +479,12 @@ private fun DraggableRailItemWrapper(
                      activeColor = scope.activeColor
                  )
              } else {
-                 // For Normal items, RailContent handles the click logic.
                  RailContent(
                      item = item,
                      navController = navController,
                      isSelected = isVisuallyActive,
                      buttonSize = buttonSize,
                      onClick = {
-                         // Wrap the click logic to include onFocus
                          scope.onFocusMap[item.id]?.invoke()
                          if (onClickOverride != null) {
                              onClickOverride(item)
@@ -557,7 +497,7 @@ private fun DraggableRailItemWrapper(
                      onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
                      onItemGloballyPositioned = onItemGloballyPositioned,
                      infoScreen = infoScreen,
-                     dragModifier = dragModifier, // Empty for normal items
+                     dragModifier = dragModifier,
                      activeColor = scope.activeColor
                  )
              }
@@ -583,7 +523,6 @@ private fun DraggableRailItemWrapper(
          }
 
          if (isDragging) {
-             // Render dragging item with offset
              Box(modifier = Modifier.offset { IntOffset(0, dragOffset.roundToInt()) }) {
                  RailContent(
                      item = item,
@@ -613,7 +552,7 @@ private fun HiddenMenuPopup(
 ) {
     Popup(
         alignment = androidx.compose.ui.Alignment.TopStart,
-        offset = IntOffset(x = anchorWidth, y = 0), // Appear to the right of the item
+        offset = IntOffset(x = anchorWidth, y = 0),
         onDismissRequest = onDismiss,
         properties = PopupProperties(focusable = true)
     ) {
@@ -628,9 +567,7 @@ private fun HiddenMenuPopup(
         ) {
             items.forEach { menuItem ->
                 if (menuItem.isInput) {
-                    // Local state for the input
                     var text by remember { mutableStateOf("") }
-
                     com.hereliesaz.aznavrail.AzTextBox(
                         modifier = Modifier.padding(8.dp),
                         hint = menuItem.hint ?: "",
@@ -639,7 +576,7 @@ private fun HiddenMenuPopup(
                         onSubmit = { value -> onInputSubmit(menuItem, value) },
                         submitButtonContent = {
                             androidx.compose.material3.Icon(
-                                imageVector = Icons.Default.Check,
+                                imageVector = androidx.compose.material.icons.Icons.Default.Check,
                                 contentDescription = "Submit",
                                 modifier = Modifier.size(16.dp),
                                 tint = MaterialTheme.colorScheme.onSurface
@@ -648,10 +585,10 @@ private fun HiddenMenuPopup(
                         outlineColor = MaterialTheme.colorScheme.onSurface
                     )
                 } else {
-                    Text(
+                    androidx.compose.material3.Text(
                         text = menuItem.text,
                         modifier = Modifier
-                            .clickable { onItemClick(menuItem) }
+                            .androidx.compose.foundation.clickable { onItemClick(menuItem) }
                             .padding(vertical = 8.dp, horizontal = 12.dp),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface
