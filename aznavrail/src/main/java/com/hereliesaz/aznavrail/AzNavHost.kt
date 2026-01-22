@@ -34,6 +34,32 @@ import com.hereliesaz.aznavrail.internal.AzLayoutConfig
 import com.hereliesaz.aznavrail.internal.AzSafeZones
 import com.hereliesaz.aznavrail.model.AzDockingSide
 
+/**
+ * AZNAVRAIL STRICT USAGE PROTOCOL
+ *
+ * 1. TOTALITARIAN CONTAINER: You MUST wrap everything in [AzHostActivityLayout].
+ * 2. ZONING LAWS: Use [onscreen] for UI. Do NOT use Scaffold.
+ * 3. SEGREGATED CONFIG: Use [azTheme], [azConfig], [azAdvanced].
+ *
+ * Example:
+ * ```
+ * AzHostActivityLayout(
+ * navController = rememberNavController() // EXPLICIT DECLARATION REQUIRED
+ * ) {
+ * azTheme(activeColor = Color.Cyan)
+ * azConfig(dockingSide = AzDockingSide.RIGHT)
+ *
+ * azRailItem(id = "home", text = "Home", onClick = {})
+ *
+ * onscreen {
+ * // Your UI goes here.
+ * // It is safe. It is contained.
+ * // No Scaffolds.
+ * }
+ * }
+ * ```
+ */
+
 val LocalAzNavHostPresent = compositionLocalOf { false }
 val LocalAzSafeZones = compositionLocalOf { AzSafeZones() }
 val LocalAzNavHostScope = staticCompositionLocalOf<AzNavHostScope?> { null }
@@ -88,8 +114,8 @@ class AzNavHostScopeImpl(
 
 @Composable
 fun AzHostActivityLayout(
+    navController: NavHostController,
     modifier: Modifier = Modifier,
-    navController: NavHostController = rememberNavController(),
     currentDestination: String? = null,
     isLandscape: Boolean? = null,
     initiallyExpanded: Boolean = false,
@@ -115,7 +141,7 @@ fun AzHostActivityLayout(
     // Determine rail settings
     val railScope = scope.getRailScopeImpl()
     val dockingSide = railScope.dockingSide
-    val railWidth = railScope.collapsedRailWidth
+    val railWidth = railScope.collapsedWidth
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val maxHeight = maxHeight
