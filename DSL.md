@@ -18,7 +18,80 @@ When using `AzHostActivityLayout`, the following additional DSL functions are av
 
 ## AzNavRail Scope
 
--   `azSettings(displayAppNameInHeader: Boolean, packRailButtons: Boolean, expandedRailWidth: Dp, collapsedRailWidth: Dp, showFooter: Boolean, isLoading: Boolean, defaultShape: AzButtonShape, enableRailDragging: Boolean, headerIconShape: AzHeaderIconShape, onUndock: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, infoScreen: Boolean, onDismissInfoScreen: (() -> Unit)?, activeColor: Color?, vibrate: Boolean)`: Configures the settings for the `AzNavRail`. `headerIconShape` can be `CIRCLE` (default), `ROUNDED`, or `NONE` (no clipping). `onUndock` allows overriding the default undock behavior. `overlayService` specifies the Service class to launch as a system overlay when undocked. `onOverlayDrag` is used to handle drag events when running in an overlay. `onItemGloballyPositioned` reports the global position of rail items. `infoScreen` enables the interactive help mode. `onDismissInfoScreen` is called when the help mode exit FAB is clicked. `activeColor` sets an optional secondary color for the selected item. `vibrate` enables tactile feedback for gestures.
+The configuration is split into three distinct sectors: `azTheme` (Visuals), `azConfig` (Behavior), and `azAdvanced` (Special Ops).
+
+### azTheme (Visuals)
+
+Configures the visual appearance of the rail.
+
+```kotlin
+azTheme(
+    expandedRailWidth: Dp,
+    collapsedRailWidth: Dp,
+    defaultShape: AzButtonShape,
+    headerIconShape: AzHeaderIconShape,
+    activeColor: Color?,
+    showFooter: Boolean
+)
+```
+
+-   **`expandedRailWidth`**: Width of the rail when expanded.
+-   **`collapsedRailWidth`**: Width of the rail when collapsed.
+-   **`defaultShape`**: Default shape for buttons (`CIRCLE`, `ROUNDED`, `RECTANGLE`).
+-   **`headerIconShape`**: Shape of the header icon (`CIRCLE`, `ROUNDED`, `NONE`).
+-   **`activeColor`**: Optional secondary color for the selected item.
+-   **`showFooter`**: Shows or hides the footer.
+
+### azConfig (Behavior)
+
+Configures the behavior and features of the rail.
+
+```kotlin
+azConfig(
+    displayAppName: Boolean,
+    packButtons: Boolean,
+    dockingSide: AzDockingSide,
+    noMenu: Boolean,
+    vibrate: Boolean,
+    activeClassifiers: Set<String>
+)
+```
+
+-   **`displayAppName`**: Whether to display the app name in the header.
+-   **`packButtons`**: Reduces vertical spacing between rail items.
+-   **`dockingSide`**: Side of the screen to dock the rail (`LEFT` or `RIGHT`).
+-   **`noMenu`**: Disables the expanded menu.
+-   **`vibrate`**: Enables tactile feedback for gestures.
+-   **`activeClassifiers`**: Set of classifiers to mark items as active aside from route/selection.
+
+### azAdvanced (Special Ops)
+
+Configures advanced operations, overlays, and state.
+
+```kotlin
+azAdvanced(
+    isLoading: Boolean,
+    enableRailDragging: Boolean,
+    onUndock: (() -> Unit)?,
+    overlayService: Class<out android.app.Service>?,
+    onOverlayDrag: ((Float, Float) -> Unit)?,
+    onItemGloballyPositioned: ((String, Rect) -> Unit)?,
+    infoScreen: Boolean,
+    onDismissInfoScreen: (() -> Unit)?
+)
+```
+
+-   **`isLoading`**: Shows a loading indicator on the rail.
+-   **`enableRailDragging`**: Allows the rail to be dragged (typically for overlays).
+-   **`onUndock`**: Callback for when the undock button is clicked.
+-   **`overlayService`**: The Service class to launch as a system overlay when undocked.
+-   **`onOverlayDrag`**: Callback to handle drag events when running in an overlay.
+-   **`onItemGloballyPositioned`**: Reports the global position of rail items (useful for help overlays).
+-   **`infoScreen`**: Enables the interactive help mode overlay.
+-   **`onDismissInfoScreen`**: Callback when the help mode exit FAB is clicked.
+
+### Items
+
 -   `azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
 -   `azMenuItem(id: String, text: String, route: String, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
 -   `azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text in the expanded menu.

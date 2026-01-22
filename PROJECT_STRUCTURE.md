@@ -62,8 +62,8 @@ The `aznavrail` directory contains the core `aznavrail` Android library module.
 | `build.gradle.kts` | The build script for the `aznavrail` module. |
 | `consumer-rules.pro` | ProGuard rules for consumers of the library. |
 | `src/` | Contains the source code for the `aznavrail` library. |
-| `src/main/java/com/hereliesaz/aznavrail/AzNavRail.kt` | The main `AzNavRail` composable and logic. |
-| `src/main/java/com/hereliesaz/aznavrail/AzNavHost.kt` | Defines `AzHostActivityLayout` (top-level) and `AzNavHost` (wrapper). |
+| `src/main/java/com/hereliesaz/aznavrail/AzNavRail.kt` | The internal `AzNavRail` composable and logic. |
+| `src/main/java/com/hereliesaz/aznavrail/AzNavHost.kt` | Defines `AzHostActivityLayout` (mandatory top-level) and `AzNavHost` (wrapper). |
 | `src/main/java/com/hereliesaz/aznavrail/AzNavRailScope.kt` | The DSL scope definition for `AzNavRail`. |
 | `src/main/java/com/hereliesaz/aznavrail/AzTextBox.kt` | The `AzTextBox` composable. |
 | `src/main/java/com/hereliesaz/aznavrail/AzForm.kt` | The `AzForm` composable. |
