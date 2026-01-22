@@ -29,24 +29,25 @@ fun AzHostActivityLayout(
 
 A wrapper around `androidx.navigation.compose.NavHost` designed to be used within the `onscreen` block of `AzHostActivityLayout`.
 
+**Features:**
+-   **Automatic Navigation Controller**: Automatically uses the `navController` from `AzHostActivityLayout` if not provided.
+-   **Smart Transitions**: Automatically configures directional slide transitions based on the rail's docking side.
+
 ```kotlin
 @Composable
 fun AzNavHost(
-    navController: NavHostController,
     startDestination: String,
     modifier: Modifier = Modifier,
+    navController: NavHostController = LocalAzNavHostScope.current?.navController ?: rememberNavController(),
     contentAlignment: Alignment = Alignment.Center,
     route: String? = null,
-    enterTransition: ... = { fadeIn(...) },
-    exitTransition: ... = { fadeOut(...) },
-    popEnterTransition: ... = enterTransition,
-    popExitTransition: ... = exitTransition,
+    // ... transition params (default to Smart Transitions)
     builder: NavGraphBuilder.() -> Unit
 )
 ```
 
--   **`navController`**: The navigation controller.
 -   **`startDestination`**: The route of the start destination.
+-   **`navController`**: The navigation controller (optional if inside `AzHostActivityLayout`).
 -   **`builder`**: The builder for the navigation graph.
 -   *(Standard NavHost parameters are supported)*.
 

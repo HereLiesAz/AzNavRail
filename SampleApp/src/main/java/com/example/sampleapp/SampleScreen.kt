@@ -400,7 +400,7 @@ fun SampleScreen(
                         )
                     }
 
-                    AzNavHost(navController = navController, startDestination = "home") {
+                    AzNavHost(startDestination = "home") {
                         composable("home") { Text("Home Screen") }
                         composable("multi-line") { Text("Multi-line Screen") }
                         composable("menu-host") { Text("Menu Host Screen") }
