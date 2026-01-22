@@ -539,10 +539,9 @@ The library includes a comprehensive **Complete Guide** (`AZNAVRAIL_COMPLETE_GUI
 ### Auto-Generate Documentation
 
 To automatically extract this guide into your project's `docs/` folder whenever you build, add the following task to your app's `build.gradle.kts`:
-
+ 
+ In app/build.gradle.kts
 '''kotlin
-// In app/build.gradle.kts
-
 tasks.register("updateAzNavDocs") {
     group = "documentation"
     description = "Extracts AzNavRail documentation from the dependency."
@@ -569,11 +568,9 @@ tasks.register("updateAzNavDocs") {
         }
     }
 }
-
-// Optional: Run this task automatically before every build
-// tasks.named("preBuild") { dependsOn("updateAzNavDocs") }
+ // Optional: Run this task automatically before every build
+ tasks.named("preBuild") { dependsOn("updateAzNavDocs") }
 '''
-
 Once added, run `./gradlew updateAzNavDocs` (or just build your app if you uncommented the last line) to generate the documentation.
 
 ## License
