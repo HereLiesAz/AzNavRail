@@ -1,6 +1,5 @@
 package com.example.sampleapp
 
-import android.os.Build
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -21,13 +20,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.hereliesaz.aznavrail.AzButton
 import com.hereliesaz.aznavrail.AzCycler
 import com.hereliesaz.aznavrail.AzForm
+import com.hereliesaz.aznavrail.AzHostActivityLayout
 import com.hereliesaz.aznavrail.AzNavHost
 import com.hereliesaz.aznavrail.AzTextBox
 import com.hereliesaz.aznavrail.AzTextBoxDefaults
@@ -66,7 +65,7 @@ fun SampleScreen(
     var noMenu by remember { mutableStateOf(false) }
     var showHelp by remember { mutableStateOf(false) }
 
-    AzNavHost(
+    AzHostActivityLayout(
         navController = navController,
         modifier = Modifier.fillMaxSize(),
         currentDestination = currentDestination?.destination?.route,
@@ -401,7 +400,7 @@ fun SampleScreen(
                         )
                     }
 
-                    NavHost(navController = navController, startDestination = "home") {
+                    AzNavHost(startDestination = "home") {
                         composable("home") { Text("Home Screen") }
                         composable("multi-line") { Text("Multi-line Screen") }
                         composable("menu-host") { Text("Menu Host Screen") }
@@ -419,6 +418,13 @@ fun SampleScreen(
                         composable("rail-cycler") { Text("Rail Cycler Screen") }
                         composable("menu-cycler") { Text("Menu Cycler Screen") }
                         composable("loading") { Text("Loading Screen") }
+                        composable("overlay-mode") { Text("Overlay Mode") }
+                        composable("docking-side") { Text("Docking Side") }
+                        composable("no-menu") { Text("No Menu") }
+                        composable("reloc-host") { Text("Relocators") }
+                        composable("layer_1") { Text("Layer 1") }
+                        composable("layer_2") { Text("Layer 2") }
+                        composable("layer_3") { Text("Layer 3") }
                     }
                 }
             }

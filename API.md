@@ -1,12 +1,12 @@
 ### API Reference
 
-#### `AzNavHost`
+#### `AzHostActivityLayout`
 
-The mandatory container for `AzNavRail` that manages layout, safe zones, and background content.
+The mandatory top-level container for `AzNavRail` that manages the rail, safe zones, background content, and layout flipping.
 
 ```kotlin
 @Composable
-fun AzNavHost(
+fun AzHostActivityLayout(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
     currentDestination: String? = null,
@@ -25,9 +25,35 @@ fun AzNavHost(
 -   **`disableSwipeToOpen`**: Disables the swipe gesture to open the drawer.
 -   **`content`**: The DSL content, scoped to `AzNavHostScope`.
 
+#### `AzNavHost`
+
+A wrapper around `androidx.navigation.compose.NavHost` designed to be used within the `onscreen` block of `AzHostActivityLayout`.
+
+**Features:**
+-   **Automatic Navigation Controller**: Automatically uses the `navController` from `AzHostActivityLayout` if not provided.
+-   **Smart Transitions**: Automatically configures directional slide transitions based on the rail's docking side.
+
+```kotlin
+@Composable
+fun AzNavHost(
+    startDestination: String,
+    modifier: Modifier = Modifier,
+    navController: NavHostController = LocalAzNavHostScope.current?.navController ?: rememberNavController(),
+    contentAlignment: Alignment = Alignment.Center,
+    route: String? = null,
+    // ... transition params (default to Smart Transitions)
+    builder: NavGraphBuilder.() -> Unit
+)
+```
+
+-   **`startDestination`**: The route of the start destination.
+-   **`navController`**: The navigation controller (optional if inside `AzHostActivityLayout`).
+-   **`builder`**: The builder for the navigation graph.
+-   *(Standard NavHost parameters are supported)*.
+
 #### `AzNavRail`
 
-The main composable for the navigation rail.
+The main composable for the navigation rail. (Usually instantiated implicitly by `AzHostActivityLayout`).
 
 ```kotlin
 @Composable
@@ -246,4 +272,3 @@ import { AzRailItem, AzMenuItem } from 'aznavrail-react-native';
   <AzMenuItem id="settings" text="Settings" onClick={() => {}} />
 </AzNavRail>
 ```
-
