@@ -2,13 +2,13 @@
 
 #### `AzHostActivityLayout`
 
-The mandatory top-level container for `AzNavRail` that manages the rail, safe zones, background content, and layout flipping.
+The **MANDATORY** top-level container that manages the rail, safe zones, background content, and layout flipping. It is illegal to instantiate `AzNavRail` directly outside of this layout (except in system overlay services).
 
 ```kotlin
 @Composable
 fun AzHostActivityLayout(
     modifier: Modifier = Modifier,
-    navController: NavHostController = rememberNavController(),
+    navController: NavHostController, // Mandatory
     currentDestination: String? = null,
     isLandscape: Boolean? = null,
     initiallyExpanded: Boolean = false,
@@ -18,7 +18,7 @@ fun AzHostActivityLayout(
 ```
 
 -   **`modifier`**: The modifier to be applied to the host container.
--   **`navController`**: The `NavHostController` used for navigation. Defaults to `rememberNavController()`.
+-   **`navController`**: The `NavHostController` used for navigation. **This is now mandatory.**
 -   **`currentDestination`**: Optional override for the current route. If null, it is derived from `navController`.
 -   **`isLandscape`**: Optional override for the orientation. If null, it is derived from the screen configuration.
 -   **`initiallyExpanded`**: Whether the rail should be initially expanded.
@@ -30,7 +30,7 @@ fun AzHostActivityLayout(
 A wrapper around `androidx.navigation.compose.NavHost` designed to be used within the `onscreen` block of `AzHostActivityLayout`.
 
 **Features:**
--   **Automatic Navigation Controller**: Automatically uses the `navController` from `AzHostActivityLayout` if not provided.
+-   **Automatic Navigation Controller**: Automatically uses the `navController` from `AzHostActivityLayout`.
 -   **Smart Transitions**: Automatically configures directional slide transitions based on the rail's docking side.
 
 ```kotlin
@@ -53,28 +53,14 @@ fun AzNavHost(
 
 #### `AzNavRail`
 
-The main composable for the navigation rail. (Usually instantiated implicitly by `AzHostActivityLayout`).
+The internal component for the navigation rail. **Do not instantiate this directly.** Use `AzHostActivityLayout`.
 
 ```kotlin
 @Composable
-fun AzNavRail(
-    modifier: Modifier = Modifier,
-    navController: NavController? = null,
-    currentDestination: String? = null,
-    isLandscape: Boolean = false,
-    initiallyExpanded: Boolean = false,
-    disableSwipeToOpen: Boolean = false,
-    content: AzNavRailScope.() -> Unit
-)
+fun AzNavRail(...)
 ```
 
--   **`modifier`**: The modifier to be applied to the navigation rail.
--   **`navController`**: An optional `NavController` to enable integration with Jetpack Navigation.
--   **`currentDestination`**: The route of the current destination, used to highlight the active item.
--   **`isLandscape`**: A boolean to indicate if the device is in landscape mode.
--   **`initiallyExpanded`**: Whether the navigation rail is expanded by default. Useful for Bubble activities.
--   **`disableSwipeToOpen`**: Whether to disable the swipe-to-open gesture.
--   **`content`**: The DSL content for the navigation rail.
+*(Direct usage is prohibited except for overlay services)*
 
 #### `AzTextBox`
 
@@ -267,6 +253,7 @@ yarn add aznavrail-react-native
 import { AzNavRail } from 'aznavrail-react-native';
 import { AzRailItem, AzMenuItem } from 'aznavrail-react-native';
 
+// React Native usage usually implies wrapping, but we show the item structure
 <AzNavRail>
   <AzRailItem id="home" text="Home" onClick={() => {}} />
   <AzMenuItem id="settings" text="Settings" onClick={() => {}} />
