@@ -1,48 +1,29 @@
 package com.example.sampleapp
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.os.Build
-import androidx.compose.runtime.Composable
-import androidx.core.app.NotificationCompat
+import androidx.compose.ui.graphics.Color
+import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.service.AzNavRailOverlayService
 
 class SampleOverlayService : AzNavRailOverlayService() {
-
-    override fun getNotification(): Notification {
-        val channelId = "overlay_channel"
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "Overlay Service",
-                NotificationManager.IMPORTANCE_LOW
+    override val content = androidx.compose.runtime.Composable {
+        // In Overlay Service, we render AzNavRail directly because the service
+        // IS the container. However, we still use the segmented config.
+        
+        com.hereliesaz.aznavrail.AzNavRail {
+            azTheme(
+                activeColor = Color.Magenta,
+                expandedWidth = 200.dp
             )
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
-        }
-
-        return NotificationCompat.Builder(this, channelId)
-            .setContentTitle("AzNavRail Overlay")
-            .setContentText("Running...")
-            .setSmallIcon(android.R.drawable.sym_def_app_icon)
-            .build()
-    }
-
-    @Composable
-    override fun OverlayContent() {
-        MyApplicationTheme {
-            SampleScreen(
-                enableRailDragging = true,
-                initiallyExpanded = false,
-                onUndockOverride = {
-                     // Clicking undock in overlay mode should close the overlay
-                     stopSelf()
-                },
-                // Removed manual onOverlayDrag, relying on automatic behavior from AzNavRailOverlayService
-                onRailDrag = null,
-                showContent = false
+            azConfig(
+                dockingSide = AzDockingSide.RIGHT,
+                packButtons = true
             )
+            azAdvanced(
+                 enableRailDragging = true
+            )
+
+            azRailItem(id = "overlay_1", text = "Close Overlay", onClick = { stopSelf() })
+            azRailItem(id = "overlay_2", text = "Action", onClick = { })
         }
     }
 }
