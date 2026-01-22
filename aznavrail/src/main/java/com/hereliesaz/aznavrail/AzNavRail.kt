@@ -82,11 +82,16 @@ import kotlinx.coroutines.launch
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
+@Target(AnnotationTarget.FUNCTION)
+@RequiresOptIn(message = "This API is strictly controlled. Use AzHostActivityLayout.")
+annotation class AzStrictLayout
+
 object AzNavRail {
     const val noTitle = "AZNAVRAIL_NO_TITLE"
     const val EXTRA_ROUTE = "com.hereliesaz.aznavrail.extra.ROUTE"
 }
 
+@AzStrictLayout
 @Composable
 fun AzNavRail(
     modifier: Modifier = Modifier,
@@ -101,21 +106,21 @@ fun AzNavRail(
     val isHostPresent = LocalAzNavHostPresent.current
     val overlayController = LocalAzNavRailOverlayController.current
 
-    // Only enforce if not an overlay (overlays might run outside the standard host)
-    // But even overlays should probably use the host if strictness is the goal.
-    // However, overlay service renders AzNavRail directly.
-    // Let's assume strictness applies to normal screen composition.
     if (!isHostPresent && overlayController == null) {
-        error(
-            """
-            AzNavRail must be used within an AzNavHost.
-
-            The AzNavHost container is mandatory to enforce safe zones, automatic padding, and correct layout behavior.
-            Please wrap your AzNavRail implementation inside an AzNavHost composable.
-
-            For more details, see: https://github.com/HereLiesAz/AzNavRail/blob/main/README.md#aznavhost-layout-rules
-            """.trimIndent()
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Red),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "UNAUTHORIZED LAYOUT DETECTED.\nWRAP IN AZHOSTACTIVITYLAYOUT.",
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+        }
+        return
     }
 
     val scope = providedScope ?: remember { AzNavRailScopeImpl() }
@@ -175,9 +180,7 @@ fun AzNavRail(
     }
 
     var isExpandedInternal by rememberSaveable(initiallyExpanded) { mutableStateOf(initiallyExpanded) }
-    // If overlayController is present, isExpanded is always false.
-    // Use a derived boolean for read operations to enforce logic, but write to internal state (or ignore if blocked).
-
+    
     val isExpandedState = remember(overlayController, effectiveNoMenu) {
         object : androidx.compose.runtime.MutableState<Boolean> {
             override var value: Boolean
@@ -194,30 +197,18 @@ fun AzNavRail(
     var showFooterPopup by remember { mutableStateOf(false) }
 
     var railOffset by remember { mutableStateOf(IntOffset.Zero) }
-    // If initially expanded, we are not floating. But if initially NOT expanded, we might be?
-    // Actually, FAB mode is triggered by user action or specific config.
-    // If the rail is meant to be in FAB mode initially (e.g. for Overlay), the user should use `onUndock` logic
-    // or just start in a state that looks like FAB.
-    // However, `isFloating` state determines if we show just the header (FAB) or the rail.
-    // For Overlay, we likely want `isFloating = true` initially if it's "undocked".
-    // But `initiallyExpanded` handles "Expanded vs Collapsed".
-    // "Floating" is "Collapsed to just a FAB".
-
-    // Logic: If onRailDrag is provided, we might assume we are in a 'floating window' context.
-    // In floating window context, 'isFloating' usually means 'collapsed to FAB'.
-    // If 'initiallyExpanded' is true, we show full rail.
     var isFloating by remember { mutableStateOf(false) }
 
     var showFloatingButtons by remember { mutableStateOf(false) }
     var wasVisibleOnDragStart by remember { mutableStateOf(false) }
-    var isAppIcon by remember { mutableStateOf(!scope.displayAppNameInHeader) }
+    var isAppIcon by remember { mutableStateOf(!scope.displayAppName) }
     var headerHeight by remember { mutableStateOf(0) }
     var railItemsHeight by remember { mutableStateOf(0) }
 
     val hapticFeedback = LocalHapticFeedback.current
 
     val railWidth by animateDpAsState(
-        targetValue = if (isExpanded) scope.expandedRailWidth else scope.collapsedRailWidth,
+        targetValue = if (isExpanded) scope.expandedWidth else scope.collapsedWidth,
         label = "railWidth"
     )
 
@@ -265,14 +256,14 @@ fun AzNavRail(
                                     repeat(clicksToCatchUp) {
                                         onClick()
                                     }
-                                                }
-                                            }
-                                            cyclerStates[id] = state.copy(job = null)
-                                        }
-                                    }
                                 }
                             }
+                            cyclerStates[id] = state.copy(job = null)
                         }
+                    }
+                }
+            }
+        }
     }
 
     val configuration = LocalConfiguration.current
@@ -367,7 +358,7 @@ fun AzNavRail(
                             .pointerInput(
                                 isFloating,
                                 scope.enableRailDragging,
-                                scope.displayAppNameInHeader,
+                                scope.displayAppName,
                                 scope.onRailDrag,
                                 overlayController
                             ) {
@@ -386,21 +377,12 @@ fun AzNavRail(
                                     },
                                     onLongPress = {
                                         if (isFloating) {
-                                            // Long press in FAB mode -> dock
-                                            // If dragging externally, we might not want to reset railOffset to Zero relative to container?
-                                            // But let's keep behavior consistent: Docking means exiting FAB mode.
-
-                                            // If onRailDrag is set, we probably shouldn't reset railOffset because we are moving the window.
-                                            // But 'docking' usually implies returning to the side of the screen.
-                                            // In Overlay mode, 'docking' might not make sense or might mean 'stick to edge'.
-                                            // For now, if onRailDrag is present, we assume the user controls position.
-
                                             if (scope.onRailDrag == null && overlayController == null) {
                                                 railOffset = IntOffset.Zero
                                             }
 
                                             isFloating = false
-                                            if (scope.displayAppNameInHeader) isAppIcon = false
+                                            if (scope.displayAppName) isAppIcon = false
                                             hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                         } else if (scope.enableRailDragging) {
                                             val overlayService = scope.overlayService
@@ -410,7 +392,7 @@ fun AzNavRail(
                                                 // Long press in docked mode -> FAB
                                                 isFloating = true
                                                 isExpanded = false
-                                                if (scope.displayAppNameInHeader) isAppIcon = true
+                                                if (scope.displayAppName) isAppIcon = true
                                             }
                                             hapticFeedback.performHapticFeedback(
                                                 HapticFeedbackType.LongPress
@@ -480,7 +462,7 @@ fun AzNavRail(
                                                 if (distance < AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
                                                     railOffset = IntOffset.Zero
                                                     isFloating = false
-                                                    if (scope.displayAppNameInHeader) isAppIcon = false
+                                                    if (scope.displayAppName) isAppIcon = false
                                                     hapticFeedback.performHapticFeedback(
                                                         HapticFeedbackType.LongPress
                                                     )
@@ -697,7 +679,7 @@ fun AzNavRail(
                                     } else {
                                         isFloating = true
                                         isExpanded = false
-                                        if (scope.displayAppNameInHeader) isAppIcon = true
+                                        if (scope.displayAppName) isAppIcon = true
                                     }
                                 },
                                 scope = scope,
@@ -802,7 +784,7 @@ fun AzNavRail(
 
                                 Column(
                                     verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(
-                                        if (scope.packRailButtons) 0.dp else AzNavRailDefaults.RailContentVerticalArrangement
+                                        if (scope.packButtons) 0.dp else AzNavRailDefaults.RailContentVerticalArrangement
                                     ),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
@@ -815,7 +797,7 @@ fun AzNavRail(
                                         onRailCyclerClick = onRailCyclerClick,
                                         onItemSelected = { navItem -> selectedItem = navItem },
                                         hostStates = hostStates,
-                                        packRailButtons = if (isFloating) true else scope.packRailButtons,
+                                        packRailButtons = if (isFloating) true else scope.packButtons,
                                         onClickOverride = if (overlayController != null) handleOverlayClick else null,
                                         onItemGloballyPositioned = { id, rect ->
                                             itemPositions[id] = rect
@@ -855,7 +837,7 @@ fun AzNavRail(
                             } else {
                                 isFloating = true
                                 isExpanded = false
-                                if (scope.displayAppNameInHeader) isAppIcon = true
+                                if (scope.displayAppName) isAppIcon = true
                                 showFooterPopup = false
                             }
                         },
