@@ -1,5 +1,13 @@
 package com.hereliesaz.aznavrail
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,15 +16,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -26,9 +36,11 @@ import com.hereliesaz.aznavrail.model.AzDockingSide
 
 val LocalAzNavHostPresent = compositionLocalOf { false }
 val LocalAzSafeZones = compositionLocalOf { AzSafeZones() }
+val LocalAzNavHostScope = staticCompositionLocalOf<AzNavHostScope?> { null }
 
 interface AzNavHostScope : AzNavRailScope {
     val navController: NavHostController
+    val dockingSide: AzDockingSide
     fun background(weight: Int = 0, content: @Composable () -> Unit)
     fun onscreen(alignment: Alignment = Alignment.TopStart, content: @Composable () -> Unit)
 }
@@ -44,6 +56,9 @@ class AzNavHostScopeImpl(
 
     override val navController: NavHostController
         get() = _navController ?: error("NavController not initialized. Ensure this scope is used within AzNavHost.")
+
+    override val dockingSide: AzDockingSide
+        get() = railScope.dockingSide
 
     val backgrounds = mutableStateListOf<AzBackgroundItem>()
     val onscreenItems = mutableStateListOf<AzOnscreenItem>()
@@ -72,7 +87,7 @@ class AzNavHostScopeImpl(
 }
 
 @Composable
-fun AzNavHost(
+fun AzHostActivityLayout(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
     currentDestination: String? = null,
@@ -114,30 +129,19 @@ fun AzNavHost(
             }
         }
 
-        // Layer 2: Restricted Content
+        // Layer 2: Restricted Content (AzHostFragmentLayout)
         val startPadding = if (dockingSide == AzDockingSide.LEFT) railWidth else 0.dp
         val endPadding = if (dockingSide == AzDockingSide.RIGHT) railWidth else 0.dp
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = safeTop, bottom = safeBottom, start = startPadding, end = endPadding)
-        ) {
-            scope.onscreenItems.forEach { item ->
-                // Flip alignment if Right Docked
-                val finalAlignment = if (dockingSide == AzDockingSide.RIGHT) {
-                    flipAlignment(item.alignment)
-                } else {
-                    item.alignment
-                }
-
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = finalAlignment
-                ) {
-                    item.content()
-                }
-            }
+        CompositionLocalProvider(LocalAzNavHostScope provides scope) {
+            AzHostFragmentLayout(
+                safeTop = safeTop,
+                safeBottom = safeBottom,
+                startPadding = startPadding,
+                endPadding = endPadding,
+                items = scope.onscreenItems,
+                dockingSide = dockingSide
+            )
         }
 
         // Layer 3: AzNavRail
@@ -156,6 +160,111 @@ fun AzNavHost(
             ) {}
         }
     }
+}
+
+@Composable
+fun AzHostFragmentLayout(
+    safeTop: Dp,
+    safeBottom: Dp,
+    startPadding: Dp,
+    endPadding: Dp,
+    items: List<AzOnscreenItem>,
+    dockingSide: AzDockingSide
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(top = safeTop, bottom = safeBottom, start = startPadding, end = endPadding)
+    ) {
+        items.forEach { item ->
+            // Flip alignment if Right Docked
+            val finalAlignment = if (dockingSide == AzDockingSide.RIGHT) {
+                flipAlignment(item.alignment)
+            } else {
+                item.alignment
+            }
+
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = finalAlignment
+            ) {
+                item.content()
+            }
+        }
+    }
+}
+
+/**
+ * A wrapper around [androidx.navigation.compose.NavHost] that automatically integrates
+ * with [AzHostActivityLayout].
+ *
+ * - Automatically uses the [NavHostController] from [AzHostActivityLayout] if not provided.
+ * - Automatically configures slide transitions based on the [AzDockingSide] (Standard or Mirrored).
+ */
+@Composable
+fun AzNavHost(
+    startDestination: String,
+    modifier: Modifier = Modifier,
+    navController: NavHostController = LocalAzNavHostScope.current?.navController ?: rememberNavController(),
+    contentAlignment: Alignment = Alignment.Center,
+    route: String? = null,
+    enterTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition)? = null,
+    exitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition)? = null,
+    popEnterTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition)? = null,
+    popExitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition)? = null,
+    builder: NavGraphBuilder.() -> Unit
+) {
+    val scope = LocalAzNavHostScope.current
+    val dockingSide = scope?.dockingSide ?: AzDockingSide.LEFT
+
+    // Smart Transitions
+    // Left Dock: New content comes from Right (end). Old content exits to Left (start/rail).
+    // Right Dock: New content comes from Left (start). Old content exits to Right (end/rail).
+
+    val defaultEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
+        if (dockingSide == AzDockingSide.LEFT) {
+            slideInHorizontally(initialOffsetX = { it }) + fadeIn() // From Right
+        } else {
+            slideInHorizontally(initialOffsetX = { -it }) + fadeIn() // From Left
+        }
+    }
+
+    val defaultExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
+        if (dockingSide == AzDockingSide.LEFT) {
+            slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() // To Left (Rail)
+        } else {
+            slideOutHorizontally(targetOffsetX = { it }) + fadeOut() // To Right (Rail)
+        }
+    }
+
+    val defaultPopEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
+        if (dockingSide == AzDockingSide.LEFT) {
+            slideInHorizontally(initialOffsetX = { -it }) + fadeIn() // From Left (Rail)
+        } else {
+            slideInHorizontally(initialOffsetX = { it }) + fadeIn() // From Right (Rail)
+        }
+    }
+
+    val defaultPopExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
+        if (dockingSide == AzDockingSide.LEFT) {
+            slideOutHorizontally(targetOffsetX = { it }) + fadeOut() // To Right
+        } else {
+            slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() // To Left
+        }
+    }
+
+    androidx.navigation.compose.NavHost(
+        navController = navController,
+        startDestination = startDestination,
+        modifier = modifier,
+        contentAlignment = contentAlignment,
+        route = route,
+        enterTransition = enterTransition ?: defaultEnter,
+        exitTransition = exitTransition ?: defaultExit,
+        popEnterTransition = popEnterTransition ?: defaultPopEnter,
+        popExitTransition = popExitTransition ?: defaultPopExit,
+        builder = builder
+    )
 }
 
 private fun flipAlignment(alignment: Alignment): Alignment {
