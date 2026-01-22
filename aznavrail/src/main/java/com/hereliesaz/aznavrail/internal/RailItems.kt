@@ -4,11 +4,16 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -27,6 +32,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.AzNavRailScopeImpl
 import com.hereliesaz.aznavrail.AzTextBoxDefaults
@@ -37,6 +49,10 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalViewConfiguration
 
 @Composable
 internal fun RailItems(
@@ -53,7 +69,7 @@ internal fun RailItems(
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
     infoScreen: Boolean = false
 ) {
-    val density = androidx.compose.ui.platform.LocalDensity.current
+    val density = LocalDensity.current
     val topLevelItems = items.filter { !it.isSubItem }
     val itemsToRender =
         if (packRailButtons) topLevelItems.filter { it.isRailItem } else topLevelItems
@@ -289,10 +305,10 @@ private fun DraggableRailItemWrapper(
     var visualOffsetY by remember { mutableStateOf(0.dp) }
 
     val myHeightPx = itemHeights[item.id] ?: 0
-    val density = androidx.compose.ui.platform.LocalDensity.current
+    val density = LocalDensity.current
     val myHeightDp = with(density) { myHeightPx.toDp() }
 
-    val itemHeightsState = androidx.compose.runtime.rememberUpdatedState(itemHeights)
+    val itemHeightsState = rememberUpdatedState(itemHeights)
 
     if (draggedItemId != null && !isDragging && item.isRelocItem && currentDropTargetIndex != null) {
         val currentIdx = scope.navItems.indexOfFirst { it.id == item.id }
@@ -335,7 +351,7 @@ private fun DraggableRailItemWrapper(
     }
 
     val hapticFeedback = LocalHapticFeedback.current
-    val viewConfiguration = androidx.compose.ui.platform.LocalViewConfiguration.current
+    val viewConfiguration = LocalViewConfiguration.current
 
     val dragModifier = if (item.isRelocItem && !infoScreen) {
         Modifier.pointerInput(item.id) {
@@ -378,7 +394,7 @@ private fun DraggableRailItemWrapper(
                         }
 
                         val positionChange = change.position - change.previousPosition
-                        if (positionChange != androidx.compose.ui.geometry.Offset.Zero) {
+                        if (positionChange != Offset.Zero) {
                             if (!isLongPress) {
                                 if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
                                     hasMoved = true
@@ -575,8 +591,8 @@ private fun HiddenMenuPopup(
                         onValueChange = { text = it },
                         onSubmit = { value -> onInputSubmit(menuItem, value) },
                         submitButtonContent = {
-                            androidx.compose.material3.Icon(
-                                imageVector = androidx.compose.material.icons.Icons.Default.Check,
+                            Icon(
+                                imageVector = Icons.Default.Check,
                                 contentDescription = "Submit",
                                 modifier = Modifier.size(16.dp),
                                 tint = MaterialTheme.colorScheme.onSurface
@@ -585,10 +601,10 @@ private fun HiddenMenuPopup(
                         outlineColor = MaterialTheme.colorScheme.onSurface
                     )
                 } else {
-                    androidx.compose.material3.Text(
+                    Text(
                         text = menuItem.text,
                         modifier = Modifier
-                            .androidx.compose.foundation.clickable { onItemClick(menuItem) }
+                            .clickable { onItemClick(menuItem) }
                             .padding(vertical = 8.dp, horizontal = 12.dp),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface
