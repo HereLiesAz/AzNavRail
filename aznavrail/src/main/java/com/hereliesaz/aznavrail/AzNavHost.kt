@@ -89,6 +89,8 @@ class AzNavHostScopeImpl(
 
 // --- Layouts ---
 
+// AUTHORIZED: This layout is the designated wrapper for the strict AzNavRail.
+@OptIn(AzStrictLayout::class)
 @Composable
 fun AzHostActivityLayout(
     navController: NavHostController, // Mandatory
@@ -110,8 +112,6 @@ fun AzHostActivityLayout(
     }
 
     val scope = remember { AzNavHostScopeImpl() }
-    // We must reset strictly to avoid duplication on recomposition, but backing lists are stateful
-    // simpler to just clear.
     scope.resetHost()
     scope.setController(navController)
 
@@ -120,7 +120,7 @@ fun AzHostActivityLayout(
     // Determine rail settings
     val railScope = scope.getRailScopeImpl()
     val dockingSide = railScope.dockingSide
-    val railWidth = railScope.collapsedWidth // Corrected property name
+    val railWidth = railScope.collapsedWidth
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val maxHeight = maxHeight
