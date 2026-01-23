@@ -74,16 +74,15 @@ fun SampleScreen(
     ) {
         // SECTOR 1: THEME
         azTheme(
-            activeColor = Color.Magenta,
-            defaultShape = AzButtonShape.RECTANGLE
+            defaultShape = AzButtonShape.RECTANGLE // Set a default shape for all rail items
         )
 
         // SECTOR 2: CONFIG
         azConfig(
             dockingSide = if (isDockingRight) AzDockingSide.RIGHT else AzDockingSide.LEFT,
             packButtons = packButtons,
-            displayAppName = true, // Replaced displayAppNameInHeader
-            noMenu = noMenu
+            noMenu = noMenu,
+            // displayAppName = true // Set to true to display the app name instead of the icon
         )
 
         // SECTOR 3: ADVANCED
@@ -231,51 +230,12 @@ fun SampleScreen(
         azDivider()
 
         azMenuHostItem(id = "menu-host", text = "Menu Host", route = "menu-host", onClick = { Log.d(TAG, "Menu host item clicked") })
-
-        // Fix for overload ambiguity: Explicitly specify defaults or use named args for optional params to match a specific signature
-        azMenuSubItem(
-            id = "menu-sub-1",
-            hostId = "menu-host",
-            text = "Menu Sub 1",
-            route = "menu-sub-1",
-            disabled = false,
-            screenTitle = null,
-            info = null,
-            onClick = { Log.d(TAG, "Menu sub item 1 clicked") }
-        )
-
-        azMenuSubItem(
-            id = "menu-sub-2",
-            hostId = "menu-host",
-            text = "Menu Sub 2",
-            route = "menu-sub-2",
-            disabled = false,
-            screenTitle = null,
-            info = null,
-            onClick = { Log.d(TAG, "Menu sub item 2 clicked") }
-        )
+        azMenuSubItem(id = "menu-sub-1", hostId = "menu-host", text = "Menu Sub 1", route = "menu-sub-1", onClick = { Log.d(TAG, "Menu sub item 1 clicked") })
+        azMenuSubItem(id = "menu-sub-2", hostId = "menu-host", text = "Menu Sub 2", route = "menu-sub-2", onClick = { Log.d(TAG, "Menu sub item 2 clicked") })
 
         azRailHostItem(id = "rail-host", text = "Rail Host", route = "rail-host", onClick = { Log.d(TAG, "Rail host item clicked") })
-
-        // Using explicit args to resolve ambiguity if exists, or just cleaner code
-        azRailSubItem(
-            id = "rail-sub-1",
-            hostId = "rail-host",
-            text = "Rail Sub 1",
-            route = "rail-sub-1",
-            onClick = { Log.d(TAG, "Rail sub item 1 clicked") }
-        )
-
-        azMenuSubItem(
-            id = "rail-sub-2",
-            hostId = "rail-host",
-            text = "Menu Sub 2",
-            route = "rail-sub-2",
-            disabled = false,
-            screenTitle = null,
-            info = null,
-            onClick = { Log.d(TAG, "Menu sub item 2 (from rail host) clicked") }
-        )
+        azRailSubItem(id = "rail-sub-1", hostId = "rail-host", text = "Rail Sub 1", route = "rail-sub-1", onClick = { Log.d(TAG, "Rail sub item 1 clicked") })
+        azMenuSubItem(id = "rail-sub-2", hostId = "rail-host", text = "Menu Sub 2", route = "rail-sub-2", onClick = { Log.d(TAG, "Menu sub item 2 (from rail host) clicked") })
 
         azMenuSubToggle(
             id = "sub-toggle",
@@ -296,10 +256,6 @@ fun SampleScreen(
             options = menuCycleOptions,
             selectedOption = menuSelectedOption,
             route = "sub-cycler",
-            disabled = false, // Resolve ambiguity by explicit disabled param
-            disabledOptions = null,
-            screenTitle = null,
-            info = null,
             shape = null,
             onClick = {
                 val currentIndex = menuCycleOptions.indexOf(menuSelectedOption)
