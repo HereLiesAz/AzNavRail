@@ -114,7 +114,7 @@ class AzNavHostScopeImpl(
 
 @Composable
 fun AzHostActivityLayout(
-    navController: NavHostController,
+    navController: NavHostController, // Mandatory Explicit
     modifier: Modifier = Modifier,
     currentDestination: String? = null,
     isLandscape: Boolean? = null,
@@ -175,7 +175,6 @@ fun AzHostActivityLayout(
             LocalAzNavHostPresent provides true,
             LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom)
         ) {
-            @OptIn(AzStrictLayout::class)
             AzNavRail(
                 modifier = Modifier.fillMaxSize(),
                 navController = navController,
