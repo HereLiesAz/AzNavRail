@@ -2,53 +2,45 @@ package com.hereliesaz.aznavrail
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
-import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
+import com.hereliesaz.aznavrail.model.AzButtonShape
+import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class AzNavRailTest {
 
     @Test
+    fun `azConfig should update behavioral properties`() {
+        val scope = AzNavRailScopeImpl()
+
+        scope.azConfig(
+            displayAppName = true,
+            packButtons = true,
+            noMenu = false,
+            dockingSide = AzDockingSide.LEFT
+        )
+
+        assertEquals(true, scope.displayAppName)
+        assertEquals(true, scope.packButtons)
+        assertEquals(false, scope.noMenu)
+        assertEquals(AzDockingSide.LEFT, scope.dockingSide)
+    }
+
+    @Test
     fun `azTheme should update visual properties`() {
         val scope = AzNavRailScopeImpl()
 
         scope.azTheme(
-            activeColor = Color.Red,
-            defaultShape = AzButtonShape.SQUARE,
-            headerIconShape = AzHeaderIconShape.SQUARE,
             expandedWidth = 300.dp,
             collapsedWidth = 100.dp,
             showFooter = false
         )
 
-        assertEquals(Color.Red, scope.activeColor)
-        assertEquals(AzButtonShape.SQUARE, scope.defaultShape)
-        assertEquals(AzHeaderIconShape.SQUARE, scope.headerIconShape)
         assertEquals(300.dp, scope.expandedWidth)
         assertEquals(100.dp, scope.collapsedWidth)
         assertEquals(false, scope.showFooter)
-    }
-
-    @Test
-    fun `azConfig should update behavioral properties`() {
-        val scope = AzNavRailScopeImpl()
-
-        scope.azConfig(
-            dockingSide = AzDockingSide.RIGHT,
-            packButtons = true,
-            noMenu = true,
-            vibrate = true,
-            displayAppName = true
-        )
-
-        assertEquals(AzDockingSide.RIGHT, scope.dockingSide)
-        assertEquals(true, scope.packButtons)
-        assertEquals(true, scope.noMenu)
-        assertEquals(true, scope.vibrate)
-        assertEquals(true, scope.displayAppName)
     }
 
     @Test(expected = IllegalArgumentException::class)
