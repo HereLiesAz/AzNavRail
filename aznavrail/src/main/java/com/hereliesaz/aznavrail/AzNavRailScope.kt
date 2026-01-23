@@ -53,17 +53,6 @@ interface AzNavRailScope {
         secLoc: String? = null
     )
 
-    /**
-     * SECTOR 1: VISUAL COMPLIANCE
-     * Configures the aesthetic properties of the rail.
-     *
-     * @param activeColor Custom color for the active/selected item.
-     * @param defaultShape The default shape for rail items.
-     * @param headerIconShape The shape of the header icon.
-     * @param expandedWidth The width of the expanded rail/menu.
-     * @param collapsedWidth The width of the collapsed rail.
-     * @param showFooter If true, the footer is displayed in the expanded menu.
-     */
     fun azTheme(
         activeColor: Color? = null,
         defaultShape: AzButtonShape = AzButtonShape.CIRCLE,
@@ -73,17 +62,6 @@ interface AzNavRailScope {
         showFooter: Boolean = true
     )
 
-    /**
-     * SECTOR 2: BEHAVIORAL PROTOCOLS
-     * Configures the interaction models and structural behavior.
-     *
-     * @param dockingSide The side of the screen to dock the rail (LEFT or RIGHT).
-     * @param packButtons If true, rail buttons are packed together without spacing.
-     * @param noMenu If true, all items are treated as rail items and the side drawer is disabled.
-     * @param vibrate If true, enables haptic feedback for gestures.
-     * @param displayAppName If true, the app name is displayed in the header instead of the icon.
-     * @param activeClassifiers Set of classifiers to mark items as active aside from route/selection.
-     */
     fun azConfig(
         dockingSide: AzDockingSide = AzDockingSide.LEFT,
         packButtons: Boolean = false,
@@ -93,20 +71,6 @@ interface AzNavRailScope {
         activeClassifiers: Set<String> = emptySet()
     )
 
-    /**
-     * SECTOR 3: SPECIAL OPERATIONS
-     * Advanced configurations for overlays, loading states, and help modes.
-     *
-     * @param isLoading If true, a full-screen loading overlay is shown.
-     * @param infoScreen If true, activates the interactive help overlay.
-     * @param onDismissInfoScreen Callback to dismiss the info screen.
-     * @param overlayService The class of the service to start for system overlay mode.
-     * @param onUndock Callback triggered when the rail is undocked (e.g., long-press header).
-     * @param enableRailDragging If true, enables FAB mode (draggable rail).
-     * @param onRailDrag Callback for custom drag handling in FAB mode.
-     * @param onOverlayDrag Callback for custom drag handling in overlay mode.
-     * @param onItemGloballyPositioned Callback for getting item positions (used for Info Screen).
-     */
     fun azAdvanced(
         isLoading: Boolean = false,
         infoScreen: Boolean = false,
@@ -133,7 +97,7 @@ interface AzNavRailScope {
 
     fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
     fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
-    fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String, disabled: Boolean, screenTitle: String?, info: String? = null)
+    fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null)
 
     fun azRailToggle(id: String, color: Color? = null, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
     fun azRailToggle(id: String, color: Color? = null, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape? = null, route: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
@@ -144,8 +108,8 @@ interface AzNavRailScope {
     fun azMenuCycler(id: String, options: List<String>, selectedOption: String, route: String, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null)
 
     fun azRailCycler(id: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
-    fun azRailCycler(id: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, route: String, disabled: Boolean, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
-    fun azRailCycler(id: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, route: String, disabled: Boolean, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null)
+    fun azRailCycler(id: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, route: String, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
+    fun azRailCycler(id: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, route: String, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null)
 
     fun azDivider()
 
@@ -158,8 +122,8 @@ interface AzNavRailScope {
     fun azRailHostItem(id: String, text: String, route: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
 
     fun azMenuSubItem(id: String, hostId: String, text: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
-    fun azMenuSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean, screenTitle: String? = null, info: String? = null)
-    fun azMenuSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
+    fun azMenuSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null)
+    fun azMenuSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
 
     fun azRailSubItem(id: String, hostId: String, text: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: () -> Unit)
     fun azRailSubItem(id: String, hostId: String, text: String, route: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null)
@@ -167,19 +131,19 @@ interface AzNavRailScope {
 
     fun azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
     fun azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
-    fun azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String, disabled: Boolean, screenTitle: String?, info: String?)
+    fun azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String, disabled: Boolean = false, screenTitle: String? = null, info: String?)
 
     fun azRailSubToggle(id: String, hostId: String, color: Color? = null, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
-    fun azRailSubToggle(id: String, hostId: String, color: Color? = null, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape? = null, route: String, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit)
-    fun azRailSubToggle(id: String, hostId: String, color: Color? = null, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape? = null, route: String, disabled: Boolean, screenTitle: String?, info: String?)
+    fun azRailSubToggle(id: String, hostId: String, color: Color? = null, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape? = null, route: String, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
+    fun azRailSubToggle(id: String, hostId: String, color: Color? = null, isChecked: Boolean, toggleOnText: String, toggleOffText: String, shape: AzButtonShape? = null, route: String, disabled: Boolean = false, screenTitle: String? = null, info: String?)
 
     fun azMenuSubCycler(id: String, hostId: String, options: List<String>, selectedOption: String, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
     fun azMenuSubCycler(id: String, hostId: String, options: List<String>, selectedOption: String, route: String, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
     fun azMenuSubCycler(id: String, hostId: String, options: List<String>, selectedOption: String, route: String, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String?)
 
     fun azRailSubCycler(id: String, hostId: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
-    fun azRailSubCycler(id: String, hostId: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, route: String, disabled: Boolean, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
-    fun azRailSubCycler(id: String, hostId: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, route: String, disabled: Boolean, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String?)
+    fun azRailSubCycler(id: String, hostId: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, route: String, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
+    fun azRailSubCycler(id: String, hostId: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, route: String, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String?)
 
     fun azRailRelocItem(id: String, hostId: String, text: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null, onRelocate: ((Int, Int, List<String>) -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit = {})
     fun azRailRelocItem(id: String, hostId: String, text: String, route: String, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null, onRelocate: ((Int, Int, List<String>) -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit)
@@ -260,8 +224,10 @@ class AzNavRailScopeImpl : AzNavRailScope {
     // Internal usage/legacy check
     var secLoc: String? = null
 
-    // This method is dead code, but needed to satisfy the interface until cleaned up.
-    // The annotation on the interface prevents it from being called.
+    @Deprecated(
+        message = "VIOLATION: azSettings has been dissolved. Use azTheme, azConfig, and azAdvanced.",
+        level = DeprecationLevel.ERROR
+    )
     @Suppress("OverridingDeprecatedMember")
     override fun azSettings(
         displayAppNameInHeader: Boolean,
@@ -721,8 +687,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     ) {
         require(selectedOption in options) {
             """
-            CONFIGURATION ERROR: `selectedOption` ($selectedOption) must be one of the provided options: $options.
-            Check your logic for item ID: '$id'.
+            `selectedOption` must be one of the provided options.
             """.trimIndent()
         }
         val finalScreenTitle = if (screenTitle == AzNavRail.noTitle) null else screenTitle ?: selectedOption
@@ -766,8 +731,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     ) {
         require(toggleOnText.isNotEmpty() && toggleOffText.isNotEmpty()) {
             """
-            CONFIGURATION ERROR: `toggleOnText` and `toggleOffText` must not be empty for item ID '$id'.
-            Please provide text labels for both toggle states.
+            `toggleOnText` and `toggleOffText` must not be empty.
             """.trimIndent()
         }
         val text = if (isChecked) toggleOnText else toggleOffText
@@ -813,8 +777,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     ) {
         require(text.isNotEmpty()) {
             """
-            CONFIGURATION ERROR: `text` must not be empty for item with ID '$id'.
-            Every rail item must have a display label.
+            `text` must not be empty for item with id `$id`.
             """.trimIndent()
         }
         val finalScreenTitle = if (screenTitle == AzNavRail.noTitle) null else screenTitle ?: text
