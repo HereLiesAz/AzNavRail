@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.navigation.compose.rememberNavController
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -18,7 +19,10 @@ class AzNavRailUITest {
     @Test
     fun azNavRail_isDisplayed() {
         composeTestRule.setContent {
-            AzNavRail {}
+            val navController = rememberNavController()
+            AzHostActivityLayout(navController = navController) {
+                // AzNavRail is implicitly rendered by the host
+            }
         }
         composeTestRule.onNodeWithContentDescription("Toggle menu, showing App icon").assertIsDisplayed()
     }
@@ -26,7 +30,8 @@ class AzNavRailUITest {
     @Test
     fun azNavRail_expandsAndCollapses() {
         composeTestRule.setContent {
-            AzNavRail {
+            val navController = rememberNavController()
+            AzHostActivityLayout(navController = navController) {
                 azMenuItem("home", "Home") {}
             }
         }
@@ -46,7 +51,10 @@ class AzNavRailUITest {
         val expectedHeight = appIcon.intrinsicHeight
 
         composeTestRule.setContent {
-            AzNavRail {}
+            val navController = rememberNavController()
+            AzHostActivityLayout(navController = navController) {
+                // Empty rail
+            }
         }
 
         val iconNode = composeTestRule.onNodeWithContentDescription("Toggle menu, showing App icon", useUnmergedTree = true)
