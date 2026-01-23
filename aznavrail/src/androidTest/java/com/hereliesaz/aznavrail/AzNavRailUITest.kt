@@ -21,7 +21,7 @@ class AzNavRailUITest {
         composeTestRule.setContent {
             val navController = rememberNavController()
             AzHostActivityLayout(navController = navController) {
-                // AzNavRail is implicitly rendered by the host
+                // The rail is implicitly part of the host layout
             }
         }
         composeTestRule.onNodeWithContentDescription("Toggle menu, showing App icon").assertIsDisplayed()
