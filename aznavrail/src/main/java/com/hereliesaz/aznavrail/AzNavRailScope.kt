@@ -13,6 +13,46 @@ import com.hereliesaz.aznavrail.model.AzItemConfig
 import com.hereliesaz.aznavrail.model.AzNavItem
 
 interface AzNavRailScope {
+
+    /**
+     * ⛔ DEPRECATED: THE BUREAUCRACY HAS ABOLISHED THIS FUNCTION.
+     *
+     * You must now split your configuration into three distinct sectors:
+     * 1. [azTheme] - For visuals (colors, shapes, dimensions).
+     * 2. [azConfig] - For behavior (docking, packing, vibration).
+     * 3. [azAdvanced] - For special operations (overlays, help screens).
+     *
+     * Consult the Golden Sample in the README for the strict protocol.
+     */
+    @Deprecated(
+        message = "VIOLATION: azSettings has been dissolved. Use azTheme, azConfig, and azAdvanced.",
+        level = DeprecationLevel.ERROR
+    )
+    fun azSettings(
+        displayAppNameInHeader: Boolean = false,
+        packRailButtons: Boolean = false,
+        expandedRailWidth: Dp = 260.dp,
+        collapsedRailWidth: Dp = 80.dp,
+        showFooter: Boolean = true,
+        isLoading: Boolean = false,
+        defaultShape: AzButtonShape = AzButtonShape.CIRCLE,
+        enableRailDragging: Boolean = false,
+        headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
+        onUndock: (() -> Unit)? = null,
+        onRailDrag: ((Float, Float) -> Unit)? = null,
+        overlayService: Class<out android.app.Service>? = null,
+        onOverlayDrag: ((Float, Float) -> Unit)? = null,
+        onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
+        infoScreen: Boolean = false,
+        onDismissInfoScreen: (() -> Unit)? = null,
+        activeColor: Color? = null,
+        vibrate: Boolean = false,
+        activeClassifiers: Set<String> = emptySet(),
+        dockingSide: AzDockingSide = AzDockingSide.LEFT,
+        noMenu: Boolean = false,
+        secLoc: String? = null
+    )
+
     /**
      * SECTOR 1: VISUAL COMPLIANCE
      * Configures the aesthetic properties of the rail.
@@ -104,8 +144,8 @@ interface AzNavRailScope {
     fun azMenuCycler(id: String, options: List<String>, selectedOption: String, route: String, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null)
 
     fun azRailCycler(id: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
-    fun azRailCycler(id: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, route: String, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
-    fun azRailCycler(id: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, route: String, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null)
+    fun azRailCycler(id: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, route: String, disabled: Boolean, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, onClick: () -> Unit)
+    fun azRailCycler(id: String, color: Color? = null, options: List<String>, selectedOption: String, shape: AzButtonShape? = null, route: String, disabled: Boolean, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null)
 
     fun azDivider()
 
@@ -220,6 +260,49 @@ class AzNavRailScopeImpl : AzNavRailScope {
     // Internal usage/legacy check
     var secLoc: String? = null
 
+    // This method is dead code, but needed to satisfy the interface until cleaned up.
+    // The annotation on the interface prevents it from being called.
+    @Suppress("OverridingDeprecatedMember")
+    override fun azSettings(
+        displayAppNameInHeader: Boolean,
+        packRailButtons: Boolean,
+        expandedRailWidth: Dp,
+        collapsedRailWidth: Dp,
+        showFooter: Boolean,
+        isLoading: Boolean,
+        defaultShape: AzButtonShape,
+        enableRailDragging: Boolean,
+        headerIconShape: AzHeaderIconShape,
+        onUndock: (() -> Unit)?,
+        onRailDrag: ((Float, Float) -> Unit)?,
+        overlayService: Class<out android.app.Service>?,
+        onOverlayDrag: ((Float, Float) -> Unit)?,
+        onItemGloballyPositioned: ((String, Rect) -> Unit)?,
+        infoScreen: Boolean,
+        onDismissInfoScreen: (() -> Unit)?,
+        activeColor: Color?,
+        vibrate: Boolean,
+        activeClassifiers: Set<String>,
+        dockingSide: AzDockingSide,
+        noMenu: Boolean,
+        secLoc: String?
+    ) {
+        throw IllegalStateException(
+            """
+            FATAL ERROR: You are attempting to use the forbidden 'azSettings' function.
+            
+            This layout architecture has been strictly reorganized.
+            
+            MIGRATION ORDER:
+            1. Move visual settings (colors, shapes, widths) to 'azTheme { ... }'
+            2. Move behavior settings (docking, packing, vibration) to 'azConfig { ... }'
+            3. Move advanced settings (overlays, help screens) to 'azAdvanced { ... }'
+            
+            FAILURE TO COMPLY WILL RESULT IN BUILD FAILURES.
+            """.trimIndent()
+        )
+    }
+
     override fun azTheme(
         activeColor: Color?,
         defaultShape: AzButtonShape,
@@ -229,7 +312,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         showFooter: Boolean
     ) {
         require(expandedWidth > collapsedWidth) {
-            "expandedWidth must be greater than collapsedWidth."
+            "LAYOUT VIOLATION: `expandedWidth` ($expandedWidth) must be greater than `collapsedWidth` ($collapsedWidth)."
         }
         this.activeColor = activeColor
         this.defaultShape = defaultShape
@@ -638,7 +721,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
     ) {
         require(selectedOption in options) {
             """
-            `selectedOption` must be one of the provided options.
+            CONFIGURATION ERROR: `selectedOption` ($selectedOption) must be one of the provided options: $options.
+            Check your logic for item ID: '$id'.
             """.trimIndent()
         }
         val finalScreenTitle = if (screenTitle == AzNavRail.noTitle) null else screenTitle ?: selectedOption
@@ -682,7 +766,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
     ) {
         require(toggleOnText.isNotEmpty() && toggleOffText.isNotEmpty()) {
             """
-            `toggleOnText` and `toggleOffText` must not be empty.
+            CONFIGURATION ERROR: `toggleOnText` and `toggleOffText` must not be empty for item ID '$id'.
+            Please provide text labels for both toggle states.
             """.trimIndent()
         }
         val text = if (isChecked) toggleOnText else toggleOffText
@@ -728,7 +813,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
     ) {
         require(text.isNotEmpty()) {
             """
-            `text` must not be empty for item with id `$id`.
+            CONFIGURATION ERROR: `text` must not be empty for item with ID '$id'.
+            Every rail item must have a display label.
             """.trimIndent()
         }
         val finalScreenTitle = if (screenTitle == AzNavRail.noTitle) null else screenTitle ?: text
