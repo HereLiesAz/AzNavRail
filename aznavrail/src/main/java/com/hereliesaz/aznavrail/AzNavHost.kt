@@ -3,7 +3,6 @@ package com.hereliesaz.aznavrail
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -15,9 +14,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
@@ -34,36 +33,12 @@ import com.hereliesaz.aznavrail.internal.AzLayoutConfig
 import com.hereliesaz.aznavrail.internal.AzSafeZones
 import com.hereliesaz.aznavrail.model.AzDockingSide
 
-/**
- * AZNAVRAIL STRICT USAGE PROTOCOL
- *
- * 1. TOTALITARIAN CONTAINER: You MUST wrap everything in [AzHostActivityLayout].
- * 2. ZONING LAWS: Use [onscreen] for UI. Do NOT use Scaffold.
- * 3. SEGREGATED CONFIG: Use [azTheme], [azConfig], [azAdvanced].
- *
- * Example:
- * ```
- * AzHostActivityLayout(
- * navController = rememberNavController() // EXPLICIT DECLARATION REQUIRED
- * ) {
- * azTheme(activeColor = Color.Cyan)
- * azConfig(dockingSide = AzDockingSide.RIGHT)
- *
- * azRailItem(id = "home", text = "Home", onClick = {})
- *
- * onscreen {
- * // Your UI goes here.
- * // It is safe. It is contained.
- * // No Scaffolds.
- * }
- * }
- * ```
- */
-
+// --- Composition Locals ---
 val LocalAzNavHostPresent = compositionLocalOf { false }
 val LocalAzSafeZones = compositionLocalOf { AzSafeZones() }
 val LocalAzNavHostScope = staticCompositionLocalOf<AzNavHostScope?> { null }
 
+// --- Scopes & Models ---
 interface AzNavHostScope : AzNavRailScope {
     val navController: NavHostController
     val dockingSide: AzDockingSide
@@ -112,9 +87,11 @@ class AzNavHostScopeImpl(
     }
 }
 
+// --- Layouts ---
+
 @Composable
 fun AzHostActivityLayout(
-    navController: NavHostController, // Mandatory Explicit
+    navController: NavHostController, // Mandatory
     modifier: Modifier = Modifier,
     currentDestination: String? = null,
     isLandscape: Boolean? = null,
@@ -133,6 +110,8 @@ fun AzHostActivityLayout(
     }
 
     val scope = remember { AzNavHostScopeImpl() }
+    // We must reset strictly to avoid duplication on recomposition, but backing lists are stateful
+    // simpler to just clear.
     scope.resetHost()
     scope.setController(navController)
 
@@ -141,7 +120,7 @@ fun AzHostActivityLayout(
     // Determine rail settings
     val railScope = scope.getRailScopeImpl()
     val dockingSide = railScope.dockingSide
-    val railWidth = railScope.collapsedWidth
+    val railWidth = railScope.collapsedWidth // Corrected property name
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val maxHeight = maxHeight
@@ -220,13 +199,6 @@ fun AzHostFragmentLayout(
     }
 }
 
-/**
- * A wrapper around [androidx.navigation.compose.NavHost] that automatically integrates
- * with [AzHostActivityLayout].
- *
- * - Automatically uses the [NavHostController] from [AzHostActivityLayout] if not provided.
- * - Automatically configures slide transitions based on the [AzDockingSide] (Standard or Mirrored).
- */
 @Composable
 fun AzNavHost(
     startDestination: String,
@@ -243,39 +215,35 @@ fun AzNavHost(
     val scope = LocalAzNavHostScope.current
     val dockingSide = scope?.dockingSide ?: AzDockingSide.LEFT
 
-    // Smart Transitions
-    // Left Dock: New content comes from Right (end). Old content exits to Left (start/rail).
-    // Right Dock: New content comes from Left (start). Old content exits to Right (end/rail).
-
     val defaultEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
         if (dockingSide == AzDockingSide.LEFT) {
-            slideInHorizontally(initialOffsetX = { it }) + fadeIn() // From Right
+            slideInHorizontally(initialOffsetX = { it }) + fadeIn()
         } else {
-            slideInHorizontally(initialOffsetX = { -it }) + fadeIn() // From Left
+            slideInHorizontally(initialOffsetX = { -it }) + fadeIn()
         }
     }
 
     val defaultExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
         if (dockingSide == AzDockingSide.LEFT) {
-            slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() // To Left (Rail)
+            slideOutHorizontally(targetOffsetX = { -it }) + fadeOut()
         } else {
-            slideOutHorizontally(targetOffsetX = { it }) + fadeOut() // To Right (Rail)
+            slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
         }
     }
 
     val defaultPopEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
         if (dockingSide == AzDockingSide.LEFT) {
-            slideInHorizontally(initialOffsetX = { -it }) + fadeIn() // From Left (Rail)
+            slideInHorizontally(initialOffsetX = { -it }) + fadeIn()
         } else {
-            slideInHorizontally(initialOffsetX = { it }) + fadeIn() // From Right (Rail)
+            slideInHorizontally(initialOffsetX = { it }) + fadeIn()
         }
     }
 
     val defaultPopExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
         if (dockingSide == AzDockingSide.LEFT) {
-            slideOutHorizontally(targetOffsetX = { it }) + fadeOut() // To Right
+            slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
         } else {
-            slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() // To Left
+            slideOutHorizontally(targetOffsetX = { -it }) + fadeOut()
         }
     }
 
