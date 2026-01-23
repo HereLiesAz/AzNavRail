@@ -107,20 +107,52 @@ fun AzNavRail(
     val overlayController = LocalAzNavRailOverlayController.current
 
     if (!isHostPresent && overlayController == null) {
+        // We render a RED SCREEN OF DEATH instead of just crashing blindly,
+        // so the user sees exactly what happened in the UI preview/device.
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Red),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "UNAUTHORIZED LAYOUT DETECTED.\nWRAP IN AZHOSTACTIVITYLAYOUT.",
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "FATAL LAYOUT VIOLATION",
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "AzNavRail MUST be wrapped in AzHostActivityLayout.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                Text(
+                    text = "Do not use Scaffold. Do not pass Go.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.8f),
+                    textAlign = TextAlign.Center
+                )
+            }
         }
-        return
+        // We also throw to stop execution if possible, but the UI feedback above is critical.
+        error(
+            """
+            FATAL LAYOUT VIOLATION: AzNavRail instantiated without AzHostActivityLayout.
+            
+            STRICT PROTOCOL ENFORCEMENT:
+            1. You MUST wrap your screen content in 'AzHostActivityLayout(navController = ...)'
+            2. You MUST NOT use 'AzNavRail' directly. It is managed by the host.
+            3. You MUST move your UI content into the 'onscreen { ... }' block.
+            
+            This is not a suggestion. It is a requirement.
+            """.trimIndent()
+        )
     }
 
     val scope = providedScope ?: remember { AzNavRailScopeImpl() }
@@ -146,7 +178,7 @@ fun AzNavRail(
         if (item.isSubItem && item.isRailItem) {
             val host = scope.navItems.find { it.id == item.hostId }
             require(host != null && host.isRailItem) {
-                "A `azRailSubItem` can only be hosted by a `azRailHostItem`."
+                "HIERARCHY ERROR: Rail sub-item '${item.id}' must be hosted by a valid rail host item. Host '${item.hostId}' not found or not in rail."
             }
         }
     }
