@@ -226,7 +226,7 @@ fun AzNavRail(
     val descriptionPositions = remember { mutableStateMapOf<String, androidx.compose.ui.geometry.Rect>() }
     var rootPosition by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
 
-    val itemsWithInfo by remember {
+    val itemsWithInfo by remember(displayedNavItems) {
         derivedStateOf {
             displayedNavItems.filter { item ->
                 val hasInfo = !item.info.isNullOrBlank()
@@ -632,8 +632,7 @@ fun AzNavRail(
                                         isFloating = true
                                         isExpanded = false
                                         if (scope.displayAppName) isAppIcon = true
-                                        showFooterPopup = false
-                            }
+                                    }
                                 },
                                 scope = scope,
                                 footerColor = if (footerColor != Color.Unspecified) footerColor else MaterialTheme.colorScheme.primary
