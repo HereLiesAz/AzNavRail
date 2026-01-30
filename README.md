@@ -438,7 +438,7 @@ The rail can be detached and moved around the screen by long-pressing the header
 
 `AzRailRelocItem` is a specialized sub-item that users can reorder via drag-and-drop. This feature is supported on Android, Web, and React Native.
 
-''kotlin
+'''kotlin
 azRailRelocItem(
     id = "reloc-1",
     hostId = "host-1",
@@ -451,7 +451,7 @@ azRailRelocItem(
     listItem("Action 1") { /* ... */ }
     inputItem("Rename") { newName -> /* ... */ }
 }
-''
+'''
 
 - **Drag-and-Drop**: Long-press (triggers a vibration) and drag an item to move it. Other items will animate to create an empty slot at the potential drop target.
 - **Cluster Constraints**: Items can only be moved within their "cluster" — a contiguous group of relocation items under the same host. They cannot jump over standard items or move to a different host.
