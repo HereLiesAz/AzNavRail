@@ -49,6 +49,7 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 To use this library, add JitPack to your `settings.gradle.kts`:
 
 '''kotlin
+
     dependencyResolutionManagement {
         repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
         repositories {
@@ -61,6 +62,7 @@ To use this library, add JitPack to your `settings.gradle.kts`:
 And add the dependency to your app's `build.gradle.kts`:
 
 '''kotlin
+
     dependencies {
         implementation("com.github.HereLiesAz:AzNavRail:VERSION") // Replace VERSION with the latest version
     }
@@ -77,6 +79,7 @@ Do **NOT** use `Scaffold`. Use `AzHostActivityLayout` as your root.
 **The Golden Sample:**
 
 '''kotlin
+
     import androidx.compose.foundation.layout.Column
     import androidx.compose.foundation.layout.padding
     import androidx.compose.material3.Text
@@ -157,6 +160,7 @@ Do **NOT** use `Scaffold`. Use `AzHostActivityLayout` as your root.
 **Example: Setting a Background**
 
 '''kotlin
+
     AzHostActivityLayout(navController = navController) {
         // This map will fill the entire screen, ignoring safe zones.
         background(weight = 0) {
@@ -198,6 +202,7 @@ The `AzNavHost` wrapper provides seamless integration with the `AzHostActivityLa
 - **Exit**: A Floating Action Button (FAB) appears in the bottom-right corner to exit the mode. You must handle the `onDismissInfoScreen` callback in `azAdvanced` to set `infoScreen = false`.
 
 '''kotlin
+
     var showHelp by remember { mutableStateOf(false) }
     
     AzNavRail(...) {
@@ -243,6 +248,7 @@ The `AzNavHost` wrapper provides seamless integration with the `AzHostActivityLa
 Here is an example of how to use the standalone `AzTextBox` for multiline and secret inputs:
 
 '''kotlin
+
     import com.hereliesaz.aznavrail.AzTextBox
     import com.hereliesaz.aznavrail.AzTextBoxDefaults
     
@@ -316,6 +322,7 @@ Here is an example of how to use the standalone `AzTextBox` for multiline and se
 Here is an example of the `AzForm` component:
 
 '''kotlin
+
     import com.hereliesaz.aznavrail.AzForm
     
     AzForm(
@@ -344,6 +351,7 @@ The `AzLoad` component provides a loading animation. It can be used as a full-sc
 To show a loading animation in the middle of the screen (overlaying the rail and content), use the `isLoading` parameter in `azAdvanced`.
 
 '''kotlin
+
     AzNavRail(...) {
         azAdvanced(
             isLoading = true // Shows the AzLoad animation in the center of the screen
@@ -359,6 +367,7 @@ This renders the animation in a non-focusable `Popup`, ensuring it appears on to
 You can also use `AzLoad` directly in your composables. It is a composable function that renders the animation. To center it, place it within a container with appropriate alignment (e.g., `Box` with `contentAlignment = Alignment.Center`).
 
 '''kotlin
+
     // In any Composable
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         AzLoad()
@@ -370,6 +379,7 @@ You can also use `AzLoad` directly in your composables. It is a composable funct
 The `AzButton` component (and `AzToggle`, `AzCycler`) can be used independently of the rail.
 
 '''kotlin
+
     AzButton(
         onClick = { /* ... */ },
         text = "Save",
@@ -379,6 +389,7 @@ The `AzButton` component (and `AzToggle`, `AzCycler`) can be used independently 
         isLoading = false, // Shows loading spinner without resizing button
         contentPadding = PaddingValues(16.dp) // Custom padding
     )
+    
 '''
 
 - **`modifier`**: Supports `Modifier` for layout customization (e.g., `weight`, `fillMaxWidth`).
@@ -391,6 +402,7 @@ The `AzButton` component (and `AzToggle`, `AzCycler`) can be used independently 
 The `AzRoller` component is a versatile dropdown that behaves like a slot machine but also supports typing and filtering. It extends the functionality of `AzTextBox` with a unique split-click interaction model.
 
 '''kotlin
+
     AzRoller(
         options = listOf("Cherry", "Bell", "Bar"),
         selectedOption = "Cherry",
@@ -401,6 +413,7 @@ The `AzRoller` component is a versatile dropdown that behaves like a slot machin
         enabled = true,
         isError = false
     )
+    
 '''
 
 - **Split Interaction**:
@@ -439,6 +452,7 @@ The rail can be detached and moved around the screen by long-pressing the header
 `AzRailRelocItem` is a specialized sub-item that users can reorder via drag-and-drop. This feature is supported on Android, Web, and React Native.
 
 '''kotlin
+
     azRailRelocItem(
         id = "reloc-1",
         hostId = "host-1",
@@ -484,6 +498,7 @@ Extend `AzNavRailOverlayService` to create a foreground service that renders the
 
 **OverlayService.kt:**
 '''kotlin
+
     class OverlayService : AzNavRailOverlayService() {
     
         override fun getNotification(): Notification {
@@ -541,6 +556,7 @@ The library includes a comprehensive **Complete Guide** (`AZNAVRAIL_COMPLETE_GUI
 To automatically extract this guide into your project's `docs/` folder whenever you build, add the following task to your app's `build.gradle.kts`:
 
 '''kotlin
+
     // In app/build.gradle.kts
     
     tasks.register("updateAzNavDocs") {
