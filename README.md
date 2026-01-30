@@ -48,7 +48,7 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 
 To use this library, add JitPack to your `settings.gradle.kts`:
 
-'''kotlin
+''' kotlin
 
     dependencyResolutionManagement {
         repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
@@ -57,15 +57,17 @@ To use this library, add JitPack to your `settings.gradle.kts`:
             maven { url = uri("https://jitpack.io") }
         }
     }
+    
 '''
 
 And add the dependency to your app's `build.gradle.kts`:
 
-'''kotlin
+''' kotlin
 
     dependencies {
         implementation("com.github.HereLiesAz:AzNavRail:VERSION") // Replace VERSION with the latest version
     }
+    
 '''
 
 ### Usage
@@ -78,7 +80,7 @@ Do **NOT** use `Scaffold`. Use `AzHostActivityLayout` as your root.
 
 **The Golden Sample:**
 
-'''kotlin
+''' kotlin
 
     import androidx.compose.foundation.layout.Column
     import androidx.compose.foundation.layout.padding
@@ -159,7 +161,7 @@ Do **NOT** use `Scaffold`. Use `AzHostActivityLayout` as your root.
 
 **Example: Setting a Background**
 
-'''kotlin
+''' kotlin
 
     AzHostActivityLayout(navController = navController) {
         // This map will fill the entire screen, ignoring safe zones.
@@ -177,6 +179,7 @@ Do **NOT** use `Scaffold`. Use `AzHostActivityLayout` as your root.
     
         // ... rail items ...
     }
+    
 '''
 
 ### Smart Transitions with AzNavHost
