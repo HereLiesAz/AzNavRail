@@ -48,17 +48,16 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 
 To use this library, add JitPack to your `settings.gradle.kts`:
 
-''' kotlin
 
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        mavenCentral()
-        maven { url = uri("https://jitpack.io") }
+    dependencyResolutionManagement {
+        repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+        repositories {
+            mavenCentral()
+            maven { url = uri("https://jitpack.io") }
+        }
     }
-}
     
-'''
+
 
 And add the dependency to your app's `build.gradle.kts`:
 
