@@ -30,6 +30,7 @@ import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -40,9 +41,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -218,6 +223,23 @@ fun AzNavRail(
     var selectedItem by rememberSaveable { mutableStateOf<AzNavItem?>(null) }
     val hostStates = remember { mutableStateMapOf<String, Boolean>() }
     val itemPositions = remember { mutableStateMapOf<String, androidx.compose.ui.geometry.Rect>() }
+    val descriptionPositions = remember { mutableStateMapOf<String, androidx.compose.ui.geometry.Rect>() }
+    var rootPosition by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
+
+    val itemsWithInfo by remember(displayedNavItems) {
+        derivedStateOf {
+            displayedNavItems.filter { item ->
+                val hasInfo = !item.info.isNullOrBlank()
+                val isRailItem = item.isRailItem
+                val isVisible = if (item.isSubItem) {
+                    hostStates[item.hostId] == true
+                } else {
+                    true
+                }
+                hasInfo && isRailItem && isVisible
+            }
+        }
+    }
 
     LaunchedEffect(displayedNavItems) {
         val initialSelectedItem = if (currentDestination != null) {
@@ -296,7 +318,35 @@ fun AzNavRail(
     }
 
     Box(
-        modifier = modifier,
+        modifier = modifier
+            .onGloballyPositioned { rootPosition = it.boundsInWindow() }
+            .drawBehind {
+                if (scope.infoScreen && rootPosition != null) {
+                    val rootRect = rootPosition!!
+
+                    itemsWithInfo.forEach { item ->
+                        val itemRect = itemPositions[item.id]
+                        val descRect = descriptionPositions[item.id]
+                        if (itemRect != null && descRect != null) {
+                             val startX = if (isRightDocked) itemRect.left else itemRect.right
+                             val startY = itemRect.center.y
+
+                             val endX = if (isRightDocked) descRect.right else descRect.left
+                             val endY = descRect.center.y
+
+                             val startLocal = Offset(startX - rootRect.left, startY - rootRect.top)
+                             val endLocal = Offset(endX - rootRect.left, endY - rootRect.top)
+
+                             drawLine(
+                                 color = Color.Gray,
+                                 start = startLocal,
+                                 end = endLocal,
+                                 strokeWidth = 2.dp.toPx()
+                             )
+                        }
+                    }
+                }
+            },
         contentAlignment = if (isRightDocked) Alignment.TopEnd else Alignment.TopStart
     ) {
         val buttonSize = AzNavRailDefaults.HeaderIconSize
@@ -721,7 +771,8 @@ fun AzNavRail(
                 railWidth = railWidth,
                 onDismiss = { scope.onDismissInfoScreen?.invoke() },
                 isRightDocked = isRightDocked,
-                safeZones = LocalAzSafeZones.current
+                safeZones = LocalAzSafeZones.current,
+                onDescriptionGloballyPositioned = { id, rect -> descriptionPositions[id] = rect }
             )
         }
     }
