@@ -66,10 +66,10 @@ class FooterTest {
             )
         }
 
-        // Click "About" (App Name acts as toggle)
-        composeTestRule.onNodeWithText("TestApp").performClick()
+        // Click "About"
+        composeTestRule.onNodeWithText("About").performClick()
 
         // Assertions
-        assertTrue("onToggle should be called for App Name", onToggleCalled)
+        assertTrue("onToggle should be called for About", onToggleCalled)
     }
 }

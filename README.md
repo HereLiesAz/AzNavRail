@@ -190,9 +190,9 @@ The `AzNavHost` wrapper provides seamless integration with the `AzHostActivityLa
 
 - **Activation**: Set `infoScreen = true` in `azAdvanced`.
 - **Behavior**:
-    - **Visual Guides**: Drawn lines connect description text to the corresponding rail items.
+    - **Visual Guides**: Drawn arrows connect description text to the corresponding rail items.
     - **Coordinates**: The overlay displays the on-screen coordinates of each item in the description, aiding in debugging and layout verification.
-    - **Independent Scrolling**: Both the description list and the rail are independently scrollable. Lines update dynamically to maintain the connection.
+    - **Independent Scrolling**: Both the description list and the rail are independently scrollable. Arrows update dynamically to maintain the connection.
     - **Interactivity**: Normal navigation items are disabled and greyed out. However, **Host Items** remain interactive, allowing users to expand and collapse sub-menus to view help for nested items.
     - **Content**: If an item has an `info` string, it is displayed in the scrollable list.
 - **Exit**: A Floating Action Button (FAB) appears in the bottom-right corner to exit the mode. You must handle the `onDismissInfoScreen` callback in `azAdvanced` to set `infoScreen = false`.
