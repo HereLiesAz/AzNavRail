@@ -49,21 +49,21 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 To use this library, add JitPack to your `settings.gradle.kts`:
 
 '''kotlin
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        mavenCentral()
-        maven { url = uri("https://jitpack.io") }
+    dependencyResolutionManagement {
+        repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+        repositories {
+            mavenCentral()
+            maven { url = uri("https://jitpack.io") }
+        }
     }
-}
 '''
 
 And add the dependency to your app's `build.gradle.kts`:
 
 '''kotlin
-dependencies {
-    implementation("com.github.HereLiesAz:AzNavRail:VERSION") // Replace VERSION with the latest version
-}
+    dependencies {
+        implementation("com.github.HereLiesAz:AzNavRail:VERSION") // Replace VERSION with the latest version
+    }
 '''
 
 ### Usage
@@ -77,62 +77,62 @@ Do **NOT** use `Scaffold`. Use `AzHostActivityLayout` as your root.
 **The Golden Sample:**
 
 '''kotlin
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import com.hereliesaz.aznavrail.AzHostActivityLayout
-import com.hereliesaz.aznavrail.AzNavHost
-import com.hereliesaz.aznavrail.model.AzDockingSide
-
-@Composable
-fun SampleScreen() {
-    // You must explicitly manage the controller
-    val navController = rememberNavController()
-
-    AzHostActivityLayout(
-        navController = navController,
-        initiallyExpanded = false
-    ) {
-        // SECTOR 1: VISUAL COMPLIANCE
-        azTheme(
-            activeColor = Color.Cyan,
-            expandedWidth = 280.dp
-        )
-
-        // SECTOR 2: BEHAVIORAL PROTOCOLS
-        azConfig(
-            dockingSide = AzDockingSide.LEFT,
-            packButtons = true,
-            displayAppName = true
-        )
-
-        // SECTOR 3: SPECIAL OPERATIONS
-        // azAdvanced(...) // for overlays, help screens, etc.
-
-        // NAVIGATION ITEMS
-        azRailItem(id = "home", text = "Home", route = "home")
-        azRailItem(id = "settings", text = "Settings", route = "settings")
-
-        // ONSCREEN CONTENT
-        // Use 'onscreen' to define your UI. 
-        // Layout rules (safe zones, padding) are enforced automatically.
-        onscreen(alignment = Alignment.Center) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                AzNavHost(startDestination = "home") {
-                    composable("home") { Text("Home Screen") }
-                    composable("settings") { Text("Settings Screen") }
+    import androidx.compose.foundation.layout.Column
+    import androidx.compose.foundation.layout.padding
+    import androidx.compose.material3.Text
+    import androidx.compose.runtime.Composable
+    import androidx.compose.ui.Alignment
+    import androidx.compose.ui.Modifier
+    import androidx.compose.ui.graphics.Color
+    import androidx.compose.ui.unit.dp
+    import androidx.navigation.compose.composable
+    import androidx.navigation.compose.rememberNavController
+    import com.hereliesaz.aznavrail.AzHostActivityLayout
+    import com.hereliesaz.aznavrail.AzNavHost
+    import com.hereliesaz.aznavrail.model.AzDockingSide
+    
+    @Composable
+    fun SampleScreen() {
+        // You must explicitly manage the controller
+        val navController = rememberNavController()
+    
+        AzHostActivityLayout(
+            navController = navController,
+            initiallyExpanded = false
+        ) {
+            // SECTOR 1: VISUAL COMPLIANCE
+            azTheme(
+                activeColor = Color.Cyan,
+                expandedWidth = 280.dp
+            )
+    
+            // SECTOR 2: BEHAVIORAL PROTOCOLS
+            azConfig(
+                dockingSide = AzDockingSide.LEFT,
+                packButtons = true,
+                displayAppName = true
+            )
+    
+            // SECTOR 3: SPECIAL OPERATIONS
+            // azAdvanced(...) // for overlays, help screens, etc.
+    
+            // NAVIGATION ITEMS
+            azRailItem(id = "home", text = "Home", route = "home")
+            azRailItem(id = "settings", text = "Settings", route = "settings")
+    
+            // ONSCREEN CONTENT
+            // Use 'onscreen' to define your UI. 
+            // Layout rules (safe zones, padding) are enforced automatically.
+            onscreen(alignment = Alignment.Center) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    AzNavHost(startDestination = "home") {
+                        composable("home") { Text("Home Screen") }
+                        composable("settings") { Text("Settings Screen") }
+                    }
                 }
             }
         }
     }
-}
 '''
 
 ### AzHostActivityLayout Configuration
@@ -157,22 +157,22 @@ fun SampleScreen() {
 **Example: Setting a Background**
 
 '''kotlin
-AzHostActivityLayout(navController = navController) {
-    // This map will fill the entire screen, ignoring safe zones.
-    background(weight = 0) {
-        GoogleMap(
-            modifier = Modifier.fillMaxSize(),
-            cameraPositionState = cameraPositionState
-        )
+    AzHostActivityLayout(navController = navController) {
+        // This map will fill the entire screen, ignoring safe zones.
+        background(weight = 0) {
+            GoogleMap(
+                modifier = Modifier.fillMaxSize(),
+                cameraPositionState = cameraPositionState
+            )
+        }
+    
+        // Your UI content goes here, respecting safe zones.
+        onscreen(Alignment.TopEnd) {
+            Text("Map Overlay")
+        }
+    
+        // ... rail items ...
     }
-
-    // Your UI content goes here, respecting safe zones.
-    onscreen(Alignment.TopEnd) {
-        Text("Map Overlay")
-    }
-
-    // ... rail items ...
-}
 '''
 
 ### Smart Transitions with AzNavHost
@@ -198,21 +198,21 @@ The `AzNavHost` wrapper provides seamless integration with the `AzHostActivityLa
 - **Exit**: A Floating Action Button (FAB) appears in the bottom-right corner to exit the mode. You must handle the `onDismissInfoScreen` callback in `azAdvanced` to set `infoScreen = false`.
 
 '''kotlin
-var showHelp by remember { mutableStateOf(false) }
-
-AzNavRail(...) {
-    azAdvanced(
-        infoScreen = showHelp,
-        onDismissInfoScreen = { showHelp = false }
-    )
-
-    azRailItem(
-        id = "home",
-        text = "Home",
-        info = "Go to the home screen." // Text displayed in help mode
-    )
-    // ...
-}
+    var showHelp by remember { mutableStateOf(false) }
+    
+    AzNavRail(...) {
+        azAdvanced(
+            infoScreen = showHelp,
+            onDismissInfoScreen = { showHelp = false }
+        )
+    
+        azRailItem(
+            id = "home",
+            text = "Home",
+            info = "Go to the home screen." // Text displayed in help mode
+        )
+        // ...
+    }
 '''
 
 ### `AzTextBox` and `AzForm`
@@ -243,94 +243,94 @@ AzNavRail(...) {
 Here is an example of how to use the standalone `AzTextBox` for multiline and secret inputs:
 
 '''kotlin
-import com.hereliesaz.aznavrail.AzTextBox
-import com.hereliesaz.aznavrail.AzTextBoxDefaults
-
-// In your main Activity or a central setup location:
-AzTextBoxDefaults.setSuggestionLimit(3) // Show up to 3 suggestions
-AzTextBoxDefaults.setBackgroundColor(Color.LightGray) // Set a global background color
-AzTextBoxDefaults.setBackgroundOpacity(0.5f) // Set a global background opacity
-
-// Uncontrolled (internal state management)
-AzTextBox(
-    modifier = Modifier.padding(16.dp),
-    hint = "Enter text...",
-    onSubmit = { text ->
-        // Handle the submitted text
-    },
-    submitButtonContent = {
-        Text("Go")
-    }
-)
-
-// Controlled (hoisted state management)
-var text by remember { mutableStateOf("") }
-AzTextBox(
-    modifier = Modifier.padding(16.dp),
-    value = text,
-    onValueChange = { text = it },
-    hint = "Enter text...",
-    onSubmit = {
-        // Handle the submitted text
-    },
-    submitButtonContent = {
-        Text("Go")
-    }
-)
-
-// Multiline Text Box
-AzTextBox(
-    modifier = Modifier.padding(16.dp),
-    hint = "Enter multiple lines of text...",
-    multiline = true,
-    onSubmit = { text ->
-        // Handle the submitted text
-    },
-    submitButtonContent = {
-        Text("Submit")
-    }
-)
-
-// Secret Text Box
-AzTextBox(
-    modifier = Modifier.padding(16.dp),
-    hint = "Enter password...",
-    secret = true,
-    onSubmit = { password ->
-        // Handle the submitted password
-    },
-    submitButtonContent = {
-        Text("Go")
-    }
-)
-
-// Disabled Text Box
-AzTextBox(
-    modifier = Modifier.padding(16.dp),
-    hint = "Cannot edit...",
-    enabled = false,
-    onSubmit = { /* No-op */ }
-)
+    import com.hereliesaz.aznavrail.AzTextBox
+    import com.hereliesaz.aznavrail.AzTextBoxDefaults
+    
+    // In your main Activity or a central setup location:
+    AzTextBoxDefaults.setSuggestionLimit(3) // Show up to 3 suggestions
+    AzTextBoxDefaults.setBackgroundColor(Color.LightGray) // Set a global background color
+    AzTextBoxDefaults.setBackgroundOpacity(0.5f) // Set a global background opacity
+    
+    // Uncontrolled (internal state management)
+    AzTextBox(
+        modifier = Modifier.padding(16.dp),
+        hint = "Enter text...",
+        onSubmit = { text ->
+            // Handle the submitted text
+        },
+        submitButtonContent = {
+            Text("Go")
+        }
+    )
+    
+    // Controlled (hoisted state management)
+    var text by remember { mutableStateOf("") }
+    AzTextBox(
+        modifier = Modifier.padding(16.dp),
+        value = text,
+        onValueChange = { text = it },
+        hint = "Enter text...",
+        onSubmit = {
+            // Handle the submitted text
+        },
+        submitButtonContent = {
+            Text("Go")
+        }
+    )
+    
+    // Multiline Text Box
+    AzTextBox(
+        modifier = Modifier.padding(16.dp),
+        hint = "Enter multiple lines of text...",
+        multiline = true,
+        onSubmit = { text ->
+            // Handle the submitted text
+        },
+        submitButtonContent = {
+            Text("Submit")
+        }
+    )
+    
+    // Secret Text Box
+    AzTextBox(
+        modifier = Modifier.padding(16.dp),
+        hint = "Enter password...",
+        secret = true,
+        onSubmit = { password ->
+            // Handle the submitted password
+        },
+        submitButtonContent = {
+            Text("Go")
+        }
+    )
+    
+    // Disabled Text Box
+    AzTextBox(
+        modifier = Modifier.padding(16.dp),
+        hint = "Cannot edit...",
+        enabled = false,
+        onSubmit = { /* No-op */ }
+    )
 '''
 
 Here is an example of the `AzForm` component:
 
 '''kotlin
-import com.hereliesaz.aznavrail.AzForm
-
-AzForm(
-    formName = "loginForm",
-    onSubmit = { formData ->
-        // formData is a map of entryName to value
-        val username = formData["username"]
-        val password = formData["password"]
+    import com.hereliesaz.aznavrail.AzForm
+    
+    AzForm(
+        formName = "loginForm",
+        onSubmit = { formData ->
+            // formData is a map of entryName to value
+            val username = formData["username"]
+            val password = formData["password"]
+        }
+    ) {
+        entry(entryName = "username", hint = "Username")
+        entry(entryName = "password", hint = "Password", secret = true)
+        entry(entryName = "bio", hint = "Biography", multiline = true)
+        entry(entryName = "readonly", hint = "Read only", enabled = false)
     }
-) {
-    entry(entryName = "username", hint = "Username")
-    entry(entryName = "password", hint = "Password", secret = true)
-    entry(entryName = "bio", hint = "Biography", multiline = true)
-    entry(entryName = "readonly", hint = "Read only", enabled = false)
-}
 '''
 
 The `onSubmit` callback provides a map where keys are the entry names defined in `entry()`, and values are the user's input.
@@ -344,12 +344,12 @@ The `AzLoad` component provides a loading animation. It can be used as a full-sc
 To show a loading animation in the middle of the screen (overlaying the rail and content), use the `isLoading` parameter in `azAdvanced`.
 
 '''kotlin
-AzNavRail(...) {
-    azAdvanced(
-        isLoading = true // Shows the AzLoad animation in the center of the screen
-        // ...
-    )
-}
+    AzNavRail(...) {
+        azAdvanced(
+            isLoading = true // Shows the AzLoad animation in the center of the screen
+            // ...
+        )
+    }
 '''
 
 This renders the animation in a non-focusable `Popup`, ensuring it appears on top of other UI elements.
@@ -359,10 +359,10 @@ This renders the animation in a non-focusable `Popup`, ensuring it appears on to
 You can also use `AzLoad` directly in your composables. It is a composable function that renders the animation. To center it, place it within a container with appropriate alignment (e.g., `Box` with `contentAlignment = Alignment.Center`).
 
 '''kotlin
-// In any Composable
-Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-    AzLoad()
-}
+    // In any Composable
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        AzLoad()
+    }
 '''
 
 ### Standalone Buttons
@@ -370,15 +370,15 @@ Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
 The `AzButton` component (and `AzToggle`, `AzCycler`) can be used independently of the rail.
 
 '''kotlin
-AzButton(
-    onClick = { /* ... */ },
-    text = "Save",
-    modifier = Modifier.fillMaxWidth(), // Now supports modifiers
-    shape = AzButtonShape.RECTANGLE,
-    enabled = true, // Can be disabled
-    isLoading = false, // Shows loading spinner without resizing button
-    contentPadding = PaddingValues(16.dp) // Custom padding
-)
+    AzButton(
+        onClick = { /* ... */ },
+        text = "Save",
+        modifier = Modifier.fillMaxWidth(), // Now supports modifiers
+        shape = AzButtonShape.RECTANGLE,
+        enabled = true, // Can be disabled
+        isLoading = false, // Shows loading spinner without resizing button
+        contentPadding = PaddingValues(16.dp) // Custom padding
+    )
 '''
 
 - **`modifier`**: Supports `Modifier` for layout customization (e.g., `weight`, `fillMaxWidth`).
@@ -391,16 +391,16 @@ AzButton(
 The `AzRoller` component is a versatile dropdown that behaves like a slot machine but also supports typing and filtering. It extends the functionality of `AzTextBox` with a unique split-click interaction model.
 
 '''kotlin
-AzRoller(
-    options = listOf("Cherry", "Bell", "Bar"),
-    selectedOption = "Cherry",
-    // Or use selectedIndex for index-based selection
-    // selectedIndex = 0,
-    onOptionSelected = { /* handle selection (String) */ },
-    hint = "Select Item",
-    enabled = true,
-    isError = false
-)
+    AzRoller(
+        options = listOf("Cherry", "Bell", "Bar"),
+        selectedOption = "Cherry",
+        // Or use selectedIndex for index-based selection
+        // selectedIndex = 0,
+        onOptionSelected = { /* handle selection (String) */ },
+        hint = "Select Item",
+        enabled = true,
+        isError = false
+    )
 '''
 
 - **Split Interaction**:
@@ -439,18 +439,18 @@ The rail can be detached and moved around the screen by long-pressing the header
 `AzRailRelocItem` is a specialized sub-item that users can reorder via drag-and-drop. This feature is supported on Android, Web, and React Native.
 
 '''kotlin
-azRailRelocItem(
-    id = "reloc-1",
-    hostId = "host-1",
-    text = "Item 1",
-    onRelocate = { from, to, newOrder ->
-        // Handle new order (List<String>)
+    azRailRelocItem(
+        id = "reloc-1",
+        hostId = "host-1",
+        text = "Item 1",
+        onRelocate = { from, to, newOrder ->
+            // Handle new order (List<String>)
+        }
+    ) {
+        // Hidden Menu (Tap to select -> Tap again to open)
+        listItem("Action 1") { /* ... */ }
+        inputItem("Rename") { newName -> /* ... */ }
     }
-) {
-    // Hidden Menu (Tap to select -> Tap again to open)
-    listItem("Action 1") { /* ... */ }
-    inputItem("Rename") { newName -> /* ... */ }
-}
 '''
 
 - **Drag-and-Drop**: Long-press (triggers a vibration) and drag an item to move it. Other items will animate to create an empty slot at the potential drop target.
@@ -484,33 +484,33 @@ Extend `AzNavRailOverlayService` to create a foreground service that renders the
 
 **OverlayService.kt:**
 '''kotlin
-class OverlayService : AzNavRailOverlayService() {
-
-    override fun getNotification(): Notification {
-        // Create and return a persistent notification for the foreground service
-        // ...
-    }
-
-    @Composable
-    override fun OverlayContent() {
-        // Wrap content in your theme
-        MyApplicationTheme {
-             // Simply render AzNavRail. The service automatically manages
-             // window resizing and drag events via an internal controller.
-             AzNavRail(
-                 // ...
-             ) {
-                 azAdvanced(
-                     enableRailDragging = true,
-                     onUndock = { stopSelf() } // Close overlay on undock
-                 )
-                 azTheme(...)
-                 azConfig(...)
-                 // ... add items
-             }
+    class OverlayService : AzNavRailOverlayService() {
+    
+        override fun getNotification(): Notification {
+            // Create and return a persistent notification for the foreground service
+            // ...
+        }
+    
+        @Composable
+        override fun OverlayContent() {
+            // Wrap content in your theme
+            MyApplicationTheme {
+                 // Simply render AzNavRail. The service automatically manages
+                 // window resizing and drag events via an internal controller.
+                 AzNavRail(
+                     // ...
+                 ) {
+                     azAdvanced(
+                         enableRailDragging = true,
+                         onUndock = { stopSelf() } // Close overlay on undock
+                     )
+                     azTheme(...)
+                     azConfig(...)
+                     // ... add items
+                 }
+            }
         }
     }
-}
 '''
 
 **Option B: Basic Service (Simpler setup)**
@@ -541,37 +541,37 @@ The library includes a comprehensive **Complete Guide** (`AZNAVRAIL_COMPLETE_GUI
 To automatically extract this guide into your project's `docs/` folder whenever you build, add the following task to your app's `build.gradle.kts`:
 
 '''kotlin
-// In app/build.gradle.kts
-
-tasks.register("updateAzNavDocs") {
-    group = "documentation"
-    description = "Extracts AzNavRail documentation from the dependency."
-
-    doLast {
-        // Find the AzNavRail AAR in the runtime classpath
-        val artifact = configurations.getByName("debugRuntimeClasspath").files
-            .find { it.name.contains("AzNavRail") && it.extension == "aar" }
-
-        if (artifact != null) {
-            copy {
-                from(zipTree(artifact))
-                include("assets/AZNAVRAIL_COMPLETE_GUIDE.md")
-                into(layout.projectDirectory.dir("docs"))
-                // Remove the 'assets/' prefix from the output file
-                eachFile {
-                    path = name
+    // In app/build.gradle.kts
+    
+    tasks.register("updateAzNavDocs") {
+        group = "documentation"
+        description = "Extracts AzNavRail documentation from the dependency."
+    
+        doLast {
+            // Find the AzNavRail AAR in the runtime classpath
+            val artifact = configurations.getByName("debugRuntimeClasspath").files
+                .find { it.name.contains("AzNavRail") && it.extension == "aar" }
+    
+            if (artifact != null) {
+                copy {
+                    from(zipTree(artifact))
+                    include("assets/AZNAVRAIL_COMPLETE_GUIDE.md")
+                    into(layout.projectDirectory.dir("docs"))
+                    // Remove the 'assets/' prefix from the output file
+                    eachFile {
+                        path = name
+                    }
+                    includeEmptyDirs = false
                 }
-                includeEmptyDirs = false
+                println("AzNavRail documentation updated: docs/AZNAVRAIL_COMPLETE_GUIDE.md")
+            } else {
+                println("AzNavRail AAR not found. Make sure the dependency is added.")
             }
-            println("AzNavRail documentation updated: docs/AZNAVRAIL_COMPLETE_GUIDE.md")
-        } else {
-            println("AzNavRail AAR not found. Make sure the dependency is added.")
         }
     }
-}
-
-// Optional: Run this task automatically before every build
-// tasks.named("preBuild") { dependsOn("updateAzNavDocs") }
+    
+    // Optional: Run this task automatically before every build
+    // tasks.named("preBuild") { dependsOn("updateAzNavDocs") }
 '''
 
 Once added, run `./gradlew updateAzNavDocs` (or just build your app if you uncommented the last line) to generate the documentation.
