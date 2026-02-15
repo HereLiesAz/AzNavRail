@@ -71,7 +71,6 @@ internal fun RailItems(
     hostStates: MutableMap<String, Boolean>,
     packRailButtons: Boolean,
     orientation: AzOrientation = AzOrientation.Vertical,
-    visualSide: AzVisualSide,
     onClickOverride: ((AzNavItem) -> Unit)? = null,
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
     infoScreen: Boolean = false,
@@ -85,9 +84,9 @@ internal fun RailItems(
     // Shared state for dragging
     var draggedItemId by remember { mutableStateOf<String?>(null) }
     var dragOffset by remember { mutableStateOf(0f) }
-    var itemHeights by remember { mutableStateOf(mapOf<String, Int>()) }
-    var itemWidths by remember { mutableStateOf(mapOf<String, Int>()) }
-    var itemBounds by remember { mutableStateOf(mapOf<String, Rect>()) }
+    val itemHeights = remember { androidx.compose.runtime.mutableStateMapOf<String, Int>() }
+    val itemWidths = remember { androidx.compose.runtime.mutableStateMapOf<String, Int>() }
+    val itemBounds = remember { androidx.compose.runtime.mutableStateMapOf<String, Rect>() }
     var hiddenMenuOpenId by remember { mutableStateOf<String?>(null) }
     var nestedRailOpenId by remember { mutableStateOf<String?>(null) }
     var currentDropTargetIndex by remember { mutableStateOf<Int?>(null) }
@@ -116,7 +115,6 @@ internal fun RailItems(
                     currentDestination = currentDestination,
                     buttonSize = buttonSize,
                     orientation = orientation,
-                    visualSide = visualSide,
                     onRailCyclerClick = onRailCyclerClick,
                     onItemSelected = onItemSelected,
                     hostStates = hostStates,
@@ -178,10 +176,13 @@ internal fun RailItems(
                     onMenuOpen = { id -> hiddenMenuOpenId = id },
                     itemSizes = currentItemSizes,
                     itemWidths = itemWidths,
-                    onHeightReported = { id, height -> itemHeights = itemHeights + (id to height) },
-                    onWidthReported = { id, width -> itemWidths = itemWidths + (id to width) },
+                    onHeightReported = { id, height -> itemHeights[id] = height },
+                    onWidthReported = { id, width -> itemWidths[id] = width },
+                    onBoundsReported = { id, bounds -> itemBounds[id] = bounds },
                     coroutineScope = coroutineScope,
                     hiddenMenuOpenId = hiddenMenuOpenId,
+                    nestedRailOpenId = nestedRailOpenId,
+                    onNestedRailToggle = { id -> nestedRailOpenId = if (nestedRailOpenId == id) null else id },
                     onHiddenMenuDismiss = { hiddenMenuOpenId = null },
                     lastTappedId = lastTappedId,
                     onUpdateLastTappedId = { id -> lastTappedId = id },
@@ -201,7 +202,6 @@ internal fun RailItems(
                                     currentDestination = currentDestination,
                                     buttonSize = buttonSize,
                                     orientation = orientation,
-                                    visualSide = visualSide,
                                     onRailCyclerClick = onRailCyclerClick,
                                     onItemSelected = onItemSelected,
                                     hostStates = hostStates,
@@ -255,10 +255,13 @@ internal fun RailItems(
                                     onMenuOpen = { id -> hiddenMenuOpenId = id },
                                     itemSizes = currentItemSizes,
                                     itemWidths = itemWidths,
-                                    onHeightReported = { id, height -> itemHeights = itemHeights + (id to height) },
-                                    onWidthReported = { id, width -> itemWidths = itemWidths + (id to width) },
+                                    onHeightReported = { id, height -> itemHeights[id] = height },
+                                    onWidthReported = { id, width -> itemWidths[id] = width },
+                                    onBoundsReported = { id, bounds -> itemBounds[id] = bounds },
                                     coroutineScope = coroutineScope,
                                     hiddenMenuOpenId = hiddenMenuOpenId,
+                                    nestedRailOpenId = nestedRailOpenId,
+                                    onNestedRailToggle = { id -> nestedRailOpenId = if (nestedRailOpenId == id) null else id },
                                     onHiddenMenuDismiss = { hiddenMenuOpenId = null },
                                     lastTappedId = lastTappedId,
                                     onUpdateLastTappedId = { id -> lastTappedId = id },
@@ -320,14 +323,6 @@ internal fun RailItems(
             Row { itemsToRender.forEach { renderItem(it) } }
         }
     }
-
-    Box {
-        if (isVertical) {
-            Column { itemsToRender.forEach { renderItem(it) } }
-        } else {
-            Row { itemsToRender.forEach { renderItem(it) } }
-        }
-    }
 }
 
 @Composable
@@ -338,7 +333,6 @@ private fun DraggableRailItemWrapper(
     currentDestination: String?,
     buttonSize: Dp,
     orientation: AzOrientation,
-    visualSide: AzVisualSide,
     onRailCyclerClick: (AzNavItem) -> Unit,
     onItemSelected: (AzNavItem) -> Unit,
     hostStates: MutableMap<String, Boolean>,
@@ -609,7 +603,7 @@ private fun DraggableRailItemWrapper(
                  },
                  backgroundColor = AzTextBoxDefaults.getBackgroundColor(),
                  backgroundOpacity = AzTextBoxDefaults.getBackgroundOpacity(),
-                 visualSide = visualSide
+                 anchorWidth = if (isVertical) (itemWidths[item.id] ?: 0) else 0 // Anchor logic might need adjustment for horizontal
              )
          }
 
@@ -645,10 +639,11 @@ private fun HiddenMenuPopup(
     onInputSubmit: (com.hereliesaz.aznavrail.model.HiddenMenuItem, String) -> Unit,
     backgroundColor: androidx.compose.ui.graphics.Color,
     backgroundOpacity: Float,
-    visualSide: AzVisualSide
+    anchorWidth: Int
 ) {
     Popup(
-        popupPositionProvider = RailMenuPositionProvider(visualSide),
+        alignment = androidx.compose.ui.Alignment.TopStart,
+        offset = IntOffset(x = anchorWidth, y = 0),
         onDismissRequest = onDismiss,
         properties = PopupProperties(focusable = true)
     ) {

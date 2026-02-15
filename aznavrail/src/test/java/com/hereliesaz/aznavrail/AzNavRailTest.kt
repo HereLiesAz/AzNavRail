@@ -68,7 +68,7 @@ class AzNavRailTest {
     @Test
     fun `azRailItem should add a rail item`() {
         val scope = AzNavRailScopeImpl()
-        scope.azRailItem("home", "Home", Color.Red, onClick = {})
+        scope.azRailItem("home", "Home", color = Color.Red, onClick = {})
         val expectedItem = AzNavItem("home", "Home", isRailItem = true, color = Color.Red)
         assertEquals(expectedItem.id, scope.navItems[0].id)
         assertEquals(expectedItem.text, scope.navItems[0].text)
