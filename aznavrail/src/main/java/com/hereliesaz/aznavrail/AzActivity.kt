@@ -10,6 +10,6 @@ abstract class AzActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        graph.Run(this)
+        graph.run(this)
     }
 }
