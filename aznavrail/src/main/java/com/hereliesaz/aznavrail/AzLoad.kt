@@ -17,6 +17,13 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+/**
+ * A simple loading spinner component.
+ *
+ * It renders a rotating circle with the text "loading..." inside.
+ * The spinner rotates continuously on the Y-axis.
+ * The color is derived from [MaterialTheme.colorScheme.primary].
+ */
 @Composable
 fun AzLoad() {
     val infiniteTransition = rememberInfiniteTransition()

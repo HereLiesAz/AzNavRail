@@ -30,6 +30,20 @@ import com.hereliesaz.aznavrail.AzNavRailScopeImpl
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 
+/**
+ * Composable that renders a nested rail popup.
+ *
+ * @param parentItem The item triggering the nested rail.
+ * @param items The items within the nested rail.
+ * @param scope The configuration scope.
+ * @param navController The navigation controller.
+ * @param currentDestination The current navigation route.
+ * @param anchorBounds The screen bounds of the parent item (anchor).
+ * @param rootBounds The screen bounds of the root container.
+ * @param onDismiss Callback to dismiss the popup.
+ * @param isRightDocked Whether the main rail is right-docked.
+ * @param onItemSelected Callback for item selection.
+ */
 @Composable
 internal fun NestedRail(
     parentItem: AzNavItem,

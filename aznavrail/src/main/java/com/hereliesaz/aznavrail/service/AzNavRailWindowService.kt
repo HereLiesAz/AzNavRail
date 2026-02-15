@@ -29,12 +29,34 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import kotlin.math.roundToInt
 
+/**
+ * CompositionLocal to provide the [AzNavRailOverlayController] to the overlay content.
+ */
 val LocalAzNavRailOverlayController = compositionLocalOf<AzNavRailOverlayController?> { null }
 
+/**
+ * Controller interface for managing the overlay window's state and behavior.
+ */
 interface AzNavRailOverlayController {
+    /**
+     * The current offset of the overlay content (window position).
+     */
     val contentOffset: State<IntOffset>
+
+    /**
+     * Called when a drag operation starts on the overlay rail.
+     */
     fun onDragStart()
+
+    /**
+     * Called when the overlay rail is dragged.
+     * @param dragAmount The amount dragged.
+     */
     fun onDrag(dragAmount: Offset)
+
+    /**
+     * Called when the drag operation ends.
+     */
     fun onDragEnd()
 }
 
@@ -174,6 +196,11 @@ abstract class AzNavRailWindowService : Service(), LifecycleOwner, SavedStateReg
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
     }
 
+    /**
+     * Updates the position of the window manually.
+     * @param x The delta X.
+     * @param y The delta Y.
+     */
     fun updatePosition(x: Float, y: Float) {
         if (composeView != null && windowManager != null) {
             windowParams.x += x.toInt()

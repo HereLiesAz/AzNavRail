@@ -5,8 +5,20 @@ import androidx.compose.ui.Alignment
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzOrientation
 
+/**
+ * Enumeration representing the visual side of the screen where the rail is docked.
+ * This takes into account physical device rotation.
+ */
 enum class AzVisualSide { LEFT, RIGHT, TOP, BOTTOM }
 
+/**
+ * Data class holding the calculated layout configuration for the rail.
+ *
+ * @param visualSide The effective visual side of the rail.
+ * @param orientation The orientation of the rail items.
+ * @param alignment The alignment of the rail within the root container.
+ * @param reverseLayout Whether the item order should be reversed (e.g., for bottom docking).
+ */
 data class RailLayoutConfig(
     val visualSide: AzVisualSide,
     val orientation: AzOrientation,
@@ -14,7 +26,18 @@ data class RailLayoutConfig(
     val reverseLayout: Boolean
 )
 
+/**
+ * Helper object for calculating rail layout based on docking side and device rotation.
+ */
 internal object AzRailLayoutHelper {
+    /**
+     * Calculates the layout configuration.
+     *
+     * @param dockingSide The configured logical docking side.
+     * @param rotation The current display rotation.
+     * @param usePhysicalDocking Whether to apply physical docking logic (adapting to rotation).
+     * @return The calculated [RailLayoutConfig].
+     */
     fun calculateLayout(
         dockingSide: AzDockingSide,
         rotation: Int,

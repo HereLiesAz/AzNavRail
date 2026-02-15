@@ -39,21 +39,70 @@ import com.hereliesaz.aznavrail.internal.AzSafeZones
 import com.hereliesaz.aznavrail.model.AzDockingSide
 
 // --- Composition Locals ---
+/**
+ * CompositionLocal to indicate if an [AzHostActivityLayout] is present in the hierarchy.
+ */
 val LocalAzNavHostPresent = compositionLocalOf { false }
+
+/**
+ * CompositionLocal providing the current safe zones (padding) applied by the layout.
+ */
 val LocalAzSafeZones = compositionLocalOf { AzSafeZones() }
+
+/**
+ * CompositionLocal providing the [AzNavHostScope] to descendants.
+ */
 val LocalAzNavHostScope = staticCompositionLocalOf<AzNavHostScope?> { null }
 
 // --- Scopes & Models ---
+/**
+ * Scope for configuring the [AzHostActivityLayout].
+ *
+ * Extends [AzNavRailScope] to allow rail configuration directly within the host layout block.
+ */
 interface AzNavHostScope : AzNavRailScope {
+    /**
+     * The [NavHostController] associated with this host.
+     */
     val navController: NavHostController
+
+    /**
+     * The configured docking side of the rail.
+     */
     val dockingSide: AzDockingSide
+
+    /**
+     * Adds a background layer behind the main UI content.
+     *
+     * @param weight The Z-order weight of the background layer. Lower weights are drawn first.
+     * @param content The composable content of the background.
+     */
     fun background(weight: Int = 0, content: @Composable () -> Unit)
+
+    /**
+     * Adds content to the safe onscreen area.
+     *
+     * Content added here will automatically respect safe zones (padding) and avoid the rail.
+     *
+     * @param alignment The alignment of the content within the safe area.
+     * @param content The composable content.
+     */
     fun onscreen(alignment: Alignment = Alignment.TopStart, content: @Composable () -> Unit)
 }
 
+/**
+ * Data class representing a background layer item.
+ */
 data class AzBackgroundItem(val weight: Int, val content: @Composable () -> Unit)
+
+/**
+ * Data class representing an onscreen content item.
+ */
 data class AzOnscreenItem(val alignment: Alignment, val content: @Composable () -> Unit)
 
+/**
+ * Implementation of [AzNavHostScope].
+ */
 class AzNavHostScopeImpl(
     private val railScope: AzNavRailScopeImpl = AzNavRailScopeImpl()
 ) : AzNavHostScope, AzNavRailScope by railScope {
@@ -66,9 +115,19 @@ class AzNavHostScopeImpl(
     override val dockingSide: AzDockingSide
         get() = railScope.dockingSide
 
+    /**
+     * List of registered background items.
+     */
     val backgrounds = mutableStateListOf<AzBackgroundItem>()
+
+    /**
+     * List of registered onscreen items.
+     */
     val onscreenItems = mutableStateListOf<AzOnscreenItem>()
 
+    /**
+     * Sets the navigation controller for this scope.
+     */
     fun setController(controller: NavHostController) {
         _navController = controller
         railScope.navController = controller
@@ -85,6 +144,9 @@ class AzNavHostScopeImpl(
     // Expose railScope for AzNavRail consumption
     fun getRailScopeImpl() = railScope
 
+    /**
+     * Resets the scope state.
+     */
     fun resetHost() {
         railScope.reset()
         backgrounds.clear()
@@ -97,6 +159,20 @@ private enum class AzVisualSide { LEFT, RIGHT, TOP, BOTTOM }
 // --- Layouts ---
 
 // AUTHORIZED: This layout is the designated wrapper for the strict AzNavRail.
+/**
+ * The mandatory top-level container for applications using AzNavRail.
+ *
+ * This layout manages the navigation rail, safe zones, background layers, and content alignment.
+ * It enforces strict layout rules to ensure consistent behavior across devices and orientations.
+ *
+ * @param navController The [NavHostController] to be used for navigation.
+ * @param modifier The modifier to be applied to the layout.
+ * @param currentDestination The current navigation route. If null, it is automatically derived from [navController].
+ * @param isLandscape Explicitly override the landscape orientation detection.
+ * @param initiallyExpanded Whether the rail should be initially expanded.
+ * @param disableSwipeToOpen Whether to disable the swipe gesture to open the rail menu.
+ * @param content The configuration block for the layout and rail.
+ */
 @OptIn(AzStrictLayout::class)
 @Composable
 fun AzHostActivityLayout(
@@ -200,6 +276,9 @@ fun AzHostActivityLayout(
     }
 }
 
+/**
+ * Internal layout component that applies safe zone padding to content.
+ */
 @Composable
 fun AzHostFragmentLayout(
     safeTop: Dp,
@@ -239,6 +318,23 @@ fun AzHostFragmentLayout(
     }
 }
 
+/**
+ * A wrapper around [androidx.navigation.compose.NavHost] designed for use within [AzHostActivityLayout].
+ *
+ * This component automatically integrates with the host layout, using the provided [NavHostController]
+ * and applying smart transition animations based on the rail's docking side.
+ *
+ * @param startDestination The route of the start destination.
+ * @param modifier The modifier to be applied to the layout.
+ * @param navController The navigation controller. Defaults to the one provided by [AzHostActivityLayout].
+ * @param contentAlignment The alignment of the content.
+ * @param route The route for the graph.
+ * @param enterTransition Callback to define enter transitions.
+ * @param exitTransition Callback to define exit transitions.
+ * @param popEnterTransition Callback to define pop enter transitions.
+ * @param popExitTransition Callback to define pop exit transitions.
+ * @param builder The builder for the navigation graph.
+ */
 @Composable
 fun AzNavHost(
     startDestination: String,

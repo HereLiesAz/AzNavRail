@@ -21,6 +21,15 @@ import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.AzDivider
 import com.hereliesaz.aznavrail.AzNavRailScopeImpl
 
+/**
+ * Composable for the footer section of the expanded navigation rail.
+ *
+ * @param appName The name of the application.
+ * @param onToggle Callback to toggle the rail state.
+ * @param onUndock Callback to undock the rail (FAB mode).
+ * @param scope The configuration scope.
+ * @param footerColor The color for the footer text.
+ */
 @Composable
 internal fun Footer(
     appName: String,
