@@ -106,7 +106,7 @@ class RelocItemHandlerTest {
             items = items,
             draggedItemId = "nonexistent",
             currentDragOffset = 100f,
-            itemHeights = mapOf("1" to 100)
+            itemSizes = mapOf("1" to 100)
         )
         assertNull(target)
     }
@@ -118,22 +118,22 @@ class RelocItemHandlerTest {
             AzNavItem(id = "2", text = "2", isRailItem = true, isRelocItem = true, hostId = "host"),
             AzNavItem(id = "3", text = "3", isRailItem = true, isRelocItem = true, hostId = "host")
         )
-        val heights = mapOf("1" to 100, "2" to 100, "3" to 100)
+        val sizes = mapOf("1" to 100, "2" to 100, "3" to 100)
 
         // Drag item "1" down by 50px. Next item "2" is 100px.
         // 50 > 0.4 * 100 (40). So it should swap.
-        val target1 = RelocItemHandler.calculateTargetIndex(items, "1", 50f, heights)
+        val target1 = RelocItemHandler.calculateTargetIndex(items, "1", 50f, sizes)
         assertEquals(1, target1)
 
         // Drag item "1" down by 150px.
         // Swap with "2" (consumes 100, remaining 50).
         // 50 > 0.4 * 100 (40). Swap with "3".
-        val target2 = RelocItemHandler.calculateTargetIndex(items, "1", 150f, heights)
+        val target2 = RelocItemHandler.calculateTargetIndex(items, "1", 150f, sizes)
         assertEquals(2, target2)
 
          // Drag item "1" down by 30px.
         // 30 < 40. No swap.
-        val target3 = RelocItemHandler.calculateTargetIndex(items, "1", 30f, heights)
+        val target3 = RelocItemHandler.calculateTargetIndex(items, "1", 30f, sizes)
         assertEquals(0, target3)
     }
 }
