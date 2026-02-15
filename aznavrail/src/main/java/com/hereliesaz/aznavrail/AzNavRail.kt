@@ -1,10 +1,13 @@
 package com.hereliesaz.aznavrail
 
 import android.content.Intent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
@@ -18,8 +21,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Icon
@@ -56,23 +61,22 @@ import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.internal.AzNavRailLogger
-import com.hereliesaz.aznavrail.internal.AzVisualSide
+import com.hereliesaz.aznavrail.model.AzOrientation
 import com.hereliesaz.aznavrail.internal.CenteredPopupPositionProvider
 import com.hereliesaz.aznavrail.internal.CyclerTransientState
 import com.hereliesaz.aznavrail.internal.Footer
 import com.hereliesaz.aznavrail.internal.HelpOverlay
+import com.hereliesaz.aznavrail.internal.MenuItem
 import com.hereliesaz.aznavrail.internal.OverlayHelper
+import com.hereliesaz.aznavrail.internal.RailItems
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
-import com.hereliesaz.aznavrail.model.AzOrientation
 import com.hereliesaz.aznavrail.service.LocalAzNavRailOverlayController
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.pow
 import kotlin.math.roundToInt
-
-import com.hereliesaz.aznavrail.internal.CollapsedRailContent
-import com.hereliesaz.aznavrail.internal.ExpandedRailContent
 
 @Target(AnnotationTarget.FUNCTION)
 @RequiresOptIn(message = "This API is strictly controlled. Use AzHostActivityLayout.")
@@ -492,25 +496,41 @@ fun AzNavRail(
 
             val contentBlock = @Composable {
                 if (isExpanded) {
+                    // When expanded, we always use a Column currently.
+                    // If we need to support reverse layout for expanded menu, we would need to reverse the items list here.
+                    // However, expanded menu is typically "gravity" based.
+                    // Let's reverse the items if reverseLayout is true.
                     val displayedItems = if (reverseLayout) displayedNavItems.reversed() else displayedNavItems
-                    ExpandedRailContent(
-                        scope = scope,
-                        displayedNavItems = displayedItems,
-                        navController = navController,
-                        currentDestination = currentDestination,
-                        cyclerStates = cyclerStates,
-                        hostStates = hostStates,
-                        itemPositions = itemPositions,
-                        isRightDocked = isRightDocked,
-                        appName = appName,
-                        footerColor = if (footerColor != Color.Unspecified) footerColor else MaterialTheme.colorScheme.primary,
-                        onToggle = { isExpanded = !isExpanded },
-                        onUndock = {
-                            val overlayService = scope.overlayService
-                            if (scope.onUndock != null) {
-                                scope.onUndock?.invoke()
-                            } else if (overlayService != null) {
-                                OverlayHelper.launch(context, overlayService)
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            // Note: Expansion is always vertical list currently (MenuItem)
+                            // If horizontal rail, expansion behavior needs undefined fix.
+                            // Assuming vertical scroll for expanded menu even if rail is horizontal for now.
+                            // But wait, if horizontal rail, the expanded menu should probably drop down?
+                            // For this task, assuming collapsed state is the priority.
+                            .pointerInput(isExpanded) {
+                                detectHorizontalDragGestures(
+                                    onDragStart = { },
+                                    onHorizontalDrag = { change, dragAmount ->
+                                        val shouldClose = if (isRightDocked) dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX else dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX
+                                        if (isExpanded && shouldClose) {
+                                            isExpanded = false
+                                            change.consume()
+                                        }
+                                    }
+                                )
+                            }
+                    ) {
+                        val itemsToShow = displayedItems.filter { !it.isSubItem }
+                        itemsToShow.forEach { item ->
+                            if (item.isDivider) {
+                                // Divider needs to be adaptable? No, MenuItem is a row.
+                                // AzDivider is usually a horizontal line.
+                                // Inside expanded menu (Column), it's fine.
+                                com.hereliesaz.aznavrail.AzDivider()
                             } else {
                                 val onClick = scope.onClickMap[item.id]
                                 val onCyclerClick = if (item.isCycler) {
@@ -540,7 +560,7 @@ fun AzNavRail(
                                                             if (onClick != null) repeat(clicksToCatchUp) { onClick() }
                                                         }
                                                         isExpanded = false
-                                                        cyclerStates[item.id]?.let { cyclerStates.put(item.id, it.copy(job = null)) }
+                                                        cyclerStates.put(item.id, cyclerStates[item.id]!!.copy(job = null))
                                                     }
                                                 ))
                                             }
@@ -597,10 +617,28 @@ fun AzNavRail(
                                     }
                                 }
                             }
-                        },
-                        coroutineScope = coroutineScope,
-                        onItemSelected = { selectedItem = it }
-                    )
+                        }
+                    }
+                    if (scope.showFooter) {
+                        Footer(
+                            appName = appName,
+                            onToggle = { isExpanded = !isExpanded },
+                            onUndock = {
+                                val overlayService = scope.overlayService
+                                if (scope.onUndock != null) {
+                                    scope.onUndock?.invoke()
+                                } else if (overlayService != null) {
+                                    OverlayHelper.launch(context, overlayService)
+                                } else {
+                                    isFloating = true
+                                    isExpanded = false
+                                    if (scope.displayAppName) isAppIcon = true
+                                }
+                            },
+                            scope = scope,
+                            footerColor = if (footerColor != Color.Unspecified) footerColor else MaterialTheme.colorScheme.primary
+                        )
+                    }
                 } else {
                     val handleOverlayClick: (AzNavItem) -> Unit = { item ->
                         if (overlayController != null && item.route != null) {
@@ -618,61 +656,69 @@ fun AzNavRail(
                     }
                     val effectiveNavController = if (overlayController != null) null else navController
 
-                    // Infer Visual Side based on Orientation + Docking
-                    // Ideally we should pass this in, but for now we infer:
-                    val inferredVisualSide = if (isVertical) {
-                        if (isRightDocked) AzVisualSide.RIGHT
-                        else AzVisualSide.LEFT
-                    } else {
-                        // If horizontal, assuming standard top/bottom logic based on docking
-                        // However, AzNavHost calculates this precisely.
-                        // Since we don't have visualSide param passed fully yet, we estimate.
-                        // But wait, RailItems needs visualSide for Popup.
-                        // If I don't update AzNavRail signature to accept visualSide, I am guessing.
-                        // AzNavHost logic:
-                        // LEFT -> 90 -> BOTTOM
-                        // LEFT -> 270 -> TOP
-                        // RIGHT -> 90 -> TOP
-                        // RIGHT -> 270 -> BOTTOM
-                        // The `isRightDocked` flag here comes from `visualDockingSide` passed from `AzNavHost`.
-                        // In AzNavHost: `visualDockingSideProxy` is RIGHT if (BOTTOM or RIGHT).
-                        // So if `isRightDocked` (proxy) is true: it could be Right (Vertical) or Bottom (Horizontal).
-                        // Wait, logic in AzNavHost:
-                        // val visualDockingSideProxy = if (visualSide == AzVisualSide.BOTTOM || visualSide == AzVisualSide.RIGHT) AzDockingSide.RIGHT else AzDockingSide.LEFT
-                        // So inside AzNavRail:
-                        // isRightDocked = true => VisualSide is RIGHT or BOTTOM.
-                        // isRightDocked = false => VisualSide is LEFT or TOP.
-                        // We also have `orientation`.
-                        // If Vertical + isRightDocked -> RIGHT.
-                        // If Vertical + !isRightDocked -> LEFT.
-                        // If Horizontal + isRightDocked -> BOTTOM.
-                        // If Horizontal + !isRightDocked -> TOP.
-                        if (isRightDocked) AzVisualSide.BOTTOM else AzVisualSide.TOP
-                    }
+                    AnimatedVisibility(visible = !isFloating || showFloatingButtons, modifier = Modifier.fillMaxSize()) {
+                        val scrollState = rememberScrollState()
+                        // Adaptive layout for items
+                        val adaptiveModifier = Modifier
+                            .padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding)
+                            .then(if(isVertical) Modifier.verticalScroll(scrollState) else Modifier.horizontalScroll(scrollState))
+                            .onSizeChanged { railItemsHeight = it.height }
+                            .pointerInput(isExpanded, disableSwipeToOpen, isVertical, isRightDocked) {
+                                if (isVertical) {
+                                    detectHorizontalDragGestures(
+                                        onDragStart = { },
+                                        onHorizontalDrag = { change, dragAmount ->
+                                            val shouldOpen = if (isRightDocked) dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX else dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX
+                                            if (!isExpanded && !disableSwipeToOpen && shouldOpen) {
+                                                isExpanded = true
+                                                change.consume()
+                                            }
+                                        }
+                                    )
+                                } else {
+                                    detectVerticalDragGestures(
+                                        onDragStart = { },
+                                        onVerticalDrag = { change, dragAmount ->
+                                            // For horizontal rails, `isRightDocked` effectively tells us if the rail is at the bottom,
+                                            // as the proxy maps TOP to LEFT and BOTTOM to RIGHT.
+                                            // A swipe "inwards" (up for bottom, down for top) should open the rail.
+                                            val isBottomRail = isRightDocked
+                                            val shouldOpen = if (isBottomRail) dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX else dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX
+                                            if (!isExpanded && !disableSwipeToOpen && shouldOpen) {
+                                                isExpanded = true
+                                                change.consume()
+                                            }
+                                        }
+                                    )
+                                }
 
-                    CollapsedRailContent(
-                        scope = scope,
-                        displayedNavItems = displayedNavItems,
-                        navController = effectiveNavController,
-                        currentDestination = currentDestination,
-                        cyclerStates = cyclerStates,
-                        hostStates = hostStates,
-                        itemPositions = itemPositions,
-                        buttonSize = buttonSize,
-                        orientation = orientation,
-                        visualSide = inferredVisualSide,
-                        isRightDocked = isRightDocked,
-                        disableSwipeToOpen = disableSwipeToOpen,
-                        isFloating = isFloating,
-                        showFloatingButtons = showFloatingButtons,
-                        onHeightChanged = { railItemsHeight = it },
-                        onOpen = { isExpanded = true },
-                        onClickOverride = if (overlayController != null) handleOverlayClick else null,
-                        onItemSelected = { navItem -> selectedItem = navItem },
-                        reverseLayout = reverseLayout
-                    )
-                }
-            }
+                            }
+
+                        // Render logic
+                        val onRailCyclerClick: (AzNavItem) -> Unit = { item ->
+                            val state = cyclerStates[item.id]
+                            if (state != null) {
+                                val options = requireNotNull(item.options) { "Cycler item '${item.id}' must have options" }
+                                val disabledOptions = item.disabledOptions ?: emptyList()
+                                val enabledOptions = options.filterNot { it in disabledOptions }
+                                if (enabledOptions.isNotEmpty()) {
+                                    val currentDisplayed = item.selectedOption
+                                    val currentIndexInEnabled = enabledOptions.indexOf(currentDisplayed)
+                                    val nextIndex = if (currentIndexInEnabled != -1) (currentIndexInEnabled + 1) % enabledOptions.size else 0
+                                    val nextOption = enabledOptions[nextIndex]
+                                    val finalItemState = displayedNavItems.find { it.id == item.id } ?: item
+                                    val currentStateInVm = finalItemState.selectedOption
+                                    val targetState = nextOption
+                                    val currentIndexInVm = options.indexOf(currentStateInVm)
+                                    val targetIndex = options.indexOf(targetState)
+                                    if (currentIndexInVm != -1 && targetIndex != -1) {
+                                        val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
+                                        val onClick = scope.onClickMap[item.id]
+                                        if (onClick != null) repeat(clicksToCatchUp) { onClick() }
+                                    }
+                                }
+                            }
+                        }
 
                         // Container for Items
                         if (isVertical) {
