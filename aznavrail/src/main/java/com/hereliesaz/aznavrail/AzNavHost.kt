@@ -32,6 +32,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.hereliesaz.aznavrail.internal.AzLayoutConfig
+import com.hereliesaz.aznavrail.internal.AzRailLayoutHelper
+import com.hereliesaz.aznavrail.internal.AzVisualSide
 import com.hereliesaz.aznavrail.model.AzOrientation
 import com.hereliesaz.aznavrail.internal.AzSafeZones
 import com.hereliesaz.aznavrail.model.AzDockingSide
@@ -90,8 +92,6 @@ class AzNavHostScopeImpl(
     }
 }
 
-private enum class AzVisualSide { LEFT, RIGHT, TOP, BOTTOM }
-
 // --- Layouts ---
 
 // AUTHORIZED: This layout is the designated wrapper for the strict AzNavRail.
@@ -130,45 +130,17 @@ fun AzHostActivityLayout(
 
     // Rotation Logic
     val rotation = LocalView.current.display?.rotation ?: Surface.ROTATION_0
-    val visualSide = if (usePhysicalDocking) {
-        when (dockingSide) {
-            AzDockingSide.LEFT -> when (rotation) {
-                Surface.ROTATION_0 -> AzVisualSide.LEFT
-                Surface.ROTATION_90 -> AzVisualSide.BOTTOM
-                Surface.ROTATION_180 -> AzVisualSide.RIGHT
-                Surface.ROTATION_270 -> AzVisualSide.TOP
-                else -> AzVisualSide.LEFT
-            }
-            AzDockingSide.RIGHT -> when (rotation) {
-                Surface.ROTATION_0 -> AzVisualSide.RIGHT
-                Surface.ROTATION_90 -> AzVisualSide.TOP
-                Surface.ROTATION_180 -> AzVisualSide.LEFT
-                Surface.ROTATION_270 -> AzVisualSide.BOTTOM
-                else -> AzVisualSide.RIGHT
-            }
-        }
-    } else {
-        // Stick to view side (Classic behavior)
-        if (dockingSide == AzDockingSide.LEFT) AzVisualSide.LEFT else AzVisualSide.RIGHT
-    }
 
-    val orientation = if (visualSide == AzVisualSide.TOP || visualSide == AzVisualSide.BOTTOM) AzOrientation.Horizontal else AzOrientation.Vertical
+    val layoutConfig = AzRailLayoutHelper.calculateLayout(
+        dockingSide = dockingSide,
+        rotation = rotation,
+        usePhysicalDocking = usePhysicalDocking
+    )
 
-    val reverseLayout = if (usePhysicalDocking) {
-        when (dockingSide) {
-            AzDockingSide.LEFT -> (rotation == Surface.ROTATION_180 || rotation == Surface.ROTATION_270)
-            AzDockingSide.RIGHT -> (rotation == Surface.ROTATION_180 || rotation == Surface.ROTATION_90)
-        }
-    } else {
-        false
-    }
-
-    val railAlignment = when (visualSide) {
-        AzVisualSide.LEFT -> Alignment.TopStart
-        AzVisualSide.RIGHT -> Alignment.TopEnd
-        AzVisualSide.TOP -> Alignment.TopStart
-        AzVisualSide.BOTTOM -> Alignment.BottomStart
-    }
+    val visualSide = layoutConfig.visualSide
+    val orientation = layoutConfig.orientation
+    val reverseLayout = layoutConfig.reverseLayout
+    val railAlignment = layoutConfig.alignment
 
     // Proxy visual docking side for AzNavRail internals (swipe direction)
     val visualDockingSideProxy = if (visualSide == AzVisualSide.BOTTOM || visualSide == AzVisualSide.RIGHT) AzDockingSide.RIGHT else AzDockingSide.LEFT
