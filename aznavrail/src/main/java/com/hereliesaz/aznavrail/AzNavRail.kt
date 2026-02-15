@@ -191,6 +191,18 @@ fun AzNavRail(
         displayedNavItems.firstOrNull()?.color ?: Color.Unspecified
     }
 
+    // Apply cycler states to items
+    val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
+    val finalNavItems = remember(displayedNavItems, cyclerStates.toMap()) {
+        displayedNavItems.map { item ->
+            if (item.isCycler) {
+                item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption)
+            } else {
+                item
+            }
+        }
+    }
+
     var isExpandedInternal by rememberSaveable(initiallyExpanded) { mutableStateOf(initiallyExpanded) }
     
     val isExpandedState = remember(overlayController, effectiveNoMenu) {
@@ -225,18 +237,26 @@ fun AzNavRail(
     )
 
     val coroutineScope = rememberCoroutineScope()
-    val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
-    var selectedItem by rememberSaveable { mutableStateOf<AzNavItem?>(null) }
+    // cyclerStates moved up
+    var selectedItemId by rememberSaveable { mutableStateOf<String?>(null) }
+    val selectedItem = remember(selectedItemId, finalNavItems) {
+        finalNavItems.find { it.id == selectedItemId }
+    }
     val hostStates = remember { mutableStateMapOf<String, Boolean>() }
     val itemPositions = remember { mutableStateMapOf<String, androidx.compose.ui.geometry.Rect>() }
 
-    LaunchedEffect(displayedNavItems) {
-        val initialSelectedItem = if (currentDestination != null) {
-            displayedNavItems.find { it.route == currentDestination }
+    LaunchedEffect(displayedNavItems, currentDestination) {
+        val targetId = if (currentDestination != null) {
+            displayedNavItems.find { it.route == currentDestination }?.id
         } else {
-            displayedNavItems.firstOrNull()
+            // Keep current selection if it still exists
+            if (selectedItemId != null && displayedNavItems.any { it.id == selectedItemId }) {
+                selectedItemId
+            } else {
+                displayedNavItems.firstOrNull()?.id
+            }
         }
-        selectedItem = initialSelectedItem
+        if (targetId != null) selectedItemId = targetId
 
         displayedNavItems.forEach { item ->
             if (item.isCycler) {
@@ -314,7 +334,7 @@ fun AzNavRail(
         modifier = modifier,
         contentAlignment = alignment
     ) {
-        val buttonSize = AzNavRailDefaults.HeaderIconSize
+        val buttonSize = 72.dp // Explicitly force 72.dp size regardless of orientation
         selectedItem?.screenTitle?.let { screenTitle ->
             if (screenTitle.isNotEmpty()) {
                 Popup(alignment = Alignment.TopEnd) {
@@ -676,6 +696,7 @@ fun AzNavRail(
                                         }
                                     )
                                 }
+
                             }
 
                         // Render logic

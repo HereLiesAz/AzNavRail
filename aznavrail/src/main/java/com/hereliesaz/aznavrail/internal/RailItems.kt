@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -44,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.AzNavRailScopeImpl
 import com.hereliesaz.aznavrail.AzTextBoxDefaults
+import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzOrientation
 import kotlinx.coroutines.Job
@@ -84,8 +86,11 @@ internal fun RailItems(
     var dragOffset by remember { mutableStateOf(0f) }
     var itemHeights by remember { mutableStateOf(mapOf<String, Int>()) }
     var itemWidths by remember { mutableStateOf(mapOf<String, Int>()) }
+    var itemBounds by remember { mutableStateOf(mapOf<String, Rect>()) }
     var hiddenMenuOpenId by remember { mutableStateOf<String?>(null) }
+    var nestedRailOpenId by remember { mutableStateOf<String?>(null) }
     var currentDropTargetIndex by remember { mutableStateOf<Int?>(null) }
+    var rootBounds by remember { mutableStateOf<Rect?>(null) }
 
     // State for snapping animations
     val snappingOffsets = remember { androidx.compose.runtime.mutableStateMapOf<String, Animatable<Float, androidx.compose.animation.core.AnimationVector1D>>() }
@@ -274,6 +279,35 @@ internal fun RailItems(
                 }
             }
         }
+
+        if (nestedRailOpenId != null) {
+            rootBounds?.let { rb ->
+                val item = items.find { it.id == nestedRailOpenId }
+                val bounds = itemBounds[nestedRailOpenId]
+                if (item != null && bounds != null && item.nestedRailItems != null && item.nestedRailAlignment != null) {
+                     NestedRail(
+                         parentItem = item,
+                         items = item.nestedRailItems,
+                         scope = scope,
+                         navController = navController,
+                         currentDestination = currentDestination,
+                         anchorBounds = bounds,
+                         rootBounds = rb,
+                         onDismiss = { nestedRailOpenId = null },
+                         isRightDocked = scope.dockingSide == AzDockingSide.RIGHT,
+                         onItemSelected = onItemSelected
+                     )
+                }
+            }
+        }
+    }
+
+    Box {
+        if (isVertical) {
+            Column { itemsToRender.forEach { renderItem(it) } }
+        } else {
+            Row { itemsToRender.forEach { renderItem(it) } }
+        }
     }
 
     Box {
@@ -311,8 +345,11 @@ private fun DraggableRailItemWrapper(
     itemWidths: Map<String, Int>,
     onHeightReported: (String, Int) -> Unit,
     onWidthReported: (String, Int) -> Unit,
+    onBoundsReported: (String, Rect) -> Unit,
     coroutineScope: kotlinx.coroutines.CoroutineScope,
     hiddenMenuOpenId: String?,
+    nestedRailOpenId: String?,
+    onNestedRailToggle: (String) -> Unit,
     onHiddenMenuDismiss: () -> Unit,
     lastTappedId: String?,
     onUpdateLastTappedId: (String) -> Unit,
@@ -478,9 +515,12 @@ private fun DraggableRailItemWrapper(
         .onGloballyPositioned { coordinates ->
              onHeightReported(item.id, coordinates.size.height)
              onWidthReported(item.id, coordinates.size.width)
+             onBoundsReported(item.id, coordinates.boundsInWindow())
         }
     } else {
-        Modifier
+        Modifier.onGloballyPositioned { coordinates ->
+             onBoundsReported(item.id, coordinates.boundsInWindow())
+        }
     }
 
     val isSelected = if (item.route != null) {
@@ -523,7 +563,9 @@ private fun DraggableRailItemWrapper(
                      buttonSize = buttonSize,
                      onClick = {
                          scope.onFocusMap[item.id]?.invoke()
-                         if (onClickOverride != null) {
+                         if (item.isNestedRail) {
+                             onNestedRailToggle(item.id)
+                         } else if (onClickOverride != null) {
                              onClickOverride(item)
                          } else {
                              scope.onClickMap[item.id]?.invoke()
