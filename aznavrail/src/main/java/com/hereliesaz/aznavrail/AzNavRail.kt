@@ -567,7 +567,7 @@ fun AzNavRail(
                                         }
                                     }
                                 } else {
-                                    onClick
+                                    null
                                 }
                                 val finalItem = if (item.isCycler) {
                                     item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption)
