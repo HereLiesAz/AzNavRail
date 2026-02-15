@@ -284,21 +284,24 @@ internal fun RailItems(
             }
         }
 
-        if (nestedRailOpenId != null && rootBounds != null) {
-            val item = items.find { it.id == nestedRailOpenId }
-            val bounds = itemBounds[nestedRailOpenId]
-            if (item != null && bounds != null && item.nestedRailItems != null && item.nestedRailAlignment != null) {
-                 NestedRail(
-                     parentItem = item,
-                     items = item.nestedRailItems,
-                     scope = scope,
-                     navController = navController,
-                     currentDestination = currentDestination,
-                     anchorBounds = bounds,
-                     rootBounds = rootBounds!!,
-                     onDismiss = { nestedRailOpenId = null },
-                     isRightDocked = scope.dockingSide == AzDockingSide.RIGHT
-                 )
+        if (nestedRailOpenId != null) {
+            rootBounds?.let { rb ->
+                val item = items.find { it.id == nestedRailOpenId }
+                val bounds = itemBounds[nestedRailOpenId]
+                if (item != null && bounds != null && item.nestedRailItems != null && item.nestedRailAlignment != null) {
+                     NestedRail(
+                         parentItem = item,
+                         items = item.nestedRailItems,
+                         scope = scope,
+                         navController = navController,
+                         currentDestination = currentDestination,
+                         anchorBounds = bounds,
+                         rootBounds = rb,
+                         onDismiss = { nestedRailOpenId = null },
+                         isRightDocked = scope.dockingSide == AzDockingSide.RIGHT,
+                         onItemSelected = onItemSelected
+                     )
+                }
             }
         }
     }

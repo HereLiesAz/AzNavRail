@@ -126,7 +126,8 @@ The DSL is used inside `AzNavHost` to configure the rail and items.
 
 **Items:**
 -   `azMenuItem(...)`: Item visible only in expanded menu.
--   `azRailItem(...)`: Item visible in rail and menu.
+-   `azRailItem(...)`: Item visible in rail and menu. Supports dynamic content via the `content` parameter (Color, Number, or Image).
+-   `azNestedRail(...)`: Creates a nested rail structure. Use `alignment` to specify `VERTICAL` (anchored column) or `HORIZONTAL` (scrollable row).
 -   `azMenuToggle(...)` / `azRailToggle(...)`: Toggle buttons.
 -   `azMenuCycler(...)` / `azRailCycler(...)`: Cycle through options.
 -   `azDivider()`: Horizontal divider.
@@ -138,6 +139,7 @@ The DSL is used inside `AzNavHost` to configure the rail and items.
 -   `id`: Unique identifier.
 -   `text`: Display label.
 -   `route`: Navigation route (optional).
+-   `content`: (RailItem Only) Pass `Color`, `Number` (Int/Float), `Int` (Drawable Res ID), or `Any` (Image URL/Path) to render custom content in the collapsed rail button.
 -   `icon`: (Implicitly handled by shapes/text in this library).
 -   `disabled`: Boolean state.
 -   `info`: Help text for Info Screen mode.

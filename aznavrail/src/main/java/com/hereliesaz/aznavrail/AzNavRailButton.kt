@@ -128,6 +128,12 @@ fun AzNavRailButton(
                 ) {
                     when (itemContent) {
                         is Color -> Box(modifier = Modifier.fillMaxSize().background(itemContent))
+                        is Int -> Image(
+                            painter = painterResource(itemContent),
+                            contentDescription = null,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize()
+                        )
                         is Number -> AutoSizeText(
                             text = itemContent.toString(),
                             style = MaterialTheme.typography.bodyMedium.copy(
@@ -138,12 +144,6 @@ fun AzNavRailButton(
                             softWrap = false,
                             alignment = Alignment.Center,
                             lineSpaceRatio = 0.9f
-                        )
-                        is Int -> Image(
-                            painter = painterResource(itemContent),
-                            contentDescription = null,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxSize()
                         )
                         else -> {
                             Image(

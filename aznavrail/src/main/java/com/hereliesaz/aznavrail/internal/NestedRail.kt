@@ -40,31 +40,11 @@ internal fun NestedRail(
     anchorBounds: Rect,
     rootBounds: Rect, // Bounds of the AzNavRail
     onDismiss: () -> Unit,
-    isRightDocked: Boolean
+    isRightDocked: Boolean,
+    onItemSelected: (AzNavItem) -> Unit
 ) {
     val density = androidx.compose.ui.platform.LocalDensity.current
     val buttonSize = AzNavRailDefaults.HeaderIconSize
-
-    val offsetX = if (isRightDocked) {
-        // To the left of the parent
-        // anchorBounds is in window coordinates?
-        // Popup relative to anchor?
-        // If we use Popup with offset, it is relative to the parent Composable (the RailItem).
-        // Since NestedRail is called inside RailItems (which is inside the rail), the parent is the RailItem wrapper.
-        // So offset (0,0) is top-left of RailItem.
-        // Left of parent = -width of nested rail.
-        // But we don't know width yet.
-        // We might need to use absolute positioning or Alignment.TopEnd with negative offset.
-        // Or simply IntOffset(-width, 0) if we knew width.
-        // For now let's assume standard Popup logic.
-        // Actually, if we use `PopupPositionProvider`, we can be precise.
-        0 // Placeholder
-    } else {
-        // To the right of the parent
-        with(density) { anchorBounds.width.toInt() }
-    }
-
-    val offsetY = 0 // Top aligned
 
     // We use a custom PositionProvider to handle "anchored to side" and "visible boundaries"
     val positionProvider = remember(anchorBounds, rootBounds, isRightDocked, parentItem.nestedRailAlignment) {
@@ -121,7 +101,8 @@ internal fun NestedRail(
                      navController = navController,
                      currentDestination = currentDestination,
                      buttonSize = buttonSize,
-                     isRightDocked = isRightDocked
+                     isRightDocked = isRightDocked,
+                     onItemSelected = onItemSelected
                  )
             } else {
                  VerticalNestedRailContent(
@@ -129,7 +110,8 @@ internal fun NestedRail(
                      scope = scope,
                      navController = navController,
                      currentDestination = currentDestination,
-                     buttonSize = buttonSize
+                     buttonSize = buttonSize,
+                     onItemSelected = onItemSelected
                  )
             }
         }
@@ -142,7 +124,8 @@ private fun VerticalNestedRailContent(
     scope: AzNavRailScopeImpl,
     navController: NavController?,
     currentDestination: String?,
-    buttonSize: androidx.compose.ui.unit.Dp
+    buttonSize: androidx.compose.ui.unit.Dp,
+    onItemSelected: (AzNavItem) -> Unit
 ) {
     // Reuse similar logic to RailItems but simpler (no drag)
     val hostStates = remember { mutableStateMapOf<String, Boolean>() }
@@ -152,12 +135,12 @@ private fun VerticalNestedRailContent(
     ) {
         items.filter { !it.isSubItem }.forEach { item ->
             // Render item
-            NestedRailItemWrapper(item, scope, navController, currentDestination, buttonSize, hostStates)
+            NestedRailItemWrapper(item, scope, navController, currentDestination, buttonSize, hostStates, isSubItem = false, onItemSelected = onItemSelected)
 
             // Render subitems if expanded
             if (item.isHost && (hostStates[item.id] == true)) {
                 items.filter { it.hostId == item.id }.forEach { subItem ->
-                     NestedRailItemWrapper(subItem, scope, navController, currentDestination, buttonSize, hostStates, isSubItem = true)
+                     NestedRailItemWrapper(subItem, scope, navController, currentDestination, buttonSize, hostStates, isSubItem = true, onItemSelected = onItemSelected)
                 }
             }
         }
@@ -171,7 +154,8 @@ private fun HorizontalNestedRailContent(
     navController: NavController?,
     currentDestination: String?,
     buttonSize: androidx.compose.ui.unit.Dp,
-    isRightDocked: Boolean
+    isRightDocked: Boolean,
+    onItemSelected: (AzNavItem) -> Unit
 ) {
     val hostStates = remember { mutableStateMapOf<String, Boolean>() }
 
@@ -180,13 +164,13 @@ private fun HorizontalNestedRailContent(
     ) {
         items.filter { !it.isSubItem }.forEach { item ->
              Column {
-                 NestedRailItemWrapper(item, scope, navController, currentDestination, buttonSize, hostStates)
+                 NestedRailItemWrapper(item, scope, navController, currentDestination, buttonSize, hostStates, isSubItem = false, onItemSelected = onItemSelected)
 
                  // "RailSubItems should expand downward, vertically"
                  // So we put them in a Column under the item
                  if (item.isHost && (hostStates[item.id] == true)) {
                       items.filter { it.hostId == item.id }.forEach { subItem ->
-                           NestedRailItemWrapper(subItem, scope, navController, currentDestination, buttonSize, hostStates, isSubItem = true)
+                           NestedRailItemWrapper(subItem, scope, navController, currentDestination, buttonSize, hostStates, isSubItem = true, onItemSelected = onItemSelected)
                       }
                  }
              }
@@ -202,7 +186,8 @@ private fun NestedRailItemWrapper(
     currentDestination: String?,
     buttonSize: androidx.compose.ui.unit.Dp,
     hostStates:  MutableMap<String, Boolean>,
-    isSubItem: Boolean = false
+    isSubItem: Boolean = false,
+    onItemSelected: (AzNavItem) -> Unit
 ) {
     val isSelected = item.route != null && item.route == currentDestination
 
@@ -215,7 +200,7 @@ private fun NestedRailItemWrapper(
              scope.onClickMap[item.id]?.invoke()
         },
         onRailCyclerClick = { /* Support if needed */ },
-        onItemClick = {}, // Maybe tracking?
+        onItemClick = { onItemSelected(item) },
         onHostClick = {
             hostStates[item.id] = !(hostStates[item.id] ?: false)
         },
