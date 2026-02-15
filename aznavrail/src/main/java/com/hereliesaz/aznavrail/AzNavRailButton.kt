@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
@@ -89,7 +90,7 @@ fun AzNavRailButton(
         AzButtonShape.SQUARE -> modifier
             .requiredSize(size)
             .aspectRatio(1f)
-        AzButtonShape.RECTANGLE, AzButtonShape.NONE -> modifier.height(36.dp)
+        AzButtonShape.RECTANGLE, AzButtonShape.NONE -> modifier.requiredHeight(36.dp)
     }
 
     val disabledColor = color.copy(alpha = 0.5f)
