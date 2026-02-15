@@ -100,6 +100,7 @@ fun AzNavRail(
     orientation: AzOrientation = AzOrientation.Vertical,
     visualDockingSide: AzDockingSide? = null,
     railAlignment: Alignment? = null,
+    reverseLayout: Boolean = false,
     content: AzNavRailScope.() -> Unit
 ) {
     val isHostPresent = LocalAzNavHostPresent.current
@@ -495,6 +496,12 @@ fun AzNavRail(
 
             val contentBlock = @Composable {
                 if (isExpanded) {
+                    // When expanded, we always use a Column currently.
+                    // If we need to support reverse layout for expanded menu, we would need to reverse the items list here.
+                    // However, expanded menu is typically "gravity" based.
+                    // Let's reverse the items if reverseLayout is true.
+                    val displayedItems = if (reverseLayout) displayedNavItems.reversed() else displayedNavItems
+
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -517,7 +524,7 @@ fun AzNavRail(
                                 )
                             }
                     ) {
-                        val itemsToShow = displayedNavItems.filter { !it.isSubItem }
+                        val itemsToShow = displayedItems.filter { !it.isSubItem }
                         itemsToShow.forEach { item ->
                             if (item.isDivider) {
                                 // Divider needs to be adaptable? No, MenuItem is a row.
@@ -590,7 +597,10 @@ fun AzNavRail(
                                 AnimatedVisibility(visible = item.isHost && (hostStates[item.id] ?: false)) {
                                     Column {
                                         val subItems = displayedNavItems.filter { it.hostId == item.id }
-                                        subItems.forEach { subItem ->
+                                        // Sub-items should arguably follow same order, or strict definition.
+                                        // Let's reverse sub-items too if needed.
+                                        val finalSubItems = if (reverseLayout) subItems.reversed() else subItems
+                                        finalSubItems.forEach { subItem ->
                                             MenuItem(
                                                 item = subItem,
                                                 navController = navController,
@@ -669,110 +679,17 @@ fun AzNavRail(
                                     detectVerticalDragGestures(
                                         onDragStart = { },
                                         onVerticalDrag = { change, dragAmount ->
-                                            // Infer top/bottom swipe based on simple logic:
-                                            // If at Top (Left orig), Swipe Down to open? Or Swipe Down to close?
-                                            // Swipe "inwards" usually opens.
-                                            // Top: Inwards is Down. (+Y)
-                                            // Bottom: Inwards is Up. (-Y)
-                                            // But I need to know if I am Top or Bottom.
-                                            // Assuming visualDockingSide logic:
-                                            // Left -> Top. Right -> Bottom.
-                                            val isBottom = isRightDocked // Simplified assumption
-                                            val shouldOpen = if (isBottom) dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX else dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX
+                                            // For horizontal rails, `isRightDocked` effectively tells us if the rail is at the bottom,
+                                            // as the proxy maps TOP to LEFT and BOTTOM to RIGHT.
+                                            // A swipe "inwards" (up for bottom, down for top) should open the rail.
+                                            val isBottomRail = isRightDocked
+                                            val shouldOpen = if (isBottomRail) dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX else dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX
                                             if (!isExpanded && !disableSwipeToOpen && shouldOpen) {
                                                 isExpanded = true
                                                 change.consume()
                                             }
                                         }
                                     )
-                                }
-
-
-                        ) {
-                            val itemsToShow = finalNavItems.filter { !it.isSubItem }
-                            itemsToShow.forEach { item ->
-                                if (item.isDivider) {
-                                    AzDivider()
-                                } else {
-                                    val onClick = scope.onClickMap[item.id]
-                                    val onCyclerClick = if (item.isCycler) {
-                                        {
-                                            val state = cyclerStates[item.id]
-                                            if (state != null && !item.disabled) {
-                                                state.job?.cancel()
-                                                val options = requireNotNull(item.options)
-                                                val disabledOptions = item.disabledOptions ?: emptyList()
-                                                val enabledOptions = options.filterNot { it in disabledOptions }
-                                                if (enabledOptions.isNotEmpty()) {
-                                                    val currentDisplayed = state.displayedOption
-                                                    val currentIndexInEnabled = enabledOptions.indexOf(currentDisplayed)
-                                                    val nextIndex = if (currentIndexInEnabled != -1) (currentIndexInEnabled + 1) % enabledOptions.size else 0
-                                                    val nextOption = enabledOptions[nextIndex]
-                                                    cyclerStates[item.id] = state.copy(
-                                                        displayedOption = nextOption,
-                                                        job = coroutineScope.launch {
-                                                            delay(1000L)
-                                                            val finalItemState = displayedNavItems.find { it.id == item.id } ?: item
-                                                            val currentStateInVm = finalItemState.selectedOption
-                                                            val targetState = nextOption
-                                                            val currentIndexInVm = options.indexOf(currentStateInVm)
-                                                            val targetIndex = options.indexOf(targetState)
-                                                            if (currentIndexInVm != -1 && targetIndex != -1) {
-                                                                val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
-                                                                if (onClick != null) repeat(clicksToCatchUp) { onClick() }
-                                                            }
-                                                            isExpanded = false
-                                                            cyclerStates[item.id] = cyclerStates[item.id]!!.copy(job = null)
-                                                        }
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        onClick
-                                    }
-                                    val finalItem = if (item.isHost) {
-                                        item.copy(isExpanded = hostStates[item.id] ?: false)
-                                    } else {
-                                        item
-                                    }
-                                    MenuItem(
-                                        item = finalItem,
-                                        navController = navController,
-                                        isSelected = finalItem.route == currentDestination,
-                                        onClick = onClick,
-                                        onCyclerClick = onCyclerClick,
-                                        onToggle = { isExpanded = !isExpanded },
-                                        onItemClick = { selectedItemId = finalItem.id },
-                                        onHostClick = {
-                                            val wasExpanded = hostStates[item.id] ?: false
-                                            val keys = hostStates.keys.toList()
-                                            keys.forEach { key -> hostStates[key] = false }
-                                            hostStates[item.id] = !wasExpanded
-                                        },
-                                        onItemGloballyPositioned = { id, rect -> itemPositions[id] = rect },
-                                        infoScreen = scope.infoScreen,
-                                        activeColor = scope.activeColor
-                                    )
-                                    AnimatedVisibility(visible = item.isHost && (hostStates[item.id] ?: false)) {
-                                        Column {
-                                            val subItems = finalNavItems.filter { it.hostId == item.id }
-                                            subItems.forEach { subItem ->
-                                                MenuItem(
-                                                    item = subItem,
-                                                    navController = navController,
-                                                    isSelected = subItem.route == currentDestination,
-                                                    onClick = scope.onClickMap[subItem.id],
-                                                    onCyclerClick = null,
-                                                    onToggle = { isExpanded = !isExpanded },
-                                                    onItemClick = { selectedItemId = subItem.id },
-                                                    onItemGloballyPositioned = { id, rect -> itemPositions[id] = rect },
-                                                    infoScreen = scope.infoScreen,
-                                                    activeColor = scope.activeColor
-                                                )
-                                            }
-                                        }
-                                    }
                                 }
 
                             }
@@ -812,7 +729,6 @@ fun AzNavRail(
                                 ),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-
                                 RailItems(
                                     items = displayedNavItems,
                                     scope = scope,
@@ -829,7 +745,8 @@ fun AzNavRail(
                                         scope.onItemGloballyPositioned?.invoke(id, rect)
                                     },
                                     infoScreen = scope.infoScreen,
-                                    orientation = orientation
+                                    orientation = orientation,
+                                    reverseLayout = reverseLayout
                                 )
                             }
                         } else {
@@ -856,59 +773,9 @@ fun AzNavRail(
                                         scope.onItemGloballyPositioned?.invoke(id, rect)
                                     },
                                     infoScreen = scope.infoScreen,
-                                    orientation = orientation
+                                    orientation = orientation,
+                                    reverseLayout = reverseLayout
                                 )
-
-                                val onRailCyclerClick: (AzNavItem) -> Unit = { item ->
-                                    val state = cyclerStates[item.id]
-                                    if (state != null) {
-                                        val options = requireNotNull(item.options) { "Cycler item '${item.id}' must have options" }
-                                        val disabledOptions = item.disabledOptions ?: emptyList()
-                                        val enabledOptions = options.filterNot { it in disabledOptions }
-                                        if (enabledOptions.isNotEmpty()) {
-                                            val currentDisplayed = item.selectedOption
-                                            val currentIndexInEnabled = enabledOptions.indexOf(currentDisplayed)
-                                            val nextIndex = if (currentIndexInEnabled != -1) (currentIndexInEnabled + 1) % enabledOptions.size else 0
-                                            val nextOption = enabledOptions[nextIndex]
-                                            val finalItemState = displayedNavItems.find { it.id == item.id } ?: item
-                                            val currentStateInVm = finalItemState.selectedOption
-                                            val targetState = nextOption
-                                            val currentIndexInVm = options.indexOf(currentStateInVm)
-                                            val targetIndex = options.indexOf(targetState)
-                                            if (currentIndexInVm != -1 && targetIndex != -1) {
-                                                val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
-                                                val onClick = scope.onClickMap[item.id]
-                                                if (onClick != null) repeat(clicksToCatchUp) { onClick() }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                Column(
-                                    verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(
-                                        if (scope.packButtons) 0.dp else AzNavRailDefaults.RailContentVerticalArrangement
-                                    ),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    RailItems(
-                                        items = finalNavItems,
-                                        scope = scope,
-                                        navController = effectiveNavController,
-                                        currentDestination = currentDestination,
-                                        buttonSize = buttonSize,
-                                        onRailCyclerClick = onRailCyclerClick,
-                                        onItemSelected = { navItem -> selectedItemId = navItem.id },
-                                        hostStates = hostStates,
-                                        packRailButtons = if (isFloating) true else scope.packButtons,
-                                        onClickOverride = if (overlayController != null) handleOverlayClick else null,
-                                        onItemGloballyPositioned = { id, rect ->
-                                            itemPositions[id] = rect
-                                            scope.onItemGloballyPositioned?.invoke(id, rect)
-                                        },
-                                        infoScreen = scope.infoScreen
-                                    )
-                                }
-
                             }
                         }
                     }
@@ -916,17 +783,23 @@ fun AzNavRail(
             }
 
             if (isVertical) {
-                Column(Modifier.fillMaxHeight()) {
-                    headerContent()
-                    Box(Modifier.weight(1f)) {
-                        contentBlock()
+                Column(Modifier.fillMaxHeight(), verticalArrangement = if (reverseLayout) androidx.compose.foundation.layout.Arrangement.Bottom else androidx.compose.foundation.layout.Arrangement.Top) {
+                    if (reverseLayout) {
+                        Box(Modifier.weight(1f)) { contentBlock() }
+                        headerContent()
+                    } else {
+                        headerContent()
+                        Box(Modifier.weight(1f)) { contentBlock() }
                     }
                 }
             } else {
-                Row(Modifier.fillMaxWidth()) {
-                    headerContent()
-                    Box(Modifier.weight(1f)) {
-                        contentBlock()
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = if (reverseLayout) androidx.compose.foundation.layout.Arrangement.End else androidx.compose.foundation.layout.Arrangement.Start) {
+                    if (reverseLayout) {
+                        Box(Modifier.weight(1f)) { contentBlock() }
+                        headerContent()
+                    } else {
+                        headerContent()
+                        Box(Modifier.weight(1f)) { contentBlock() }
                     }
                 }
             }
