@@ -92,6 +92,8 @@ class AzNavHostScopeImpl(
     }
 }
 
+private enum class AzVisualSide { LEFT, RIGHT, TOP, BOTTOM }
+
 // --- Layouts ---
 
 // AUTHORIZED: This layout is the designated wrapper for the strict AzNavRail.
