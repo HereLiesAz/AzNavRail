@@ -352,44 +352,44 @@ class AzNavRailScopeImpl : AzNavRailScope {
     }
 
     override fun azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: () -> Unit) {
-        addRailItem(id, text, null, null, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick)
+        addRailItem(id = id, text = text, route = null, content = null, color = color, shape = shape, disabled = disabled, screenTitle = screenTitle, info = info, classifiers = classifiers, onFocus = onFocus, onClick = onClick)
     }
 
     override fun azRailItem(id: String, text: String, route: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?) {
-        addRailItem(id, text, route, null, color, shape, disabled, screenTitle, info, classifiers, onFocus) {}
+        addRailItem(id = id, text = text, route = route, content = null, color = color, shape = shape, disabled = disabled, screenTitle = screenTitle, info = info, classifiers = classifiers, onFocus = onFocus, onClick = {})
     }
 
     override fun azRailItem(id: String, text: String, route: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: () -> Unit) {
-        addRailItem(id, text, route, null, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick)
+        addRailItem(id = id, text = text, route = route, content = null, color = color, shape = shape, disabled = disabled, screenTitle = screenTitle, info = info, classifiers = classifiers, onFocus = onFocus, onClick = onClick)
     }
 
     override fun azRailItem(id: String, text: String, config: AzItemConfig, onClick: () -> Unit) {
         addRailItem(
-            id, text, null, null, config.color, config.shape, config.disabled, config.screenTitle, config.info, config.classifiers, config.onFocus, onClick
+            id = id, text = text, route = null, content = null, color = config.color, shape = config.shape, disabled = config.disabled, screenTitle = config.screenTitle, info = config.info, classifiers = config.classifiers, onFocus = config.onFocus, onClick = onClick
         )
     }
 
     override fun azRailItem(id: String, text: String, route: String, config: AzItemConfig) {
         addRailItem(
-            id, text, route, null, config.color, config.shape, config.disabled, config.screenTitle, config.info, config.classifiers, config.onFocus
-        ) {}
+            id = id, text = text, route = route, content = null, color = config.color, shape = config.shape, disabled = config.disabled, screenTitle = config.screenTitle, info = config.info, classifiers = config.classifiers, onFocus = config.onFocus, onClick = {}
+        )
     }
 
     override fun azRailItem(id: String, text: String, content: Any, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: () -> Unit) {
-        addRailItem(id, text, null, content, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick)
+        addRailItem(id = id, text = text, route = null, content = content, color = color, shape = shape, disabled = disabled, screenTitle = screenTitle, info = info, classifiers = classifiers, onFocus = onFocus, onClick = onClick)
     }
 
     override fun azRailItem(id: String, text: String, route: String, content: Any, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?) {
-        addRailItem(id, text, route, content, color, shape, disabled, screenTitle, info, classifiers, onFocus) {}
+        addRailItem(id = id, text = text, route = route, content = content, color = color, shape = shape, disabled = disabled, screenTitle = screenTitle, info = info, classifiers = classifiers, onFocus = onFocus, onClick = {})
     }
 
     override fun azRailItem(id: String, text: String, route: String, content: Any, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: () -> Unit) {
-        addRailItem(id, text, route, content, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick)
+        addRailItem(id = id, text = text, route = route, content = content, color = color, shape = shape, disabled = disabled, screenTitle = screenTitle, info = info, classifiers = classifiers, onFocus = onFocus, onClick = onClick)
     }
 
     override fun azRailItem(id: String, text: String, route: String, config: AzItemConfig, onClick: () -> Unit) {
         addRailItem(
-            id, text, route, null, config.color, config.shape, config.disabled, config.screenTitle, config.info, config.classifiers, config.onFocus, onClick
+            id = id, text = text, route = route, content = null, color = config.color, shape = config.shape, disabled = config.disabled, screenTitle = config.screenTitle, info = config.info, classifiers = config.classifiers, onFocus = config.onFocus, onClick = onClick
         )
     }
 
