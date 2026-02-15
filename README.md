@@ -41,6 +41,8 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 - **AzHostActivityLayout**: A layout container that enforces strict safe zones and automatic alignment rules.
 - **AzNavHost**: A wrapper around `androidx.navigation.compose.NavHost` for seamless integration.
 - **Smart Transitions**: `AzNavHost` automatically configures directional transitions (slide in/out) based on the docking side (e.g., standard LTR or mirrored for Right dock).
+- **Dynamic Content**: Rail buttons can now display solid colors, numbers, or images (via Coil) directly.
+- **Nested Rails**: Support for nested navigation structures (`azNestedRail`) with both Vertical (anchored column) and Horizontal (scrollable row) alignments.
 
 ## AzNavRail for Android (Jetpack Compose)
 
