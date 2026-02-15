@@ -1,8 +1,10 @@
 package com.hereliesaz.aznavrail
 
 import android.annotation.SuppressLint
+import android.content.res.Resources
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -128,12 +130,38 @@ fun AzNavRailButton(
                 ) {
                     when (itemContent) {
                         is Color -> Box(modifier = Modifier.fillMaxSize().background(itemContent))
-                        is Int -> Image(
-                            painter = painterResource(itemContent),
-                            contentDescription = null,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxSize()
-                        )
+                        is Int -> {
+                            val context = LocalContext.current
+                            val isResource = remember(itemContent) {
+                                try {
+                                    context.resources.getResourceName(itemContent)
+                                    true
+                                } catch (e: Resources.NotFoundException) {
+                                    false
+                                }
+                            }
+
+                            if (isResource) {
+                                Image(
+                                    painter = painterResource(itemContent),
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                AutoSizeText(
+                                    text = itemContent.toString(),
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        textAlign = TextAlign.Center,
+                                        color = if (!enabled) disabledColor else finalColor
+                                    ),
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    alignment = Alignment.Center,
+                                    lineSpaceRatio = 0.9f
+                                )
+                            }
+                        }
                         is Number -> AutoSizeText(
                             text = itemContent.toString(),
                             style = MaterialTheme.typography.bodyMedium.copy(
