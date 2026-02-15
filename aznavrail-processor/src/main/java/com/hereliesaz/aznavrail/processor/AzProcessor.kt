@@ -132,11 +132,12 @@ class AzProcessor(
         builder.addStatement("")
         // Validation: At least one content item?
         val contentItems = items.filter { it.hasContent }
-        val startDest = if (contentItems.isNotEmpty()) {
-            contentItems.first().id
-        } else {
-            // Fallback to "home" but maybe warn?
-            "home"
+        val contentItems = items.filter { it.hasContent }
+        val homeItem = items.filterIsInstance<RailItemData>().find { it.home }
+        val startDest = homeItem?.id ?: contentItems.firstOrNull()?.id ?: ""
+
+        if (startDest.isEmpty()) {
+            logger.error("No start destination found. Mark an item with `home = true` or add a navigable function.")
         }
 
         builder.beginControlFlow("AzNavHost(startDestination = %S)", startDest)
