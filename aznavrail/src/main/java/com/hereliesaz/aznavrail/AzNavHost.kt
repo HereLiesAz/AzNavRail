@@ -1,5 +1,6 @@
 package com.hereliesaz.aznavrail
 
+import android.view.Surface
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -22,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavBackStackEntry
@@ -30,6 +32,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.hereliesaz.aznavrail.internal.AzLayoutConfig
+import com.hereliesaz.aznavrail.internal.AzRailLayoutHelper
+import com.hereliesaz.aznavrail.internal.AzVisualSide
+import com.hereliesaz.aznavrail.model.AzOrientation
 import com.hereliesaz.aznavrail.internal.AzSafeZones
 import com.hereliesaz.aznavrail.model.AzDockingSide
 
@@ -121,6 +126,24 @@ fun AzHostActivityLayout(
     val railScope = scope.getRailScopeImpl()
     val dockingSide = railScope.dockingSide
     val railWidth = railScope.collapsedWidth
+    val usePhysicalDocking = railScope.usePhysicalDocking
+
+    // Rotation Logic
+    val rotation = LocalView.current.display?.rotation ?: Surface.ROTATION_0
+
+    val layoutConfig = AzRailLayoutHelper.calculateLayout(
+        dockingSide = dockingSide,
+        rotation = rotation,
+        usePhysicalDocking = usePhysicalDocking
+    )
+
+    val visualSide = layoutConfig.visualSide
+    val orientation = layoutConfig.orientation
+    val reverseLayout = layoutConfig.reverseLayout
+    val railAlignment = layoutConfig.alignment
+
+    // Proxy visual docking side for AzNavRail internals (swipe direction)
+    val visualDockingSideProxy = if (visualSide == AzVisualSide.BOTTOM || visualSide == AzVisualSide.RIGHT) AzDockingSide.RIGHT else AzDockingSide.LEFT
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val maxHeight = maxHeight
@@ -135,8 +158,10 @@ fun AzHostActivityLayout(
         }
 
         // Layer 2: Restricted Content (AzHostFragmentLayout)
-        val startPadding = if (dockingSide == AzDockingSide.LEFT) railWidth else 0.dp
-        val endPadding = if (dockingSide == AzDockingSide.RIGHT) railWidth else 0.dp
+        val startPadding = if (visualSide == AzVisualSide.LEFT) railWidth else 0.dp
+        val endPadding = if (visualSide == AzVisualSide.RIGHT) railWidth else 0.dp
+        val topPadding = if (visualSide == AzVisualSide.TOP) railWidth else 0.dp
+        val bottomPadding = if (visualSide == AzVisualSide.BOTTOM) railWidth else 0.dp
 
         CompositionLocalProvider(LocalAzNavHostScope provides scope) {
             AzHostFragmentLayout(
@@ -144,8 +169,10 @@ fun AzHostActivityLayout(
                 safeBottom = safeBottom,
                 startPadding = startPadding,
                 endPadding = endPadding,
+                topPadding = topPadding,
+                bottomPadding = bottomPadding,
                 items = scope.onscreenItems,
-                dockingSide = dockingSide
+                dockingSide = dockingSide // Original docking side for logical flipping if needed
             )
         }
 
@@ -161,7 +188,11 @@ fun AzHostActivityLayout(
                 isLandscape = effectiveIsLandscape,
                 initiallyExpanded = initiallyExpanded,
                 disableSwipeToOpen = disableSwipeToOpen,
-                providedScope = railScope
+                providedScope = railScope,
+                orientation = orientation,
+                visualDockingSide = visualDockingSideProxy,
+                railAlignment = railAlignment,
+                reverseLayout = reverseLayout
             ) {}
         }
     }
@@ -173,16 +204,23 @@ fun AzHostFragmentLayout(
     safeBottom: Dp,
     startPadding: Dp,
     endPadding: Dp,
+    topPadding: Dp = 0.dp,
+    bottomPadding: Dp = 0.dp,
     items: List<AzOnscreenItem>,
     dockingSide: AzDockingSide
 ) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(top = safeTop, bottom = safeBottom, start = startPadding, end = endPadding)
+            .padding(
+                top = safeTop + topPadding,
+                bottom = safeBottom + bottomPadding,
+                start = startPadding,
+                end = endPadding
+            )
     ) {
         items.forEach { item ->
-            // Flip alignment if Right Docked
+            // Flip alignment if Right Docked (Physical)
             val finalAlignment = if (dockingSide == AzDockingSide.RIGHT) {
                 flipAlignment(item.alignment)
             } else {
