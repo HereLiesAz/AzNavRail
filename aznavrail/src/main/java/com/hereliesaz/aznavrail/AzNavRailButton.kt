@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
@@ -83,10 +84,10 @@ fun AzNavRailButton(
 
     val buttonModifier = when (shape) {
         AzButtonShape.CIRCLE -> modifier
-            .size(size)
+            .requiredSize(size)
             .aspectRatio(1f)
         AzButtonShape.SQUARE -> modifier
-            .size(size)
+            .requiredSize(size)
             .aspectRatio(1f)
         AzButtonShape.RECTANGLE, AzButtonShape.NONE -> modifier.height(36.dp)
     }
