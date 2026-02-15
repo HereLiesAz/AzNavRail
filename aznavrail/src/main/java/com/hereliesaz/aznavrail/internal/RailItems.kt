@@ -71,6 +71,7 @@ internal fun RailItems(
     hostStates: MutableMap<String, Boolean>,
     packRailButtons: Boolean,
     orientation: AzOrientation = AzOrientation.Vertical,
+    visualSide: AzVisualSide,
     onClickOverride: ((AzNavItem) -> Unit)? = null,
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
     infoScreen: Boolean = false,
@@ -115,6 +116,7 @@ internal fun RailItems(
                     currentDestination = currentDestination,
                     buttonSize = buttonSize,
                     orientation = orientation,
+                    visualSide = visualSide,
                     onRailCyclerClick = onRailCyclerClick,
                     onItemSelected = onItemSelected,
                     hostStates = hostStates,
@@ -202,6 +204,7 @@ internal fun RailItems(
                                     currentDestination = currentDestination,
                                     buttonSize = buttonSize,
                                     orientation = orientation,
+                                    visualSide = visualSide,
                                     onRailCyclerClick = onRailCyclerClick,
                                     onItemSelected = onItemSelected,
                                     hostStates = hostStates,
@@ -323,6 +326,14 @@ internal fun RailItems(
             Row { itemsToRender.forEach { renderItem(it) } }
         }
     }
+
+    Box {
+        if (isVertical) {
+            Column { itemsToRender.forEach { renderItem(it) } }
+        } else {
+            Row { itemsToRender.forEach { renderItem(it) } }
+        }
+    }
 }
 
 @Composable
@@ -333,6 +344,7 @@ private fun DraggableRailItemWrapper(
     currentDestination: String?,
     buttonSize: Dp,
     orientation: AzOrientation,
+    visualSide: AzVisualSide,
     onRailCyclerClick: (AzNavItem) -> Unit,
     onItemSelected: (AzNavItem) -> Unit,
     hostStates: MutableMap<String, Boolean>,
@@ -603,7 +615,7 @@ private fun DraggableRailItemWrapper(
                  },
                  backgroundColor = AzTextBoxDefaults.getBackgroundColor(),
                  backgroundOpacity = AzTextBoxDefaults.getBackgroundOpacity(),
-                 anchorWidth = if (isVertical) (itemWidths[item.id] ?: 0) else 0 // Anchor logic might need adjustment for horizontal
+                 visualSide = visualSide
              )
          }
 
@@ -639,11 +651,10 @@ private fun HiddenMenuPopup(
     onInputSubmit: (com.hereliesaz.aznavrail.model.HiddenMenuItem, String) -> Unit,
     backgroundColor: androidx.compose.ui.graphics.Color,
     backgroundOpacity: Float,
-    anchorWidth: Int
+    visualSide: AzVisualSide
 ) {
     Popup(
-        alignment = androidx.compose.ui.Alignment.TopStart,
-        offset = IntOffset(x = anchorWidth, y = 0),
+        popupPositionProvider = RailMenuPositionProvider(visualSide),
         onDismissRequest = onDismiss,
         properties = PopupProperties(focusable = true)
     ) {
