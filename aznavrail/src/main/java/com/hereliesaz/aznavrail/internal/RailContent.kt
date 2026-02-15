@@ -96,7 +96,8 @@ internal fun RailContent(
             size = buttonSize,
             shape = item.shape,
             enabled = isEnabled,
-            isSelected = isSelected
+            isSelected = isSelected,
+            itemContent = item.content
         )
     }
 }

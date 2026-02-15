@@ -2,10 +2,13 @@ package com.hereliesaz.aznavrail
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
@@ -24,9 +27,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.util.text.AutoSizeText
 
@@ -62,6 +68,7 @@ fun AzNavRailButton(
     isSelected: Boolean = false,
     isLoading: Boolean = false,
     contentPadding: PaddingValues = PaddingValues(8.dp),
+    itemContent: Any? = null,
     content: @Composable () -> Unit = {}
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -110,28 +117,66 @@ fun AzNavRailButton(
         interactionSource = interactionSource
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.alpha(if (isLoading) 0f else 1f)
-            ) {
-                val textModifier = when (shape) {
-                    AzButtonShape.RECTANGLE, AzButtonShape.NONE -> Modifier
-                    AzButtonShape.CIRCLE, AzButtonShape.SQUARE -> Modifier.weight(1f)
+            if (itemContent != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .alpha(if (isLoading) 0f else 1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    when (itemContent) {
+                        is Color -> Box(modifier = Modifier.fillMaxSize().background(itemContent))
+                        is Number -> AutoSizeText(
+                            text = itemContent.toString(),
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                textAlign = TextAlign.Center,
+                                color = if (!enabled) disabledColor else finalColor
+                            ),
+                            maxLines = 1,
+                            softWrap = false,
+                            alignment = Alignment.Center,
+                            lineSpaceRatio = 0.9f
+                        )
+                        is Int -> Image(
+                            painter = painterResource(itemContent),
+                            contentDescription = null,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        else -> {
+                            Image(
+                                painter = rememberAsyncImagePainter(model = itemContent),
+                                contentDescription = null,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
                 }
+            } else {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.alpha(if (isLoading) 0f else 1f)
+                ) {
+                    val textModifier = when (shape) {
+                        AzButtonShape.RECTANGLE, AzButtonShape.NONE -> Modifier
+                        AzButtonShape.CIRCLE, AzButtonShape.SQUARE -> Modifier.weight(1f)
+                    }
 
-                AutoSizeText(
-                    text = text,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        textAlign = TextAlign.Center,
-                        color = if (!enabled) disabledColor else finalColor
-                    ),
-                    modifier = textModifier,
-                    maxLines = if (text.contains("\n")) Int.MAX_VALUE else 1,
-                    softWrap = false,
-                    alignment = Alignment.Center,
-                    lineSpaceRatio = 0.9f
-                )
-                content()
+                    AutoSizeText(
+                        text = text,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            textAlign = TextAlign.Center,
+                            color = if (!enabled) disabledColor else finalColor
+                        ),
+                        modifier = textModifier,
+                        maxLines = if (text.contains("\n")) Int.MAX_VALUE else 1,
+                        softWrap = false,
+                        alignment = Alignment.Center,
+                        lineSpaceRatio = 0.9f
+                    )
+                    content()
+                }
             }
 
             if (isLoading) {
