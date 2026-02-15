@@ -679,16 +679,11 @@ fun AzNavRail(
                                     detectVerticalDragGestures(
                                         onDragStart = { },
                                         onVerticalDrag = { change, dragAmount ->
-                                            // Infer top/bottom swipe based on simple logic:
-                                            // If at Top (Left orig), Swipe Down to open? Or Swipe Down to close?
-                                            // Swipe "inwards" usually opens.
-                                            // Top: Inwards is Down. (+Y)
-                                            // Bottom: Inwards is Up. (-Y)
-                                            // But I need to know if I am Top or Bottom.
-                                            // Assuming visualDockingSide logic:
-                                            // Left -> Top. Right -> Bottom.
-                                            val isBottom = isRightDocked // Simplified assumption
-                                            val shouldOpen = if (isBottom) dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX else dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX
+                                            // For horizontal rails, `isRightDocked` effectively tells us if the rail is at the bottom,
+                                            // as the proxy maps TOP to LEFT and BOTTOM to RIGHT.
+                                            // A swipe "inwards" (up for bottom, down for top) should open the rail.
+                                            val isBottomRail = isRightDocked
+                                            val shouldOpen = if (isBottomRail) dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX else dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX
                                             if (!isExpanded && !disableSwipeToOpen && shouldOpen) {
                                                 isExpanded = true
                                                 change.consume()
