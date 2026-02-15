@@ -560,7 +560,7 @@ fun AzNavRail(
                                                             if (onClick != null) repeat(clicksToCatchUp) { onClick() }
                                                         }
                                                         isExpanded = false
-                                                        cyclerStates.put(item.id, cyclerStates[item.id]!!.copy(job = null))
+                                                        cyclerStates[item.id]?.let { cyclerStates.put(item.id, it.copy(job = null)) }
                                                     }
                                                 ))
                                             }
