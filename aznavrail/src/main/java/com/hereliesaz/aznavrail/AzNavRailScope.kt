@@ -70,7 +70,8 @@ interface AzNavRailScope {
         noMenu: Boolean = false,
         vibrate: Boolean = false,
         displayAppName: Boolean = false,
-        activeClassifiers: Set<String> = emptySet()
+        activeClassifiers: Set<String> = emptySet(),
+        usePhysicalDocking: Boolean = false
     )
 
     fun azAdvanced(
@@ -219,6 +220,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     var vibrate: Boolean = false
     var displayAppName: Boolean = false
     var activeClassifiers: Set<String> = emptySet()
+    var usePhysicalDocking: Boolean = false
 
     var isLoading: Boolean = false
     var infoScreen: Boolean = false
@@ -303,7 +305,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
         noMenu: Boolean,
         vibrate: Boolean,
         displayAppName: Boolean,
-        activeClassifiers: Set<String>
+        activeClassifiers: Set<String>,
+        usePhysicalDocking: Boolean
     ) {
         this.dockingSide = dockingSide
         this.packButtons = packButtons
@@ -311,6 +314,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         this.vibrate = vibrate
         this.displayAppName = displayAppName
         this.activeClassifiers = activeClassifiers
+        this.usePhysicalDocking = usePhysicalDocking
     }
 
     override fun azAdvanced(
