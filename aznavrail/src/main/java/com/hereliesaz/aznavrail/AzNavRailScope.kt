@@ -352,26 +352,26 @@ class AzNavRailScopeImpl : AzNavRailScope {
     }
 
     override fun azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: () -> Unit) {
-        addRailItem(id, text, null, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick)
+        addRailItem(id, text, null, null, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick)
     }
 
     override fun azRailItem(id: String, text: String, route: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?) {
-        addRailItem(id, text, route, color, shape, disabled, screenTitle, info, classifiers, onFocus) {}
+        addRailItem(id, text, route, null, color, shape, disabled, screenTitle, info, classifiers, onFocus) {}
     }
 
     override fun azRailItem(id: String, text: String, route: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: () -> Unit) {
-        addRailItem(id, text, route, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick)
+        addRailItem(id, text, route, null, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick)
     }
 
     override fun azRailItem(id: String, text: String, config: AzItemConfig, onClick: () -> Unit) {
         addRailItem(
-            id, text, null, config.color, config.shape, config.disabled, config.screenTitle, config.info, config.classifiers, config.onFocus, onClick
+            id, text, null, null, config.color, config.shape, config.disabled, config.screenTitle, config.info, config.classifiers, config.onFocus, onClick
         )
     }
 
     override fun azRailItem(id: String, text: String, route: String, config: AzItemConfig) {
         addRailItem(
-            id, text, route, config.color, config.shape, config.disabled, config.screenTitle, config.info, config.classifiers, config.onFocus
+            id, text, route, null, config.color, config.shape, config.disabled, config.screenTitle, config.info, config.classifiers, config.onFocus
         ) {}
     }
 
