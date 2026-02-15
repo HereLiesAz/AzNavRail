@@ -287,7 +287,7 @@ fun AzNavRail(
                                     repeat(clicksToCatchUp) { onClick() }
                                 }
                             }
-                            cyclerStates[id] = state.copy(job = null)
+                            cyclerStates.put(id, state.copy(job = null))
                         }
                     }
                 }
@@ -546,7 +546,7 @@ fun AzNavRail(
                                                 val currentIndexInEnabled = enabledOptions.indexOf(currentDisplayed)
                                                 val nextIndex = if (currentIndexInEnabled != -1) (currentIndexInEnabled + 1) % enabledOptions.size else 0
                                                 val nextOption = enabledOptions[nextIndex]
-                                                cyclerStates[item.id] = state.copy(
+                                                cyclerStates.put(item.id, state.copy(
                                                     displayedOption = nextOption,
                                                     job = coroutineScope.launch {
                                                         delay(1000L)
@@ -560,9 +560,9 @@ fun AzNavRail(
                                                             if (onClick != null) repeat(clicksToCatchUp) { onClick() }
                                                         }
                                                         isExpanded = false
-                                                        cyclerStates[item.id] = cyclerStates[item.id]!!.copy(job = null)
+                                                        cyclerStates.put(item.id, cyclerStates[item.id]!!.copy(job = null))
                                                     }
-                                                )
+                                                ))
                                             }
                                         }
                                     }
@@ -583,14 +583,14 @@ fun AzNavRail(
                                     onClick = onClick,
                                     onCyclerClick = onCyclerClick,
                                     onToggle = { isExpanded = !isExpanded },
-                                    onItemClick = { selectedItem = finalItem },
+                                    onItemClick = { selectedItemId = finalItem.id },
                                     onHostClick = {
                                         val wasExpanded = hostStates[item.id] ?: false
                                         val keys = hostStates.keys.toList()
                                         keys.forEach { key -> hostStates[key] = false }
                                         hostStates[item.id] = !wasExpanded
                                     },
-                                    onItemGloballyPositioned = { id, rect -> itemPositions[id] = rect },
+                                    onItemGloballyPositioned = { id, rect -> itemPositions.put(id, rect) },
                                     infoScreen = scope.infoScreen,
                                     activeColor = scope.activeColor
                                 )
@@ -608,8 +608,8 @@ fun AzNavRail(
                                                 onClick = scope.onClickMap[subItem.id],
                                                 onCyclerClick = null,
                                                 onToggle = { isExpanded = !isExpanded },
-                                                onItemClick = { selectedItem = subItem },
-                                                onItemGloballyPositioned = { id, rect -> itemPositions[id] = rect },
+                                                onItemClick = { selectedItemId = subItem.id },
+                                                onItemGloballyPositioned = { id, rect -> itemPositions.put(id, rect) },
                                                 infoScreen = scope.infoScreen,
                                                 activeColor = scope.activeColor
                                             )
@@ -736,12 +736,12 @@ fun AzNavRail(
                                     currentDestination = currentDestination,
                                     buttonSize = buttonSize,
                                     onRailCyclerClick = onRailCyclerClick,
-                                    onItemSelected = { navItem -> selectedItem = navItem },
+                                    onItemSelected = { navItem -> selectedItemId = navItem.id },
                                     hostStates = hostStates,
                                     packRailButtons = if (isFloating) true else scope.packButtons,
                                     onClickOverride = if (overlayController != null) handleOverlayClick else null,
                                     onItemGloballyPositioned = { id, rect ->
-                                        itemPositions[id] = rect
+                                        itemPositions.put(id, rect)
                                         scope.onItemGloballyPositioned?.invoke(id, rect)
                                     },
                                     infoScreen = scope.infoScreen,
@@ -764,12 +764,12 @@ fun AzNavRail(
                                     currentDestination = currentDestination,
                                     buttonSize = buttonSize,
                                     onRailCyclerClick = onRailCyclerClick,
-                                    onItemSelected = { navItem -> selectedItem = navItem },
+                                    onItemSelected = { navItem -> selectedItemId = navItem.id },
                                     hostStates = hostStates,
                                     packRailButtons = if (isFloating) true else scope.packButtons,
                                     onClickOverride = if (overlayController != null) handleOverlayClick else null,
                                     onItemGloballyPositioned = { id, rect ->
-                                        itemPositions[id] = rect
+                                        itemPositions.put(id, rect)
                                         scope.onItemGloballyPositioned?.invoke(id, rect)
                                     },
                                     infoScreen = scope.infoScreen,
