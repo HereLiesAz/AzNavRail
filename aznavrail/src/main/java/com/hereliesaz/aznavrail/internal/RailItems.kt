@@ -84,9 +84,9 @@ internal fun RailItems(
     // Shared state for dragging
     var draggedItemId by remember { mutableStateOf<String?>(null) }
     var dragOffset by remember { mutableStateOf(0f) }
-    var itemHeights by remember { mutableStateOf(mapOf<String, Int>()) }
-    var itemWidths by remember { mutableStateOf(mapOf<String, Int>()) }
-    var itemBounds by remember { mutableStateOf(mapOf<String, Rect>()) }
+    val itemHeights = remember { androidx.compose.runtime.mutableStateMapOf<String, Int>() }
+    val itemWidths = remember { androidx.compose.runtime.mutableStateMapOf<String, Int>() }
+    val itemBounds = remember { androidx.compose.runtime.mutableStateMapOf<String, Rect>() }
     var hiddenMenuOpenId by remember { mutableStateOf<String?>(null) }
     var nestedRailOpenId by remember { mutableStateOf<String?>(null) }
     var currentDropTargetIndex by remember { mutableStateOf<Int?>(null) }
@@ -176,10 +176,13 @@ internal fun RailItems(
                     onMenuOpen = { id -> hiddenMenuOpenId = id },
                     itemSizes = currentItemSizes,
                     itemWidths = itemWidths,
-                    onHeightReported = { id, height -> itemHeights = itemHeights + (id to height) },
-                    onWidthReported = { id, width -> itemWidths = itemWidths + (id to width) },
+                    onHeightReported = { id, height -> itemHeights[id] = height },
+                    onWidthReported = { id, width -> itemWidths[id] = width },
+                    onBoundsReported = { id, bounds -> itemBounds[id] = bounds },
                     coroutineScope = coroutineScope,
                     hiddenMenuOpenId = hiddenMenuOpenId,
+                    nestedRailOpenId = nestedRailOpenId,
+                    onNestedRailToggle = { id -> nestedRailOpenId = if (nestedRailOpenId == id) null else id },
                     onHiddenMenuDismiss = { hiddenMenuOpenId = null },
                     lastTappedId = lastTappedId,
                     onUpdateLastTappedId = { id -> lastTappedId = id },
@@ -252,10 +255,13 @@ internal fun RailItems(
                                     onMenuOpen = { id -> hiddenMenuOpenId = id },
                                     itemSizes = currentItemSizes,
                                     itemWidths = itemWidths,
-                                    onHeightReported = { id, height -> itemHeights = itemHeights + (id to height) },
-                                    onWidthReported = { id, width -> itemWidths = itemWidths + (id to width) },
+                                    onHeightReported = { id, height -> itemHeights[id] = height },
+                                    onWidthReported = { id, width -> itemWidths[id] = width },
+                                    onBoundsReported = { id, bounds -> itemBounds[id] = bounds },
                                     coroutineScope = coroutineScope,
                                     hiddenMenuOpenId = hiddenMenuOpenId,
+                                    nestedRailOpenId = nestedRailOpenId,
+                                    onNestedRailToggle = { id -> nestedRailOpenId = if (nestedRailOpenId == id) null else id },
                                     onHiddenMenuDismiss = { hiddenMenuOpenId = null },
                                     lastTappedId = lastTappedId,
                                     onUpdateLastTappedId = { id -> lastTappedId = id },
