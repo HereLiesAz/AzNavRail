@@ -45,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.AzNavRailScopeImpl
 import com.hereliesaz.aznavrail.AzTextBoxDefaults
+import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzOrientation
@@ -306,6 +307,18 @@ internal fun RailItems(
                 }
             }
         }
+    }
+
+    Box(
+        modifier = Modifier.onGloballyPositioned { coordinates ->
+            rootBounds = coordinates.boundsInWindow()
+        }
+    ) {
+        if (isVertical) {
+            Column { itemsToRender.forEach { renderItem(it) } }
+        } else {
+            Row { itemsToRender.forEach { renderItem(it) } }
+        }
 
         if (nestedRailOpenId != null) {
             rootBounds?.let { rb ->
@@ -314,7 +327,7 @@ internal fun RailItems(
                 if (item != null && bounds != null && item.nestedRailItems != null && item.nestedRailAlignment != null) {
                      NestedRail(
                          parentItem = item,
-                         items = item.nestedRailItems,
+                         items = item.nestedRailItems!!,
                          scope = scope,
                          navController = navController,
                          currentDestination = currentDestination,
@@ -326,22 +339,6 @@ internal fun RailItems(
                      )
                 }
             }
-        }
-    }
-
-    Box {
-        if (isVertical) {
-            Column { itemsToRender.forEach { renderItem(it) } }
-        } else {
-            Row { itemsToRender.forEach { renderItem(it) } }
-        }
-    }
-
-    Box {
-        if (isVertical) {
-            Column { itemsToRender.forEach { renderItem(it) } }
-        } else {
-            Row { itemsToRender.forEach { renderItem(it) } }
         }
     }
 }

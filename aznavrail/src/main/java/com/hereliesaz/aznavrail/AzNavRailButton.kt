@@ -81,6 +81,30 @@ fun AzNavRailButton(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    val context = LocalContext.current
+
+    val isResource = remember(itemContent) {
+        if (itemContent is Int) {
+            try {
+                context.resources.getResourceName(itemContent)
+                true
+            } catch (e: Resources.NotFoundException) {
+                false
+            }
+        } else {
+            false
+        }
+    }
+
+    val effectiveContentPadding = if (
+        itemContent is Color ||
+        (itemContent is Int && isResource) ||
+        (itemContent != null && itemContent !is Int && itemContent !is Number)
+    ) {
+        PaddingValues(0.dp)
+    } else {
+        contentPadding
+    }
 
     val buttonShape = when (shape) {
         AzButtonShape.CIRCLE -> CircleShape
@@ -120,7 +144,7 @@ fun AzNavRailButton(
         shape = buttonShape,
         border = if (shape == AzButtonShape.NONE) BorderStroke(0.dp, Color.Transparent) else BorderStroke(3.dp, if (!enabled) disabledColor else finalColor),
         colors = colors ?: defaultColors,
-        contentPadding = contentPadding,
+        contentPadding = effectiveContentPadding,
         enabled = enabled,
         interactionSource = interactionSource
     ) {
@@ -135,21 +159,11 @@ fun AzNavRailButton(
                     when (itemContent) {
                         is Color -> Box(modifier = Modifier.fillMaxSize().background(itemContent))
                         is Int -> {
-                            val context = LocalContext.current
-                            val isResource = remember(itemContent) {
-                                try {
-                                    context.resources.getResourceName(itemContent)
-                                    true
-                                } catch (e: Resources.NotFoundException) {
-                                    false
-                                }
-                            }
-
                             if (isResource) {
                                 Image(
                                     painter = painterResource(itemContent),
                                     contentDescription = null,
-                                    contentScale = ContentScale.Fit,
+                                    contentScale = ContentScale.Crop,
                                     modifier = Modifier.fillMaxSize()
                                 )
                             } else {
@@ -181,7 +195,7 @@ fun AzNavRailButton(
                             Image(
                                 painter = rememberAsyncImagePainter(model = itemContent),
                                 contentDescription = null,
-                                contentScale = ContentScale.Fit,
+                                contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
                             )
                         }
