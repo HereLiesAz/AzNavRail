@@ -44,3 +44,6 @@ CueDetat/
 
 # Node modules
 **/node_modules/
+build*.txt
+test*.txt
+*output*.txt
