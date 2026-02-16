@@ -310,22 +310,6 @@ class AzProcessor(
                 }
             }
         }
-
-        // Parent Validation
-        val allIds = items.map { it.id }.toSet()
-        items.forEach { item ->
-            if (item is NestedRailData) {
-                if (!allIds.contains(item.parent)) {
-                    logger.error("Nested item '${item.id}' refers to non-existent parent '${item.parent}'", item.symbol)
-                }
-            }
-        }
-
-        val contentItems = items.filter { it.hasContent }
-        if (contentItems.isEmpty()) {
-            logger.error("No content items found. You must annotate at least one @Composable function with @Az.", activityClass)
-        }
-
         return items
     }
 
