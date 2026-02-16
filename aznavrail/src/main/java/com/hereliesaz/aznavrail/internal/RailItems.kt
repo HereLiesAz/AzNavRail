@@ -327,7 +327,7 @@ internal fun RailItems(
                 if (item != null && bounds != null && item.nestedRailItems != null && item.nestedRailAlignment != null) {
                      NestedRail(
                          parentItem = item,
-                         items = item.nestedRailItems,
+                         items = item.nestedRailItems!!,
                          scope = scope,
                          navController = navController,
                          currentDestination = currentDestination,
