@@ -30,7 +30,7 @@ In your app module's `build.gradle.kts`, apply the KSP plugin and add dependenci
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("com.google.devtools.ksp") version "1.9.22-1.0.17" // Use version compatible with your Kotlin version
+    id("com.google.devtools.ksp") version "2.2.21-2.0.5"" // Use version compatible with your Kotlin version
 }
 ```
 
@@ -38,10 +38,10 @@ plugins {
 ```kotlin
 dependencies {
     // Core Library
-    implementation("com.github.HereLiesAz.AzNavRail:aznavrail:7.1")
+    implementation("com.github.HereLiesAz.AzNavRail:aznavrail:7.4")
     
     // Annotation Processor (Required for High-Inference System)
-    ksp("com.github.HereLiesAz.AzNavRail:aznavrail-processor:7.1")
+    ksp("com.github.HereLiesAz.AzNavRail:aznavrail-processor:7.4")
 }
 ```
 
