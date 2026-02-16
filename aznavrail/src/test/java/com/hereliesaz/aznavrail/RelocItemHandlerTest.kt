@@ -1,5 +1,6 @@
 package com.hereliesaz.aznavrail
 
+import androidx.compose.ui.geometry.Rect
 import com.hereliesaz.aznavrail.internal.RelocItemHandler
 import com.hereliesaz.aznavrail.model.AzNavItem
 import org.junit.Test
@@ -106,7 +107,8 @@ class RelocItemHandlerTest {
             items = items,
             draggedItemId = "nonexistent",
             currentDragOffset = 100f,
-            itemSizes = mapOf("1" to 100)
+            itemBounds = emptyMap(),
+            isVertical = true
         )
         assertNull(target)
     }
@@ -118,22 +120,35 @@ class RelocItemHandlerTest {
             AzNavItem(id = "2", text = "2", isRailItem = true, isRelocItem = true, hostId = "host"),
             AzNavItem(id = "3", text = "3", isRailItem = true, isRelocItem = true, hostId = "host")
         )
-        val sizes = mapOf("1" to 100, "2" to 100, "3" to 100)
 
-        // Drag item "1" down by 50px. Next item "2" is 100px.
-        // 50 > 0.4 * 100 (40). So it should swap.
-        val target1 = RelocItemHandler.calculateTargetIndex(items, "1", 50f, sizes)
+        val bounds = mapOf(
+            "1" to Rect(0f, 0f, 100f, 100f),
+            "2" to Rect(0f, 100f, 100f, 200f),
+            "3" to Rect(0f, 200f, 100f, 300f)
+        )
+
+        // Drag item "1" down by 60px.
+        // Center of 1: 50. +60 = 110.
+        // Center of 2: 150. |110-150| = 40.
+        // Center of 1: 50. |110-50| = 60.
+        // Closest is 2.
+        val target1 = RelocItemHandler.calculateTargetIndex(items, "1", 60f, bounds, true)
         assertEquals(1, target1)
 
-        // Drag item "1" down by 150px.
-        // Swap with "2" (consumes 100, remaining 50).
-        // 50 > 0.4 * 100 (40). Swap with "3".
-        val target2 = RelocItemHandler.calculateTargetIndex(items, "1", 150f, sizes)
+        // Drag item "1" down by 160px.
+        // Center: 50 + 160 = 210.
+        // Center of 3: 250. |210-250| = 40.
+        // Center of 2: 150. |210-150| = 60.
+        // Closest is 3.
+        val target2 = RelocItemHandler.calculateTargetIndex(items, "1", 160f, bounds, true)
         assertEquals(2, target2)
 
          // Drag item "1" down by 30px.
-        // 30 < 40. No swap.
-        val target3 = RelocItemHandler.calculateTargetIndex(items, "1", 30f, sizes)
+        // Center: 80.
+        // Center of 1: 50. |80-50| = 30.
+        // Center of 2: 150. |80-150| = 70.
+        // Closest is 1.
+        val target3 = RelocItemHandler.calculateTargetIndex(items, "1", 30f, bounds, true)
         assertEquals(0, target3)
     }
 }
