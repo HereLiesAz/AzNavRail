@@ -78,15 +78,63 @@ import kotlinx.coroutines.launch
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
+/**
+ * Annotation marking API elements that enforce strict layout constraints.
+ *
+ * This annotation is used on [AzNavRail] to indicate that it cannot be used directly in typical UI composition
+ * and must be wrapped by an [AzHostActivityLayout].
+ *
+ * **Troubleshooting:**
+ * If you encounter an error related to this annotation, ensure that you are calling [AzNavRail]
+ * inside the content block of [AzHostActivityLayout]. Do not use [AzNavRail] in a standard [androidx.compose.material3.Scaffold].
+ */
 @Target(AnnotationTarget.FUNCTION)
 @RequiresOptIn(message = "This API is strictly controlled. Use AzHostActivityLayout.")
 annotation class AzStrictLayout
 
+/**
+ * Main object containing constants for AzNavRail.
+ */
 object AzNavRail {
+    /**
+     * Constant indicating no title should be displayed for an item.
+     */
     const val noTitle = "AZNAVRAIL_NO_TITLE"
+
+    /**
+     * Intent extra key for passing navigation routes to the activity.
+     */
     const val EXTRA_ROUTE = "com.hereliesaz.aznavrail.extra.ROUTE"
 }
 
+/**
+ * The core composable for the AzNavRail navigation rail.
+ *
+ * This component renders the rail, handles user interactions, manages expansion state,
+ * and coordinates with the [AzHostActivityLayout].
+ *
+ * **Strict Usage:** This composable is marked with [AzStrictLayout]. It should not be instantiated directly
+ * in application code, except within specific overlay service contexts where layout rules differ.
+ * The standard entry point is [AzHostActivityLayout].
+ *
+ * @param modifier The modifier to apply to the rail container.
+ * @param navController The [NavController] used for navigation actions.
+ * @param currentDestination The route of the current destination.
+ * @param isLandscape Whether the current configuration is landscape.
+ * @param initiallyExpanded Whether the rail starts in an expanded state.
+ * @param disableSwipeToOpen Whether swipe gestures to open the menu are disabled.
+ * @param providedScope An optional pre-configured scope, typically passed from [AzHostActivityLayout].
+ * @param orientation The orientation of the rail ([AzOrientation.Vertical] or [AzOrientation.Horizontal]).
+ * @param visualDockingSide The effective docking side for visual layout purposes.
+ * @param railAlignment The alignment of the rail within its container.
+ * @param reverseLayout Whether to reverse the layout order (e.g., for bottom or right docking).
+ * @param content The DSL configuration block.
+ *
+ * @throws IllegalStateException If called without a parent [AzHostActivityLayout] (unless in an overlay context).
+ * **Fix:** Wrap your [AzNavRail] usage with [AzHostActivityLayout].
+ * @throws IllegalArgumentException If a hierarchy violation is detected (e.g., a Rail Sub-Item without a valid Rail Host).
+ * **Fix:** Ensure all `azRailSubItem` calls reference a valid `azRailHostItem` ID.
+ */
 @AzStrictLayout
 @Composable
 fun AzNavRail(
@@ -567,7 +615,7 @@ fun AzNavRail(
                                         }
                                     }
                                 } else {
-                                    onClick
+                                    null
                                 }
                                 val finalItem = if (item.isCycler) {
                                     item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption)

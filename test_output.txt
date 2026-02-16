@@ -1,0 +1,159 @@
+> Task :aznavrail:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :aznavrail:preBuild UP-TO-DATE
+> Task :aznavrail:preDebugBuild UP-TO-DATE
+> Task :aznavrail:generateDebugBuildConfig
+> Task :aznavrail:generateDebugResValues UP-TO-DATE
+> Task :aznavrail:generateDebugResources UP-TO-DATE
+> Task :aznavrail:packageDebugResources UP-TO-DATE
+> Task :aznavrail:processDebugNavigationResources UP-TO-DATE
+> Task :aznavrail:parseDebugLocalResources UP-TO-DATE
+> Task :aznavrail:generateDebugRFile UP-TO-DATE
+> Task :aznavrail:javaPreCompileDebug UP-TO-DATE
+> Task :aznavrail:preDebugUnitTestBuild UP-TO-DATE
+> Task :aznavrail:writeDebugAarMetadata UP-TO-DATE
+
+> Task :aznavrail:compileDebugKotlin
+w: file:///app/aznavrail/src/main/java/com/hereliesaz/aznavrail/internal/SecretScreens.kt:373:30 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+
+> Task :aznavrail:checkDebugUnitTestAarMetadata
+> Task :aznavrail:compileDebugJavaWithJavac
+> Task :aznavrail:compileDebugLibraryResources UP-TO-DATE
+> Task :aznavrail:bundleLibRuntimeToJarDebug
+> Task :aznavrail:bundleLibCompileToJarDebug
+> Task :aznavrail:generateDebugUnitTestResValues
+> Task :aznavrail:mapDebugUnitTestSourceSetPaths
+> Task :aznavrail:generateDebugUnitTestResources
+> Task :aznavrail:extractDeepLinksDebug UP-TO-DATE
+> Task :aznavrail:processDebugManifest UP-TO-DATE
+> Task :aznavrail:mergeDebugUnitTestResources
+> Task :aznavrail:processDebugUnitTestManifest
+> Task :aznavrail:generateDebugUnitTestAssets UP-TO-DATE
+> Task :aznavrail:javaPreCompileDebugUnitTest
+> Task :aznavrail:mergeDebugShaders UP-TO-DATE
+> Task :aznavrail:compileDebugShaders NO-SOURCE
+> Task :aznavrail:generateDebugAssets UP-TO-DATE
+> Task :aznavrail:mergeDebugAssets UP-TO-DATE
+> Task :aznavrail:mergeDebugUnitTestAssets
+> Task :aznavrail:processDebugJavaRes UP-TO-DATE
+> Task :aznavrail:preReleaseBuild UP-TO-DATE
+> Task :aznavrail:generateReleaseBuildConfig
+> Task :aznavrail:generateReleaseResValues UP-TO-DATE
+> Task :aznavrail:generateReleaseResources UP-TO-DATE
+> Task :aznavrail:packageReleaseResources UP-TO-DATE
+> Task :aznavrail:processReleaseNavigationResources UP-TO-DATE
+> Task :aznavrail:parseReleaseLocalResources UP-TO-DATE
+> Task :aznavrail:generateReleaseRFile UP-TO-DATE
+> Task :aznavrail:javaPreCompileRelease UP-TO-DATE
+> Task :aznavrail:preReleaseUnitTestBuild UP-TO-DATE
+> Task :aznavrail:writeReleaseAarMetadata UP-TO-DATE
+> Task :aznavrail:checkReleaseUnitTestAarMetadata
+> Task :aznavrail:generateReleaseUnitTestResValues
+> Task :aznavrail:compileReleaseLibraryResources
+> Task :aznavrail:mapReleaseUnitTestSourceSetPaths
+> Task :aznavrail:generateReleaseUnitTestResources
+> Task :aznavrail:processDebugUnitTestResources
+> Task :aznavrail:mergeReleaseUnitTestResources
+
+> Task :aznavrail:compileReleaseKotlin
+w: file:///app/aznavrail/src/main/java/com/hereliesaz/aznavrail/internal/SecretScreens.kt:373:30 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+
+> Task :aznavrail:packageDebugUnitTestForUnitTest
+> Task :aznavrail:generateDebugUnitTestConfig
+> Task :aznavrail:compileReleaseJavaWithJavac
+> Task :aznavrail:extractDeepLinksRelease
+> Task :aznavrail:processReleaseManifest UP-TO-DATE
+> Task :aznavrail:bundleLibRuntimeToJarRelease
+> Task :aznavrail:bundleLibCompileToJarRelease
+> Task :aznavrail:processReleaseUnitTestManifest
+> Task :aznavrail:generateReleaseUnitTestAssets UP-TO-DATE
+> Task :aznavrail:javaPreCompileReleaseUnitTest
+> Task :aznavrail:mergeReleaseShaders UP-TO-DATE
+> Task :aznavrail:compileReleaseShaders NO-SOURCE
+> Task :aznavrail:generateReleaseAssets UP-TO-DATE
+> Task :aznavrail:mergeReleaseAssets UP-TO-DATE
+> Task :aznavrail:mergeReleaseUnitTestAssets
+> Task :aznavrail:processReleaseJavaRes UP-TO-DATE
+> Task :SampleApp:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :SampleApp:preBuild UP-TO-DATE
+> Task :SampleApp:preDebugBuild UP-TO-DATE
+> Task :SampleApp:checkDebugAarMetadata UP-TO-DATE
+> Task :SampleApp:processDebugNavigationResources UP-TO-DATE
+> Task :SampleApp:compileDebugNavigationResources UP-TO-DATE
+> Task :SampleApp:generateDebugResValues UP-TO-DATE
+> Task :SampleApp:mapDebugSourceSetPaths UP-TO-DATE
+> Task :SampleApp:generateDebugResources UP-TO-DATE
+> Task :SampleApp:mergeDebugResources UP-TO-DATE
+> Task :SampleApp:packageDebugResources UP-TO-DATE
+> Task :SampleApp:parseDebugLocalResources UP-TO-DATE
+> Task :SampleApp:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :SampleApp:extractDeepLinksDebug UP-TO-DATE
+> Task :SampleApp:processDebugMainManifest UP-TO-DATE
+> Task :SampleApp:processDebugManifest UP-TO-DATE
+> Task :SampleApp:processDebugManifestForPackage UP-TO-DATE
+> Task :SampleApp:processDebugResources UP-TO-DATE
+> Task :SampleApp:javaPreCompileDebug UP-TO-DATE
+> Task :SampleApp:preDebugUnitTestBuild UP-TO-DATE
+> Task :SampleApp:javaPreCompileDebugUnitTest
+> Task :aznavrail:processReleaseUnitTestResources
+> Task :SampleApp:buildKotlinToolingMetadata
+> Task :SampleApp:compileDebugKotlin
+> Task :aznavrail:packageReleaseUnitTestForUnitTest
+> Task :SampleApp:compileDebugJavaWithJavac NO-SOURCE
+> Task :aznavrail:generateReleaseUnitTestConfig
+> Task :SampleApp:bundleDebugClassesToRuntimeJar
+> Task :SampleApp:bundleDebugClassesToCompileJar
+> Task :SampleApp:processDebugJavaRes UP-TO-DATE
+> Task :SampleApp:compileDebugUnitTestKotlin NO-SOURCE
+> Task :SampleApp:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :SampleApp:processDebugUnitTestJavaRes NO-SOURCE
+> Task :SampleApp:testDebugUnitTest NO-SOURCE
+> Task :SampleApp:preReleaseBuild UP-TO-DATE
+> Task :SampleApp:checkReleaseAarMetadata
+> Task :SampleApp:processReleaseNavigationResources
+> Task :SampleApp:generateReleaseResValues
+> Task :SampleApp:compileReleaseNavigationResources
+> Task :SampleApp:mapReleaseSourceSetPaths
+> Task :SampleApp:generateReleaseResources
+> Task :SampleApp:packageReleaseResources
+> Task :SampleApp:parseReleaseLocalResources
+> Task :SampleApp:createReleaseCompatibleScreenManifests
+> Task :SampleApp:extractDeepLinksRelease
+> Task :SampleApp:processReleaseMainManifest
+> Task :SampleApp:processReleaseManifest
+> Task :SampleApp:processReleaseManifestForPackage
+> Task :SampleApp:javaPreCompileRelease
+> Task :SampleApp:preReleaseUnitTestBuild UP-TO-DATE
+> Task :SampleApp:javaPreCompileReleaseUnitTest
+> Task :SampleApp:mergeReleaseResources
+> Task :aznavrail:compileDebugUnitTestKotlin
+> Task :aznavrail:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :aznavrail:processDebugUnitTestJavaRes
+> Task :SampleApp:processReleaseResources
+> Task :aznavrail:compileReleaseUnitTestKotlin
+> Task :aznavrail:testDebugUnitTest
+> Task :aznavrail:compileReleaseUnitTestJavaWithJavac NO-SOURCE
+> Task :aznavrail:processReleaseUnitTestJavaRes
+> Task :aznavrail:testReleaseUnitTest
+> Task :aznavrail:test
+> Task :SampleApp:compileReleaseKotlin
+> Task :SampleApp:compileReleaseJavaWithJavac NO-SOURCE
+> Task :SampleApp:bundleReleaseClassesToRuntimeJar
+> Task :SampleApp:bundleReleaseClassesToCompileJar
+> Task :SampleApp:processReleaseJavaRes
+> Task :SampleApp:compileReleaseUnitTestKotlin NO-SOURCE
+> Task :SampleApp:compileReleaseUnitTestJavaWithJavac NO-SOURCE
+> Task :SampleApp:processReleaseUnitTestJavaRes NO-SOURCE
+> Task :SampleApp:testReleaseUnitTest NO-SOURCE
+> Task :SampleApp:test UP-TO-DATE
+
+[Incubating] Problems report is available at: file:///app/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.1.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 1m 58s
+109 actionable tasks: 66 executed, 43 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.1.0/userguide/configuration_cache_enabling.html

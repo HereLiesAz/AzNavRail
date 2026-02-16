@@ -18,10 +18,23 @@ import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 
 /**
- * Composable for displaying a single item in the collapsed rail.
+ * Internal composable for displaying a single item within the collapsed rail.
+ *
+ * It wraps [AzNavRailButton] and handles item-specific logic like click handling,
+ * state management (toggles, cyclers), and coordinate reporting.
  *
  * @param item The navigation item to display.
+ * @param navController The navigation controller for routing.
+ * @param isSelected Whether this item is currently selected.
  * @param buttonSize The size of the button.
+ * @param onClick Optional additional click callback.
+ * @param onRailCyclerClick Callback for cycler item clicks.
+ * @param onItemClick Callback when any item is clicked.
+ * @param onHostClick Callback when a host item is clicked.
+ * @param onItemGloballyPositioned Callback reporting the item's global bounds.
+ * @param infoScreen Whether the info screen (help mode) is active.
+ * @param dragModifier Modifier for drag-and-drop interactions.
+ * @param activeColor The active color for the button.
  */
 @Composable
 internal fun RailContent(

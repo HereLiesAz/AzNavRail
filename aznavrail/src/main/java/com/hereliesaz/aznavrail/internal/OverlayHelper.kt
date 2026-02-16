@@ -7,7 +7,17 @@ import android.os.Build
 import android.provider.Settings
 import com.hereliesaz.aznavrail.service.AzNavRailOverlayService
 
+/**
+ * Helper object for launching system overlays.
+ */
 internal object OverlayHelper {
+    /**
+     * Launches the specified service as an overlay.
+     * Checks for the SYSTEM_ALERT_WINDOW permission and prompts the user if missing.
+     *
+     * @param context The context to use.
+     * @param serviceClass The class of the service to start.
+     */
     fun launch(context: Context, serviceClass: Class<*>) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
             val intent = Intent(

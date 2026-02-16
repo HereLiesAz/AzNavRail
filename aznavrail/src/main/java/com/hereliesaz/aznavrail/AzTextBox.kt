@@ -56,19 +56,35 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.hereliesaz.aznavrail.util.HistoryManager
 
+/**
+ * Object holding global defaults for [AzTextBox].
+ */
 object AzTextBoxDefaults {
     private var suggestionLimit: Int = 5
     private var backgroundColor: Color = Color.Transparent
     private var backgroundOpacity: Float = 1.0f
 
+    /**
+     * Sets the maximum number of autocomplete suggestions to display.
+     *
+     * @param limit The limit (0-5).
+     */
     fun setSuggestionLimit(limit: Int) {
         suggestionLimit = limit.coerceIn(0, 5)
     }
 
+    /**
+     * Sets the global background color for all text boxes.
+     */
     fun setBackgroundColor(color: Color) {
         backgroundColor = color
     }
 
+    /**
+     * Sets the global background opacity for all text boxes.
+     *
+     * @param opacity The opacity (0.0 - 1.0).
+     */
     fun setBackgroundOpacity(opacity: Float) {
         backgroundOpacity = opacity.coerceIn(0f, 1f)
     }
@@ -78,6 +94,30 @@ object AzTextBoxDefaults {
     internal fun getBackgroundOpacity(): Float = backgroundOpacity
 }
 
+/**
+ * A highly customizable text input box with integrated features like autocomplete, history,
+ * password visibility toggling, and multi-line support.
+ *
+ * @param modifier The modifier to be applied to the text box.
+ * @param value The input text to be shown in the text field. If null, the component manages its own state.
+ * @param onValueChange The callback that is triggered when the input value updates.
+ * @param historyContext A context string used to namespace autocomplete history.
+ * @param hint The hint text to display when the input is empty.
+ * @param outlined Whether the text box has a border outline.
+ * @param multiline Whether the text box supports multiple lines and expands vertically.
+ * @param secret Whether the text box is a password field (masked input).
+ * @param isError Whether the input is in an error state.
+ * @param keyboardOptions Custom keyboard configuration.
+ * @param keyboardActions Custom keyboard actions.
+ * @param leadingIcon An optional composable to display at the start of the text box.
+ * @param trailingIcon An optional composable to display at the end of the text box (before system icons).
+ * @param enabled Whether the text box is enabled and interactive.
+ * @param outlineColor The color for the outline, text, and icons.
+ * @param showClearButton Whether to show the clear/reveal button.
+ * @param focusRequester An optional [androidx.compose.ui.focus.FocusRequester] to control focus programmatically.
+ * @param submitButtonContent Optional content for a built-in submit button.
+ * @param onSubmit A callback invoked when the submit button is clicked or "Done" is pressed on the keyboard.
+ */
 @Composable
 fun AzTextBox(
     modifier: Modifier = Modifier,

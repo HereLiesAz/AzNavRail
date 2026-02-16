@@ -41,6 +41,18 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.model.AzNavItem
 
+/**
+ * Overlay that draws visual guides (lines/arrows) connecting rail items to their descriptions.
+ * Used for onboarding or help screens.
+ *
+ * @param items The list of navigation items.
+ * @param itemPositions A map of item IDs to their screen coordinates.
+ * @param hostStates A map of host expansion states.
+ * @param railWidth The current width of the rail.
+ * @param onDismiss Callback to dismiss the overlay.
+ * @param isRightDocked Whether the rail is docked on the right.
+ * @param safeZones The safe zone configuration.
+ */
 @Composable
 internal fun HelpOverlay(
     items: List<AzNavItem>,

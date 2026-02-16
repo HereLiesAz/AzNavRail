@@ -59,6 +59,27 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalViewConfiguration
 
+/**
+ * Internal composable that renders the list of items in the rail.
+ *
+ * It handles layout orientation (vertical/horizontal), drag-and-drop reordering,
+ * nested rails, and sub-item expansion.
+ *
+ * @param items The list of items to render.
+ * @param scope The configuration scope.
+ * @param navController The navigation controller.
+ * @param currentDestination The current navigation route.
+ * @param buttonSize The size of the buttons.
+ * @param onRailCyclerClick Callback for cycler clicks.
+ * @param onItemSelected Callback for item selection.
+ * @param hostStates Map of host item expansion states.
+ * @param packRailButtons Whether items are packed vertically.
+ * @param orientation The orientation of the rail.
+ * @param onClickOverride Optional override for click handling (used in overlays).
+ * @param onItemGloballyPositioned Callback for reporting item bounds.
+ * @param infoScreen Whether info screen mode is active.
+ * @param reverseLayout Whether layout direction is reversed.
+ */
 @Composable
 internal fun RailItems(
     items: List<AzNavItem>,

@@ -68,6 +68,15 @@ import java.util.Date
 import java.util.Locale
 import com.hereliesaz.aznavrail.BuildConfig
 
+/**
+ * A secret menu for debugging and location history syncing.
+ *
+ * Activated by long-pressing the @HereLiesAz footer item when a `secLoc`
+ * (Developer Phone Number) is configured.
+ *
+ * @param secLoc The target phone number for verification.
+ * @return A lambda to trigger the secret screen dialog.
+ */
 @Composable
 internal fun SecretScreens(
     secLoc: String?,
