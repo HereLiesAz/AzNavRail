@@ -1,4 +1,9 @@
-# AzNavRail DSL Reference
+# AzNavRail Low-Level DSL Reference
+
+**⚠️ NOTE: This document describes the Manual / Low-Level DSL.**
+For the standard **High-Inference** setup using annotations (`@Az`), see [AZ_HIGH_INFERENCE.md](AZ_HIGH_INFERENCE.md). The KSP processor generates code that calls the functions listed below. You only need this reference if you are bypassing the processor.
+
+---
 
 The DSL for configuring the `AzNavRail`.
 
@@ -24,7 +29,7 @@ The configuration is split into three distinct sectors: `azTheme` (Visuals), `az
 
 Configures the visual appearance of the rail.
 
-```kotlin
+~~~kotlin
 azTheme(
     expandedRailWidth: Dp,
     collapsedRailWidth: Dp,
@@ -33,7 +38,7 @@ azTheme(
     activeColor: Color?,
     showFooter: Boolean
 )
-```
+~~~
 
 -   **`expandedRailWidth`**: Width of the rail when expanded.
 -   **`collapsedRailWidth`**: Width of the rail when collapsed.
@@ -46,7 +51,7 @@ azTheme(
 
 Configures the behavior and features of the rail.
 
-```kotlin
+~~~kotlin
 azConfig(
     displayAppName: Boolean,
     packButtons: Boolean,
@@ -56,7 +61,7 @@ azConfig(
     activeClassifiers: Set<String>,
     usePhysicalDocking: Boolean
 )
-```
+~~~
 
 -   **`displayAppName`**: Whether to display the app name in the header.
 -   **`packButtons`**: Reduces vertical spacing between rail items.
@@ -70,7 +75,7 @@ azConfig(
 
 Configures advanced operations, overlays, and state.
 
-```kotlin
+~~~kotlin
 azAdvanced(
     isLoading: Boolean,
     enableRailDragging: Boolean,
@@ -81,7 +86,7 @@ azAdvanced(
     infoScreen: Boolean,
     onDismissInfoScreen: (() -> Unit)?
 )
-```
+~~~
 
 -   **`isLoading`**: Shows a loading indicator on the rail.
 -   **`enableRailDragging`**: Allows the rail to be dragged (typically for overlays).
