@@ -41,21 +41,25 @@ import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.util.text.AutoSizeText
 
 /**
- * A circular, text-only button with auto-sizing text, designed for the
- * collapsed navigation rail.
+ * A versatile button component used within the AzNavRail.
+ *
+ * It supports various shapes, dynamic content (text, image, color), and states (loading, selected).
+ * It automatically sizes text to fit within its bounds.
  *
  * @param onClick A lambda to be executed when the button is clicked.
  * @param text The text to display on the button.
  * @param modifier The modifier to be applied to the button.
- * @param size The diameter of the circular button.
- * @param color The color of the button's border and text.
- * @param colors The colors of the button, overriding `color` if provided.
- * @param shape The shape of the button.
- * @param enabled Whether the button is enabled.
- * @param isSelected Whether the button is selected.
+ * @param size The size of the button (width/height for square/circle shapes).
+ * @param color The base color of the button's border and text.
+ * @param activeColor The color used when the button is in an active/selected state.
+ * @param colors Custom [ButtonColors] to override the default color logic.
+ * @param shape The shape of the button ([AzButtonShape.CIRCLE], [AzButtonShape.RECTANGLE], etc.).
+ * @param enabled Whether the button is enabled and interactive.
+ * @param isSelected Whether the button is currently selected.
  * @param isLoading Whether the button is in a loading state.
  * @param contentPadding The padding to be applied to the button's content.
- * @param content Optional content to be displayed alongside the text.
+ * @param itemContent Optional dynamic content to display instead of text. Can be a [Color], resource ID (Int), Number, or image URL.
+ * @param content Optional composable content to append to the text layout.
  */
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable

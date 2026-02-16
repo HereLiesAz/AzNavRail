@@ -34,9 +34,25 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 
+/**
+ * Scope for defining the structure of an [AzForm].
+ */
 class AzFormScope {
     internal val entries = mutableListOf<AzFormEntry>()
 
+    /**
+     * Adds a text entry field to the form.
+     *
+     * @param entryName The unique name key for this field, used in the result map.
+     * @param hint The hint text to display when the field is empty.
+     * @param multiline Whether the field supports multiple lines of text.
+     * @param secret Whether the field is for sensitive input (password), masking the text.
+     * @param leadingIcon An optional composable to display at the start of the field.
+     * @param isError Whether the field is in an error state.
+     * @param enabled Whether the field is enabled and interactive.
+     * @param keyboardOptions Custom keyboard configuration.
+     * @param keyboardActions Custom keyboard actions.
+     */
     fun entry(
         entryName: String,
         hint: String,
@@ -74,6 +90,23 @@ internal data class AzFormEntry(
     val enabled: Boolean
 )
 
+/**
+ * A container composable that groups multiple [AzTextBox] fields into a single form.
+ *
+ * The form manages the state of all its fields and provides a single submit action.
+ * It automatically handles focus traversal (Next) and submission (Send) for the last field.
+ *
+ * @param formName A unique name for the form, used as a context for autocomplete history.
+ * @param modifier The modifier to be applied to the form container.
+ * @param outlined Whether the text fields in the form should be outlined.
+ * @param outlineColor The color of the outlines and icons.
+ * @param trailingIcon An optional composable to display at the end of every text box in the form.
+ * @param keyboardOptions Default keyboard options for all fields in the form.
+ * @param keyboardActions Default keyboard actions for all fields in the form.
+ * @param onSubmit A callback invoked when the form is submitted, providing a map of [entryName] to value.
+ * @param submitButtonContent A composable for the submit button's content.
+ * @param content The DSL block to define form entries.
+ */
 @Composable
 fun AzForm(
     formName: String,

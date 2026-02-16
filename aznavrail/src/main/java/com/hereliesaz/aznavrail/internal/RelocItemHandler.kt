@@ -32,6 +32,10 @@ object RelocItemHandler {
     /**
      * Finds the contiguous cluster of RelocItems surrounding the given item.
      * Returns the start and end indices (inclusive) in the list.
+     *
+     * @param items The list of all items.
+     * @param itemId The ID of the item to search around.
+     * @return The range of indices for the cluster, or null if not found.
      */
     fun findCluster(items: List<AzNavItem>, itemId: String): IntRange? {
         val index = items.indexOfFirst { it.id == itemId }
@@ -65,6 +69,7 @@ object RelocItemHandler {
 
     /**
      * Swaps items in the mutable list to reflect the drag operation.
+     *
      * @param items The mutable list of items.
      * @param draggedId The ID of the item being dragged.
      * @param targetIndex The index where the dragged item should be.
@@ -88,6 +93,12 @@ object RelocItemHandler {
 
     /**
      * Calculates the target index for a dragged item based on its drag offset and item sizes (heights or widths).
+     *
+     * @param items The list of items.
+     * @param draggedItemId The ID of the item being dragged.
+     * @param currentDragOffset The current drag offset in pixels.
+     * @param itemSizes A map of item IDs to their sizes (height or width).
+     * @return The target index, or null if no valid target.
      */
     fun calculateTargetIndex(
         items: List<AzNavItem>,

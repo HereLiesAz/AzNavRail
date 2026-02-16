@@ -33,11 +33,17 @@ import com.hereliesaz.aznavrail.model.AzNavItem
  * multi-line text with indentation for all lines after the first.
  *
  * @param item The navigation item to display.
- * @param onCyclerClick The click handler for cycler items, which includes
- *    the delay logic.
- * @param onToggle The click handler for toggling the rail's expanded
- *    state. This is called immediately for standard and toggle items, and
- *    with a delay for cycler items.
+ * @param navController The navigation controller.
+ * @param isSelected Whether the item is selected.
+ * @param onClick Optional additional click callback.
+ * @param onLongClick Optional long click callback.
+ * @param onCyclerClick The click handler for cycler items, which includes the delay logic.
+ * @param onToggle The click handler for toggling the rail's expanded state.
+ * @param onItemClick Callback when any item is clicked.
+ * @param onHostClick Callback when a host item is clicked.
+ * @param onItemGloballyPositioned Callback reporting the item's global bounds.
+ * @param infoScreen Whether the info screen is active.
+ * @param activeColor The active color for the item.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
