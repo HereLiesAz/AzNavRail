@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("com.google.devtools.ksp") version "2.2.21-2.0.5"
 }
 
 android {
@@ -33,6 +34,7 @@ android {
 }
 
 dependencies {
+    ksp(project(":aznavrail-processor"))
     implementation(project(":aznavrail"))
     //implementation(libs.aznavrail)
     implementation(platform(libs.androidx.compose.bom))

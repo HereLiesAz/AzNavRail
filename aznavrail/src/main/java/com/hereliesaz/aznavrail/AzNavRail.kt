@@ -46,6 +46,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -205,7 +207,7 @@ fun AzNavRail(
 
     displayedNavItems.forEach { item ->
         if (item.isSubItem && item.isRailItem) {
-            val host = scope.navItems.find { it.id == item.hostId }
+            val host = displayedNavItems.find { it.id == item.hostId }
             require(host != null && host.isRailItem) {
                 "HIERARCHY ERROR: Rail sub-item '${item.id}' must be hosted by a valid rail host item."
             }
@@ -274,6 +276,7 @@ fun AzNavRail(
     var isAppIcon by remember { mutableStateOf(!scope.displayAppName) }
     var headerHeight by remember { mutableStateOf(0) }
     var railItemsHeight by remember { mutableStateOf(0) }
+    var railBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
 
     val hapticFeedback = LocalHapticFeedback.current
 
@@ -424,7 +427,8 @@ fun AzNavRail(
                      } else {
                          railOffset
                      }
-                },
+                }
+                .onGloballyPositioned { railBounds = it.boundsInWindow() },
             color = if (isExpanded) MaterialTheme.colorScheme.surface.copy(alpha = 0.95f) else Color.Transparent,
         ) {
             val headerContent = @Composable {
@@ -893,7 +897,8 @@ fun AzNavRail(
                 railWidth = railThickness,
                 onDismiss = { scope.onDismissInfoScreen?.invoke() },
                 isRightDocked = isRightDocked,
-                safeZones = LocalAzSafeZones.current
+                safeZones = LocalAzSafeZones.current,
+                railBounds = railBounds ?: androidx.compose.ui.geometry.Rect.Zero
             )
         }
     }
