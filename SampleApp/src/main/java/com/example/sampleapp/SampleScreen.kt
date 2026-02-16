@@ -1,10 +1,13 @@
 package com.example.sampleapp
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +33,7 @@ import com.hereliesaz.aznavrail.AzToggle
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
+import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 
 @Composable
 fun SampleScreen(
@@ -51,23 +55,40 @@ fun SampleScreen(
     var displayAppName by remember { mutableStateOf(true) }
     var usePhysicalDocking by remember { mutableStateOf(false) }
     var infoScreen by remember { mutableStateOf(false) }
+    var noMenu by remember { mutableStateOf(false) }
+    var vibrate by remember { mutableStateOf(true) }
+    var isLoading by remember { mutableStateOf(false) }
 
     // State for items
     var wifiEnabled by remember { mutableStateOf(true) }
     val modes = listOf("Light", "Dark", "Auto")
     var currentMode by remember { mutableStateOf("Auto") }
     var subToggle by remember { mutableStateOf(false) }
+    var menuToggle by remember { mutableStateOf(false) }
+    val menuOptions = listOf("Option A", "Option B", "Option C")
+    var currentMenuOption by remember { mutableStateOf("Option A") }
 
     AzHostActivityLayout(
         navController = navController,
         modifier = Modifier.fillMaxSize(),
         initiallyExpanded = initiallyExpanded
     ) {
+        // Background Layer Demo
+        background(weight = -1) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            )
+        }
+
         azConfig(
             dockingSide = dockingSide,
             packButtons = packButtons,
             displayAppName = displayAppName,
-            usePhysicalDocking = usePhysicalDocking
+            usePhysicalDocking = usePhysicalDocking,
+            noMenu = noMenu,
+            vibrate = vibrate
         )
 
         azTheme(
@@ -82,14 +103,43 @@ fun SampleScreen(
             onDismissInfoScreen = { infoScreen = false },
             enableRailDragging = enableRailDragging,
             onUndock = onUndockOverride,
-            onRailDrag = onRailDrag
+            onRailDrag = onRailDrag,
+            isLoading = isLoading,
+            overlayService = SampleOverlayService::class.java
         )
 
-        // Standard Items
+        // --- Standard Items ---
         azRailItem(id = "home", text = "Home", route = "home", info = "Go to home screen", onClick = {})
         azMenuItem(id = "settings", text = "Settings", route = "settings", info = "Configure app settings", onClick = {})
 
-        // Toggles
+        // --- Dynamic Content Items ---
+        // Color Item
+        azRailItem(
+            id = "color_item",
+            text = "Red",
+            content = Color.Red,
+            info = "Item with Color content",
+            onClick = {}
+        )
+        // Number Item
+        azRailItem(
+            id = "number_item",
+            text = "42",
+            content = 42,
+            info = "Item with Number content",
+            onClick = {}
+        )
+        // Image Item (using system resource)
+        azRailItem(
+            id = "image_item",
+            text = "Camera",
+            content = android.R.drawable.ic_menu_camera,
+            info = "Item with Image Resource content",
+            onClick = {}
+        )
+
+        // --- Toggles ---
+        // Rail Toggle (Visible in collapsed rail)
         azRailToggle(
             id = "wifi",
             isChecked = wifiEnabled,
@@ -98,8 +148,18 @@ fun SampleScreen(
             onClick = { wifiEnabled = !wifiEnabled },
             info = "Toggle Wi-Fi connection"
         )
+        // Menu Toggle (Visible only in expanded menu)
+        azMenuToggle(
+            id = "menu_toggle",
+            isChecked = menuToggle,
+            toggleOnText = "Menu Toggle: On",
+            toggleOffText = "Menu Toggle: Off",
+            onClick = { menuToggle = !menuToggle },
+            info = "A toggle only visible in the menu"
+        )
 
-        // Cyclers
+        // --- Cyclers ---
+        // Rail Cycler (Visible in collapsed rail)
         azRailCycler(
             id = "mode",
             options = modes,
@@ -107,14 +167,38 @@ fun SampleScreen(
             onClick = { /* Handle mode change */ currentMode = modes[(modes.indexOf(currentMode) + 1) % modes.size] },
             info = "Cycle through display modes"
         )
+        // Menu Cycler (Visible only in expanded menu)
+        azMenuCycler(
+            id = "menu_cycler",
+            options = menuOptions,
+            selectedOption = currentMenuOption,
+            onClick = { currentMenuOption = menuOptions[(menuOptions.indexOf(currentMenuOption) + 1) % menuOptions.size] },
+            info = "Cycle options in menu"
+        )
 
-        // Nested Rail
-        azNestedRail(id = "nested", text = "More", info = "Access nested items") {
-            azRailItem(id = "n1", text = "Nested 1", onClick = {})
-            azRailItem(id = "n2", text = "Nested 2", onClick = {})
+        // --- Nested Rails ---
+        // Vertical Alignment
+        azNestedRail(
+            id = "nested_vert",
+            text = "Vertical Nest",
+            alignment = AzNestedRailAlignment.VERTICAL,
+            info = "Vertical nested rail"
+        ) {
+            azRailItem(id = "nv1", text = "V Nested 1", onClick = {})
+            azRailItem(id = "nv2", text = "V Nested 2", onClick = {})
+        }
+        // Horizontal Alignment
+        azNestedRail(
+            id = "nested_horz",
+            text = "Horizontal Nest",
+            alignment = AzNestedRailAlignment.HORIZONTAL,
+            info = "Horizontal nested rail"
+        ) {
+            azRailItem(id = "nh1", text = "H Nested 1", onClick = {})
+            azRailItem(id = "nh2", text = "H Nested 2", onClick = {})
         }
 
-        // Host with Sub-items
+        // --- Host with Sub-items ---
         azRailHostItem(id = "adv", text = "Advanced", info = "Advanced settings group", onClick = {})
         azRailSubItem(id = "sub1", hostId = "adv", text = "Sub Item 1", onClick = {}, info = "A standard sub-item")
 
@@ -128,7 +212,7 @@ fun SampleScreen(
             info = "A toggle inside a host"
         )
 
-        // Relocatable Items
+        // --- Relocatable Items ---
         azRailRelocItem(
             id = "reloc1",
             hostId = "adv",
@@ -148,6 +232,14 @@ fun SampleScreen(
             listItem("Action 2") {}
         }
 
+        // --- Divider ---
+        azDivider()
+
+        // --- Menu Host Item ---
+        azMenuHostItem(id = "menu_host", text = "Menu Host", info = "Host item in menu only", onClick = {})
+        azMenuSubItem(id = "menu_sub1", hostId = "menu_host", text = "Menu Sub 1", onClick = {})
+
+
         if (showContent) {
             onscreen(Alignment.TopStart) {
                 AzNavHost(startDestination = "home") {
@@ -161,6 +253,7 @@ fun SampleScreen(
                         ) {
                             Text("Configuration", style = MaterialTheme.typography.headlineSmall)
 
+                            // Docking & Packing
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 AzToggle(
                                     isChecked = dockingSide == AzDockingSide.LEFT,
@@ -176,6 +269,7 @@ fun SampleScreen(
                                 )
                             }
 
+                            // Visuals
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 AzRoller(
                                     options = AzButtonShape.values().map { it.name },
@@ -191,6 +285,7 @@ fun SampleScreen(
                                 )
                             }
 
+                            // Footer & Name & NoMenu
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 AzToggle(
                                     isChecked = showFooter,
@@ -204,8 +299,15 @@ fun SampleScreen(
                                     toggleOnText = "Name: Visible",
                                     toggleOffText = "Name: Hidden"
                                 )
+                                AzToggle(
+                                    isChecked = noMenu,
+                                    onToggle = { noMenu = !noMenu },
+                                    toggleOnText = "No Menu: On",
+                                    toggleOffText = "No Menu: Off"
+                                )
                             }
 
+                            // Advanced Features
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 AzToggle(
                                     isChecked = usePhysicalDocking,
@@ -218,6 +320,21 @@ fun SampleScreen(
                                     onToggle = { infoScreen = !infoScreen },
                                     toggleOnText = "Info: On",
                                     toggleOffText = "Info: Off"
+                                )
+                            }
+
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                AzToggle(
+                                    isChecked = vibrate,
+                                    onToggle = { vibrate = !vibrate },
+                                    toggleOnText = "Vibrate: On",
+                                    toggleOffText = "Vibrate: Off"
+                                )
+                                AzToggle(
+                                    isChecked = isLoading,
+                                    onToggle = { isLoading = !isLoading },
+                                    toggleOnText = "Loading: On",
+                                    toggleOffText = "Loading: Off"
                                 )
                             }
 
