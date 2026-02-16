@@ -62,23 +62,24 @@ internal fun NestedRail(
 
     // We use a custom PositionProvider to handle "anchored to side" and "visible boundaries"
     val positionProvider = remember(anchorBounds, rootBounds, isRightDocked, parentItem.nestedRailAlignment) {
+        val targetBounds = anchorBounds
         object : androidx.compose.ui.window.PopupPositionProvider {
             override fun calculatePosition(
-                parentBounds: androidx.compose.ui.unit.IntRect,
+                anchorBounds: androidx.compose.ui.unit.IntRect, // Kept name to match supertype (avoid warning), effectively ignored/unused in calculation logic below
                 windowSize: androidx.compose.ui.unit.IntSize,
                 layoutDirection: androidx.compose.ui.unit.LayoutDirection,
                 popupContentSize: androidx.compose.ui.unit.IntSize
             ): IntOffset {
-                // We use the captured `anchorBounds` (Rect) which is the item's bounds.
-                // The `parentBounds` parameter here is the parent container's bounds.
+                // We use the captured `targetBounds` (Rect) which is the item's bounds.
+                // The parameter `anchorBounds` (from Popup) refers to the parent container, which we ignore.
 
                 val x = if (isRightDocked) {
-                    anchorBounds.left.toInt() - popupContentSize.width
+                    targetBounds.left.toInt() - popupContentSize.width
                 } else {
-                    anchorBounds.right.toInt()
+                    targetBounds.right.toInt()
                 }
 
-                val y = anchorBounds.top.toInt()
+                val y = targetBounds.top.toInt()
 
                 return IntOffset(x, y)
             }
