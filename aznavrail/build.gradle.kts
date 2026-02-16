@@ -47,8 +47,11 @@ android {
         }
     }
 
+    // This is the correct way to configure publishing for Android Libraries
     publishing {
-        singleVariant("release")
+        singleVariant("release") {
+            withSourcesJar()
+        }
     }
 }
 
@@ -62,6 +65,7 @@ dependencies {
     implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.androidx.compose.animation.core)
     implementation(libs.androidx.material.icons.extended)
+    
     api(libs.coil.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.ui)
@@ -113,15 +117,18 @@ tasks.register<Copy>("extractDocs") {
     into("${project.rootDir}/docs")
 }
 
-// JitPack Publication Settings
+// NOTE: Manual 'afterEvaluate { publishing ... }' block removed. 
+// Standard plugin behavior will now correctly publish 'aznavrail' artifact.
+// Configure the publication to include the release variant
 afterEvaluate {
     publishing {
         publications {
-            create<MavenPublication>("release") {
+            // We register a publication named "release" that uses the release component
+            register<MavenPublication>("release") {
                 from(components["release"])
-                groupId = "com.github.HereLiesAz"
-                artifactId = "AzNavRail"
-                version = "7.1"
+                // Do NOT set groupId or artifactId manually here.
+                // JitPack handles them based on the repo and module name.
+                // Module name is 'aznavrail' (lowercase), so the artifact will be 'aznavrail'.
             }
         }
     }
