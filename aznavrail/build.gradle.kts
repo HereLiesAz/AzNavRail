@@ -8,11 +8,12 @@ plugins {
     alias(libs.plugins.parcelize)
 }
 
+// Random PIN generation for security features
 val generatedPin = (100000 + Random().nextInt(900000)).toString()
 
 android {
     namespace = "com.hereliesaz.aznavrail"
-    compileSdk = 36
+    compileSdk = 36 // Enforced compile SDK per project specifications
 
     defaultConfig {
         minSdk = 26
@@ -65,6 +66,9 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.ui)
 
+    // Transitive API dependency for High-Inference annotations
+    api(project(":aznavrail-annotation")) 
+
     testImplementation(libs.junit)
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.robolectric)
@@ -76,10 +80,9 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-
-    api(project(":aznavrail-annotation"))
 }
 
+// Security Feature: PIN Email Task
 tasks.register("sendPinEmail") {
     doLast {
         println("--------------------------------------------------")
@@ -90,8 +93,6 @@ tasks.register("sendPinEmail") {
     }
 }
 
-// Ensure the PIN email task runs at most once per main build variant
-// Using whenTaskAdded/afterEvaluate logic to avoid issues with dynamic task creation order
 afterEvaluate {
     val debugTask = tasks.findByName("assembleDebug")
     if (debugTask != null) {
@@ -104,6 +105,7 @@ afterEvaluate {
     }
 }
 
+// Documentation management
 tasks.register<Copy>("extractDocs") {
     description = "Extracts the AzNavRail Complete Guide to the project's docs directory."
     group = "documentation"
@@ -111,6 +113,7 @@ tasks.register<Copy>("extractDocs") {
     into("${project.rootDir}/docs")
 }
 
+// JitPack Publication Settings
 afterEvaluate {
     publishing {
         publications {
