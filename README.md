@@ -6,7 +6,7 @@ A contemptably stubborn if not dictatorially restrictive navigation rail/menu--I
 
 This "navigrenuail" provides a vertical navigation rail that expands to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
 
-## New! Az High-Inference KSP System
+## New High-Inference KSP System
 
 AzNavRail now includes a powerful **High-Inference System** that generates your entire navigation graph and configuration from minimal code.
 
