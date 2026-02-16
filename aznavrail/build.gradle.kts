@@ -118,7 +118,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "com.github.HereLiesAz"
                 artifactId = "AzNavRail"
-                version = "5.1"
+                version = "7.1"
             }
         }
     }
