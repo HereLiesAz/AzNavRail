@@ -10,6 +10,8 @@ This document serves as a detailed specification and behavior guide for the AzNa
   text MUST MUST MUST fit inside the shape, no wrapping allowed without the developer explicitly
   deciding to do so with a newline character.
 
+- **Content Filling**: If a Rail Item's content is a `Color`, an Image Resource ID (`Int`), or an Image URL/Model (`Any`), it MUST fill the button shape completely (Fill/Crop) with 0 padding. Text and Numbers retain default padding.
+
 - To be clear, if the developer has a multi-word string for a rail item, they DO need the ability to
   put the words on separate lines.
 
@@ -33,11 +35,17 @@ Support hierarchical navigation with host and sub-items. This allows you to crea
 are easy to navigate.
 
 - **Host Items**: These are top-level items that can contain sub-items. They can be placed in the
-  rail or the menu.
+  rail or the menu. They expand **inline** when clicked.
 
 - **Sub-Items**: These are nested items, toggles, and cyclers that are only visible when their host
   item is expanded. They can also be placed in the rail or the menu. A rail Sub item must be the
   child of a rail host, but menu sub items may be the child of a rail host or menu host.
+
+- **Nested Rails (`azNestedRail`)**: This is a distinct feature from Host Items. A Nested Rail opens a separate **popup overlay** adjacent to the parent item instead of expanding inline. It supports `VERTICAL` (column) and `HORIZONTAL` (row) alignment.
+
+- **Orientation Handling**: The rail supports two modes:
+    1.  **Default**: Anchored to the screen/view side (e.g., Left side of the window).
+    2.  **Physical Docking (Experimental)**: Anchored to the physical side of the device, adapting to rotation (e.g., Left in Portrait -> Right in Reverse Portrait).
 
 Long press the app icon/name to activate fab mode for dragging around the screen.
 

@@ -9,8 +9,9 @@ Welcome to the comprehensive guide for **AzNavRail**. This document contains eve
 1.  [Getting Started](#getting-started)
 2.  [AzNavHost Layout Rules](#aznavhost-layout-rules)
 3.  [DSL Reference](#dsl-reference)
-4.  [API Reference](#api-reference)
-5.  [Sample Application Source Code](#sample-application-source-code)
+4.  [Secondary Navigation Patterns](#secondary-navigation-patterns)
+5.  [API Reference](#api-reference)
+6.  [Sample Application Source Code](#sample-application-source-code)
 
 ---
 
@@ -123,16 +124,18 @@ The DSL is used inside `AzNavHost` to configure the rail and items.
     - `vibrate`: Boolean
     - `dockingSide`: AzDockingSide (LEFT/RIGHT)
     - `noMenu`: Boolean
+    - `usePhysicalDocking`: Boolean (Default: `false`). If `true`, the rail anchors to the physical side of the device, adapting to rotation (e.g., Left in Portrait becomes Right in Reverse Portrait). If `false`, it anchors to the screen side (View) regardless of rotation.
 
 **Items:**
 -   `azMenuItem(...)`: Item visible only in expanded menu.
--   `azRailItem(...)`: Item visible in rail and menu. Supports dynamic content via the `content` parameter (Color, Number, or Image).
--   `azNestedRail(...)`: Creates a nested rail structure. Use `alignment` to specify `VERTICAL` (anchored column) or `HORIZONTAL` (scrollable row).
+-   `azRailItem(...)`: Item visible in rail and menu. Supports dynamic content via the `content` parameter.
+    -   **Content Styling**: If `content` is a `Color`, an Image Resource ID (`Int`), or an Image URL/Model (`Any`), it will **FILL** the button shape completely (zero padding, crop scale). Text and Numbers retain default padding.
+-   `azNestedRail(...)`: Creates a nested rail structure displayed in a popup overlay. Use `alignment` to specify `VERTICAL` (anchored column) or `HORIZONTAL` (scrollable row).
 -   `azMenuToggle(...)` / `azRailToggle(...)`: Toggle buttons.
 -   `azMenuCycler(...)` / `azRailCycler(...)`: Cycle through options.
 -   `azDivider()`: Horizontal divider.
--   `azMenuHostItem(...)` / `azRailHostItem(...)`: Parent items for nested menus.
--   `azMenuSubItem(...)` / `azRailSubItem(...)`: Child items.
+-   `azMenuHostItem(...)` / `azRailHostItem(...)`: Parent items for nested menus (Inline expansion).
+-   `azMenuSubItem(...)` / `azRailSubItem(...)`: Child items for Host items.
 -   `azRailRelocItem(...)`: Reorderable drag-and-drop items.
 
 **Common Parameters:**
@@ -144,6 +147,24 @@ The DSL is used inside `AzNavHost` to configure the rail and items.
 -   `disabled`: Boolean state.
 -   `info`: Help text for Info Screen mode.
 -   `onClick`: Lambda action.
+
+---
+
+## Secondary Navigation Patterns
+
+AzNavRail supports two distinct patterns for secondary or hierarchical navigation:
+
+1.  **Host Items (`azRailHostItem` / `azRailSubItem`)**
+    -   **Behavior**: Clicking a Host item expands it **inline** within the rail (or menu), pushing other items down.
+    -   **Use Case**: Best for simple, linear hierarchies where you want to keep the user context within the main list.
+    -   **Visual**: Sub-items appear indented or grouped below the host.
+
+2.  **Nested Rail (`azNestedRail`)**
+    -   **Behavior**: Clicking a Nested Rail parent opens a separate **popup overlay** adjacent to the parent item.
+    -   **Use Case**: Ideal for complex sub-menus or when you want to save vertical space in the main rail.
+    -   **Alignment**: Configurable via `alignment` parameter:
+        -   `AzNestedRailAlignment.VERTICAL`: Displays items in a vertical column.
+        -   `AzNestedRailAlignment.HORIZONTAL`: Displays items in a horizontal row.
 
 ---
 
