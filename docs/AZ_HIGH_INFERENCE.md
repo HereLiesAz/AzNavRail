@@ -40,7 +40,8 @@ import com.hereliesaz.aznavrail.model.AzDockingSide
 
 @Az(
     app = App(
-        dock = AzDockingSide.LEFT
+        dock = AzDockingSide.LEFT,
+        displayAppName = true
     )
 )
 class MainActivity : AzActivity() {

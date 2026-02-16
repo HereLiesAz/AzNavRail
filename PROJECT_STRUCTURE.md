@@ -18,6 +18,7 @@ This document provides a brief but thorough description of what each file in the
 | `SampleApp/` | An Android application that demonstrates how to use the `aznavrail` library. |
 | `aznavrail/` | The core `aznavrail` Android library module. |
 | `aznavrail-web/` | The web version of the `aznavrail` library. |
+| `docs/` | Contains detailed documentation guides. |
 | `gradle/` | Contains the Gradle wrapper files. |
 | `.gitignore` | Specifies intentionally untracked files to ignore. |
 | `AGENTS.md` | Provides instructions for AI agents working with the codebase. |
@@ -27,6 +28,14 @@ This document provides a brief but thorough description of what each file in the
 | `gradlew` | The Gradle wrapper script for Unix-based systems. |
 | `gradlew.bat` | The Gradle wrapper script for Windows. |
 | `settings.gradle.kts` | The settings script for the project. |
+
+#### docs Directory
+
+| File | Description |
+| --- | --- |
+| `AZNAVRAIL_COMPLETE_GUIDE.md` | A comprehensive guide extracted from the library assets. |
+| `AZ_HIGH_INFERENCE.md` | Documentation for the KSP High-Inference system. |
+| `MIGRATION_GUIDE.md` | Guide for upgrading versions and adapting to breaking changes. |
 
 #### .github Directory
 
@@ -71,6 +80,8 @@ The `aznavrail` directory contains the core `aznavrail` Android library module.
 | `src/main/java/com/hereliesaz/aznavrail/AzNavRailButton.kt` | The button component used within the rail. |
 | `src/main/java/com/hereliesaz/aznavrail/AzLoad.kt` | The loading animation component. |
 | `src/main/java/com/hereliesaz/aznavrail/AzDivider.kt` | The divider component. |
+| `src/main/java/com/hereliesaz/aznavrail/internal/NestedRail.kt` | The component responsible for rendering nested rail popup overlays. |
+| `src/main/java/com/hereliesaz/aznavrail/internal/AzRailLayoutHelper.kt` | Helper logic for calculating rail layout and physical/screen orientation modes. |
 
 #### aznavrail-web Directory
 
