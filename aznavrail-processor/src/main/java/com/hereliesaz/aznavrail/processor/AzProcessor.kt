@@ -41,7 +41,7 @@ class AzProcessor(
             .addImport("androidx.activity.compose", "setContent")
             .addImport("androidx.navigation.compose", "rememberNavController", "composable")
             .addImport("com.hereliesaz.aznavrail", "AzHostActivityLayout", "AzNavHost", "AzGraphInterface")
-            .addImport("com.hereliesaz.aznavrail.model", "AzDockingSide", "AzOrientation", "AzNestedRailAlignment")
+            .addImport("com.hereliesaz.aznavrail.model", "AzDockingSide", "AzNestedRailAlignment")
             .addImport("androidx.activity", "ComponentActivity")
 
         val graphObject = TypeSpec.objectBuilder(graphClassName)
@@ -147,6 +147,8 @@ class AzProcessor(
                 if (item.text.isNotEmpty()) builder.addStatement("text = %S,", item.text)
                 if (item.hasContent) {
                     builder.addStatement("route = %S,", item.id)
+                } else {
+                    builder.addStatement("onClick = {},")
                 }
                 builder.unindent()
                 builder.addStatement(")")
@@ -176,6 +178,7 @@ class AzProcessor(
                 builder.indent()
                 builder.addStatement("id = %S,", item.id)
                 if (item.text.isNotEmpty()) builder.addStatement("text = %S,", item.text)
+                builder.addStatement("onClick = {},")
                 builder.unindent()
                 builder.addStatement(")")
 
@@ -192,7 +195,11 @@ class AzProcessor(
                           builder.addStatement("id = %S,", child.id)
                           builder.addStatement("hostId = %S,", item.id)
                           if (child.text.isNotEmpty()) builder.addStatement("text = %S,", child.text)
-                          if (child.hasContent) builder.addStatement("route = %S,", child.id)
+                          if (child.hasContent) {
+                              builder.addStatement("route = %S,", child.id)
+                          } else {
+                              builder.addStatement("onClick = {},")
+                          }
                           builder.unindent()
                           builder.addStatement(")")
                      }
