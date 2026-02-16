@@ -13,15 +13,24 @@ class AzProcessor(
     private val logger: KSPLogger
 ) : SymbolProcessor {
 
-    override fun process(resolver: Resolver): List<KSAnnotated> {
-        val symbols = resolver.getSymbolsWithAnnotation("com.hereliesaz.aznavrail.annotation.Az")
-        val ret = symbols.filter { !it.validate() }.toList()
-        val validSymbols = symbols.filter { it.validate() }.toList()
+    private var isGenerated = false
 
-        val activityClass = validSymbols.filterIsInstance<KSClassDeclaration>().firstOrNull()
+    override fun process(resolver: Resolver): List<KSAnnotated> {
+        if (isGenerated) return emptyList()
+
+        val symbols = resolver.getSymbolsWithAnnotation("com.hereliesaz.aznavrail.annotation.Az").toList()
+
+        if (symbols.isEmpty()) return emptyList()
+
+        val invalidSymbols = symbols.filter { !it.validate() }
+        if (invalidSymbols.isNotEmpty()) {
+            return symbols
+        }
+
+        val activityClass = symbols.filterIsInstance<KSClassDeclaration>().firstOrNull()
 
         if (activityClass == null) {
-            return ret
+            return emptyList()
         }
 
         val packageName = activityClass.packageName.asString()
@@ -41,14 +50,15 @@ class AzProcessor(
         val runFunction = FunSpec.builder("Run")
             .addModifiers(KModifier.OVERRIDE)
             .addParameter("activity", ClassName("androidx.activity", "ComponentActivity"))
-            .addCode(generateRunBody(activityClass, validSymbols))
+            .addCode(generateRunBody(activityClass, symbols))
 
         graphObject.addFunction(runFunction.build())
         fileSpec.addType(graphObject.build())
 
-        fileSpec.build().writeTo(codeGenerator, Dependencies(true, *validSymbols.mapNotNull { (it as? KSDeclaration)?.containingFile }.toTypedArray()))
+        fileSpec.build().writeTo(codeGenerator, Dependencies(true, *symbols.mapNotNull { (it as? KSDeclaration)?.containingFile }.toTypedArray()))
 
-        return ret
+        isGenerated = true
+        return emptyList()
     }
 
     private fun generateRunBody(activityClass: KSClassDeclaration, symbols: List<KSAnnotated>): CodeBlock {
