@@ -53,7 +53,8 @@ azConfig(
     dockingSide: AzDockingSide,
     noMenu: Boolean,
     vibrate: Boolean,
-    activeClassifiers: Set<String>
+    activeClassifiers: Set<String>,
+    usePhysicalDocking: Boolean
 )
 ```
 
@@ -63,6 +64,7 @@ azConfig(
 -   **`noMenu`**: Disables the expanded menu.
 -   **`vibrate`**: Enables tactile feedback for gestures.
 -   **`activeClassifiers`**: Set of classifiers to mark items as active aside from route/selection.
+-   **`usePhysicalDocking`**: If `true`, the rail anchors to the physical side of the device, adapting to rotation (e.g., LEFT in Portrait becomes RIGHT in Upside Down). If `false` (default), it anchors to the screen side (View) regardless of rotation.
 
 ### azAdvanced (Special Ops)
 
@@ -94,7 +96,7 @@ azAdvanced(
 
 -   `azMenuItem(id: String, text: String, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
 -   `azMenuItem(id: String, text: String, route: String, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit)`: Adds a menu item that only appears in the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text with the `\n` character.
--   `azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text in the expanded menu. Supports dynamic content via the `content` parameter (Color, Number, Image).
+-   `azRailItem(id: String, text: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text in the expanded menu. Supports dynamic content via the `content` parameter (Color, Number, Image). **Visual Content**: If content is a Color, Image Resource ID (`Int`), or Image URL/Model (`Any`), it will fill the button shape completely (crop/bleed) with zero padding. Text and Numbers retain default padding.
 -   `azRailItem(id: String, text: String, route: String, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit)`: Adds a rail item that appears in both the collapsed rail and the expanded menu. Tapping it executes the action and collapses the rail. Supports multi-line text in the expanded menu.
 -   `azNestedRail(id: String, text: String, alignment: AzNestedRailAlignment, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, content: AzNavRailScope.() -> Unit)`: Creates a nested rail structure. Items inside the `content` block are displayed in a popup anchored to the parent item. `alignment` can be `VERTICAL` (column) or `HORIZONTAL` (row).
 -   `azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, disabled: Boolean, screenTitle: String?, info: String?, onClick: () -> Unit)`: Adds a toggle item that only appears in the expanded menu. Tapping it executes the action and collapses the rail.

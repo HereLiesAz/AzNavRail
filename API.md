@@ -227,6 +227,23 @@ fun AzCycler(
 
 For the full DSL reference, see [DSL.md](DSL.md).
 
+#### `azNestedRail`
+
+A DSL function to create a nested rail structure.
+
+```kotlin
+fun azNestedRail(
+    id: String,
+    text: String,
+    alignment: AzNestedRailAlignment = AzNestedRailAlignment.VERTICAL,
+    // ... standard item parameters ...
+    content: AzNavRailScope.() -> Unit
+)
+```
+
+- **`alignment`**: Specifies the layout of the nested items (`VERTICAL` or `HORIZONTAL`).
+- **`content`**: The inner scope where nested items are defined.
+
 ## AzNavRail for Web (React)
 
 `aznavrail-web` is a React component that provides a Material Design-style navigation rail.

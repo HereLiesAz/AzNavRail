@@ -46,25 +46,27 @@ class MainActivity : AzActivity() {
 - **Loading State**: Built-in loading animation.
 - **Standalone Components**: `AzButton`, `AzToggle`, `AzCycler`, `AzDivider`, `AzRoller`.
 - **Navigation**: seamless Jetpack Navigation integration.
-- **Hierarchy**: Nested menus with host and sub-items.
+- **Hierarchy**: Nested menus with host and sub-items (Inline expansion).
+- **Nested Rails**: Support for nested navigation structures (`azNestedRail`) with both Vertical (anchored column) and Horizontal (scrollable row) alignments (Popup overlay).
 - **Draggable (FAB Mode)**: Detach and move the rail.
 -   **Reorderable Items**: `AzRailRelocItem` allows user drag-and-drop reordering within clusters.
     -   **Drag**: Long press (with vibration feedback) to start dragging.
     -   **Hidden Menu**: Tap to focus/select. If already focused, tap again to open the hidden menu.
 - **System Overlay**: System-wide overlay support with automatic resizing and activity launching.
 - **Auto-sizing Text**: Text fits without wrapping (unless explicit newline).
+- **Full-Fill Content**: Rail items with images or colors now completely fill the button shape (crop/bleed).
 - **Toggles/Cyclers**: Simple state management.
 - **Gestures**: Swipe/tap to expand, collapse, or undock.
 - **`AzTextBox`**: Modern text box with autocomplete and submit button.
 - **`AzRoller`**: A dropdown menu that works like a roller or slot machine, cycling through options infinitely.
 - **Info Screen**: Interactive help mode for onboarding with visual guides and coordinate display.
 - **Left/Right Docking**: Position the rail on the left or right side of the screen.
+- **Physical Docking**: Experimental mode (`usePhysicalDocking`) to anchor the rail to the physical side of the device, adapting to rotation.
 - **No Menu Mode**: Treat all items as rail items, removing the side drawer.
 - **AzHostActivityLayout**: A layout container that enforces strict safe zones and automatic alignment rules.
 - **AzNavHost**: A wrapper around `androidx.navigation.compose.NavHost` for seamless integration.
 - **Smart Transitions**: `AzNavHost` automatically configures directional transitions (slide in/out) based on the docking side (e.g., standard LTR or mirrored for Right dock).
 - **Dynamic Content**: Rail buttons can now display solid colors, numbers, or images (via Coil) directly.
-- **Nested Rails**: Support for nested navigation structures (`azNestedRail`) with both Vertical (anchored column) and Horizontal (scrollable row) alignments.
 
 ## AzNavRail for Android (Jetpack Compose)
 
@@ -135,7 +137,8 @@ Do **NOT** use `Scaffold`. Use `AzHostActivityLayout` as your root.
             azConfig(
                 dockingSide = AzDockingSide.LEFT,
                 packButtons = true,
-                displayAppName = true
+                displayAppName = true,
+                usePhysicalDocking = false // Experimental: Anchor to physical device side
             )
     
             // SECTOR 3: SPECIAL OPERATIONS
