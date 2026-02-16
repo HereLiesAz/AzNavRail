@@ -6,6 +6,28 @@ A contemptably stubborn if not dictatorially restrictive navigation rail/menu--I
 
 This "navigrenuail" provides a vertical navigation rail that expands to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
 
+## New! Az High-Inference KSP System
+
+AzNavRail now includes a powerful **High-Inference System** that generates your entire navigation graph and configuration from minimal code.
+
+*   **Zero Boilerplate**: No `onCreate`, no `setContent`, no manual graph building.
+*   **Zero-Talk Inference**: Function names become IDs and Titles automatically.
+*   **Compile-Time Validation**: Ensures your navigation targets are valid `@Composable`s.
+
+[**Read the Full High-Inference Guide Here**](docs/AZ_HIGH_INFERENCE.md)
+
+### Quick Example
+
+```kotlin
+@Az(app = App(dock = AzDockingSide.LEFT))
+class MainActivity : AzActivity() {
+    override val graph = AzGraph // Generated automatically
+}
+
+@Az // ID="home", Text="Home"
+@Composable fun Home() { Text("Home") }
+```
+
 ## Features
 
 - **Responsive Layout**: Automatically adjusts to orientation changes.

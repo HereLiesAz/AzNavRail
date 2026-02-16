@@ -17,11 +17,17 @@ class AzProcessor(
         val symbols = resolver.getSymbolsWithAnnotation("com.hereliesaz.aznavrail.annotation.Az")
         val ret = symbols.filter { !it.validate() }.toList()
 
+        // Always try to find the activity class to generate the graph, even if symbols list is tricky in incremental
+        // In KSP 2.0 incremental, we might need to be careful.
+        // Let's rely on validSymbols.
         val validSymbols = symbols.filter { it.validate() }.toList()
-        if (validSymbols.isEmpty()) return ret
 
+        // Find the activity class. It must be annotated with @Az(app=...)
         val activityClass = validSymbols.filterIsInstance<KSClassDeclaration>().firstOrNull()
+
         if (activityClass == null) {
+            // If we have other symbols but no activity, we can't generate the graph.
+            // But maybe we should defer?
             return ret
         }
 
@@ -54,7 +60,7 @@ class AzProcessor(
 
     private fun generateRunBody(activityClass: KSClassDeclaration, symbols: List<KSAnnotated>): CodeBlock {
         val appConfig = extractAppConfig(activityClass)
-        val items = extractItems(symbols)
+        val items = extractItems(symbols, activityClass)
 
         val builder = CodeBlock.builder()
 
@@ -74,16 +80,7 @@ class AzProcessor(
         items.forEach { item ->
             if (item is NestedRailData) {
                 if (!allIds.contains(item.parent)) {
-                    // Logic: Just log error, don't generate?
-                    // Or generate but maybe fail at runtime?
-                    // Better to not generate broken code?
-                    // But we are inside generateRunBody, already committed to generating.
-                    // We can comment it out or add a comment.
-                    // Ideally we should have validated before generating.
-                    // But since we are here, let's just proceed, but maybe log a warning to console during build?
-                    // We can't log to KSPLogger here easily without passing it down.
-                    // I passed logger to AzProcessor, so I can pass it here.
-                    // I'll update signature.
+                    logger.error("Nested item '${item.id}' refers to non-existent parent '${item.parent}'", item.symbol)
                 }
             }
         }
@@ -132,12 +129,11 @@ class AzProcessor(
         builder.addStatement("")
         // Validation: At least one content item?
         val contentItems = items.filter { it.hasContent }
-        val contentItems = items.filter { it.hasContent }
-        val homeItem = items.filterIsInstance<RailItemData>().find { it.home }
-        val startDest = homeItem?.id ?: contentItems.firstOrNull()?.id ?: ""
-
-        if (startDest.isEmpty()) {
-            logger.error("No start destination found. Mark an item with `home = true` or add a navigable function.")
+        val startDest = if (contentItems.isNotEmpty()) {
+            contentItems.first().id
+        } else {
+            // Fallback to "home" but maybe warn?
+            "home"
         }
 
         builder.beginControlFlow("AzNavHost(startDestination = %S)", startDest)
@@ -158,10 +154,10 @@ class AzProcessor(
     }
 
     private data class AppConfig(val dock: String?, val orientation: String?)
-    private interface ItemData { val id: String; val hasContent: Boolean; val functionName: String; val packageName: String }
-    private data class RailItemData(override val id: String, val text: String, val icon: Int, val isHost: Boolean, override val hasContent: Boolean, override val functionName: String, override val packageName: String) : ItemData
-    private data class NestedRailData(override val id: String, val parent: String, val text: String, val icon: Int, override val hasContent: Boolean, override val functionName: String, override val packageName: String) : ItemData
-    private data class RailHostData(override val id: String, val text: String, val icon: Int, override val functionName: String, override val packageName: String) : ItemData { override val hasContent = false }
+    private interface ItemData { val id: String; val hasContent: Boolean; val functionName: String; val packageName: String; val symbol: KSNode }
+    private data class RailItemData(override val id: String, val text: String, val icon: Int, val isHost: Boolean, override val hasContent: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
+    private data class NestedRailData(override val id: String, val parent: String, val text: String, val icon: Int, override val hasContent: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
+    private data class RailHostData(override val id: String, val text: String, val icon: Int, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData { override val hasContent = false }
 
     private fun extractAppConfig(activity: KSClassDeclaration): AppConfig {
         val azAnnot = activity.getAnnotation("com.hereliesaz.aznavrail.annotation.Az") ?: return AppConfig(null, null)
@@ -176,7 +172,7 @@ class AzProcessor(
         return AppConfig(dock, orientation)
     }
 
-    private fun extractItems(symbols: List<KSAnnotated>): List<ItemData> {
+    private fun extractItems(symbols: List<KSAnnotated>, activityClass: KSClassDeclaration): List<ItemData> {
         val items = mutableListOf<ItemData>()
 
         symbols.forEach { symbol ->
@@ -218,7 +214,8 @@ class AzProcessor(
                         isHost = (railAnnot.getArgument("isHost") as? Boolean) ?: false,
                         hasContent = hasContent,
                         functionName = name,
-                        packageName = pkg
+                        packageName = pkg,
+                        symbol = symbol
                     ))
                 } else if (isHost) {
                      items.add(RailHostData(
@@ -226,7 +223,8 @@ class AzProcessor(
                         text = (hostAnnot.getArgument("text") as? String)?.takeIf { it.isNotEmpty() } ?: inferredText,
                         icon = (hostAnnot.getArgument("icon") as? Int) ?: 0,
                         functionName = name,
-                        packageName = pkg
+                        packageName = pkg,
+                        symbol = symbol
                     ))
                 } else if (isNested) {
                     items.add(NestedRailData(
@@ -236,7 +234,8 @@ class AzProcessor(
                         icon = (nestedAnnot.getArgument("icon") as? Int) ?: 0,
                         hasContent = hasContent,
                         functionName = name,
-                        packageName = pkg
+                        packageName = pkg,
+                        symbol = symbol
                     ))
                 } else {
                     if (symbol is KSFunctionDeclaration) {
@@ -247,7 +246,8 @@ class AzProcessor(
                             isHost = false,
                             hasContent = hasContent,
                             functionName = name,
-                            packageName = pkg
+                            packageName = pkg,
+                            symbol = symbol
                         ))
                     } else if (symbol is KSPropertyDeclaration) {
                          items.add(RailHostData(
@@ -255,7 +255,8 @@ class AzProcessor(
                             text = inferredText,
                             icon = 0,
                             functionName = name,
-                            packageName = pkg
+                            packageName = pkg,
+                            symbol = symbol
                         ))
                     }
                 }
@@ -267,9 +268,14 @@ class AzProcessor(
         items.forEach { item ->
             if (item is NestedRailData) {
                 if (!allIds.contains(item.parent)) {
-                    logger.error("Nested item '${item.id}' refers to non-existent parent '${item.parent}'")
+                    logger.error("Nested item '${item.id}' refers to non-existent parent '${item.parent}'", item.symbol)
                 }
             }
+        }
+
+        val contentItems = items.filter { it.hasContent }
+        if (contentItems.isEmpty()) {
+            logger.error("No content items found. You must annotate at least one @Composable function with @Az.", activityClass)
         }
 
         return items
