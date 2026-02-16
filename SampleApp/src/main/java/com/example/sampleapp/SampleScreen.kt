@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -53,7 +54,7 @@ fun SampleScreen(
     var activeColor by remember { mutableStateOf(Color.Cyan) }
     var showFooter by remember { mutableStateOf(true) }
     var displayAppName by remember { mutableStateOf(true) }
-    var usePhysicalDocking by remember { mutableStateOf(false) }
+    var usePhysicalDocking by rememberSaveable { mutableStateOf(false) }
     var infoScreen by remember { mutableStateOf(false) }
     var noMenu by remember { mutableStateOf(false) }
     var vibrate by remember { mutableStateOf(true) }

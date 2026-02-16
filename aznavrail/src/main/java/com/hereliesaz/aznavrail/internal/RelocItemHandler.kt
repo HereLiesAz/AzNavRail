@@ -1,28 +1,7 @@
 package com.hereliesaz.aznavrail.internal
 
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.pointer.PointerInputChange
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.util.VelocityTracker
-import androidx.compose.ui.platform.LocalViewConfiguration
-import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.geometry.Rect
 import com.hereliesaz.aznavrail.model.AzNavItem
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.drag
 
 /**
  * Helper object to manage RelocItem interactions.
@@ -79,10 +58,6 @@ object RelocItemHandler {
         if (currentIndex == -1) return
         if (currentIndex == targetIndex) return
 
-        // Simple swap logic: remove and insert.
-        // But prompt says "shifting by moving the RelocItems immediately adjacent".
-        // Remove at current, insert at target is the standard reorder.
-
         // Validation: Target must be within the cluster.
         val cluster = findCluster(items, draggedId) ?: return
         if (targetIndex !in cluster) return
@@ -92,58 +67,55 @@ object RelocItemHandler {
     }
 
     /**
-     * Calculates the target index for a dragged item based on its drag offset and item sizes (heights or widths).
+     * Calculates the target index for a dragged item based on its current position.
      *
      * @param items The list of items.
      * @param draggedItemId The ID of the item being dragged.
      * @param currentDragOffset The current drag offset in pixels.
-     * @param itemSizes A map of item IDs to their sizes (height or width).
+     * @param itemBounds A map of item IDs to their bounds.
+     * @param isVertical Whether the layout is vertical.
      * @return The target index, or null if no valid target.
      */
     fun calculateTargetIndex(
         items: List<AzNavItem>,
         draggedItemId: String,
         currentDragOffset: Float,
-        itemSizes: Map<String, Int>
+        itemBounds: Map<String, Rect>,
+        isVertical: Boolean
     ): Int? {
         val currentIndex = items.indexOfFirst { it.id == draggedItemId }
         if (currentIndex == -1) return null
 
+        val draggedBounds = itemBounds[draggedItemId] ?: return null
         val cluster = findCluster(items, draggedItemId) ?: return null
 
-        var target = currentIndex
-        var remainingOffset = currentDragOffset
-
-        if (remainingOffset > 0) {
-            while (target < cluster.last) {
-                val nextItem = items[target + 1]
-                val nextSize = itemSizes[nextItem.id] ?: 0
-                if (nextSize == 0) break // Safety check
-
-                // User requested 40% overlap threshold
-                // If remaining offset covers > 40% of next item size, swap.
-                if (remainingOffset > nextSize * 0.4f) {
-                    remainingOffset -= nextSize
-                    target++
-                } else {
-                    break
-                }
-            }
+        // Calculate the center of the dragged item
+        val draggedCenter = if (isVertical) {
+            draggedBounds.center.y + currentDragOffset
         } else {
-            while (target > cluster.first) {
-                val prevItem = items[target - 1]
-                val prevSize = itemSizes[prevItem.id] ?: 0
-                if (prevSize == 0) break // Safety check
+            draggedBounds.center.x + currentDragOffset
+        }
 
-                // User requested 40% overlap threshold (negative direction)
-                if (remainingOffset < -(prevSize * 0.4f)) {
-                    remainingOffset += prevSize
-                    target--
-                } else {
-                    break
+        // Find which item in the cluster contains this center point
+        // If the center is between items, we snap to the closest one.
+
+        var bestTarget = currentIndex
+        var minDistance = Float.MAX_VALUE
+
+        for (i in cluster) {
+            val item = items[i]
+            val bounds = itemBounds[item.id]
+            if (bounds != null) {
+                val itemCenter = if (isVertical) bounds.center.y else bounds.center.x
+                val distance = kotlin.math.abs(draggedCenter - itemCenter)
+
+                if (distance < minDistance) {
+                    minDistance = distance
+                    bestTarget = i
                 }
             }
         }
-        return target
+
+        return bestTarget
     }
 }

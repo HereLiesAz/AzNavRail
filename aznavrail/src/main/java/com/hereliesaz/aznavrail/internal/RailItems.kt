@@ -111,6 +111,7 @@ internal fun RailItems(
     val itemBounds = remember { androidx.compose.runtime.mutableStateMapOf<String, Rect>() }
     var hiddenMenuOpenId by remember { mutableStateOf<String?>(null) }
     var nestedRailOpenId by remember { mutableStateOf<String?>(null) }
+    var capturedAnchorBounds by remember { mutableStateOf<Rect?>(null) }
     var currentDropTargetIndex by remember { mutableStateOf<Int?>(null) }
     var rootBounds by remember { mutableStateOf<Rect?>(null) }
 
@@ -198,13 +199,22 @@ internal fun RailItems(
                     onMenuOpen = { id -> hiddenMenuOpenId = id },
                     itemSizes = currentItemSizes,
                     itemWidths = itemWidths,
+                    itemBounds = itemBounds,
                     onHeightReported = { id, height -> itemHeights[id] = height },
                     onWidthReported = { id, width -> itemWidths[id] = width },
                     onBoundsReported = { id, bounds -> itemBounds[id] = bounds },
                     coroutineScope = coroutineScope,
                     hiddenMenuOpenId = hiddenMenuOpenId,
                     nestedRailOpenId = nestedRailOpenId,
-                    onNestedRailToggle = { id -> nestedRailOpenId = if (nestedRailOpenId == id) null else id },
+                    onNestedRailToggle = { id ->
+                        if (nestedRailOpenId == id) {
+                            nestedRailOpenId = null
+                            capturedAnchorBounds = null
+                        } else {
+                            nestedRailOpenId = id
+                            capturedAnchorBounds = itemBounds[id]
+                        }
+                    },
                     onHiddenMenuDismiss = { hiddenMenuOpenId = null },
                     lastTappedId = lastTappedId,
                     onUpdateLastTappedId = { id -> lastTappedId = id },
@@ -277,13 +287,22 @@ internal fun RailItems(
                                     onMenuOpen = { id -> hiddenMenuOpenId = id },
                                     itemSizes = currentItemSizes,
                                     itemWidths = itemWidths,
+                                    itemBounds = itemBounds,
                                     onHeightReported = { id, height -> itemHeights[id] = height },
                                     onWidthReported = { id, width -> itemWidths[id] = width },
                                     onBoundsReported = { id, bounds -> itemBounds[id] = bounds },
                                     coroutineScope = coroutineScope,
                                     hiddenMenuOpenId = hiddenMenuOpenId,
                                     nestedRailOpenId = nestedRailOpenId,
-                                    onNestedRailToggle = { id -> nestedRailOpenId = if (nestedRailOpenId == id) null else id },
+                                    onNestedRailToggle = { id ->
+                                        if (nestedRailOpenId == id) {
+                                            nestedRailOpenId = null
+                                            capturedAnchorBounds = null
+                                        } else {
+                                            nestedRailOpenId = id
+                                            capturedAnchorBounds = itemBounds[id]
+                                        }
+                                    },
                                     onHiddenMenuDismiss = { hiddenMenuOpenId = null },
                                     lastTappedId = lastTappedId,
                                     onUpdateLastTappedId = { id -> lastTappedId = id },
@@ -323,7 +342,11 @@ internal fun RailItems(
         if (nestedRailOpenId != null) {
             rootBounds?.let { rb ->
                 val item = items.find { it.id == nestedRailOpenId }
-                val bounds = itemBounds[nestedRailOpenId]
+                val bounds = if (item?.nestedRailAlignment == com.hereliesaz.aznavrail.model.AzNestedRailAlignment.VERTICAL) {
+                    capturedAnchorBounds
+                } else {
+                    itemBounds[nestedRailOpenId]
+                }
                 if (item != null && bounds != null && item.nestedRailItems != null && item.nestedRailAlignment != null) {
                      NestedRail(
                          parentItem = item,
@@ -333,7 +356,10 @@ internal fun RailItems(
                          currentDestination = currentDestination,
                          anchorBounds = bounds,
                          rootBounds = rb,
-                         onDismiss = { nestedRailOpenId = null },
+                         onDismiss = {
+                             nestedRailOpenId = null
+                             capturedAnchorBounds = null
+                         },
                          isRightDocked = scope.dockingSide == AzDockingSide.RIGHT,
                          onItemSelected = onItemSelected
                      )
@@ -367,6 +393,7 @@ private fun DraggableRailItemWrapper(
     onMenuOpen: (String) -> Unit,
     itemSizes: Map<String, Int>,
     itemWidths: Map<String, Int>,
+    itemBounds: Map<String, Rect>,
     onHeightReported: (String, Int) -> Unit,
     onWidthReported: (String, Int) -> Unit,
     onBoundsReported: (String, Rect) -> Unit,
@@ -495,7 +522,8 @@ private fun DraggableRailItemWrapper(
                                         items = scope.navItems,
                                         draggedItemId = item.id,
                                         currentDragOffset = totalDrag,
-                                        itemSizes = itemSizesState.value
+                                        itemBounds = itemBounds,
+                                        isVertical = isVertical
                                     )
                                     if (target != null && target != currentDropTargetIndex) {
                                         onDragTargetChange(target)
