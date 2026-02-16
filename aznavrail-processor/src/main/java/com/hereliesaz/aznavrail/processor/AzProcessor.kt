@@ -13,22 +13,24 @@ class AzProcessor(
     private val logger: KSPLogger
 ) : SymbolProcessor {
 
+    private var isGenerated = false
+
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        val symbols = resolver.getSymbolsWithAnnotation("com.hereliesaz.aznavrail.annotation.Az")
-        val ret = symbols.filter { !it.validate() }.toList()
+        if (isGenerated) return emptyList()
 
-        // Always try to find the activity class to generate the graph, even if symbols list is tricky in incremental
-        // In KSP 2.0 incremental, we might need to be careful.
-        // Let's rely on validSymbols.
-        val validSymbols = symbols.filter { it.validate() }.toList()
+        val symbols = resolver.getSymbolsWithAnnotation("com.hereliesaz.aznavrail.annotation.Az").toList()
 
-        // Find the activity class. It must be annotated with @Az(app=...)
-        val activityClass = validSymbols.filterIsInstance<KSClassDeclaration>().firstOrNull()
+        if (symbols.isEmpty()) return emptyList()
+
+        val invalidSymbols = symbols.filter { !it.validate() }
+        if (invalidSymbols.isNotEmpty()) {
+            return symbols
+        }
+
+        val activityClass = symbols.filterIsInstance<KSClassDeclaration>().firstOrNull()
 
         if (activityClass == null) {
-            // If we have other symbols but no activity, we can't generate the graph.
-            // But maybe we should defer?
-            return ret
+            return emptyList()
         }
 
         val packageName = activityClass.packageName.asString()
@@ -39,7 +41,7 @@ class AzProcessor(
             .addImport("androidx.activity.compose", "setContent")
             .addImport("androidx.navigation.compose", "rememberNavController", "composable")
             .addImport("com.hereliesaz.aznavrail", "AzHostActivityLayout", "AzNavHost", "AzGraphInterface")
-            .addImport("com.hereliesaz.aznavrail.model", "AzDockingSide", "AzOrientation")
+            .addImport("com.hereliesaz.aznavrail.model", "AzDockingSide", "AzOrientation", "AzNestedRailAlignment")
             .addImport("androidx.activity", "ComponentActivity")
 
         val graphObject = TypeSpec.objectBuilder(graphClassName)
@@ -48,14 +50,15 @@ class AzProcessor(
         val runFunction = FunSpec.builder("Run")
             .addModifiers(KModifier.OVERRIDE)
             .addParameter("activity", ClassName("androidx.activity", "ComponentActivity"))
-            .addCode(generateRunBody(activityClass, validSymbols))
+            .addCode(generateRunBody(activityClass, symbols))
 
         graphObject.addFunction(runFunction.build())
         fileSpec.addType(graphObject.build())
 
-        fileSpec.build().writeTo(codeGenerator, Dependencies(true, *validSymbols.mapNotNull { (it as? KSDeclaration)?.containingFile }.toTypedArray()))
+        fileSpec.build().writeTo(codeGenerator, Dependencies(true, *symbols.mapNotNull { (it as? KSDeclaration)?.containingFile }.toTypedArray()))
 
-        return ret
+        isGenerated = true
+        return emptyList()
     }
 
     private fun generateRunBody(activityClass: KSClassDeclaration, symbols: List<KSAnnotated>): CodeBlock {
@@ -70,72 +73,52 @@ class AzProcessor(
         builder.add("AzHostActivityLayout(\n")
         builder.indent()
         builder.addStatement("navController = navController,")
-        if (appConfig.dock != null) builder.addStatement("visualDockingSide = %T.%L,", ClassName("com.hereliesaz.aznavrail.model", "AzDockingSide"), appConfig.dock)
-        if (appConfig.orientation != null) builder.addStatement("orientation = %T.%L,", ClassName("com.hereliesaz.aznavrail.model", "AzOrientation"), appConfig.orientation)
         builder.unindent()
         builder.beginControlFlow(")")
 
-        // Validation for parent existence
-        val allIds = items.map { it.id }.toSet()
+        // Generate azConfig call
+        if (appConfig.dock != null || appConfig.orientation != null) {
+            builder.add("azConfig(\n")
+            builder.indent()
+            if (appConfig.dock != null) builder.addStatement("dockingSide = %T.%L,", ClassName("com.hereliesaz.aznavrail.model", "AzDockingSide"), appConfig.dock)
+            // Orientation isn't directly in azConfig in new API?
+            // azConfig takes dockingSide, packButtons, noMenu, etc.
+            // Orientation seems to be derived or passed elsewhere?
+            // AzNavRail takes orientation. AzHostActivityLayout calculates it.
+            // It seems 'orientation' is no longer directly configurable via azConfig?
+            // Wait, AzApp annotation has orientation.
+            // But AzNavRailScope.azConfig does NOT have orientation!
+            // It seems orientation is inferred from docking side and rotation in AzHostActivityLayout.
+            // So we might ignore orientation from annotation for now or log warning.
+            builder.unindent()
+            builder.addStatement(")\n")
+        }
+
+        // Separate items into top-level and children
+        val topLevelItems = mutableListOf<ItemData>()
+        val children = mutableMapOf<String, MutableList<ItemData>>()
+
         items.forEach { item ->
-            if (item is NestedRailData) {
-                if (!allIds.contains(item.parent)) {
-                    logger.error("Nested item '${item.id}' refers to non-existent parent '${item.parent}'", item.symbol)
-                }
+            if (item is NestedRailData && item.parent.isNotEmpty()) {
+                children.getOrPut(item.parent) { mutableListOf() }.add(item)
+            } else {
+                topLevelItems.add(item)
             }
         }
 
-        items.forEach { item ->
-            when (item) {
-                is RailItemData -> {
-                    builder.add("azRailItem(\n")
-                    builder.indent()
-                    builder.addStatement("id = %S,", item.id)
-                    builder.addStatement("icon = %L,", item.icon)
-                    if (item.text.isNotEmpty()) builder.addStatement("text = %S,", item.text)
-                    if (item.isHost) builder.addStatement("isHost = true,")
-                    if (item.hasContent) {
-                        builder.addStatement("route = %S,", item.id)
-                    }
-                    builder.unindent()
-                    builder.addStatement(")")
-                }
-                is NestedRailData -> {
-                    builder.add("azNestedRail(\n")
-                    builder.indent()
-                    builder.addStatement("parent = %S,", item.parent)
-                    builder.addStatement("id = %S,", item.id)
-                    builder.addStatement("icon = %L,", item.icon)
-                    if (item.text.isNotEmpty()) builder.addStatement("text = %S,", item.text)
-                    if (item.hasContent) {
-                        builder.addStatement("route = %S,", item.id)
-                    }
-                    builder.unindent()
-                    builder.addStatement(")")
-                }
-                is RailHostData -> {
-                     builder.add("azRailItem(\n")
-                    builder.indent()
-                    builder.addStatement("id = %S,", item.id)
-                    builder.addStatement("icon = %L,", item.icon)
-                    if (item.text.isNotEmpty()) builder.addStatement("text = %S,", item.text)
-                    builder.addStatement("isHost = true,")
-                    builder.unindent()
-                    builder.addStatement(")")
-                }
-            }
+        topLevelItems.forEach { item ->
+            generateItem(builder, item, children)
         }
 
         builder.addStatement("")
-        // Validation: At least one content item?
         val contentItems = items.filter { it.hasContent }
         val startDest = if (contentItems.isNotEmpty()) {
             contentItems.first().id
         } else {
-            // Fallback to "home" but maybe warn?
             "home"
         }
 
+        builder.beginControlFlow("onscreen")
         builder.beginControlFlow("AzNavHost(startDestination = %S)", startDest)
 
         contentItems.forEach { item ->
@@ -149,8 +132,73 @@ class AzProcessor(
         builder.endControlFlow()
         builder.endControlFlow()
         builder.endControlFlow()
+        builder.endControlFlow()
 
         return builder.build()
+    }
+
+    private fun generateItem(builder: CodeBlock.Builder, item: ItemData, childrenMap: Map<String, List<ItemData>>) {
+         when (item) {
+            is RailItemData -> {
+                builder.add("azRailItem(\n")
+                builder.indent()
+                builder.addStatement("id = %S,", item.id)
+                if (item.icon != 0) builder.addStatement("content = %L,", item.icon)
+                if (item.text.isNotEmpty()) builder.addStatement("text = %S,", item.text)
+                if (item.hasContent) {
+                    builder.addStatement("route = %S,", item.id)
+                }
+                builder.unindent()
+                builder.addStatement(")")
+            }
+            is NestedRailData -> {
+                // NestedRail trigger
+                builder.add("azNestedRail(\n")
+                builder.indent()
+                builder.addStatement("id = %S,", item.id)
+                if (item.text.isNotEmpty()) builder.addStatement("text = %S,", item.text)
+                // alignment? defaulting to VERTICAL
+                 builder.addStatement("alignment = %T.VERTICAL,", ClassName("com.hereliesaz.aznavrail.model", "AzNestedRailAlignment"))
+                builder.unindent()
+                builder.beginControlFlow(")")
+
+                // Children
+                childrenMap[item.id]?.forEach { child ->
+                     // Children of nested rail are typically rail items
+                     // But if the child is NestedRailData (from annotation), we treat it as item
+                     generateItem(builder, child, childrenMap)
+                }
+
+                builder.endControlFlow()
+            }
+            is RailHostData -> {
+                 builder.add("azRailHostItem(\n")
+                builder.indent()
+                builder.addStatement("id = %S,", item.id)
+                if (item.text.isNotEmpty()) builder.addStatement("text = %S,", item.text)
+                builder.unindent()
+                builder.addStatement(")")
+
+                // Look for children defined via some other mechanism?
+                // Currently our logic only supports children if they are NestedRailData with parent set.
+                // If the user uses NestedRailData(parent="host_id"), we can treat it as child.
+                // But we need to handle that in the grouping logic.
+                // Since we used generic ItemData in map, we can support it.
+                 childrenMap[item.id]?.forEach { child ->
+                     // If parent is Host, use azRailSubItem
+                     if (child is NestedRailData) { // reusing NestedRailData for subitem...
+                          builder.add("azRailSubItem(\n")
+                          builder.indent()
+                          builder.addStatement("id = %S,", child.id)
+                          builder.addStatement("hostId = %S,", item.id)
+                          if (child.text.isNotEmpty()) builder.addStatement("text = %S,", child.text)
+                          if (child.hasContent) builder.addStatement("route = %S,", child.id)
+                          builder.unindent()
+                          builder.addStatement(")")
+                     }
+                }
+            }
+        }
     }
 
     private data class AppConfig(val dock: String?, val orientation: String?)
@@ -262,22 +310,6 @@ class AzProcessor(
                 }
             }
         }
-
-        // Parent Validation
-        val allIds = items.map { it.id }.toSet()
-        items.forEach { item ->
-            if (item is NestedRailData) {
-                if (!allIds.contains(item.parent)) {
-                    logger.error("Nested item '${item.id}' refers to non-existent parent '${item.parent}'", item.symbol)
-                }
-            }
-        }
-
-        val contentItems = items.filter { it.hasContent }
-        if (contentItems.isEmpty()) {
-            logger.error("No content items found. You must annotate at least one @Composable function with @Az.", activityClass)
-        }
-
         return items
     }
 

@@ -19,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -44,7 +45,8 @@ internal fun HelpOverlay(
     railWidth: Dp,
     onDismiss: () -> Unit,
     isRightDocked: Boolean = false,
-    safeZones: AzSafeZones = AzSafeZones()
+    safeZones: AzSafeZones = AzSafeZones(),
+    railBounds: Rect = Rect.Zero
 ) {
     val descriptionPositions = remember { mutableStateMapOf<String, Rect>() }
 
@@ -91,14 +93,11 @@ internal fun HelpOverlay(
                         "\nLocation: (${itemRect.left.toInt()}, ${itemRect.top.toInt()})"
                     } else ""
 
-                    DescriptionCard(
+                    TrackedDescriptionCard(
+                        id = item.id,
                         text = item.info!! + locationInfo,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp)
-                            .onGloballyPositioned { coordinates ->
-                                descriptionPositions[item.id] = coordinates.boundsInWindow()
-                            }
+                        onPositioned = { rect -> descriptionPositions[item.id] = rect },
+                        onDispose = { descriptionPositions.remove(item.id) }
                     )
                 }
             }
@@ -120,26 +119,31 @@ internal fun HelpOverlay(
                 }
 
                 if (isVisible && itemRect != null && descRect != null) {
-                    val lineColor = Color.Black
-                    val strokeWidth = 2.dp.toPx()
+                    // Check if item is actually visible in the rail viewport
+                    val isItemVisibleInRail = railBounds == Rect.Zero || railBounds.contains(itemRect.center)
 
-                    val buttonPoint: Offset
-                    val descPoint: Offset
+                    if (isItemVisibleInRail) {
+                        val lineColor = Color.Black
+                        val strokeWidth = 2.dp.toPx()
 
-                    if (isRightDocked) {
-                        buttonPoint = Offset(itemRect.left, itemRect.center.y)
-                        descPoint = Offset(descRect.right, descRect.center.y)
-                    } else {
-                        buttonPoint = Offset(itemRect.right, itemRect.center.y)
-                        descPoint = Offset(descRect.left, descRect.center.y)
+                        val buttonPoint: Offset
+                        val descPoint: Offset
+
+                        if (isRightDocked) {
+                            buttonPoint = Offset(itemRect.left, itemRect.center.y)
+                            descPoint = Offset(descRect.right, descRect.center.y)
+                        } else {
+                            buttonPoint = Offset(itemRect.right, itemRect.center.y)
+                            descPoint = Offset(descRect.left, descRect.center.y)
+                        }
+
+                        drawLine(
+                            color = lineColor,
+                            start = buttonPoint,
+                            end = descPoint,
+                            strokeWidth = strokeWidth
+                        )
                     }
-
-                    drawLine(
-                        color = lineColor,
-                        start = buttonPoint,
-                        end = descPoint,
-                        strokeWidth = strokeWidth
-                    )
                 }
             }
         }
@@ -160,6 +164,27 @@ internal fun HelpOverlay(
             }
         }
     }
+}
+
+@Composable
+private fun TrackedDescriptionCard(
+    id: String,
+    text: String,
+    onPositioned: (Rect) -> Unit,
+    onDispose: () -> Unit
+) {
+    DisposableEffect(id) {
+        onDispose { onDispose() }
+    }
+    DescriptionCard(
+        text = text,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp)
+            .onGloballyPositioned { coordinates ->
+                onPositioned(coordinates.boundsInWindow())
+            }
+    )
 }
 
 @Composable
