@@ -22,6 +22,7 @@ class AzProcessor(
 
         if (symbols.isEmpty()) return emptyList()
 
+        // Validation skipped to allow circular generation (Activity references Graph)
         val activityClass = symbols.filterIsInstance<KSClassDeclaration>().firstOrNull() ?: return emptyList()
 
         val packageName = activityClass.packageName.asString()
@@ -95,6 +96,7 @@ class AzProcessor(
         val homeItem = items.filterIsInstance<RailItemData>().find { it.isHome && it.hasContent }
         val startDest = homeItem?.id ?: contentItems.firstOrNull()?.id ?: "home"
 
+        // FIX: Removed 'onscreen' wrapper which does not exist in standard AzNavRailScope
         builder.beginControlFlow("AzNavHost(startDestination = %S)", startDest)
 
         contentItems.forEach { item ->
@@ -105,10 +107,10 @@ class AzProcessor(
             builder.endControlFlow()
         }
 
-        builder.endControlFlow() 
-        builder.endControlFlow() 
-        builder.endControlFlow() 
-        builder.endControlFlow() 
+        builder.endControlFlow() // End AzNavHost
+        builder.endControlFlow() // End AzHostActivityLayout
+        builder.endControlFlow() // End activity.setContent
+        builder.endControlFlow() // End Run body
 
         return builder.build()
     }
