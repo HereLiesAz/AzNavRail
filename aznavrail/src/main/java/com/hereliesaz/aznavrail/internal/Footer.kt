@@ -27,15 +27,6 @@ import androidx.core.net.toUri
 import com.hereliesaz.aznavrail.AzDivider
 import com.hereliesaz.aznavrail.AzNavRailScopeImpl
 
-/**
- * Composable for the footer section of the expanded navigation rail.
- *
- * @param appName The name of the application.
- * @param onToggle Callback to toggle the rail state.
- * @param onUndock Callback to undock the rail (FAB mode).
- * @param scope The configuration scope.
- * @param footerColor The color for the footer text.
- */
 @Composable
 internal fun Footer(
     appName: String,
@@ -113,7 +104,6 @@ internal fun Footer(
             modifier = Modifier.clickable { onToggle() }
         )
 
-        // Show "Undock" if enabled
         if (scope.enableRailDragging) {
              Spacer(modifier = Modifier.height(8.dp))
              Text(
@@ -126,7 +116,6 @@ internal fun Footer(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Automatic Links
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
