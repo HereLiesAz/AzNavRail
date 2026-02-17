@@ -59,27 +59,43 @@ internal fun NestedRail(
 ) {
     val density = androidx.compose.ui.platform.LocalDensity.current
     val buttonSize = AzNavRailDefaults.HeaderIconSize
+    val alignment = parentItem.nestedRailAlignment
 
-    // We use a custom PositionProvider to handle "anchored to side" and "visible boundaries"
-    val positionProvider = remember(anchorBounds, rootBounds, isRightDocked, parentItem.nestedRailAlignment) {
-        val targetBounds = anchorBounds
+    // Custom PositionProvider to handle "Center on SCREEN" logic for vertical rails
+    // and "Top align with Parent" for horizontal rails.
+    val positionProvider = remember(anchorBounds, rootBounds, isRightDocked, alignment) {
         object : androidx.compose.ui.window.PopupPositionProvider {
             override fun calculatePosition(
-                anchorBounds: androidx.compose.ui.unit.IntRect, // Kept name to match supertype (avoid warning), effectively ignored/unused in calculation logic below
+                anchorBoundsIgnored: androidx.compose.ui.unit.IntRect,
                 windowSize: androidx.compose.ui.unit.IntSize,
                 layoutDirection: androidx.compose.ui.unit.LayoutDirection,
                 popupContentSize: androidx.compose.ui.unit.IntSize
             ): IntOffset {
-                // We use the captured `targetBounds` (Rect) which is the item's bounds.
-                // The parameter `anchorBounds` (from Popup) refers to the parent container, which we ignore.
-
+                // X Position: Always to the side of the parent
                 val x = if (isRightDocked) {
-                    targetBounds.left.toInt() - popupContentSize.width
+                    anchorBounds.left.toInt() - popupContentSize.width
                 } else {
-                    targetBounds.right.toInt()
+                    anchorBounds.right.toInt()
                 }
 
-                val y = targetBounds.top.toInt()
+                val contentHeight = popupContentSize.height
+                val windowHeight = windowSize.height
+                
+                // Y Position Calculation
+                val y = if (alignment == AzNestedRailAlignment.VERTICAL) {
+                    // Vertical Nested Rail: Center on SCREEN
+                    // Rule 1: If too tall for screen, pin to top.
+                    if (contentHeight >= windowHeight) {
+                        0
+                    } else {
+                        // Rule 2: Center vertically relative to the WINDOW (Screen)
+                        (windowHeight - contentHeight) / 2
+                    }
+                } else {
+                    // Horizontal Nested Rail: Align top with parent top
+                    // Tracks the parent item exactly
+                    anchorBounds.top.toInt()
+                }
 
                 return IntOffset(x, y)
             }
@@ -94,19 +110,17 @@ internal fun NestedRail(
         val backgroundColor = MaterialTheme.colorScheme.surface
         val border = MaterialTheme.colorScheme.outline
 
-        // Calculate max height based on rootBounds and anchor
-        // "visible boundaries being the same as the AzNavRail itself"
-        // Since we align top to anchor, max height = rootBounds.bottom - anchor.top
-        // Wait, rootBounds might be the visible area.
-        // Let's rely on screen height or passed rootBounds.
-        val maxHeightDp = with(density) { (rootBounds.bottom - anchorBounds.top).toDp() }
+        // We use window height constraints inside the Popup content
+        // to ensure scrolling works if the content is massive.
+        val config = androidx.compose.ui.platform.LocalConfiguration.current
+        val screenHeight = config.screenHeightDp.dp
 
         Box(
             modifier = Modifier
                 .background(backgroundColor, RoundedCornerShape(8.dp))
                 .border(1.dp, border, RoundedCornerShape(8.dp))
                 .padding(4.dp)
-                .heightIn(max = maxHeightDp)
+                .heightIn(max = screenHeight) // Allow taking up full screen height if needed
         ) {
             if (parentItem.nestedRailAlignment == AzNestedRailAlignment.HORIZONTAL) {
                  HorizontalNestedRailContent(
@@ -141,9 +155,9 @@ private fun VerticalNestedRailContent(
     buttonSize: androidx.compose.ui.unit.Dp,
     onItemSelected: (AzNavItem) -> Unit
 ) {
-    // Reuse similar logic to RailItems but simpler (no drag)
     val hostStates = remember { mutableStateMapOf<String, Boolean>() }
 
+    // Scrollable Column: Only scrolls if content exceeds available height (handled by Compose)
     Column(
         modifier = Modifier.verticalScroll(rememberScrollState())
     ) {
@@ -173,6 +187,7 @@ private fun HorizontalNestedRailContent(
 ) {
     val hostStates = remember { mutableStateMapOf<String, Boolean>() }
 
+    // Scrollable Row: Only scrolls if content exceeds available width
     Row(
         modifier = Modifier.horizontalScroll(rememberScrollState())
     ) {
@@ -180,8 +195,6 @@ private fun HorizontalNestedRailContent(
              Column {
                  NestedRailItemWrapper(item, scope, navController, currentDestination, buttonSize, hostStates, isSubItem = false, onItemSelected = onItemSelected)
 
-                 // "RailSubItems should expand downward, vertically"
-                 // So we put them in a Column under the item
                  if (item.isHost && (hostStates[item.id] == true)) {
                       items.filter { it.hostId == item.id }.forEach { subItem ->
                            NestedRailItemWrapper(subItem, scope, navController, currentDestination, buttonSize, hostStates, isSubItem = true, onItemSelected = onItemSelected)
