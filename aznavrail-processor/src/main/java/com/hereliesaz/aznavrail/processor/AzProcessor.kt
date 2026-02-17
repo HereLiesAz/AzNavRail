@@ -22,7 +22,6 @@ class AzProcessor(
 
         if (symbols.isEmpty()) return emptyList()
 
-        // Validation check removed to prevent circular dependency with generated graph
         val activityClass = symbols.filterIsInstance<KSClassDeclaration>().firstOrNull() ?: return emptyList()
 
         val packageName = activityClass.packageName.asString()
@@ -76,7 +75,6 @@ class AzProcessor(
             builder.addStatement(")\n")
         }
 
-        // Group items: Top-level vs Children (SubItems or NestedItems)
         val topLevelItems = mutableListOf<ItemData>()
         val childrenMap = mutableMapOf<String, MutableList<ItemData>>()
 
@@ -94,12 +92,10 @@ class AzProcessor(
 
         builder.addStatement("")
         val contentItems = items.filter { it.hasContent }
-        
-        // Fix: Detect 'home = true'
         val homeItem = items.filterIsInstance<RailItemData>().find { it.isHome && it.hasContent }
         val startDest = homeItem?.id ?: contentItems.firstOrNull()?.id ?: "home"
 
-        builder.beginControlFlow("onscreen")
+        // FIX: Removed 'onscreen' wrapper which does not exist in standard AzNavRailScope
         builder.beginControlFlow("AzNavHost(startDestination = %S)", startDest)
 
         contentItems.forEach { item ->
@@ -110,10 +106,10 @@ class AzProcessor(
             builder.endControlFlow()
         }
 
-        builder.endControlFlow()
-        builder.endControlFlow()
-        builder.endControlFlow()
-        builder.endControlFlow()
+        builder.endControlFlow() // End AzNavHost
+        builder.endControlFlow() // End AzHostActivityLayout
+        builder.endControlFlow() // End activity.setContent
+        builder.endControlFlow() // End Run body
 
         return builder.build()
     }
@@ -121,7 +117,6 @@ class AzProcessor(
     private fun generateItem(builder: CodeBlock.Builder, item: ItemData, childrenMap: Map<String, List<ItemData>>) {
          when (item) {
             is RailItemData -> {
-                // Standard Top-Level Rail Item
                 builder.add("azRailItem(\n")
                 builder.indent()
                 builder.addStatement("id = %S,", item.id)
@@ -136,16 +131,15 @@ class AzProcessor(
                 builder.addStatement(")")
             }
             is NestedRailData -> {
-                // Parenting: A Nested Rail "parents" children
                 builder.add("azNestedRail(\n")
                 builder.indent()
                 builder.addStatement("id = %S,", item.id)
                 if (item.text.isNotEmpty()) builder.addStatement("text = %S,", item.text)
+                 // NOTE: This forces vertical alignment. See note below.
                  builder.addStatement("alignment = %T.VERTICAL,", ClassName("com.hereliesaz.aznavrail.model", "AzNestedRailAlignment"))
                 builder.unindent()
                 builder.beginControlFlow(")")
 
-                // Generate children recursively inside the block
                 childrenMap[item.id]?.forEach { child ->
                      generateItem(builder, child, childrenMap)
                 }
@@ -153,7 +147,6 @@ class AzProcessor(
                 builder.endControlFlow()
             }
             is RailHostData -> {
-                 // Hosting: A Rail Host "hosts" sub-items inline
                  builder.add("azRailHostItem(\n")
                 builder.indent()
                 builder.addStatement("id = %S,", item.id)
@@ -162,9 +155,7 @@ class AzProcessor(
                 builder.unindent()
                 builder.addStatement(")")
 
-                 // Generate children as SubItems (Siblings in DSL, but logically children)
                  childrenMap[item.id]?.forEach { child ->
-                     // If child is a RailItem, it becomes a SubItem
                      if (child is RailItemData) {
                           builder.add("azRailSubItem(\n")
                           builder.indent()
@@ -185,92 +176,32 @@ class AzProcessor(
     }
 
     private data class AppConfig(val dock: String?)
-    
-    // Interface includes 'parent' to handle hierarchy
-    private interface ItemData { 
-        val id: String
-        val parent: String 
-        val hasContent: Boolean
-        val functionName: String
-        val packageName: String
-        val symbol: KSNode 
-    }
-    
-    private data class RailItemData(
-        override val id: String, 
-        override val parent: String,
-        val text: String, 
-        val icon: Int, 
-        val isHost: Boolean, 
-        val isHome: Boolean, 
-        override val hasContent: Boolean, 
-        override val functionName: String, 
-        override val packageName: String, 
-        override val symbol: KSNode
-    ) : ItemData
-    
-    private data class NestedRailData(
-        override val id: String, 
-        override val parent: String,
-        val text: String, 
-        val icon: Int, 
-        override val hasContent: Boolean, 
-        override val functionName: String, 
-        override val packageName: String, 
-        override val symbol: KSNode
-    ) : ItemData
-    
-    private data class RailHostData(
-        override val id: String, 
-        val text: String, 
-        val icon: Int, 
-        override val functionName: String, 
-        override val packageName: String, 
-        override val symbol: KSNode
-    ) : ItemData { 
-        override val hasContent = false 
-        override val parent = "" // Hosts are typically top-level
-    }
+    private interface ItemData { val id: String; val parent: String; val hasContent: Boolean; val functionName: String; val packageName: String; val symbol: KSNode }
+    private data class RailItemData(override val id: String, override val parent: String, val text: String, val icon: Int, val isHost: Boolean, val isHome: Boolean, override val hasContent: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
+    private data class NestedRailData(override val id: String, override val parent: String, val text: String, val icon: Int, override val hasContent: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
+    private data class RailHostData(override val id: String, val text: String, val icon: Int, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData { override val hasContent = false; override val parent = "" }
 
     private fun extractAppConfig(activity: KSClassDeclaration): AppConfig {
         val azAnnot = activity.getAnnotation("com.hereliesaz.aznavrail.annotation.Az") ?: return AppConfig(null)
         val appAnnot = azAnnot.getArgument("app") as? KSAnnotation ?: return AppConfig(null)
-
         val dockArg = appAnnot.arguments.find { it.name?.asString() == "dock" }?.value
         val dock = (dockArg as? KSType)?.declaration?.simpleName?.asString() ?: dockArg?.toString()?.substringAfterLast(".")
-
         return AppConfig(dock)
     }
 
     private fun extractItems(symbols: List<KSAnnotated>, activityClass: KSClassDeclaration): List<ItemData> {
         val items = mutableListOf<ItemData>()
-
         symbols.forEach { symbol ->
             if (symbol is KSFunctionDeclaration || symbol is KSPropertyDeclaration) {
                 val azAnnot = symbol.getAnnotation("com.hereliesaz.aznavrail.annotation.Az") ?: return@forEach
-
-                if (symbol is KSFunctionDeclaration) {
-                    val isComposable = symbol.annotations.any {
-                        it.shortName.asString() == "Composable" ||
-                        it.annotationType.resolve().declaration.qualifiedName?.asString() == "androidx.compose.runtime.Composable"
-                    }
-                    if (!isComposable) {
-                        logger.error("Function '${symbol.simpleName.asString()}' annotated with @Az must be @Composable.", symbol)
-                        return@forEach 
-                    }
-                }
-
                 val railAnnot = azAnnot.getArgument("rail") as? KSAnnotation
                 val hostAnnot = azAnnot.getArgument("host") as? KSAnnotation
                 val nestedAnnot = azAnnot.getArgument("nested") as? KSAnnotation
-
                 val name = symbol.simpleName.asString()
                 val pkg = symbol.packageName.asString()
                 val hasContent = symbol is KSFunctionDeclaration 
-
                 val inferredId = name.toSnakeCase()
                 val inferredText = name.splitCamelCase()
-
                 val isRail = railAnnot?.getArgument("isValid") as? Boolean ?: false
                 val isHost = hostAnnot?.getArgument("isValid") as? Boolean ?: false
                 val isNested = nestedAnnot?.getArgument("isValid") as? Boolean ?: false
