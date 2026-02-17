@@ -22,20 +22,8 @@ class AzProcessor(
 
         if (symbols.isEmpty()) return emptyList()
 
-        // CRITICAL FIX: Validation check removed to allow circular generation.
-        // We must generate AzGraph even if MainActivity references it (and is thus currently invalid).
-        // val invalidSymbols = symbols.filter { !it.validate() }
-        // if (invalidSymbols.isNotEmpty()) {
-        //    return symbols
-        // }
-
-        val activityClass = symbols.filterIsInstance<KSClassDeclaration>().firstOrNull()
-
-        if (activityClass == null) {
-            // If no Activity is annotated, we cannot generate the graph anchor.
-            // We return empty list to stop processing.
-            return emptyList()
-        }
+        // Validation check removed to prevent circular dependency with generated graph
+        val activityClass = symbols.filterIsInstance<KSClassDeclaration>().firstOrNull() ?: return emptyList()
 
         val packageName = activityClass.packageName.asString()
         val graphClassName = "AzGraph"
@@ -80,38 +68,36 @@ class AzProcessor(
         builder.unindent()
         builder.beginControlFlow(")")
 
-        // Generate azConfig call
-        if (appConfig.dock != null || appConfig.orientation != null) {
+        if (appConfig.dock != null) {
             builder.add("azConfig(\n")
             builder.indent()
-            if (appConfig.dock != null) builder.addStatement("dockingSide = %T.%L,", ClassName("com.hereliesaz.aznavrail.model", "AzDockingSide"), appConfig.dock)
+            builder.addStatement("dockingSide = %T.%L,", ClassName("com.hereliesaz.aznavrail.model", "AzDockingSide"), appConfig.dock)
             builder.unindent()
             builder.addStatement(")\n")
         }
 
-        // Separate items into top-level and children
+        // Group items: Top-level vs Children (SubItems or NestedItems)
         val topLevelItems = mutableListOf<ItemData>()
-        val children = mutableMapOf<String, MutableList<ItemData>>()
+        val childrenMap = mutableMapOf<String, MutableList<ItemData>>()
 
         items.forEach { item ->
-            if (item is NestedRailData && item.parent.isNotEmpty()) {
-                children.getOrPut(item.parent) { mutableListOf() }.add(item)
+            if (item.parent.isNotEmpty()) {
+                childrenMap.getOrPut(item.parent) { mutableListOf() }.add(item)
             } else {
                 topLevelItems.add(item)
             }
         }
 
         topLevelItems.forEach { item ->
-            generateItem(builder, item, children)
+            generateItem(builder, item, childrenMap)
         }
 
         builder.addStatement("")
         val contentItems = items.filter { it.hasContent }
-        val startDest = if (contentItems.isNotEmpty()) {
-            contentItems.first().id
-        } else {
-            "home"
-        }
+        
+        // Fix: Detect 'home = true'
+        val homeItem = items.filterIsInstance<RailItemData>().find { it.isHome && it.hasContent }
+        val startDest = homeItem?.id ?: contentItems.firstOrNull()?.id ?: "home"
 
         builder.beginControlFlow("onscreen")
         builder.beginControlFlow("AzNavHost(startDestination = %S)", startDest)
@@ -135,6 +121,7 @@ class AzProcessor(
     private fun generateItem(builder: CodeBlock.Builder, item: ItemData, childrenMap: Map<String, List<ItemData>>) {
          when (item) {
             is RailItemData -> {
+                // Standard Top-Level Rail Item
                 builder.add("azRailItem(\n")
                 builder.indent()
                 builder.addStatement("id = %S,", item.id)
@@ -149,6 +136,7 @@ class AzProcessor(
                 builder.addStatement(")")
             }
             is NestedRailData -> {
+                // Parenting: A Nested Rail "parents" children
                 builder.add("azNestedRail(\n")
                 builder.indent()
                 builder.addStatement("id = %S,", item.id)
@@ -157,6 +145,7 @@ class AzProcessor(
                 builder.unindent()
                 builder.beginControlFlow(")")
 
+                // Generate children recursively inside the block
                 childrenMap[item.id]?.forEach { child ->
                      generateItem(builder, child, childrenMap)
                 }
@@ -164,6 +153,7 @@ class AzProcessor(
                 builder.endControlFlow()
             }
             is RailHostData -> {
+                 // Hosting: A Rail Host "hosts" sub-items inline
                  builder.add("azRailHostItem(\n")
                 builder.indent()
                 builder.addStatement("id = %S,", item.id)
@@ -172,8 +162,10 @@ class AzProcessor(
                 builder.unindent()
                 builder.addStatement(")")
 
+                 // Generate children as SubItems (Siblings in DSL, but logically children)
                  childrenMap[item.id]?.forEach { child ->
-                     if (child is NestedRailData) { 
+                     // If child is a RailItem, it becomes a SubItem
+                     if (child is RailItemData) {
                           builder.add("azRailSubItem(\n")
                           builder.indent()
                           builder.addStatement("id = %S,", child.id)
@@ -192,23 +184,62 @@ class AzProcessor(
         }
     }
 
-    private data class AppConfig(val dock: String?, val orientation: String?)
-    private interface ItemData { val id: String; val hasContent: Boolean; val functionName: String; val packageName: String; val symbol: KSNode }
-    private data class RailItemData(override val id: String, val text: String, val icon: Int, val isHost: Boolean, override val hasContent: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
-    private data class NestedRailData(override val id: String, val parent: String, val text: String, val icon: Int, override val hasContent: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
-    private data class RailHostData(override val id: String, val text: String, val icon: Int, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData { override val hasContent = false }
+    private data class AppConfig(val dock: String?)
+    
+    // Interface includes 'parent' to handle hierarchy
+    private interface ItemData { 
+        val id: String
+        val parent: String 
+        val hasContent: Boolean
+        val functionName: String
+        val packageName: String
+        val symbol: KSNode 
+    }
+    
+    private data class RailItemData(
+        override val id: String, 
+        override val parent: String,
+        val text: String, 
+        val icon: Int, 
+        val isHost: Boolean, 
+        val isHome: Boolean, 
+        override val hasContent: Boolean, 
+        override val functionName: String, 
+        override val packageName: String, 
+        override val symbol: KSNode
+    ) : ItemData
+    
+    private data class NestedRailData(
+        override val id: String, 
+        override val parent: String,
+        val text: String, 
+        val icon: Int, 
+        override val hasContent: Boolean, 
+        override val functionName: String, 
+        override val packageName: String, 
+        override val symbol: KSNode
+    ) : ItemData
+    
+    private data class RailHostData(
+        override val id: String, 
+        val text: String, 
+        val icon: Int, 
+        override val functionName: String, 
+        override val packageName: String, 
+        override val symbol: KSNode
+    ) : ItemData { 
+        override val hasContent = false 
+        override val parent = "" // Hosts are typically top-level
+    }
 
     private fun extractAppConfig(activity: KSClassDeclaration): AppConfig {
-        val azAnnot = activity.getAnnotation("com.hereliesaz.aznavrail.annotation.Az") ?: return AppConfig(null, null)
-        val appAnnot = azAnnot.getArgument("app") as? KSAnnotation ?: return AppConfig(null, null)
+        val azAnnot = activity.getAnnotation("com.hereliesaz.aznavrail.annotation.Az") ?: return AppConfig(null)
+        val appAnnot = azAnnot.getArgument("app") as? KSAnnotation ?: return AppConfig(null)
 
         val dockArg = appAnnot.arguments.find { it.name?.asString() == "dock" }?.value
         val dock = (dockArg as? KSType)?.declaration?.simpleName?.asString() ?: dockArg?.toString()?.substringAfterLast(".")
 
-        val orientationArg = appAnnot.arguments.find { it.name?.asString() == "orientation" }?.value
-        val orientation = (orientationArg as? KSType)?.declaration?.simpleName?.asString() ?: orientationArg?.toString()?.substringAfterLast(".")
-
-        return AppConfig(dock, orientation)
+        return AppConfig(dock)
     }
 
     private fun extractItems(symbols: List<KSAnnotated>, activityClass: KSClassDeclaration): List<ItemData> {
@@ -218,7 +249,6 @@ class AzProcessor(
             if (symbol is KSFunctionDeclaration || symbol is KSPropertyDeclaration) {
                 val azAnnot = symbol.getAnnotation("com.hereliesaz.aznavrail.annotation.Az") ?: return@forEach
 
-                // Composable Validation
                 if (symbol is KSFunctionDeclaration) {
                     val isComposable = symbol.annotations.any {
                         it.shortName.asString() == "Composable" ||
@@ -248,9 +278,11 @@ class AzProcessor(
                 if (isRail) {
                     items.add(RailItemData(
                         id = (railAnnot!!.getArgument("id") as? String)?.takeIf { it.isNotEmpty() } ?: inferredId,
+                        parent = (railAnnot.getArgument("parent") as? String) ?: "",
                         text = (railAnnot.getArgument("text") as? String)?.takeIf { it.isNotEmpty() } ?: inferredText,
                         icon = (railAnnot.getArgument("icon") as? Int) ?: 0,
                         isHost = (railAnnot.getArgument("isHost") as? Boolean) ?: false,
+                        isHome = (railAnnot.getArgument("home") as? Boolean) ?: false,
                         hasContent = hasContent,
                         functionName = name,
                         packageName = pkg,
@@ -276,28 +308,6 @@ class AzProcessor(
                         packageName = pkg,
                         symbol = symbol
                     ))
-                } else {
-                    if (symbol is KSFunctionDeclaration) {
-                        items.add(RailItemData(
-                            id = inferredId,
-                            text = inferredText,
-                            icon = 0,
-                            isHost = false,
-                            hasContent = hasContent,
-                            functionName = name,
-                            packageName = pkg,
-                            symbol = symbol
-                        ))
-                    } else if (symbol is KSPropertyDeclaration) {
-                         items.add(RailHostData(
-                            id = inferredId,
-                            text = inferredText,
-                            icon = 0,
-                            functionName = name,
-                            packageName = pkg,
-                            symbol = symbol
-                        ))
-                    }
                 }
             }
         }
