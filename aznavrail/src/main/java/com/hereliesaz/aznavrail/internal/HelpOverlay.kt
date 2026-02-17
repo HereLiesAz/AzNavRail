@@ -61,14 +61,11 @@ internal fun HelpOverlay(
         hasInfo && isRailItem && isVisible
     }
 
-    val screenHeight = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp
-    val safeTop = screenHeight * 0.2f
-    val safeBottom = screenHeight * 0.1f
+    // REMOVED: Arbitrary screen height percentage constraints (safeTop/safeBottom).
+    // The overlay now fills the screen and only respects the passed 'safeZones'.
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = safeTop, bottom = safeBottom)
+        modifier = Modifier.fillMaxSize()
     ) {
         Row(Modifier.fillMaxSize()) {
             if (!isRightDocked) {
@@ -89,6 +86,8 @@ internal fun HelpOverlay(
             ) {
                 items(itemsWithInfo, key = { it.id }) { item ->
                     val itemRect = itemPositions[item.id]
+                    // Optional: Debug info removed from production display if desired, 
+                    // but kept here to match your previous logic.
                     val locationInfo = if (itemRect != null) {
                         "\nLocation: (${itemRect.left.toInt()}, ${itemRect.top.toInt()})"
                     } else ""
