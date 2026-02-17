@@ -30,20 +30,6 @@ import com.hereliesaz.aznavrail.AzNavRailScopeImpl
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 
-/**
- * Composable that renders a nested rail popup.
- *
- * @param parentItem The item triggering the nested rail.
- * @param items The items within the nested rail.
- * @param scope The configuration scope.
- * @param navController The navigation controller.
- * @param currentDestination The current navigation route.
- * @param anchorBounds The screen bounds of the parent item (anchor).
- * @param rootBounds The screen bounds of the root container.
- * @param onDismiss Callback to dismiss the popup.
- * @param isRightDocked Whether the main rail is right-docked.
- * @param onItemSelected Callback for item selection.
- */
 @Composable
 internal fun NestedRail(
     parentItem: AzNavItem,
@@ -61,8 +47,7 @@ internal fun NestedRail(
     val buttonSize = AzNavRailDefaults.HeaderIconSize
     val alignment = parentItem.nestedRailAlignment
 
-    // Custom PositionProvider to handle "Center on SCREEN" logic for vertical rails
-    // and "Top align with Parent" for horizontal rails.
+    // Custom PositionProvider for "Center on SCREEN" (Vertical) and "Top Align" (Horizontal)
     val positionProvider = remember(anchorBounds, rootBounds, isRightDocked, alignment) {
         object : androidx.compose.ui.window.PopupPositionProvider {
             override fun calculatePosition(
@@ -84,16 +69,14 @@ internal fun NestedRail(
                 // Y Position Calculation
                 val y = if (alignment == AzNestedRailAlignment.VERTICAL) {
                     // Vertical Nested Rail: Center on SCREEN
-                    // Rule 1: If too tall for screen, pin to top.
+                    // Note: Content size is already constrained by the Box below, so it fits.
                     if (contentHeight >= windowHeight) {
-                        0
+                        0 
                     } else {
-                        // Rule 2: Center vertically relative to the WINDOW (Screen)
-                        (windowHeight - contentHeight) / 2
+                        (windowHeight - contentHeight) / 2 // Center relative to Screen
                     }
                 } else {
                     // Horizontal Nested Rail: Align top with parent top
-                    // Tracks the parent item exactly
                     anchorBounds.top.toInt()
                 }
 
@@ -109,18 +92,20 @@ internal fun NestedRail(
     ) {
         val backgroundColor = MaterialTheme.colorScheme.surface
         val border = MaterialTheme.colorScheme.outline
-
-        // We use window height constraints inside the Popup content
-        // to ensure scrolling works if the content is massive.
         val config = androidx.compose.ui.platform.LocalConfiguration.current
-        val screenHeight = config.screenHeightDp.dp
+        
+        // 4/5ths Rule: Cap nested rail size at 80% of screen
+        val maxRailHeight = config.screenHeightDp.dp * 0.8f
+        val maxRailWidth = config.screenWidthDp.dp * 0.8f
 
         Box(
             modifier = Modifier
                 .background(backgroundColor, RoundedCornerShape(8.dp))
                 .border(1.dp, border, RoundedCornerShape(8.dp))
                 .padding(4.dp)
-                .heightIn(max = screenHeight) // Allow taking up full screen height if needed
+                // Apply BOTH constraints (safe since one dim will be naturally small)
+                .heightIn(max = maxRailHeight)
+                .widthIn(max = maxRailWidth)
         ) {
             if (parentItem.nestedRailAlignment == AzNestedRailAlignment.HORIZONTAL) {
                  HorizontalNestedRailContent(
@@ -157,15 +142,13 @@ private fun VerticalNestedRailContent(
 ) {
     val hostStates = remember { mutableStateMapOf<String, Boolean>() }
 
-    // Scrollable Column: Only scrolls if content exceeds available height (handled by Compose)
+    // Scrollable Column
     Column(
         modifier = Modifier.verticalScroll(rememberScrollState())
     ) {
         items.filter { !it.isSubItem }.forEach { item ->
-            // Render item
             NestedRailItemWrapper(item, scope, navController, currentDestination, buttonSize, hostStates, isSubItem = false, onItemSelected = onItemSelected)
 
-            // Render subitems if expanded
             if (item.isHost && (hostStates[item.id] == true)) {
                 items.filter { it.hostId == item.id }.forEach { subItem ->
                      NestedRailItemWrapper(subItem, scope, navController, currentDestination, buttonSize, hostStates, isSubItem = true, onItemSelected = onItemSelected)
@@ -187,7 +170,7 @@ private fun HorizontalNestedRailContent(
 ) {
     val hostStates = remember { mutableStateMapOf<String, Boolean>() }
 
-    // Scrollable Row: Only scrolls if content exceeds available width
+    // Scrollable Row
     Row(
         modifier = Modifier.horizontalScroll(rememberScrollState())
     ) {
