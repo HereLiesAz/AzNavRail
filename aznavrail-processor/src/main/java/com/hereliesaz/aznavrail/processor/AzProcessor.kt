@@ -22,14 +22,18 @@ class AzProcessor(
 
         if (symbols.isEmpty()) return emptyList()
 
-        val invalidSymbols = symbols.filter { !it.validate() }
-        if (invalidSymbols.isNotEmpty()) {
-            return symbols
-        }
+        // CRITICAL FIX: Validation check removed to allow circular generation.
+        // We must generate AzGraph even if MainActivity references it (and is thus currently invalid).
+        // val invalidSymbols = symbols.filter { !it.validate() }
+        // if (invalidSymbols.isNotEmpty()) {
+        //    return symbols
+        // }
 
         val activityClass = symbols.filterIsInstance<KSClassDeclaration>().firstOrNull()
 
         if (activityClass == null) {
+            // If no Activity is annotated, we cannot generate the graph anchor.
+            // We return empty list to stop processing.
             return emptyList()
         }
 
@@ -81,15 +85,6 @@ class AzProcessor(
             builder.add("azConfig(\n")
             builder.indent()
             if (appConfig.dock != null) builder.addStatement("dockingSide = %T.%L,", ClassName("com.hereliesaz.aznavrail.model", "AzDockingSide"), appConfig.dock)
-            // Orientation isn't directly in azConfig in new API?
-            // azConfig takes dockingSide, packButtons, noMenu, etc.
-            // Orientation seems to be derived or passed elsewhere?
-            // AzNavRail takes orientation. AzHostActivityLayout calculates it.
-            // It seems 'orientation' is no longer directly configurable via azConfig?
-            // Wait, AzApp annotation has orientation.
-            // But AzNavRailScope.azConfig does NOT have orientation!
-            // It seems orientation is inferred from docking side and rotation in AzHostActivityLayout.
-            // So we might ignore orientation from annotation for now or log warning.
             builder.unindent()
             builder.addStatement(")\n")
         }
@@ -154,20 +149,15 @@ class AzProcessor(
                 builder.addStatement(")")
             }
             is NestedRailData -> {
-                // NestedRail trigger
                 builder.add("azNestedRail(\n")
                 builder.indent()
                 builder.addStatement("id = %S,", item.id)
                 if (item.text.isNotEmpty()) builder.addStatement("text = %S,", item.text)
-                // alignment? defaulting to VERTICAL
                  builder.addStatement("alignment = %T.VERTICAL,", ClassName("com.hereliesaz.aznavrail.model", "AzNestedRailAlignment"))
                 builder.unindent()
                 builder.beginControlFlow(")")
 
-                // Children
                 childrenMap[item.id]?.forEach { child ->
-                     // Children of nested rail are typically rail items
-                     // But if the child is NestedRailData (from annotation), we treat it as item
                      generateItem(builder, child, childrenMap)
                 }
 
@@ -182,14 +172,8 @@ class AzProcessor(
                 builder.unindent()
                 builder.addStatement(")")
 
-                // Look for children defined via some other mechanism?
-                // Currently our logic only supports children if they are NestedRailData with parent set.
-                // If the user uses NestedRailData(parent="host_id"), we can treat it as child.
-                // But we need to handle that in the grouping logic.
-                // Since we used generic ItemData in map, we can support it.
                  childrenMap[item.id]?.forEach { child ->
-                     // If parent is Host, use azRailSubItem
-                     if (child is NestedRailData) { // reusing NestedRailData for subitem...
+                     if (child is NestedRailData) { 
                           builder.add("azRailSubItem(\n")
                           builder.indent()
                           builder.addStatement("id = %S,", child.id)
@@ -242,7 +226,7 @@ class AzProcessor(
                     }
                     if (!isComposable) {
                         logger.error("Function '${symbol.simpleName.asString()}' annotated with @Az must be @Composable.", symbol)
-                        return@forEach // Skip this item
+                        return@forEach 
                     }
                 }
 
@@ -252,7 +236,7 @@ class AzProcessor(
 
                 val name = symbol.simpleName.asString()
                 val pkg = symbol.packageName.asString()
-                val hasContent = symbol is KSFunctionDeclaration // Already validated if function
+                val hasContent = symbol is KSFunctionDeclaration 
 
                 val inferredId = name.toSnakeCase()
                 val inferredText = name.splitCamelCase()
