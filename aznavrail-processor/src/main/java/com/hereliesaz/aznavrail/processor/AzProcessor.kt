@@ -96,7 +96,6 @@ class AzProcessor(
         val homeItem = items.filterIsInstance<RailItemData>().find { it.isHome && it.hasContent }
         val startDest = homeItem?.id ?: contentItems.firstOrNull()?.id ?: "home"
 
-        // FIX: Removed 'onscreen' wrapper which does not exist in standard AzNavRailScope
         builder.beginControlFlow("AzNavHost(startDestination = %S)", startDest)
 
         contentItems.forEach { item ->
@@ -110,7 +109,7 @@ class AzProcessor(
         builder.endControlFlow() // End AzNavHost
         builder.endControlFlow() // End AzHostActivityLayout
         builder.endControlFlow() // End activity.setContent
-        builder.endControlFlow() // End Run body
+        // STOP. Do not add another endControlFlow here.
 
         return builder.build()
     }
