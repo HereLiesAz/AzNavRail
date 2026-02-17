@@ -1,13 +1,11 @@
 package com.hereliesaz.aznavrail.annotation
 
 import com.hereliesaz.aznavrail.model.AzDockingSide
-import com.hereliesaz.aznavrail.model.AzOrientation
 
 @Target(AnnotationTarget.ANNOTATION_CLASS)
 annotation class App(
     val isValid: Boolean = true,
-    val dock: AzDockingSide = AzDockingSide.LEFT,
-    val orientation: AzOrientation = AzOrientation.Vertical
+    val dock: AzDockingSide = AzDockingSide.LEFT
 )
 
 @Target(AnnotationTarget.ANNOTATION_CLASS)
@@ -16,7 +14,8 @@ annotation class RailItem(
     val id: String = "",
     val text: String = "",
     val icon: Int = 0,
-    val home: Boolean = false
+    val home: Boolean = false,
+    val parent: String = "" // Added to link to Hosts or NestedParents
 )
 
 @Target(AnnotationTarget.ANNOTATION_CLASS)
