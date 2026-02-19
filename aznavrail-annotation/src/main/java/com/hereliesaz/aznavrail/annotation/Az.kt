@@ -35,10 +35,17 @@ annotation class NestedRail(
     val icon: Int = 0
 )
 
+@Target(AnnotationTarget.ANNOTATION_CLASS)
+annotation class Background(
+    val isValid: Boolean = true,
+    val weight: Int = 0
+)
+
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY)
 annotation class Az(
     val app: App = App(isValid = false),
     val rail: RailItem = RailItem(isValid = false),
     val host: RailHost = RailHost(isValid = false),
-    val nested: NestedRail = NestedRail(isValid = false)
+    val nested: NestedRail = NestedRail(isValid = false),
+    val background: Background = Background(isValid = false)
 )
