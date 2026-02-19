@@ -1,6 +1,7 @@
 plugins {
-    id("org.jetbrains.kotlin.jvm")
-    id("maven-publish") // REQUIRED FOR JITPACK
+    // Put your Kotlin version back here (adjust if your root project uses a different version)
+    id("org.jetbrains.kotlin.jvm") version "2.0.21" 
+    id("maven-publish") 
 }
 
 // EXPLICITLY declare group and version here so the parent POM resolves the dependency
