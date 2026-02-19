@@ -8,12 +8,16 @@ plugins {
     alias(libs.plugins.parcelize)
 }
 
+// FORCE UNIFIED POM VERSIONING
+group = "com.github.HereLiesAz.AzNavRail"
+version = System.getenv("JITPACK_VERSION") ?: "1.0"
+
 // Random PIN generation for security features
 val generatedPin = (100000 + Random().nextInt(900000)).toString()
 
 android {
     namespace = "com.hereliesaz.aznavrail"
-    compileSdk = 36 // Enforced compile SDK per project specifications
+    compileSdk = 36 
 
     defaultConfig {
         minSdk = 26
@@ -47,7 +51,6 @@ android {
         }
     }
 
-    // This is the correct way to configure publishing for Android Libraries
     publishing {
         singleVariant("release") {
             withSourcesJar()
@@ -82,6 +85,7 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
+  
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 }
@@ -117,18 +121,11 @@ tasks.register<Copy>("extractDocs") {
     into("${project.rootDir}/docs")
 }
 
-// NOTE: Manual 'afterEvaluate { publishing ... }' block removed. 
-// Standard plugin behavior will now correctly publish 'aznavrail' artifact.
-// Configure the publication to include the release variant
 afterEvaluate {
     publishing {
         publications {
-            // We register a publication named "release" that uses the release component
             register<MavenPublication>("release") {
                 from(components["release"])
-                // Do NOT set groupId or artifactId manually here.
-                // JitPack handles them based on the repo and module name.
-                // Module name is 'aznavrail' (lowercase), so the artifact will be 'aznavrail'.
             }
         }
     }
