@@ -62,24 +62,48 @@ class AzProcessor(
         builder.beginControlFlow("activity.setContent")
         builder.addStatement("val navController = rememberNavController()")
 
-        // MANUAL BLOCK: Circumventing KotlinPoet's unindent bug
+        val contentItems = items.filter { it.hasContent }
+        val homeItem = items.filterIsInstance<RailItemData>().find { it.isHome && it.hasContent }
+        val startDest = homeItem?.id ?: contentItems.firstOrNull()?.id ?: "home"
+
         builder.add("AzHostActivityLayout(\n")
         builder.indent()
         builder.addStatement("navController = navController,")
+        
+        // Define the Composable UI host parameter properly
+        builder.add("onscreen = {\n")
+        builder.indent()
+        builder.beginControlFlow("AzNavHost(startDestination = %S)", startDest)
+
+        contentItems.forEach { item ->
+            builder.beginControlFlow("composable(%S)", item.id)
+            val funcName = item.functionName
+            val pkg = item.packageName
+            builder.addStatement("%M()", MemberName(pkg, funcName))
+            builder.endControlFlow()
+        }
+
+        builder.endControlFlow() // Close AzNavHost
         builder.unindent()
-        builder.addStatement(") {") 
+        builder.add("}\n") // Close onscreen
+        
+        builder.unindent()
+        builder.add(") {\n") // Open trailing lambda (AzNavRailScope)
         builder.indent()
 
+        // 1. Establish the Static Law
+        if (appConfig.dock != null) {
+            builder.add("azConfig(\n")
+            builder.indent()
+            builder.addStatement("dockingSide = %T.%L,", ClassName("com.hereliesaz.aznavrail.model", "AzDockingSide"), appConfig.dock)
+            builder.unindent()
+            builder.addStatement(")\n")
+        }
+
+        // 2. Invoke the Subversive Agent (Runtime Aesthetic Overrides)
         builder.addStatement("val azActivity = activity as? %T", ClassName("com.hereliesaz.aznavrail", "AzActivity"))
-        builder.addStatement("val dynamicDock = azActivity?.dynamicDockingSide?.value")
-        val fallbackDock = appConfig.dock ?: "LEFT"
-        builder.addStatement("val staticDock = %T.%L", ClassName("com.hereliesaz.aznavrail.model", "AzDockingSide"), fallbackDock)
-
-        builder.add("azConfig(\n")
-        builder.indent()
-        builder.addStatement("dockingSide = dynamicDock ?: staticDock,")
-        builder.unindent()
-        builder.addStatement(")\n")
+        builder.addStatement("azActivity?.apply { configureRail() }")
+        builder.addStatement("")
 
         val topLevelItems = mutableListOf<ItemData>()
         val childrenMap = mutableMapOf<String, MutableList<ItemData>>()
@@ -96,28 +120,8 @@ class AzProcessor(
             generateItem(builder, item, childrenMap)
         }
 
-        builder.addStatement("")
-        val contentItems = items.filter { it.hasContent }
-        val homeItem = items.filterIsInstance<RailItemData>().find { it.isHome && it.hasContent }
-        val startDest = homeItem?.id ?: contentItems.firstOrNull()?.id ?: "home"
-
-        // THE RESURRECTION: 'onscreen' is back to provide the @Composable context
-        builder.beginControlFlow("onscreen")
-        builder.beginControlFlow("AzNavHost(startDestination = %S)", startDest)
-
-        contentItems.forEach { item ->
-            builder.beginControlFlow("composable(%S)", item.id)
-            val funcName = item.functionName
-            val pkg = item.packageName
-            builder.addStatement("%M()", MemberName(pkg, funcName))
-            builder.endControlFlow()
-        }
-
-        builder.endControlFlow() // Close AzNavHost
-        builder.endControlFlow() // Close onscreen
-
         builder.unindent()
-        builder.addStatement("}") // Close AzHostActivityLayout manually
+        builder.addStatement("}") // Close AzHostActivityLayout trailing lambda
 
         builder.endControlFlow() // Close activity.setContent
 
