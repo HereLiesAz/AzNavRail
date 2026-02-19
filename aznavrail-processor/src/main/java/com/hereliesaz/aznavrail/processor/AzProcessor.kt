@@ -1,3 +1,4 @@
+// aznavrail-processor/src/main/java/com/hereliesaz/aznavrail/processor/AzProcessor.kt
 package com.hereliesaz.aznavrail.processor
 
 import com.google.devtools.ksp.processing.*
@@ -31,7 +32,7 @@ class AzProcessor(
             .addImport("androidx.compose.runtime", "Composable")
             .addImport("androidx.activity.compose", "setContent")
             .addImport("androidx.navigation.compose", "rememberNavController", "composable")
-            .addImport("com.hereliesaz.aznavrail", "AzHostActivityLayout", "AzNavHost", "AzGraphInterface")
+            .addImport("com.hereliesaz.aznavrail", "AzHostActivityLayout", "AzNavHost", "AzGraphInterface", "AzActivity")
             .addImport("com.hereliesaz.aznavrail.model", "AzDockingSide", "AzNestedRailAlignment")
             .addImport("androidx.activity", "ComponentActivity")
 
@@ -69,13 +70,16 @@ class AzProcessor(
         builder.addStatement(") {") 
         builder.indent()
 
-        if (appConfig.dock != null) {
-            builder.add("azConfig(\n")
-            builder.indent()
-            builder.addStatement("dockingSide = %T.%L,", ClassName("com.hereliesaz.aznavrail.model", "AzDockingSide"), appConfig.dock)
-            builder.unindent()
-            builder.addStatement(")\n")
-        }
+        builder.addStatement("val azActivity = activity as? %T", ClassName("com.hereliesaz.aznavrail", "AzActivity"))
+        builder.addStatement("val dynamicDock = azActivity?.dynamicDockingSide?.value")
+        val fallbackDock = appConfig.dock ?: "LEFT"
+        builder.addStatement("val staticDock = %T.%L", ClassName("com.hereliesaz.aznavrail.model", "AzDockingSide"), fallbackDock)
+
+        builder.add("azConfig(\n")
+        builder.indent()
+        builder.addStatement("dockingSide = dynamicDock ?: staticDock,")
+        builder.unindent()
+        builder.addStatement(")\n")
 
         val topLevelItems = mutableListOf<ItemData>()
         val childrenMap = mutableMapOf<String, MutableList<ItemData>>()
