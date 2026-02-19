@@ -71,7 +71,7 @@ class AzProcessor(
         builder.indent()
         builder.addStatement("navController = navController,")
         builder.unindent()
-        builder.add(") {\n") // Open trailing lambda (AzNavRailScope)
+        builder.add(") {\n") // Open trailing lambda (AzNavRailScope) - Now correctly tracking state
         builder.indent()
 
         backgroundItems.forEach { bg ->
@@ -232,10 +232,12 @@ class AzProcessor(
                     builder.add("onClick = {\n")
                     builder.indent()
                     builder.addStatement("val opts = listOf(%L)", optionsStr)
+                    builder.beginControlFlow("if (opts.isNotEmpty())")
                     builder.addStatement("val idx = opts.indexOf(%M)", prop)
                     builder.addStatement("%M = opts[(idx + 1) %% opts.size]", prop)
+                    builder.endControlFlow()
                     builder.unindent()
-                    builder.addStatement("},")
+                    builder.addStatement("},\n")
                 } else if (item.isAction) {
                     val firstOpt = item.options.firstOrNull() ?: ""
                     builder.addStatement("selectedOption = %S,", firstOpt)
