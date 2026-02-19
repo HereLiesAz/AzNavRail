@@ -200,12 +200,18 @@ class AzProcessor(
                 builder.indent()
                 builder.addStatement("id = %S,", item.id)
                 if (item.parent.isNotEmpty()) builder.addStatement("hostId = %S,", item.parent)
-                builder.addStatement("isChecked = false, // TODO: State binding required")
                 builder.addStatement("toggleOnText = %S,", item.toggleOnText)
                 builder.addStatement("toggleOffText = %S,", item.toggleOffText)
-                if (item.isAction) {
+
+                if (item.isProperty) {
+                    val prop = MemberName(item.packageName, item.functionName)
+                    builder.addStatement("isChecked = %M,", prop)
+                    builder.addStatement("onClick = { %M = !%M },", prop, prop)
+                } else if (item.isAction) {
+                    builder.addStatement("isChecked = false,")
                     builder.addStatement("onClick = { %M() },", MemberName(item.packageName, item.functionName))
                 } else {
+                    builder.addStatement("isChecked = false,")
                     builder.addStatement("onClick = {},")
                 }
                 builder.unindent()
@@ -219,11 +225,24 @@ class AzProcessor(
                 if (item.parent.isNotEmpty()) builder.addStatement("hostId = %S,", item.parent)
                 val optionsStr = item.options.joinToString(", ") { "\"$it\"" }
                 builder.addStatement("options = listOf(%L),", optionsStr)
-                val firstOpt = item.options.firstOrNull() ?: ""
-                builder.addStatement("selectedOption = %S, // TODO: State binding required", firstOpt)
-                if (item.isAction) {
+                
+                if (item.isProperty) {
+                    val prop = MemberName(item.packageName, item.functionName)
+                    builder.addStatement("selectedOption = %M,", prop)
+                    builder.add("onClick = {\n")
+                    builder.indent()
+                    builder.addStatement("val opts = listOf(%L)", optionsStr)
+                    builder.addStatement("val idx = opts.indexOf(%M)", prop)
+                    builder.addStatement("%M = opts[(idx + 1) %% opts.size]", prop)
+                    builder.unindent()
+                    builder.addStatement("},")
+                } else if (item.isAction) {
+                    val firstOpt = item.options.firstOrNull() ?: ""
+                    builder.addStatement("selectedOption = %S,", firstOpt)
                     builder.addStatement("onClick = { %M() },", MemberName(item.packageName, item.functionName))
                 } else {
+                    val firstOpt = item.options.firstOrNull() ?: ""
+                    builder.addStatement("selectedOption = %S,", firstOpt)
                     builder.addStatement("onClick = {},")
                 }
                 builder.unindent()
@@ -233,13 +252,13 @@ class AzProcessor(
     }
 
     private data class AppConfig(val dock: String?)
-    private interface ItemData { val id: String; val parent: String; val hasContent: Boolean; val isAction: Boolean; val functionName: String; val packageName: String; val symbol: KSNode }
-    private data class RailItemData(override val id: String, override val parent: String, val text: String, val icon: Int, val isHost: Boolean, val isHome: Boolean, override val hasContent: Boolean, override val isAction: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
-    private data class NestedRailData(override val id: String, override val parent: String, val text: String, val icon: Int, override val hasContent: Boolean, override val isAction: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
-    private data class RailHostData(override val id: String, val text: String, val icon: Int, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData { override val hasContent = false; override val isAction = false; override val parent = "" }
-    private data class BackgroundData(val weight: Int, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData { override val id = ""; override val parent = ""; override val hasContent = true; override val isAction = false }
-    private data class ToggleData(override val id: String, override val parent: String, val toggleOnText: String, val toggleOffText: String, override val hasContent: Boolean, override val isAction: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
-    private data class CyclerData(override val id: String, override val parent: String, val options: List<String>, override val hasContent: Boolean, override val isAction: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
+    private interface ItemData { val id: String; val parent: String; val hasContent: Boolean; val isAction: Boolean; val isProperty: Boolean; val functionName: String; val packageName: String; val symbol: KSNode }
+    private data class RailItemData(override val id: String, override val parent: String, val text: String, val icon: Int, val isHost: Boolean, val isHome: Boolean, override val hasContent: Boolean, override val isAction: Boolean, override val isProperty: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
+    private data class NestedRailData(override val id: String, override val parent: String, val text: String, val icon: Int, override val hasContent: Boolean, override val isAction: Boolean, override val isProperty: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
+    private data class RailHostData(override val id: String, val text: String, val icon: Int, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData { override val hasContent = false; override val isAction = false; override val isProperty = false; override val parent = "" }
+    private data class BackgroundData(val weight: Int, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData { override val id = ""; override val parent = ""; override val hasContent = true; override val isAction = false; override val isProperty = false }
+    private data class ToggleData(override val id: String, override val parent: String, val toggleOnText: String, val toggleOffText: String, override val hasContent: Boolean, override val isAction: Boolean, override val isProperty: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
+    private data class CyclerData(override val id: String, override val parent: String, val options: List<String>, override val hasContent: Boolean, override val isAction: Boolean, override val isProperty: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
 
     private fun extractAppConfig(activity: KSClassDeclaration): AppConfig {
         val azAnnot = activity.getAnnotation("com.hereliesaz.aznavrail.annotation.Az") ?: return AppConfig(null)
@@ -266,6 +285,7 @@ class AzProcessor(
                 
                 val isComposable = symbol.annotations.any { it.shortName.asString() == "Composable" }
                 val isFunction = symbol is KSFunctionDeclaration
+                val isProperty = symbol is KSPropertyDeclaration
                 val hasContent = isFunction && isComposable
                 val isAction = isFunction && !isComposable
                 
@@ -289,6 +309,7 @@ class AzProcessor(
                         isHome = (railAnnot.getArgument("home") as? Boolean) ?: false,
                         hasContent = hasContent,
                         isAction = isAction,
+                        isProperty = isProperty,
                         functionName = name,
                         packageName = pkg,
                         symbol = symbol
@@ -310,6 +331,7 @@ class AzProcessor(
                         icon = (nestedAnnot.getArgument("icon") as? Int) ?: 0,
                         hasContent = hasContent,
                         isAction = isAction,
+                        isProperty = isProperty,
                         functionName = name,
                         packageName = pkg,
                         symbol = symbol
@@ -329,6 +351,7 @@ class AzProcessor(
                         toggleOffText = (toggleAnnot.getArgument("toggleOffText") as? String) ?: "Off",
                         hasContent = hasContent,
                         isAction = isAction,
+                        isProperty = isProperty,
                         functionName = name,
                         packageName = pkg,
                         symbol = symbol
@@ -342,6 +365,7 @@ class AzProcessor(
                         options = optionsList,
                         hasContent = hasContent,
                         isAction = isAction,
+                        isProperty = isProperty,
                         functionName = name,
                         packageName = pkg,
                         symbol = symbol
