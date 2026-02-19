@@ -138,6 +138,18 @@ class AzProcessor(
                 val serviceClass = ClassName.bestGuess(advancedConfig.overlayServiceClass)
                 builder.addStatement("overlayService = %T::class.java,", serviceClass)
             }
+            if (advancedConfig.onUndock.isNotEmpty()) {
+                builder.addStatement("onUndock = ::%L,", advancedConfig.onUndock)
+            }
+            if (advancedConfig.onRailDrag.isNotEmpty()) {
+                builder.addStatement("onRailDrag = ::%L,", advancedConfig.onRailDrag)
+            }
+            if (advancedConfig.onOverlayDrag.isNotEmpty()) {
+                builder.addStatement("onOverlayDrag = ::%L,", advancedConfig.onOverlayDrag)
+            }
+            if (advancedConfig.onItemGloballyPositioned.isNotEmpty()) {
+                builder.addStatement("onItemGloballyPositioned = ::%L,", advancedConfig.onItemGloballyPositioned)
+            }
             builder.unindent()
             builder.addStatement(")\n")
         }
@@ -179,8 +191,14 @@ class AzProcessor(
                 if (item.icon != 0 && !item.isMenu) builder.addStatement("content = %L,", item.icon)
                 if (item.text.isNotEmpty()) builder.addStatement("text = %S,", item.text)
                 addMetadataParameters(builder, item)
-                if (!item.isMenu && item.classifiers.isNotEmpty()) {
-                    builder.addStatement("classifiers = setOf(%L),", item.classifiers.joinToString(", ") { "\"$it\"" })
+                
+                if (!item.isMenu) {
+                    if (item.classifiers.isNotEmpty()) {
+                        builder.addStatement("classifiers = setOf(%L),", item.classifiers.joinToString(", ") { "\"$it\"" })
+                    }
+                    if (item.onFocus.isNotEmpty()) {
+                        builder.addStatement("onFocus = ::%L,", item.onFocus)
+                    }
                 }
                 
                 if (item.hasContent) {
@@ -201,6 +219,9 @@ class AzProcessor(
                 addMetadataParameters(builder, item)
                 if (item.classifiers.isNotEmpty()) {
                     builder.addStatement("classifiers = setOf(%L),", item.classifiers.joinToString(", ") { "\"$it\"" })
+                }
+                if (item.onFocus.isNotEmpty()) {
+                    builder.addStatement("onFocus = ::%L,", item.onFocus)
                 }
                 builder.addStatement("alignment = %T.VERTICAL,", ClassName("com.hereliesaz.aznavrail.model", "AzNestedRailAlignment"))
                 builder.unindent()
@@ -232,8 +253,14 @@ class AzProcessor(
                           builder.addStatement("hostId = %S,", item.id)
                           if (child.text.isNotEmpty()) builder.addStatement("text = %S,", child.text)
                           addMetadataParameters(builder, child)
-                          if (!item.isMenu && child.classifiers.isNotEmpty()) {
-                              builder.addStatement("classifiers = setOf(%L),", child.classifiers.joinToString(", ") { "\"$it\"" })
+                          
+                          if (!item.isMenu) {
+                              if (child.classifiers.isNotEmpty()) {
+                                  builder.addStatement("classifiers = setOf(%L),", child.classifiers.joinToString(", ") { "\"$it\"" })
+                              }
+                              if (child.onFocus.isNotEmpty()) {
+                                  builder.addStatement("onFocus = ::%L,", child.onFocus)
+                              }
                           }
                           
                           if (child.hasContent) {
@@ -331,6 +358,12 @@ class AzProcessor(
                 if (item.classifiers.isNotEmpty()) {
                     builder.addStatement("classifiers = setOf(%L),", item.classifiers.joinToString(", ") { "\"$it\"" })
                 }
+                if (item.onFocus.isNotEmpty()) {
+                    builder.addStatement("onFocus = ::%L,", item.onFocus)
+                }
+                if (item.onRelocate.isNotEmpty()) {
+                    builder.addStatement("onRelocate = ::%L,", item.onRelocate)
+                }
                 
                 if (item.hasContent) {
                     builder.addStatement("route = %S,", item.id)
@@ -364,15 +397,15 @@ class AzProcessor(
     private interface ItemData { val id: String; val parent: String; val hasContent: Boolean; val isAction: Boolean; val isProperty: Boolean; val functionName: String; val packageName: String; val symbol: KSNode }
     private interface MetadataItem { val disabled: Boolean; val screenTitle: String; val info: String }
     
-    private data class RailItemData(override val id: String, override val parent: String, val text: String, val icon: Int, val isHost: Boolean, val isHome: Boolean, val isMenu: Boolean, override val disabled: Boolean, override val screenTitle: String, override val info: String, val classifiers: List<String>, override val hasContent: Boolean, override val isAction: Boolean, override val isProperty: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData, MetadataItem
-    private data class NestedRailData(override val id: String, override val parent: String, val text: String, val icon: Int, override val disabled: Boolean, override val screenTitle: String, override val info: String, val classifiers: List<String>, override val hasContent: Boolean, override val isAction: Boolean, override val isProperty: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData, MetadataItem
+    private data class RailItemData(override val id: String, override val parent: String, val text: String, val icon: Int, val isHost: Boolean, val isHome: Boolean, val isMenu: Boolean, override val disabled: Boolean, override val screenTitle: String, override val info: String, val classifiers: List<String>, val onFocus: String, override val hasContent: Boolean, override val isAction: Boolean, override val isProperty: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData, MetadataItem
+    private data class NestedRailData(override val id: String, override val parent: String, val text: String, val icon: Int, override val disabled: Boolean, override val screenTitle: String, override val info: String, val classifiers: List<String>, val onFocus: String, override val hasContent: Boolean, override val isAction: Boolean, override val isProperty: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData, MetadataItem
     private data class RailHostData(override val id: String, val text: String, val icon: Int, val isMenu: Boolean, override val disabled: Boolean, override val screenTitle: String, override val info: String, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData, MetadataItem { override val hasContent = false; override val isAction = false; override val isProperty = false; override val parent = "" }
     private data class BackgroundData(val weight: Int, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData { override val id = ""; override val parent = ""; override val hasContent = true; override val isAction = false; override val isProperty = false }
     private data class ToggleData(override val id: String, override val parent: String, val toggleOnText: String, val toggleOffText: String, val isMenu: Boolean, override val disabled: Boolean, override val screenTitle: String, override val info: String, override val hasContent: Boolean, override val isAction: Boolean, override val isProperty: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData, MetadataItem
     private data class CyclerData(override val id: String, override val parent: String, val options: List<String>, val isMenu: Boolean, override val disabled: Boolean, val disabledOptions: List<String>, override val screenTitle: String, override val info: String, override val hasContent: Boolean, override val isAction: Boolean, override val isProperty: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData, MetadataItem
-    private data class RelocItemData(override val id: String, override val parent: String, val text: String, val hiddenMenuRoutes: List<String>, override val disabled: Boolean, override val screenTitle: String, override val info: String, val classifiers: List<String>, override val hasContent: Boolean, override val isAction: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData, MetadataItem { override val isProperty = false }
+    private data class RelocItemData(override val id: String, override val parent: String, val text: String, val hiddenMenuRoutes: List<String>, override val disabled: Boolean, override val screenTitle: String, override val info: String, val classifiers: List<String>, val onFocus: String, val onRelocate: String, override val hasContent: Boolean, override val isAction: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData, MetadataItem { override val isProperty = false }
     private data class DividerData(override val symbol: KSNode) : ItemData { override val id = ""; override val parent = ""; override val hasContent = false; override val isAction = false; override val isProperty = false; override val functionName = ""; override val packageName = "" }
-    private data class AdvancedData(val isLoading: Boolean, val infoScreen: Boolean, val enableRailDragging: Boolean, val overlayServiceClass: String, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData { override val id = ""; override val parent = ""; override val hasContent = false; override val isAction = false; override val isProperty = true }
+    private data class AdvancedData(val isLoading: Boolean, val infoScreen: Boolean, val enableRailDragging: Boolean, val overlayServiceClass: String, val onUndock: String, val onRailDrag: String, val onOverlayDrag: String, val onItemGloballyPositioned: String, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData { override val id = ""; override val parent = ""; override val hasContent = false; override val isAction = false; override val isProperty = true }
 
     private fun extractAppConfig(activity: KSClassDeclaration): AppConfig? {
         val azAnnot = activity.getAnnotation("com.hereliesaz.aznavrail.annotation.Az") ?: return null
@@ -409,6 +442,10 @@ class AzProcessor(
             infoScreen = (advAnnot.getArgument("infoScreen") as? Boolean) ?: false,
             enableRailDragging = (advAnnot.getArgument("enableRailDragging") as? Boolean) ?: false,
             overlayServiceClass = (advAnnot.getArgument("overlayServiceClass") as? String) ?: "",
+            onUndock = (advAnnot.getArgument("onUndock") as? String) ?: "",
+            onRailDrag = (advAnnot.getArgument("onRailDrag") as? String) ?: "",
+            onOverlayDrag = (advAnnot.getArgument("onOverlayDrag") as? String) ?: "",
+            onItemGloballyPositioned = (advAnnot.getArgument("onItemGloballyPositioned") as? String) ?: "",
             functionName = "",
             packageName = "",
             symbol = activity
@@ -469,6 +506,7 @@ class AzProcessor(
                         screenTitle = (activeAnnot.getArgument("screenTitle") as? String) ?: "",
                         info = (activeAnnot.getArgument("info") as? String) ?: "",
                         classifiers = classRaw?.map { it.toString() } ?: emptyList(),
+                        onFocus = if (isRail) (activeAnnot.getArgument("onFocus") as? String) ?: "" else "",
                         hasContent = hasContent,
                         isAction = isAction,
                         isProperty = isProperty,
@@ -500,6 +538,7 @@ class AzProcessor(
                         screenTitle = (nestedAnnot.getArgument("screenTitle") as? String) ?: "",
                         info = (nestedAnnot.getArgument("info") as? String) ?: "",
                         classifiers = classRaw?.map { it.toString() } ?: emptyList(),
+                        onFocus = (nestedAnnot.getArgument("onFocus") as? String) ?: "",
                         hasContent = hasContent,
                         isAction = isAction,
                         isProperty = isProperty,
@@ -562,6 +601,8 @@ class AzProcessor(
                         screenTitle = (relocAnnot.getArgument("screenTitle") as? String) ?: "",
                         info = (relocAnnot.getArgument("info") as? String) ?: "",
                         classifiers = classRaw?.map { it.toString() } ?: emptyList(),
+                        onFocus = (relocAnnot.getArgument("onFocus") as? String) ?: "",
+                        onRelocate = (relocAnnot.getArgument("onRelocate") as? String) ?: "",
                         hasContent = hasContent,
                         isAction = isAction,
                         functionName = name,
@@ -576,6 +617,10 @@ class AzProcessor(
                         infoScreen = (advAnnot.getArgument("infoScreen") as? Boolean) ?: false,
                         enableRailDragging = (advAnnot.getArgument("enableRailDragging") as? Boolean) ?: false,
                         overlayServiceClass = (advAnnot.getArgument("overlayServiceClass") as? String) ?: "",
+                        onUndock = (advAnnot.getArgument("onUndock") as? String) ?: "",
+                        onRailDrag = (advAnnot.getArgument("onRailDrag") as? String) ?: "",
+                        onOverlayDrag = (advAnnot.getArgument("onOverlayDrag") as? String) ?: "",
+                        onItemGloballyPositioned = (advAnnot.getArgument("onItemGloballyPositioned") as? String) ?: "",
                         functionName = name,
                         packageName = pkg,
                         symbol = symbol
