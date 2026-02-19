@@ -36,7 +36,7 @@ android {
 dependencies {
     ksp(project(":aznavrail-processor"))
     implementation(project(":aznavrail"))
-    //implementation(libs.aznavrail)
+    //implementation(libs.aznavrailSample)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
