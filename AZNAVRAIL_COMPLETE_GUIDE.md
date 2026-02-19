@@ -1,8 +1,8 @@
 # AzNavRail Complete Guide
 
-Welcome to the comprehensive guide for **AzNavRail**. This document details the **High-Inference System**, which is the only supported method for configuring the rail architecture.
+Welcome to the comprehensive guide for **AzNavRail**. This document details the **High-Inference System**, which is the only supported method for configuring the rail architecture. 
 
-**Dictatorial Design:** You do not build the graph. You do not configure the layout. You annotate your intentions, and the Compiler enforces the strict rules of the AzNavRail system.
+**Dictatorial Design:** You do not build the graph. You do not configure the layout. You do not pick the colors. You annotate your intentions, and the Compiler enforces the strict, brutalist rules of the AzNavRail system. 
 
 ---
 
@@ -10,10 +10,10 @@ Welcome to the comprehensive guide for **AzNavRail**. This document details the 
 
 1.  [Getting Started](#getting-started)
 2.  [The Az Protocol (Architecture)](#the-az-protocol-architecture)
-3.  [Strict Layout Rules](#strict-layout-rules)
-4.  [Annotation Reference (@Az)](#annotation-reference-az)
-5.  [Component Reference](#component-reference)
-6.  [Sample Application Source Code](#sample-application-source-code)
+3.  [State & Action Binding](#state--action-binding)
+4.  [Strict Layout Rules](#strict-layout-rules)
+5.  [Annotation Reference (@Az)](#annotation-reference-az)
+6.  [Component Reference](#component-reference)
 
 ---
 
@@ -38,14 +38,11 @@ Add the **KSP Plugin** and dependencies to your app's `build.gradle.kts`.
 
 ~~~kotlin
 plugins {
-    id("com.google.devtools.ksp") version "2.0.0-1.0.21" // Verify version matches Kotlin
+    id("com.google.devtools.ksp") version "2.0.0-1.0.21"
 }
 
 dependencies {
-    // The Core Library
     implementation("com.github.HereLiesAz.AzNavRail:aznavrail:VERSION")
-    
-    // The Annotation Processor (The Brains)
     implementation("com.github.HereLiesAz.AzNavRail:aznavrail-annotation:VERSION")
     ksp("com.github.HereLiesAz.AzNavRail:aznavrail-processor:VERSION")
 }
@@ -53,24 +50,17 @@ dependencies {
 
 ### 2. The Constitution (App Setup)
 
-You do not write `onCreate`. You do not write `setContent`. You extend `AzActivity` and point it to the generated graph, retaining only a small override to adjust runtime aesthetics.
+You do not write `onCreate`. You do not write `setContent`. You extend `AzActivity` and point it to the generated graph.
 
 ~~~kotlin
-// 1. Define Global Rules (Theme, Docking)
-@Az(app = App(
-    dock = AzDockingSide.LEFT, 
-    theme = AzTheme.GlitchNoir
-))
+// 1. Define Global Rules
+@Az(app = App(dock = AzDockingSide.LEFT, expandedWidth = 240, collapsedWidth = 80))
 class MainActivity : AzActivity() {
     // 2. Link the Generated Graph
     override val graph = AzGraph 
 
-    // 3. The Aesthetic Escape Hatch
+    // 3. The Runtime Escape Hatch (Optional)
     override fun AzNavRailScope.configureRail() {
-        azTheme(
-            expandedWidth = 240.dp,
-            collapsedWidth = 80.dp
-        )
         azConfig(
             vibrate = true,
             displayAppName = true
@@ -81,7 +71,7 @@ class MainActivity : AzActivity() {
 
 ### 3. The Stations (Screens)
 
-You do not manually add items to a rail. You annotate `@Composable` functions.
+You do not manually add items to a rail. You annotate `@Composable` functions. The machine infers the ID and the display text from your function name.
 
 ~~~kotlin
 // Inferred ID: "home", Title: "Home"
@@ -89,13 +79,6 @@ You do not manually add items to a rail. You annotate `@Composable` functions.
 @Composable
 fun Home() {
     Text("Strict Mode Active")
-}
-
-// Inferred ID: "profile", Title: "Profile"
-@Az(rail = RailItem(icon = R.drawable.ic_user))
-@Composable
-fun Profile() {
-    Text("User Settings")
 }
 ~~~
 
@@ -105,13 +88,12 @@ fun Profile() {
 
 The KSP Processor enforces the following architecture:
 
-1.  **Zero-Talk Inference**: If you do not provide an `id` or `text` in the annotation, it is derived from the function name (e.g., `fun WiFiSettings` -> ID: `wifi_settings`, Text: "WiFi Settings").
-2.  **The Tax**: Every function annotated with `@Az` **MUST** also be annotated with `@Composable`. If you forget, the build fails.
-3.  **Hierarchy**: To create sub-menus, you define a **Host** (using a property) and link children to it using `parent`.
+1.  **Zero-Talk Inference**: If you do not provide an `id` or `text` in the annotation, it is derived from the symbol name (e.g., `fun WiFiSettings` -> ID: `wifi_settings`, Text: "WiFi Settings").
+2.  **Hierarchy**: To create sub-menus, define a **Host** (using a property) and link children to it using `parent`.
 
 ~~~kotlin
 // Define a Host (Expands in Rail)
-@Az(railHost = RailHost(icon = R.drawable.ic_settings))
+@Az(host = RailHost(icon = R.drawable.ic_settings))
 val System = null // Placeholder property
 
 // Link a Child to the Host
@@ -122,157 +104,78 @@ fun Wifi() { ... }
 
 ---
 
+## State & Action Binding
+
+The system differentiates between screens, transient actions, and state toggles based on the *shape* of the symbol you annotate.
+
+### Action Binding (Transient Execution)
+If you annotate a function that is **NOT** a `@Composable`, the system wires it as an `onClick` transient action. It will execute and the rail will immediately collapse.
+
+~~~kotlin
+@Az(rail = RailItem(icon = R.drawable.ic_logout))
+fun Logout() {
+    authSystem.terminate()
+}
+~~~
+
+### State Binding (Puppeteering)
+If you annotate a `var` property with `@Az(toggle = ...)` or `@Az(cycler = ...)`, the compiler assumes this is the source of truth. It will inject property delegation into the UI to automatically read and mutate your variable. 
+
+*Note:* You must use Kotlin property delegation (`by mutableStateOf()`) for the UI to observe it.
+
+~~~kotlin
+@Az(toggle = Toggle(toggleOnText = "DARK", toggleOffText = "LIGHT", isMenu = true))
+var isDarkMode by mutableStateOf(false)
+~~~
+
+---
+
 ## Strict Layout Rules
 
 The generated `AzGraph` automatically wraps your content in `AzHostActivityLayout`. This enforces:
 
 1.  **Safe Zones**: Your UI content is strictly forbidden from the **Top 20%** and **Bottom 10%** of the screen.
 2.  **Rail Avoidance**: Content is automatically padded to avoid the rail.
-3.  **Smart Transitions**:
-    * **Left Dock**: Screens slide in from Right.
-    * **Right Dock**: Screens slide in from Left.
+3.  **Smart Transitions**: Animations automatically reverse based on the docking side.
+4.  **Aesthetic Purge**: The layout handles geometry. Your app's `MaterialTheme` handles the paint. 
 
-### Backgrounds (Bypassing Safe Zones)
-To place content (like Maps) behind the safe zones, use the `background` scope in the layout (requires manual overrides or overlay components).
+### Backgrounds
+To place content (like Maps) behind the safe zones, annotate a composable with `@Az(background = Background(weight = 0))`. 
 
 ---
 
 ## Annotation Reference (@Az)
 
-The `@Az` annotation is the single point of entry. It contains contexts for different component types.
-
 ### `app = App(...)`
-Used on `MainActivity`.
-* `dock`: `AzDockingSide.LEFT` or `RIGHT`.
-* `theme`: `AzTheme` preset (e.g., `GlitchNoir`).
-* `secure`: `Boolean`. If true, enforces strict safe zone clipping.
+Used on `MainActivity`. Defines global geometry and behavior.
+* `dock`, `expandedWidth`, `collapsedWidth`, `packButtons`, `usePhysicalDocking`.
 
-### `rail = RailItem(...)`
-Defines a standard navigation screen.
-* `id`: Unique String ID. (Default: Function Name).
-* `text`: Display label. (Default: Function Name).
-* `icon`: Drawable Resource ID.
-* `parent`: ID of the Host item (if this is a sub-item).
-* `home`: `Boolean`. Set to `true` for the start destination.
+### `advanced = Advanced(...)`
+Used on `MainActivity`. Binds system overlays and drags.
+* `infoScreen`, `isLoading`, `overlayServiceClass`, `onUndock`, `onRailDrag`.
 
-### `railHost = RailHost(...)`
+### `rail = RailItem(...)` / `menu = MenuItem(...)`
+Defines a standard screen or action. `menu` items appear only in the footer.
+* `id`, `text`, `icon`, `parent`, `home`, `disabled`, `classifiers`.
+
+### `host = RailHost(...)`
 Defines a parent item that expands to show children.
-* `id`: Unique String ID.
-* `text`: Display label.
-* `icon`: Drawable Resource ID.
 
 ### `nested = NestedRail(...)`
-Defines a generic "Nested Rail" popup menu.
-* `parent`: ID of the item that opens this popup.
-* `align`: `AzNestedRailAlignment.VERTICAL` or `HORIZONTAL`.
+Defines a popup menu structure.
 
-### `toggle = Toggle(...)`
-Defines a state toggle button (swaps text ON/OFF).
-* `onText`: Text to display when True.
-* `offText`: Text to display when False.
-* `slot`: `AzSlot.RAIL` or `AzSlot.MENU`.
+### `toggle = Toggle(...)` / `cycler = Cycler(...)`
+Defines state-bound interactive elements.
+
+### `reloc = RelocItem(...)`
+Defines an item that can be dragged and reordered by the user, revealing hidden menus.
 
 ---
 
 ## Component Reference
 
-While the navigation structure is generated, you use these components within your screens.
-
 ### `AzTextBox`
 A versatile text input with autocomplete, multiline, and "Secret" modes.
 
-~~~kotlin
-AzTextBox(
-    hint = "Password",
-    secret = true, // Masks input
-    onSubmit = { text -> ... }
-)
-~~~
-
 ### `AzRoller`
-A slot-machine style dropdown with split-click interaction (Left: Type, Right: Scroll).
-
-~~~kotlin
-AzRoller(
-    options = listOf("A", "B", "C"),
-    selectedOption = "A",
-    onOptionSelected = { ... }
-)
-~~~
-
-### `AzButton`
-A circular, text-only button that adheres to the Glitch-Noir aesthetic.
-
----
-
-## Sample Application Source Code
-
-This is the **High-Inference** reference implementation.
-
-### `MainActivity.kt`
-
-~~~kotlin
-package com.example.sampleapp
-
-import com.hereliesaz.aznavrail.annotation.*
-import com.hereliesaz.aznavrail.AzActivity
-
-// 1. Configure the App
-@Az(app = App(dock = AzDockingSide.RIGHT, theme = AzTheme.GlitchNoir))
-class MainActivity : AzActivity() {
-    // 2. Ignite the Engine
-    override val graph = AzGraph 
-
-    // 3. Define Runtime Aesthetics
-    override fun AzNavRailScope.configureRail() {
-        azTheme(activeColor = Color.Red)
-        azConfig(vibrate = true)
-    }
-}
-~~~
-
-### `Screens.kt`
-
-~~~kotlin
-package com.example.sampleapp
-
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import com.hereliesaz.aznavrail.annotation.*
-
-// 1. Home Screen
-@Az(rail = RailItem(home = true))
-@Composable
-fun Home() {
-    Text("Welcome to the Dictatorship.")
-}
-
-// 2. Defining a Host (System Settings)
-@Az(railHost = RailHost)
-val System = null
-
-// 3. Sub-Items (Linked to System)
-@Az(rail = RailItem(parent = "system"))
-@Composable
-fun Wifi() {
-    Text("Searching for networks...")
-}
-
-@Az(rail = RailItem(parent = "system"))
-@Composable
-fun Bluetooth() {
-    Text("Pairing devices...")
-}
-
-// 4. A Menu Toggle (Dark Mode)
-@Az(toggle = Toggle(
-    id = "dark_mode",
-    onText = "LIGHTS OFF",
-    offText = "LIGHTS ON",
-    slot = AzSlot.MENU
-))
-@Composable
-fun DarkModeHandler() {
-    // Logic to handle theme switching
-}
-~~~
+A slot-machine style dropdown with split-click interaction.
