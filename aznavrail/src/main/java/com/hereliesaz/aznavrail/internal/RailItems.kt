@@ -278,7 +278,6 @@ internal fun RailItems(
         }
     ) {
         if (isVertical) {
-            // FIX: Constrain height to 80% screen, then scroll.
             Column(
                 modifier = Modifier
                     .heightIn(max = maxRailHeight)
@@ -287,7 +286,6 @@ internal fun RailItems(
                 itemsToRender.forEach { renderItem(it) } 
             }
         } else {
-            // FIX: Constrain width to 80% screen, then scroll.
             Row(
                 modifier = Modifier
                     .widthIn(max = maxRailWidth)
@@ -327,8 +325,6 @@ internal fun RailItems(
     }
 }
 
-// DraggableRailItemWrapper and HiddenMenuPopup are unchanged in logic but required for compilation.
-// (Assume standard implementation follows here as provided in previous turns)
 @Composable
 private fun DraggableRailItemWrapper(
     item: AzNavItem,
@@ -563,7 +559,7 @@ private fun DraggableRailItemWrapper(
                      onItemGloballyPositioned = onItemGloballyPositioned,
                      infoScreen = infoScreen,
                      dragModifier = dragModifier,
-                     activeColor = scope.activeColor
+                     activeColor = MaterialTheme.colorScheme.primary
                  )
              } else {
                  RailContent(
@@ -587,7 +583,7 @@ private fun DraggableRailItemWrapper(
                      onItemGloballyPositioned = onItemGloballyPositioned,
                      infoScreen = infoScreen,
                      dragModifier = dragModifier,
-                     activeColor = scope.activeColor
+                     activeColor = MaterialTheme.colorScheme.primary
                  )
              }
          }
@@ -628,7 +624,7 @@ private fun DraggableRailItemWrapper(
                      onRailCyclerClick = {},
                      onItemClick = {},
                      infoScreen = infoScreen,
-                     activeColor = scope.activeColor
+                     activeColor = MaterialTheme.colorScheme.primary
                  )
              }
          }
