@@ -2,7 +2,6 @@ package com.example.sampleapp
 
 import android.app.Notification
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.AzStrictLayout
 import com.hereliesaz.aznavrail.model.AzDockingSide
@@ -31,13 +30,10 @@ class SampleOverlayService : AzNavRailOverlayService() {
         // IS the container.
         
         com.hereliesaz.aznavrail.AzNavRail {
-            azTheme(
-                activeColor = Color.Magenta,
-                expandedWidth = 200.dp
-            )
             azConfig(
                 dockingSide = AzDockingSide.RIGHT,
-                packButtons = true
+                packButtons = true,
+                expandedWidth = 200.dp
             )
             azAdvanced(
                  enableRailDragging = true
