@@ -1,3 +1,4 @@
+// aznavrail/src/main/java/com/hereliesaz/aznavrail/AzNavHost.kt
 package com.hereliesaz.aznavrail
 
 import android.view.Surface
@@ -182,7 +183,7 @@ fun AzHostActivityLayout(
     isLandscape: Boolean? = null,
     initiallyExpanded: Boolean = false,
     disableSwipeToOpen: Boolean = false,
-    content: AzNavHostScope.() -> Unit
+    content: @Composable AzNavHostScope.() -> Unit
 ) {
     val configuration = LocalConfiguration.current
     val effectiveIsLandscape = isLandscape ?: (configuration.screenWidthDp > configuration.screenHeightDp)
@@ -198,7 +199,7 @@ fun AzHostActivityLayout(
     scope.resetHost()
     scope.setController(navController)
 
-    scope.apply(content)
+    scope.content()
 
     // Determine rail settings
     val railScope = scope.getRailScopeImpl()
