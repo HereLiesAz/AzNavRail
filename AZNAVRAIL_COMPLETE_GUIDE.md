@@ -1,3 +1,4 @@
+# hereliesaz/aznavrail/AzNavRail-553df3aa5188963b5eee2cba012e09115f6b0819/docs/AZNAVRAIL_COMPLETE_GUIDE.md
 # AzNavRail Complete Guide
 
 Welcome to the comprehensive guide for **AzNavRail**. This document details the **High-Inference System**, which is the only supported method for configuring the rail architecture.
@@ -53,7 +54,7 @@ dependencies {
 
 ### 2. The Constitution (App Setup)
 
-You do not write `onCreate`. You do not write `setContent`. You extend `AzActivity` and point it to the generated graph.
+You do not write `onCreate`. You do not write `setContent`. You extend `AzActivity` and point it to the generated graph, retaining only a small override to adjust runtime aesthetics.
 
 ~~~kotlin
 // 1. Define Global Rules (Theme, Docking)
@@ -64,6 +65,18 @@ You do not write `onCreate`. You do not write `setContent`. You extend `AzActivi
 class MainActivity : AzActivity() {
     // 2. Link the Generated Graph
     override val graph = AzGraph 
+
+    // 3. The Aesthetic Escape Hatch
+    override fun AzNavRailScope.configureRail() {
+        azTheme(
+            expandedWidth = 240.dp,
+            collapsedWidth = 80.dp
+        )
+        azConfig(
+            vibrate = true,
+            displayAppName = true
+        )
+    }
 }
 ~~~
 
@@ -210,6 +223,12 @@ import com.hereliesaz.aznavrail.AzActivity
 class MainActivity : AzActivity() {
     // 2. Ignite the Engine
     override val graph = AzGraph 
+
+    // 3. Define Runtime Aesthetics
+    override fun AzNavRailScope.configureRail() {
+        azTheme(activeColor = Color.Red)
+        azConfig(vibrate = true)
+    }
 }
 ~~~
 
