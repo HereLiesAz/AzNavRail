@@ -62,7 +62,8 @@ class AzProcessor(
         builder.beginControlFlow("activity.setContent")
         builder.addStatement("val navController = rememberNavController()")
 
-        val contentItems = items.filter { it.hasContent }
+        val backgroundItems = items.filterIsInstance<BackgroundData>()
+        val contentItems = items.filter { it.hasContent && it !is BackgroundData }
         val homeItem = items.filterIsInstance<RailItemData>().find { it.isHome && it.hasContent }
         val startDest = homeItem?.id ?: contentItems.firstOrNull()?.id ?: "home"
 
@@ -72,6 +73,12 @@ class AzProcessor(
         builder.unindent()
         builder.add(") {\n") // Open trailing lambda (AzNavRailScope)
         builder.indent()
+
+        backgroundItems.forEach { bg ->
+            builder.beginControlFlow("background(weight = %L)", bg.weight)
+            builder.addStatement("%M()", MemberName(bg.packageName, bg.functionName))
+            builder.endControlFlow()
+        }
 
         builder.add("onscreen {\n")
         builder.indent()
@@ -106,7 +113,7 @@ class AzProcessor(
         val topLevelItems = mutableListOf<ItemData>()
         val childrenMap = mutableMapOf<String, MutableList<ItemData>>()
 
-        items.forEach { item ->
+        items.filter { it !is BackgroundData }.forEach { item ->
             if (item.parent.isNotEmpty()) {
                 childrenMap.getOrPut(item.parent) { mutableListOf() }.add(item)
             } else {
@@ -191,6 +198,7 @@ class AzProcessor(
     private data class RailItemData(override val id: String, override val parent: String, val text: String, val icon: Int, val isHost: Boolean, val isHome: Boolean, override val hasContent: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
     private data class NestedRailData(override val id: String, override val parent: String, val text: String, val icon: Int, override val hasContent: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
     private data class RailHostData(override val id: String, val text: String, val icon: Int, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData { override val hasContent = false; override val parent = "" }
+    private data class BackgroundData(val weight: Int, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData { override val id = ""; override val parent = ""; override val hasContent = true }
 
     private fun extractAppConfig(activity: KSClassDeclaration): AppConfig {
         val azAnnot = activity.getAnnotation("com.hereliesaz.aznavrail.annotation.Az") ?: return AppConfig(null)
@@ -208,14 +216,18 @@ class AzProcessor(
                 val railAnnot = azAnnot.getArgument("rail") as? KSAnnotation
                 val hostAnnot = azAnnot.getArgument("host") as? KSAnnotation
                 val nestedAnnot = azAnnot.getArgument("nested") as? KSAnnotation
+                val bgAnnot = azAnnot.getArgument("background") as? KSAnnotation
+                
                 val name = symbol.simpleName.asString()
                 val pkg = symbol.packageName.asString()
                 val hasContent = symbol is KSFunctionDeclaration 
                 val inferredId = name.toSnakeCase()
                 val inferredText = name.splitCamelCase()
+                
                 val isRail = railAnnot?.getArgument("isValid") as? Boolean ?: false
                 val isHost = hostAnnot?.getArgument("isValid") as? Boolean ?: false
                 val isNested = nestedAnnot?.getArgument("isValid") as? Boolean ?: false
+                val isBg = bgAnnot?.getArgument("isValid") as? Boolean ?: false
 
                 if (isRail) {
                     items.add(RailItemData(
@@ -246,6 +258,13 @@ class AzProcessor(
                         text = (nestedAnnot.getArgument("text") as? String)?.takeIf { it.isNotEmpty() } ?: inferredText,
                         icon = (nestedAnnot.getArgument("icon") as? Int) ?: 0,
                         hasContent = hasContent,
+                        functionName = name,
+                        packageName = pkg,
+                        symbol = symbol
+                    ))
+                } else if (isBg) {
+                    items.add(BackgroundData(
+                        weight = (bgAnnot!!.getArgument("weight") as? Int) ?: 0,
                         functionName = name,
                         packageName = pkg,
                         symbol = symbol
