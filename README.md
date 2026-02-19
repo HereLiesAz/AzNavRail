@@ -2,9 +2,9 @@
 
 [![](https://jitpack.io/v/HereLiesAz/AzNavRail.svg)](https://jitpack.io/#HereLiesAz/AzNavRail)
 
-A contemptably stubborn if not dictatorially restrictive navigation rail/menu--I call it a renu. Or maybe a mail. No, a "navigrenuail"--for Jetpack Compose with a streamlined, DSL-style API.
+A contemptably stubborn if not dictatorially restrictive navigation rail/menu--I call it a renu. Or maybe a mail. No, a "navigrenuail"--for Jetpack Compose with a streamlined, zero-boilerplate API via KSP code generation.
 
-This navigrenuail provides a vertical navigation rail that expands to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
+This navigrenuail provides a vertical navigation rail that expands to a full menu drawer. It forces a brutalist architecture to ensure consistent layout boundaries, safe-zone obedience, and zero aesthetic drifting.
 
 ## 🚀 Quick Setup Guide
 
@@ -55,29 +55,27 @@ Let AzNavRail generate your entire navigation graph for you.
 1.  **Annotate your Activity**: Use `@Az` on your main activity to configure the app.
 2.  **Annotate your Composables**: Use `@Az` on any `@Composable` function you want in the rail.
 3.  **Connect the Graph**: Override `graph` in your activity.
-4.  **Configure Rail**: Override `configureRail()` to adjust runtime aesthetic preferences.
+4.  **Configure Rail**: Override `configureRail()` to adjust runtime behavioral preferences.
 
 **MainActivity.kt:**
 ~~~kotlin
 import com.hereliesaz.aznavrail.AzActivity
 import com.hereliesaz.aznavrail.annotation.Az
-import com.hereliesaz.aznavrail.annotation.AzApp
+import com.hereliesaz.aznavrail.annotation.App
 import com.hereliesaz.aznavrail.model.AzDockingSide
 
-@Az(app = AzApp(dock = AzDockingSide.LEFT))
+@Az(app = App(dock = AzDockingSide.LEFT))
 class MainActivity : AzActivity() {
     // The processor generates 'AzGraph' in your package automatically.
     override val graph = AzGraph
 
-    // Override to inject dynamic or runtime aesthetic configurations
+    // Override to inject dynamic runtime configurations
     override fun AzNavRailScope.configureRail() {
-        azTheme(
-            expandedWidth = 240.dp,
-            collapsedWidth = 80.dp
-        )
         azConfig(
             vibrate = true,
-            displayAppName = true
+            displayAppName = true,
+            expandedWidth = 240.dp,
+            collapsedWidth = 80.dp
         )
     }
 }
@@ -88,15 +86,15 @@ class MainActivity : AzActivity() {
 import androidx.compose.runtime.Composable
 import androidx.compose.material3.Text
 import com.hereliesaz.aznavrail.annotation.Az
-import com.hereliesaz.aznavrail.annotation.AzRail
+import com.hereliesaz.aznavrail.annotation.RailItem
 
-@Az(rail = AzRail(id = "home", text = "Home", home = true, icon = R.drawable.ic_home))
+@Az(rail = RailItem(home = true, icon = R.drawable.ic_home))
 @Composable
 fun Home() {
     Text("Welcome Home")
 }
 
-@Az(rail = AzRail(id = "settings", text = "Settings", icon = R.drawable.ic_settings))
+@Az(rail = RailItem(icon = R.drawable.ic_settings))
 @Composable
 fun Settings() {
     Text("App Settings")
@@ -104,7 +102,7 @@ fun Settings() {
 ~~~
 
 ### Option B: Manual Setup (Classic Mode)
-If you prefer manual control, you must use the `AzHostActivityLayout` wrapper.
+If you prefer manual control, you must use the `AzHostActivityLayout` wrapper to avoid fatal safe-zone violations.
 
 **MainActivity.kt:**
 ~~~kotlin
@@ -124,13 +122,10 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             ) {
-                // 1. Theme
-                azTheme(activeColor = Color.Cyan)
-                
-                // 2. Config
+                // 1. Config
                 azConfig(dockingSide = AzDockingSide.LEFT)
 
-                // 3. Define Items
+                // 2. Define Items
                 azRailItem(id = "home", text = "Home", route = "home")
                 azRailItem(id = "settings", text = "Settings", route = "settings")
             }
@@ -144,20 +139,16 @@ class MainActivity : ComponentActivity() {
 ## 🌟 Key Features
 
 - **Responsive Layout**: Automatically adjusts to orientation changes.
-- **Scrollable**: Both rail and menu are scrollable.
-- **DSL API**: Simple, declarative API.
-- **Shapes**: `CIRCLE`, `SQUARE`, `RECTANGLE`, or `NONE`. `RECTANGLE`/`NONE` auto-size width (fixed 36dp height).
+- **Strict Safe Zones**: Your UI is banned from the top 20% and bottom 10% of the screen.
+- **Scrollable**: Both rail and menu are vertically/horizontally scrollable.
+- **Aesthetic Purge**: The library provides the concrete, your `MaterialTheme` provides the paint.
 - **Smart Collapse**: Items collapse the rail after interaction.
-- **Delayed Cycler**: Built-in delay prevents accidental triggers.
-- **Automatic Header**: Displays app icon or name.
-- **Loading State**: Built-in loading animation.
-- **Standalone Components**: `AzButton`, `AzToggle`, `AzCycler`, `AzDivider`, `AzRoller`, `AzTextBox`, `AzForm`.
-- **Nested Rails**: Support for nested navigation structures (`azNestedRail`) with both Vertical and Horizontal alignments.
+- **State Puppeteering**: Bind state toggles and multi-option cyclers directly to `var` properties via KSP.
+- **Nested Rails**: Support for nested navigation structures (`azNestedRail`) with both Vertical and Horizontal popups.
 - **Draggable (FAB Mode)**: Detach and move the rail by long-pressing the header.
-- **Reorderable Items**: `AzRailRelocItem` allows user drag-and-drop reordering.
-- **System Overlay**: System-wide overlay support.
+- **Reorderable Items**: `RelocItem` allows user drag-and-drop reordering.
+- **System Overlay**: System-wide floating overlay window support built-in.
 - **Info Screen**: Interactive help mode for onboarding.
-- **AzHostActivityLayout**: A layout container that enforces strict safe zones and automatic alignment rules.
 
 [API Reference](/API.md) | [Full DSL](/DSL.md) | [Project Structure](/PROJECT_STRUCTURE.md)
 
