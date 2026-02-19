@@ -69,9 +69,11 @@ class AzProcessor(
         builder.add("AzHostActivityLayout(\n")
         builder.indent()
         builder.addStatement("navController = navController,")
-        
-        // Define the Composable UI host parameter properly
-        builder.add("onscreen = {\n")
+        builder.unindent()
+        builder.add(") {\n") // Open trailing lambda (AzNavRailScope)
+        builder.indent()
+
+        builder.add("onscreen {\n")
         builder.indent()
         builder.beginControlFlow("AzNavHost(startDestination = %S)", startDest)
 
@@ -86,10 +88,6 @@ class AzProcessor(
         builder.endControlFlow() // Close AzNavHost
         builder.unindent()
         builder.add("}\n") // Close onscreen
-        
-        builder.unindent()
-        builder.add(") {\n") // Open trailing lambda (AzNavRailScope)
-        builder.indent()
 
         // 1. Establish the Static Law
         if (appConfig.dock != null) {
