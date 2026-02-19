@@ -36,6 +36,23 @@ annotation class NestedRail(
 )
 
 @Target(AnnotationTarget.ANNOTATION_CLASS)
+annotation class RailToggle(
+    val isValid: Boolean = true,
+    val parent: String = "",
+    val id: String = "",
+    val toggleOnText: String = "",
+    val toggleOffText: String = ""
+)
+
+@Target(AnnotationTarget.ANNOTATION_CLASS)
+annotation class RailCycler(
+    val isValid: Boolean = true,
+    val parent: String = "",
+    val id: String = "",
+    val options: Array<String> = []
+)
+
+@Target(AnnotationTarget.ANNOTATION_CLASS)
 annotation class Background(
     val isValid: Boolean = true,
     val weight: Int = 0
@@ -47,5 +64,7 @@ annotation class Az(
     val rail: RailItem = RailItem(isValid = false),
     val host: RailHost = RailHost(isValid = false),
     val nested: NestedRail = NestedRail(isValid = false),
+    val toggle: RailToggle = RailToggle(isValid = false),
+    val cycler: RailCycler = RailCycler(isValid = false),
     val background: Background = Background(isValid = false)
 )
