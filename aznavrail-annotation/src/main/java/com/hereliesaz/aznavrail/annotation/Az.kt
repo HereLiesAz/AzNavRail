@@ -13,7 +13,18 @@ annotation class App(
     val displayAppName: Boolean = false,
     val activeClassifiers: Array<String> = [],
     val usePhysicalDocking: Boolean = false,
-    val showFooter: Boolean = true
+    val showFooter: Boolean = true,
+    val expandedWidth: Int = -1, // -1 means ignore, fallback to default
+    val collapsedWidth: Int = -1
+)
+
+@Target(AnnotationTarget.ANNOTATION_CLASS)
+annotation class Advanced(
+    val isValid: Boolean = true,
+    val isLoading: Boolean = false,
+    val infoScreen: Boolean = false,
+    val enableRailDragging: Boolean = false,
+    val overlayServiceClass: String = "" // Fully Qualified Domain Name of the Service
 )
 
 @Target(AnnotationTarget.ANNOTATION_CLASS)
@@ -120,6 +131,7 @@ annotation class Divider(
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY)
 annotation class Az(
     val app: App = App(isValid = false),
+    val advanced: Advanced = Advanced(isValid = false),
     val rail: RailItem = RailItem(isValid = false),
     val menu: MenuItem = MenuItem(isValid = false),
     val host: RailHost = RailHost(isValid = false),
