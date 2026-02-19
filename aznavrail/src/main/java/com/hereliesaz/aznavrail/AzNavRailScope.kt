@@ -1,14 +1,11 @@
 // aznavrail/src/main/java/com/hereliesaz/aznavrail/AzNavRailScope.kt
 package com.hereliesaz.aznavrail
 
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
@@ -44,8 +41,7 @@ interface AzNavRailScope {
 
     fun azRailItem(id: String, text: String = "", route: String? = null, content: Any? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null)
 
-    @Composable
-    fun azNestedRail(id: String, text: String = "", alignment: AzNestedRailAlignment = AzNestedRailAlignment.VERTICAL, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, content: @Composable AzNavRailScope.() -> Unit)
+    fun azNestedRail(id: String, text: String = "", alignment: AzNestedRailAlignment = AzNestedRailAlignment.VERTICAL, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, content: AzNavRailScope.() -> Unit)
 
     fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
 
@@ -127,6 +123,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     var expandedWidth: Dp = 130.dp
     var collapsedWidth: Dp = 80.dp
     var showFooter: Boolean = true
+    
     var dockingSide: AzDockingSide = AzDockingSide.LEFT
     var packButtons: Boolean = false
     var noMenu: Boolean = false
@@ -181,8 +178,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         addItem(id = id, text = text, route = route, screenTitle = screenTitle, info = info, isRailItem = true, disabled = disabled, classifiers = classifiers, onFocus = onFocus, content = content, onClick = onClick ?: {})
     }
 
-    @Composable
-    override fun azNestedRail(id: String, text: String, alignment: AzNestedRailAlignment, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, content: @Composable AzNavRailScope.() -> Unit) {
+    override fun azNestedRail(id: String, text: String, alignment: AzNestedRailAlignment, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, content: AzNavRailScope.() -> Unit) {
         val nestedScope = AzNavRailScopeImpl()
         nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, showFooter = this.showFooter)
         nestedScope.content()
@@ -200,8 +196,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
         navItems.add(
             AzNavItem(
                 id = id, text = text, isRailItem = true, isNestedRail = true,
-                nestedRailAlignment = alignment, nestedRailItems = nestedItems, color = null,
-                shape = AzButtonShape.CIRCLE, disabled = disabled, screenTitle = screenTitle ?: text,
+                nestedRailAlignment = alignment, nestedRailItems = nestedItems,
+                disabled = disabled, screenTitle = screenTitle ?: text,
                 info = info, classifiers = classifiers
             )
         )
@@ -276,8 +272,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
         navItems.add(
             AzNavItem(
                 id = id, text = text, route = route, isRailItem = true, isSubItem = true, hostId = hostId,
-                isRelocItem = true, color = null, shape = AzButtonShape.CIRCLE, disabled = disabled,
-                screenTitle = finalScreenTitle, info = info, hiddenMenuItems = prefixedItems, classifiers = classifiers
+                isRelocItem = true, disabled = disabled, screenTitle = finalScreenTitle, info = info, 
+                hiddenMenuItems = prefixedItems, classifiers = classifiers
             )
         )
     }
@@ -291,8 +287,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
         navItems.add(
             AzNavItem(
                 id = id, text = "", route = route, screenTitle = finalScreenTitle, isRailItem = isRailItem,
-                color = null, isCycler = true, options = options, selectedOption = selectedOption,
-                shape = AzButtonShape.CIRCLE, disabled = disabled, disabledOptions = disabledOptions,
+                isCycler = true, options = options, selectedOption = selectedOption,
+                disabled = disabled, disabledOptions = disabledOptions,
                 isSubItem = isSubItem, hostId = hostId, info = info
             )
         )
@@ -308,8 +304,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
         navItems.add(
             AzNavItem(
                 id = id, text = "", route = route, screenTitle = finalScreenTitle, isRailItem = isRailItem,
-                color = null, isToggle = true, isChecked = isChecked, toggleOnText = toggleOnText,
-                toggleOffText = toggleOffText, shape = AzButtonShape.CIRCLE, disabled = disabled,
+                isToggle = true, isChecked = isChecked, toggleOnText = toggleOnText,
+                toggleOffText = toggleOffText, disabled = disabled,
                 isSubItem = isSubItem, hostId = hostId, info = info
             )
         )
@@ -324,8 +320,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
         navItems.add(
             AzNavItem(
                 id = id, text = text, route = route, screenTitle = finalScreenTitle, isRailItem = isRailItem,
-                color = null, shape = AzButtonShape.CIRCLE, disabled = disabled, isHost = isHost,
-                isSubItem = isSubItem, hostId = hostId, info = info, classifiers = classifiers, content = content
+                disabled = disabled, isHost = isHost, isSubItem = isSubItem, hostId = hostId, 
+                info = info, classifiers = classifiers, content = content
             )
         )
     }
