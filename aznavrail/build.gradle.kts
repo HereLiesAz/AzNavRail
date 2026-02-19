@@ -8,9 +8,9 @@ plugins {
     alias(libs.plugins.parcelize)
 }
 
-// FORCE UNIFIED POM VERSIONING
+// Unifying version across all modules via the version catalog
 group = "com.github.HereLiesAz.AzNavRail"
-version = System.getenv("JITPACK_VERSION") ?: "1.0"
+version = System.getenv("JITPACK_VERSION") ?: libs.versions.aznavrail.get()
 
 // Random PIN generation for security features
 val generatedPin = (100000 + Random().nextInt(900000)).toString()
