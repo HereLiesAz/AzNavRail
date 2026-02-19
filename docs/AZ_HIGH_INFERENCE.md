@@ -31,9 +31,42 @@ The `@Az` annotation accepts the following contextual blocks:
 ### 1. Screen Binding (The Standard)
 Annotate a `@Composable` function. The machine routes it into the `AzNavHost` graph.
 
-```kotlin
+~~~kotlin
 @Az // ID: "home", Text: "Home"
 @Composable
 fun Home() {
     Text("Home Screen")
 }
+~~~
+
+### 2. Action Binding (The Transient)
+Annotate a standard `fun`. The machine binds it to an `onClick` lambda. The graph ignores it.
+
+~~~kotlin
+@Az(rail = RailItem(icon = R.drawable.ic_power))
+fun Logout() {
+    session.kill()
+}
+~~~
+
+### 3. State Binding (The Puppet)
+Annotate a `var` property with a `Toggle` or `Cycler`. The machine reads its state to update the UI and mutates it when clicked. You must use `by mutableStateOf()`.
+
+~~~kotlin
+@Az(toggle = Toggle(toggleOnText = "LOUD", toggleOffText = "QUIET"))
+var isAlertActive by mutableStateOf(false)
+~~~
+
+## Inference Rules
+
+| Code Symbol | Inferred ID | Inferred Text |
+| :--- | :--- | :--- |
+| `fun UserProfile()` | `user_profile` | "User Profile" |
+| `fun FAQ()` | `f_a_q` (Standard Snake) | "F A Q" |
+| `var SystemVolume` | `system_volume` | "System Volume" |
+
+## Validation
+
+The processor enforces "The Tax":
+* Any function annotated as a screen (`RailItem`, `MenuItem`, `NestedRail`) **MUST** be annotated with `@Composable`. If it lacks the annotation, it is assumed to be a transient action.
+* Sub-items must declare a valid, existing `parent` ID string.
