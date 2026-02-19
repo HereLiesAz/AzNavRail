@@ -1,16 +1,14 @@
+// SampleApp/src/main/kotlin/com/example/sampleapp/MainActivity.kt
 package com.example.sampleapp
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.Color
 import com.hereliesaz.aznavrail.AzActivity
 import com.hereliesaz.aznavrail.AzNavRailScope
 import com.hereliesaz.aznavrail.annotation.App
 import com.hereliesaz.aznavrail.annotation.Az
-import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
-import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 
 @Az(app = App(dock = AzDockingSide.LEFT))
@@ -20,9 +18,6 @@ class MainActivity : AzActivity() {
     // Configuration State
     var dockingSide by mutableStateOf(AzDockingSide.LEFT)
     var packButtons by mutableStateOf(false)
-    var buttonShape by mutableStateOf(AzButtonShape.CIRCLE)
-    var headerShape by mutableStateOf(AzHeaderIconShape.CIRCLE)
-    var activeColor by mutableStateOf(Color.Cyan)
     var showFooter by mutableStateOf(true)
     var displayAppName by mutableStateOf(true)
     var usePhysicalDocking by mutableStateOf(false)
@@ -43,13 +38,7 @@ class MainActivity : AzActivity() {
             displayAppName = displayAppName,
             usePhysicalDocking = usePhysicalDocking,
             noMenu = noMenu,
-            vibrate = vibrate
-        )
-
-        azTheme(
-            defaultShape = buttonShape,
-            headerIconShape = headerShape,
-            activeColor = activeColor,
+            vibrate = vibrate,
             showFooter = showFooter
         )
 
@@ -63,15 +52,6 @@ class MainActivity : AzActivity() {
 
         // Manual Dynamic Items
 
-        // Color Item
-        azRailItem(
-            id = "color_item",
-            text = "Red",
-            color = Color.Red,
-            info = "Item with Color content",
-            onClick = {}
-        )
-        // Number Item
         azRailItem(
             id = "number_item",
             text = "42",
@@ -79,7 +59,7 @@ class MainActivity : AzActivity() {
             info = "Item with Number content",
             onClick = {}
         )
-         // Image Item (using system resource)
+        
         azRailItem(
             id = "image_item",
             text = "Camera",
