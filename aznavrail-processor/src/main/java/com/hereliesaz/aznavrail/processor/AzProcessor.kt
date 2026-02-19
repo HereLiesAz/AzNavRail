@@ -35,6 +35,7 @@ class AzProcessor(
             .addImport("com.hereliesaz.aznavrail", "AzHostActivityLayout", "AzNavHost", "AzGraphInterface", "AzActivity")
             .addImport("com.hereliesaz.aznavrail.model", "AzDockingSide", "AzNestedRailAlignment")
             .addImport("androidx.activity", "ComponentActivity")
+            .addImport("androidx.compose.ui.unit", "dp")
 
         val graphObject = TypeSpec.objectBuilder(graphClassName)
             .addSuperinterface(ClassName("com.hereliesaz.aznavrail", "AzGraphInterface"))
@@ -55,6 +56,7 @@ class AzProcessor(
 
     private fun generateRunBody(activityClass: KSClassDeclaration, symbols: List<KSAnnotated>): CodeBlock {
         val appConfig = extractAppConfig(activityClass)
+        val advancedConfig = extractAdvancedConfig(activityClass)
         val items = extractItems(symbols, activityClass)
 
         val builder = CodeBlock.builder()
@@ -106,9 +108,35 @@ class AzProcessor(
             builder.addStatement("displayAppName = %L,", appConfig.displayAppName)
             builder.addStatement("usePhysicalDocking = %L,", appConfig.usePhysicalDocking)
             builder.addStatement("showFooter = %L,", appConfig.showFooter)
+            if (appConfig.expandedWidth > 0) builder.addStatement("expandedWidth = %L.dp,", appConfig.expandedWidth)
+            if (appConfig.collapsedWidth > 0) builder.addStatement("collapsedWidth = %L.dp,", appConfig.collapsedWidth)
+            
             if (appConfig.activeClassifiers.isNotEmpty()) {
                 val classStr = appConfig.activeClassifiers.joinToString(", ") { "\"$it\"" }
                 builder.addStatement("activeClassifiers = setOf(%L),", classStr)
+            }
+            builder.unindent()
+            builder.addStatement(")\n")
+        }
+
+        if (advancedConfig != null) {
+            builder.add("azAdvanced(\n")
+            builder.indent()
+            if (advancedConfig.isLoading) {
+                val loadingProp = MemberName(advancedConfig.packageName, advancedConfig.functionName)
+                builder.addStatement("isLoading = %M,", loadingProp)
+            }
+            if (advancedConfig.infoScreen) {
+                val infoProp = MemberName(advancedConfig.packageName, advancedConfig.functionName)
+                builder.addStatement("infoScreen = %M,", infoProp)
+                builder.addStatement("onDismissInfoScreen = { %M = false },", infoProp)
+            }
+            if (advancedConfig.enableRailDragging) {
+                builder.addStatement("enableRailDragging = true,")
+            }
+            if (advancedConfig.overlayServiceClass.isNotEmpty()) {
+                val serviceClass = ClassName.bestGuess(advancedConfig.overlayServiceClass)
+                builder.addStatement("overlayService = %T::class.java,", serviceClass)
             }
             builder.unindent()
             builder.addStatement(")\n")
@@ -121,7 +149,7 @@ class AzProcessor(
         val topLevelItems = mutableListOf<ItemData>()
         val childrenMap = mutableMapOf<String, MutableList<ItemData>>()
 
-        items.filter { it !is BackgroundData }.forEach { item ->
+        items.filter { it !is BackgroundData && it !is AdvancedData }.forEach { item ->
             if (item.parent.isNotEmpty()) {
                 childrenMap.getOrPut(item.parent) { mutableListOf() }.add(item)
             } else {
@@ -321,6 +349,7 @@ class AzProcessor(
             is DividerData -> {
                 builder.addStatement("azDivider()")
             }
+            else -> {}
         }
     }
     
@@ -330,7 +359,7 @@ class AzProcessor(
         if (item.info.isNotEmpty()) builder.addStatement("info = %S,", item.info)
     }
 
-    private data class AppConfig(val dock: String, val packButtons: Boolean, val noMenu: Boolean, val vibrate: Boolean, val displayAppName: Boolean, val usePhysicalDocking: Boolean, val showFooter: Boolean, val activeClassifiers: List<String>)
+    private data class AppConfig(val dock: String, val packButtons: Boolean, val noMenu: Boolean, val vibrate: Boolean, val displayAppName: Boolean, val usePhysicalDocking: Boolean, val showFooter: Boolean, val expandedWidth: Int, val collapsedWidth: Int, val activeClassifiers: List<String>)
     
     private interface ItemData { val id: String; val parent: String; val hasContent: Boolean; val isAction: Boolean; val isProperty: Boolean; val functionName: String; val packageName: String; val symbol: KSNode }
     private interface MetadataItem { val disabled: Boolean; val screenTitle: String; val info: String }
@@ -343,6 +372,7 @@ class AzProcessor(
     private data class CyclerData(override val id: String, override val parent: String, val options: List<String>, val isMenu: Boolean, override val disabled: Boolean, val disabledOptions: List<String>, override val screenTitle: String, override val info: String, override val hasContent: Boolean, override val isAction: Boolean, override val isProperty: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData, MetadataItem
     private data class RelocItemData(override val id: String, override val parent: String, val text: String, val hiddenMenuRoutes: List<String>, override val disabled: Boolean, override val screenTitle: String, override val info: String, val classifiers: List<String>, override val hasContent: Boolean, override val isAction: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData, MetadataItem { override val isProperty = false }
     private data class DividerData(override val symbol: KSNode) : ItemData { override val id = ""; override val parent = ""; override val hasContent = false; override val isAction = false; override val isProperty = false; override val functionName = ""; override val packageName = "" }
+    private data class AdvancedData(val isLoading: Boolean, val infoScreen: Boolean, val enableRailDragging: Boolean, val overlayServiceClass: String, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData { override val id = ""; override val parent = ""; override val hasContent = false; override val isAction = false; override val isProperty = true }
 
     private fun extractAppConfig(activity: KSClassDeclaration): AppConfig? {
         val azAnnot = activity.getAnnotation("com.hereliesaz.aznavrail.annotation.Az") ?: return null
@@ -361,7 +391,27 @@ class AzProcessor(
             displayAppName = (appAnnot.getArgument("displayAppName") as? Boolean) ?: false,
             usePhysicalDocking = (appAnnot.getArgument("usePhysicalDocking") as? Boolean) ?: false,
             showFooter = (appAnnot.getArgument("showFooter") as? Boolean) ?: true,
+            expandedWidth = (appAnnot.getArgument("expandedWidth") as? Int) ?: -1,
+            collapsedWidth = (appAnnot.getArgument("collapsedWidth") as? Int) ?: -1,
             activeClassifiers = classifiersRaw?.map { it.toString() } ?: emptyList()
+        )
+    }
+
+    private fun extractAdvancedConfig(activity: KSClassDeclaration): AdvancedData? {
+        val azAnnot = activity.getAnnotation("com.hereliesaz.aznavrail.annotation.Az") ?: return null
+        val advAnnot = azAnnot.getArgument("advanced") as? KSAnnotation ?: return null
+        
+        val isValid = (advAnnot.getArgument("isValid") as? Boolean) ?: false
+        if (!isValid) return null
+        
+        return AdvancedData(
+            isLoading = (advAnnot.getArgument("isLoading") as? Boolean) ?: false,
+            infoScreen = (advAnnot.getArgument("infoScreen") as? Boolean) ?: false,
+            enableRailDragging = (advAnnot.getArgument("enableRailDragging") as? Boolean) ?: false,
+            overlayServiceClass = (advAnnot.getArgument("overlayServiceClass") as? String) ?: "",
+            functionName = "",
+            packageName = "",
+            symbol = activity
         )
     }
 
@@ -379,6 +429,7 @@ class AzProcessor(
                 val cyclerAnnot = azAnnot.getArgument("cycler") as? KSAnnotation
                 val relocAnnot = azAnnot.getArgument("reloc") as? KSAnnotation
                 val dividerAnnot = azAnnot.getArgument("divider") as? KSAnnotation
+                val advAnnot = azAnnot.getArgument("advanced") as? KSAnnotation
                 
                 val name = symbol.simpleName.asString()
                 val pkg = symbol.packageName.asString()
@@ -401,6 +452,7 @@ class AzProcessor(
                 val isCycler = cyclerAnnot?.getArgument("isValid") as? Boolean ?: false
                 val isReloc = relocAnnot?.getArgument("isValid") as? Boolean ?: false
                 val isDivider = dividerAnnot?.getArgument("isValid") as? Boolean ?: false
+                val isAdv = advAnnot?.getArgument("isValid") as? Boolean ?: false
 
                 if (isRail || isMenu) {
                     val activeAnnot = if (isRail) railAnnot!! else menuAnnot!!
@@ -518,6 +570,16 @@ class AzProcessor(
                     ))
                 } else if (isDivider) {
                     items.add(DividerData(symbol))
+                } else if (isAdv) {
+                    items.add(AdvancedData(
+                        isLoading = (advAnnot!!.getArgument("isLoading") as? Boolean) ?: false,
+                        infoScreen = (advAnnot.getArgument("infoScreen") as? Boolean) ?: false,
+                        enableRailDragging = (advAnnot.getArgument("enableRailDragging") as? Boolean) ?: false,
+                        overlayServiceClass = (advAnnot.getArgument("overlayServiceClass") as? String) ?: "",
+                        functionName = name,
+                        packageName = pkg,
+                        symbol = symbol
+                    ))
                 }
             }
         }
