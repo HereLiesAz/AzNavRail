@@ -72,7 +72,6 @@ import com.hereliesaz.aznavrail.internal.MenuItem
 import com.hereliesaz.aznavrail.internal.OverlayHelper
 import com.hereliesaz.aznavrail.internal.RailItems
 import com.hereliesaz.aznavrail.model.AzDockingSide
-import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.service.LocalAzNavRailOverlayController
 import kotlinx.coroutines.delay
@@ -80,63 +79,15 @@ import kotlinx.coroutines.launch
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
-/**
- * Annotation marking API elements that enforce strict layout constraints.
- *
- * This annotation is used on [AzNavRail] to indicate that it cannot be used directly in typical UI composition
- * and must be wrapped by an [AzHostActivityLayout].
- *
- * **Troubleshooting:**
- * If you encounter an error related to this annotation, ensure that you are calling [AzNavRail]
- * inside the content block of [AzHostActivityLayout]. Do not use [AzNavRail] in a standard [androidx.compose.material3.Scaffold].
- */
 @Target(AnnotationTarget.FUNCTION)
 @RequiresOptIn(message = "This API is strictly controlled. Use AzHostActivityLayout.")
 annotation class AzStrictLayout
 
-/**
- * Main object containing constants for AzNavRail.
- */
 object AzNavRail {
-    /**
-     * Constant indicating no title should be displayed for an item.
-     */
     const val noTitle = "AZNAVRAIL_NO_TITLE"
-
-    /**
-     * Intent extra key for passing navigation routes to the activity.
-     */
     const val EXTRA_ROUTE = "com.hereliesaz.aznavrail.extra.ROUTE"
 }
 
-/**
- * The core composable for the AzNavRail navigation rail.
- *
- * This component renders the rail, handles user interactions, manages expansion state,
- * and coordinates with the [AzHostActivityLayout].
- *
- * **Strict Usage:** This composable is marked with [AzStrictLayout]. It should not be instantiated directly
- * in application code, except within specific overlay service contexts where layout rules differ.
- * The standard entry point is [AzHostActivityLayout].
- *
- * @param modifier The modifier to apply to the rail container.
- * @param navController The [NavController] used for navigation actions.
- * @param currentDestination The route of the current destination.
- * @param isLandscape Whether the current configuration is landscape.
- * @param initiallyExpanded Whether the rail starts in an expanded state.
- * @param disableSwipeToOpen Whether swipe gestures to open the menu are disabled.
- * @param providedScope An optional pre-configured scope, typically passed from [AzHostActivityLayout].
- * @param orientation The orientation of the rail ([AzOrientation.Vertical] or [AzOrientation.Horizontal]).
- * @param visualDockingSide The effective docking side for visual layout purposes.
- * @param railAlignment The alignment of the rail within its container.
- * @param reverseLayout Whether to reverse the layout order (e.g., for bottom or right docking).
- * @param content The DSL configuration block.
- *
- * @throws IllegalStateException If called without a parent [AzHostActivityLayout] (unless in an overlay context).
- * **Fix:** Wrap your [AzNavRail] usage with [AzHostActivityLayout].
- * @throws IllegalArgumentException If a hierarchy violation is detected (e.g., a Rail Sub-Item without a valid Rail Host).
- * **Fix:** Ensure all `azRailSubItem` calls reference a valid `azRailHostItem` ID.
- */
 @AzStrictLayout
 @Composable
 fun AzNavRail(
@@ -241,7 +192,6 @@ fun AzNavRail(
         displayedNavItems.firstOrNull()?.color ?: Color.Unspecified
     }
 
-    // Apply cycler states to items
     val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
     val finalNavItems = remember(displayedNavItems, cyclerStates.toMap()) {
         displayedNavItems.map { item ->
@@ -288,7 +238,6 @@ fun AzNavRail(
     )
 
     val coroutineScope = rememberCoroutineScope()
-    // cyclerStates moved up
     var selectedItemId by rememberSaveable { mutableStateOf<String?>(null) }
     val selectedItem = remember(selectedItemId, finalNavItems) {
         finalNavItems.find { it.id == selectedItemId }
@@ -300,7 +249,6 @@ fun AzNavRail(
         val targetId = if (currentDestination != null) {
             displayedNavItems.find { it.route == currentDestination }?.id
         } else {
-            // Keep current selection if it still exists
             if (selectedItemId != null && displayedNavItems.any { it.id == selectedItemId }) {
                 selectedItemId
             } else {
@@ -316,7 +264,6 @@ fun AzNavRail(
         }
     }
 
-    // Cycler sync logic
     LaunchedEffect(isExpanded) {
         if (!isExpanded) {
             cyclerStates.forEach { (id, state) ->
@@ -377,15 +324,13 @@ fun AzNavRail(
         }
     }
 
-    // Determine alignment for the Box based on visual docking side
-    // Note: This aligns the inner content (the Surface)
     val alignment = railAlignment ?: (if (isRightDocked) Alignment.TopEnd else Alignment.TopStart)
 
     Box(
         modifier = modifier,
         contentAlignment = alignment
     ) {
-        val buttonSize = 72.dp // Explicitly force 72.dp size regardless of orientation
+        val buttonSize = 72.dp 
         selectedItem?.screenTitle?.let { screenTitle ->
             if (screenTitle.isNotEmpty()) {
                 Popup(alignment = Alignment.TopEnd) {
@@ -417,7 +362,6 @@ fun AzNavRail(
             }
         }
 
-        // Main Rail Content
         Surface(
             modifier = Modifier
                 .then(if (isVertical) Modifier.width(railThickness).fillMaxHeight() else Modifier.height(railThickness).fillMaxWidth())
@@ -530,11 +474,7 @@ fun AzNavRail(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             if (appIcon != null) {
                                 val baseModifier = Modifier.size(AzNavRailDefaults.HeaderIconSize)
-                                val finalModifier = when (scope.headerIconShape) {
-                                    AzHeaderIconShape.CIRCLE -> baseModifier.clip(CircleShape)
-                                    AzHeaderIconShape.ROUNDED -> baseModifier.clip(RoundedCornerShape(12.dp))
-                                    AzHeaderIconShape.NONE -> baseModifier
-                                }
+                                val finalModifier = baseModifier.clip(CircleShape)
                                 Image(painter = rememberAsyncImagePainter(model = appIcon), contentDescription = "Toggle menu, showing $appName icon", modifier = finalModifier)
                             } else {
                                 Icon(imageVector = Icons.Default.Menu, contentDescription = "Toggle Menu", modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize))
@@ -548,21 +488,12 @@ fun AzNavRail(
 
             val contentBlock = @Composable {
                 if (isExpanded) {
-                    // When expanded, we always use a Column currently.
-                    // If we need to support reverse layout for expanded menu, we would need to reverse the items list here.
-                    // However, expanded menu is typically "gravity" based.
-                    // Let's reverse the items if reverseLayout is true.
                     val displayedItems = if (reverseLayout) displayedNavItems.reversed() else displayedNavItems
 
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .verticalScroll(rememberScrollState())
-                            // Note: Expansion is always vertical list currently (MenuItem)
-                            // If horizontal rail, expansion behavior needs undefined fix.
-                            // Assuming vertical scroll for expanded menu even if rail is horizontal for now.
-                            // But wait, if horizontal rail, the expanded menu should probably drop down?
-                            // For this task, assuming collapsed state is the priority.
                             .pointerInput(isExpanded) {
                                 detectHorizontalDragGestures(
                                     onDragStart = { },
@@ -579,9 +510,6 @@ fun AzNavRail(
                         val itemsToShow = displayedItems.filter { !it.isSubItem }
                         itemsToShow.forEach { item ->
                             if (item.isDivider) {
-                                // Divider needs to be adaptable? No, MenuItem is a row.
-                                // AzDivider is usually a horizontal line.
-                                // Inside expanded menu (Column), it's fine.
                                 com.hereliesaz.aznavrail.AzDivider()
                             } else {
                                 val onClick = scope.onClickMap[item.id]
@@ -644,13 +572,11 @@ fun AzNavRail(
                                     },
                                     onItemGloballyPositioned = { id, rect -> itemPositions.put(id, rect) },
                                     infoScreen = scope.infoScreen,
-                                    activeColor = scope.activeColor
+                                    activeColor = MaterialTheme.colorScheme.primary
                                 )
                                 AnimatedVisibility(visible = item.isHost && (hostStates[item.id] ?: false)) {
                                     Column {
                                         val subItems = displayedNavItems.filter { it.hostId == item.id }
-                                        // Sub-items should arguably follow same order, or strict definition.
-                                        // Let's reverse sub-items too if needed.
                                         val finalSubItems = if (reverseLayout) subItems.reversed() else subItems
                                         finalSubItems.forEach { subItem ->
                                             MenuItem(
@@ -663,7 +589,7 @@ fun AzNavRail(
                                                 onItemClick = { selectedItemId = subItem.id },
                                                 onItemGloballyPositioned = { id, rect -> itemPositions.put(id, rect) },
                                                 infoScreen = scope.infoScreen,
-                                                activeColor = scope.activeColor
+                                                activeColor = MaterialTheme.colorScheme.primary
                                             )
                                         }
                                     }
@@ -710,7 +636,6 @@ fun AzNavRail(
 
                     AnimatedVisibility(visible = !isFloating || showFloatingButtons, modifier = Modifier.fillMaxSize()) {
                         val scrollState = rememberScrollState()
-                        // Adaptive layout for items
                         val adaptiveModifier = Modifier
                             .padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding)
                             .then(if(isVertical) Modifier.verticalScroll(scrollState) else Modifier.horizontalScroll(scrollState))
@@ -731,9 +656,6 @@ fun AzNavRail(
                                     detectVerticalDragGestures(
                                         onDragStart = { },
                                         onVerticalDrag = { change, dragAmount ->
-                                            // For horizontal rails, `isRightDocked` effectively tells us if the rail is at the bottom,
-                                            // as the proxy maps TOP to LEFT and BOTTOM to RIGHT.
-                                            // A swipe "inwards" (up for bottom, down for top) should open the rail.
                                             val isBottomRail = isRightDocked
                                             val shouldOpen = if (isBottomRail) dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX else dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX
                                             if (!isExpanded && !disableSwipeToOpen && shouldOpen) {
@@ -746,7 +668,6 @@ fun AzNavRail(
 
                             }
 
-                        // Render logic
                         val onRailCyclerClick: (AzNavItem) -> Unit = { item ->
                             val state = cyclerStates[item.id]
                             if (state != null) {
@@ -772,7 +693,6 @@ fun AzNavRail(
                             }
                         }
 
-                        // Container for Items
                         if (isVertical) {
                             Column(
                                 modifier = adaptiveModifier,
