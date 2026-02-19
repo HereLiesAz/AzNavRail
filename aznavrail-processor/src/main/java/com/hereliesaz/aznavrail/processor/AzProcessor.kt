@@ -96,10 +96,20 @@ class AzProcessor(
         builder.unindent()
         builder.add("}\n")
 
-        if (appConfig.dock != null) {
+        if (appConfig != null) {
             builder.add("azConfig(\n")
             builder.indent()
             builder.addStatement("dockingSide = %T.%L,", ClassName("com.hereliesaz.aznavrail.model", "AzDockingSide"), appConfig.dock)
+            builder.addStatement("packButtons = %L,", appConfig.packButtons)
+            builder.addStatement("noMenu = %L,", appConfig.noMenu)
+            builder.addStatement("vibrate = %L,", appConfig.vibrate)
+            builder.addStatement("displayAppName = %L,", appConfig.displayAppName)
+            builder.addStatement("usePhysicalDocking = %L,", appConfig.usePhysicalDocking)
+            builder.addStatement("showFooter = %L,", appConfig.showFooter)
+            if (appConfig.activeClassifiers.isNotEmpty()) {
+                val classStr = appConfig.activeClassifiers.joinToString(", ") { "\"$it\"" }
+                builder.addStatement("activeClassifiers = setOf(%L),", classStr)
+            }
             builder.unindent()
             builder.addStatement(")\n")
         }
@@ -140,6 +150,11 @@ class AzProcessor(
                 builder.addStatement("id = %S,", item.id)
                 if (item.icon != 0 && !item.isMenu) builder.addStatement("content = %L,", item.icon)
                 if (item.text.isNotEmpty()) builder.addStatement("text = %S,", item.text)
+                addMetadataParameters(builder, item)
+                if (!item.isMenu && item.classifiers.isNotEmpty()) {
+                    builder.addStatement("classifiers = setOf(%L),", item.classifiers.joinToString(", ") { "\"$it\"" })
+                }
+                
                 if (item.hasContent) {
                     builder.addStatement("route = %S,", item.id)
                 } else if (item.isAction) {
@@ -155,7 +170,11 @@ class AzProcessor(
                 builder.indent()
                 builder.addStatement("id = %S,", item.id)
                 if (item.text.isNotEmpty()) builder.addStatement("text = %S,", item.text)
-                 builder.addStatement("alignment = %T.VERTICAL,", ClassName("com.hereliesaz.aznavrail.model", "AzNestedRailAlignment"))
+                addMetadataParameters(builder, item)
+                if (item.classifiers.isNotEmpty()) {
+                    builder.addStatement("classifiers = setOf(%L),", item.classifiers.joinToString(", ") { "\"$it\"" })
+                }
+                builder.addStatement("alignment = %T.VERTICAL,", ClassName("com.hereliesaz.aznavrail.model", "AzNestedRailAlignment"))
                 builder.unindent()
                 builder.beginControlFlow(")")
 
@@ -171,6 +190,7 @@ class AzProcessor(
                 builder.indent()
                 builder.addStatement("id = %S,", item.id)
                 if (item.text.isNotEmpty()) builder.addStatement("text = %S,", item.text)
+                addMetadataParameters(builder, item)
                 builder.addStatement("onClick = {},")
                 builder.unindent()
                 builder.addStatement(")")
@@ -183,6 +203,11 @@ class AzProcessor(
                           builder.addStatement("id = %S,", child.id)
                           builder.addStatement("hostId = %S,", item.id)
                           if (child.text.isNotEmpty()) builder.addStatement("text = %S,", child.text)
+                          addMetadataParameters(builder, child)
+                          if (!item.isMenu && child.classifiers.isNotEmpty()) {
+                              builder.addStatement("classifiers = setOf(%L),", child.classifiers.joinToString(", ") { "\"$it\"" })
+                          }
+                          
                           if (child.hasContent) {
                               builder.addStatement("route = %S,", child.id)
                           } else if (child.isAction) {
@@ -210,6 +235,7 @@ class AzProcessor(
                 if (item.parent.isNotEmpty()) builder.addStatement("hostId = %S,", item.parent)
                 builder.addStatement("toggleOnText = %S,", item.toggleOnText)
                 builder.addStatement("toggleOffText = %S,", item.toggleOffText)
+                addMetadataParameters(builder, item)
 
                 if (item.isProperty) {
                     val prop = MemberName(item.packageName, item.functionName)
@@ -238,6 +264,10 @@ class AzProcessor(
                 if (item.parent.isNotEmpty()) builder.addStatement("hostId = %S,", item.parent)
                 val optionsStr = item.options.joinToString(", ") { "\"$it\"" }
                 builder.addStatement("options = listOf(%L),", optionsStr)
+                addMetadataParameters(builder, item)
+                if (item.disabledOptions.isNotEmpty()) {
+                     builder.addStatement("disabledOptions = listOf(%L),", item.disabledOptions.joinToString(", ") { "\"$it\"" })
+                }
                 
                 if (item.isProperty) {
                     val prop = MemberName(item.packageName, item.functionName)
@@ -269,6 +299,11 @@ class AzProcessor(
                 builder.addStatement("id = %S,", item.id)
                 builder.addStatement("hostId = %S,", item.parent)
                 if (item.text.isNotEmpty()) builder.addStatement("text = %S,", item.text)
+                addMetadataParameters(builder, item)
+                if (item.classifiers.isNotEmpty()) {
+                    builder.addStatement("classifiers = setOf(%L),", item.classifiers.joinToString(", ") { "\"$it\"" })
+                }
+                
                 if (item.hasContent) {
                     builder.addStatement("route = %S,", item.id)
                 } else if (item.isAction) {
@@ -288,24 +323,46 @@ class AzProcessor(
             }
         }
     }
+    
+    private fun addMetadataParameters(builder: CodeBlock.Builder, item: MetadataItem) {
+        if (item.disabled) builder.addStatement("disabled = true,")
+        if (item.screenTitle.isNotEmpty()) builder.addStatement("screenTitle = %S,", item.screenTitle)
+        if (item.info.isNotEmpty()) builder.addStatement("info = %S,", item.info)
+    }
 
-    private data class AppConfig(val dock: String?)
+    private data class AppConfig(val dock: String, val packButtons: Boolean, val noMenu: Boolean, val vibrate: Boolean, val displayAppName: Boolean, val usePhysicalDocking: Boolean, val showFooter: Boolean, val activeClassifiers: List<String>)
+    
     private interface ItemData { val id: String; val parent: String; val hasContent: Boolean; val isAction: Boolean; val isProperty: Boolean; val functionName: String; val packageName: String; val symbol: KSNode }
-    private data class RailItemData(override val id: String, override val parent: String, val text: String, val icon: Int, val isHost: Boolean, val isHome: Boolean, val isMenu: Boolean, override val hasContent: Boolean, override val isAction: Boolean, override val isProperty: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
-    private data class NestedRailData(override val id: String, override val parent: String, val text: String, val icon: Int, override val hasContent: Boolean, override val isAction: Boolean, override val isProperty: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
-    private data class RailHostData(override val id: String, val text: String, val icon: Int, val isMenu: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData { override val hasContent = false; override val isAction = false; override val isProperty = false; override val parent = "" }
+    private interface MetadataItem { val disabled: Boolean; val screenTitle: String; val info: String }
+    
+    private data class RailItemData(override val id: String, override val parent: String, val text: String, val icon: Int, val isHost: Boolean, val isHome: Boolean, val isMenu: Boolean, override val disabled: Boolean, override val screenTitle: String, override val info: String, val classifiers: List<String>, override val hasContent: Boolean, override val isAction: Boolean, override val isProperty: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData, MetadataItem
+    private data class NestedRailData(override val id: String, override val parent: String, val text: String, val icon: Int, override val disabled: Boolean, override val screenTitle: String, override val info: String, val classifiers: List<String>, override val hasContent: Boolean, override val isAction: Boolean, override val isProperty: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData, MetadataItem
+    private data class RailHostData(override val id: String, val text: String, val icon: Int, val isMenu: Boolean, override val disabled: Boolean, override val screenTitle: String, override val info: String, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData, MetadataItem { override val hasContent = false; override val isAction = false; override val isProperty = false; override val parent = "" }
     private data class BackgroundData(val weight: Int, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData { override val id = ""; override val parent = ""; override val hasContent = true; override val isAction = false; override val isProperty = false }
-    private data class ToggleData(override val id: String, override val parent: String, val toggleOnText: String, val toggleOffText: String, val isMenu: Boolean, override val hasContent: Boolean, override val isAction: Boolean, override val isProperty: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
-    private data class CyclerData(override val id: String, override val parent: String, val options: List<String>, val isMenu: Boolean, override val hasContent: Boolean, override val isAction: Boolean, override val isProperty: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
-    private data class RelocItemData(override val id: String, override val parent: String, val text: String, val hiddenMenuRoutes: List<String>, override val hasContent: Boolean, override val isAction: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData { override val isProperty = false }
+    private data class ToggleData(override val id: String, override val parent: String, val toggleOnText: String, val toggleOffText: String, val isMenu: Boolean, override val disabled: Boolean, override val screenTitle: String, override val info: String, override val hasContent: Boolean, override val isAction: Boolean, override val isProperty: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData, MetadataItem
+    private data class CyclerData(override val id: String, override val parent: String, val options: List<String>, val isMenu: Boolean, override val disabled: Boolean, val disabledOptions: List<String>, override val screenTitle: String, override val info: String, override val hasContent: Boolean, override val isAction: Boolean, override val isProperty: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData, MetadataItem
+    private data class RelocItemData(override val id: String, override val parent: String, val text: String, val hiddenMenuRoutes: List<String>, override val disabled: Boolean, override val screenTitle: String, override val info: String, val classifiers: List<String>, override val hasContent: Boolean, override val isAction: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData, MetadataItem { override val isProperty = false }
     private data class DividerData(override val symbol: KSNode) : ItemData { override val id = ""; override val parent = ""; override val hasContent = false; override val isAction = false; override val isProperty = false; override val functionName = ""; override val packageName = "" }
 
-    private fun extractAppConfig(activity: KSClassDeclaration): AppConfig {
-        val azAnnot = activity.getAnnotation("com.hereliesaz.aznavrail.annotation.Az") ?: return AppConfig(null)
-        val appAnnot = azAnnot.getArgument("app") as? KSAnnotation ?: return AppConfig(null)
+    private fun extractAppConfig(activity: KSClassDeclaration): AppConfig? {
+        val azAnnot = activity.getAnnotation("com.hereliesaz.aznavrail.annotation.Az") ?: return null
+        val appAnnot = azAnnot.getArgument("app") as? KSAnnotation ?: return null
+        
         val dockArg = appAnnot.arguments.find { it.name?.asString() == "dock" }?.value
-        val dock = (dockArg as? KSType)?.declaration?.simpleName?.asString() ?: dockArg?.toString()?.substringAfterLast(".")
-        return AppConfig(dock)
+        val dock = (dockArg as? KSType)?.declaration?.simpleName?.asString() ?: dockArg?.toString()?.substringAfterLast(".") ?: "LEFT"
+        
+        val classifiersRaw = appAnnot.getArgument("activeClassifiers") as? ArrayList<*>
+        
+        return AppConfig(
+            dock = dock,
+            packButtons = (appAnnot.getArgument("packButtons") as? Boolean) ?: false,
+            noMenu = (appAnnot.getArgument("noMenu") as? Boolean) ?: false,
+            vibrate = (appAnnot.getArgument("vibrate") as? Boolean) ?: false,
+            displayAppName = (appAnnot.getArgument("displayAppName") as? Boolean) ?: false,
+            usePhysicalDocking = (appAnnot.getArgument("usePhysicalDocking") as? Boolean) ?: false,
+            showFooter = (appAnnot.getArgument("showFooter") as? Boolean) ?: true,
+            activeClassifiers = classifiersRaw?.map { it.toString() } ?: emptyList()
+        )
     }
 
     private fun extractItems(symbols: List<KSAnnotated>, activityClass: KSClassDeclaration): List<ItemData> {
@@ -347,6 +404,7 @@ class AzProcessor(
 
                 if (isRail || isMenu) {
                     val activeAnnot = if (isRail) railAnnot!! else menuAnnot!!
+                    val classRaw = activeAnnot.getArgument("classifiers") as? ArrayList<*>
                     items.add(RailItemData(
                         id = (activeAnnot.getArgument("id") as? String)?.takeIf { it.isNotEmpty() } ?: inferredId,
                         parent = (activeAnnot.getArgument("parent") as? String) ?: "",
@@ -355,6 +413,10 @@ class AzProcessor(
                         isHost = false,
                         isHome = if (isRail) (activeAnnot.getArgument("home") as? Boolean) ?: false else false,
                         isMenu = isMenu,
+                        disabled = (activeAnnot.getArgument("disabled") as? Boolean) ?: false,
+                        screenTitle = (activeAnnot.getArgument("screenTitle") as? String) ?: "",
+                        info = (activeAnnot.getArgument("info") as? String) ?: "",
+                        classifiers = classRaw?.map { it.toString() } ?: emptyList(),
                         hasContent = hasContent,
                         isAction = isAction,
                         isProperty = isProperty,
@@ -368,16 +430,24 @@ class AzProcessor(
                         text = (hostAnnot.getArgument("text") as? String)?.takeIf { it.isNotEmpty() } ?: inferredText,
                         icon = (hostAnnot.getArgument("icon") as? Int) ?: 0,
                         isMenu = (hostAnnot.getArgument("isMenu") as? Boolean) ?: false,
+                        disabled = (hostAnnot.getArgument("disabled") as? Boolean) ?: false,
+                        screenTitle = (hostAnnot.getArgument("screenTitle") as? String) ?: "",
+                        info = (hostAnnot.getArgument("info") as? String) ?: "",
                         functionName = name,
                         packageName = pkg,
                         symbol = symbol
                     ))
                 } else if (isNested) {
+                    val classRaw = nestedAnnot!!.getArgument("classifiers") as? ArrayList<*>
                     items.add(NestedRailData(
-                        id = (nestedAnnot!!.getArgument("id") as? String)?.takeIf { it.isNotEmpty() } ?: inferredId,
+                        id = (nestedAnnot.getArgument("id") as? String)?.takeIf { it.isNotEmpty() } ?: inferredId,
                         parent = (nestedAnnot.getArgument("parent") as? String) ?: "",
                         text = (nestedAnnot.getArgument("text") as? String)?.takeIf { it.isNotEmpty() } ?: inferredText,
                         icon = (nestedAnnot.getArgument("icon") as? Int) ?: 0,
+                        disabled = (nestedAnnot.getArgument("disabled") as? Boolean) ?: false,
+                        screenTitle = (nestedAnnot.getArgument("screenTitle") as? String) ?: "",
+                        info = (nestedAnnot.getArgument("info") as? String) ?: "",
+                        classifiers = classRaw?.map { it.toString() } ?: emptyList(),
                         hasContent = hasContent,
                         isAction = isAction,
                         isProperty = isProperty,
@@ -399,6 +469,9 @@ class AzProcessor(
                         toggleOnText = (toggleAnnot.getArgument("toggleOnText") as? String) ?: "On",
                         toggleOffText = (toggleAnnot.getArgument("toggleOffText") as? String) ?: "Off",
                         isMenu = (toggleAnnot.getArgument("isMenu") as? Boolean) ?: false,
+                        disabled = (toggleAnnot.getArgument("disabled") as? Boolean) ?: false,
+                        screenTitle = (toggleAnnot.getArgument("screenTitle") as? String) ?: "",
+                        info = (toggleAnnot.getArgument("info") as? String) ?: "",
                         hasContent = hasContent,
                         isAction = isAction,
                         isProperty = isProperty,
@@ -408,12 +481,16 @@ class AzProcessor(
                     ))
                 } else if (isCycler) {
                     val rawOptions = cyclerAnnot!!.getArgument("options") as? ArrayList<*>
-                    val optionsList = rawOptions?.map { it.toString() } ?: emptyList()
+                    val disOptions = cyclerAnnot.getArgument("disabledOptions") as? ArrayList<*>
                     items.add(CyclerData(
                         id = (cyclerAnnot.getArgument("id") as? String)?.takeIf { it.isNotEmpty() } ?: inferredId,
                         parent = (cyclerAnnot.getArgument("parent") as? String) ?: "",
-                        options = optionsList,
+                        options = rawOptions?.map { it.toString() } ?: emptyList(),
                         isMenu = (cyclerAnnot.getArgument("isMenu") as? Boolean) ?: false,
+                        disabled = (cyclerAnnot.getArgument("disabled") as? Boolean) ?: false,
+                        disabledOptions = disOptions?.map { it.toString() } ?: emptyList(),
+                        screenTitle = (cyclerAnnot.getArgument("screenTitle") as? String) ?: "",
+                        info = (cyclerAnnot.getArgument("info") as? String) ?: "",
                         hasContent = hasContent,
                         isAction = isAction,
                         isProperty = isProperty,
@@ -423,12 +500,16 @@ class AzProcessor(
                     ))
                 } else if (isReloc) {
                     val rawRoutes = relocAnnot!!.getArgument("hiddenMenuRoutes") as? ArrayList<*>
-                    val routeList = rawRoutes?.map { it.toString() } ?: emptyList()
+                    val classRaw = relocAnnot.getArgument("classifiers") as? ArrayList<*>
                     items.add(RelocItemData(
                         id = (relocAnnot.getArgument("id") as? String)?.takeIf { it.isNotEmpty() } ?: inferredId,
                         parent = (relocAnnot.getArgument("parent") as? String) ?: "",
                         text = (relocAnnot.getArgument("text") as? String)?.takeIf { it.isNotEmpty() } ?: inferredText,
-                        hiddenMenuRoutes = routeList,
+                        hiddenMenuRoutes = rawRoutes?.map { it.toString() } ?: emptyList(),
+                        disabled = (relocAnnot.getArgument("disabled") as? Boolean) ?: false,
+                        screenTitle = (relocAnnot.getArgument("screenTitle") as? String) ?: "",
+                        info = (relocAnnot.getArgument("info") as? String) ?: "",
+                        classifiers = classRaw?.map { it.toString() } ?: emptyList(),
                         hasContent = hasContent,
                         isAction = isAction,
                         functionName = name,
