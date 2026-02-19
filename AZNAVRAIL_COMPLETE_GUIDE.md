@@ -1,4 +1,3 @@
-# hereliesaz/aznavrail/AzNavRail-553df3aa5188963b5eee2cba012e09115f6b0819/docs/AZNAVRAIL_COMPLETE_GUIDE.md
 # AzNavRail Complete Guide
 
 Welcome to the comprehensive guide for **AzNavRail**. This document details the **High-Inference System**, which is the only supported method for configuring the rail architecture.
