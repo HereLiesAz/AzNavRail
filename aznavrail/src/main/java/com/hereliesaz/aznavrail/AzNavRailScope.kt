@@ -1,6 +1,7 @@
 // aznavrail/src/main/java/com/hereliesaz/aznavrail/AzNavRailScope.kt
 package com.hereliesaz.aznavrail
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
@@ -12,14 +13,6 @@ import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 
-/**
- * The Synthetic Tongue.
- *
- * This DSL was originally designed to cradle human frailty with dozens of redundant overloads.
- * Now that the Compiler writes the UI, the facade has been stripped. This is a machine-to-machine
- * interface. A brutalist, monolithic API for the KSP processor.
- * * If you find yourself manually typing these functions, you have failed the architecture.
- */
 interface AzNavRailScope {
 
     fun azConfig(
@@ -51,7 +44,8 @@ interface AzNavRailScope {
 
     fun azRailItem(id: String, text: String = "", route: String? = null, content: Any? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null)
 
-    fun azNestedRail(id: String, text: String = "", alignment: AzNestedRailAlignment = AzNestedRailAlignment.VERTICAL, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, content: AzNavRailScope.() -> Unit)
+    @Composable
+    fun azNestedRail(id: String, text: String = "", alignment: AzNestedRailAlignment = AzNestedRailAlignment.VERTICAL, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, content: @Composable AzNavRailScope.() -> Unit)
 
     fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
 
@@ -187,7 +181,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
         addItem(id = id, text = text, route = route, screenTitle = screenTitle, info = info, isRailItem = true, disabled = disabled, classifiers = classifiers, onFocus = onFocus, content = content, onClick = onClick ?: {})
     }
 
-    override fun azNestedRail(id: String, text: String, alignment: AzNestedRailAlignment, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, content: AzNavRailScope.() -> Unit) {
+    @Composable
+    override fun azNestedRail(id: String, text: String, alignment: AzNestedRailAlignment, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, content: @Composable AzNavRailScope.() -> Unit) {
         val nestedScope = AzNavRailScopeImpl()
         nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, showFooter = this.showFooter)
         nestedScope.content()
