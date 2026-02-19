@@ -1,3 +1,4 @@
+// SampleApp/src/main/kotlin/com/example/sampleapp/Screens.kt
 package com.example.sampleapp
 
 import androidx.compose.foundation.layout.Arrangement
@@ -15,14 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.AzButton
-import com.hereliesaz.aznavrail.AzRoller
 import com.hereliesaz.aznavrail.AzTextBox
 import com.hereliesaz.aznavrail.AzToggle
 import com.hereliesaz.aznavrail.annotation.Az
 import com.hereliesaz.aznavrail.annotation.RailItem
-import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
-import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 
 @Az(rail = RailItem(home = true))
 @Composable
@@ -53,22 +51,6 @@ fun Home() {
                     onToggle = { activity.packButtons = !activity.packButtons },
                     toggleOnText = "Packed: On",
                     toggleOffText = "Packed: Off"
-                )
-            }
-
-            // Visuals
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AzRoller(
-                    options = AzButtonShape.values().map { it.name },
-                    selectedOption = activity.buttonShape.name,
-                    onOptionSelected = { activity.buttonShape = AzButtonShape.valueOf(it) },
-                    hint = "Button Shape"
-                )
-                AzRoller(
-                    options = AzHeaderIconShape.values().map { it.name },
-                    selectedOption = activity.headerShape.name,
-                    onOptionSelected = { activity.headerShape = AzHeaderIconShape.valueOf(it) },
-                    hint = "Header Shape"
                 )
             }
 
