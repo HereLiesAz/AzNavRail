@@ -1,7 +1,11 @@
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "2.2.21"
+    id("org.jetbrains.kotlin.jvm")
     id("maven-publish") // REQUIRED FOR JITPACK
 }
+
+// EXPLICITLY declare group and version here so the parent POM resolves the dependency
+group = "com.github.HereLiesAz.AzNavRail"
+version = "1.0" // JitPack overrides this dynamically
 
 dependencies {
     implementation(kotlin("stdlib"))
@@ -13,9 +17,7 @@ afterEvaluate {
         publications {
             create<MavenPublication>("release") {
                 from(components["java"])
-                groupId = "com.github.HereLiesAz.AzNavRail"
                 artifactId = "aznavrail-annotation"
-                version = "1.0" // JitPack overrides this, but Gradle needs a value
             }
         }
     }
