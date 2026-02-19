@@ -1,5 +1,6 @@
 [versions]
-aznavrail = "main-SNAPSHOT"
+aznavrailSample = "main-SNAPSHOT"
+aznavrail = "7.15"
 # Android & Jetpack
 composeBom = "2024.06.00"
 coreKtx = "1.17.0"
