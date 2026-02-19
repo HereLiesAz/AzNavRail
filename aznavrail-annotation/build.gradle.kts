@@ -1,14 +1,17 @@
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "2.0.21"
+    id("org.jetbrains.kotlin.jvm") version "2.2.21"
     id("maven-publish") 
 }
 
-// FORCE UNIFIED POM VERSIONING
 group = "com.github.HereLiesAz.AzNavRail"
-version = System.getenv("JITPACK_VERSION") ?: "1.0"
+version = System.getenv("JITPACK_VERSION") ?: libs.versions.aznavrail.get()
 
 dependencies {
     implementation(kotlin("stdlib"))
+}
+
+kotlin {
+    jvmToolchain(17)
 }
 
 afterEvaluate {
@@ -16,7 +19,9 @@ afterEvaluate {
         publications {
             create<MavenPublication>("release") {
                 from(components["java"])
+                groupId = project.group.toString()
                 artifactId = "aznavrail-annotation"
+                version = project.version.toString()
             }
         }
     }
