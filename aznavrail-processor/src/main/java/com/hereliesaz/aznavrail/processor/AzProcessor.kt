@@ -96,7 +96,6 @@ class AzProcessor(
         builder.unindent()
         builder.add("}\n") // Close onscreen
 
-        // 1. Establish the Static Law
         if (appConfig.dock != null) {
             builder.add("azConfig(\n")
             builder.indent()
@@ -105,7 +104,6 @@ class AzProcessor(
             builder.addStatement(")\n")
         }
 
-        // 2. Invoke the Subversive Agent (Runtime Aesthetic Overrides)
         builder.addStatement("val azActivity = activity as? %T", ClassName("com.hereliesaz.aznavrail", "AzActivity"))
         builder.addStatement("azActivity?.apply { configureRail() }")
         builder.addStatement("")
@@ -143,6 +141,8 @@ class AzProcessor(
                 if (item.text.isNotEmpty()) builder.addStatement("text = %S,", item.text)
                 if (item.hasContent) {
                     builder.addStatement("route = %S,", item.id)
+                } else if (item.isAction) {
+                    builder.addStatement("onClick = { %M() },", MemberName(item.packageName, item.functionName))
                 } else {
                     builder.addStatement("onClick = {},")
                 }
@@ -182,23 +182,64 @@ class AzProcessor(
                           if (child.text.isNotEmpty()) builder.addStatement("text = %S,", child.text)
                           if (child.hasContent) {
                               builder.addStatement("route = %S,", child.id)
+                          } else if (child.isAction) {
+                              builder.addStatement("onClick = { %M() },", MemberName(child.packageName, child.functionName))
                           } else {
                               builder.addStatement("onClick = {},")
                           }
                           builder.unindent()
                           builder.addStatement(")")
+                     } else if (child is ToggleData || child is CyclerData) {
+                          generateItem(builder, child, childrenMap)
                      }
                 }
+            }
+            is ToggleData -> {
+                val prefix = if (item.parent.isNotEmpty()) "azRailSubToggle" else "azRailToggle"
+                builder.add("$prefix(\n")
+                builder.indent()
+                builder.addStatement("id = %S,", item.id)
+                if (item.parent.isNotEmpty()) builder.addStatement("hostId = %S,", item.parent)
+                builder.addStatement("isChecked = false, // TODO: State binding required")
+                builder.addStatement("toggleOnText = %S,", item.toggleOnText)
+                builder.addStatement("toggleOffText = %S,", item.toggleOffText)
+                if (item.isAction) {
+                    builder.addStatement("onClick = { %M() },", MemberName(item.packageName, item.functionName))
+                } else {
+                    builder.addStatement("onClick = {},")
+                }
+                builder.unindent()
+                builder.addStatement(")")
+            }
+            is CyclerData -> {
+                val prefix = if (item.parent.isNotEmpty()) "azRailSubCycler" else "azRailCycler"
+                builder.add("$prefix(\n")
+                builder.indent()
+                builder.addStatement("id = %S,", item.id)
+                if (item.parent.isNotEmpty()) builder.addStatement("hostId = %S,", item.parent)
+                val optionsStr = item.options.joinToString(", ") { "\"$it\"" }
+                builder.addStatement("options = listOf(%L),", optionsStr)
+                val firstOpt = item.options.firstOrNull() ?: ""
+                builder.addStatement("selectedOption = %S, // TODO: State binding required", firstOpt)
+                if (item.isAction) {
+                    builder.addStatement("onClick = { %M() },", MemberName(item.packageName, item.functionName))
+                } else {
+                    builder.addStatement("onClick = {},")
+                }
+                builder.unindent()
+                builder.addStatement(")")
             }
         }
     }
 
     private data class AppConfig(val dock: String?)
-    private interface ItemData { val id: String; val parent: String; val hasContent: Boolean; val functionName: String; val packageName: String; val symbol: KSNode }
-    private data class RailItemData(override val id: String, override val parent: String, val text: String, val icon: Int, val isHost: Boolean, val isHome: Boolean, override val hasContent: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
-    private data class NestedRailData(override val id: String, override val parent: String, val text: String, val icon: Int, override val hasContent: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
-    private data class RailHostData(override val id: String, val text: String, val icon: Int, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData { override val hasContent = false; override val parent = "" }
-    private data class BackgroundData(val weight: Int, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData { override val id = ""; override val parent = ""; override val hasContent = true }
+    private interface ItemData { val id: String; val parent: String; val hasContent: Boolean; val isAction: Boolean; val functionName: String; val packageName: String; val symbol: KSNode }
+    private data class RailItemData(override val id: String, override val parent: String, val text: String, val icon: Int, val isHost: Boolean, val isHome: Boolean, override val hasContent: Boolean, override val isAction: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
+    private data class NestedRailData(override val id: String, override val parent: String, val text: String, val icon: Int, override val hasContent: Boolean, override val isAction: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
+    private data class RailHostData(override val id: String, val text: String, val icon: Int, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData { override val hasContent = false; override val isAction = false; override val parent = "" }
+    private data class BackgroundData(val weight: Int, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData { override val id = ""; override val parent = ""; override val hasContent = true; override val isAction = false }
+    private data class ToggleData(override val id: String, override val parent: String, val toggleOnText: String, val toggleOffText: String, override val hasContent: Boolean, override val isAction: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
+    private data class CyclerData(override val id: String, override val parent: String, val options: List<String>, override val hasContent: Boolean, override val isAction: Boolean, override val functionName: String, override val packageName: String, override val symbol: KSNode) : ItemData
 
     private fun extractAppConfig(activity: KSClassDeclaration): AppConfig {
         val azAnnot = activity.getAnnotation("com.hereliesaz.aznavrail.annotation.Az") ?: return AppConfig(null)
@@ -217,10 +258,17 @@ class AzProcessor(
                 val hostAnnot = azAnnot.getArgument("host") as? KSAnnotation
                 val nestedAnnot = azAnnot.getArgument("nested") as? KSAnnotation
                 val bgAnnot = azAnnot.getArgument("background") as? KSAnnotation
+                val toggleAnnot = azAnnot.getArgument("toggle") as? KSAnnotation
+                val cyclerAnnot = azAnnot.getArgument("cycler") as? KSAnnotation
                 
                 val name = symbol.simpleName.asString()
                 val pkg = symbol.packageName.asString()
-                val hasContent = symbol is KSFunctionDeclaration 
+                
+                val isComposable = symbol.annotations.any { it.shortName.asString() == "Composable" }
+                val isFunction = symbol is KSFunctionDeclaration
+                val hasContent = isFunction && isComposable
+                val isAction = isFunction && !isComposable
+                
                 val inferredId = name.toSnakeCase()
                 val inferredText = name.splitCamelCase()
                 
@@ -228,6 +276,8 @@ class AzProcessor(
                 val isHost = hostAnnot?.getArgument("isValid") as? Boolean ?: false
                 val isNested = nestedAnnot?.getArgument("isValid") as? Boolean ?: false
                 val isBg = bgAnnot?.getArgument("isValid") as? Boolean ?: false
+                val isToggle = toggleAnnot?.getArgument("isValid") as? Boolean ?: false
+                val isCycler = cyclerAnnot?.getArgument("isValid") as? Boolean ?: false
 
                 if (isRail) {
                     items.add(RailItemData(
@@ -238,6 +288,7 @@ class AzProcessor(
                         isHost = (railAnnot.getArgument("isHost") as? Boolean) ?: false,
                         isHome = (railAnnot.getArgument("home") as? Boolean) ?: false,
                         hasContent = hasContent,
+                        isAction = isAction,
                         functionName = name,
                         packageName = pkg,
                         symbol = symbol
@@ -258,6 +309,7 @@ class AzProcessor(
                         text = (nestedAnnot.getArgument("text") as? String)?.takeIf { it.isNotEmpty() } ?: inferredText,
                         icon = (nestedAnnot.getArgument("icon") as? Int) ?: 0,
                         hasContent = hasContent,
+                        isAction = isAction,
                         functionName = name,
                         packageName = pkg,
                         symbol = symbol
@@ -265,6 +317,31 @@ class AzProcessor(
                 } else if (isBg) {
                     items.add(BackgroundData(
                         weight = (bgAnnot!!.getArgument("weight") as? Int) ?: 0,
+                        functionName = name,
+                        packageName = pkg,
+                        symbol = symbol
+                    ))
+                } else if (isToggle) {
+                    items.add(ToggleData(
+                        id = (toggleAnnot!!.getArgument("id") as? String)?.takeIf { it.isNotEmpty() } ?: inferredId,
+                        parent = (toggleAnnot.getArgument("parent") as? String) ?: "",
+                        toggleOnText = (toggleAnnot.getArgument("toggleOnText") as? String) ?: "On",
+                        toggleOffText = (toggleAnnot.getArgument("toggleOffText") as? String) ?: "Off",
+                        hasContent = hasContent,
+                        isAction = isAction,
+                        functionName = name,
+                        packageName = pkg,
+                        symbol = symbol
+                    ))
+                } else if (isCycler) {
+                    val rawOptions = cyclerAnnot!!.getArgument("options") as? ArrayList<*>
+                    val optionsList = rawOptions?.map { it.toString() } ?: emptyList()
+                    items.add(CyclerData(
+                        id = (cyclerAnnot.getArgument("id") as? String)?.takeIf { it.isNotEmpty() } ?: inferredId,
+                        parent = (cyclerAnnot.getArgument("parent") as? String) ?: "",
+                        options = optionsList,
+                        hasContent = hasContent,
+                        isAction = isAction,
                         functionName = name,
                         packageName = pkg,
                         symbol = symbol
