@@ -215,6 +215,6 @@ private fun NestedRailItemWrapper(
             hostStates[item.id] = !(hostStates[item.id] ?: false)
         },
         infoScreen = false,
-        activeColor = scope.activeColor
+        activeColor = MaterialTheme.colorScheme.primary
     )
 }
