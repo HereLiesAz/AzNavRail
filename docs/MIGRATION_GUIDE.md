@@ -1,126 +1,78 @@
-# The Great Purge: Migrating to High-Inference
+# Migration Guide: Surviving the Automation Purge
 
-**Current Status:** `Legacy Boilerplate` ➔ **Target:** `High-Inference Dictatorship`
+If you are reading this, you are attempting to upgrade AzNavRail from its chaotic, manual-DSL era to the totalitarian KSP architecture. The old ways of hand-crafting your `AzHostActivityLayout` and meticulously typing `azSettings` are dead. 
 
-This guide details how to migrate your application from the manual `AzHostActivityLayout` configuration to the automated `@Az` annotation system.
+Follow this sequence to avoid compilation failure and structural collapse.
 
-The "New Way" is not a suggestion. It is the architectural standard. It eliminates 95% of the setup code and enforces layout compliance at compile time.
+## Phase 1: Eradicate the Manual Graph
 
----
+You previously built your UI inside `setContent { ... }` using a sprawling DSL block. 
 
-## 1. Dependency Updates
+**Action:** Delete it. Delete all of it. The `AzHostActivityLayout`, the `AzNavHost`, the `composable` routes. KSP generates this now.
 
-You must install the **Processor** (The Brains) and the **Annotations** (The Signals).
+## Phase 2: Surrender the Activity
 
-**`app/build.gradle.kts`**
+Your `MainActivity` must now bow to the generated structural authority.
 
-~~~kotlin
-plugins {
-    // 1. Add KSP (Must match your Kotlin version)
-    id("com.google.devtools.ksp") version "2.0.0-1.0.21" 
-}
-
-dependencies {
-    implementation("com.github.HereLiesAz.AzNavRail:aznavrail:VERSION")
-    
-    // 2. Add the High-Inference Modules
-    implementation("com.github.HereLiesAz.AzNavRail:aznavrail-annotation:VERSION")
-    ksp("com.github.HereLiesAz.AzNavRail:aznavrail-processor:VERSION")
-}
-~~~
-
----
-
-## 2. The Activity Coup
-
-**Goal:** Eliminate `setContent`, `AzHostActivityLayout`, and manual `AzNavHost` construction.
-
-**Legacy (The Old Way):**
+**Old Way:**
 ~~~kotlin
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { 
-            val navController = rememberNavController()
-            AzHostActivityLayout(navController = navController) {
-                azTheme(...)
-                azConfig(...)
-                azRailItem(...)
-                onscreen { ... }
-            }
+        setContent {
+            AzHostActivityLayout(...) { ... }
         }
     }
 }
 ~~~
 
-**High-Inference (The New Way):**
+**The New Mandate:**
+Extend `AzActivity` and declare the generated `AzGraph`. The `onCreate` logic is handled for you.
+
 ~~~kotlin
-// 1. Configuration moves to the Annotation
-@Az(app = App(dock = AzDockingSide.LEFT, theme = AzTheme.GlitchNoir))
+@Az(app = AzApp(dock = AzDockingSide.LEFT))
 class MainActivity : AzActivity() {
-    // 2. Point to the Generated Graph
-    override val graph = AzGraph 
+    override val graph = AzGraph
 }
 ~~~
 
----
+## Phase 3: The Dissolution of `azSettings`
 
-## 3. The Station Migration
+The bloated, omnipotent `azSettings` function has been destroyed for crimes against modularity. You must split your runtime configurations into three distinct sectors within the `configureRail()` escape hatch.
 
-**Goal:** Convert manual `azRailItem` calls into annotated Composables.
+**Action:** Move your parameters to their designated functions.
 
-**Legacy (The Old Way):**
-*Defined inside the Activity DSL:*
+1.  **`azTheme { ... }`**: Visual aesthetics (colors, shapes, widths, footer visibility).
+2.  **`azConfig { ... }`**: Behavioral mechanics (docking side, haptics, packing, missing menus).
+3.  **`azAdvanced { ... }`**: System-level manipulation (loading screens, help overlays, floating windows).
+
 ~~~kotlin
-azRailItem(id = "home", text = "Home", route = "home")
-// ...
-composable("home") { HomeScreen() }
-~~~
+class MainActivity : AzActivity() {
+    override val graph = AzGraph
 
-**High-Inference (The New Way):**
-*Defined on the Function itself:*
-~~~kotlin
-@Az(rail = RailItem(home = true)) // ID="home", Text="Home" inferred
-@Composable
-fun Home() { 
-    // Content 
+    // The sole survivor of the DSL era.
+    override fun AzNavRailScope.configureRail() {
+        azTheme(
+            expandedWidth = 260.dp,
+            collapsedWidth = 80.dp,
+            activeColor = Color.Red
+        )
+        
+        azConfig(
+            dockingSide = AzDockingSide.LEFT,
+            vibrate = true
+        )
+        
+        azAdvanced(
+            infoScreen = isFirstLaunch,
+            enableRailDragging = true
+        )
+    }
 }
 ~~~
 
----
+## Phase 4: Submit to the Synthetic Tongue
 
-## 4. Hierarchy Migration
+The `AzNavRailScope` has been stripped of its human conveniences. There are no longer polymorphic overloads for every conceivable combination of missing arguments.
 
-**Goal:** Convert `azRailHostItem` and `azNestedRail`.
-
-**Legacy:**
-~~~kotlin
-azRailHostItem(id = "settings", text = "Settings")
-azRailSubItem(parent = "settings", id = "wifi", text = "WiFi", route = "wifi")
-~~~
-
-**High-Inference:**
-~~~kotlin
-// Hosts are now Properties (since they have no screen content)
-@Az(railHost = RailHost) 
-val Settings = null 
-
-// Children link via 'parent'
-@Az(rail = RailItem(parent = "settings"))
-@Composable 
-fun Wifi() { ... }
-~~~
-
----
-
-## 5. Automated Migration Script
-
-Don't want to rewrite manually? We have provided a script to perform a hostile takeover of your codebase.
-
-1.  Copy `scripts/migrate_to_az.py` to your project root.
-2.  Run: `python3 migrate_to_az.py ./app/src/main/java`
-3.  The script will:
-    * Scan for usages of `azRailItem`, `azMenuItem`, etc.
-    * Extract IDs, Text, and Routes.
-    * Generate a new file `AzMigratedSpecs.kt` containing the equivalent `@Az` annotated functions.
-4.  Copy the generated code into your project and delete the old configuration.
+If you are dynamically creating items that the annotations cannot reach, you must use the explicit, monolithic function signatures. Look at `DSL.md` for the exact parameters. Do not attempt to guess; the compiler will not forgive you.
