@@ -14,7 +14,7 @@ annotation class App(
     val activeClassifiers: Array<String> = [],
     val usePhysicalDocking: Boolean = false,
     val showFooter: Boolean = true,
-    val expandedWidth: Int = -1, // -1 means ignore, fallback to default
+    val expandedWidth: Int = -1,
     val collapsedWidth: Int = -1
 )
 
@@ -24,7 +24,11 @@ annotation class Advanced(
     val isLoading: Boolean = false,
     val infoScreen: Boolean = false,
     val enableRailDragging: Boolean = false,
-    val overlayServiceClass: String = "" // Fully Qualified Domain Name of the Service
+    val overlayServiceClass: String = "",
+    val onUndock: String = "",
+    val onRailDrag: String = "",
+    val onOverlayDrag: String = "",
+    val onItemGloballyPositioned: String = ""
 )
 
 @Target(AnnotationTarget.ANNOTATION_CLASS)
@@ -38,7 +42,8 @@ annotation class RailItem(
     val disabled: Boolean = false,
     val screenTitle: String = "",
     val info: String = "",
-    val classifiers: Array<String> = []
+    val classifiers: Array<String> = [],
+    val onFocus: String = ""
 )
 
 @Target(AnnotationTarget.ANNOTATION_CLASS)
@@ -75,7 +80,8 @@ annotation class NestedRail(
     val disabled: Boolean = false,
     val screenTitle: String = "",
     val info: String = "",
-    val classifiers: Array<String> = []
+    val classifiers: Array<String> = [],
+    val onFocus: String = ""
 )
 
 @Target(AnnotationTarget.ANNOTATION_CLASS)
@@ -114,7 +120,9 @@ annotation class RelocItem(
     val disabled: Boolean = false,
     val screenTitle: String = "",
     val info: String = "",
-    val classifiers: Array<String> = []
+    val classifiers: Array<String> = [],
+    val onFocus: String = "",
+    val onRelocate: String = ""
 )
 
 @Target(AnnotationTarget.ANNOTATION_CLASS)
