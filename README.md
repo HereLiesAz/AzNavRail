@@ -11,7 +11,7 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 ### 1. Add JitPack
 In your `settings.gradle.kts` (or root `build.gradle.kts`), add the JitPack repository:
 
-```kotlin
+~~~kotlin
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
@@ -20,30 +20,30 @@ dependencyResolutionManagement {
         maven { url = uri("https://jitpack.io") }
     }
 }
-```
+~~~
 
 ### 2. Configure Your Module
 In your app module's `build.gradle.kts`, apply the KSP plugin and add dependencies.
 
 **Plugins Block:**
-```kotlin
+~~~kotlin
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("com.google.devtools.ksp") version "2.2.21-2.0.5"" // Use version compatible with your Kotlin version
+    id("com.google.devtools.ksp") version "2.2.21-2.0.5" // Use version compatible with your Kotlin version
 }
-```
+~~~
 
 **Dependencies Block:**
-```kotlin
+~~~kotlin
 dependencies {
     // Core Library
-    implementation("com.github.HereLiesAz.AzNavRail:aznavrail:7.4")
+    implementation("com.github.HereLiesAz.AzNavRail:aznavrail:<latest_version>")
     
     // Annotation Processor (Required for High-Inference System)
-    ksp("com.github.HereLiesAz.AzNavRail:aznavrail-processor:7.4")
+    ksp("com.github.HereLiesAz.AzNavRail:aznavrail-processor:<latest_version>")
 }
-```
+~~~
 
 ---
 
@@ -55,48 +55,59 @@ Let AzNavRail generate your entire navigation graph for you.
 1.  **Annotate your Activity**: Use `@Az` on your main activity to configure the app.
 2.  **Annotate your Composables**: Use `@Az` on any `@Composable` function you want in the rail.
 3.  **Connect the Graph**: Override `graph` in your activity.
+4.  **Configure Rail**: Override `configureRail()` to adjust runtime aesthetic preferences.
 
 **MainActivity.kt:**
-```kotlin
+~~~kotlin
 import com.hereliesaz.aznavrail.AzActivity
-import com.hereliesaz.aznavrail.annotation.App
 import com.hereliesaz.aznavrail.annotation.Az
+import com.hereliesaz.aznavrail.annotation.AzApp
 import com.hereliesaz.aznavrail.model.AzDockingSide
 
-@Az(app = App(dock = AzDockingSide.LEFT))
+@Az(app = AzApp(dock = AzDockingSide.LEFT))
 class MainActivity : AzActivity() {
     // The processor generates 'AzGraph' in your package automatically.
     override val graph = AzGraph
+
+    // Override to inject dynamic or runtime aesthetic configurations
+    override fun AzNavRailScope.configureRail() {
+        azTheme(
+            expandedWidth = 240.dp,
+            collapsedWidth = 80.dp
+        )
+        azConfig(
+            vibrate = true,
+            displayAppName = true
+        )
+    }
 }
-```
+~~~
 
 **Screens.kt:**
-```kotlin
+~~~kotlin
 import androidx.compose.runtime.Composable
 import androidx.compose.material3.Text
 import com.hereliesaz.aznavrail.annotation.Az
-import com.hereliesaz.aznavrail.annotation.RailItem
+import com.hereliesaz.aznavrail.annotation.AzRail
 
-@Az // ID="home", Text="Home", Icon=0
+@Az(rail = AzRail(id = "home", text = "Home", home = true, icon = R.drawable.ic_home))
 @Composable
 fun Home() {
     Text("Welcome Home")
 }
 
-@Az(rail = RailItem(text = "Settings", icon = R.drawable.ic_settings))
+@Az(rail = AzRail(id = "settings", text = "Settings", icon = R.drawable.ic_settings))
 @Composable
 fun Settings() {
     Text("App Settings")
 }
-```
-
-**That's it!** No `onCreate`, no `setContent`, no manual `NavHost` setup.
+~~~
 
 ### Option B: Manual Setup (Classic Mode)
 If you prefer manual control, you must use the `AzHostActivityLayout` wrapper.
 
 **MainActivity.kt:**
-```kotlin
+~~~kotlin
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -104,28 +115,29 @@ class MainActivity : ComponentActivity() {
             val navController = rememberNavController()
 
             // ⚠️ MANDATORY WRAPPER
-            AzHostActivityLayout(navController = navController) {
-
-                // 1. Theme & Config
-                azTheme(activeColor = Color.Cyan)
-                azConfig(dockingSide = AzDockingSide.LEFT)
-
-                // 2. Define Items
-                azRailItem(id = "home", text = "Home", route = "home")
-                azRailItem(id = "settings", text = "Settings", route = "settings")
-
-                // 3. Define Content Area
-                onscreen {
+            AzHostActivityLayout(
+                navController = navController,
+                onscreen = {
                     AzNavHost(startDestination = "home") {
                         composable("home") { Home() }
                         composable("settings") { Settings() }
                     }
                 }
+            ) {
+                // 1. Theme
+                azTheme(activeColor = Color.Cyan)
+                
+                // 2. Config
+                azConfig(dockingSide = AzDockingSide.LEFT)
+
+                // 3. Define Items
+                azRailItem(id = "home", text = "Home", route = "home")
+                azRailItem(id = "settings", text = "Settings", route = "settings")
             }
         }
     }
 }
-```
+~~~
 
 ---
 
