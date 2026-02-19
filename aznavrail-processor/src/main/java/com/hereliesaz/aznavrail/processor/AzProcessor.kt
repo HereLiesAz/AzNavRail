@@ -2,8 +2,11 @@ package com.hereliesaz.aznavrail.processor
 
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.validate
 import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
+import java.util.Locale
 
 class AzProcessor(
     private val codeGenerator: CodeGenerator,
@@ -55,18 +58,16 @@ class AzProcessor(
 
         val builder = CodeBlock.builder()
 
-        // 1. Open setContent
         builder.beginControlFlow("activity.setContent")
         builder.addStatement("val navController = rememberNavController()")
 
-        // 2. Open AzHostActivityLayout (MANUAL INDENTATION)
-        // We do this manually to avoid 'cannot unindent' errors from ambiguous control flows
+        // MANUAL BLOCK: Circumventing KotlinPoet's unindent bug
         builder.add("AzHostActivityLayout(\n")
         builder.indent()
         builder.addStatement("navController = navController,")
         builder.unindent()
-        builder.addStatement(") {") // Explicitly open block
-        builder.indent()            // Explicitly indent
+        builder.addStatement(") {") 
+        builder.indent()
 
         if (appConfig.dock != null) {
             builder.add("azConfig(\n")
@@ -96,7 +97,8 @@ class AzProcessor(
         val homeItem = items.filterIsInstance<RailItemData>().find { it.isHome && it.hasContent }
         val startDest = homeItem?.id ?: contentItems.firstOrNull()?.id ?: "home"
 
-        // 3. Open AzNavHost
+        // THE RESURRECTION: 'onscreen' is back to provide the @Composable context
+        builder.beginControlFlow("onscreen")
         builder.beginControlFlow("AzNavHost(startDestination = %S)", startDest)
 
         contentItems.forEach { item ->
@@ -107,19 +109,17 @@ class AzProcessor(
             builder.endControlFlow()
         }
 
-        // CLOSE BLOCKS
-        builder.endControlFlow() // Closes AzNavHost
+        builder.endControlFlow() // Close AzNavHost
+        builder.endControlFlow() // Close onscreen
 
-        builder.unindent()       // Manually unindent AzHostActivityLayout
-        builder.addStatement("}") // Manually close AzHostActivityLayout
+        builder.unindent()
+        builder.addStatement("}") // Close AzHostActivityLayout manually
 
-        builder.endControlFlow() // Closes activity.setContent
+        builder.endControlFlow() // Close activity.setContent
 
         return builder.build()
     }
 
-    // ... (generateItem, data classes, and extract methods remain unchanged)
-    
     private fun generateItem(builder: CodeBlock.Builder, item: ItemData, childrenMap: Map<String, List<ItemData>>) {
          when (item) {
             is RailItemData -> {
