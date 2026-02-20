@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity() {
 ~~~
 
 **The New Mandate:**
-Extend `AzActivity` and declare the generated `AzGraph`. The `onCreate` logic is handled for you by the synthetic backend.
+Extend `AzActivity` and declare the generated `AzGraph`. The `onCreate` logic is handled for you by the synthetic backend. Note that your custom functions and state properties can now live safely inside the Activity; the processor will find them.
 
 ~~~kotlin
 @Az(app = App(dock = AzDockingSide.LEFT))
@@ -36,40 +36,39 @@ class MainActivity : AzActivity() {
 }
 ~~~
 
-## Phase 3: The Annihilation of `azSettings` and `azTheme`
+## Phase 3: The Rebirth of `azTheme` as `@Theme`
 
-The bloated, omnipotent `azSettings` function has been destroyed for crimes against modularity. **Furthermore, `azTheme` has been entirely eradicated.** The layout engine refuses to act as your interior decorator. Your app's `MaterialTheme` now controls the colors. 
+The bloated, omnipotent `azSettings` function has been destroyed for crimes against modularity. We originally burned `azTheme` to the ground entirely, but it has been resurrected from the ashes as a declarative annotation.
 
-Parameters that previously lived in `azTheme` (like `expandedWidth`, `collapsedWidth`, and `showFooter`) have been absorbed into `azConfig` and the `@App` annotation.
+Parameters that previously lived in `azTheme` (like `expandedWidth` and `collapsedWidth`) have been absorbed into `azConfig` and the `@App` annotation.
 
-**Action:** Move your structural parameters to their designated functions and delete all references to colors and shapes.
-
-1.  **`azConfig { ... }`**: Behavioral mechanics and geometry (docking side, width, haptics, footer visibility).
-2.  **`azAdvanced { ... }`**: System-level manipulation (loading screens, help overlays, floating windows).
+**Action:** Move your structural and aesthetic parameters to the top-level annotations.
 
 ~~~kotlin
+@Az(
+    app = App(
+        dock = AzDockingSide.LEFT,
+        expandedWidth = 260,
+        collapsedWidth = 80
+    ),
+    theme = Theme(
+        activeColorHex = "#FF00FF",
+        defaultShape = AzButtonShape.ROUNDED_RECTANGLE
+    ),
+    advanced = Advanced(
+        enableRailDragging = true,
+        onRailDrag = "MyDragCallback" // The processor will wire this to instance.MyDragCallback()
+    )
+)
 class MainActivity : AzActivity() {
     override val graph = AzGraph
-
-    override fun AzNavRailScope.configureRail() {
-        azConfig(
-            dockingSide = AzDockingSide.LEFT,
-            expandedWidth = 260.dp,
-            collapsedWidth = 80.dp,
-            showFooter = true,
-            vibrate = true
-        )
-        
-        azAdvanced(
-            infoScreen = isFirstLaunch,
-            enableRailDragging = true
-        )
-    }
+    
+    fun MyDragCallback(x: Float, y: Float) { }
 }
 ~~~
 
 ## Phase 4: Submit to the Synthetic Tongue
 
-The `AzNavRailScope` has been stripped of its human conveniences. There are no longer polymorphic overloads for every conceivable combination of arguments, and all parameters relating to `color` and `shape` have been removed from the item builders.
+The `AzNavRailScope` has been stripped of its human conveniences. There are no longer polymorphic overloads for every conceivable combination of arguments.
 
 If you are dynamically creating items that the annotations cannot reach, you must use the explicit, monolithic function signatures. Look at `DSL.md` for the exact parameters. Do not attempt to guess; the compiler will not forgive you.
