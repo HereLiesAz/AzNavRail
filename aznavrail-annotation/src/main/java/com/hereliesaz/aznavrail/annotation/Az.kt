@@ -1,4 +1,3 @@
-// aznavrail-annotation/src/main/java/com/hereliesaz/aznavrail/annotation/Az.kt
 package com.hereliesaz.aznavrail.annotation
 
 import com.hereliesaz.aznavrail.model.AzButtonShape
@@ -50,7 +49,7 @@ annotation class RailItem(
     val id: String = "",
     val text: String = "",
     val icon: Int = 0,
-    val iconText: String = "", // RESTORED: Allows text-based icons like "42"
+    val iconText: String = "",
     val home: Boolean = false,
     val parent: String = "",
     val disabled: Boolean = false,
@@ -134,6 +133,8 @@ annotation class RelocItem(
     val parent: String = "",
     val id: String = "",
     val text: String = "",
+    val icon: Int = 0,
+    val iconText: String = "",
     val hiddenMenuRoutes: Array<String> = [],
     val hiddenMenuActions: Array<String> = [], 
     val hiddenMenuInputs: Array<String> = [],  
