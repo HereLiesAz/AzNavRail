@@ -1,3 +1,4 @@
+// aznavrail-annotation/src/main/java/com/hereliesaz/aznavrail/annotation/Az.kt
 package com.hereliesaz.aznavrail.annotation
 
 import com.hereliesaz.aznavrail.model.AzButtonShape
@@ -25,7 +26,7 @@ annotation class App(
 @Target(AnnotationTarget.ANNOTATION_CLASS)
 annotation class Theme(
     val isValid: Boolean = true,
-    val activeColorHex: String = "", // e.g. "#FF00FF"
+    val activeColorHex: String = "", 
     val defaultShape: AzButtonShape = AzButtonShape.CIRCLE,
     val headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE
 )
@@ -49,6 +50,7 @@ annotation class RailItem(
     val id: String = "",
     val text: String = "",
     val icon: Int = 0,
+    val iconText: String = "", // RESTORED: Allows text-based icons like "42"
     val home: Boolean = false,
     val parent: String = "",
     val disabled: Boolean = false,
@@ -64,6 +66,7 @@ annotation class MenuItem(
     val id: String = "",
     val text: String = "",
     val icon: Int = 0,
+    val iconText: String = "",
     val parent: String = "",
     val disabled: Boolean = false,
     val screenTitle: String = "",
@@ -76,6 +79,7 @@ annotation class RailHost(
     val id: String = "",
     val text: String = "",
     val icon: Int = 0,
+    val iconText: String = "",
     val isMenu: Boolean = false,
     val disabled: Boolean = false,
     val screenTitle: String = "",
@@ -89,6 +93,7 @@ annotation class NestedRail(
     val id: String = "",
     val text: String = "",
     val icon: Int = 0,
+    val iconText: String = "",
     val disabled: Boolean = false,
     val screenTitle: String = "",
     val info: String = "",
@@ -130,8 +135,8 @@ annotation class RelocItem(
     val id: String = "",
     val text: String = "",
     val hiddenMenuRoutes: Array<String> = [],
-    val hiddenMenuActions: Array<String> = [], // Automatically wired to listItem
-    val hiddenMenuInputs: Array<String> = [],  // Automatically wired to inputItem
+    val hiddenMenuActions: Array<String> = [], 
+    val hiddenMenuInputs: Array<String> = [],  
     val disabled: Boolean = false,
     val screenTitle: String = "",
     val info: String = "",
