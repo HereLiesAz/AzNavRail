@@ -1,7 +1,6 @@
 package com.hereliesaz.aznavrail.internal
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -37,15 +36,28 @@ internal fun RailContent(
         AzButtonShape.ROUNDED_RECTANGLE -> RoundedCornerShape(12.dp)
     }
 
+    val displayText = when {
+        item.isToggle -> if (item.isChecked) item.toggleOnText else item.toggleOffText
+        item.isCycler -> item.selectedOption ?: ""
+        else -> item.text
+    }
+
     Box(modifier = dragModifier.clip(shapeModifier)) {
         AzButton(
             onClick = {
-                onClick?.invoke()
-                onItemClick()
+                if (item.isCycler) {
+                    onRailCyclerClick(item)
+                } else if (item.isHost) {
+                    onHostClick?.invoke()
+                } else {
+                    onClick?.invoke()
+                    onItemClick()
+                }
             },
-            text = item.text,
+            text = displayText ?: "",
             shape = shape,
-            activeColor = if (isSelected) activeColor else MaterialTheme.colorScheme.onSurface
+            activeColor = if (isSelected) activeColor else MaterialTheme.colorScheme.onSurface,
+            enabled = !item.disabled
         )
     }
 }
