@@ -318,8 +318,8 @@ fun AzNavRail(
                     if (isAppIcon) {
                         val headerIconShapeModifier = when (scope.headerIconShape) {
                             AzHeaderIconShape.CIRCLE -> CircleShape
-                            AzHeaderIconShape.ROUNDED_SQUARE -> RoundedCornerShape(8.dp)
-                            AzHeaderIconShape.SQUARE -> RectangleShape
+                            AzHeaderIconShape.ROUNDED -> RoundedCornerShape(8.dp)
+                            AzHeaderIconShape.NONE -> RectangleShape
                         }
                         if (appIcon != null) {
                             Image(painter = rememberAsyncImagePainter(model = appIcon), contentDescription = "Toggle menu", modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize).clip(headerIconShapeModifier))
@@ -379,7 +379,7 @@ fun AzNavRail(
                             }
                         }
                     }
-                    if (scope.showFooter) Footer(appName = appName, onToggle = { isExpanded = !isExpanded }, onUndock = { if (scope.onUndock != null) scope.onUndock?.invoke() else if (scope.overlayService != null) OverlayHelper.launch(context, scope.overlayService) else { isFloating = true; isExpanded = false; if (scope.displayAppName) isAppIcon = true } }, scope = scope, footerColor = actualActiveColor)
+                    if (scope.showFooter) Footer(appName = appName, onToggle = { isExpanded = !isExpanded }, onUndock = { if (scope.onUndock != null) scope.onUndock?.invoke() else { val os = scope.overlayService; if (os != null) OverlayHelper.launch(context, os) else { isFloating = true; isExpanded = false; if (scope.displayAppName) isAppIcon = true } } }, scope = scope, footerColor = actualActiveColor)
                 } else {
                     AnimatedVisibility(visible = !isFloating || showFloatingButtons, modifier = Modifier.fillMaxSize()) {
                         val scrollState = rememberScrollState()
