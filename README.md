@@ -49,8 +49,7 @@ dependencies {
 
 ## 🛠️ Usage
 
-### Option A: High-Inference (Recommended)
-Let AzNavRail generate your entire navigation graph for you.
+AzNavRail relies entirely on the High-Inference annotation system. The library generates your entire navigation graph and enforces strict layout laws automatically.
 
 1.  **Annotate your Activity**: Use `@Az` on your main activity to configure the app.
 2.  **Annotate your Composables**: Use `@Az` on any `@Composable` function you want in the rail.
@@ -98,39 +97,6 @@ fun Home() {
 @Composable
 fun Settings() {
     Text("App Settings")
-}
-~~~
-
-### Option B: Manual Setup (Classic Mode)
-If you prefer manual control, you must use the `AzHostActivityLayout` wrapper to avoid fatal safe-zone violations.
-
-**MainActivity.kt:**
-~~~kotlin
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            val navController = rememberNavController()
-
-            // ⚠️ MANDATORY WRAPPER
-            AzHostActivityLayout(
-                navController = navController,
-                onscreen = {
-                    AzNavHost(startDestination = "home") {
-                        composable("home") { Home() }
-                        composable("settings") { Settings() }
-                    }
-                }
-            ) {
-                // 1. Config
-                azConfig(dockingSide = AzDockingSide.LEFT)
-
-                // 2. Define Items
-                azRailItem(id = "home", text = "Home", route = "home")
-                azRailItem(id = "settings", text = "Settings", route = "settings")
-            }
-        }
-    }
 }
 ~~~
 
