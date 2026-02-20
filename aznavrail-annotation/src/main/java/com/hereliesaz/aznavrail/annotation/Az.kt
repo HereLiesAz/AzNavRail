@@ -1,7 +1,9 @@
-// aznavrail-annotation/src/main/java/com/hereliesaz/aznavrail/annotation/Az.kt
 package com.hereliesaz.aznavrail.annotation
 
+import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
+import com.hereliesaz.aznavrail.model.AzHeaderIconShape
+import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 
 @Target(AnnotationTarget.ANNOTATION_CLASS)
 annotation class App(
@@ -15,7 +17,17 @@ annotation class App(
     val usePhysicalDocking: Boolean = false,
     val showFooter: Boolean = true,
     val expandedWidth: Int = -1,
-    val collapsedWidth: Int = -1
+    val collapsedWidth: Int = -1,
+    val initiallyExpanded: Boolean = false,
+    val disableSwipeToOpen: Boolean = false
+)
+
+@Target(AnnotationTarget.ANNOTATION_CLASS)
+annotation class Theme(
+    val isValid: Boolean = true,
+    val activeColorHex: String = "", // e.g. "#FF00FF"
+    val defaultShape: AzButtonShape = AzButtonShape.CIRCLE,
+    val headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE
 )
 
 @Target(AnnotationTarget.ANNOTATION_CLASS)
@@ -81,7 +93,8 @@ annotation class NestedRail(
     val screenTitle: String = "",
     val info: String = "",
     val classifiers: Array<String> = [],
-    val onFocus: String = ""
+    val onFocus: String = "",
+    val alignment: AzNestedRailAlignment = AzNestedRailAlignment.VERTICAL
 )
 
 @Target(AnnotationTarget.ANNOTATION_CLASS)
@@ -117,6 +130,8 @@ annotation class RelocItem(
     val id: String = "",
     val text: String = "",
     val hiddenMenuRoutes: Array<String> = [],
+    val hiddenMenuActions: Array<String> = [], // Automatically wired to listItem
+    val hiddenMenuInputs: Array<String> = [],  // Automatically wired to inputItem
     val disabled: Boolean = false,
     val screenTitle: String = "",
     val info: String = "",
@@ -139,6 +154,7 @@ annotation class Divider(
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY)
 annotation class Az(
     val app: App = App(isValid = false),
+    val theme: Theme = Theme(isValid = false),
     val advanced: Advanced = Advanced(isValid = false),
     val rail: RailItem = RailItem(isValid = false),
     val menu: MenuItem = MenuItem(isValid = false),
