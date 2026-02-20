@@ -88,13 +88,13 @@ import androidx.compose.material3.Text
 import com.hereliesaz.aznavrail.annotation.Az
 import com.hereliesaz.aznavrail.annotation.RailItem
 
-@Az(rail = RailItem(home = true, icon = R.drawable.ic_home))
+@Az(rail = RailItem(id = "home", text = "Home", home = true, icon = R.drawable.ic_home))
 @Composable
 fun Home() {
     Text("Welcome Home")
 }
 
-@Az(rail = RailItem(icon = R.drawable.ic_settings))
+@Az(rail = RailItem(id = "settings", text = "Settings", icon = R.drawable.ic_settings))
 @Composable
 fun Settings() {
     Text("App Settings")
