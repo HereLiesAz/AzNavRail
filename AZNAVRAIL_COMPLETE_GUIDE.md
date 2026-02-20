@@ -13,7 +13,6 @@ Welcome to the comprehensive guide for **AzNavRail**. This document details the 
 3.  [State & Action Binding](#state--action-binding)
 4.  [Strict Layout Rules](#strict-layout-rules)
 5.  [Annotation Reference (@Az)](#annotation-reference-az)
-6.  [Component Reference](#component-reference)
 
 ---
 
@@ -21,20 +20,7 @@ Welcome to the comprehensive guide for **AzNavRail**. This document details the 
 
 ### 1. Installation
 
-Add JitPack to your project's `settings.gradle.kts`:
-
-~~~kotlin
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        mavenCentral()
-        maven { url = uri("https://jitpack.io") }
-    }
-}
-~~~
-
 Add the **KSP Plugin** and dependencies to your app's `build.gradle.kts`.
-**Crucial:** The KSP version must match your Kotlin version.
 
 ~~~kotlin
 plugins {
@@ -64,6 +50,7 @@ class MainActivity : AzActivity() {
         azConfig(
             vibrate = true,
             displayAppName = true
+            // Dynamic overrides for expandedWidth, etc., go here
         )
     }
 }
@@ -91,17 +78,6 @@ The KSP Processor enforces the following architecture:
 1.  **Zero-Talk Inference**: If you do not provide an `id` or `text` in the annotation, it is derived from the symbol name (e.g., `fun WiFiSettings` -> ID: `wifi_settings`, Text: "WiFi Settings").
 2.  **Hierarchy**: To create sub-menus, define a **Host** (using a property) and link children to it using `parent`.
 
-~~~kotlin
-// Define a Host (Expands in Rail)
-@Az(host = RailHost(icon = R.drawable.ic_settings))
-val System = null // Placeholder property
-
-// Link a Child to the Host
-@Az(rail = RailItem(parent = "system"))
-@Composable 
-fun Wifi() { ... }
-~~~
-
 ---
 
 ## State & Action Binding
@@ -110,13 +86,6 @@ The system differentiates between screens, transient actions, and state toggles 
 
 ### Action Binding (Transient Execution)
 If you annotate a function that is **NOT** a `@Composable`, the system wires it as an `onClick` transient action. It will execute and the rail will immediately collapse.
-
-~~~kotlin
-@Az(rail = RailItem(icon = R.drawable.ic_logout))
-fun Logout() {
-    authSystem.terminate()
-}
-~~~
 
 ### State Binding (Puppeteering)
 If you annotate a `var` property with `@Az(toggle = ...)` or `@Az(cycler = ...)`, the compiler assumes this is the source of truth. It will inject property delegation into the UI to automatically read and mutate your variable. 
@@ -140,42 +109,4 @@ The generated `AzGraph` automatically wraps your content in `AzHostActivityLayou
 4.  **Aesthetic Purge**: The layout handles geometry. Your app's `MaterialTheme` handles the paint. 
 
 ### Backgrounds
-To place content (like Maps) behind the safe zones, annotate a composable with `@Az(background = Background(weight = 0))`. 
-
----
-
-## Annotation Reference (@Az)
-
-### `app = App(...)`
-Used on `MainActivity`. Defines global geometry and behavior.
-* `dock`, `expandedWidth`, `collapsedWidth`, `packButtons`, `usePhysicalDocking`.
-
-### `advanced = Advanced(...)`
-Used on `MainActivity`. Binds system overlays and drags.
-* `infoScreen`, `isLoading`, `overlayServiceClass`, `onUndock`, `onRailDrag`.
-
-### `rail = RailItem(...)` / `menu = MenuItem(...)`
-Defines a standard screen or action. `menu` items appear only in the footer.
-* `id`, `text`, `icon`, `parent`, `home`, `disabled`, `classifiers`.
-
-### `host = RailHost(...)`
-Defines a parent item that expands to show children.
-
-### `nested = NestedRail(...)`
-Defines a popup menu structure.
-
-### `toggle = Toggle(...)` / `cycler = Cycler(...)`
-Defines state-bound interactive elements.
-
-### `reloc = RelocItem(...)`
-Defines an item that can be dragged and reordered by the user, revealing hidden menus.
-
----
-
-## Component Reference
-
-### `AzTextBox`
-A versatile text input with autocomplete, multiline, and "Secret" modes.
-
-### `AzRoller`
-A slot-machine style dropdown with split-click interaction.
+To place content (like Maps) behind the safe zones, annotate a composable with `@Az(background = Background(weight = 0))`.
