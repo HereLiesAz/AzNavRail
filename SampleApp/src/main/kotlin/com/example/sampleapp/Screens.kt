@@ -3,8 +3,10 @@ package com.example.sampleapp
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -22,6 +24,7 @@ import com.hereliesaz.aznavrail.annotation.Az
 import com.hereliesaz.aznavrail.annotation.RailItem
 import com.hereliesaz.aznavrail.model.AzDockingSide
 
+@OptIn(ExperimentalLayoutApi::class)
 @Az(rail = RailItem(home = true))
 @Composable
 fun Home() {
@@ -38,8 +41,11 @@ fun Home() {
         Text("Configuration", style = MaterialTheme.typography.headlineSmall)
 
         if (activity != null) {
-            // Docking & Packing
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 AzToggle(
                     isChecked = activity.dockingSide == AzDockingSide.LEFT,
                     onToggle = { activity.dockingSide = if (activity.dockingSide == AzDockingSide.LEFT) AzDockingSide.RIGHT else AzDockingSide.LEFT },
@@ -52,10 +58,6 @@ fun Home() {
                     toggleOnText = "Packed: On",
                     toggleOffText = "Packed: Off"
                 )
-            }
-
-            // Footer & Name & NoMenu
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AzToggle(
                     isChecked = activity.showFooter,
                     onToggle = { activity.showFooter = !activity.showFooter },
@@ -74,10 +76,6 @@ fun Home() {
                     toggleOnText = "No Menu: On",
                     toggleOffText = "No Menu: Off"
                 )
-            }
-
-            // Advanced Features
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AzToggle(
                     isChecked = activity.usePhysicalDocking,
                     onToggle = { activity.usePhysicalDocking = !activity.usePhysicalDocking },
@@ -90,9 +88,6 @@ fun Home() {
                     toggleOnText = "Info: On",
                     toggleOffText = "Info: Off"
                 )
-            }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AzToggle(
                     isChecked = activity.vibrate,
                     onToggle = { activity.vibrate = !activity.vibrate },
@@ -112,9 +107,14 @@ fun Home() {
 
         Text("Components Showcase", style = MaterialTheme.typography.headlineSmall)
 
-        AzButton(onClick = {}, text = "Normal Button")
-        AzButton(onClick = {}, text = "Loading", isLoading = true)
-        AzButton(onClick = {}, text = "Disabled", enabled = false)
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            AzButton(onClick = {}, text = "Normal Button")
+            AzButton(onClick = {}, text = "Loading", isLoading = true)
+            AzButton(onClick = {}, text = "Disabled", enabled = false)
+        }
 
         Text("Text Boxes", style = MaterialTheme.typography.titleMedium)
         AzTextBox(hint = "Normal Input", onSubmit = {})
