@@ -1,3 +1,4 @@
+// aznavrail/src/main/java/com/hereliesaz/aznavrail/AzNavRail.kt
 package com.hereliesaz.aznavrail
 
 import android.content.Intent
@@ -75,7 +76,6 @@ import com.hereliesaz.aznavrail.internal.MenuItem
 import com.hereliesaz.aznavrail.internal.OverlayHelper
 import com.hereliesaz.aznavrail.internal.RailItems
 import com.hereliesaz.aznavrail.model.AzDockingSide
-import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.service.LocalAzNavRailOverlayController
 import kotlinx.coroutines.delay
@@ -335,27 +335,34 @@ fun AzNavRail(
         contentAlignment = alignment
     ) {
         val buttonSize = 72.dp 
+        
+        // Massive, opposite-aligned screen title. No double-stacking padding.
+        val titleAlignment = if (isRightDocked) Alignment.TopStart else Alignment.TopEnd
+        val titlePaddingStart = if (isRightDocked) 32.dp else 0.dp
+        val titlePaddingEnd = if (isRightDocked) 0.dp else 32.dp
+
         selectedItem?.screenTitle?.let { screenTitle ->
             if (screenTitle.isNotEmpty()) {
-                Popup(alignment = Alignment.TopEnd) {
+                Popup(alignment = titleAlignment) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .windowInsetsPadding(WindowInsets.systemBars)
-                            .padding(end = 16.dp, top = 16.dp),
-                        contentAlignment = Alignment.CenterEnd
+                            .padding(start = titlePaddingStart, end = titlePaddingEnd, top = 16.dp),
+                        contentAlignment = if (isRightDocked) Alignment.CenterStart else Alignment.CenterEnd
                     ) {
                         Text(
                             text = screenTitle,
-                            style = MaterialTheme.typography.headlineMedium.copy(
-                                fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.displayLarge.copy(
+                                fontWeight = FontWeight.Black,
                                 color = MaterialTheme.colorScheme.primary
-                            )
+                            ),
+                            textAlign = if (isRightDocked) TextAlign.Start else TextAlign.End
                         )
                     }
                 }
             }
         }
+
         if (scope.isLoading) {
             Popup(
                 popupPositionProvider = CenteredPopupPositionProvider,
@@ -363,7 +370,7 @@ fun AzNavRail(
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars)
+                    modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars) // Only load indicator needs this protection now
                 ) {
                     AzLoad()
                 }
