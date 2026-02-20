@@ -80,15 +80,36 @@ The KSP Processor enforces the following architecture:
 
 ---
 
-## State & Action Binding
+## State & Action Binding: The Shape of the Function
 
-The system differentiates between screens, transient actions, and state toggles based on the *shape* of the symbol you annotate.
+The system dictates whether an item navigates to a new screen, toggles a state, or triggers a silent background process by examining the *shape* of the symbol you annotate.
 
-### Action Binding (Transient Execution)
-If you annotate a function that is **NOT** a `@Composable`, the system wires it as an `onClick` transient action. It will execute and the rail will immediately collapse.
+### 1. Screen Binding (Navigable Destinations)
+If the annotated target is a **`@Composable` function**, the processor assumes it possesses visual mass. It wires the item into the `AzNavHost` graph and assigns it a routing destination. Clicking the rail item opens the screen.
 
-### State Binding (Puppeteering)
-If you annotate a `var` property with `@Az(toggle = ...)` or `@Az(cycler = ...)`, the compiler assumes this is the source of truth. It will inject property delegation into the UI to automatically read and mutate your variable. 
+~~~kotlin
+@Az(rail = RailItem(icon = R.drawable.ic_profile))
+@Composable
+fun UserProfile() {
+    Text("Profile Screen")
+}
+~~~
+
+### 2. Action Binding (Transient Executions)
+If the annotated target is a **standard function** (without `@Composable`), the processor deduces it is a transient action. It does **not** add it to the navigation graph. Instead, it wires the function call directly to the rail item's `onClick` listener. 
+
+Clicking the item will simply execute your code and collapse the rail.
+
+~~~kotlin
+@Az(rail = RailItem(icon = R.drawable.ic_logout, text = "Log Out"))
+fun TerminateSession() {
+    authManager.clearTokens()
+    // No screen is opened. The rail just collapses.
+}
+~~~
+
+### 3. State Binding (Puppeteering)
+If you annotate a `var` property with `@Az(toggle = ...)` or `@Az(cycler = ...)`, the compiler assumes this is a source of UI truth. It automatically reads the variable to draw the UI state, and mutates the variable when the user clicks it. 
 
 *Note:* You must use Kotlin property delegation (`by mutableStateOf()`) for the UI to observe it.
 
@@ -103,10 +124,10 @@ var isDarkMode by mutableStateOf(false)
 
 The generated `AzGraph` automatically wraps your content in `AzHostActivityLayout`. This enforces:
 
-1.  **Safe Zones**: Your UI content is strictly forbidden from the **Top 20%** and **Bottom 10%** of the screen.
+1.  **Safe Zones**: Your UI content is strictly forbidden from the **Top 20%** and **Bottom 10%** of the screen. The rail itself is restricted to the **Top 10%** and **Bottom 10%**. Under no circumstances will your content obscure system bars.
 2.  **Rail Avoidance**: Content is automatically padded to avoid the rail.
 3.  **Smart Transitions**: Animations automatically reverse based on the docking side.
 4.  **Aesthetic Purge**: The layout handles geometry. Your app's `MaterialTheme` handles the paint. 
 
 ### Backgrounds
-To place content (like Maps) behind the safe zones, annotate a composable with `@Az(background = Background(weight = 0))`.
+To place content (like Maps) behind the safe zones, annotate a composable with `@Az(background = Background(weight = 0))`. Backgrounds ignore all padding and extend completely behind the navigation bars, notification bars, and the rail itself.
