@@ -26,10 +26,12 @@ The `@Az` annotation accepts the following contextual blocks:
 * `background = Background(...)`: Base layers beneath the safe zones.
 * `divider = Divider(...)`: Visual breaks in the list.
 
-## Binding Protocols
+## Binding Protocols: The Shape of the Function
 
-### 1. Screen Binding (The Standard)
-Annotate a `@Composable` function. The machine routes it into the `AzNavHost` graph.
+The machine judges your functions by their shape. It determines whether a button opens a new screen or simply executes a block of code based entirely on the presence or absence of the `@Composable` annotation.
+
+### 1. Screen Binding (The Navigable Destination)
+If your goal is to open a new screen, the function **MUST** be annotated with `@Composable`. The compiler sees the visual mass and routes it into the `AzNavHost` graph, assigning it a destination ID.
 
 ~~~kotlin
 @Az // ID: "home", Text: "Home"
@@ -39,13 +41,17 @@ fun Home() {
 }
 ~~~
 
-### 2. Action Binding (The Transient)
-Annotate a standard `fun`. The machine binds it to an `onClick` lambda. The graph ignores it.
+### 2. Action Binding (The Transient Execution)
+**What if you don't want to open a screen?** What if you just want a button that triggers a process (e.g., logging out, clearing a cache, initiating a sync)?
+
+You simply omit the `@Composable` annotation. By starving the function of visual mass, the compiler deduces it is a **transient action**. Instead of throwing it into the navigation graph, the processor wires the function directly into the button's `onClick` lambda. 
+
+When the user clicks the item, your function executes, the rail collapses instantly, and absolutely no navigation occurs.
 
 ~~~kotlin
-@Az(rail = RailItem(icon = R.drawable.ic_power))
-fun Logout() {
-    session.kill()
+@Az(rail = RailItem(icon = R.drawable.ic_power, text = "Self Destruct"))
+fun InitiatePurge() {
+    System.exit(0)
 }
 ~~~
 
@@ -68,5 +74,5 @@ var isAlertActive by mutableStateOf(false)
 ## Validation
 
 The processor enforces "The Tax":
-* Any function annotated as a screen (`RailItem`, `MenuItem`, `NestedRail`) **MUST** be annotated with `@Composable`. If it lacks the annotation, it is assumed to be a transient action.
+* Any function annotated as a screen (`RailItem`, `MenuItem`, `NestedRail`) that you *intend* to be navigable **MUST** have `@Composable`. If you forget it, the system will treat your screen as a silent, invisible action.
 * Sub-items must declare a valid, existing `parent` ID string.
