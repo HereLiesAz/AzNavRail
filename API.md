@@ -1,14 +1,73 @@
-# The Synthetic Tongue (AzNavRailScope)
+# AzNavRail API Reference
 
-This document outlines the strict API surface of `AzNavRailScope`. This interface was originally designed to cradle human frailty with dozens of redundant, polymorphic overloads and aesthetic paintbrushes.
+This document serves as the technical reference for the AzNavRail library. The facade has been stripped. The machine expects strict obedience to the high-inference architecture.
 
-Now that the KSP processor writes the UI, this facade has been brutally stripped down to a machine-to-machine dialect. Aesthetics like colors and shapes have been purged entirely from the architecture—let your app's `MaterialTheme` dress the concrete. 
+* **[1. High-Inference API](#1-high-inference-api-az)**: The annotation system used to dictate structure to the compiler.
+* **[2. The Configuration Duality (Scope API)](#2-the-configuration-duality-scope-api)**: The backend API used to inject runtime configurations.
+* **[3. UI Components](#3-ui-components)**: Standalone components (`AzTextBox`, `AzRoller`, etc.) for building screens.
+* **[4. Low-Level API](#4-low-level-api-manual)**: The underlying layout engine (`AzHostActivityLayout`).
 
-If you find yourself manually typing these functions to construct items, rather than using `@Az` annotations, you have fundamentally failed to understand the system.
+---
 
-The only acceptable use of this DSL by a human is within the `configureRail()` override in your `AzActivity` to inject runtime variables.
+## 1. High-Inference API (`@Az`)
 
-## The Configuration Duality
+The primary interface for the library is the `@Az` annotation. It is a monolithic container that accepts specific context objects. The processor interprets your intent based on whether the annotated target is a `@Composable` function (Screen), a standard function (Action), or a property (State).
+
+### `com.hereliesaz.aznavrail.annotation.Az`
+
+**Target:** `FUNCTION`, `CLASS`, `PROPERTY`
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `app` | `App` | Configuration for the `MainActivity` (Global State). |
+| `advanced`| `Advanced` | Binds catastrophic system overlays and physical dimensions. |
+| `rail` | `RailItem` | Defines a standard navigation destination or transient action. |
+| `menu` | `MenuItem` | Defines an item visible *only* in the expanded footer menu. |
+| `host` | `RailHost` | Defines a parent item that expands inline. |
+| `nested` | `NestedRail` | Defines a popup menu structure. |
+| `toggle` | `Toggle` | Defines a state toggle button. |
+| `cycler` | `Cycler` | Defines a multi-option cycle button. |
+| `reloc` | `RelocItem` | Defines a draggable, reorderable item with hidden menus. |
+| `background`| `Background`| Plunges content beneath the safe zones based on weight. |
+| `divider` | `Divider` | Injects visual silence into the list. |
+
+### Context Classes
+
+#### `App` (Class Level)
+Configures the global application state. Aesthetics like colors have been abolished.
+* `dock`: `AzDockingSide` (`LEFT` or `RIGHT`).
+* `packButtons`: `Boolean`.
+* `noMenu`: `Boolean`.
+* `vibrate`: `Boolean`.
+* `displayAppName`: `Boolean`.
+* `usePhysicalDocking`: `Boolean`.
+* `showFooter`: `Boolean`.
+* `expandedWidth` / `collapsedWidth`: `Int`. (Injected as `Dp` by the compiler).
+* `activeClassifiers`: `Array<String>`.
+
+#### `Advanced` (Class Level)
+* `isLoading`, `infoScreen`, `enableRailDragging`: `Boolean`.
+* `overlayServiceClass`: `String` (Fully qualified class name).
+* Callback Binders (`String`): `onUndock`, `onRailDrag`, `onOverlayDrag`, `onItemGloballyPositioned`. (Provide the name of the function to bind).
+
+#### `RailItem` / `MenuItem` / `NestedRail`
+* `id`, `text`, `parent`: Structural routing.
+* `icon`: `Int` (Drawable Res ID).
+* `disabled`: `Boolean`.
+* `screenTitle`, `info`: `String`.
+* `classifiers`: `Array<String>`.
+* `onFocus`: `String` (Name of the function to bind).
+
+#### `Toggle` & `Cycler`
+* `toggleOnText`, `toggleOffText`: `String`.
+* `options`, `disabledOptions`: `Array<String>`.
+* **State Binding**: If you annotate a `var` property with these, the generated code will automatically read and mutate the state.
+
+---
+
+## 2. The Configuration Duality (Scope API)
+
+When extending `AzActivity`, you may optionally override `AzNavRailScope.configureRail()` to inject dynamic parameters. `azSettings` and `azTheme` were executed for treason. Use your app's `MaterialTheme` for colors.
 
 ### `azConfig`
 Controls the behavioral and geometrical mechanics.
@@ -29,7 +88,7 @@ fun azConfig(
 ~~~
 
 ### `azAdvanced`
-Controls catastrophic systemic overrides, loading states, and floating window bindings.
+Controls systemic overrides and overlays.
 
 ~~~kotlin
 fun azAdvanced(
@@ -45,24 +104,34 @@ fun azAdvanced(
 )
 ~~~
 
-## The Monolithic Item Builders
+---
 
-The following functions are strictly invoked by the generated `AzGraph`. They require explicit named parameters. `azNestedRail` and the host block are heavily strictly typed as `@Composable`.
+## 3. UI Components
 
-* `azMenuItem(id, text, route, disabled, screenTitle, info, onClick)`
-* `azRailItem(id, text, route, content, disabled, screenTitle, info, classifiers, onFocus, onClick)`
-* `@Composable azNestedRail(id, text, alignment, disabled, screenTitle, info, classifiers, onFocus) { ... }`
-* `azMenuToggle(id, isChecked, toggleOnText, toggleOffText, route, disabled, screenTitle, info, onClick)`
-* `azRailToggle(id, isChecked, toggleOnText, toggleOffText, route, disabled, screenTitle, info, onClick)`
-* `azMenuCycler(id, options, selectedOption, route, disabled, disabledOptions, screenTitle, info, onClick)`
-* `azRailCycler(id, options, selectedOption, route, disabled, disabledOptions, screenTitle, info, onClick)`
-* `azDivider()`
-* `azMenuHostItem(id, text, route, disabled, screenTitle, info, onClick)`
-* `azRailHostItem(id, text, route, disabled, screenTitle, info, onClick)`
-* `azMenuSubItem(id, hostId, text, route, disabled, screenTitle, info, onClick)`
-* `azRailSubItem(id, hostId, text, route, disabled, screenTitle, info, classifiers, onFocus, onClick)`
-* `azMenuSubToggle(id, hostId, isChecked, toggleOnText, toggleOffText, route, disabled, screenTitle, info, onClick)`
-* `azRailSubToggle(id, hostId, isChecked, toggleOnText, toggleOffText, route, disabled, screenTitle, info, onClick)`
-* `azMenuSubCycler(id, hostId, options, selectedOption, route, disabled, disabledOptions, screenTitle, info, onClick)`
-* `azRailSubCycler(id, hostId, options, selectedOption, route, disabled, disabledOptions, screenTitle, info, onClick)`
-* `azRailRelocItem(id, hostId, text, route, disabled, screenTitle, info, classifiers, onFocus, onClick, onRelocate) { ... }`
+Standalone components designed to be used **inside** your `@Composable` screens.
+
+### `AzTextBox`
+A high-ground text input field with support for autocomplete, password masking, and multiline text.
+
+### `AzRoller`
+A "Slot Machine" style dropdown. Left click to type/filter, right click to spin the barrel.
+
+### `AzButton`
+A circular or shaped button that automatically resizes text to fit.
+
+### `AzForm`
+A container for grouping multiple `AzTextBox` fields with a single submit button.
+
+---
+
+## 4. Low-Level API (Manual)
+
+**⚠️ Warning:** The KSP processor writes this code. You are observing the matrix. Do not touch it unless you are prepared for reality to collapse.
+
+### `AzActivity`
+The base class for your Activity.
+* `abstract val graph: AzGraphInterface`: Point this to the generated `AzGraph`.
+* `open fun AzNavRailScope.configureRail()`: Override to inject runtime configuration via `azConfig`, and `azAdvanced`.
+
+### `AzHostActivityLayout`
+The strict layout container. Throws `FatalLayoutViolation` if safe zones are breached.
