@@ -30,7 +30,7 @@ In your app module's `build.gradle.kts`, apply the KSP plugin and add dependenci
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("com.google.devtools.ksp") version "2.2.21-2.0.5" // Use version compatible with your Kotlin version
+    id("com.google.devtools.ksp") version "2.0.0-1.0.21" // Use version compatible with your Kotlin version
 }
 ~~~
 
@@ -51,22 +51,28 @@ dependencies {
 
 AzNavRail relies entirely on the High-Inference annotation system. The library generates your entire navigation graph and enforces strict layout laws automatically.
 
-1.  **Annotate your Activity**: Use `@Az` on your main activity to configure the app.
-2.  **Annotate your Composables**: Use `@Az` on any `@Composable` function you want in the rail.
+1.  **Annotate your Activity**: Use `@Az` on your main activity to configure the app and theme.
+2.  **Annotate your Composables & States**: Use `@Az` on any `@Composable` function, transient action, or state variable you want in the rail.
 3.  **Connect the Graph**: Override `graph` in your activity.
-4.  **Configure Rail**: Override `configureRail()` to adjust runtime behavioral preferences.
+4.  **Configure Rail**: Override `configureRail()` for dynamic runtime values.
 
 **MainActivity.kt:**
 ~~~kotlin
 import com.hereliesaz.aznavrail.AzActivity
-import com.hereliesaz.aznavrail.annotation.Az
-import com.hereliesaz.aznavrail.annotation.App
-import com.hereliesaz.aznavrail.model.AzDockingSide
+import com.hereliesaz.aznavrail.annotation.*
+import com.hereliesaz.aznavrail.model.*
 
-@Az(app = App(dock = AzDockingSide.LEFT))
+@Az(
+    app = App(dock = AzDockingSide.LEFT),
+    theme = Theme(activeColorHex = "#FF00FF", defaultShape = AzButtonShape.ROUNDED_RECTANGLE)
+)
 class MainActivity : AzActivity() {
     // The processor generates 'AzGraph' in your package automatically.
     override val graph = AzGraph
+
+    // Bind state directly. The KSP processor knows how to find this instance variable.
+    @Az(toggle = Toggle(toggleOnText = "WIFI: ON", toggleOffText = "WIFI: OFF"))
+    var isWifiOn by mutableStateOf(false)
 
     // Override to inject dynamic runtime configurations
     override fun AzNavRailScope.configureRail() {
@@ -93,10 +99,10 @@ fun Home() {
     Text("Welcome Home")
 }
 
-@Az(rail = RailItem(id = "settings", text = "Settings", icon = R.drawable.ic_settings))
+@Az(rail = RailItem(id = "secret", text = "Answer", iconText = "42"))
 @Composable
-fun Settings() {
-    Text("App Settings")
+fun SecretScreen() {
+    Text("Typographic Icons Supported")
 }
 ~~~
 
@@ -105,35 +111,13 @@ fun Settings() {
 ## 🌟 Key Features
 
 - **Responsive Layout**: Automatically adjusts to orientation changes.
-- **Strict Safe Zones**: Your UI is banned from the top 20% and bottom 10% of the screen.
+- **Strict Safe Zones**: Your UI content is violently crushed between the Top 20% and Bottom 10% marks. The Rail is imprisoned between Top 10% and Bottom 10%. Safe zones strictly guarantee no overlaps with system bars.
 - **Scrollable**: Both rail and menu are vertically/horizontally scrollable.
-- **Aesthetic Purge**: The library provides the concrete, your `MaterialTheme` provides the paint.
-- **Smart Collapse**: Items collapse the rail after interaction.
-- **State Puppeteering**: Bind state toggles and multi-option cyclers directly to `var` properties via KSP.
+- **Absolute Backgrounds**: Background layers render fully behind the system navigation and notification bars.
+- **State Puppeteering**: Bind state toggles, transient actions, and multi-option cyclers directly to functions and `var` properties inside your Activity via KSP.
 - **Nested Rails**: Support for nested navigation structures (`azNestedRail`) with both Vertical and Horizontal popups.
 - **Draggable (FAB Mode)**: Detach and move the rail by long-pressing the header.
-- **Reorderable Items**: `RelocItem` allows user drag-and-drop reordering.
+- **Reorderable Items**: `RelocItem` allows user drag-and-drop reordering with hidden floating actions.
 - **System Overlay**: System-wide floating overlay window support built-in.
-- **Info Screen**: Interactive help mode for onboarding.
 
-[API Reference](/API.md) | [Full DSL](/DSL.md) | [Project Structure](/PROJECT_STRUCTURE.md)
-
-## Documentation
-
-The library includes a comprehensive **Complete Guide** (`AZNAVRAIL_COMPLETE_GUIDE.md`) in the `docs/` folder containing detailed instructions, API references, and best practices.
-
-## License
-
-Copyright 2024 The AzNavRail Authors
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    https://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either expressed or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+[API Reference](API.md) | [Full DSL](DSL.md) | [Complete Guide](AZNAVRAIL_COMPLETE_GUIDE.md)
