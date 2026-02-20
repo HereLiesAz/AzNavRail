@@ -33,11 +33,12 @@ internal fun RailContent(
     val shapeModifier = when (shape) {
         AzButtonShape.CIRCLE -> CircleShape
         AzButtonShape.RECTANGLE -> RectangleShape
-        AzButtonShape.ROUNDED_RECTANGLE -> RoundedCornerShape(12.dp)
+        AzButtonShape.SQUARE -> RectangleShape
+        AzButtonShape.NONE -> RectangleShape
     }
 
     val displayText = when {
-        item.isToggle -> if (item.isChecked) item.toggleOnText else item.toggleOffText
+        item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
         item.isCycler -> item.selectedOption ?: ""
         else -> item.text
     }
