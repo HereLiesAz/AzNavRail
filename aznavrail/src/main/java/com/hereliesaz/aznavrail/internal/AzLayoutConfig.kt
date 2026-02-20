@@ -8,10 +8,15 @@ import androidx.compose.ui.unit.dp
  * Configuration constants for the AzNavRail layout.
  */
 object AzLayoutConfig {
-    /** The percentage of screen height reserved for the safe top zone (20%). */
-    const val SafeTopPercent = 0.2f
-    /** The percentage of screen height reserved for the safe bottom zone (10%). */
-    const val SafeBottomPercent = 0.1f
+    /** The percentage of screen height reserved for the content safe top zone (20%). */
+    const val ContentSafeTopPercent = 0.2f
+    /** The percentage of screen height reserved for the content safe bottom zone (10%). */
+    const val ContentSafeBottomPercent = 0.1f
+    
+    /** The percentage of screen height reserved for the rail safe top zone (10%). */
+    const val RailSafeTopPercent = 0.1f
+    /** The percentage of screen height reserved for the rail safe bottom zone (10%). */
+    const val RailSafeBottomPercent = 0.1f
 }
 
 /**
