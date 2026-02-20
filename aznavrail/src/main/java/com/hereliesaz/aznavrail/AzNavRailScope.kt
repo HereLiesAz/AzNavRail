@@ -1,4 +1,3 @@
-// aznavrail/src/main/java/com/hereliesaz/aznavrail/AzNavRailScope.kt
 package com.hereliesaz.aznavrail
 
 import androidx.compose.ui.geometry.Rect
@@ -14,55 +13,27 @@ import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 
 interface AzNavRailScope {
+    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 130.dp, collapsedWidth: Dp = 80.dp, showFooter: Boolean = true)
+    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.CIRCLE, headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE)
+    fun azAdvanced(isLoading: Boolean = false, infoScreen: Boolean = false, onDismissInfoScreen: (() -> Unit)? = null, overlayService: Class<out android.app.Service>? = null, onUndock: (() -> Unit)? = null, enableRailDragging: Boolean = false, onRailDrag: ((Float, Float) -> Unit)? = null, onOverlayDrag: ((Float, Float) -> Unit)? = null, onItemGloballyPositioned: ((String, Rect) -> Unit)? = null)
 
-    fun azConfig(
-        dockingSide: AzDockingSide = AzDockingSide.LEFT,
-        packButtons: Boolean = false,
-        noMenu: Boolean = false,
-        vibrate: Boolean = false,
-        displayAppName: Boolean = false,
-        activeClassifiers: Set<String> = emptySet(),
-        usePhysicalDocking: Boolean = false,
-        expandedWidth: Dp = 130.dp,
-        collapsedWidth: Dp = 80.dp,
-        showFooter: Boolean = true
-    )
-
-    fun azTheme(
-        activeColor: Color = Color.Unspecified,
-        defaultShape: AzButtonShape = AzButtonShape.CIRCLE,
-        headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE
-    )
-
-    fun azAdvanced(
-        isLoading: Boolean = false,
-        infoScreen: Boolean = false,
-        onDismissInfoScreen: (() -> Unit)? = null,
-        overlayService: Class<out android.app.Service>? = null,
-        onUndock: (() -> Unit)? = null,
-        enableRailDragging: Boolean = false,
-        onRailDrag: ((Float, Float) -> Unit)? = null,
-        onOverlayDrag: ((Float, Float) -> Unit)? = null,
-        onItemGloballyPositioned: ((String, Rect) -> Unit)? = null
-    )
-
-    fun azMenuItem(id: String, text: String, route: String? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
+    fun azMenuItem(id: String, text: String, route: String? = null, content: Any? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
     fun azRailItem(id: String, text: String = "", route: String? = null, content: Any? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null)
-    fun azNestedRail(id: String, text: String = "", alignment: AzNestedRailAlignment = AzNestedRailAlignment.VERTICAL, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, content: AzNavRailScope.() -> Unit)
+    fun azNestedRail(id: String, text: String = "", route: String? = null, content: Any? = null, alignment: AzNestedRailAlignment = AzNestedRailAlignment.VERTICAL, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, nestedContent: AzNavRailScope.() -> Unit)
     fun azMenuToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
     fun azRailToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
     fun azMenuCycler(id: String, options: List<String>, selectedOption: String, route: String? = null, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
     fun azRailCycler(id: String, options: List<String>, selectedOption: String, route: String? = null, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
     fun azDivider()
-    fun azMenuHostItem(id: String, text: String, route: String? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
-    fun azRailHostItem(id: String, text: String, route: String? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
-    fun azMenuSubItem(id: String, hostId: String, text: String, route: String? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
-    fun azRailSubItem(id: String, hostId: String, text: String = "", route: String? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null)
+    fun azMenuHostItem(id: String, text: String, route: String? = null, content: Any? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
+    fun azRailHostItem(id: String, text: String, route: String? = null, content: Any? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
+    fun azMenuSubItem(id: String, hostId: String, text: String, route: String? = null, content: Any? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
+    fun azRailSubItem(id: String, hostId: String, text: String = "", route: String? = null, content: Any? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null)
     fun azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
     fun azRailSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
     fun azMenuSubCycler(id: String, hostId: String, options: List<String>, selectedOption: String, route: String? = null, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
     fun azRailSubCycler(id: String, hostId: String, options: List<String>, selectedOption: String, route: String? = null, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
-    fun azRailRelocItem(id: String, hostId: String, text: String, route: String? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null, onRelocate: ((Int, Int, List<String>) -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit = {})
+    fun azRailRelocItem(id: String, hostId: String, text: String, route: String? = null, content: Any? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null, onRelocate: ((Int, Int, List<String>) -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit = {})
 }
 
 interface HiddenMenuScope {
@@ -171,21 +142,19 @@ class AzNavRailScopeImpl : AzNavRailScope {
         this.onItemGloballyPositioned = onItemGloballyPositioned
     }
 
-    override fun azMenuItem(id: String, text: String, route: String?, disabled: Boolean, screenTitle: String?, info: String?, onClick: (() -> Unit)?) {
-        addItem(id = id, text = text, route = route, screenTitle = screenTitle, info = info, isRailItem = false, disabled = disabled, onClick = onClick ?: {})
+    override fun azMenuItem(id: String, text: String, route: String?, content: Any?, disabled: Boolean, screenTitle: String?, info: String?, onClick: (() -> Unit)?) {
+        addItem(id = id, text = text, route = route, screenTitle = screenTitle, info = info, isRailItem = false, disabled = disabled, content = content, onClick = onClick ?: {})
     }
 
     override fun azRailItem(id: String, text: String, route: String?, content: Any?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: (() -> Unit)?) {
         addItem(id = id, text = text, route = route, screenTitle = screenTitle, info = info, isRailItem = true, disabled = disabled, classifiers = classifiers, onFocus = onFocus, content = content, onClick = onClick ?: {})
     }
 
-    override fun azNestedRail(id: String, text: String, alignment: AzNestedRailAlignment, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, content: AzNavRailScope.() -> Unit) {
+    override fun azNestedRail(id: String, text: String, route: String?, content: Any?, alignment: AzNestedRailAlignment, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, nestedContent: AzNavRailScope.() -> Unit) {
         val nestedScope = AzNavRailScopeImpl()
         nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, showFooter = this.showFooter)
         nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape)
-        nestedScope.content()
-
-        val nestedItems = nestedScope.navItems.toList()
+        nestedScope.nestedContent()
 
         nestedScope.onClickMap.forEach { (k, v) -> onClickMap[k] = v }
         nestedScope.onFocusMap.forEach { (k, v) -> onFocusMap[k] = v }
@@ -197,10 +166,10 @@ class AzNavRailScopeImpl : AzNavRailScope {
 
         navItems.add(
             AzNavItem(
-                id = id, text = text, isRailItem = true, isNestedRail = true,
-                nestedRailAlignment = alignment, nestedRailItems = nestedItems,
+                id = id, text = text, route = route, isRailItem = true, isNestedRail = true,
+                nestedRailAlignment = alignment, nestedRailItems = nestedScope.navItems.toList(),
                 disabled = disabled, screenTitle = screenTitle ?: text,
-                info = info, classifiers = classifiers
+                info = info, classifiers = classifiers, content = content
             )
         )
     }
@@ -225,20 +194,20 @@ class AzNavRailScopeImpl : AzNavRailScope {
         navItems.add(AzNavItem(id = "divider_${navItems.size}", text = "", isRailItem = false, isDivider = true))
     }
 
-    override fun azMenuHostItem(id: String, text: String, route: String?, disabled: Boolean, screenTitle: String?, info: String?, onClick: (() -> Unit)?) {
-        addItem(id = id, text = text, route = route, screenTitle = screenTitle, info = info, isRailItem = false, disabled = disabled, isHost = true, onClick = onClick ?: {})
+    override fun azMenuHostItem(id: String, text: String, route: String?, content: Any?, disabled: Boolean, screenTitle: String?, info: String?, onClick: (() -> Unit)?) {
+        addItem(id = id, text = text, route = route, screenTitle = screenTitle, info = info, isRailItem = false, disabled = disabled, isHost = true, content = content, onClick = onClick ?: {})
     }
 
-    override fun azRailHostItem(id: String, text: String, route: String?, disabled: Boolean, screenTitle: String?, info: String?, onClick: (() -> Unit)?) {
-        addItem(id = id, text = text, route = route, screenTitle = screenTitle, info = info, isRailItem = true, disabled = disabled, isHost = true, onClick = onClick ?: {})
+    override fun azRailHostItem(id: String, text: String, route: String?, content: Any?, disabled: Boolean, screenTitle: String?, info: String?, onClick: (() -> Unit)?) {
+        addItem(id = id, text = text, route = route, screenTitle = screenTitle, info = info, isRailItem = true, disabled = disabled, isHost = true, content = content, onClick = onClick ?: {})
     }
 
-    override fun azMenuSubItem(id: String, hostId: String, text: String, route: String?, disabled: Boolean, screenTitle: String?, info: String?, onClick: (() -> Unit)?) {
-        addItem(id = id, text = text, route = route, screenTitle = screenTitle, info = info, isRailItem = false, disabled = disabled, isSubItem = true, hostId = hostId, onClick = onClick ?: {})
+    override fun azMenuSubItem(id: String, hostId: String, text: String, route: String?, content: Any?, disabled: Boolean, screenTitle: String?, info: String?, onClick: (() -> Unit)?) {
+        addItem(id = id, text = text, route = route, screenTitle = screenTitle, info = info, isRailItem = false, disabled = disabled, isSubItem = true, hostId = hostId, content = content, onClick = onClick ?: {})
     }
 
-    override fun azRailSubItem(id: String, hostId: String, text: String, route: String?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: (() -> Unit)?) {
-        addItem(id = id, text = text, route = route, screenTitle = screenTitle, info = info, isRailItem = true, disabled = disabled, isSubItem = true, hostId = hostId, classifiers = classifiers, onFocus = onFocus, onClick = onClick ?: {})
+    override fun azRailSubItem(id: String, hostId: String, text: String, route: String?, content: Any?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: (() -> Unit)?) {
+        addItem(id = id, text = text, route = route, screenTitle = screenTitle, info = info, isRailItem = true, disabled = disabled, isSubItem = true, hostId = hostId, classifiers = classifiers, onFocus = onFocus, content = content, onClick = onClick ?: {})
     }
 
     override fun azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String?, disabled: Boolean, screenTitle: String?, info: String?, onClick: (() -> Unit)?) {
@@ -257,7 +226,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         addCycler(id = id, hostId = hostId, options = options, selectedOption = selectedOption, route = route, disabled = disabled, disabledOptions = disabledOptions, screenTitle = screenTitle, info = info, isRailItem = true, isSubItem = true, onClick = onClick ?: {})
     }
 
-    override fun azRailRelocItem(id: String, hostId: String, text: String, route: String?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: (() -> Unit)?, onRelocate: ((Int, Int, List<String>) -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
+    override fun azRailRelocItem(id: String, hostId: String, text: String, route: String?, content: Any?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: (() -> Unit)?, onRelocate: ((Int, Int, List<String>) -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
         val hiddenMenuScope = HiddenMenuScopeImpl()
         hiddenMenuScope.hiddenMenu()
 
@@ -275,7 +244,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
             AzNavItem(
                 id = id, text = text, route = route, isRailItem = true, isSubItem = true, hostId = hostId,
                 isRelocItem = true, disabled = disabled, screenTitle = finalScreenTitle, info = info, 
-                hiddenMenuItems = prefixedItems, classifiers = classifiers
+                hiddenMenuItems = prefixedItems, classifiers = classifiers, content = content
             )
         )
     }
