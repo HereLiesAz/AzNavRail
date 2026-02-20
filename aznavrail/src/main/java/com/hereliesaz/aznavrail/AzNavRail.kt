@@ -13,14 +13,17 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -72,6 +75,7 @@ import com.hereliesaz.aznavrail.internal.MenuItem
 import com.hereliesaz.aznavrail.internal.OverlayHelper
 import com.hereliesaz.aznavrail.internal.RailItems
 import com.hereliesaz.aznavrail.model.AzDockingSide
+import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.service.LocalAzNavRailOverlayController
 import kotlinx.coroutines.delay
@@ -337,6 +341,7 @@ fun AzNavRail(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .windowInsetsPadding(WindowInsets.systemBars)
                             .padding(end = 16.dp, top = 16.dp),
                         contentAlignment = Alignment.CenterEnd
                     ) {
@@ -356,7 +361,10 @@ fun AzNavRail(
                 popupPositionProvider = CenteredPopupPositionProvider,
                 properties = PopupProperties(focusable = false)
             ) {
-                Box(contentAlignment = Alignment.Center) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars)
+                ) {
                     AzLoad()
                 }
             }
@@ -781,6 +789,7 @@ fun AzNavRail(
             Popup(onDismissRequest = { showFooterPopup = false }, popupPositionProvider = CenteredPopupPositionProvider) {
                 Box(
                     modifier = Modifier
+                        .windowInsetsPadding(WindowInsets.systemBars)
                         .padding(16.dp)
                         .clip(RoundedCornerShape(16.dp))
                         .background(MaterialTheme.colorScheme.surface)
