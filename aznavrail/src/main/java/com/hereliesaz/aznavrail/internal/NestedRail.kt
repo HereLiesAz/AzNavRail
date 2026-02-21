@@ -1,3 +1,4 @@
+// aznavrail/src/main/java/com/hereliesaz/aznavrail/internal/NestedRail.kt
 package com.hereliesaz.aznavrail.internal
 
 import androidx.compose.foundation.background
@@ -5,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.heightIn
@@ -17,9 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.IntOffset
@@ -31,6 +31,7 @@ import com.hereliesaz.aznavrail.AzNavRailScopeImpl
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
+import com.hereliesaz.aznavrail.util.EqualWidthLayout
 
 @Composable
 internal fun NestedRail(
@@ -40,18 +41,16 @@ internal fun NestedRail(
     navController: NavController?,
     currentDestination: String?,
     anchorBounds: Rect,
-    rootBounds: Rect, // Bounds of the AzNavRail
+    rootBounds: Rect,
     onDismiss: () -> Unit,
     isRightDocked: Boolean,
     onItemSelected: (AzNavItem) -> Unit,
     activeColor: Color,
     defaultShape: AzButtonShape
 ) {
-    val density = androidx.compose.ui.platform.LocalDensity.current
     val buttonSize = AzNavRailDefaults.HeaderIconSize
     val alignment = parentItem.nestedRailAlignment
 
-    // Custom PositionProvider for "Center on SCREEN" (Vertical) and "Top Align" (Horizontal)
     val positionProvider = remember(anchorBounds, rootBounds, isRightDocked, alignment) {
         object : androidx.compose.ui.window.PopupPositionProvider {
             override fun calculatePosition(
@@ -60,28 +59,36 @@ internal fun NestedRail(
                 layoutDirection: androidx.compose.ui.unit.LayoutDirection,
                 popupContentSize: androidx.compose.ui.unit.IntSize
             ): IntOffset {
-                // X Position: Always to the side of the parent
-                val x = if (isRightDocked) {
-                    anchorBounds.left.toInt() - popupContentSize.width
-                } else {
-                    anchorBounds.right.toInt()
-                }
-
+                val contentWidth = popupContentSize.width
+                val windowWidth = windowSize.width
                 val contentHeight = popupContentSize.height
                 val windowHeight = windowSize.height
 
-                // Y Position Calculation
+                val x = if (alignment == AzNestedRailAlignment.VERTICAL) {
+                    (windowWidth - contentWidth) / 2
+                } else {
+                    if (isRightDocked) {
+                        anchorBounds.left.toInt() - contentWidth
+                    } else {
+                        anchorBounds.right.toInt()
+                    }
+                }
+
+                val maxRailHeightPx = (windowHeight * 0.8f).toInt()
+
                 val y = if (alignment == AzNestedRailAlignment.VERTICAL) {
-                    // Vertical Nested Rail: Center on SCREEN
-                    // Note: Content size is already constrained by the Box below, so it fits.
-                    if (contentHeight >= windowHeight) {
+                    if (contentHeight >= maxRailHeightPx) {
                         0
                     } else {
-                        (windowHeight - contentHeight) / 2 // Center relative to Screen
+                        (windowHeight - contentHeight) / 2
                     }
                 } else {
-                    // Horizontal Nested Rail: Align top with parent top
-                    anchorBounds.top.toInt()
+                    val desiredY = anchorBounds.top.toInt()
+                    if (desiredY + contentHeight > windowHeight) {
+                        (windowHeight - contentHeight).coerceAtLeast(0)
+                    } else {
+                        desiredY
+                    }
                 }
 
                 return IntOffset(x, y)
@@ -98,7 +105,6 @@ internal fun NestedRail(
         val border = MaterialTheme.colorScheme.outline
         val config = androidx.compose.ui.platform.LocalConfiguration.current
 
-        // 4/5ths Rule: Cap nested rail size at 80% of screen
         val maxRailHeight = config.screenHeightDp.dp * 0.8f
         val maxRailWidth = config.screenWidthDp.dp * 0.8f
 
@@ -107,7 +113,6 @@ internal fun NestedRail(
                 .background(backgroundColor, RoundedCornerShape(8.dp))
                 .border(1.dp, border, RoundedCornerShape(8.dp))
                 .padding(4.dp)
-                // Apply BOTH constraints (safe since one dim will be naturally small)
                 .heightIn(max = maxRailHeight)
                 .widthIn(max = maxRailWidth)
         ) {
@@ -152,9 +157,9 @@ private fun VerticalNestedRailContent(
 ) {
     val hostStates = remember { mutableStateMapOf<String, Boolean>() }
 
-    // Scrollable Column
-    Column(
-        modifier = Modifier.verticalScroll(rememberScrollState())
+    EqualWidthLayout(
+        modifier = Modifier.verticalScroll(rememberScrollState()),
+        verticalSpacing = AzNavRailDefaults.RailContentVerticalArrangement
     ) {
         items.filter { !it.isSubItem }.forEach { item ->
             NestedRailItemWrapper(item, scope, navController, currentDestination, buttonSize, hostStates, isSubItem = false, onItemSelected = onItemSelected, activeColor = activeColor, defaultShape = defaultShape)
@@ -182,7 +187,6 @@ private fun HorizontalNestedRailContent(
 ) {
     val hostStates = remember { mutableStateMapOf<String, Boolean>() }
 
-    // Scrollable Row
     Row(
         modifier = Modifier.horizontalScroll(rememberScrollState())
     ) {
@@ -223,13 +227,14 @@ private fun NestedRailItemWrapper(
         onClick = {
             scope.onClickMap[item.id]?.invoke()
         },
-        onRailCyclerClick = { /* Support if needed */ },
+        onRailCyclerClick = { },
         onItemClick = { onItemSelected(item) },
         onHostClick = {
             hostStates[item.id] = !(hostStates[item.id] ?: false)
         },
         infoScreen = false,
         activeColor = activeColor,
-        shape = defaultShape
+        shape = defaultShape,
+        dragModifier = Modifier.fillMaxWidth()
     )
 }
