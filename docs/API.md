@@ -4,7 +4,7 @@
 
 The **MANDATORY** top-level container that manages the rail, safe zones, background content, and layout flipping. It is illegal to instantiate `AzNavRail` directly outside of this layout (except in system overlay services).
 
-```kotlin
+~~~kotlin
 @Composable
 fun AzHostActivityLayout(
     modifier: Modifier = Modifier,
@@ -15,7 +15,7 @@ fun AzHostActivityLayout(
     disableSwipeToOpen: Boolean = false,
     content: AzNavHostScope.() -> Unit
 )
-```
+~~~
 
 -   **`modifier`**: The modifier to be applied to the host container.
 -   **`navController`**: The `NavHostController` used for navigation. **This is now mandatory.**
@@ -33,7 +33,7 @@ A wrapper around `androidx.navigation.compose.NavHost` designed to be used withi
 -   **Automatic Navigation Controller**: Automatically uses the `navController` from `AzHostActivityLayout`.
 -   **Smart Transitions**: Automatically configures directional slide transitions based on the rail's docking side.
 
-```kotlin
+~~~kotlin
 @Composable
 fun AzNavHost(
     startDestination: String,
@@ -44,7 +44,7 @@ fun AzNavHost(
     // ... transition params (default to Smart Transitions)
     builder: NavGraphBuilder.() -> Unit
 )
-```
+~~~
 
 -   **`startDestination`**: The route of the start destination.
 -   **`navController`**: The navigation controller (optional if inside `AzHostActivityLayout`).
@@ -55,10 +55,10 @@ fun AzNavHost(
 
 The internal component for the navigation rail. **Do not instantiate this directly.** Use `AzHostActivityLayout`.
 
-```kotlin
+~~~kotlin
 @Composable
 fun AzNavRail(...)
-```
+~~~
 
 *(Direct usage is prohibited except for overlay services)*
 
@@ -66,7 +66,7 @@ fun AzNavRail(...)
 
 A text input field with autocomplete.
 
-```kotlin
+~~~kotlin
 @Composable
 fun AzTextBox(
     modifier: Modifier = Modifier,
@@ -86,7 +86,7 @@ fun AzTextBox(
     submitButtonContent: (@Composable () -> Unit)? = null,
     onSubmit: (String) -> Unit
 )
-```
+~~~
 
 -   **`modifier`**: The modifier to be applied to the text box.
 -   **`value`**: The input text to be shown in the text field. Use `null` for an uncontrolled component.
@@ -109,7 +109,7 @@ fun AzTextBox(
 
 A composable for creating a form with multiple `AzTextBox` fields.
 
-```kotlin
+~~~kotlin
 @Composable
 fun AzForm(
     formName: String,
@@ -123,7 +123,7 @@ fun AzForm(
     submitButtonContent: @Composable () -> Unit = { Text("Submit") },
     content: AzFormScope.() -> Unit
 )
-```
+~~~
 
 -   **`formName`**: A unique name for the form. This name is used as the `historyContext` for all text fields within the form, ensuring that autocomplete suggestions are namespaced and relevant to this form only.
 -   **`modifier`**: The modifier to be applied to the form.
@@ -152,7 +152,7 @@ An object for configuring global `AzTextBox` and `AzForm` settings.
 
 A circular, text-only button with auto-sizing text.
 
-```kotlin
+~~~kotlin
 @Composable
 fun AzButton(
     onClick: () -> Unit,
@@ -162,7 +162,7 @@ fun AzButton(
     colors: ButtonColors? = null,
     shape: AzButtonShape = AzButtonShape.CIRCLE
 )
-```
+~~~
 
 -   **`onClick`**: A lambda to be executed when the button is clicked.
 -   **`text`**: The text to display on the button.
@@ -175,7 +175,7 @@ fun AzButton(
 
 A toggle button that displays different text for its on and off states.
 
-```kotlin
+~~~kotlin
 @Composable
 fun AzToggle(
     isChecked: Boolean,
@@ -187,7 +187,7 @@ fun AzToggle(
     colors: ButtonColors? = null,
     shape: AzButtonShape = AzButtonShape.CIRCLE
 )
-```
+~~~
 
 -   **`isChecked`**: Whether the toggle is in the "on" state.
 -   **`onToggle`**: The callback to be invoked when the button is toggled.
@@ -202,7 +202,7 @@ fun AzToggle(
 
 A button that cycles through a list of options when clicked, with a delayed action.
 
-```kotlin
+~~~kotlin
 @Composable
 fun AzCycler(
     options: List<String>,
@@ -213,7 +213,7 @@ fun AzCycler(
     colors: ButtonColors? = null,
     shape: AzButtonShape = AzButtonShape.CIRCLE
 )
-```
+~~~
 
 -   **`options`**: The list of options to cycle through.
 -   **`selectedOption`**: The currently selected option from the view model.
@@ -223,15 +223,11 @@ fun AzCycler(
 -   **`colors`**: The colors of the button, overriding `color` if provided.
 -   **`shape`**: The shape of the button.
 
-#### `AzNavRailScope`
-
-For the full DSL reference, see [DSL.md](DSL.md).
-
 #### `azNestedRail`
 
 A DSL function to create a nested rail structure.
 
-```kotlin
+~~~kotlin
 fun azNestedRail(
     id: String,
     text: String,
@@ -239,7 +235,7 @@ fun azNestedRail(
     // ... standard item parameters ...
     content: AzNavRailScope.() -> Unit
 )
-```
+~~~
 
 - **`alignment`**: Specifies the layout of the nested items (`VERTICAL` or `HORIZONTAL`).
 - **`content`**: The inner scope where nested items are defined.
@@ -258,15 +254,15 @@ All item functions are overloaded to support `route`-based navigation.
 
 ### Installation
 
-```bash
+~~~bash
 npm install aznavrail-react-native
 # or
 yarn add aznavrail-react-native
-```
+~~~
 
 ### Usage
 
-```tsx
+~~~tsx
 import { AzNavRail } from 'aznavrail-react-native';
 import { AzRailItem, AzMenuItem } from 'aznavrail-react-native';
 
@@ -275,4 +271,4 @@ import { AzRailItem, AzMenuItem } from 'aznavrail-react-native';
   <AzRailItem id="home" text="Home" onClick={() => {}} />
   <AzMenuItem id="settings" text="Settings" onClick={() => {}} />
 </AzNavRail>
-```
+~~~

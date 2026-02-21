@@ -1,6 +1,5 @@
 package com.hereliesaz.aznavrail.internal
 
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -12,7 +11,7 @@ object AzLayoutConfig {
     const val ContentSafeTopPercent = 0.2f
     /** The percentage of screen height reserved for the content safe bottom zone (10%). */
     const val ContentSafeBottomPercent = 0.1f
-    
+
     /** The percentage of screen height reserved for the rail safe top zone (10%). */
     const val RailSafeTopPercent = 0.1f
     /** The percentage of screen height reserved for the rail safe bottom zone (10%). */

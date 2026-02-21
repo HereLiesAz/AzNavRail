@@ -12,7 +12,7 @@ When using `AzHostActivityLayout`, the following additional DSL functions are av
 
 -   `background(weight: Int, content: @Composable () -> Unit)`: Adds a background layer. Backgrounds ignore strict layout rules (safe zones) and fill the screen. Layers are stacked based on `weight` (lower weights are drawn first).
 -   `onscreen(alignment: Alignment, content: @Composable () -> Unit)`: Adds content to the safe area.
-    -   **Safe Zones**: Content is restricted from the top 20% and bottom 10% of the screen.
+    -   **Safe Zones**: Content is restricted from the top (`80.dp`) and bottom (`48.dp`) of the screen.
     -   **Rail Avoidance**: Content is padded to avoid the rail.
     -   **Alignment Flipping**: If the rail is docked to the Right, horizontal alignments are flipped (e.g., `Start` becomes `End`).
 
@@ -24,7 +24,7 @@ The configuration is split into three distinct sectors: `azTheme` (Visuals), `az
 
 Configures the visual appearance of the rail.
 
-```kotlin
+~~~kotlin
 azTheme(
     expandedRailWidth: Dp,
     collapsedRailWidth: Dp,
@@ -33,7 +33,7 @@ azTheme(
     activeColor: Color?,
     showFooter: Boolean
 )
-```
+~~~
 
 -   **`expandedRailWidth`**: Width of the rail when expanded.
 -   **`collapsedRailWidth`**: Width of the rail when collapsed.
@@ -46,7 +46,7 @@ azTheme(
 
 Configures the behavior and features of the rail.
 
-```kotlin
+~~~kotlin
 azConfig(
     displayAppName: Boolean,
     packButtons: Boolean,
@@ -56,7 +56,7 @@ azConfig(
     activeClassifiers: Set<String>,
     usePhysicalDocking: Boolean
 )
-```
+~~~
 
 -   **`displayAppName`**: Whether to display the app name in the header.
 -   **`packButtons`**: Reduces vertical spacing between rail items.
@@ -70,7 +70,7 @@ azConfig(
 
 Configures advanced operations, overlays, and state.
 
-```kotlin
+~~~kotlin
 azAdvanced(
     isLoading: Boolean,
     enableRailDragging: Boolean,
@@ -81,7 +81,7 @@ azAdvanced(
     infoScreen: Boolean,
     onDismissInfoScreen: (() -> Unit)?
 )
-```
+~~~
 
 -   **`isLoading`**: Shows a loading indicator on the rail.
 -   **`enableRailDragging`**: Allows the rail to be dragged (typically for overlays).

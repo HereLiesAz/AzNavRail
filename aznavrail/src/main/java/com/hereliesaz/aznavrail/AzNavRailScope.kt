@@ -82,7 +82,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         hiddenMenuOnValueChangeMap.clear()
         onRelocateMap.clear()
     }
-    
+
     // Config
     var expandedWidth: Dp = 130.dp
     var collapsedWidth: Dp = 80.dp
@@ -241,7 +241,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         navItems.add(
             AzNavItem(
                 id = id, text = text, route = route, isRailItem = true, isSubItem = true, hostId = hostId,
-                isRelocItem = true, disabled = disabled, screenTitle = finalScreenTitle, info = info, 
+                isRelocItem = true, disabled = disabled, screenTitle = finalScreenTitle, info = info,
                 hiddenMenuItems = prefixedItems, classifiers = classifiers, content = content
             )
         )
