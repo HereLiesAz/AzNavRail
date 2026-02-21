@@ -1,6 +1,8 @@
 package com.hereliesaz.aznavrail.internal
 
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzNavItem
@@ -20,19 +22,22 @@ internal fun MenuItem(
     activeColor: Color,
     defaultShape: AzButtonShape
 ) {
-    // Menu item utilizes standard RailContent but can expand into a row if needed.
     RailContent(
         item = item,
         navController = navController,
         isSelected = isSelected,
         buttonSize = AzNavRailDefaults.HeaderIconSize,
-        onClick = onClick,
+        onClick = {
+            onClick?.invoke()
+            onToggle()
+        },
         onRailCyclerClick = { onCyclerClick?.invoke() },
         onItemClick = onItemClick,
         onHostClick = onHostClick,
         onItemGloballyPositioned = onItemGloballyPositioned,
         infoScreen = infoScreen,
         activeColor = activeColor,
-        shape = defaultShape
+        shape = AzButtonShape.RECTANGLE,
+        dragModifier = Modifier.fillMaxWidth()
     )
 }
