@@ -1,45 +1,110 @@
-# The Synthetic Tongue (AzNavRailScope)
+# The AzNavRail DSL
 
-This document outlines the strict API surface of `AzNavRailScope`. This interface is primarily invoked by the generated `AzGraph`. The only acceptable use of this DSL by a human is within the `configureRail()` override in your `AzActivity` to inject runtime variables.
+This document outlines how to use the `AzNavRailScope` DSL to configure your navigation rail. This DSL is used within the `AzHostActivityLayout` composable.
 
-## The Configuration Trinity
+## Basic Usage
+
+Wrap your `AzNavHost` (or your own navigation host) with `AzHostActivityLayout`:
+
+```kotlin
+AzHostActivityLayout(
+    navController = navController,
+    content = {
+        // Configure behavior
+        azConfig(
+            dockingSide = AzDockingSide.LEFT,
+            packButtons = true,
+            displayAppName = true
+        )
+
+        // Configure theme
+        azTheme(
+            activeColor = MaterialTheme.colorScheme.primary,
+            defaultShape = AzButtonShape.CIRCLE
+        )
+
+        // Add items
+        azRailItem(
+            id = "home",
+            text = "Home",
+            route = "home_route",
+            content = Icons.Default.Home
+        )
+
+        // Add menu items
+        azMenuItem(
+            id = "settings",
+            text = "Settings",
+            route = "settings_route"
+        )
+
+        // Setup the NavHost
+        onscreen {
+            AzNavHost(
+                startDestination = "home_route",
+                navController = navController
+            ) {
+                composable("home_route") { HomeScreen() }
+                composable("settings_route") { SettingsScreen() }
+            }
+        }
+    }
+)
+```
+
+## Configuration
 
 ### `azConfig`
 Controls the behavioral and geometrical mechanics.
 ~~~kotlin
-fun azConfig(dockingSide, packButtons, noMenu, vibrate, displayAppName, activeClassifiers, usePhysicalDocking, expandedWidth, collapsedWidth, showFooter)
+fun azConfig(
+    dockingSide: AzDockingSide = AzDockingSide.LEFT,
+    packButtons: Boolean = false,
+    noMenu: Boolean = false,
+    vibrate: Boolean = false,
+    displayAppName: Boolean = false,
+    activeClassifiers: Set<String> = emptySet(),
+    usePhysicalDocking: Boolean = false,
+    expandedWidth: Dp = 130.dp,
+    collapsedWidth: Dp = 80.dp,
+    showFooter: Boolean = true
+)
 ~~~
 
 ### `azTheme`
 Controls the physical shape and active color.
 ~~~kotlin
-fun azTheme(activeColor, defaultShape, headerIconShape)
+fun azTheme(
+    activeColor: Color = Color.Unspecified,
+    defaultShape: AzButtonShape = AzButtonShape.CIRCLE,
+    headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE
+)
 ~~~
 
 ### `azAdvanced`
-Controls catastrophic systemic overrides, loading states, and floating window bindings.
+Controls advanced settings, loading states, and overlay bindings.
 ~~~kotlin
-fun azAdvanced(isLoading, infoScreen, onDismissInfoScreen, overlayService, onUndock, enableRailDragging, onRailDrag, onOverlayDrag, onItemGloballyPositioned)
+fun azAdvanced(
+    isLoading: Boolean = false,
+    infoScreen: Boolean = false,
+    onDismissInfoScreen: (() -> Unit)? = null,
+    overlayService: Class<out android.app.Service>? = null,
+    onUndock: (() -> Unit)? = null,
+    enableRailDragging: Boolean = false,
+    onRailDrag: ((Float, Float) -> Unit)? = null,
+    onOverlayDrag: ((Float, Float) -> Unit)? = null,
+    onItemGloballyPositioned: ((String, Rect) -> Unit)? = null
+)
 ~~~
 
-## The Monolithic Item Builders
+## Item Builders
 
-The following functions are strictly invoked by the generated `AzGraph`. They require explicit named parameters.
-
-* `azMenuItem(id, text, route, disabled, screenTitle, info, onClick)`
+* `azMenuItem(id, text, route, content, disabled, screenTitle, info, onClick)`
 * `azRailItem(id, text, route, content, disabled, screenTitle, info, classifiers, onFocus, onClick)`
-* `@Composable azNestedRail(id, text, alignment, disabled, screenTitle, info, classifiers, onFocus) { ... }`
+* `@Composable azNestedRail(id, text, route, content, alignment, disabled, screenTitle, info, classifiers, onFocus) { ... }`
 * `azMenuToggle(id, isChecked, toggleOnText, toggleOffText, route, disabled, screenTitle, info, onClick)`
 * `azRailToggle(id, isChecked, toggleOnText, toggleOffText, route, disabled, screenTitle, info, onClick)`
 * `azMenuCycler(id, options, selectedOption, route, disabled, disabledOptions, screenTitle, info, onClick)`
 * `azRailCycler(id, options, selectedOption, route, disabled, disabledOptions, screenTitle, info, onClick)`
 * `azDivider()`
-* `azMenuHostItem(id, text, route, disabled, screenTitle, info, onClick)`
-* `azRailHostItem(id, text, route, disabled, screenTitle, info, onClick)`
-* `azMenuSubItem(id, hostId, text, route, disabled, screenTitle, info, onClick)`
-* `azRailSubItem(id, hostId, text, route, disabled, screenTitle, info, classifiers, onFocus, onClick)`
-* `azMenuSubToggle(id, hostId, isChecked, toggleOnText, toggleOffText, route, disabled, screenTitle, info, onClick)`
-* `azRailSubToggle(id, hostId, isChecked, toggleOnText, toggleOffText, route, disabled, screenTitle, info, onClick)`
-* `azMenuSubCycler(id, hostId, options, selectedOption, route, disabled, disabledOptions, screenTitle, info, onClick)`
-* `azRailSubCycler(id, hostId, options, selectedOption, route, disabled, disabledOptions, screenTitle, info, onClick)`
-* `azRailRelocItem(id, hostId, text, route, disabled, screenTitle, info, classifiers, onFocus, onClick, onRelocate) { ... }`
+* `azRailRelocItem(id, hostId, text, route, content, disabled, screenTitle, info, classifiers, onFocus, onClick, onRelocate) { ... }`

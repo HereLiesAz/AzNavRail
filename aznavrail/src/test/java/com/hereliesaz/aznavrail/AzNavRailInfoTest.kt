@@ -25,7 +25,7 @@ class AzNavRailInfoTest {
     fun `azRailItem should accept info parameter`() {
         val scope = AzNavRailScopeImpl()
         val infoText = "This is a rail item"
-        scope.azRailItem("home", "Home", color = Color.Red, info = infoText, onClick = {})
+        scope.azRailItem("home", "Home", content = Color.Red, info = infoText, onClick = {})
 
         val item = scope.navItems[0]
         assertEquals(infoText, item.info)
