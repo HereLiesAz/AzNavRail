@@ -8,16 +8,11 @@ plugins {
     alias(libs.plugins.parcelize)
 }
 
-// Unifying version across all modules via the version catalog
-group = "com.github.HereLiesAz.AzNavRail"
-version = System.getenv("JITPACK_VERSION") ?: libs.versions.aznavrail.get()
-
-// Random PIN generation for security features
 val generatedPin = (100000 + Random().nextInt(900000)).toString()
 
 android {
     namespace = "com.hereliesaz.aznavrail"
-    compileSdk = 36 
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 26
@@ -32,12 +27,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     kotlin {
-        jvmToolchain(17)
+        jvmToolchain(21)
     }
 
     buildFeatures {
@@ -52,9 +47,7 @@ android {
     }
 
     publishing {
-        singleVariant("release") {
-            withSourcesJar()
-        }
+        singleVariant("release")
     }
 }
 
@@ -68,13 +61,9 @@ dependencies {
     implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.androidx.compose.animation.core)
     implementation(libs.androidx.material.icons.extended)
-    
     api(libs.coil.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.ui)
-
-    // Transitive API dependency for High-Inference annotations
-    api(project(":aznavrail-annotation")) 
 
     testImplementation(libs.junit)
     testImplementation(libs.androidx.test.ext.junit)
@@ -85,12 +74,12 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
-  
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    api(project(":aznavrail-annotation"))
 }
 
-// Security Feature: PIN Email Task
 tasks.register("sendPinEmail") {
     doLast {
         println("--------------------------------------------------")
@@ -101,6 +90,8 @@ tasks.register("sendPinEmail") {
     }
 }
 
+// Ensure the PIN email task runs at most once per main build variant
+// Using whenTaskAdded/afterEvaluate logic to avoid issues with dynamic task creation order
 afterEvaluate {
     val debugTask = tasks.findByName("assembleDebug")
     if (debugTask != null) {
@@ -113,7 +104,6 @@ afterEvaluate {
     }
 }
 
-// Documentation management
 tasks.register<Copy>("extractDocs") {
     description = "Extracts the AzNavRail Complete Guide to the project's docs directory."
     group = "documentation"
@@ -124,8 +114,11 @@ tasks.register<Copy>("extractDocs") {
 afterEvaluate {
     publishing {
         publications {
-            register<MavenPublication>("release") {
+            create<MavenPublication>("release") {
                 from(components["release"])
+                groupId = "com.github.HereLiesAz"
+                artifactId = "AzNavRail"
+                version = "5.1"
             }
         }
     }
