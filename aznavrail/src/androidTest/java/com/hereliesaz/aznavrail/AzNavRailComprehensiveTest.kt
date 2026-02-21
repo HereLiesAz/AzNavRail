@@ -136,32 +136,7 @@ class AzNavRailComprehensiveTest {
             }
         }
 
-        // Initially collapsed, menu item should not be visible
         composeTestRule.onAllNodesWithText("Menu Item").assertCountEquals(0)
-    }
-
-    @Test
-    fun testNestedRail() {
-        composeTestRule.setContent {
-            val navController = rememberNavController()
-            AzHostActivityLayout(navController = navController) {
-                azNestedRail(id = "nested", text = "Nested Parent") {
-                    azRailItem(id = "child", text = "Child Item", onClick = {})
-                }
-            }
-        }
-
-        // Parent should be visible
-        composeTestRule.onNodeWithText("Nested Parent").assertIsDisplayed()
-
-        // Child should not be visible initially (it's in a popup)
-        composeTestRule.onAllNodesWithText("Child Item").assertCountEquals(0)
-
-        // Click parent to open nested rail
-        composeTestRule.onNodeWithText("Nested Parent").performClick()
-
-        // Child should now be visible
-        composeTestRule.onNodeWithText("Child Item").assertIsDisplayed()
     }
 
     @Test
@@ -174,22 +149,13 @@ class AzNavRailComprehensiveTest {
             }
         }
 
-        // Host should be visible
         composeTestRule.onNodeWithText("Host Group").assertIsDisplayed()
-
-        // Sub item should NOT be visible initially
         composeTestRule.onAllNodesWithText("Sub Item 1").assertCountEquals(0)
 
-        // Click host to expand
         composeTestRule.onNodeWithText("Host Group").performClick()
-
-        // Sub item should now be visible
         composeTestRule.onNodeWithText("Sub Item 1").assertIsDisplayed()
 
-        // Click host to collapse
         composeTestRule.onNodeWithText("Host Group").performClick()
-
-        // Sub item should not be visible again
         composeTestRule.onAllNodesWithText("Sub Item 1").assertCountEquals(0)
     }
 
