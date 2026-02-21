@@ -289,6 +289,15 @@ fun SampleScreen() {
             listItem(text = "Action", onClick = { Log.d(TAG, "Reloc action clicked") })
         }
 
+        azNestedRail(
+            id = "nested-rail",
+            text = "Nested Rail",
+            route = "nested-rail"
+        ) {
+             azRailItem(id = "nested-1", text = "Nested Item 1", route = "nested-1")
+             azRailItem(id = "nested-2", text = "Nested Item 2", route = "nested-2")
+        }
+
 
         // BACKGROUNDS
         background(weight = 0) {
@@ -467,6 +476,9 @@ fun SampleScreen() {
                     composable("overlay-mode") { Text("Overlay Mode Screen") }
                     composable("docking-side") { Text("Docking Side Screen") }
                     composable("no-menu") { Text("No Menu Screen") }
+                    composable("nested-rail") { Text("Nested Rail Screen") }
+                    composable("nested-1") { Text("Nested Item 1 Screen") }
+                    composable("nested-2") { Text("Nested Item 2 Screen") }
                 }
             }
         }
