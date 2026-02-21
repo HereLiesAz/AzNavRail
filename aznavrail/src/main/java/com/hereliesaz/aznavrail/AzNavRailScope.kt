@@ -8,7 +8,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
-import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 import java.util.Collections.emptySet
@@ -99,7 +98,6 @@ class AzNavRailScopeImpl : AzNavRailScope {
     // Theme
     var activeColor: Color = Color.Unspecified
     var defaultShape: AzButtonShape = AzButtonShape.CIRCLE
-    var headerIconShape: AzHeaderIconShape = AzHeaderIconShape.NONE
 
     // Advanced
     var isLoading: Boolean = false
@@ -125,10 +123,9 @@ class AzNavRailScopeImpl : AzNavRailScope {
         this.showFooter = showFooter
     }
 
-    override fun azTheme(activeColor: Color, defaultShape: AzButtonShape, headerIconShape: AzHeaderIconShape) {
+    override fun azTheme(activeColor: Color, defaultShape: AzButtonShape) {
         this.activeColor = activeColor
         this.defaultShape = defaultShape
-        this.headerIconShape = headerIconShape
     }
 
     override fun azAdvanced(isLoading: Boolean, infoScreen: Boolean, onDismissInfoScreen: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?) {
@@ -154,7 +151,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     override fun azNestedRail(id: String, text: String, route: String?, content: Any?, alignment: AzNestedRailAlignment, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, nestedContent: AzNavRailScope.() -> Unit) {
         val nestedScope = AzNavRailScopeImpl()
         nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, showFooter = this.showFooter)
-        nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape)
+        nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape)
         nestedScope.nestedContent()
 
         nestedScope.onClickMap.forEach { (k, v) -> onClickMap[k] = v }
