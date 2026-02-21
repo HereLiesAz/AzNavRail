@@ -2,9 +2,10 @@
 
 [![](https://jitpack.io/v/HereLiesAz/AzNavRail.svg)](https://jitpack.io/#HereLiesAz/AzNavRail)
 
-A contemptably stubborn if not dictatorially restrictive navigation rail/menu--I call it a renu. Or maybe a mail. No, a navigrenuail--for Jetpack Compose with a streamlined, DSL-style API.
-
-This "navigrenuail" provides a vertical navigation rail that expands to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
+A contemptably stubborn if not dictatorially restrictive navigation rail/menu--I call it a renu.
+Or maybe a mail. No, a navigrenuail--for Jetpack Compose with a streamlined, DSL-style API.
+This "navigrenuail" provides a vertical navigation rail that expands to a full menu drawer.
+It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
 
 ## Features
 
@@ -28,8 +29,9 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 - **Nested Rails**: Support for nested navigation structures (`azNestedRail`) with both Vertical (anchored column) and Horizontal (scrollable row) alignments (Popup overlay).
 - **Draggable (FAB Mode)**: Detach and move the rail.
 - **Reorderable Items**: `AzRailRelocItem` allows user drag-and-drop reordering within clusters.
-    - **Drag**: Long press (with vibration feedback) to start dragging.
-    - **Hidden Menu**: Tap to focus/select. If already focused, tap again to open the hidden menu.
+- **Drag**: Long press (with vibration feedback) to start dragging.
+  - **Hidden Menu**: Tap to focus/select.
+    If already focused, tap again to open the hidden menu.
 - **System Overlay**: System-wide overlay support with automatic resizing and activity launching.
 - **Auto-sizing Text**: Text fits without wrapping (unless explicit newline).
 - **Full-Fill Content**: Rail items with images or colors now completely fill the button shape (crop/bleed).
@@ -74,8 +76,8 @@ dependencies {
 
 **⚠️ STRICT USAGE PROTOCOL**
 
-`AzNavRail` **MUST** be used within an `AzHostActivityLayout` container. The library enforces strict layout rules (safe zones, padding, z-ordering) and will throw a runtime error (or display a red warning screen) if `AzNavRail` is instantiated directly without a host wrapper.
-
+`AzNavRail` **MUST** be used within an `AzHostActivityLayout` container.
+The library enforces strict layout rules (safe zones, padding, z-ordering) and will throw a runtime error (or display a red warning screen) if `AzNavRail` is instantiated directly without a host wrapper.
 Do **NOT** use `Scaffold`. Use `AzHostActivityLayout` as your root.
 
 **The Golden Sample:**
@@ -106,8 +108,7 @@ fun SampleScreen() {
     ) {
         // SECTOR 1: VISUAL COMPLIANCE
         azTheme(
-            activeColor = Color.Cyan,
-            expandedWidth = 280.dp
+            activeColor = Color.Cyan
         )
 
         // SECTOR 2: BEHAVIORAL PROTOCOLS
@@ -115,7 +116,8 @@ fun SampleScreen() {
             dockingSide = AzDockingSide.LEFT,
             packButtons = true,
             displayAppName = true,
-            usePhysicalDocking = false // Experimental: Anchor to physical device side
+            usePhysicalDocking = false, // Experimental: Anchor to physical device side
+            expandedWidth = 280.dp
         )
 
         // SECTOR 3: SPECIAL OPERATIONS
@@ -126,7 +128,7 @@ fun SampleScreen() {
         azRailItem(id = "settings", text = "Settings", route = "settings")
 
         // ONSCREEN CONTENT
-        // Use 'onscreen' to define your UI. 
+        // Use 'onscreen' to define your UI.
         // Layout rules (safe zones, padding) are enforced automatically.
         onscreen(alignment = Alignment.Center) {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -144,10 +146,12 @@ fun SampleScreen() {
 
 `AzHostActivityLayout` enforces a "Strict Mode" layout system:
 
-1.  **Rail Avoidance**: No content in the `onscreen` block will overlap the rail. Padding is automatically applied based on the docking side.
-2.  **Vertical Safe Zones**: Content is restricted from the top (`80.dp`) and bottom (`48.dp`) of the screen.
+1.  **Rail Avoidance**: No content in the `onscreen` block will overlap the rail.
+    Padding is automatically applied based on the docking side.
+2.  **Vertical Safe Zones**: Content is restricted from the **Top 20%** (`0.2f`) and **Bottom 10%** (`0.1f`) of the screen.
 3.  **Automatic Flipping**: Alignments passed to `onscreen` (e.g., `TopStart`) are automatically mirrored if the rail is docked to the right.
-4.  **Backgrounds**: Use the `background(weight)` DSL to place full-screen content behind the UI (e.g., maps, camera feeds). Backgrounds ignore safe zones.
+4.  **Backgrounds**: Use the `background(weight)` DSL to place full-screen content behind the UI (e.g., maps, camera feeds).
+    Backgrounds ignore safe zones.
 
 [API Reference](docs/API.md)
 
