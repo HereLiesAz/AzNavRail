@@ -59,6 +59,8 @@ internal object AzNavRailDefaults {
     val FooterDividerVerticalPadding = 8.dp
     /** Height of the spacer in the footer. */
     val FooterSpacerHeight = 12.dp
+    val HeaderHeightDp = 56.dp
+    val ButtonSize = 48.dp
 }
 
 /**
