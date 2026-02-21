@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,7 +25,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 
 @Composable
-fun SampleScreen() {
+fun SampleScreen(string: String) {
     val TAG = "SampleApp"
     val navController = rememberNavController()
     val currentDestination by navController.currentBackStackEntryAsState()
