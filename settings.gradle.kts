@@ -26,5 +26,3 @@ dependencyResolutionManagement {
 rootProject.name = "AzNavRail"
 include(":SampleApp")
 include(":aznavrail")
-include(":aznavrail-annotation")
-include(":aznavrail-processor")
