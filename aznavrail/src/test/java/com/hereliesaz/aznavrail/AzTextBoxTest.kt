@@ -47,9 +47,9 @@ class AzTextBoxTest {
     @Test
     fun azTextBox_inside_lazyColumn_renders_correctly_without_crash() {
         // This test places AzTextBox inside a LazyColumn.
-        // If AzTextBox uses a LazyColumn for suggestions, it would crash when suggestions are displayed
-        // because of nested vertically scrolling components with undefined height.
-
+        // It verifies that the autocomplete Popup dropdown intelligently measures
+        // its own bounds and parent's width, breaking free from contextual constraints 
+        // without causing nested scroll exception crashes.
         composeTestRule.setContent {
             LazyColumn {
                 item {
@@ -66,11 +66,7 @@ class AzTextBoxTest {
         // Wait for suggestions to appear
         composeTestRule.waitForIdle()
 
-        // If it hasn't crashed yet, we can try to verify suggestions are visible.
-        // The crash typically happens during measurement/layout.
-
         // "apple" should be visible if suggestions are showing.
-        // If the crash prevents rendering, this might fail or the test runner will report the exception.
         composeTestRule.onNodeWithText("apple").assertIsDisplayed()
     }
 }

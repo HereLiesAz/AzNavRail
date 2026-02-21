@@ -87,7 +87,8 @@ fun AzNavRail(
     navController?.let { scope.navController = it }
     scope.apply(content)
 
-    val effectiveNoMenu = scope.noMenu && overlayController == null
+    var isFloating by remember { mutableStateOf(overlayController != null) }
+    val effectiveNoMenu = scope.noMenu && overlayController == null && !isFloating
     val effectiveDockingSide = visualDockingSide ?: scope.dockingSide
     val isRightDocked = effectiveDockingSide == AzDockingSide.RIGHT
 
@@ -128,7 +129,7 @@ fun AzNavRail(
 
     var showFooterPopup by remember { mutableStateOf(false) }
     var railOffset by remember { mutableStateOf(IntOffset.Zero) }
-    var isFloating by remember { mutableStateOf(overlayController != null) }
+
     var showFloatingButtons by remember { mutableStateOf(false) }
     var wasVisibleOnDragStart by remember { mutableStateOf(false) }
 

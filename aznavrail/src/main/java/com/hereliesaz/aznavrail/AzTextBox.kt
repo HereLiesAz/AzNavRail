@@ -168,6 +168,7 @@ fun AzTextBox(
     val backgroundColor = AzTextBoxDefaults.getBackgroundColor().copy(alpha = AzTextBoxDefaults.getBackgroundOpacity())
     var isPasswordVisible by remember { mutableStateOf(false) }
     var componentHeight by remember { mutableIntStateOf(0) }
+    var componentWidth by remember { mutableIntStateOf(0) }
 
     val effectiveColor = if (isError) {
         MaterialTheme.colorScheme.error
@@ -193,7 +194,10 @@ fun AzTextBox(
         Row(
             modifier = Modifier
                 .background(backgroundColor)
-                .onSizeChanged { componentHeight = it.height },
+                .onSizeChanged {
+                    componentHeight = it.height
+                    componentWidth = it.width
+                },
             verticalAlignment = if (multiline) Alignment.Bottom else Alignment.CenterVertically
         ) {
             Box(
@@ -325,7 +329,7 @@ fun AzTextBox(
                 val surfaceColor = MaterialTheme.colorScheme.surface
                 Column(
                     modifier = Modifier
-                        .width(200.dp) // Or match parent width if possible, but Popup breaks context constraints
+                        .width(with(density) { componentWidth.toDp() })
                         .background(surfaceColor)
                         .border(1.dp, effectiveColor.copy(alpha = 0.5f))
                 ) {
