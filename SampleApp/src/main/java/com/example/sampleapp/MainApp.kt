@@ -24,13 +24,6 @@ import android.provider.Settings
 import android.content.Intent
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Info
-
 @Composable
 fun MainApp() {
     val TAG = "SampleApp"
@@ -132,12 +125,12 @@ fun MainApp() {
             onClick = { Log.d(TAG, "Color item clicked") }
         )
 
-        // Demonstrating Dynamic Content (Icon)
+        // Demonstrating Dynamic Content (Icon as Resource)
         azRailItem(
             id = "icon-item",
             text = "Icon",
-            content = Icons.Filled.Star,
-            info = "Demonstrates dynamic content with Icon",
+            content = android.R.drawable.ic_menu_agenda,
+            info = "Demonstrates dynamic content with Resource ID",
             onClick = { Log.d(TAG, "Icon item clicked") }
         )
 
