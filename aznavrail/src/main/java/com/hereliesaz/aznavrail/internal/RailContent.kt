@@ -1,16 +1,11 @@
 package com.hereliesaz.aznavrail.internal
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.unit.dp
-import com.hereliesaz.aznavrail.AzButton
+import com.hereliesaz.aznavrail.AzNavRailButton
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 
@@ -30,21 +25,14 @@ internal fun RailContent(
     activeColor: Color,
     shape: AzButtonShape
 ) {
-    val shapeModifier = when (shape) {
-        AzButtonShape.CIRCLE -> CircleShape
-        AzButtonShape.RECTANGLE -> RectangleShape
-        AzButtonShape.SQUARE -> RectangleShape
-        AzButtonShape.NONE -> RectangleShape
-    }
-
     val displayText = when {
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
         item.isCycler -> item.selectedOption ?: ""
         else -> item.text
     }
 
-    Box(modifier = dragModifier.clip(shapeModifier)) {
-        AzButton(
+    Box(modifier = dragModifier) {
+        AzNavRailButton(
             onClick = {
                 if (item.isCycler) {
                     onRailCyclerClick(item)
@@ -56,9 +44,14 @@ internal fun RailContent(
                 }
             },
             text = displayText ?: "",
+            modifier = Modifier,
+            size = buttonSize,
+            color = MaterialTheme.colorScheme.onSurface,
+            activeColor = activeColor,
             shape = shape,
-            activeColor = if (isSelected) activeColor else MaterialTheme.colorScheme.onSurface,
-            enabled = !item.disabled
+            enabled = !item.disabled,
+            isSelected = isSelected,
+            itemContent = item.content
         )
     }
 }
