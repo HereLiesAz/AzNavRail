@@ -25,6 +25,7 @@ import android.provider.Settings
 import android.net.Uri
 import android.content.Intent
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 
 @Composable
 fun SampleScreen() {
@@ -64,7 +65,7 @@ fun SampleScreen() {
         } else {
             val intent = Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:${context.packageName}")
+                "package:${context.packageName}".toUri()
             )
             context.startActivity(intent)
         }
@@ -333,166 +334,164 @@ fun SampleScreen() {
             Text("Aligned TopEnd (Flips)", modifier = Modifier.padding(16.dp))
         }
 
-        onscreen(alignment = Alignment.Center) {
-            Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
-                // Uncontrolled AzTextBox with history context
-                AzTextBox(
-                    modifier = Modifier.padding(bottom = 16.dp),
-                    hint = "Uncontrolled (History: Search)",
-                    historyContext = "search_history",
-                    onSubmit = { text ->
-                        Log.d(TAG, "Submitted text from uncontrolled AzTextBox: $text")
-                    },
-                    submitButtonContent = {
-                        Text("Go")
-                    }
-                )
-
-                // Controlled AzTextBox with a different history context
-                var controlledText by remember { mutableStateOf("") }
-                AzTextBox(
-                    modifier = Modifier.padding(bottom = 16.dp),
-                    value = controlledText,
-                    onValueChange = { controlledText = it },
-                    hint = "Controlled (History: Usernames)",
-                    historyContext = "username_history",
-                    onSubmit = { text ->
-                        Log.d(TAG, "Submitted text from controlled AzTextBox: $text")
-                    },
-                    submitButtonContent = {
-                        Text("Go")
-                    }
-                )
-
-                // AzTextBox with inverted outline
-                AzTextBox(
-                    modifier = Modifier.padding(bottom = 16.dp),
-                    hint = "Uncontrolled (No Outline)",
-                    outlined = false,
-                    onSubmit = { text ->
-                        Log.d(TAG, "Submitted text from no-outline AzTextBox: $text")
-                    },
-                    submitButtonContent = {
-                        Text("Go")
-                    }
-                )
-
-                // Disabled AzTextBox
-                AzTextBox(
-                    modifier = Modifier.padding(bottom = 16.dp),
-                    hint = "Disabled",
-                    enabled = false,
-                    onSubmit = { Log.d(TAG, "Submitted disabled") }
-                )
-
-                AzForm(
-                    formName = "loginForm",
-                    modifier = Modifier.padding(bottom = 16.dp),
-                    onSubmit = { formData ->
-                        Log.d(TAG, "Form submitted: $formData")
-                    },
-                    submitButtonContent = {
-                        Text("Login")
-                    }
-                ) {
-                    entry(entryName = "username", hint = "Username")
-                    entry(entryName = "password", hint = "Password", secret = true)
-                    entry(entryName = "bio", hint = "Biography", multiline = true)
-                }
-
-                AzForm(
-                    formName = "registrationForm",
-                    outlined = false,
-                    onSubmit = { formData ->
-                        Log.d(TAG, "Registration Form submitted: $formData")
-                    },
-                    submitButtonContent = {
-                        Text("Register")
-                    }
-                ) {
-                    entry(entryName = "email", hint = "Email", enabled = false)
-                    entry(entryName = "confirm_password", hint = "Confirm Password", secret = true)
-                }
-
-                Row {
-                    var buttonLoading by remember { mutableStateOf(false) }
-                    AzButton(
-                        onClick = {
-                            Log.d(TAG, "Standalone AzButton clicked")
-                            buttonLoading = !buttonLoading
+        // Navigation host within content
+        AzNavHost(startDestination = "home", navController = navController) {
+            composable("home") {
+                Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
+                    // Uncontrolled AzTextBox with history context
+                    AzTextBox(
+                        modifier = Modifier.padding(bottom = 16.dp),
+                        hint = "Uncontrolled (History: Search)",
+                        historyContext = "search_history",
+                        onSubmit = { text ->
+                            Log.d(TAG, "Submitted text from uncontrolled AzTextBox: $text")
                         },
-                        text = "Button",
-                        shape = AzButtonShape.SQUARE,
-                        isLoading = buttonLoading,
-                        contentPadding = PaddingValues(16.dp)
+                        submitButtonContent = {
+                            Text("Go")
+                        }
                     )
 
-                    AzButton(
-                        onClick = { Log.d(TAG, "Disabled clicked") },
-                        text = "Disabled",
-                        enabled = false
-                    )
-
-                    var isToggled by remember { mutableStateOf(false) }
-                    AzToggle(
-                        isChecked = isToggled,
-                        onToggle = { isToggled = !isToggled },
-                        toggleOnText = "On",
-                        toggleOffText = "Off",
-                        shape = AzButtonShape.RECTANGLE
-                    )
-                    val cyclerOptions = remember { listOf("1", "2", "3") }
-                    var selectedCyclerOption by remember { mutableStateOf(cyclerOptions.first()) }
-                    AzCycler(
-                        options = cyclerOptions,
-                        selectedOption = selectedCyclerOption,
-                        onCycle = {
-                            val currentIndex = cyclerOptions.indexOf(selectedCyclerOption)
-                            val nextIndex = (currentIndex + 1) % cyclerOptions.size
-                            selectedCyclerOption = cyclerOptions[nextIndex]
+                    // Controlled AzTextBox with a different history context
+                    var controlledText by remember { mutableStateOf("") }
+                    AzTextBox(
+                        modifier = Modifier.padding(bottom = 16.dp),
+                        value = controlledText,
+                        onValueChange = { controlledText = it },
+                        hint = "Controlled (History: Usernames)",
+                        historyContext = "username_history",
+                        onSubmit = { text ->
+                            Log.d(TAG, "Submitted text from controlled AzTextBox: $text")
                         },
-                        shape = AzButtonShape.CIRCLE
+                        submitButtonContent = {
+                            Text("Go")
+                        }
                     )
-                }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                    // AzTextBox with inverted outline
+                    AzTextBox(
+                        modifier = Modifier.padding(bottom = 16.dp),
+                        hint = "Uncontrolled (No Outline)",
+                        outlined = false,
+                        onSubmit = { text ->
+                            Log.d(TAG, "Submitted text from no-outline AzTextBox: $text")
+                        },
+                        submitButtonContent = {
+                            Text("Go")
+                        }
+                    )
 
-                AzRoller(
-                    options = listOf("Cherry", "Bell", "Bar", "Seven", "Diamond"),
-                    selectedOption = "Cherry",
-                    onOptionSelected = { Log.d(TAG, "Roller selected: $it") },
-                    hint = "Roller Select",
-                    enabled = true
-                )
+                    // Disabled AzTextBox
+                    AzTextBox(
+                        modifier = Modifier.padding(bottom = 16.dp),
+                        hint = "Disabled",
+                        enabled = false,
+                        onSubmit = { Log.d(TAG, "Submitted disabled") }
+                    )
 
-                // Navigation host within content
-                AzNavHost(startDestination = "home", navController = navController) {
-                    composable("home") { Text("Home Screen") }
-                    composable("multi-line") { Text("Multi-line Screen") }
-                    composable("menu-host") { Text("Menu Host Screen") }
-                    composable("menu-sub-1") { Text("Menu Sub 1 Screen") }
-                    composable("menu-sub-2") { Text("Menu Sub 2 Screen") }
-                    composable("rail-host") { Text("Rail Host Screen") }
-                    composable("rail-sub-1") { Text("Rail Sub 1 Screen") }
-                    composable("rail-sub-2") { Text("Rail Sub 2 Screen") }
-                    composable("sub-toggle") { Text("Sub Toggle Screen") }
-                    composable("sub-cycler") { Text("Sub Cycler Screen") }
-                    composable("pack-rail") { Text("Pack Rail Screen") }
-                    composable("profile") { Text("Profile Screen") }
-                    composable("online") { Text("Online Screen") }
-                    composable("dark-mode") { Text("Dark Mode Screen") }
-                    composable("rail-cycler") { Text("Rail Cycler Screen") }
-                    composable("menu-cycler") { Text("Menu Cycler Screen") }
-                    composable("loading") { Text("Loading Screen") }
-                    composable("physical-docking") { Text("Physical Docking Screen") }
-                    composable("overlay-mode") { Text("Overlay Mode Screen") }
-                    composable("docking-side") { Text("Docking Side Screen") }
-                    composable("no-menu") { Text("No Menu Screen") }
-                    composable("nested-rail") { Text("Nested Rail Screen") }
-                    composable("nested-1") { Text("Nested Item 1 Screen") }
-                    composable("nested-2") { Text("Nested Item 2 Screen") }
+                    AzForm(
+                        formName = "loginForm",
+                        modifier = Modifier.padding(bottom = 16.dp),
+                        onSubmit = { formData ->
+                            Log.d(TAG, "Form submitted: $formData")
+                        },
+                        submitButtonContent = {
+                            Text("Login")
+                        }
+                    ) {
+                        entry(entryName = "username", hint = "Username")
+                        entry(entryName = "password", hint = "Password", secret = true)
+                        entry(entryName = "bio", hint = "Biography", multiline = true)
+                    }
+
+                    AzForm(
+                        formName = "registrationForm",
+                        outlined = false,
+                        onSubmit = { formData ->
+                            Log.d(TAG, "Registration Form submitted: $formData")
+                        },
+                        submitButtonContent = {
+                            Text("Register")
+                        }
+                    ) {
+                        entry(entryName = "email", hint = "Email", enabled = false)
+                        entry(entryName = "confirm_password", hint = "Confirm Password", secret = true)
+                    }
+
+                    Row {
+                        var buttonLoading by remember { mutableStateOf(false) }
+                        AzButton(
+                            onClick = {
+                                Log.d(TAG, "Standalone AzButton clicked")
+                                buttonLoading = !buttonLoading
+                            },
+                            text = "Button",
+                            shape = AzButtonShape.SQUARE,
+                            isLoading = buttonLoading,
+                            contentPadding = PaddingValues(16.dp)
+                        )
+
+                        AzButton(
+                            onClick = { Log.d(TAG, "Disabled clicked") },
+                            text = "Disabled",
+                            enabled = false
+                        )
+
+                        var isToggled by remember { mutableStateOf(false) }
+                        AzToggle(
+                            isChecked = isToggled,
+                            onToggle = { isToggled = !isToggled },
+                            toggleOnText = "On",
+                            toggleOffText = "Off",
+                            shape = AzButtonShape.RECTANGLE
+                        )
+                        val cyclerOptions = remember { listOf("1", "2", "3") }
+                        var selectedCyclerOption by remember { mutableStateOf(cyclerOptions.first()) }
+                        AzCycler(
+                            options = cyclerOptions,
+                            selectedOption = selectedCyclerOption,
+                            onCycle = {
+                                val currentIndex = cyclerOptions.indexOf(selectedCyclerOption)
+                                val nextIndex = (currentIndex + 1) % cyclerOptions.size
+                                selectedCyclerOption = cyclerOptions[nextIndex]
+                            },
+                            shape = AzButtonShape.CIRCLE
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    AzRoller(
+                        options = listOf("Cherry", "Bell", "Bar", "Seven", "Diamond"),
+                        selectedOption = "Cherry",
+                        onOptionSelected = { Log.d(TAG, "Roller selected: $it") },
+                        hint = "Roller Select",
+                        enabled = true
+                    )
                 }
             }
+            composable("multi-line") { Text("Multi-line Screen") }
+            composable("menu-host") { Text("Menu Host Screen") }
+            composable("menu-sub-1") { Text("Menu Sub 1 Screen") }
+            composable("menu-sub-2") { Text("Menu Sub 2 Screen") }
+            composable("rail-host") { Text("Rail Host Screen") }
+            composable("rail-sub-1") { Text("Rail Sub 1 Screen") }
+            composable("rail-sub-2") { Text("Rail Sub 2 Screen") }
+            composable("sub-toggle") { Text("Sub Toggle Screen") }
+            composable("sub-cycler") { Text("Sub Cycler Screen") }
+            composable("pack-rail") { Text("Pack Rail Screen") }
+            composable("profile") { Text("Profile Screen") }
+            composable("online") { Text("Online Screen") }
+            composable("dark-mode") { Text("Dark Mode Screen") }
+            composable("rail-cycler") { Text("Rail Cycler Screen") }
+            composable("menu-cycler") { Text("Menu Cycler Screen") }
+            composable("loading") { Text("Loading Screen") }
+            composable("physical-docking") { Text("Physical Docking Screen") }
+            composable("overlay-mode") { Text("Overlay Mode Screen") }
+            composable("docking-side") { Text("Docking Side Screen") }
+            composable("no-menu") { Text("No Menu Screen") }
+            composable("nested-rail") { Text("Nested Rail Screen") }
+            composable("nested-1") { Text("Nested Item 1 Screen") }
+            composable("nested-2") { Text("Nested Item 2 Screen") }
         }
     }
 }

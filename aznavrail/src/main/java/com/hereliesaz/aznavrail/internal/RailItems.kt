@@ -3,8 +3,8 @@ package com.hereliesaz.aznavrail.internal
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -32,6 +32,7 @@ import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzOrientation
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalConfiguration
+import com.hereliesaz.aznavrail.util.EqualWidthLayout
 
 @Composable
 internal fun RailItems(
@@ -56,7 +57,7 @@ internal fun RailItems(
     val config = LocalConfiguration.current
     val screenHeight = config.screenHeightDp.dp
     val screenWidth = config.screenWidthDp.dp
-    
+
     val maxRailHeight = screenHeight * 0.8f
     val maxRailWidth = screenWidth * 0.8f
 
@@ -107,9 +108,16 @@ internal fun RailItems(
 
     Box(modifier = Modifier.onGloballyPositioned { rootBounds = it.boundsInWindow() }) {
         if (isVertical) {
-            Column(modifier = Modifier.heightIn(max = maxRailHeight).verticalScroll(rememberScrollState())) { itemsToRender.forEach { renderItem(it) } }
+            EqualWidthLayout(
+                modifier = Modifier.heightIn(max = maxRailHeight).verticalScroll(rememberScrollState()),
+                verticalSpacing = if (scope.packButtons) 0.dp else AzNavRailDefaults.RailContentVerticalArrangement
+            ) {
+                itemsToRender.forEach { renderItem(it) }
+            }
         } else {
-            Row(modifier = Modifier.widthIn(max = maxRailWidth).horizontalScroll(rememberScrollState())) { itemsToRender.forEach { renderItem(it) } }
+            Row(modifier = Modifier.widthIn(max = maxRailWidth).horizontalScroll(rememberScrollState())) {
+                itemsToRender.forEach { renderItem(it) }
+            }
         }
 
         if (nestedRailOpenId != null) {
@@ -117,7 +125,7 @@ internal fun RailItems(
                 val item = items.find { it.id == nestedRailOpenId }
                 val bounds = if (item?.nestedRailAlignment == com.hereliesaz.aznavrail.model.AzNestedRailAlignment.VERTICAL) capturedAnchorBounds else itemBounds[nestedRailOpenId]
                 if (item != null && bounds != null && item.nestedRailItems != null && item.nestedRailAlignment != null) {
-                     NestedRail(parentItem = item, items = item.nestedRailItems!!, scope = scope, navController = navController, currentDestination = currentDestination, anchorBounds = bounds, rootBounds = rb, onDismiss = { nestedRailOpenId = null; capturedAnchorBounds = null }, isRightDocked = scope.dockingSide == AzDockingSide.RIGHT, onItemSelected = onItemSelected, activeColor = activeColor, defaultShape = defaultShape)
+                    NestedRail(parentItem = item, items = item.nestedRailItems!!, scope = scope, navController = navController, currentDestination = currentDestination, anchorBounds = bounds, rootBounds = rb, onDismiss = { nestedRailOpenId = null; capturedAnchorBounds = null }, isRightDocked = scope.dockingSide == AzDockingSide.RIGHT, onItemSelected = onItemSelected, activeColor = activeColor, defaultShape = defaultShape)
                 }
             }
         }
@@ -139,15 +147,15 @@ private fun DraggableRailItemWrapper(
     val isClassifierActive = item.classifiers.any { it in scope.activeClassifiers }
     val isVisuallyActive = isSelected || isClassifierActive || lastTappedId == item.id
 
-    Box {
-         RailContent(
-             item = item, navController = navController, isSelected = isVisuallyActive, buttonSize = buttonSize,
-             onClick = { scope.onFocusMap[item.id]?.invoke(); if (item.isNestedRail) onNestedRailToggle(item.id) else if (onClickOverride != null) onClickOverride(item) else scope.onClickMap[item.id]?.invoke() },
-             onRailCyclerClick = onRailCyclerClick, onItemClick = { onItemSelected(item) },
-             onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
-             onItemGloballyPositioned = onItemGloballyPositioned, infoScreen = infoScreen,
-             dragModifier = Modifier.onGloballyPositioned { onBoundsReported(item.id, it.boundsInWindow()) },
-             activeColor = activeColor, shape = defaultShape
-         )
+    Box(modifier = Modifier.fillMaxWidth()) {
+        RailContent(
+            item = item, navController = navController, isSelected = isVisuallyActive, buttonSize = buttonSize,
+            onClick = { scope.onFocusMap[item.id]?.invoke(); if (item.isNestedRail) onNestedRailToggle(item.id) else if (onClickOverride != null) onClickOverride(item) else scope.onClickMap[item.id]?.invoke() },
+            onRailCyclerClick = onRailCyclerClick, onItemClick = { onItemSelected(item) },
+            onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
+            onItemGloballyPositioned = onItemGloballyPositioned, infoScreen = infoScreen,
+            dragModifier = Modifier.fillMaxWidth().onGloballyPositioned { onBoundsReported(item.id, it.boundsInWindow()) },
+            activeColor = activeColor, shape = defaultShape
+        )
     }
 }
