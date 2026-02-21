@@ -310,13 +310,8 @@ fun AzNavRail(
                     contentAlignment = if (isAppIcon) Alignment.Center else Alignment.CenterStart
                 ) {
                     if (isAppIcon) {
-                        val headerIconShapeModifier = when (scope.headerIconShape) {
-                            AzHeaderIconShape.CIRCLE -> CircleShape
-                            AzHeaderIconShape.ROUNDED -> RoundedCornerShape(8.dp)
-                            AzHeaderIconShape.NONE -> RectangleShape
-                        }
                         if (appIcon != null) {
-                            Image(painter = rememberAsyncImagePainter(model = appIcon), contentDescription = "Toggle menu", modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize).clip(headerIconShapeModifier))
+                            Image(painter = rememberAsyncImagePainter(model = appIcon), contentDescription = "Toggle menu", modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize))
                         } else {
                             Icon(imageVector = Icons.Default.Menu, contentDescription = "Toggle Menu", modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize))
                         }

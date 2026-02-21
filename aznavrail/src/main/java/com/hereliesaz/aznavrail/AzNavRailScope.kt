@@ -11,10 +11,11 @@ import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
+import java.util.Collections.emptySet
 
 interface AzNavRailScope {
     fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 130.dp, collapsedWidth: Dp = 80.dp, showFooter: Boolean = true)
-    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.CIRCLE, headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE)
+    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.CIRCLE)
     fun azAdvanced(isLoading: Boolean = false, infoScreen: Boolean = false, onDismissInfoScreen: (() -> Unit)? = null, overlayService: Class<out android.app.Service>? = null, onUndock: (() -> Unit)? = null, enableRailDragging: Boolean = false, onRailDrag: ((Float, Float) -> Unit)? = null, onOverlayDrag: ((Float, Float) -> Unit)? = null, onItemGloballyPositioned: ((String, Rect) -> Unit)? = null)
 
     fun azMenuItem(id: String, text: String, route: String? = null, content: Any? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
@@ -98,7 +99,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     // Theme
     var activeColor: Color = Color.Unspecified
     var defaultShape: AzButtonShape = AzButtonShape.CIRCLE
-    var headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE
+    var headerIconShape: AzHeaderIconShape = AzHeaderIconShape.NONE
 
     // Advanced
     var isLoading: Boolean = false
