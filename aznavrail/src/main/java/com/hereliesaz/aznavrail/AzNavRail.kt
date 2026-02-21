@@ -1,28 +1,20 @@
 package com.hereliesaz.aznavrail
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
+import android.annotation.SuppressLint
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
@@ -30,24 +22,20 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -61,226 +49,293 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
+import com.hereliesaz.aznavrail.internal.AzNavRailLogger
 import com.hereliesaz.aznavrail.model.AzOrientation
 import com.hereliesaz.aznavrail.internal.CenteredPopupPositionProvider
 import com.hereliesaz.aznavrail.internal.CyclerTransientState
 import com.hereliesaz.aznavrail.internal.Footer
+import com.hereliesaz.aznavrail.internal.HelpOverlay
 import com.hereliesaz.aznavrail.internal.MenuItem
 import com.hereliesaz.aznavrail.internal.OverlayHelper
 import com.hereliesaz.aznavrail.internal.RailItems
 import com.hereliesaz.aznavrail.model.AzDockingSide
+import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.service.LocalAzNavRailOverlayController
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
 @Target(AnnotationTarget.FUNCTION)
-@RequiresOptIn(message = "This API is strictly controlled. Use AzHostActivityLayout.")
+@RequiresOptIn(message = "This API is for internal layout use only. Please use AzHostActivityLayout.")
 annotation class AzStrictLayout
 
-object AzNavRail {
-    const val noTitle = "AZNAVRAIL_NO_TITLE"
-    const val EXTRA_ROUTE = "com.hereliesaz.aznavrail.extra.ROUTE"
-}
-
-@AzStrictLayout
+@OptIn(AzStrictLayout::class)
 @Composable
 fun AzNavRail(
     modifier: Modifier = Modifier,
+    providedScope: AzNavRailScopeImpl? = null,
     navController: NavController? = null,
     currentDestination: String? = null,
     isLandscape: Boolean = false,
+    visualDockingSide: AzDockingSide? = null,
     initiallyExpanded: Boolean = false,
     disableSwipeToOpen: Boolean = false,
-    providedScope: AzNavRailScopeImpl? = null,
-    orientation: AzOrientation = AzOrientation.Vertical,
-    visualDockingSide: AzDockingSide? = null,
-    railAlignment: Alignment? = null,
-    reverseLayout: Boolean = false,
-    content: AzNavRailScope.() -> Unit
+    content: AzNavRailScope.() -> Unit = {}
 ) {
-    val isHostPresent = LocalAzNavHostPresent.current
-    val overlayController = LocalAzNavRailOverlayController.current
-
-    if (!isHostPresent && overlayController == null) {
-        Box(modifier = Modifier.fillMaxSize().background(Color.Red), contentAlignment = Alignment.Center) {
-            Text("FATAL LAYOUT VIOLATION", color = Color.White)
-        }
-        error("FATAL LAYOUT VIOLATION: AzNavRail instantiated without AzHostActivityLayout.")
+    if (!LocalAzNavHostPresent.current && providedScope == null) {
+        throw IllegalStateException("AzNavRail must be used within an AzHostActivityLayout.")
     }
 
-    val scope = providedScope ?: AzNavRailScopeImpl().apply {
-        navController?.let { this.navController = it }
-        this.content()
-    }
+    val scope = providedScope ?: remember { AzNavRailScopeImpl() }
+    if (providedScope == null) scope.reset()
+    navController?.let { scope.navController = it }
+    scope.apply(content)
 
     val actualActiveColor = if (scope.activeColor != Color.Unspecified) scope.activeColor else MaterialTheme.colorScheme.primary
     val actualShape = scope.defaultShape
 
+    val overlayController = LocalAzNavRailOverlayController.current
     val effectiveNoMenu = scope.noMenu && overlayController == null
     val effectiveDockingSide = visualDockingSide ?: scope.dockingSide
     val isRightDocked = effectiveDockingSide == AzDockingSide.RIGHT
 
-    // Extract items safely from the scope
-    val displayedNavItems = if (effectiveNoMenu) {
-        scope.navItems.map { it.copy(isRailItem = true) }
-    } else {
-        scope.navItems.toList()
+    val displayedNavItems = remember(scope.navItems, effectiveNoMenu) {
+        if (effectiveNoMenu) scope.navItems.map { it.copy(isRailItem = true) } else scope.navItems
     }
 
     val context = LocalContext.current
-    val appName = remember(context.packageName) { context.packageManager.getApplicationLabel(context.packageManager.getApplicationInfo(context.packageName, 0)).toString() }
+    val packageManager = context.packageManager
+    val packageName = context.packageName
+    val appName = remember(packageName) {
+        packageManager.getApplicationLabel(packageManager.getApplicationInfo(packageName, 0)).toString()
+    }
+    val appIcon = remember(packageName) {
+        packageManager.getApplicationIcon(packageName)
+    }
 
     val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
-    val finalNavItems = displayedNavItems.map { item ->
-        if (item.isCycler) item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption) else item
-    }
-
-    var isExpandedInternal by rememberSaveable(initiallyExpanded) { mutableStateOf(initiallyExpanded) }
-    val isExpandedState = remember(overlayController, effectiveNoMenu) {
-        object : androidx.compose.runtime.MutableState<Boolean> {
-            override var value: Boolean
-                get() = if (overlayController != null || effectiveNoMenu) false else isExpandedInternal
-                set(v) { if (overlayController == null && !effectiveNoMenu) isExpandedInternal = v }
-            override fun component1() = value
-            override fun component2(): (Boolean) -> Unit = { value = it }
+    val finalNavItems = remember(displayedNavItems, cyclerStates.toMap()) {
+        displayedNavItems.map { item ->
+            if (item.isCycler) item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption)
+            else item
         }
     }
-    var isExpanded by isExpandedState
 
-    var showFooterPopup by remember { mutableStateOf(false) }
+    var isExpanded by remember { mutableStateOf(initiallyExpanded) }
+    var isFloating by remember { mutableStateOf(overlayController != null) }
     var railOffset by remember { mutableStateOf(IntOffset.Zero) }
-    var isFloating by remember { mutableStateOf(false) }
     var showFloatingButtons by remember { mutableStateOf(false) }
     var wasVisibleOnDragStart by remember { mutableStateOf(false) }
-    var isAppIcon by remember { mutableStateOf(!scope.displayAppName) }
-    var headerHeight by remember { mutableStateOf(0) }
-    var railItemsHeight by remember { mutableStateOf(0) }
-    var railBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
+
+    var isAppIcon by remember(isFloating, scope.displayAppName) { 
+        mutableStateOf(if (isFloating) true else !scope.displayAppName) 
+    }
 
     val hapticFeedback = LocalHapticFeedback.current
-    val isVertical = orientation == AzOrientation.Vertical
-    val railThickness by animateDpAsState(if (isExpanded) scope.expandedWidth else scope.collapsedWidth, label = "railThickness")
-
     val coroutineScope = rememberCoroutineScope()
-    var selectedItemId by rememberSaveable { mutableStateOf<String?>(null) }
-    val selectedItem = finalNavItems.find { it.id == selectedItemId }
-    val hostStates = remember { mutableStateMapOf<String, Boolean>() }
-    val itemPositions = remember { mutableStateMapOf<String, androidx.compose.ui.geometry.Rect>() }
+    val density = LocalDensity.current
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dp
 
-    val itemIdsString = displayedNavItems.joinToString(",") { it.id }
-    LaunchedEffect(itemIdsString, currentDestination) {
-        val targetId = if (currentDestination != null) displayedNavItems.find { it.route == currentDestination }?.id else selectedItemId ?: displayedNavItems.firstOrNull()?.id
-        if (targetId != null) selectedItemId = targetId
-        displayedNavItems.forEach { if (it.isCycler) cyclerStates.putIfAbsent(it.id, CyclerTransientState(it.selectedOption ?: "")) }
+    val hostStates = remember { mutableStateMapOf<String, Boolean>() }
+    val toggleHost: (String) -> Unit = { id ->
+        val currentState = hostStates[id] ?: false
+        hostStates.keys.forEach { hostStates[it] = false }
+        hostStates[id] = !currentState
     }
 
-    LaunchedEffect(isExpanded) {
-        if (!isExpanded) {
-            cyclerStates.forEach { (id, state) ->
-                if (state.job != null) {
-                    state.job.cancel()
-                    val item = displayedNavItems.find { it.id == id }
-                    if (item != null) {
-                        coroutineScope.launch {
-                            val options = requireNotNull(item.options)
-                            val currentStateInVm = item.selectedOption
-                            val targetState = state.displayedOption
-                            val currentIndexInVm = options.indexOf(currentStateInVm)
-                            val targetIndex = options.indexOf(targetState)
-                            if (currentIndexInVm != -1 && targetIndex != -1) {
-                                val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
-                                val onClick = scope.onClickMap[item.id]
-                                if (onClick != null) repeat(clicksToCatchUp) { onClick() }
+    val safeZones = LocalAzSafeZones.current
+    val currentContentOffset = overlayController?.contentOffset?.value ?: railOffset
+
+    BackHandler(enabled = isExpanded && !effectiveNoMenu) {
+        isExpanded = false
+    }
+
+    val closeMenuAction = {
+        if (isExpanded) {
+            isExpanded = false
+        }
+    }
+
+    val onItemSelected: (AzNavItem) -> Unit = { item ->
+        if (item.route != null && navController != null) {
+            navController.navigate(item.route)
+        }
+        if (item.collapseOnClick) {
+            isExpanded = false
+        }
+    }
+
+    val onRailCyclerClick: (AzNavItem) -> Unit = { item ->
+        if (item.options != null && item.options.isNotEmpty()) {
+            val currentState = cyclerStates[item.id]
+            val currentOption = currentState?.displayedOption ?: item.selectedOption ?: item.options.first()
+            val currentIndex = item.options.indexOf(currentOption)
+            val nextIndex = (currentIndex + 1) % item.options.size
+            val nextOption = item.options[nextIndex]
+
+            currentState?.job?.cancel()
+
+            val newJob = coroutineScope.launch {
+                delay(1000)
+                item.onClick?.invoke()
+                cyclerStates.remove(item.id)
+            }
+            cyclerStates[item.id] = CyclerTransientState(nextOption, newJob)
+        }
+    }
+
+    val reverseLayout = isRightDocked && isLandscape
+
+    Box(modifier = modifier.fillMaxSize()) {
+        if (isExpanded && !effectiveNoMenu && !isFloating) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectHorizontalDragGestures { change, dragAmount ->
+                            if (if (isRightDocked) dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX else dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
+                                isExpanded = false
+                                change.consume()
                             }
-                            cyclerStates.put(id, state.copy(job = null))
                         }
                     }
-                }
-            }
-        }
-    }
-
-    val density = LocalDensity.current
-    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
-
-    LaunchedEffect(showFloatingButtons) {
-        if (showFloatingButtons && scope.onRailDrag == null && overlayController == null) {
-            val bottomBound = with(density) { screenHeight.toPx() } * 0.9f
-            val railBottom = railOffset.y + headerHeight + railItemsHeight
-            if (railBottom > bottomBound) railOffset = IntOffset(railOffset.x, (bottomBound - headerHeight - railItemsHeight).roundToInt())
-        }
-    }
-
-    Box(modifier = modifier, contentAlignment = railAlignment ?: (if (isRightDocked) Alignment.TopEnd else Alignment.TopStart)) {
-        val buttonSize = 72.dp
-        val titleAlignment = if (isRightDocked) Alignment.TopStart else Alignment.TopEnd
-        val titlePaddingStart = if (isRightDocked) 32.dp else 0.dp
-        val titlePaddingEnd = if (isRightDocked) 0.dp else 32.dp
-
-        selectedItem?.screenTitle?.let { screenTitle ->
-            if (screenTitle.isNotEmpty()) {
-                Popup(alignment = titleAlignment) {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(start = titlePaddingStart, end = titlePaddingEnd, top = 16.dp),
-                        contentAlignment = if (isRightDocked) Alignment.CenterStart else Alignment.CenterEnd
-                    ) {
-                        Text(text = screenTitle, style = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Black, color = actualActiveColor), textAlign = if (isRightDocked) TextAlign.Start else TextAlign.End)
-                    }
-                }
-            }
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { isExpanded = false }
+                    )
+            )
         }
 
-        if (scope.isLoading) {
-            Popup(popupPositionProvider = CenteredPopupPositionProvider, properties = PopupProperties(focusable = false)) {
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars)) { AzLoad() }
-            }
-        }
-
-        Surface(
-            modifier = Modifier.then(if (isVertical) Modifier.width(railThickness).fillMaxHeight() else Modifier.height(railThickness).fillMaxWidth())
-                .offset { if (overlayController != null) overlayController.contentOffset.value else railOffset }
-                .onGloballyPositioned { railBounds = it.boundsInWindow() },
-            color = if (isExpanded) MaterialTheme.colorScheme.surface.copy(alpha = 0.95f) else Color.Transparent,
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .width(if (isExpanded) scope.expandedWidth else scope.collapsedWidth)
+                .offset { currentContentOffset }
+                .align(if (isRightDocked) Alignment.TopEnd else Alignment.TopStart)
+                .padding(top = safeZones.top, bottom = safeZones.bottom)
+                .then(
+                    if (isFloating) Modifier.wrapContentHeight(Alignment.Top) else Modifier
+                )
+                .clip(
+                    RoundedCornerShape(
+                        topStart = if (isRightDocked || isFloating) 16.dp else 0.dp,
+                        bottomStart = if (isRightDocked || isFloating) 16.dp else 0.dp,
+                        topEnd = if (!isRightDocked || isFloating) 16.dp else 0.dp,
+                        bottomEnd = if (!isRightDocked || isFloating) 16.dp else 0.dp
+                    )
+                )
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.95f))
+                .border(
+                    1.dp,
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                    RoundedCornerShape(
+                        topStart = if (isRightDocked || isFloating) 16.dp else 0.dp,
+                        bottomStart = if (isRightDocked || isFloating) 16.dp else 0.dp,
+                        topEnd = if (!isRightDocked || isFloating) 16.dp else 0.dp,
+                        bottomEnd = if (!isRightDocked || isFloating) 16.dp else 0.dp
+                    )
+                )
+                .then(
+                    if (!disableSwipeToOpen && !isExpanded && !isFloating && !effectiveNoMenu) {
+                        Modifier.pointerInput(Unit) {
+                            detectHorizontalDragGestures { change, dragAmount ->
+                                if (if (isRightDocked) dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX else dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX) {
+                                    isExpanded = true
+                                    change.consume()
+                                }
+                            }
+                        }
+                    } else Modifier
+                )
         ) {
-            val headerContent = @Composable {
+            Column(modifier = Modifier.fillMaxSize()) {
+                val headerHeight = with(density) { AzNavRailDefaults.HeaderHeightDp.toPx() }
                 Box(
                     modifier = Modifier
-                        .padding(bottom = if (isVertical) AzNavRailDefaults.HeaderPadding else 0.dp, end = if (!isVertical) AzNavRailDefaults.HeaderPadding else 0.dp)
-                        .onSizeChanged { headerHeight = it.height }
-                        .pointerInput(isFloating, scope.enableRailDragging, scope.displayAppName, scope.onRailDrag, overlayController) {
-                            detectTapGestures(
-                                onTap = {
-                                    if (effectiveNoMenu) showFooterPopup = !showFooterPopup
-                                    else if (isFloating) showFloatingButtons = !showFloatingButtons
-                                    else if (overlayController == null) isExpanded = !isExpanded
-                                },
-                                onLongPress = {
-                                    if (isFloating) {
-                                        if (scope.onRailDrag == null && overlayController == null) railOffset = IntOffset.Zero
-                                        isFloating = false
-                                        if (scope.displayAppName) isAppIcon = false
-                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    } else if (scope.enableRailDragging) {
-                                        val overlayService = scope.overlayService
-                                        if (overlayService != null) OverlayHelper.launch(context, overlayService)
-                                        else { isFloating = true; isExpanded = false; if (scope.displayAppName) isAppIcon = true }
-                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                        .fillMaxWidth()
+                        .height(AzNavRailDefaults.HeaderHeightDp)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            if (isFloating) {
+                                showFloatingButtons = !showFloatingButtons
+                            } else if (!effectiveNoMenu) {
+                                if (scope.vibrate) hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                isExpanded = !isExpanded
+                            }
+                        }
+                        .pointerInput(isFloating) {
+                            detectVerticalDragGestures(
+                                onVerticalDrag = { change, dragAmount ->
+                                    if (!isFloating && (dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX || dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX)) {
+                                        if (scope.enableRailDragging) {
+                                            if (scope.overlayService != null) {
+                                                OverlayHelper.launch(context, scope.overlayService!!)
+                                            } else {
+                                                isFloating = true
+                                                isExpanded = false
+                                                showFloatingButtons = false
+                                                if (scope.displayAppName) isAppIcon = true
+                                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            }
+                                            change.consume()
+                                        }
                                     }
                                 }
+                            )
+                        }
+                        .pointerInput(isFloating, scope.enableRailDragging, overlayController) {
+                            detectDragGestures(
+                                onDragStart = { },
+                                onDrag = { change, _ -> change.consume() },
+                                onDragEnd = { }
+                            )
+                        }
+                        .pointerInput(isFloating, scope.enableRailDragging, overlayController) {
+                            detectDragGestures(
+                                onDragStart = {
+                                    if (overlayController == null && !isFloating && scope.enableRailDragging) {
+                                        if (scope.overlayService != null) {
+                                            OverlayHelper.launch(context, scope.overlayService!!)
+                                        } else {
+                                            isFloating = true
+                                            isExpanded = false
+                                            if (scope.displayAppName) isAppIcon = true
+                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        }
+                                    }
+                                },
+                                onDrag = { _, _ -> },
+                                onDragEnd = { }
                             )
                         }
                         .pointerInput(isFloating, scope.enableRailDragging, scope.onRailDrag, overlayController) {
                             detectDragGestures(
                                 onDragStart = {
-                                    if (overlayController != null) { overlayController.onDragStart(); if (isFloating) { wasVisibleOnDragStart = showFloatingButtons; showFloatingButtons = false } }
-                                    else if (isFloating) { wasVisibleOnDragStart = showFloatingButtons; showFloatingButtons = false }
+                                    if (overlayController != null) {
+                                        overlayController.onDragStart()
+                                        if (isFloating) {
+                                            wasVisibleOnDragStart = showFloatingButtons
+                                            showFloatingButtons = false
+                                        }
+                                    } else if (isFloating) {
+                                        wasVisibleOnDragStart = showFloatingButtons
+                                        showFloatingButtons = false
+                                    }
                                 },
                                 onDrag = { change, dragAmount ->
-                                    if (overlayController != null) { change.consume(); overlayController.onDrag(dragAmount) }
-                                    else if (scope.onOverlayDrag != null) { change.consume(); scope.onOverlayDrag?.invoke(dragAmount.x, dragAmount.y) }
-                                    else if (isFloating) {
+                                    if (overlayController != null) {
+                                        change.consume()
+                                        overlayController.onDrag(dragAmount)
+                                    } else if (scope.onOverlayDrag != null) {
+                                        change.consume()
+                                        scope.onOverlayDrag?.invoke(dragAmount.x, dragAmount.y)
+                                    } else if (isFloating) {
                                         change.consume()
                                         if (scope.onRailDrag != null) scope.onRailDrag?.invoke(dragAmount.x, dragAmount.y)
                                         else {
@@ -291,11 +346,15 @@ fun AzNavRail(
                                     }
                                 },
                                 onDragEnd = {
-                                    if (overlayController != null) { overlayController.onDragEnd(); if (isFloating) showFloatingButtons = true }
-                                    else if (isFloating) {
+                                    if (overlayController != null) {
+                                        overlayController.onDragEnd()
+                                        if (isFloating) showFloatingButtons = true
+                                    } else if (isFloating) {
                                         if (scope.onRailDrag == null) {
                                             if (kotlin.math.sqrt(railOffset.x.toFloat().pow(2) + railOffset.y.toFloat().pow(2)) < AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
-                                                railOffset = IntOffset.Zero; isFloating = false; if (scope.displayAppName) isAppIcon = false
+                                                railOffset = IntOffset.Zero
+                                                isFloating = false
+                                                if (scope.displayAppName) isAppIcon = false
                                                 hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                             } else if (wasVisibleOnDragStart) showFloatingButtons = true
                                         } else if (wasVisibleOnDragStart) showFloatingButtons = true
@@ -306,105 +365,340 @@ fun AzNavRail(
                     contentAlignment = if (isAppIcon) Alignment.Center else Alignment.CenterStart
                 ) {
                     if (isAppIcon) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Toggle Menu",
-                            modifier = Modifier.size(24.dp), // Replaced broken Drawable loader with safe Material Menu icon
-                            tint = actualActiveColor
-                        )
-                    } else {
-                        Text(text = appName, style = MaterialTheme.typography.titleMedium, softWrap = false, maxLines = 1, textAlign = TextAlign.Start, color = MaterialTheme.colorScheme.onSurface)
-                    }
-                }
-            }
-
-            val contentBlock = @Composable {
-                if (isExpanded) {
-                    val displayedItems = if (reverseLayout) displayedNavItems.reversed() else displayedNavItems
-                    Column(
-                        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).pointerInput(isExpanded) {
-                            detectHorizontalDragGestures(onHorizontalDrag = { change, dragAmount ->
-                                if (isExpanded && (if (isRightDocked) dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX else dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX)) {
-                                    isExpanded = false; change.consume()
-                                }
-                            })
+                        val headerIconShapeModifier = when (scope.headerIconShape) {
+                            AzHeaderIconShape.CIRCLE -> CircleShape
+                            AzHeaderIconShape.ROUNDED -> RoundedCornerShape(8.dp)
+                            AzHeaderIconShape.NONE -> RectangleShape
                         }
-                    ) {
-                        displayedItems.filter { !it.isSubItem }.forEach { item ->
-                            if (item.isDivider) { com.hereliesaz.aznavrail.AzDivider() }
-                            else {
-                                val onClick = scope.onClickMap[item.id]
-                                val finalItem = if (item.isCycler) item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption) else if (item.isHost) item.copy(isExpanded = hostStates[item.id] ?: false) else item
-                                MenuItem(
-                                    item = finalItem,
-                                    navController = navController,
-                                    isSelected = finalItem.route == currentDestination,
-                                    onClick = onClick,
-                                    onCyclerClick = if (item.isCycler) { { /* Cycler logic omitted for brevity in builder */ } } else null,
-                                    onToggle = { isExpanded = !isExpanded },
-                                    onItemClick = { selectedItemId = finalItem.id },
-                                    onHostClick = { val wasExpanded = hostStates[item.id] ?: false; hostStates.keys.forEach { hostStates[it] = false }; hostStates[item.id] = !wasExpanded },
-                                    onItemGloballyPositioned = { id, rect -> itemPositions[id] = rect },
-                                    infoScreen = scope.infoScreen,
-                                    activeColor = actualActiveColor,
-                                    defaultShape = actualShape
-                                )
-                                AnimatedVisibility(visible = item.isHost && (hostStates[item.id] ?: false)) {
-                                    Column {
-                                        val subItems = displayedNavItems.filter { it.hostId == item.id }
-                                        (if (reverseLayout) subItems.reversed() else subItems).forEach { subItem ->
-                                            MenuItem(
-                                                item = subItem, navController = navController, isSelected = subItem.route == currentDestination,
-                                                onClick = scope.onClickMap[subItem.id], onCyclerClick = null, onToggle = { isExpanded = !isExpanded },
-                                                onItemClick = { selectedItemId = subItem.id }, onItemGloballyPositioned = { id, rect -> itemPositions[id] = rect },
-                                                infoScreen = scope.infoScreen, activeColor = actualActiveColor, defaultShape = actualShape
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if (scope.showFooter) Footer(appName = appName, onToggle = { isExpanded = !isExpanded }, onUndock = { if (scope.onUndock != null) scope.onUndock?.invoke() else { val os = scope.overlayService; if (os != null) OverlayHelper.launch(context, os) else { isFloating = true; isExpanded = false; if (scope.displayAppName) isAppIcon = true } } }, scope = scope, footerColor = actualActiveColor)
-                } else {
-                    AnimatedVisibility(visible = !isFloating || showFloatingButtons, modifier = Modifier.fillMaxSize()) {
-                        val scrollState = rememberScrollState()
-                        val adaptiveModifier = Modifier.padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding).then(if(isVertical) Modifier.verticalScroll(scrollState) else Modifier.horizontalScroll(scrollState)).onSizeChanged { railItemsHeight = it.height }
-
-                        val onRailCyclerClick: (AzNavItem) -> Unit = { item -> /* Cycler logic omitted for builder brevity */ }
-
-                        if (isVertical) {
-                            Column(modifier = adaptiveModifier, verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(if (scope.packButtons) 0.dp else AzNavRailDefaults.RailContentVerticalArrangement), horizontalAlignment = Alignment.CenterHorizontally) {
-                                RailItems(
-                                    items = displayedNavItems, scope = scope, navController = navController, currentDestination = currentDestination,
-                                    buttonSize = buttonSize, onRailCyclerClick = onRailCyclerClick, onItemSelected = { selectedItemId = it.id },
-                                    hostStates = hostStates, packRailButtons = if (isFloating) true else scope.packButtons, onClickOverride = null,
-                                    onItemGloballyPositioned = { id, rect -> itemPositions[id] = rect; scope.onItemGloballyPositioned?.invoke(id, rect) },
-                                    infoScreen = scope.infoScreen, orientation = orientation, reverseLayout = reverseLayout, activeColor = actualActiveColor, defaultShape = actualShape
-                                )
-                            }
+                        if (appIcon != null) {
+                            Image(painter = rememberAsyncImagePainter(model = appIcon), contentDescription = "Toggle menu", modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize).clip(headerIconShapeModifier))
                         } else {
-                            Row(modifier = adaptiveModifier, horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(if (scope.packButtons) 0.dp else AzNavRailDefaults.RailContentVerticalArrangement), verticalAlignment = Alignment.CenterVertically) {
-                                RailItems(
-                                    items = displayedNavItems, scope = scope, navController = navController, currentDestination = currentDestination,
-                                    buttonSize = buttonSize, onRailCyclerClick = onRailCyclerClick, onItemSelected = { selectedItemId = it.id },
-                                    hostStates = hostStates, packRailButtons = if (isFloating) true else scope.packButtons, onClickOverride = null,
-                                    onItemGloballyPositioned = { id, rect -> itemPositions[id] = rect; scope.onItemGloballyPositioned?.invoke(id, rect) },
-                                    infoScreen = scope.infoScreen, orientation = orientation, reverseLayout = reverseLayout, activeColor = actualActiveColor, defaultShape = actualShape
-                                )
-                            }
+                            Icon(imageVector = Icons.Default.Menu, contentDescription = "Toggle Menu", modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize))
                         }
+                    } else {
+                        Text(text = appName, style = MaterialTheme.typography.titleMedium, softWrap = false, maxLines = 1, textAlign = TextAlign.Start)
                     }
                 }
-            }
 
-            if (isVertical) {
-                Column(Modifier.fillMaxHeight(), verticalArrangement = if (reverseLayout) androidx.compose.foundation.layout.Arrangement.Bottom else androidx.compose.foundation.layout.Arrangement.Top) {
-                    if (reverseLayout) { Box(Modifier.weight(1f)) { contentBlock() }; headerContent() } else { headerContent(); Box(Modifier.weight(1f)) { contentBlock() } }
+                val contentBlock = @Composable {
+                    if (isExpanded) {
+                        val displayedItems = if (reverseLayout) displayedNavItems.reversed() else displayedNavItems
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
+                                .pointerInput(isExpanded) {
+                                    detectHorizontalDragGestures(onHorizontalDrag = { change, dragAmount ->
+                                        if (isExpanded && (if (isRightDocked) dragAmount > AzNavRailDefaults.SWIPE_THRESHOLD_PX else dragAmount < -AzNavRailDefaults.SWIPE_THRESHOLD_PX)) {
+                                            isExpanded = false
+                                            change.consume()
+                                        }
+                                    })
+                                }
+                        ) {
+                            displayedItems.filter { !it.isSubItem }.forEach { item ->
+                                if (item.isDivider) {
+                                    com.hereliesaz.aznavrail.AzDivider()
+                                } else {
+                                    MenuItem(
+                                        item = item,
+                                        subItems = displayedItems.filter { it.isSubItem && it.hostId == item.id },
+                                        currentDestination = currentDestination,
+                                        activeColor = actualActiveColor,
+                                        activeClassifiers = scope.activeClassifiers,
+                                        hostStates = hostStates,
+                                        onToggleHost = { toggleHost(item.id) },
+                                        onItemClick = { onItemSelected(item); item.onClick?.invoke() },
+                                        onMenuCyclerClick = { onRailCyclerClick(it) },
+                                        infoScreen = scope.infoScreen
+                                    )
+                                }
+                            }
+                        }
+                    } else if (!isFloating || showFloatingButtons) {
+                        RailItems(
+                            items = finalNavItems,
+                            currentDestination = currentDestination,
+                            activeColor = actualActiveColor,
+                            shape = actualShape,
+                            buttonSize = AzNavRailDefaults.ButtonSize,
+                            activeClassifiers = scope.activeClassifiers,
+                            scope = scope,
+                            navController = navController,
+                            onItemSelected = onItemSelected,
+                            onRailCyclerClick = onRailCyclerClick,
+                            hostStates = hostStates,
+                            packRailButtons = scope.packButtons,
+                            orientation = if (isLandscapeEffective && !isFloating) AzOrientation.Horizontal else AzOrientation.Vertical,
+                            onItemGloballyPositioned = scope.onItemGloballyPositioned,
+                            infoScreen = scope.infoScreen,
+                            reverseLayout = reverseLayout
+                        )
+                    }
                 }
-            } else {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = if (reverseLayout) androidx.compose.foundation.layout.Arrangement.End else androidx.compose.foundation.layout.Arrangement.Start) {
-                    if (reverseLayout) { Box(Modifier.weight(1f)) { contentBlock() }; headerContent() } else { headerContent(); Box(Modifier.weight(1f)) { contentBlock() } }
+
+                Box(modifier = Modifier.weight(1f)) {
+                    contentBlock()
+                }
+
+                if (scope.showFooter && !isFloating && (!isLandscapeEffective || isExpanded)) {
+                    Footer(
+                        appName = appName,
+                        onToggle = { if (!effectiveNoMenu) isExpanded = !isExpanded },
+                        onUndock = {
+                            if (scope.onUndock != null) {
+                                scope.onUndock?.invoke()
+                            } else if (scope.enableRailDragging) {
+                                if (scope.overlayService != null) {
+                                    OverlayHelper.launch(context, scope.overlayService!!)
+                                } else {
+                                    isFloating = true
+                                    isExpanded = false
+                                    if (scope.displayAppName) isAppIcon = true
+                                }
+                            }
+                        },
+                        scope = scope,
+                        footerColor = if (isExpanded) {
+                            if (scope.navItems.isNotEmpty()) scope.navItems.first().color ?: actualActiveColor else actualActiveColor
+                        } else actualActiveColor
+                    )
+                }
+            }
+        }
+
+        if (scope.isLoading) {
+            Popup(alignment = Alignment.Center, properties = PopupProperties(focusable = false)) {
+                AzLoad()
+            }
+        }
+
+        if (scope.infoScreen) {
+            HelpOverlay(
+                items = finalNavItems,
+                onDismiss = scope.onDismissInfoScreen ?: {}
+            )
+        }
+    }
+}
+
+@Composable
+internal fun DraggableRailItemWrapper(
+    item: AzNavItem,
+    scope: AzNavRailScopeImpl,
+    navController: NavController?,
+    currentDestination: String?,
+    buttonSize: Dp,
+    orientation: AzOrientation,
+    onRailCyclerClick: (AzNavItem) -> Unit,
+    onItemSelected: (AzNavItem) -> Unit,
+    hostStates: Map<String, Boolean>,
+    onClickOverride: ((AzNavItem) -> Unit)?,
+    onItemGloballyPositioned: ((String, Rect) -> Unit)?,
+    infoScreen: Boolean,
+    draggedItemId: String?,
+    dragOffset: Float,
+    currentDropTargetIndex: Int?,
+    onDragStart: (String) -> Unit,
+    onDragEnd: () -> Unit,
+    onDragCancel: () -> Unit,
+    onDrag: (Float) -> Unit
+) {
+    val hapticFeedback = LocalHapticFeedback.current
+    var showHiddenMenu by remember { mutableStateOf(false) }
+    val isDragging = draggedItemId == item.id
+    val offset = if (isDragging) dragOffset else 0f
+    
+    val actualActiveColor = if (scope.activeColor != Color.Unspecified) scope.activeColor else MaterialTheme.colorScheme.primary
+    val isVertical = orientation == AzOrientation.Vertical
+    var showScreenTitle by remember { mutableStateOf(false) }
+    val isRightDocked = scope.dockingSide == AzDockingSide.RIGHT
+
+    if (item.isNestedRail) {
+        var showNestedRail by remember { mutableStateOf(false) }
+        val alignment = item.nestedRailAlignment ?: AzNestedRailAlignment.VERTICAL
+        
+        Box {
+            AzNavRailButton(
+                item = item,
+                currentDestination = currentDestination,
+                activeColor = actualActiveColor,
+                activeClassifiers = scope.activeClassifiers,
+                onClick = { 
+                    if (infoScreen) return@AzNavRailButton
+                    showNestedRail = !showNestedRail 
+                },
+                modifier = Modifier,
+                size = buttonSize,
+                onGloballyPositioned = { rect -> onItemGloballyPositioned?.invoke(item.id, rect) }
+            )
+            
+            if (showNestedRail) {
+                Popup(
+                    alignment = if (isRightDocked) Alignment.TopEnd else Alignment.TopStart,
+                    onDismissRequest = { showNestedRail = false },
+                    properties = PopupProperties(focusable = true, dismissOnClickOutside = true)
+                ) {
+                    com.hereliesaz.aznavrail.internal.NestedRail(
+                        parentItem = item,
+                        items = item.nestedRailItems ?: emptyList(),
+                        currentDestination = currentDestination,
+                        activeColor = actualActiveColor,
+                        activeClassifiers = scope.activeClassifiers,
+                        onItemSelected = { 
+                            onItemSelected(it)
+                            it.onClick?.invoke()
+                            showNestedRail = false 
+                        },
+                        alignment = alignment,
+                        isRightDocked = isRightDocked
+                    )
+                }
+            }
+        }
+        return
+    }
+
+    Box(
+        modifier = Modifier
+            .offset {
+                if (isVertical) IntOffset(0, offset.roundToInt())
+                else IntOffset(offset.roundToInt(), 0)
+            }
+            .zIndex(if (isDragging) 1f else 0f)
+    ) {
+        val clickModifier = if (item.isRelocItem && !infoScreen) {
+            Modifier.pointerInput(Unit) {
+                detectDragGestures(
+                    onDragStart = { 
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                        showHiddenMenu = false
+                        onDragStart(item.id) 
+                    },
+                    onDragEnd = onDragEnd,
+                    onDragCancel = onDragCancel,
+                    onDrag = { change, dragAmount -> 
+                        change.consume()
+                        onDrag(if (isVertical) dragAmount.y else dragAmount.x)
+                    }
+                )
+            }
+        } else Modifier
+
+        Box(modifier = clickModifier) {
+            AzNavRailButton(
+                item = item,
+                currentDestination = currentDestination,
+                activeColor = actualActiveColor,
+                activeClassifiers = scope.activeClassifiers,
+                onClick = {
+                    if (infoScreen) return@AzNavRailButton
+                    showScreenTitle = true
+                    if (item.isRelocItem) {
+                        showHiddenMenu = !showHiddenMenu
+                    } else {
+                        if (onClickOverride != null) onClickOverride(item)
+                        else if (item.isCycler) onRailCyclerClick(item)
+                        else {
+                            if (item.route != null && navController != null) navController.navigate(item.route)
+                            onItemSelected(item)
+                        }
+                    }
+                },
+                onLongClick = {
+                    if (infoScreen) return@AzNavRailButton
+                    showScreenTitle = true
+                    if (item.isRelocItem && !isDragging) {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                        showHiddenMenu = false
+                        onDragStart(item.id)
+                    }
+                },
+                modifier = Modifier,
+                size = buttonSize,
+                onGloballyPositioned = { rect ->
+                    if (item.isRelocItem) {
+                        com.hereliesaz.aznavrail.internal.RelocItemHandler.itemBoundsCache[item.id] = rect
+                    }
+                    onItemGloballyPositioned?.invoke(item.id, rect)
+                }
+            )
+        }
+
+        if (showScreenTitle && item.screenTitle != "NO_TITLE") {
+            val titleText = item.screenTitle ?: item.text
+            if (titleText.isNotEmpty()) {
+                Popup(
+                    alignment = if (isRightDocked) Alignment.TopStart else Alignment.TopEnd,
+                    properties = PopupProperties(focusable = false)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 12.dp)
+                            .then(if (isRightDocked) Modifier.padding(start = 32.dp) else Modifier.padding(end = 16.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
+                            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = titleText,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                LaunchedEffect(Unit) {
+                    delay(1500)
+                    showScreenTitle = false
+                }
+            }
+        }
+
+        if (showHiddenMenu && item.hiddenMenuItems != null && item.hiddenMenuItems.isNotEmpty()) {
+            Popup(
+                alignment = Alignment.TopEnd,
+                offset = IntOffset(if (isRightDocked) -150 else 150, 0),
+                onDismissRequest = { showHiddenMenu = false },
+                properties = PopupProperties(focusable = true)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
+                        .shadow(4.dp, RoundedCornerShape(8.dp))
+                        .padding(8.dp)
+                        .width(IntrinsicSize.Max)
+                ) {
+                    item.hiddenMenuItems.forEach { hiddenItem ->
+                        if (hiddenItem.isInput) {
+                            var text by remember { mutableStateOf("") }
+                            AzTextBox(
+                                value = text,
+                                onValueChange = { text = it },
+                                hint = hiddenItem.hint ?: hiddenItem.text,
+                                onSubmit = {
+                                    val action = scope.hiddenMenuInputActions[hiddenItem.id]
+                                    action?.invoke(it)
+                                    showHiddenMenu = false
+                                }
+                            )
+                        } else {
+                            Text(
+                                text = hiddenItem.text,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        if (hiddenItem.route != null && navController != null) {
+                                            navController.navigate(hiddenItem.route)
+                                        } else {
+                                            val action = scope.hiddenMenuActions[hiddenItem.id]
+                                            action?.invoke()
+                                        }
+                                        showHiddenMenu = false
+                                    }
+                                    .padding(8.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
