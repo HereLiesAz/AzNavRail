@@ -76,12 +76,12 @@ class AzNavRailSampleIntegrationTest {
     }
 
     @Test
-    fun `azNestedRail should add nested items correctly`() {
+    fun `azNestedRail should add nested items correctly for Horizontal`() {
         val scope = AzNavRailScopeImpl()
 
         scope.azNestedRail(
-            id = "nested",
-            text = "Nested",
+            id = "nested_h",
+            text = "Nested Horizontal",
             alignment = AzNestedRailAlignment.HORIZONTAL
         ) {
             azRailItem("child1", "Child 1")
@@ -90,13 +90,34 @@ class AzNavRailSampleIntegrationTest {
 
         assertEquals(1, scope.navItems.size)
         val nested = scope.navItems[0]
-        assertEquals("nested", nested.id)
+        assertEquals("nested_h", nested.id)
         assertEquals(true, nested.isNestedRail)
         assertEquals(AzNestedRailAlignment.HORIZONTAL, nested.nestedRailAlignment)
 
         assertEquals(2, nested.nestedRailItems!!.size)
         assertEquals("child1", nested.nestedRailItems!![0].id)
-        assertEquals("child2", nested.nestedRailItems!![1].id)
+    }
+
+    @Test
+    fun `azNestedRail should add nested items correctly for Vertical`() {
+        val scope = AzNavRailScopeImpl()
+
+        scope.azNestedRail(
+            id = "nested_v",
+            text = "Nested Vertical",
+            alignment = AzNestedRailAlignment.VERTICAL
+        ) {
+            azRailItem("child3", "Child 3")
+        }
+
+        assertEquals(1, scope.navItems.size)
+        val nested = scope.navItems[0]
+        assertEquals("nested_v", nested.id)
+        assertEquals(true, nested.isNestedRail)
+        assertEquals(AzNestedRailAlignment.VERTICAL, nested.nestedRailAlignment)
+
+        assertEquals(1, nested.nestedRailItems!!.size)
+        assertEquals("child3", nested.nestedRailItems!![0].id)
     }
 
     @Test

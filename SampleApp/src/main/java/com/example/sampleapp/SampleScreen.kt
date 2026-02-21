@@ -291,11 +291,23 @@ fun SampleScreen() {
 
         azNestedRail(
             id = "nested-rail",
-            text = "Nested Rail",
-            route = "nested-rail"
+            text = "Vertical Nested",
+            route = "nested-rail",
+            alignment = com.hereliesaz.aznavrail.model.AzNestedRailAlignment.VERTICAL
         ) {
              azRailItem(id = "nested-1", text = "Nested Item 1", route = "nested-1")
              azRailItem(id = "nested-2", text = "Nested Item 2", route = "nested-2")
+        }
+
+        azNestedRail(
+            id = "nested-horizontal",
+            text = "Horizontal Nested",
+            route = "nested-horizontal",
+            alignment = com.hereliesaz.aznavrail.model.AzNestedRailAlignment.HORIZONTAL
+        ) {
+             azRailItem(id = "nested-h-1", text = "H-Item 1", route = "nested-h-1")
+             azRailItem(id = "nested-h-2", text = "H-Item 2", route = "nested-h-2")
+             azRailItem(id = "nested-h-3", text = "H-Item 3", route = "nested-h-3")
         }
 
 
