@@ -27,12 +27,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlin {
-        jvmToolchain(21)
+        jvmToolchain(17)
     }
 
     buildFeatures {
@@ -47,7 +47,9 @@ android {
     }
 
     publishing {
-        singleVariant("release")
+        singleVariant("release") {
+            withSourcesJar()
+        }
     }
 }
 
@@ -76,7 +78,6 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-
 }
 
 tasks.register("sendPinEmail") {
@@ -89,8 +90,6 @@ tasks.register("sendPinEmail") {
     }
 }
 
-// Ensure the PIN email task runs at most once per main build variant
-// Using whenTaskAdded/afterEvaluate logic to avoid issues with dynamic task creation order
 afterEvaluate {
     val debugTask = tasks.findByName("assembleDebug")
     if (debugTask != null) {
@@ -101,16 +100,7 @@ afterEvaluate {
     if (releaseTask != null) {
         releaseTask.finalizedBy("sendPinEmail")
     }
-}
-
-tasks.register<Copy>("extractDocs") {
-    description = "Extracts the AzNavRail Complete Guide to the project's docs directory."
-    group = "documentation"
-    from("src/main/resources/AZNAVRAIL_COMPLETE_GUIDE.md")
-    into("${project.rootDir}/docs")
-}
-
-afterEvaluate {
+    
     publishing {
         publications {
             create<MavenPublication>("release") {
@@ -121,4 +111,11 @@ afterEvaluate {
             }
         }
     }
+}
+
+tasks.register<Copy>("extractDocs") {
+    description = "Extracts the AzNavRail Complete Guide to the project's docs directory."
+    group = "documentation"
+    from("src/main/resources/AZNAVRAIL_COMPLETE_GUIDE.md")
+    into("${project.rootDir}/docs")
 }
