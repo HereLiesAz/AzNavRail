@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,9 +24,8 @@ import android.provider.Settings
 import android.content.Intent
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
-
 @Composable
-fun SampleScreen(string: String) {
+fun MainApp() {
     val TAG = "SampleApp"
     val navController = rememberNavController()
     val currentDestination by navController.currentBackStackEntryAsState()
@@ -68,6 +68,8 @@ fun SampleScreen(string: String) {
         }
     }
 
+    val themeColor = MaterialTheme.colorScheme.primary
+
     // Use AzHostActivityLayout as the top-level container
     AzHostActivityLayout(
         navController = navController,
@@ -84,7 +86,8 @@ fun SampleScreen(string: String) {
         )
 
         azTheme(
-            defaultShape = AzButtonShape.RECTANGLE
+            defaultShape = AzButtonShape.RECTANGLE,
+            activeColor = themeColor
         )
 
         azAdvanced(
@@ -111,6 +114,24 @@ fun SampleScreen(string: String) {
                 packRailButtons = !packRailButtons
                 Log.d(TAG, "Pack rail toggled to: $packRailButtons")
             }
+        )
+
+        // Demonstrating Dynamic Content (Color)
+        azRailItem(
+            id = "color-item",
+            text = "Color",
+            content = Color.Red,
+            info = "Demonstrates dynamic content with Color",
+            onClick = { Log.d(TAG, "Color item clicked") }
+        )
+
+        // Demonstrating Dynamic Content (Icon as Resource)
+        azRailItem(
+            id = "icon-item",
+            text = "Icon",
+            content = android.R.drawable.ic_menu_agenda,
+            info = "Demonstrates dynamic content with Resource ID",
+            onClick = { Log.d(TAG, "Icon item clicked") }
         )
 
         azRailItem(
@@ -464,30 +485,37 @@ fun SampleScreen(string: String) {
                         )
                     }
                 }
-                composable("multi-line") { Text("Multi-line Screen") }
-                composable("menu-host") { Text("Menu Host Screen") }
-                composable("menu-sub-1") { Text("Menu Sub 1 Screen") }
-                composable("menu-sub-2") { Text("Menu Sub 2 Screen") }
-                composable("rail-host") { Text("Rail Host Screen") }
-                composable("rail-sub-1") { Text("Rail Sub 1 Screen") }
-                composable("rail-sub-2") { Text("Rail Sub 2 Screen") }
-                composable("sub-toggle") { Text("Sub Toggle Screen") }
-                composable("sub-cycler") { Text("Sub Cycler Screen") }
-                composable("pack-rail") { Text("Pack Rail Screen") }
-                composable("profile") { Text("Profile Screen") }
-                composable("online") { Text("Online Screen") }
-                composable("dark-mode") { Text("Dark Mode Screen") }
-                composable("rail-cycler") { Text("Rail Cycler Screen") }
-                composable("menu-cycler") { Text("Menu Cycler Screen") }
-                composable("loading") { Text("Loading Screen") }
-                composable("physical-docking") { Text("Physical Docking Screen") }
-                composable("overlay-mode") { Text("Overlay Mode Screen") }
-                composable("docking-side") { Text("Docking Side Screen") }
-                composable("no-menu") { Text("No Menu Screen") }
-                composable("nested-rail") { Text("Nested Rail Screen") }
-                composable("nested-1") { Text("Nested Item 1 Screen") }
-                composable("nested-2") { Text("Nested Item 2 Screen") }
+                composable("multi-line") { ScreenContent("Multi-line Screen") }
+                composable("menu-host") { ScreenContent("Menu Host Screen") }
+                composable("menu-sub-1") { ScreenContent("Menu Sub 1 Screen") }
+                composable("menu-sub-2") { ScreenContent("Menu Sub 2 Screen") }
+                composable("rail-host") { ScreenContent("Rail Host Screen") }
+                composable("rail-sub-1") { ScreenContent("Rail Sub 1 Screen") }
+                composable("rail-sub-2") { ScreenContent("Rail Sub 2 Screen") }
+                composable("sub-toggle") { ScreenContent("Sub Toggle Screen") }
+                composable("sub-cycler") { ScreenContent("Sub Cycler Screen") }
+                composable("pack-rail") { ScreenContent("Pack Rail Screen") }
+                composable("profile") { ScreenContent("Profile Screen") }
+                composable("online") { ScreenContent("Online Screen") }
+                composable("dark-mode") { ScreenContent("Dark Mode Screen") }
+                composable("rail-cycler") { ScreenContent("Rail Cycler Screen") }
+                composable("menu-cycler") { ScreenContent("Menu Cycler Screen") }
+                composable("loading") { ScreenContent("Loading Screen") }
+                composable("physical-docking") { ScreenContent("Physical Docking Screen") }
+                composable("overlay-mode") { ScreenContent("Overlay Mode Screen") }
+                composable("docking-side") { ScreenContent("Docking Side Screen") }
+                composable("no-menu") { ScreenContent("No Menu Screen") }
+                composable("nested-rail") { ScreenContent("Nested Rail Screen") }
+                composable("nested-1") { ScreenContent("Nested Item 1 Screen") }
+                composable("nested-2") { ScreenContent("Nested Item 2 Screen") }
             }
         }
+    }
+}
+
+@Composable
+fun ScreenContent(text: String) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(text)
     }
 }
