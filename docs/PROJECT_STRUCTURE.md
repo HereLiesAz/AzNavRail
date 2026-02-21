@@ -17,25 +17,25 @@ This document provides a brief but thorough description of what each file in the
 | `.github/` | Contains GitHub Actions workflows for CI/CD. |
 | `SampleApp/` | An Android application that demonstrates how to use the `aznavrail` library. |
 | `aznavrail/` | The core `aznavrail` Android library module. |
+| `aznavrail-react-native/` | The React Native version of the `aznavrail` library. |
 | `aznavrail-web/` | The web version of the `aznavrail` library. |
 | `docs/` | Contains detailed documentation guides. |
 | `gradle/` | Contains the Gradle wrapper files. |
 | `.gitignore` | Specifies intentionally untracked files to ignore. |
-| `AGENTS.md` | Provides instructions for AI agents working with the codebase. |
 | `README.md` | The main README file for the project. |
 | `build.gradle.kts` | The main build script for the project. |
 | `gradle.properties` | Project-wide Gradle settings. |
-| `gradlew` | The Gradle wrapper script for Unix-based systems. |
-| `gradlew.bat` | The Gradle wrapper script for Windows. |
 | `settings.gradle.kts` | The settings script for the project. |
+| `setup_android.sh` | Shell script for setting up the Android SDK environment. |
 
 #### docs Directory
 
 | File | Description |
 | --- | --- |
 | `AZNAVRAIL_COMPLETE_GUIDE.md` | A comprehensive guide extracted from the library assets. |
-| `AZ_HIGH_INFERENCE.md` | Documentation for the KSP High-Inference system. |
-| `MIGRATION_GUIDE.md` | Guide for upgrading versions and adapting to breaking changes. |
+| `API.md` | Direct documentation of the public-facing API. |
+| `DSL.md` | Direct documentation covering the builder Domain Specific Language parameters. |
+| `PROJECT_STRUCTURE.md` | Explains the layout of the repository. |
 
 #### .github Directory
 
@@ -47,8 +47,9 @@ This document provides a brief but thorough description of what each file in the
 
 | File | Description |
 | --- | --- |
-| `npm-publish.yml` | This workflow builds, tests, and publishes the `aznavrail-web` package to npm. |
-| `push.yml` | This workflow builds and tests the project on every push and pull request. |
+| `android-sample-build.yml` | Validates Android builds on push. |
+| `codeql.yml` | Code security scanning action. |
+| `jekyll-gh-pages.yml` | Documentation deployment pipeline. |
 
 #### SampleApp Directory
 
@@ -58,8 +59,10 @@ The `SampleApp` directory contains an Android application that demonstrates how 
 | --- | --- |
 | `build.gradle.kts` | The build script for the `SampleApp` module. |
 | `src/main/AndroidManifest.xml` | The manifest file for the `SampleApp`. |
-| `src/main/java/com/example/sampleapp/BubbleActivity.kt` | An activity configured to run as an Android Bubble, demonstrating overlay capabilities. |
-| `src/main/java/com/example/sampleapp/MainActivity.kt` | The main activity of the `SampleApp`, which contains the sample code for the `aznavrail` library. |
+| `src/main/java/com/example/sampleapp/MainActivity.kt` | The main activity of the `SampleApp`. |
+| `src/main/java/com/example/sampleapp/SampleScreen.kt` | Demonstrates all features of the DSL inside `AzHostActivityLayout`. |
+| `src/main/java/com/example/sampleapp/SampleOverlayService.kt` | Foreground service overlay demonstration. |
+| `src/main/java/com/example/sampleapp/SampleBasicOverlayService.kt` | Basic `SYSTEM_ALERT_WINDOW` overlay demonstration. |
 | `src/main/res/` | Contains the resources for the `SampleApp`. |
 
 #### aznavrail Directory
@@ -70,35 +73,31 @@ The `aznavrail` directory contains the core `aznavrail` Android library module.
 | --- | --- |
 | `build.gradle.kts` | The build script for the `aznavrail` module. |
 | `consumer-rules.pro` | ProGuard rules for consumers of the library. |
-| `src/` | Contains the source code for the `aznavrail` library. |
 | `src/main/java/com/hereliesaz/aznavrail/AzNavRail.kt` | The internal `AzNavRail` composable and logic. |
 | `src/main/java/com/hereliesaz/aznavrail/AzNavHost.kt` | Defines `AzHostActivityLayout` (mandatory top-level) and `AzNavHost` (wrapper). |
 | `src/main/java/com/hereliesaz/aznavrail/AzNavRailScope.kt` | The DSL scope definition for `AzNavRail`. |
 | `src/main/java/com/hereliesaz/aznavrail/AzTextBox.kt` | The `AzTextBox` composable. |
 | `src/main/java/com/hereliesaz/aznavrail/AzForm.kt` | The `AzForm` composable. |
+| `src/main/java/com/hereliesaz/aznavrail/AzRoller.kt` | The slot-machine dropdown dropdown picker. |
 | `src/main/java/com/hereliesaz/aznavrail/AzButton.kt` | The standalone `AzButton` composable. |
-| `src/main/java/com/hereliesaz/aznavrail/AzNavRailButton.kt` | The button component used within the rail. |
+| `src/main/java/com/hereliesaz/aznavrail/AzNavRailButton.kt` | The core button component powering the rail itself. |
 | `src/main/java/com/hereliesaz/aznavrail/AzLoad.kt` | The loading animation component. |
 | `src/main/java/com/hereliesaz/aznavrail/AzDivider.kt` | The divider component. |
-| `src/main/java/com/hereliesaz/aznavrail/internal/NestedRail.kt` | The component responsible for rendering nested rail popup overlays. |
-| `src/main/java/com/hereliesaz/aznavrail/internal/AzRailLayoutHelper.kt` | Helper logic for calculating rail layout and physical/screen orientation modes. |
+| `src/main/java/com/hereliesaz/aznavrail/internal/NestedRail.kt` | Rendering engine for nested rail popup overlays. |
+| `src/main/java/com/hereliesaz/aznavrail/internal/AzRailLayoutHelper.kt` | Helper logic for calculating rail layout and physical vs view side mappings. |
+| `src/main/java/com/hereliesaz/aznavrail/internal/RelocItemHandler.kt` | Handles drag, drop, bounds, and cluster bounding for Reorderable items. |
+| `src/main/java/com/hereliesaz/aznavrail/internal/SecretScreens.kt` | Location logger utility unlocked via PIN check on the footer. |
+
+#### aznavrail-react-native Directory
+
+Contains the React Native translation of the framework. Built using Bob.
 
 #### aznavrail-web Directory
 
-The `aznavrail-web` directory contains the web version of the `aznavrail` library.
+The `aznavrail-web` directory contains the web version of the `aznavrail` library built with React & Vite.
 
 | File/Directory | Description |
 | --- | --- |
-| `public/` | Contains public assets that are served directly. |
 | `src/` | Contains the source code for the `aznavrail-web` library. |
-| `.gitignore` | Specifies intentionally untracked files to ignore. |
-| `README.md` | The README file for the `aznavrail-web` library. |
-| `eslint.config.js` | ESLint configuration file. |
-| `index.html` | The main HTML file for the web application. |
-| `package-lock.json` | Records the exact version of each dependency. |
 | `package.json` | Lists the project dependencies and scripts. |
-| `vite.config.js` | Vite configuration file. |
-
-#### gradle Directory
-
-The `gradle` directory contains the Gradle wrapper files, which allow the project to be built with a specific version of Gradle without having to install it system-wide.
+| `vite.config.js` | Vite configuration file for UMD and ES builds. |

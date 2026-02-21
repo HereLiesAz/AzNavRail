@@ -89,8 +89,6 @@ class AzNavHostScopeImpl(
     }
 }
 
-private enum class AzVisualSide { LEFT, RIGHT, TOP, BOTTOM }
-
 // --- Layouts ---
 
 @OptIn(AzStrictLayout::class)
@@ -117,7 +115,9 @@ fun AzHostActivityLayout(
     val scope = remember { AzNavHostScopeImpl() }
     scope.resetHost()
     scope.setController(navController)
-    scope.apply(content)
+
+    // FIX 1: Evaluate the composable lambda directly rather than via apply()
+    scope.content()
 
     val railScope = scope.getRailScopeImpl()
     val dockingSide = railScope.dockingSide
@@ -149,7 +149,6 @@ fun AzHostActivityLayout(
         val railSafeBottom = max(systemBars.calculateBottomPadding(), maxHeight * AzLayoutConfig.RailSafeBottomPercent)
 
         // Layer 1: Backgrounds
-        // Unrestricted, drawing fully behind the system bars and interactive content.
         scope.backgrounds.sortedBy { it.weight }.forEach { item ->
             Box(modifier = Modifier.fillMaxSize()) {
                 item.content()
@@ -171,7 +170,7 @@ fun AzHostActivityLayout(
                 topPadding = topPadding,
                 bottomPadding = bottomPadding,
                 items = scope.onscreenItems,
-                dockingSide = dockingSide 
+                dockingSide = dockingSide
             )
         }
 

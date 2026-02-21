@@ -144,15 +144,19 @@ fun AzTextBox(
         "AzTextBox cannot be both multiline and secret."
     }
 
-    var internalText by remember { mutableStateOf("") }
+    val isControlled = value != null && onValueChange != null
+    var internalText by remember { mutableStateOf(value ?: "") }
 
-    // Determine effective text
-    val text = value ?: internalText
-    
-    // Logic Fix: Ensure internal text updates if we are in uncontrolled mode (value == null),
-    // but allow the developer's onValueChange to handle it if in controlled mode.
+    LaunchedEffect(value) {
+        if (value != null && !isControlled) {
+            internalText = value
+        }
+    }
+
+    val text = if (isControlled) value!! else internalText
+
     val onTextChange: (String) -> Unit = { newText ->
-        if (value == null) {
+        if (!isControlled) {
             internalText = newText
         }
         onValueChange?.invoke(newText)
@@ -311,7 +315,7 @@ fun AzTextBox(
 
         if (suggestions.isNotEmpty() && enabled) {
             val density = LocalDensity.current
-            
+
             Popup(
                 alignment = Alignment.TopStart,
                 offset = IntOffset(0, componentHeight),
@@ -356,10 +360,12 @@ fun AzTextBox(
 
 private fun Modifier.fadeRight(): Modifier = this.drawWithContent {
     drawContent()
+    // FIX 2: Clamp safeStartX to prevent geometric rendering crashes on narrow widths
+    val safeStartX = maxOf(0f, size.width - 50f)
     drawRect(
         brush = Brush.horizontalGradient(
             colors = listOf(Color.Transparent, Color.Black),
-            startX = size.width - 50f,
+            startX = safeStartX,
             endX = size.width
         ),
         blendMode = BlendMode.DstIn

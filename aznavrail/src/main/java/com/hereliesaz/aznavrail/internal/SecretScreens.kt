@@ -7,9 +7,7 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
-import android.os.Build
 import android.os.Bundle
-import android.telephony.TelephonyManager
 import android.util.Log
 import android.content.Intent
 import android.net.Uri
@@ -51,7 +49,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import com.hereliesaz.aznavrail.AzButton
 import com.hereliesaz.aznavrail.AzTextBox
-import com.hereliesaz.aznavrail.model.AzButtonShape
+import com.hereliesaz.aznavrail.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -66,15 +64,14 @@ import java.net.Socket
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import com.hereliesaz.aznavrail.BuildConfig
 
 /**
  * A secret menu for debugging and location history syncing.
  *
  * Activated by long-pressing the @HereLiesAz footer item when a `secLoc`
- * (Developer Phone Number) is configured.
+ * (Developer Configuration) is passed.
  *
- * @param secLoc The target phone number for verification.
+ * @param secLoc The target identifier for verification.
  * @return A lambda to trigger the secret screen dialog.
  */
 @Composable
@@ -100,70 +97,8 @@ private fun SecLocMainDialog(
     secLoc: String,
     onDismiss: () -> Unit
 ) {
-    val context = LocalContext.current
-
-    // Check for Phone State Permission (needed to verify identity)
-    // We do NOT remember this value so that it reflects runtime changes (if the host app requests/grants permissions)
-    val hasPhonePermission = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED ||
-            (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
-             ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_NUMBERS) == PackageManager.PERMISSION_GRANTED)
-
-    if (!hasPhonePermission) {
-        // Fallback: If we can't verify identity, we can't determine role.
-        // Show generic permission request message.
-        PermissionRequiredDialog(onDismiss, "Phone permissions (READ_PHONE_STATE or READ_PHONE_NUMBERS) are required to verify device identity.")
-        return
-    }
-
-    // Determine Role
-    val deviceNumber = remember(context) { getDevicePhoneNumber(context) }
-
-    // Normalize numbers for comparison (remove spaces, dashes, etc.)
-    val isSourceDevice = remember(deviceNumber, secLoc) {
-        val cleanDevice = deviceNumber?.replace(Regex("[^0-9]"), "")
-        val cleanSecLoc = secLoc.replace(Regex("[^0-9]"), "")
-        // Simple check: do they match? (Handling nulls)
-        !cleanDevice.isNullOrEmpty() && (cleanDevice == cleanSecLoc || cleanDevice.endsWith(cleanSecLoc) || cleanSecLoc.endsWith(cleanDevice))
-    }
-
-    if (isSourceDevice) {
-        SecLocSourceDialog(onDismiss = onDismiss)
-    } else {
-        SecLocViewerFlow(secLoc = secLoc, onDismiss = onDismiss)
-    }
-}
-
-@Composable
-private fun PermissionRequiredDialog(onDismiss: () -> Unit, message: String) {
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-        ) {
-            Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Permission Required", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(message, style = MaterialTheme.typography.bodyMedium)
-                Spacer(modifier = Modifier.height(16.dp))
-                AzButton(onClick = onDismiss, text = "Close")
-            }
-        }
-    }
-}
-
-@Composable
-private fun SecLocSourceDialog(onDismiss: () -> Unit) {
-    // This is the source device. It should log locations.
-    // It also displays the current log.
-    SecLocHistoryDialog(
-        isSource = true,
-        onDismiss = onDismiss
-    )
-}
-
-@Composable
-private fun SecLocViewerFlow(secLoc: String, onDismiss: () -> Unit) {
     var isAuthenticated by remember { mutableStateOf(false) }
+    var selectedMode by remember { mutableStateOf<String?>(null) }
 
     if (!isAuthenticated) {
         SecretCredentialsDialog(
@@ -171,9 +106,35 @@ private fun SecLocViewerFlow(secLoc: String, onDismiss: () -> Unit) {
             onDismiss = onDismiss,
             onUnlock = { isAuthenticated = true }
         )
+    } else if (selectedMode == null) {
+        ModeSelectionDialog(
+            onDismiss = onDismiss,
+            onSelectMode = { selectedMode = it }
+        )
+    } else if (selectedMode == "SOURCE") {
+        SecLocSourceDialog(onDismiss = onDismiss)
     } else {
-        // Viewer Mode: "Download" log
         SecLocViewerDialog(onDismiss = onDismiss)
+    }
+}
+
+@Composable
+private fun ModeSelectionDialog(onDismiss: () -> Unit, onSelectMode: (String) -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+            Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Select Operating Mode", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(16.dp))
+                AzButton(onClick = { onSelectMode("SOURCE") }, text = "Run as Source (Server)")
+                Spacer(modifier = Modifier.height(8.dp))
+                AzButton(onClick = { onSelectMode("VIEWER") }, text = "Run as Viewer (Client)")
+                Spacer(modifier = Modifier.height(16.dp))
+                AzButton(onClick = onDismiss, text = "Cancel")
+            }
+        }
     }
 }
 
@@ -201,7 +162,7 @@ private fun SecretCredentialsDialog(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Enter the secLoc number or Build PIN.",
+                    text = "Enter the configuration key or Build PIN.",
                     style = MaterialTheme.typography.bodyMedium
                 )
 
@@ -212,7 +173,6 @@ private fun SecretCredentialsDialog(
                     secret = true,
                     isError = error,
                     onSubmit = { input ->
-                        // Validate against secLoc (phone) OR generated build PIN
                         val buildPin = BuildConfig.GENERATED_SEC_LOC_PIN
                         if (input == secLoc || input == buildPin) {
                             onUnlock()
@@ -227,6 +187,14 @@ private fun SecretCredentialsDialog(
             }
         }
     }
+}
+
+@Composable
+private fun SecLocSourceDialog(onDismiss: () -> Unit) {
+    SecLocHistoryDialog(
+        isSource = true,
+        onDismiss = onDismiss
+    )
 }
 
 @Composable
@@ -260,7 +228,6 @@ private fun SecLocViewerDialog(onDismiss: () -> Unit) {
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                // Sync Controls
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
                     modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
@@ -272,9 +239,7 @@ private fun SecLocViewerDialog(onDismiss: () -> Unit) {
                             hint = "Enter Source IP (e.g. 192.168.1.5)",
                             value = sourceIp,
                             onValueChange = { sourceIp = it },
-                            onSubmit = {
-                                // Optional auto-submit
-                            }
+                            onSubmit = { /* Optional auto-submit */ }
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         AzButton(
@@ -337,15 +302,13 @@ private fun SecLocHistoryDialog(
     val coroutineScope = rememberCoroutineScope()
     var serverIp by remember { mutableStateOf<String?>(null) }
 
-    // Permission check for LOCATION
     val hasLocPermission = remember(context) {
         ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-        ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
     }
 
     val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) }
 
-    // Load initial history from file
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             val saved = SecLocLogManager.readLog(context)
@@ -353,7 +316,6 @@ private fun SecLocHistoryDialog(
         }
         if (isSource) {
             serverIp = SecLocNetworkUtils.getLocalIpAddress()
-            // Start Server
             coroutineScope.launch(Dispatchers.IO) {
                 SecLocNetworkUtils.startServer(context)
             }
@@ -372,7 +334,6 @@ private fun SecLocHistoryDialog(
                         provider = location.provider ?: "unknown"
                     )
                     secLocHistory.add(0, entry)
-                    // Save to file
                     coroutineScope.launch {
                         SecLocLogManager.appendLog(context, entry)
                     }
@@ -387,10 +348,10 @@ private fun SecLocHistoryDialog(
             try {
                 val providers = locationManager.getProviders(true)
                 if (providers.contains(LocationManager.GPS_PROVIDER)) {
-                     locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000L, 5f, listener)
+                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000L, 5f, listener)
                 }
                 if (providers.contains(LocationManager.NETWORK_PROVIDER)) {
-                     locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000L, 5f, listener)
+                    locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000L, 5f, listener)
                 }
             } catch (e: Exception) {
                 Log.e("SecretScreens", "Error requesting location updates", e)
@@ -402,7 +363,6 @@ private fun SecLocHistoryDialog(
         }
     }
 
-    // Stop server on dispose
     DisposableEffect(Unit) {
         onDispose {
             SecLocNetworkUtils.stopServer()
@@ -537,7 +497,6 @@ private object SecLocLogManager {
         } catch (e: Exception) {
             Log.e("SecLocLogManager", "Error reading log", e)
         }
-        // Return reversed to show newest first
         list.reversed()
     }
 
@@ -579,7 +538,6 @@ private object SecLocNetworkUtils {
                 try {
                     val client = serverSocket?.accept()
                     client?.let { socket ->
-                        // Send file content
                         val writer = PrintWriter(socket.getOutputStream(), true)
                         val file = SecLocLogManager.getLogFile(context)
                         if (file.exists()) {
@@ -640,18 +598,5 @@ private object SecLocNetworkUtils {
             } catch (e: Exception) { }
         }
         list.reversed()
-    }
-}
-
-@SuppressLint("MissingPermission")
-private fun getDevicePhoneNumber(context: Context): String? {
-    return try {
-        val tm = context.getSystemService(Context.TELEPHONY_SERVICE) as? TelephonyManager
-        @Suppress("DEPRECATION")
-        tm?.line1Number
-    } catch (e: SecurityException) {
-        null
-    } catch (e: Exception) {
-        null
     }
 }

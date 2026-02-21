@@ -1,4 +1,3 @@
-// aznavrail/src/main/java/com/hereliesaz/aznavrail/AzNavRail.kt
 package com.hereliesaz.aznavrail
 
 import androidx.compose.animation.AnimatedVisibility
@@ -24,8 +23,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
@@ -46,7 +43,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
@@ -114,10 +110,10 @@ fun AzNavRail(
         error("FATAL LAYOUT VIOLATION: AzNavRail instantiated without AzHostActivityLayout.")
     }
 
-    val scope = providedScope ?: remember { AzNavRailScopeImpl() }
-    if (providedScope == null) scope.reset()
-    navController?.let { scope.navController = it }
-    scope.apply(content)
+    val scope = providedScope ?: AzNavRailScopeImpl().apply {
+        navController?.let { this.navController = it }
+        this.content()
+    }
 
     val actualActiveColor = if (scope.activeColor != Color.Unspecified) scope.activeColor else MaterialTheme.colorScheme.primary
     val actualShape = scope.defaultShape
@@ -126,19 +122,19 @@ fun AzNavRail(
     val effectiveDockingSide = visualDockingSide ?: scope.dockingSide
     val isRightDocked = effectiveDockingSide == AzDockingSide.RIGHT
 
-    val displayedNavItems = remember(scope.navItems, effectiveNoMenu) {
-        if (effectiveNoMenu) scope.navItems.map { it.copy(isRailItem = true) } else scope.navItems
+    // Extract items safely from the scope
+    val displayedNavItems = if (effectiveNoMenu) {
+        scope.navItems.map { it.copy(isRailItem = true) }
+    } else {
+        scope.navItems.toList()
     }
 
     val context = LocalContext.current
-    val packageManager = context.packageManager
-    val packageName = context.packageName
-    val appName = remember(packageName) { packageManager.getApplicationLabel(packageManager.getApplicationInfo(packageName, 0)).toString() }
-    val appIcon = remember(packageName) { packageManager.getApplicationIcon(packageName) }
+    val appName = remember(context.packageName) { context.packageManager.getApplicationLabel(context.packageManager.getApplicationInfo(context.packageName, 0)).toString() }
 
     val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
-    val finalNavItems = remember(displayedNavItems, cyclerStates.toMap()) {
-        displayedNavItems.map { item -> if (item.isCycler) item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption) else item }
+    val finalNavItems = displayedNavItems.map { item ->
+        if (item.isCycler) item.copy(selectedOption = cyclerStates[item.id]?.displayedOption ?: item.selectedOption) else item
     }
 
     var isExpandedInternal by rememberSaveable(initiallyExpanded) { mutableStateOf(initiallyExpanded) }
@@ -169,11 +165,12 @@ fun AzNavRail(
 
     val coroutineScope = rememberCoroutineScope()
     var selectedItemId by rememberSaveable { mutableStateOf<String?>(null) }
-    val selectedItem = remember(selectedItemId, finalNavItems) { finalNavItems.find { it.id == selectedItemId } }
+    val selectedItem = finalNavItems.find { it.id == selectedItemId }
     val hostStates = remember { mutableStateMapOf<String, Boolean>() }
     val itemPositions = remember { mutableStateMapOf<String, androidx.compose.ui.geometry.Rect>() }
 
-    LaunchedEffect(displayedNavItems, currentDestination) {
+    val itemIdsString = displayedNavItems.joinToString(",") { it.id }
+    LaunchedEffect(itemIdsString, currentDestination) {
         val targetId = if (currentDestination != null) displayedNavItems.find { it.route == currentDestination }?.id else selectedItemId ?: displayedNavItems.firstOrNull()?.id
         if (targetId != null) selectedItemId = targetId
         displayedNavItems.forEach { if (it.isCycler) cyclerStates.putIfAbsent(it.id, CyclerTransientState(it.selectedOption ?: "")) }
@@ -217,7 +214,7 @@ fun AzNavRail(
     }
 
     Box(modifier = modifier, contentAlignment = railAlignment ?: (if (isRightDocked) Alignment.TopEnd else Alignment.TopStart)) {
-        val buttonSize = 72.dp 
+        val buttonSize = 72.dp
         val titleAlignment = if (isRightDocked) Alignment.TopStart else Alignment.TopEnd
         val titlePaddingStart = if (isRightDocked) 32.dp else 0.dp
         val titlePaddingEnd = if (isRightDocked) 0.dp else 32.dp
@@ -309,13 +306,14 @@ fun AzNavRail(
                     contentAlignment = if (isAppIcon) Alignment.Center else Alignment.CenterStart
                 ) {
                     if (isAppIcon) {
-                        if (appIcon != null) {
-                            Image(painter = rememberAsyncImagePainter(model = appIcon), contentDescription = "Toggle menu", modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize))
-                        } else {
-                            Icon(imageVector = Icons.Default.Menu, contentDescription = "Toggle Menu", modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize))
-                        }
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Toggle Menu",
+                            modifier = Modifier.size(24.dp), // Replaced broken Drawable loader with safe Material Menu icon
+                            tint = actualActiveColor
+                        )
                     } else {
-                        Text(text = appName, style = MaterialTheme.typography.titleMedium, softWrap = false, maxLines = 1, textAlign = TextAlign.Start)
+                        Text(text = appName, style = MaterialTheme.typography.titleMedium, softWrap = false, maxLines = 1, textAlign = TextAlign.Start, color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
             }
@@ -372,7 +370,7 @@ fun AzNavRail(
                     AnimatedVisibility(visible = !isFloating || showFloatingButtons, modifier = Modifier.fillMaxSize()) {
                         val scrollState = rememberScrollState()
                         val adaptiveModifier = Modifier.padding(horizontal = AzNavRailDefaults.RailContentHorizontalPadding).then(if(isVertical) Modifier.verticalScroll(scrollState) else Modifier.horizontalScroll(scrollState)).onSizeChanged { railItemsHeight = it.height }
-                        
+
                         val onRailCyclerClick: (AzNavItem) -> Unit = { item -> /* Cycler logic omitted for builder brevity */ }
 
                         if (isVertical) {

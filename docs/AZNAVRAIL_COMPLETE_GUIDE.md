@@ -1,189 +1,10 @@
-# AzNavRail Complete Guide
+### API Reference
 
-Welcome to the comprehensive guide for **AzNavRail**. This document contains everything you need to know to use the library, including setup instructions, a full API and DSL reference, layout rules, and complete sample code.
+#### `AzHostActivityLayout`
 
----
+The **MANDATORY** top-level container that manages the rail, safe zones, background content, and layout flipping. It is illegal to instantiate `AzNavRail` directly outside of this layout (except in system overlay services).
 
-## Table of Contents
-
-1.  [Getting Started](#getting-started)
-2.  [AzHostActivityLayout Layout Rules](#azhostactivitylayout-layout-rules)
-3.  [Smart Transitions with AzNavHost](#smart-transitions-with-aznavhost)
-4.  [DSL Reference](#dsl-reference)
-5.  [API Reference](#api-reference)
-6.  [Sample Application Source Code](#sample-application-source-code)
-
----
-
-## Getting Started
-
-### Installation
-
-To use AzNavRail, add JitPack to your project's `settings.gradle.kts`:
-
-```kotlin
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        mavenCentral()
-        maven { url = uri("https://jitpack.io") }
-    }
-}
-```
-
-Add the dependency to your app's `build.gradle.kts`:
-
-```kotlin
-dependencies {
-    implementation("com.github.HereLiesAz:AzNavRail:VERSION") // Replace VERSION with the latest release
-}
-```
-
-### Basic Usage
-
-**IMPORTANT:** `AzNavRail` **MUST** be used within an `AzHostActivityLayout` container.
-
-```kotlin
-AzHostActivityLayout(navController = navController) {
-    // 1. Theme (Visuals)
-    azTheme(
-        activeColor = Color.Red,
-        defaultShape = AzButtonShape.CIRCLE
-    )
-
-    // 2. Config (Behavior)
-    azConfig(
-        displayAppName = true,
-        dockingSide = AzDockingSide.LEFT,
-        packButtons = true
-    )
-
-    // 3. Advanced (Optional)
-    azAdvanced(
-        infoScreen = false
-    )
-
-    // Define Rail Items (Visible on collapsed rail)
-    azRailItem(id = "home", text = "Home", route = "home", onClick = { /* navigate */ })
-
-    // Define Menu Items (Visible only when expanded)
-    azMenuItem(id = "settings", text = "Settings", route = "settings", onClick = { /* navigate */ })
-
-    // Define Content
-    onscreen(Alignment.Center) {
-        // AzNavHost automatically links to the outer AzHostActivityLayout
-        AzNavHost(startDestination = "home") {
-             composable("home") { Text("Home Screen") }
-             // ...
-        }
-    }
-}
-```
-
----
-
-## AzHostActivityLayout Layout Rules
-
-`AzHostActivityLayout` enforces a "Strict Mode" layout system to ensure consistent UX and prevent overlap.
-
-1.  **Rail Avoidance**: Content in the `onscreen` block is automatically padded to avoid the rail.
-2.  **Safe Zones**: Content is restricted from the **Top 20%** and **Bottom 10%** of the screen.
-3.  **Automatic Flipping**: Alignments passed to `onscreen` (e.g., `TopStart`) are mirrored if the rail is docked to the Right.
-4.  **Backgrounds**: Use the `background(weight)` DSL to place full-screen content (e.g., maps) behind the UI. Backgrounds **ignore safe zones**.
-
-**Example:**
-
-```kotlin
-AzHostActivityLayout(navController = navController) {
-    // Full screen background
-    background(weight = 0) {
-        GoogleMap(...)
-    }
-
-    // Safe UI content
-    onscreen(Alignment.TopEnd) {
-        Text("Overlay")
-    }
-}
-```
-
----
-
-## Smart Transitions with AzNavHost
-
-The `AzNavHost` wrapper provides seamless integration with the `AzHostActivityLayout`:
-
-1.  **Automatic Navigation Controller**: It automatically retrieves the `navController` provided to `AzHostActivityLayout`, eliminating the need to pass it again.
-2.  **Directional Transitions**: It automatically configures entry and exit animations based on the rail's docking side:
-    *   **Left Dock**: New screens slide in from the **Right**; old screens slide out to the **Left** (towards the rail).
-    *   **Right Dock**: New screens slide in from the **Left**; old screens slide out to the **Right** (towards the rail).
-
----
-
-## DSL Reference
-
-The DSL is used inside `AzHostActivityLayout` to configure the rail and items.
-
-### AzHostActivityLayout Scope
-
--   `background(weight: Int, content: @Composable () -> Unit)`: Adds a background layer ignoring safe zones.
--   `onscreen(alignment: Alignment, content: @Composable () -> Unit)`: Adds content to the safe area.
-
-### AzNavRail Scope
-
-**Sectors:**
-
-1.  **`azTheme(...)`** (Visuals):
-    -   `expandedRailWidth`: Dp
-    -   `collapsedRailWidth`: Dp
-    -   `defaultShape`: AzButtonShape
-    -   `headerIconShape`: AzHeaderIconShape
-    -   `activeColor`: Color?
-    -   `showFooter`: Boolean
-
-2.  **`azConfig(...)`** (Behavior):
-    -   `displayAppName`: Boolean
-    -   `packButtons`: Boolean
-    -   `dockingSide`: AzDockingSide (LEFT/RIGHT)
-    -   `noMenu`: Boolean
-    -   `vibrate`: Boolean
-    -   `activeClassifiers`: Set<String>
-
-3.  **`azAdvanced(...)`** (Special Ops):
-    -   `isLoading`: Boolean
-    -   `enableRailDragging`: Boolean
-    -   `onUndock`: (() -> Unit)?
-    -   `overlayService`: Class<out Service>?
-    -   `onOverlayDrag`: ((Float, Float) -> Unit)?
-    -   `onItemGloballyPositioned`: ((String, Rect) -> Unit)?
-    -   `infoScreen`: Boolean
-    -   `onDismissInfoScreen`: (() -> Unit)?
-
-**Items:**
--   `azMenuItem(...)`: Item visible only in expanded menu.
--   `azRailItem(...)`: Item visible in rail and menu.
--   `azMenuToggle(...)` / `azRailToggle(...)`: Toggle buttons.
--   `azMenuCycler(...)` / `azRailCycler(...)`: Cycle through options.
--   `azDivider()`: Horizontal divider.
--   `azMenuHostItem(...)` / `azRailHostItem(...)`: Parent items for nested menus.
--   `azMenuSubItem(...)` / `azRailSubItem(...)`: Child items.
--   `azRailRelocItem(...)`: Reorderable drag-and-drop items.
-
-**Common Parameters:**
--   `id`: Unique identifier.
--   `text`: Display label.
--   `route`: Navigation route (optional).
--   `icon`: (Implicitly handled by shapes/text in this library).
--   `disabled`: Boolean state.
--   `info`: Help text for Info Screen mode.
--   `onClick`: Lambda action.
-
----
-
-## API Reference
-
-### `AzHostActivityLayout`
-```kotlin
+~~~kotlin
 @Composable
 fun AzHostActivityLayout(
     modifier: Modifier = Modifier,
@@ -194,25 +15,58 @@ fun AzHostActivityLayout(
     disableSwipeToOpen: Boolean = false,
     content: AzNavHostScope.() -> Unit
 )
-```
+~~~
 
-### `AzNavHost`
-```kotlin
+-   **`modifier`**: The modifier to be applied to the host container.
+-   **`navController`**: The `NavHostController` used for navigation. **This is now mandatory.**
+-   **`currentDestination`**: Optional override for the current route. If null, it is derived from `navController`.
+-   **`isLandscape`**: Optional override for the orientation. If null, it is derived from the screen configuration.
+-   **`initiallyExpanded`**: Whether the rail should be initially expanded.
+-   **`disableSwipeToOpen`**: Disables the swipe gesture to open the drawer.
+-   **`content`**: The DSL content, scoped to `AzNavHostScope`.
+
+#### `AzNavHost`
+
+A wrapper around `androidx.navigation.compose.NavHost` designed to be used within the `onscreen` block of `AzHostActivityLayout`.
+
+**Features:**
+-   **Automatic Navigation Controller**: Automatically uses the `navController` from `AzHostActivityLayout`.
+-   **Smart Transitions**: Automatically configures directional slide transitions based on the rail's docking side.
+
+~~~kotlin
 @Composable
 fun AzNavHost(
     startDestination: String,
     modifier: Modifier = Modifier,
-    // navController derived from context if omitted
+    navController: NavHostController = LocalAzNavHostScope.current?.navController ?: rememberNavController(),
     contentAlignment: Alignment = Alignment.Center,
     route: String? = null,
-    // ... transition params (smart defaults)
+    // ... transition params (default to Smart Transitions)
     builder: NavGraphBuilder.() -> Unit
 )
-```
+~~~
 
-### `AzTextBox`
-A versatile text input component.
-```kotlin
+-   **`startDestination`**: The route of the start destination.
+-   **`navController`**: The navigation controller (optional if inside `AzHostActivityLayout`).
+-   **`builder`**: The builder for the navigation graph.
+-   *(Standard NavHost parameters are supported)*.
+
+#### `AzNavRail`
+
+The internal component for the navigation rail. **Do not instantiate this directly.** Use `AzHostActivityLayout`.
+
+~~~kotlin
+@Composable
+fun AzNavRail(...)
+~~~
+
+*(Direct usage is prohibited except for overlay services)*
+
+#### `AzTextBox`
+
+A text input field with autocomplete.
+
+~~~kotlin
 @Composable
 fun AzTextBox(
     modifier: Modifier = Modifier,
@@ -223,209 +77,198 @@ fun AzTextBox(
     multiline: Boolean = false,
     secret: Boolean = false,
     isError: Boolean = false,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    outlineColor: Color = MaterialTheme.colorScheme.primary,
     historyContext: String? = null,
     submitButtonContent: (@Composable () -> Unit)? = null,
     onSubmit: (String) -> Unit
 )
-```
+~~~
 
-### `AzForm`
-Groups `AzTextBox` fields.
-```kotlin
+-   **`modifier`**: The modifier to be applied to the text box.
+-   **`value`**: The input text to be shown in the text field. Use `null` for an uncontrolled component.
+-   **`onValueChange`**: The callback that is triggered when the input value updates. Use `null` for an uncontrolled component.
+-   **`hint`**: The hint text to display when the input is empty.
+-   **`outlined`**: Whether the text box has an outline. The submit button's outline will be the inverse of this value.
+-   **`multiline`**: Enables multiline input, which expands the text box vertically.
+-   **`secret`**: Masks the input for password fields and replaces the clear button with a reveal icon.
+-   **`isError`**: Indicates if the input is in an error state, changing the outline and icon color to the error color.
+-   **`keyboardOptions`**: Configuration for the keyboard, such as `ImeAction`.
+-   **`keyboardActions`**: Actions to take when keyboard events occur, such as when the 'Enter' key is pressed.
+-   **`leadingIcon`**: An optional composable to display at the start of the text box.
+-   **`trailingIcon`**: An optional composable to display at the end of the text box (before the clear/submit buttons).
+-   **`outlineColor`**: Sets the color for the outline, input text, and all icons.
+-   **`historyContext`**: An optional string to provide a unique context for the autocomplete history. If provided, suggestions will be drawn only from entries saved with the same context.
+-   **`submitButtonContent`**: A composable lambda for the content of the submit button.
+-   **`onSubmit`**: A callback that is invoked when the submit button is clicked, providing the current text.
+
+#### `AzForm`
+
+A composable for creating a form with multiple `AzTextBox` fields.
+
+~~~kotlin
 @Composable
 fun AzForm(
     formName: String,
+    modifier: Modifier = Modifier,
+    outlined: Boolean = true,
+    outlineColor: Color = MaterialTheme.colorScheme.primary,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
     onSubmit: (Map<String, String>) -> Unit,
+    submitButtonContent: @Composable () -> Unit = { Text("Submit") },
     content: AzFormScope.() -> Unit
 )
-```
+~~~
 
-### `AzButton`, `AzToggle`, `AzCycler`
-Standalone versions of the rail components are available for general UI use.
+-   **`formName`**: A unique name for the form. This name is used as the `historyContext` for all text fields within the form, ensuring that autocomplete suggestions are namespaced and relevant to this form only.
+-   **`modifier`**: The modifier to be applied to the form.
+-   **`outlined`**: Whether the text fields in the form have an outline. The submit button's outline will be the inverse of this value.
+-   **`outlineColor`**: Sets the color for the outline, input text, and all icons for all fields in the form.
+-   **`trailingIcon`**: An optional composable to display at the end of every text box in the form.
+-   **`keyboardOptions`**: Default keyboard options for the form.
+-   **`keyboardActions`**: Default keyboard actions for the form. By default, 'Enter' moves to the next field, and sends the form on the last field.
+-   **`onSubmit`**: A callback that is invoked when the form's submit button is clicked, providing a map of the form data.
+-   **`submitButtonContent`**: A composable lambda for the content of the submit button.
+-   **`content`**: The DSL content for the form, where you define the `entry` fields.
 
----
+#### `AzFormScope`
 
-## Sample Application Source Code
+-   `entry(entryName: String, hint: String, multiline: Boolean, secret: Boolean, leadingIcon: @Composable (() -> Unit)?, isError: Boolean, keyboardOptions: KeyboardOptions, keyboardActions: KeyboardActions)`: Adds a text field to the form. `leadingIcon` allows adding an icon to the start of the field. `isError` sets the error state. `keyboardOptions` and `keyboardActions` allow overriding the form defaults.
 
-Below is the complete source code for a functional Sample App demonstrating all features.
+#### `AzTextBoxDefaults`
 
-### `MainActivity.kt`
+An object for configuring global `AzTextBox` and `AzForm` settings.
 
-```kotlin
-package com.example.sampleapp
+-   `setSuggestionLimit(limit: Int)`: Sets the maximum number of autocomplete suggestions to display (0-5) and the corresponding history storage limit in kilobytes.
+-   `setBackgroundColor(color: Color)`: Sets the global background color for all text boxes and forms.
+-   `setBackgroundOpacity(opacity: Float)`: Sets the global background opacity for all text boxes and forms.
 
-import android.Manifest
-import android.content.Intent
-import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.provider.Settings
-import android.util.Log
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
+#### `AzButton`
 
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            MyApplicationTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    val context = LocalContext.current
+A circular, text-only button with auto-sizing text.
 
-                    // Request Notification Permission for Android 13+
-                    val permissionLauncher = rememberLauncherForActivityResult(
-                        ActivityResultContracts.RequestPermission()
-                    ) { isGranted ->
-                         Log.d("MainActivity", "Notification permission granted: $isGranted")
-                    }
-
-                    LaunchedEffect(Unit) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        }
-                    }
-
-                    val startOverlay = {
-                        if (Settings.canDrawOverlays(context)) {
-                            val intent = Intent(context, SampleOverlayService::class.java)
-                            ContextCompat.startForegroundService(context, intent)
-                        } else {
-                            val intent = Intent(
-                                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                                Uri.parse("package:${context.packageName}")
-                            )
-                            context.startActivity(intent)
-                        }
-                    }
-
-                    SampleScreen(
-                        onUndockOverride = {
-                            startOverlay()
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-```
-
-### `SampleScreen.kt`
-
-```kotlin
-package com.example.sampleapp
-
-import android.util.Log
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
-import com.hereliesaz.aznavrail.*
-import com.hereliesaz.aznavrail.model.AzButtonShape
-import com.hereliesaz.aznavrail.model.AzDockingSide
-
+~~~kotlin
 @Composable
-fun SampleScreen(
-    enableRailDragging: Boolean = true,
-    initiallyExpanded: Boolean = false,
-    onUndockOverride: (() -> Unit)? = null,
-    onRailDrag: ((Float, Float) -> Unit)? = null,
-    showContent: Boolean = true
-) {
-    val TAG = "SampleApp"
-    val navController = rememberNavController()
-    val currentDestination by navController.currentBackStackEntryAsState()
-    var isOnline by remember { mutableStateOf(true) }
-    var isDarkMode by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) }
-    var packButtons by remember { mutableStateOf(false) }
-    val railCycleOptions = remember { listOf("A", "B", "C", "D") }
-    var railSelectedOption by remember { mutableStateOf(railCycleOptions.first()) }
-    val menuCycleOptions = remember { listOf("X", "Y", "Z") }
-    var menuSelectedOption by remember { mutableStateOf(menuCycleOptions.first()) }
-    val context = LocalContext.current
-    val configuration = LocalConfiguration.current
-    val isLandscape = configuration.screenWidthDp > configuration.screenHeightDp
+fun AzButton(
+    onClick: () -> Unit,
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.primary,
+    colors: ButtonColors? = null,
+    shape: AzButtonShape = AzButtonShape.CIRCLE
+)
+~~~
 
-    // Set the global suggestion limit for all AzTextBox instances
-    AzTextBoxDefaults.setSuggestionLimit(3)
+-   **`onClick`**: A lambda to be executed when the button is clicked.
+-   **`text`**: The text to display on the button.
+-   **`modifier`**: The modifier to be applied to the button.
+-   **`color`**: The color of the button's border and text.
+-   **`colors`**: The colors of the button, overriding `color` if provided.
+-   **`shape`**: The shape of the button.
 
-    var useBasicOverlay by remember { mutableStateOf(false) }
-    var isDockingRight by remember { mutableStateOf(false) }
-    var noMenu by remember { mutableStateOf(false) }
-    var showHelp by remember { mutableStateOf(false) }
+#### `AzToggle`
 
-    AzHostActivityLayout(
-        navController = navController,
-        modifier = Modifier.fillMaxSize(),
-        currentDestination = currentDestination?.destination?.route,
-        isLandscape = isLandscape,
-        initiallyExpanded = initiallyExpanded
-    ) {
-        azTheme(
-            defaultShape = AzButtonShape.RECTANGLE
-        )
+A toggle button that displays different text for its on and off states.
 
-        azConfig(
-            packButtons = packButtons,
-            dockingSide = if (isDockingRight) AzDockingSide.RIGHT else AzDockingSide.LEFT,
-            noMenu = noMenu
-        )
+~~~kotlin
+@Composable
+fun AzToggle(
+    isChecked: Boolean,
+    onToggle: () -> Unit,
+    toggleOnText: String,
+    toggleOffText: String,
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.primary,
+    colors: ButtonColors? = null,
+    shape: AzButtonShape = AzButtonShape.CIRCLE
+)
+~~~
 
-        azAdvanced(
-            isLoading = isLoading,
-            enableRailDragging = enableRailDragging,
-            onUndock = onUndockOverride,
-            onRailDrag = onRailDrag,
-            overlayService = if (useBasicOverlay) SampleBasicOverlayService::class.java else SampleOverlayService::class.java,
-            infoScreen = showHelp,
-            onDismissInfoScreen = { showHelp = false }
-        )
+-   **`isChecked`**: Whether the toggle is in the "on" state.
+-   **`onToggle`**: The callback to be invoked when the button is toggled.
+-   **`toggleOnText`**: The text to display when the toggle is on.
+-   **`toggleOffText`**: The text to display when the toggle is off.
+-   **`modifier`**: The modifier to be applied to the button.
+-   **`color`**: The color of the button's border and text.
+-   **`colors`**: The colors of the button, overriding `color` if provided.
+-   **`shape`**: The shape of the button.
 
-        // RAIL ITEMS ... (same as previous examples)
-        azMenuItem(id = "home", text = "Home", route = "home", onClick = { Log.d(TAG, "Home menu item clicked") })
-        // ...
+#### `AzCycler`
 
-        // BACKGROUNDS
-        background(weight = 0) {
-            Box(Modifier.fillMaxSize().background(Color(0xFFEEEEEE)))
-        }
+A button that cycles through a list of options when clicked, with a delayed action.
 
-        // ONSCREEN COMPONENTS
-        if (showContent) {
-            onscreen(alignment = Alignment.Center) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    // ... AzTextBox examples ...
+~~~kotlin
+@Composable
+fun AzCycler(
+    options: List<String>,
+    selectedOption: String,
+    onCycle: () -> Unit,
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.primary,
+    colors: ButtonColors? = null,
+    shape: AzButtonShape = AzButtonShape.CIRCLE
+)
+~~~
 
-                    AzNavHost(startDestination = "home") {
-                        composable("home") { Text("Home Screen") }
-                        // ...
-                    }
-                }
-            }
-        }
-    }
-}
-```
+-   **`options`**: The list of options to cycle through.
+-   **`selectedOption`**: The currently selected option from the view model.
+-   **`onCycle`**: The callback to be invoked for the final selected option after a 1-second delay.
+-   **`modifier`**: The modifier to be applied to the button.
+-   **`color`**: The color of the button's border and text.
+-   **`colors`**: The colors of the button, overriding `color` if provided.
+-   **`shape`**: The shape of the button.
+
+#### `azNestedRail`
+
+A DSL function to create a nested rail structure.
+
+~~~kotlin
+fun azNestedRail(
+    id: String,
+    text: String,
+    alignment: AzNestedRailAlignment = AzNestedRailAlignment.VERTICAL,
+    // ... standard item parameters ...
+    content: AzNavRailScope.() -> Unit
+)
+~~~
+
+- **`alignment`**: Specifies the layout of the nested items (`VERTICAL` or `HORIZONTAL`).
+- **`content`**: The inner scope where nested items are defined.
+
+## AzNavRail for Web (React)
+
+`aznavrail-web` is a React component that provides a Material Design-style navigation rail.
+
+### Features
+
+All item functions are overloaded to support `route`-based navigation.
+
+## AzNavRail for React Native
+
+`aznavrail-react-native` provides the navigation rail for React Native applications.
+
+### Installation
+
+~~~bash
+npm install aznavrail-react-native
+# or
+yarn add aznavrail-react-native
+~~~
+
+### Usage
+
+~~~tsx
+import { AzNavRail } from 'aznavrail-react-native';
+import { AzRailItem, AzMenuItem } from 'aznavrail-react-native';
+
+// React Native usage usually implies wrapping, but we show the item structure
+<AzNavRail>
+  <AzRailItem id="home" text="Home" onClick={() => {}} />
+  <AzMenuItem id="settings" text="Settings" onClick={() => {}} />
+</AzNavRail>
+~~~
