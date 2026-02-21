@@ -102,7 +102,7 @@ fun AzHostActivityLayout(
     isLandscape: Boolean? = null,
     initiallyExpanded: Boolean = false,
     disableSwipeToOpen: Boolean = false,
-    content: AzNavHostScope.() -> Unit
+    content: @Composable AzNavHostScope.() -> Unit
 ) {
     val configuration = LocalConfiguration.current
     val effectiveIsLandscape = isLandscape ?: (configuration.screenWidthDp > configuration.screenHeightDp)
