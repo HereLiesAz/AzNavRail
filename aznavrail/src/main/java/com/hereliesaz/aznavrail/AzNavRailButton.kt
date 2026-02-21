@@ -14,10 +14,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -36,39 +36,31 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.model.AzButtonShape
-import com.hereliesaz.aznavrail.model.AzNavItem
+import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.util.text.AutoSizeText
 
 @Composable
 internal fun AzNavRailButton(
-    item: AzNavItem,
-    currentDestination: String?,
-    activeColor: Color,
-    activeClassifiers: Set<String>,
     onClick: () -> Unit,
-    onLongClick: (() -> Unit)? = null,
+    text: String,
     modifier: Modifier = Modifier,
-    size: Dp = 48.dp,
+    color: Color = MaterialTheme.colorScheme.primary,
+    activeColor: Color = MaterialTheme.colorScheme.primary,
+    colors: ButtonColors? = null,
+    size: Dp = AzNavRailDefaults.ButtonSize,
+    shape: AzButtonShape = AzButtonShape.CIRCLE,
+    enabled: Boolean = true,
+    isSelected: Boolean = false,
+    isLoading: Boolean = false,
+    contentPadding: PaddingValues = PaddingValues(8.dp),
+    itemContent: Any? = null,
+    onLongClick: (() -> Unit)? = null,
     onGloballyPositioned: ((Rect) -> Unit)? = null
 ) {
-    val isActiveRoute = item.route != null && currentDestination == item.route
-    val isActiveClassifier = item.classifiers.any { activeClassifiers.contains(it) }
-    val isActive = isActiveRoute || isActiveClassifier
-
-    val color = item.color ?: MaterialTheme.colorScheme.onSurface
-    val finalColor = if (isActive) activeColor else color
+    val finalColor = if (isSelected) activeColor else color
     val disabledColor = color.copy(alpha = 0.38f)
 
-    val displayText = if (item.isToggle) {
-        if (item.isChecked == true) item.toggleOnText else item.toggleOffText
-    } else if (item.isCycler) {
-        item.selectedOption ?: ""
-    } else {
-        item.text
-    }
-
     val context = LocalContext.current
-    val itemContent = item.content
     val isResource = remember(itemContent) {
         if (itemContent is Int) {
             try {
@@ -79,26 +71,25 @@ internal fun AzNavRailButton(
         } else false
     }
 
-    val basePadding = 8.dp
     val effectiveContentPadding = if (itemContent is Color || isResource || (itemContent != null && itemContent !is Int && itemContent !is Number && itemContent !is Color)) {
         PaddingValues(0.dp)
     } else {
-        PaddingValues(basePadding)
+        contentPadding
     }
 
-    val widthModifier = if (item.shape == AzButtonShape.RECTANGLE || item.shape == AzButtonShape.NONE) {
+    val widthModifier = if (shape == AzButtonShape.RECTANGLE || shape == AzButtonShape.NONE) {
         Modifier.padding(horizontal = 8.dp)
     } else {
         Modifier.size(size)
     }
 
-    val heightModifier = if (item.shape == AzButtonShape.RECTANGLE || item.shape == AzButtonShape.NONE) {
+    val heightModifier = if (shape == AzButtonShape.RECTANGLE || shape == AzButtonShape.NONE) {
         Modifier.padding(vertical = 4.dp)
     } else {
         Modifier
     }
 
-    val shapeModifier = when (item.shape) {
+    val shapeModifier = when (shape) {
         AzButtonShape.CIRCLE -> CircleShape
         AzButtonShape.SQUARE -> RoundedCornerShape(8.dp)
         AzButtonShape.RECTANGLE -> RoundedCornerShape(8.dp)
@@ -106,6 +97,10 @@ internal fun AzNavRailButton(
     }
 
     val interactionSource = remember { MutableInteractionSource() }
+    val defaultColors = ButtonDefaults.outlinedButtonColors(
+        containerColor = Color.Transparent,
+        disabledContainerColor = Color.Transparent
+    )
 
     Box(
         modifier = modifier
@@ -115,11 +110,7 @@ internal fun AzNavRailButton(
                 onGloballyPositioned?.invoke(coordinates.boundsInWindow())
             }
     ) {
-        val btnModifier = if (item.shape == AzButtonShape.RECTANGLE || item.shape == AzButtonShape.NONE) {
-            Modifier
-        } else {
-            Modifier.fillMaxSize()
-        }
+        val btnModifier = if (shape == AzButtonShape.RECTANGLE || shape == AzButtonShape.NONE) Modifier else Modifier.fillMaxSize()
 
         OutlinedButton(
             onClick = { },
@@ -127,24 +118,21 @@ internal fun AzNavRailButton(
                 .combinedClickable(
                     interactionSource = interactionSource,
                     indication = null,
-                    onClick = { if (!item.disabled) onClick() },
-                    onLongClick = { if (!item.disabled && onLongClick != null) onLongClick() }
+                    onClick = { if (enabled) onClick() },
+                    onLongClick = { if (enabled && onLongClick != null) onLongClick() }
                 ),
             shape = shapeModifier,
-            border = if (item.shape == AzButtonShape.NONE) BorderStroke(0.dp, Color.Transparent)
-            else BorderStroke(3.dp, if (!item.disabled) finalColor else disabledColor),
-            colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = Color.Transparent,
-                disabledContainerColor = Color.Transparent
-            ),
+            border = if (shape == AzButtonShape.NONE) BorderStroke(0.dp, Color.Transparent)
+            else BorderStroke(3.dp, if (enabled) finalColor else disabledColor),
+            colors = colors ?: defaultColors,
             contentPadding = effectiveContentPadding,
-            enabled = !item.disabled,
+            enabled = enabled,
             interactionSource = interactionSource
         ) {
             Box(contentAlignment = Alignment.Center) {
                 if (itemContent != null) {
                     Box(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize().alpha(if (isLoading) 0f else 1f),
                         contentAlignment = Alignment.Center
                     ) {
                         when (itemContent) {
@@ -160,27 +148,15 @@ internal fun AzNavRailButton(
                                 } else {
                                     AutoSizeText(
                                         text = itemContent.toString(),
-                                        style = MaterialTheme.typography.bodyMedium.copy(
-                                            textAlign = TextAlign.Center,
-                                            color = if (!item.disabled) finalColor else disabledColor
-                                        ),
-                                        maxLines = 1,
-                                        softWrap = false,
-                                        alignment = Alignment.Center,
-                                        lineSpaceRatio = 0.9f
+                                        style = MaterialTheme.typography.bodyMedium.copy(textAlign = TextAlign.Center, color = if (enabled) finalColor else disabledColor),
+                                        maxLines = 1, softWrap = false, alignment = Alignment.Center, lineSpaceRatio = 0.9f
                                     )
                                 }
                             }
                             is Number -> AutoSizeText(
                                 text = itemContent.toString(),
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    textAlign = TextAlign.Center,
-                                    color = if (!item.disabled) finalColor else disabledColor
-                                ),
-                                maxLines = 1,
-                                softWrap = false,
-                                alignment = Alignment.Center,
-                                lineSpaceRatio = 0.9f
+                                style = MaterialTheme.typography.bodyMedium.copy(textAlign = TextAlign.Center, color = if (enabled) finalColor else disabledColor),
+                                maxLines = 1, softWrap = false, alignment = Alignment.Center, lineSpaceRatio = 0.9f
                             )
                             else -> {
                                 Image(
@@ -193,25 +169,25 @@ internal fun AzNavRailButton(
                         }
                     }
                 } else {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        val textModifier = when (item.shape) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.alpha(if (isLoading) 0f else 1f)) {
+                        val textModifier = when (shape) {
                             AzButtonShape.RECTANGLE, AzButtonShape.NONE -> Modifier
                             AzButtonShape.CIRCLE, AzButtonShape.SQUARE -> Modifier.weight(1f)
                         }
                         AutoSizeText(
-                            text = displayText,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                textAlign = TextAlign.Center,
-                                color = if (!item.disabled) finalColor else disabledColor
-                            ),
+                            text = text,
+                            style = MaterialTheme.typography.bodyMedium.copy(textAlign = TextAlign.Center, color = if (enabled) finalColor else disabledColor),
                             modifier = textModifier,
-                            maxLines = if (displayText.contains("\n")) Int.MAX_VALUE else 1,
-                            softWrap = false,
-                            alignment = Alignment.Center,
-                            lineSpaceRatio = 0.9f
+                            maxLines = if (text.contains("\n")) Int.MAX_VALUE else 1,
+                            softWrap = false, alignment = Alignment.Center, lineSpaceRatio = 0.9f
                         )
                     }
                 }
+            }
+        }
+        if (isLoading) {
+            Box(modifier = Modifier.matchParentSize().wrapContentSize(align = Alignment.Center, unbounded = true)) {
+                AzLoad()
             }
         }
     }

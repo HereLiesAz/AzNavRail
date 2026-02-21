@@ -39,7 +39,6 @@ import androidx.navigation.compose.rememberNavController
 import com.hereliesaz.aznavrail.internal.AzLayoutConfig
 import com.hereliesaz.aznavrail.internal.AzRailLayoutHelper
 import com.hereliesaz.aznavrail.internal.AzVisualSide
-import com.hereliesaz.aznavrail.model.AzOrientation
 import com.hereliesaz.aznavrail.internal.AzSafeZones
 import com.hereliesaz.aznavrail.model.AzDockingSide
 
@@ -48,23 +47,48 @@ val LocalAzSafeZones = compositionLocalOf { AzSafeZones() }
 val LocalAzNavHostScope = staticCompositionLocalOf<AzNavHostScope?> { null }
 
 interface AzNavHostScope : AzNavRailScope {
+    val navController: NavHostController
+    val dockingSide: AzDockingSide
     fun background(weight: Int = 0, content: @Composable () -> Unit)
-    fun onscreen(alignment: Alignment = Alignment.Center, content: @Composable () -> Unit)
+    fun onscreen(alignment: Alignment = Alignment.TopStart, content: @Composable () -> Unit)
 }
 
-private class AzNavHostScopeImpl(private val railScope: AzNavRailScopeImpl) : AzNavHostScope, AzNavRailScope by railScope {
-    val backgrounds = mutableStateListOf<Pair<Int, @Composable () -> Unit>>()
-    val onscreenContents = mutableStateListOf<Pair<Alignment, @Composable () -> Unit>>()
+data class AzBackgroundItem(val weight: Int, val content: @Composable () -> Unit)
+data class AzOnscreenItem(val alignment: Alignment, val content: @Composable () -> Unit)
+
+class AzNavHostScopeImpl(
+    private val railScope: AzNavRailScopeImpl = AzNavRailScopeImpl()
+) : AzNavHostScope, AzNavRailScope by railScope {
+    private var _navController: NavHostController? = null
+    override val navController: NavHostController get() = _navController ?: error("NavController not initialized.")
+    override val dockingSide: AzDockingSide get() = railScope.dockingSide
+
+    val backgrounds = mutableStateListOf<AzBackgroundItem>()
+    val onscreenItems = mutableStateListOf<AzOnscreenItem>()
+
+    fun setController(controller: NavHostController) {
+        _navController = controller
+        railScope.navController = controller
+    }
 
     override fun background(weight: Int, content: @Composable () -> Unit) {
-        backgrounds.add(weight to content)
+        backgrounds.add(AzBackgroundItem(weight, content))
     }
 
     override fun onscreen(alignment: Alignment, content: @Composable () -> Unit) {
-        onscreenContents.add(alignment to content)
+        onscreenItems.add(AzOnscreenItem(alignment, content))
+    }
+
+    fun getRailScopeImpl() = railScope
+
+    fun resetHost() {
+        railScope.reset()
+        backgrounds.clear()
+        onscreenItems.clear()
     }
 }
 
+@OptIn(AzStrictLayout::class)
 @Composable
 fun AzHostActivityLayout(
     modifier: Modifier = Modifier,
@@ -76,89 +100,117 @@ fun AzHostActivityLayout(
     content: AzNavHostScope.() -> Unit
 ) {
     val configuration = LocalConfiguration.current
-    val view = LocalView.current
     val density = LocalDensity.current
+    val effectiveIsLandscape = isLandscape ?: (configuration.screenWidthDp > configuration.screenHeightDp)
 
-    val screenHeight = configuration.screenHeightDp
-    val isLandscapeEffective = isLandscape ?: (configuration.screenWidthDp > configuration.screenHeightDp)
+    val effectiveCurrentDestination = currentDestination ?: run {
+        val navBackStackEntry by navController.currentBackStackEntryAsState()
+        navBackStackEntry?.destination?.route
+    }
 
-    val display = view.display
-    val rotation = display?.rotation ?: Surface.ROTATION_0
+    val scope = remember { AzNavHostScopeImpl() }
+    scope.resetHost()
+    scope.setController(navController)
+    scope.apply(content)
 
-    val railScope = remember { AzNavRailScopeImpl() }
-    val hostScope = remember(railScope) { AzNavHostScopeImpl(railScope) }
-
-    hostScope.backgrounds.clear()
-    hostScope.onscreenContents.clear()
-    hostScope.apply(content)
+    val railScope = scope.getRailScopeImpl()
+    val dockingSide = railScope.dockingSide
+    val railWidth = railScope.collapsedWidth
+    val usePhysicalDocking = railScope.usePhysicalDocking
+    val rotation = LocalView.current.display?.rotation ?: Surface.ROTATION_0
 
     val layoutConfig = AzRailLayoutHelper.calculateLayout(
-        logicalSide = hostScope.dockingSide,
+        dockingSide = dockingSide,
         rotation = rotation,
-        usePhysicalDocking = hostScope.usePhysicalDocking
+        usePhysicalDocking = usePhysicalDocking
     )
 
     val visualSide = layoutConfig.visualSide
-    val isRightDocked = visualSide == AzVisualSide.RIGHT || visualSide == AzVisualSide.BOTTOM
+    val orientation = layoutConfig.orientation
+    val reverseLayout = layoutConfig.reverseLayout
+    val railAlignment = layoutConfig.alignment
 
-    val expandedWidth = hostScope.expandedWidth
-    val collapsedWidth = hostScope.collapsedWidth
+    val visualDockingSideProxy = if (visualSide == AzVisualSide.BOTTOM || visualSide == AzVisualSide.RIGHT) AzDockingSide.RIGHT else AzDockingSide.LEFT
 
     val systemBars = WindowInsets.systemBars.asPaddingValues()
+    val screenHeight = configuration.screenHeightDp
+
     val calculatedTop = with(density) { (screenHeight * AzLayoutConfig.ContentSafeTopPercent).toDp() }
     val calculatedBottom = with(density) { (screenHeight * AzLayoutConfig.ContentSafeBottomPercent).toDp() }
 
     val safeTop = max(calculatedTop, systemBars.calculateTopPadding())
     val safeBottom = max(calculatedBottom, systemBars.calculateBottomPadding())
 
-    val safeZones = AzSafeZones(top = safeTop, bottom = safeBottom)
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        scope.backgrounds.sortedBy { it.weight }.forEach { item ->
+            Box(modifier = Modifier.fillMaxSize()) { item.content() }
+        }
 
-    CompositionLocalProvider(
-        LocalAzNavHostPresent provides true,
-        LocalAzSafeZones provides safeZones,
-        LocalAzNavHostScope provides hostScope
-    ) {
-        BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-            val contentPadding = if (hostScope.noMenu) collapsedWidth else expandedWidth
+        val startPadding = if (visualSide == AzVisualSide.LEFT) railWidth else 0.dp
+        val endPadding = if (visualSide == AzVisualSide.RIGHT) railWidth else 0.dp
+        val topPadding = if (visualSide == AzVisualSide.TOP) railWidth else 0.dp
+        val bottomPadding = if (visualSide == AzVisualSide.BOTTOM) railWidth else 0.dp
 
-            hostScope.backgrounds.sortedBy { it.first }.forEach { (_, bgContent) ->
-                Box(modifier = Modifier.fillMaxSize()) {
-                    bgContent()
-                }
-            }
-
-            hostScope.onscreenContents.forEach { (alignment, onscreenContent) ->
-                val adjustedAlignment = if (isRightDocked && alignment is BiasAlignment) {
-                    BiasAlignment(horizontalBias = -alignment.horizontalBias, verticalBias = alignment.verticalBias)
-                } else {
-                    alignment
-                }
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(
-                            top = safeZones.top,
-                            bottom = safeZones.bottom,
-                            start = if (!isRightDocked) contentPadding else 0.dp,
-                            end = if (isRightDocked) contentPadding else 0.dp
-                        ),
-                    contentAlignment = adjustedAlignment
-                ) {
-                    onscreenContent()
-                }
-            }
-
-            AzNavRail(
-                modifier = Modifier,
-                providedScope = railScope,
-                navController = navController,
-                currentDestination = currentDestination,
-                isLandscape = isLandscapeEffective,
-                visualDockingSide = if (isRightDocked) AzDockingSide.RIGHT else AzDockingSide.LEFT,
-                initiallyExpanded = initiallyExpanded,
-                disableSwipeToOpen = disableSwipeToOpen
+        CompositionLocalProvider(LocalAzNavHostScope provides scope) {
+            AzHostFragmentLayout(
+                safeTop = safeTop,
+                safeBottom = safeBottom,
+                startPadding = startPadding,
+                endPadding = endPadding,
+                topPadding = topPadding,
+                bottomPadding = bottomPadding,
+                items = scope.onscreenItems,
+                dockingSide = dockingSide
             )
+        }
+
+        CompositionLocalProvider(
+            LocalAzNavHostPresent provides true,
+            LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom)
+        ) {
+            AzNavRail(
+                modifier = Modifier.fillMaxSize(),
+                navController = navController,
+                currentDestination = effectiveCurrentDestination,
+                isLandscape = effectiveIsLandscape,
+                initiallyExpanded = initiallyExpanded,
+                disableSwipeToOpen = disableSwipeToOpen,
+                providedScope = railScope,
+                orientation = orientation,
+                visualDockingSide = visualDockingSideProxy,
+                railAlignment = railAlignment,
+                reverseLayout = reverseLayout,
+                content = {}
+            )
+        }
+    }
+}
+
+@Composable
+fun AzHostFragmentLayout(
+    safeTop: Dp,
+    safeBottom: Dp,
+    startPadding: Dp,
+    endPadding: Dp,
+    topPadding: Dp,
+    bottomPadding: Dp,
+    items: List<AzOnscreenItem>,
+    dockingSide: AzDockingSide
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(top = safeTop + topPadding, bottom = safeBottom + bottomPadding, start = startPadding, end = endPadding)
+    ) {
+        items.forEach { item ->
+            val finalAlignment = if (dockingSide == AzDockingSide.RIGHT && item.alignment is BiasAlignment) {
+                BiasAlignment(horizontalBias = -(item.alignment as BiasAlignment).horizontalBias, verticalBias = (item.alignment as BiasAlignment).verticalBias)
+            } else {
+                item.alignment
+            }
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = finalAlignment) {
+                item.content()
+            }
         }
     }
 }
@@ -170,32 +222,42 @@ fun AzNavHost(
     navController: NavHostController = LocalAzNavHostScope.current?.navController ?: rememberNavController(),
     contentAlignment: Alignment = Alignment.Center,
     route: String? = null,
-    enterTransition: (@JvmSuppressWildcards AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) = {
-        val scope = LocalAzNavHostScope.current
-        val isRightDocked = scope?.dockingSide == AzDockingSide.RIGHT
-        val slideDirection = if (isRightDocked) -1 else 1
-        slideInHorizontally(initialOffsetX = { slideDirection * 1000 }) + fadeIn()
-    },
-    exitTransition: (@JvmSuppressWildcards AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) = {
-        val scope = LocalAzNavHostScope.current
-        val isRightDocked = scope?.dockingSide == AzDockingSide.RIGHT
-        val slideDirection = if (isRightDocked) 1 else -1
-        slideOutHorizontally(targetOffsetX = { slideDirection * 1000 }) + fadeOut()
-    },
-    popEnterTransition: (@JvmSuppressWildcards AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) = enterTransition,
-    popExitTransition: (@JvmSuppressWildcards AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) = exitTransition,
+    enterTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition)? = null,
+    exitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition)? = null,
+    popEnterTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition)? = null,
+    popExitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition)? = null,
     builder: NavGraphBuilder.() -> Unit
 ) {
+    val scope = LocalAzNavHostScope.current
+    val dockingSide = scope?.dockingSide ?: AzDockingSide.LEFT
+
+    val defaultEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
+        if (dockingSide == AzDockingSide.LEFT) slideInHorizontally(initialOffsetX = { it }) + fadeIn()
+        else slideInHorizontally(initialOffsetX = { -it }) + fadeIn()
+    }
+    val defaultExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
+        if (dockingSide == AzDockingSide.LEFT) slideOutHorizontally(targetOffsetX = { -it }) + fadeOut()
+        else slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
+    }
+    val defaultPopEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
+        if (dockingSide == AzDockingSide.LEFT) slideInHorizontally(initialOffsetX = { -it }) + fadeIn()
+        else slideInHorizontally(initialOffsetX = { it }) + fadeIn()
+    }
+    val defaultPopExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
+        if (dockingSide == AzDockingSide.LEFT) slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
+        else slideOutHorizontally(targetOffsetX = { -it }) + fadeOut()
+    }
+
     androidx.navigation.compose.NavHost(
         navController = navController,
         startDestination = startDestination,
         modifier = modifier,
         contentAlignment = contentAlignment,
         route = route,
-        enterTransition = enterTransition,
-        exitTransition = exitTransition,
-        popEnterTransition = popEnterTransition,
-        popExitTransition = popExitTransition,
+        enterTransition = enterTransition ?: defaultEnter,
+        exitTransition = exitTransition ?: defaultExit,
+        popEnterTransition = popEnterTransition ?: defaultPopEnter,
+        popExitTransition = popExitTransition ?: defaultPopExit,
         builder = builder
     )
 }

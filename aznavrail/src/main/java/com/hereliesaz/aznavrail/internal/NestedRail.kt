@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -21,7 +20,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.AzNavRailButton
-import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 
@@ -44,8 +42,9 @@ internal fun NestedRail(
         ((windowHeight / 2f) - anchorBounds.top).toInt()
     } else 0
 
+    // FIXED: Corrected the Modifier.then extension usage for dynamic padding
     val modifier = Modifier
-        .padding(if (isRightDocked) Modifier.padding(end = 16.dp) else Modifier.padding(start = 16.dp))
+        .then(if (isRightDocked) Modifier.padding(end = 16.dp) else Modifier.padding(start = 16.dp))
         .clip(RoundedCornerShape(16.dp))
         .background(MaterialTheme.colorScheme.surfaceVariant)
         .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), RoundedCornerShape(16.dp))
@@ -59,11 +58,14 @@ internal fun NestedRail(
         ) {
             items.forEach { item ->
                 AzNavRailButton(
-                    item = item,
-                    currentDestination = currentDestination,
+                    onClick = { onItemSelected(item) },
+                    text = item.text,
+                    color = item.color ?: MaterialTheme.colorScheme.onSurface,
                     activeColor = activeColor,
-                    activeClassifiers = activeClassifiers,
-                    onClick = { onItemSelected(item) }
+                    shape = item.shape ?: com.hereliesaz.aznavrail.model.AzButtonShape.CIRCLE,
+                    enabled = !item.disabled,
+                    isSelected = (item.route != null && currentDestination == item.route) || item.classifiers.any { activeClassifiers.contains(it) },
+                    itemContent = item.content
                 )
             }
         }
@@ -75,11 +77,14 @@ internal fun NestedRail(
         ) {
             items.forEach { item ->
                 AzNavRailButton(
-                    item = item,
-                    currentDestination = currentDestination,
+                    onClick = { onItemSelected(item) },
+                    text = item.text,
+                    color = item.color ?: MaterialTheme.colorScheme.onSurface,
                     activeColor = activeColor,
-                    activeClassifiers = activeClassifiers,
-                    onClick = { onItemSelected(item) }
+                    shape = item.shape ?: com.hereliesaz.aznavrail.model.AzButtonShape.CIRCLE,
+                    enabled = !item.disabled,
+                    isSelected = (item.route != null && currentDestination == item.route) || item.classifiers.any { activeClassifiers.contains(it) },
+                    itemContent = item.content
                 )
             }
         }
