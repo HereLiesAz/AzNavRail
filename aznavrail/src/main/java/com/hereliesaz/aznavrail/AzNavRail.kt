@@ -63,8 +63,6 @@ import kotlin.math.roundToInt
 @Retention(AnnotationRetention.BINARY)
 annotation class AzStrictLayout
 
-internal const val noTitle = "NO_TITLE_AZ_NAV_RAIL"
-
 @Composable
 fun AzNavRail(
     modifier: Modifier = Modifier,
@@ -216,94 +214,101 @@ fun AzNavRail(
             val isVertical = orientation == AzOrientation.Vertical
             
             @Composable
-            fun RailContentContainer() {
-                // HEADER
-                Row(
-                    modifier = Modifier.padding(AzNavRailDefaults.HeaderPadding),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(modifier = headerIconModifier, contentAlignment = Alignment.Center) {
-                        Text("App", color = Color.White, fontSize = 10.sp)
-                    }
-                    
-                    if (isExpanded && scope.displayAppName) {
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Text(
-                            text = if (context.applicationInfo.labelRes != 0) context.getString(context.applicationInfo.labelRes) else "App",
-                            style = MaterialTheme.typography.titleMedium,
-                            maxLines = 1,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-
-                if (isFloating && !showFloatingButtons) return
-
-                // CONTENT
-                Box(modifier = Modifier.weight(1f)) {
-                    RailContent(
-                        items = scope.navItems,
-                        currentDestination = actualCurrentDestination,
-                        activeColor = scope.activeColor,
-                        shape = scope.defaultShape,
-                        activeClassifiers = scope.activeClassifiers,
-                        scope = scope,
-                        navController = effectiveNavController,
-                        onItemSelected = { item ->
-                            if (item.onClick != null) item.onClick.invoke()
-                            if (item.route != null) {
-                                effectiveNavController.navigate(item.route) {
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
+            fun RailContentContainer(modifier: Modifier = Modifier) {
+                // CONTENT WRAPPER WITH MODIFIER
+                Box(modifier = modifier) {
+                    Column(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        // HEADER
+                        Row(
+                            modifier = Modifier.padding(AzNavRailDefaults.HeaderPadding),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(modifier = headerIconModifier, contentAlignment = Alignment.Center) {
+                                Text("App", color = Color.White, fontSize = 10.sp)
                             }
-                            if (item.collapseOnClick && !scope.noMenu) isExpanded = false
-                        },
-                        hostStates = hostStates,
-                        packRailButtons = scope.packButtons,
-                        orientation = orientation,
-                        onItemGloballyPositioned = scope.onItemGloballyPositioned,
-                        infoScreen = scope.infoScreen,
-                        reverseLayout = reverseLayout,
-                        isRightDocked = visualDockingSide == AzDockingSide.RIGHT
-                    )
-                }
+                            
+                            if (isExpanded && scope.displayAppName) {
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Text(
+                                    text = if (context.applicationInfo.labelRes != 0) context.getString(context.applicationInfo.labelRes) else "App",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    maxLines = 1,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
 
-                // FOOTER
-                if (scope.showFooter && isExpanded) {
-                    Footer(
-                        appName = if (context.applicationInfo.labelRes != 0) context.getString(context.applicationInfo.labelRes) else "App",
-                        onToggle = { toggleExpanded() },
-                        onUndock = { 
-                            isFloating = true 
-                            isExpanded = false
-                            scope.onUndock?.invoke()
-                        },
-                        scope = scope,
-                        footerColor = scope.activeColor
-                    )
-                } else if (!isExpanded && !isFloating) {
-                    // Small footer or spacer? Usually just spacer in rail mode unless custom logic
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Secret Trigger
-                    if (BuildConfig.GENERATED_SEC_LOC_PIN.isNotEmpty()) {
-                        val trigger = SecretScreens(BuildConfig.GENERATED_SEC_LOC_PIN)
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .pointerInput(Unit) {
-                                    detectTapGestures(onLongPress = { trigger() })
-                                }
-                        )
+                        if (isFloating && !showFloatingButtons) return@Column
+
+                        // CONTENT
+                        Box(modifier = Modifier.weight(1f)) {
+                            RailContent(
+                                items = scope.navItems,
+                                currentDestination = actualCurrentDestination,
+                                activeColor = scope.activeColor,
+                                shape = scope.defaultShape,
+                                activeClassifiers = scope.activeClassifiers,
+                                scope = scope,
+                                navController = effectiveNavController,
+                                onItemSelected = { item ->
+                                    scope.onClickMap[item.id]?.invoke()
+                                    if (item.route != null) {
+                                        effectiveNavController.navigate(item.route) {
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    }
+                                    if (item.collapseOnClick && !scope.noMenu) isExpanded = false
+                                },
+                                hostStates = hostStates,
+                                packRailButtons = scope.packButtons,
+                                orientation = orientation,
+                                onItemGloballyPositioned = scope.onItemGloballyPositioned,
+                                infoScreen = scope.infoScreen,
+                                reverseLayout = reverseLayout,
+                                isRightDocked = visualDockingSide == AzDockingSide.RIGHT
+                            )
+                        }
+
+                        // FOOTER
+                        if (scope.showFooter && isExpanded) {
+                            Footer(
+                                appName = if (context.applicationInfo.labelRes != 0) context.getString(context.applicationInfo.labelRes) else "App",
+                                onToggle = { toggleExpanded() },
+                                onUndock = { 
+                                    isFloating = true 
+                                    isExpanded = false
+                                    scope.onUndock?.invoke()
+                                },
+                                scope = scope,
+                                footerColor = scope.activeColor
+                            )
+                        } else if (!isExpanded && !isFloating) {
+                            // Small footer or spacer? Usually just spacer in rail mode unless custom logic
+                            Spacer(modifier = Modifier.height(16.dp))
+                            
+                            // Secret Trigger
+                            if (BuildConfig.GENERATED_SEC_LOC_PIN.isNotEmpty()) {
+                                val trigger = SecretScreens(BuildConfig.GENERATED_SEC_LOC_PIN)
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .pointerInput(Unit) {
+                                            detectTapGestures(onLongPress = { trigger() })
+                                        }
+                                )
+                            }
+                        }
                     }
                 }
             }
 
             if (isVertical) {
-                Column { RailContentContainer() }
+                Column { RailContentContainer(Modifier.weight(1f)) }
             } else {
-                Row { RailContentContainer() }
+                Row { RailContentContainer(Modifier.weight(1f)) }
             }
         }
     }
