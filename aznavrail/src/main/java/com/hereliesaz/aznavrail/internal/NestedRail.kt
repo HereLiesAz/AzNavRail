@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -16,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -42,12 +42,12 @@ internal fun NestedRail(
         ((windowHeight / 2f) - anchorBounds.top).toInt()
     } else 0
 
-    // FIXED: Corrected the Modifier.then extension usage for dynamic padding
+    // STRICT RULE: No Rounded Corners. Changed shape to RectangleShape.
     val modifier = Modifier
         .then(if (isRightDocked) Modifier.padding(end = 16.dp) else Modifier.padding(start = 16.dp))
-        .clip(RoundedCornerShape(16.dp))
+        .clip(RectangleShape)
         .background(MaterialTheme.colorScheme.surfaceVariant)
-        .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), RoundedCornerShape(16.dp))
+        .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), RectangleShape)
         .padding(8.dp)
 
     if (alignment == AzNestedRailAlignment.VERTICAL) {
@@ -62,7 +62,7 @@ internal fun NestedRail(
                     text = item.text,
                     color = item.color ?: MaterialTheme.colorScheme.onSurface,
                     activeColor = activeColor,
-                    shape = item.shape ?: com.hereliesaz.aznavrail.model.AzButtonShape.CIRCLE,
+                    shape = item.shape ?: com.hereliesaz.aznavrail.model.AzButtonShape.SQUARE, // Defaulting to Square/Rectangle preference
                     enabled = !item.disabled,
                     isSelected = (item.route != null && currentDestination == item.route) || item.classifiers.any { activeClassifiers.contains(it) },
                     itemContent = item.content
@@ -81,7 +81,7 @@ internal fun NestedRail(
                     text = item.text,
                     color = item.color ?: MaterialTheme.colorScheme.onSurface,
                     activeColor = activeColor,
-                    shape = item.shape ?: com.hereliesaz.aznavrail.model.AzButtonShape.CIRCLE,
+                    shape = item.shape ?: com.hereliesaz.aznavrail.model.AzButtonShape.SQUARE,
                     enabled = !item.disabled,
                     isSelected = (item.route != null && currentDestination == item.route) || item.classifiers.any { activeClassifiers.contains(it) },
                     itemContent = item.content
