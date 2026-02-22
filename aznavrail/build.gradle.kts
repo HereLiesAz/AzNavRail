@@ -12,7 +12,7 @@ val generatedPin = (100000 + Random().nextInt(900000)).toString()
 
 android {
     namespace = "com.hereliesaz.aznavrail"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 26
