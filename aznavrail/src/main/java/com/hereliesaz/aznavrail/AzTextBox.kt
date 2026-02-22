@@ -48,6 +48,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -206,7 +207,7 @@ fun AzTextBox(
                     .then(if (!multiline) Modifier.height(36.dp) else Modifier)
                     .then(
                         if (outlined) {
-                            Modifier.border(1.dp, effectiveColor)
+                            Modifier.border(1.dp, effectiveColor, RectangleShape)
                         } else {
                             Modifier
                         }
@@ -304,7 +305,7 @@ fun AzTextBox(
                             } else Modifier)
                             .then(
                                 if (!outlined) {
-                                    Modifier.border(1.dp, effectiveColor)
+                                    Modifier.border(1.dp, effectiveColor, RectangleShape)
                                 } else {
                                     Modifier
                                 }
@@ -331,7 +332,7 @@ fun AzTextBox(
                     modifier = Modifier
                         .width(with(density) { componentWidth.toDp() })
                         .background(surfaceColor)
-                        .border(1.dp, effectiveColor.copy(alpha = 0.5f))
+                        .border(1.dp, effectiveColor.copy(alpha = 0.5f), RectangleShape)
                 ) {
                     suggestions.forEachIndexed { index, suggestion ->
                         val suggestionBgColor = if (index % 2 == 0) {
@@ -364,7 +365,6 @@ fun AzTextBox(
 
 private fun Modifier.fadeRight(): Modifier = this.drawWithContent {
     drawContent()
-    // FIX 2: Clamp safeStartX to prevent geometric rendering crashes on narrow widths
     val safeStartX = maxOf(0f, size.width - 50f)
     drawRect(
         brush = Brush.horizontalGradient(
