@@ -30,6 +30,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
@@ -179,13 +180,14 @@ fun AzForm(
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     CompositionLocalProvider(LocalContentColor provides outlineColor) {
+                        // STRICT RULE: No Rounded Corners. Used RectangleShape for background and border.
                         Box(
                             modifier = Modifier
                                 .clickable { onSubmit(formData.toMap()) }
-                                .background(AzTextBoxDefaults.getBackgroundColor().copy(alpha = AzTextBoxDefaults.getBackgroundOpacity()))
+                                .background(AzTextBoxDefaults.getBackgroundColor().copy(alpha = AzTextBoxDefaults.getBackgroundOpacity()), RectangleShape)
                                 .then(
                                     if (!outlined) {
-                                        Modifier.border(1.dp, outlineColor)
+                                        Modifier.border(1.dp, outlineColor, RectangleShape)
                                     } else {
                                         Modifier
                                     }
