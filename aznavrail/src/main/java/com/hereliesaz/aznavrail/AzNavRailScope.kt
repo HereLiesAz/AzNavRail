@@ -15,9 +15,34 @@ import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 import java.util.Collections.emptySet
 
 interface AzNavRailScope {
+    // Legacy/DSL split methods
     fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 130.dp, collapsedWidth: Dp = 80.dp, showFooter: Boolean = true)
-    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.CIRCLE, headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE)
+    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.RECTANGLE, headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE)
     fun azAdvanced(isLoading: Boolean = false, infoScreen: Boolean = false, onDismissInfoScreen: (() -> Unit)? = null, overlayService: Class<out android.app.Service>? = null, onUndock: (() -> Unit)? = null, enableRailDragging: Boolean = false, onRailDrag: ((Float, Float) -> Unit)? = null, onOverlayDrag: ((Float, Float) -> Unit)? = null, onItemGloballyPositioned: ((String, Rect) -> Unit)? = null)
+
+    // Combined method matching AZNAVRAIL_COMPLETE_GUIDE.md
+    fun azSettings(
+        displayAppNameInHeader: Boolean = false,
+        packRailButtons: Boolean = false,
+        expandedRailWidth: Dp = 130.dp,
+        collapsedRailWidth: Dp = 80.dp,
+        showFooter: Boolean = true,
+        isLoading: Boolean = false,
+        defaultShape: AzButtonShape = AzButtonShape.RECTANGLE,
+        enableRailDragging: Boolean = false,
+        headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
+        onUndock: (() -> Unit)? = null,
+        overlayService: Class<out android.app.Service>? = null,
+        onOverlayDrag: ((Float, Float) -> Unit)? = null,
+        onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
+        infoScreen: Boolean = false,
+        onDismissInfoScreen: (() -> Unit)? = null,
+        activeColor: Color? = null,
+        vibrate: Boolean = false,
+        dockingSide: AzDockingSide = AzDockingSide.LEFT,
+        noMenu: Boolean = false,
+        usePhysicalDocking: Boolean = false
+    )
 
     fun azMenuItem(id: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
     fun azRailItem(id: String, text: String = "", route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null)
@@ -99,8 +124,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
 
     // Theme
     var activeColor: Color = Color.Unspecified
-    var defaultShape: AzButtonShape = AzButtonShape.CIRCLE
-    var headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE
+    var defaultShape: AzButtonShape = AzButtonShape.RECTANGLE // Strict: default is rectangle
+    var headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE // Default per legacy, overridden in UI
 
     // Advanced
     var isLoading: Boolean = false
@@ -142,6 +167,51 @@ class AzNavRailScopeImpl : AzNavRailScope {
         this.onRailDrag = onRailDrag
         this.onOverlayDrag = onOverlayDrag
         this.onItemGloballyPositioned = onItemGloballyPositioned
+    }
+
+    override fun azSettings(
+        displayAppNameInHeader: Boolean,
+        packRailButtons: Boolean,
+        expandedRailWidth: Dp,
+        collapsedRailWidth: Dp,
+        showFooter: Boolean,
+        isLoading: Boolean,
+        defaultShape: AzButtonShape,
+        enableRailDragging: Boolean,
+        headerIconShape: AzHeaderIconShape,
+        onUndock: (() -> Unit)?,
+        overlayService: Class<out android.app.Service>?,
+        onOverlayDrag: ((Float, Float) -> Unit)?,
+        onItemGloballyPositioned: ((String, Rect) -> Unit)?,
+        infoScreen: Boolean,
+        onDismissInfoScreen: (() -> Unit)?,
+        activeColor: Color?,
+        vibrate: Boolean,
+        dockingSide: AzDockingSide,
+        noMenu: Boolean,
+        usePhysicalDocking: Boolean
+    ) {
+        // Map to internal properties
+        this.displayAppName = displayAppNameInHeader
+        this.packButtons = packRailButtons
+        this.expandedWidth = expandedRailWidth
+        this.collapsedWidth = collapsedRailWidth
+        this.showFooter = showFooter
+        this.isLoading = isLoading
+        this.defaultShape = defaultShape
+        this.enableRailDragging = enableRailDragging
+        this.headerIconShape = headerIconShape
+        this.onUndock = onUndock
+        this.overlayService = overlayService
+        this.onOverlayDrag = onOverlayDrag
+        this.onItemGloballyPositioned = onItemGloballyPositioned
+        this.infoScreen = infoScreen
+        this.onDismissInfoScreen = onDismissInfoScreen
+        if (activeColor != null) this.activeColor = activeColor
+        this.vibrate = vibrate
+        this.dockingSide = dockingSide
+        this.noMenu = noMenu
+        this.usePhysicalDocking = usePhysicalDocking
     }
 
     override fun azMenuItem(id: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, onClick: (() -> Unit)?) {
