@@ -24,7 +24,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.hereliesaz.aznavrail.AzNavRail
 import com.hereliesaz.aznavrail.model.AzNavItem
 import kotlinx.coroutines.delay
 
@@ -65,8 +64,7 @@ internal fun MenuItem(
             infoScreen = infoScreen
         )
 
-        // SCREEN TITLE ALIGNMENT FIX FOR MENU
-        if (showScreenTitle && item.screenTitle != AzNavRail.noTitle) {
+        if (showScreenTitle && item.screenTitle != AzNavRailDefaults.NO_TITLE) {
             val titleText = item.screenTitle ?: item.text
             if (titleText.isNotEmpty()) {
                 Popup(
