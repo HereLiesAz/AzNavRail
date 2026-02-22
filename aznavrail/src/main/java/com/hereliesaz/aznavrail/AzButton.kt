@@ -1,8 +1,8 @@
 package com.hereliesaz.aznavrail
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -21,7 +21,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * A circular, text-only button with auto-sizing text.
+ * A circular (or rectangular per strict mode), text-only button with auto-sizing text.
  *
  * This component is designed to be used both within the rail and as a standalone button.
  *
@@ -31,7 +31,7 @@ import kotlinx.coroutines.launch
  * @param color The base color of the button's border and text.
  * @param activeColor The color used when the button is in an active state (if applicable).
  * @param colors Custom [ButtonColors] to override the default color logic.
- * @param shape The shape of the button ([AzButtonShape.CIRCLE], [AzButtonShape.RECTANGLE], etc.).
+ * @param shape The shape of the button ([AzButtonShape.CIRCLE], [AzButtonShape.RECTANGLE], etc.). Note: In strict mode, all shapes render as Rectangle.
  * @param enabled Whether the button is enabled and interactive.
  * @param isLoading Whether the button is in a loading state, replacing text with a spinner.
  * @param contentPadding The padding to be applied to the button's content. Defaults to 8.dp if null.
@@ -44,7 +44,7 @@ fun AzButton(
     color: Color = MaterialTheme.colorScheme.primary,
     activeColor: Color = MaterialTheme.colorScheme.primary,
     colors: ButtonColors? = null,
-    shape: AzButtonShape = AzButtonShape.CIRCLE,
+    shape: AzButtonShape = AzButtonShape.RECTANGLE, // Default changed to RECTANGLE for strict compliance
     enabled: Boolean = true,
     isLoading: Boolean = false,
     contentPadding: PaddingValues? = null
@@ -89,7 +89,7 @@ fun AzToggle(
     color: Color = MaterialTheme.colorScheme.primary,
     activeColor: Color = MaterialTheme.colorScheme.primary,
     colors: ButtonColors? = null,
-    shape: AzButtonShape = AzButtonShape.CIRCLE,
+    shape: AzButtonShape = AzButtonShape.RECTANGLE,
     enabled: Boolean = true
 ) {
     val text = if (isChecked) toggleOnText else toggleOffText
@@ -133,7 +133,7 @@ fun AzCycler(
     color: Color = MaterialTheme.colorScheme.primary,
     activeColor: Color = MaterialTheme.colorScheme.primary,
     colors: ButtonColors? = null,
-    shape: AzButtonShape = AzButtonShape.CIRCLE,
+    shape: AzButtonShape = AzButtonShape.RECTANGLE,
     enabled: Boolean = true
 ) {
     var displayedOption by rememberSaveable(selectedOption) { mutableStateOf(selectedOption) }
