@@ -4,14 +4,16 @@ This document outlines the strict API surface of `AzNavRailScope`. This interfac
 
 Now that the KSP processor writes the UI, this facade has been brutally stripped down to a machine-to-machine dialect. **Aesthetics like colors and shapes have been purged entirely from the architecture**—let your app's `MaterialTheme` dress the concrete. 
 
-If you find yourself manually typing these functions to construct items, rather than using `@Az` annotations, you have fundamentally failed to understand the system.
+## The Live Dictatorship (v7.25)
 
-The only acceptable use of this DSL by a human is within the `configureRail()` override in your `AzActivity` to inject runtime variables.
+While the `AzNavRailScope` remains a rigid series of instructions, the **v7.25 KSP Processor** now injects reactive logic. When using `@Az` annotations with property bindings (e.g., `textProperty = "myTitle"`), the generated code no longer passes hardcoded literals. Instead, it accesses your `AzActivity` instance directly.
+
+Because these properties are ideally `mutableStateOf`, the entire `AzGraph` will **recompose** automatically when your Activity state changes. The "Dictatorship" is no longer static; it is alive.
 
 ## The Configuration Duality
 
 ### `azConfig`
-Controls the behavioral and geometrical mechanics.
+Controls behavioral and geometrical mechanics.
 
 ~~~kotlin
 fun azConfig(
@@ -47,7 +49,7 @@ fun azAdvanced(
 
 ## The Monolithic Item Builders
 
-The following functions are strictly invoked by the generated `AzGraph`. They require explicit named parameters. `azNestedRail` is heavily strictly typed as `@Composable`.
+The following functions are strictly invoked by the generated `AzGraph`.
 
 * `azMenuItem(id, text, route, disabled, screenTitle, info, onClick)`
 * `azRailItem(id, text, route, content, disabled, screenTitle, info, classifiers, onFocus, onClick)`

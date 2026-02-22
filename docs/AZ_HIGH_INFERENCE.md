@@ -1,37 +1,38 @@
-# Az High-Inference KSP System
+# Az High-Inference KSP System (v7.25)
 
 The Az High-Inference system is a ruthless compile-time code generator that eliminates the boilerplate traditionally associated with setting up `AzNavRail`. By using the `@Az` annotation and a smart KSP processor, you declare your intentions, and the machine constructs the architecture.
 
+**v7.25 Update: Live Dictatorship.** The system now supports dynamic reactive binding. Annotations can link to Activity properties by name, allowing the rail to update in real-time as your state changes.
+
 ## Key Features
 
+* **Live Dictatorship**: Bind visibility, labels, and badges to `mutableStateOf` properties in your Activity.
 * **Zero-Talk Inference**: Automatically infers IDs and titles from your function and property names.
     * `fun WifiSettings()` -> ID: `wifi_settings`, Text: "Wifi Settings"
 * **Action & State Binding**: The processor observes the shape of your code. It binds non-composable functions as transient click actions, and mutable properties as UI state.
-* **Unified Annotation**: A single `@Az` annotation handles Apps, Overlays, Items, Hosts, Toggles, Cyclers, and Nested Rails.
 * **Base Class Automation**: `AzActivity` handles all the `onCreate`, `setContent`, and `AzHostActivityLayout` wiring for you.
 
 ## The Vocabulary
 
-The `@Az` annotation accepts the following contextual blocks:
+The `@Az` annotation accepts the following contextual blocks. 
+*Note: In v7.25, Enum-like parameters (e.g., `dock`, `alignment`) are passed as **String literals** to prevent cyclic dependency issues in the annotation module.*
 
-* `app = App(...)`: Global configuration, geometry, and docking rules.
+* `app = App(...)`: Global configuration, geometry, and docking rules. Use `dock = "LEFT"` or `"RIGHT"`.
 * `advanced = Advanced(...)`: Loading states, window overlays, and drag callbacks.
-* `rail = RailItem(...)`: Standard UI screens or transient actions.
+* `rail = RailItem(...)`: Standard UI screens or transient actions. Supports `visibleProperty`, `textProperty`, etc.
 * `menu = MenuItem(...)`: Items relegated to the footer drawer.
 * `host = RailHost(...)`: Parent items that expand inline.
-* `nested = NestedRail(...)`: Popup menu structures.
-* `toggle = Toggle(...)`: State-driven ON/OFF buttons.
-* `cycler = Cycler(...)`: State-driven multi-option rotators.
+* `nested = NestedRail(...)`: Popup menu structures. Use `alignment = "VERTICAL"` or `"HORIZONTAL"`.
+* `toggle = Toggle(...)`: State-driven ON/OFF buttons. Requires `isCheckedProperty`.
+* `cycler = Cycler(...)`: State-driven multi-option rotators. Supports `optionsProperty`.
 * `reloc = RelocItem(...)`: Draggable items with hidden menus.
 * `background = Background(...)`: Base layers beneath the safe zones.
 * `divider = Divider(...)`: Visual breaks in the list.
 
 ## Binding Protocols: The Shape of the Function
 
-The machine judges your functions by their shape. It determines whether a button opens a new screen or simply executes a block of code based entirely on the presence or absence of the `@Composable` annotation.
-
 ### 1. Screen Binding (The Navigable Destination)
-If your goal is to open a new screen, the function **MUST** be annotated with `@Composable`. The compiler sees the visual mass and routes it into the `AzNavHost` graph, assigning it a destination ID.
+If your goal is to open a new screen, the function **MUST** be annotated with `@Composable`. 
 
 ~~~kotlin
 @Az // ID: "home", Text: "Home"
@@ -42,11 +43,7 @@ fun Home() {
 ~~~
 
 ### 2. Action Binding (The Transient Execution)
-**What if you don't want to open a screen?** What if you just want a button that triggers a process (e.g., logging out, clearing a cache, initiating a sync)?
-
-You simply omit the `@Composable` annotation. By starving the function of visual mass, the compiler deduces it is a **transient action**. Instead of throwing it into the navigation graph, the processor wires the function directly into the button's `onClick` lambda. 
-
-When the user clicks the item, your function executes, the rail collapses instantly, and absolutely no navigation occurs.
+If you omit the `@Composable` annotation, the compiler deduces it is a **transient action**. The function is wired directly to the `onClick` lambda.
 
 ~~~kotlin
 @Az(rail = RailItem(icon = R.drawable.ic_power, text = "Self Destruct"))
@@ -55,11 +52,23 @@ fun InitiatePurge() {
 }
 ~~~
 
-### 3. State Binding (The Puppet)
-Annotate a `var` property with a `Toggle` or `Cycler`. The machine reads its state to update the UI and mutates it when clicked. You must use `by mutableStateOf()`.
+### 3. State Binding (The Puppet / Live Dictatorship)
+Annotate a `var` property with a `Toggle` or `Cycler`. In v7.25, you can also bind standard `RailItem` fields to Activity state.
 
 ~~~kotlin
-@Az(toggle = Toggle(toggleOnText = "LOUD", toggleOffText = "QUIET"))
+class MainActivity : AzActivity() {
+    override val graph = AzGraph
+    
+    // Live State
+    var isAlertActive by mutableStateOf(false)
+    var userLabel by mutableStateOf("Guest")
+}
+
+@Az(rail = RailItem(textProperty = "userLabel"))
+@Composable
+fun Profile() { ... }
+
+@Az(toggle = Toggle(isCheckedProperty = "isAlertActive", toggleOnText = "LOUD", toggleOffText = "QUIET"))
 var isAlertActive by mutableStateOf(false)
 ~~~
 
@@ -68,11 +77,5 @@ var isAlertActive by mutableStateOf(false)
 | Code Symbol | Inferred ID | Inferred Text |
 | :--- | :--- | :--- |
 | `fun UserProfile()` | `user_profile` | "User Profile" |
-| `fun FAQ()` | `f_a_q` (Standard Snake) | "F A Q" |
+| `fun FAQ()` | `f_a_q` | "F A Q" |
 | `var SystemVolume` | `system_volume` | "System Volume" |
-
-## Validation
-
-The processor enforces "The Tax":
-* Any function annotated as a screen (`RailItem`, `MenuItem`, `NestedRail`) that you *intend* to be navigable **MUST** have `@Composable`. If you forget it, the system will treat your screen as a silent, invisible action.
-* Sub-items must declare a valid, existing `parent` ID string.

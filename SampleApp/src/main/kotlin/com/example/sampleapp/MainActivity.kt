@@ -1,100 +1,75 @@
 // SampleApp/src/main/kotlin/com/example/sampleapp/MainActivity.kt
 package com.example.sampleapp
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.AzActivity
-import com.hereliesaz.aznavrail.AzNavRailScope
-import com.hereliesaz.aznavrail.annotation.App
-import com.hereliesaz.aznavrail.annotation.Az
-import com.hereliesaz.aznavrail.model.AzDockingSide
-import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
+import com.hereliesaz.aznavrail.AzTextBox
+import com.hereliesaz.aznavrail.AzToggle
+import com.hereliesaz.aznavrail.annotation.*
 
-@Az(app = App(dock = AzDockingSide.LEFT))
+@Az(
+    app = App(dock = "LEFT"),
+    advanced = Advanced(isLoadingProperty = "isLoading", infoScreen = true)
+)
 class MainActivity : AzActivity() {
     override val graph = AzGraph
 
-    // Configuration State
-    var dockingSide by mutableStateOf(AzDockingSide.LEFT)
-    var packButtons by mutableStateOf(false)
-    var showFooter by mutableStateOf(true)
-    var displayAppName by mutableStateOf(true)
-    var usePhysicalDocking by mutableStateOf(false)
-    var infoScreen by mutableStateOf(false)
-    var noMenu by mutableStateOf(false)
-    var vibrate by mutableStateOf(true)
+    // Reactive state properties bound via *Property strings in annotations
     var isLoading by mutableStateOf(false)
-
-    // State for manual items
     var wifiEnabled by mutableStateOf(true)
     var currentMode by mutableStateOf("Auto")
     val modes = listOf("Light", "Dark", "Auto")
+    
+    var dynamicTitle by mutableStateOf("Dynamic Item")
+    var dynamicBadge by mutableStateOf("1")
+    var isItemVisible by mutableStateOf(true)
+    var isItemDisabled by mutableStateOf(false)
 
-    override fun AzNavRailScope.configureRail() {
-        azConfig(
-            dockingSide = dockingSide,
-            packButtons = packButtons,
-            displayAppName = displayAppName,
-            usePhysicalDocking = usePhysicalDocking,
-            noMenu = noMenu,
-            vibrate = vibrate,
-            showFooter = showFooter
-        )
+    @Az(rail = RailItem(
+        textProperty = "dynamicTitle",
+        iconTextProperty = "dynamicBadge",
+        visibleProperty = "isItemVisible",
+        disabledProperty = "isItemDisabled"
+    ))
+    @Composable
+    fun DynamicItem() {
+        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            Text("Dynamic Content Area", style = MaterialTheme.typography.headlineMedium)
+            Text("Title: $dynamicTitle")
+            Text("Badge: $dynamicBadge")
+        }
+    }
 
-        azAdvanced(
-            infoScreen = infoScreen,
-            onDismissInfoScreen = { infoScreen = false },
-            enableRailDragging = true,
-            isLoading = isLoading,
-            overlayService = SampleOverlayService::class.java
-        )
+    @Az(toggle = Toggle(isCheckedProperty = "wifiEnabled", toggleOnText = "Wi-Fi: On", toggleOffText = "Wi-Fi: Off"))
+    fun WifiToggle() {}
 
-        // Manual Dynamic Items
+    @Az(cycler = Cycler(optionsProperty = "modes", selectedOptionProperty = "currentMode"))
+    fun ModeCycler() {}
 
-        azRailItem(
-            id = "number_item",
-            text = "42",
-            content = 42,
-            info = "Item with Number content",
-            onClick = {}
-        )
-        
-        azRailItem(
-            id = "image_item",
-            text = "Camera",
-            content = android.R.drawable.ic_menu_camera,
-            info = "Item with Image Resource content",
-            onClick = {}
-        )
-
-        // Toggles
-        azRailToggle(
-            id = "wifi",
-            isChecked = wifiEnabled,
-            toggleOnText = "Wi-Fi: On",
-            toggleOffText = "Wi-Fi: Off",
-            onClick = { wifiEnabled = !wifiEnabled },
-            info = "Toggle Wi-Fi connection"
-        )
-
-        azRailCycler(
-            id = "mode",
-            options = modes,
-            selectedOption = currentMode,
-            onClick = { currentMode = modes[(modes.indexOf(currentMode) + 1) % modes.size] },
-            info = "Cycle through display modes"
-        )
-
-        // Nested Rails (Manual)
-        azNestedRail(
-            id = "nested_vert",
-            text = "Vertical Nest",
-            alignment = AzNestedRailAlignment.VERTICAL,
-            info = "Vertical nested rail"
+    @Az(rail = RailItem(icon = android.R.drawable.ic_menu_edit))
+    @Composable
+    fun ControlPanel() {
+        // This screen allows testing the reactive bindings
+        Column(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            azRailItem(id = "nv1", text = "V Nested 1", onClick = {})
-            azRailItem(id = "nv2", text = "V Nested 2", onClick = {})
+            Text("Live Dictatorship Controller", style = MaterialTheme.typography.headlineSmall)
+            
+            AzTextBox(hint = "Change Item Title", onSubmit = { dynamicTitle = it })
+            AzTextBox(hint = "Change Badge", onSubmit = { dynamicBadge = it })
+            
+            AzToggle(isChecked = isItemVisible, onToggle = { isItemVisible = it }, toggleOnText = "Item Visible", toggleOffText = "Item Hidden")
+            AzToggle(isChecked = isItemDisabled, onToggle = { isItemDisabled = it }, toggleOnText = "Item Disabled", toggleOffText = "Item Enabled")
+            AzToggle(isChecked = isLoading, onToggle = { isLoading = it }, toggleOnText = "Loading: On", toggleOffText = "Loading: Off")
         }
     }
 }

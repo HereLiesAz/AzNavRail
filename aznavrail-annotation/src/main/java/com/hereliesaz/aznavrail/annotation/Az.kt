@@ -1,15 +1,10 @@
 // aznavrail-annotation/src/main/java/com/hereliesaz/aznavrail/annotation/Az.kt
 package com.hereliesaz.aznavrail.annotation
 
-import com.hereliesaz.aznavrail.model.AzButtonShape
-import com.hereliesaz.aznavrail.model.AzDockingSide
-import com.hereliesaz.aznavrail.model.AzHeaderIconShape
-import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
-
 @Target(AnnotationTarget.ANNOTATION_CLASS)
 annotation class App(
     val isValid: Boolean = true,
-    val dock: AzDockingSide = AzDockingSide.LEFT,
+    val dock: String = "LEFT", // Use String for literals in annotations to avoid cyclic dependency
     val packButtons: Boolean = false,
     val noMenu: Boolean = false,
     val vibrate: Boolean = false,
@@ -27,14 +22,15 @@ annotation class App(
 annotation class Theme(
     val isValid: Boolean = true,
     val activeColorHex: String = "", 
-    val defaultShape: AzButtonShape = AzButtonShape.CIRCLE,
-    val headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE
+    val defaultShape: String = "CIRCLE",
+    val headerIconShape: String = "CIRCLE"
 )
 
 @Target(AnnotationTarget.ANNOTATION_CLASS)
 annotation class Advanced(
     val isValid: Boolean = true,
     val isLoading: Boolean = false,
+    val isLoadingProperty: String = "", // Dynamic binding for loading state
     val infoScreen: Boolean = false,
     val enableRailDragging: Boolean = false,
     val overlayServiceClass: String = "",
@@ -49,11 +45,15 @@ annotation class RailItem(
     val isValid: Boolean = true,
     val id: String = "",
     val text: String = "",
+    val textProperty: String = "", // Dynamic binding for label
     val icon: Int = 0,
-    val iconText: String = "", // RESTORED: Allows text-based icons like "42"
+    val iconText: String = "", 
+    val iconTextProperty: String = "", // Dynamic binding for badge/icon text
     val home: Boolean = false,
     val parent: String = "",
     val disabled: Boolean = false,
+    val disabledProperty: String = "", // Dynamic binding for disabled state
+    val visibleProperty: String = "", // Dynamic binding for visibility
     val screenTitle: String = "",
     val info: String = "",
     val classifiers: Array<String> = [],
@@ -65,10 +65,14 @@ annotation class MenuItem(
     val isValid: Boolean = true,
     val id: String = "",
     val text: String = "",
+    val textProperty: String = "",
     val icon: Int = 0,
     val iconText: String = "",
+    val iconTextProperty: String = "",
     val parent: String = "",
     val disabled: Boolean = false,
+    val disabledProperty: String = "",
+    val visibleProperty: String = "",
     val screenTitle: String = "",
     val info: String = ""
 )
@@ -78,10 +82,14 @@ annotation class RailHost(
     val isValid: Boolean = true,
     val id: String = "",
     val text: String = "",
+    val textProperty: String = "",
     val icon: Int = 0,
     val iconText: String = "",
+    val iconTextProperty: String = "",
     val isMenu: Boolean = false,
     val disabled: Boolean = false,
+    val disabledProperty: String = "",
+    val visibleProperty: String = "",
     val screenTitle: String = "",
     val info: String = ""
 )
@@ -92,14 +100,18 @@ annotation class NestedRail(
     val parent: String = "",
     val id: String = "",
     val text: String = "",
+    val textProperty: String = "",
     val icon: Int = 0,
     val iconText: String = "",
+    val iconTextProperty: String = "",
     val disabled: Boolean = false,
+    val disabledProperty: String = "",
+    val visibleProperty: String = "",
     val screenTitle: String = "",
     val info: String = "",
     val classifiers: Array<String> = [],
     val onFocus: String = "",
-    val alignment: AzNestedRailAlignment = AzNestedRailAlignment.VERTICAL
+    val alignment: String = "VERTICAL"
 )
 
 @Target(AnnotationTarget.ANNOTATION_CLASS)
@@ -107,10 +119,13 @@ annotation class Toggle(
     val isValid: Boolean = true,
     val parent: String = "",
     val id: String = "",
+    val isCheckedProperty: String = "", // MANDATORY for dynamic toggles
     val toggleOnText: String = "",
     val toggleOffText: String = "",
     val isMenu: Boolean = false,
     val disabled: Boolean = false,
+    val disabledProperty: String = "",
+    val visibleProperty: String = "",
     val screenTitle: String = "",
     val info: String = ""
 )
@@ -121,9 +136,11 @@ annotation class Cycler(
     val parent: String = "",
     val id: String = "",
     val options: Array<String> = [],
+    val optionsProperty: String = "", // Dynamic list of options
+    val selectedOptionProperty: String = "", // Dynamic selected option
     val isMenu: Boolean = false,
     val disabled: Boolean = false,
-    val disabledOptions: Array<String> = [],
+    val disabledOptionsProperty: String = "", // Dynamic disabled options
     val screenTitle: String = "",
     val info: String = ""
 )
@@ -134,10 +151,13 @@ annotation class RelocItem(
     val parent: String = "",
     val id: String = "",
     val text: String = "",
+    val textProperty: String = "",
     val hiddenMenuRoutes: Array<String> = [],
     val hiddenMenuActions: Array<String> = [], 
     val hiddenMenuInputs: Array<String> = [],  
     val disabled: Boolean = false,
+    val disabledProperty: String = "",
+    val visibleProperty: String = "",
     val screenTitle: String = "",
     val info: String = "",
     val classifiers: Array<String> = [],
@@ -153,7 +173,8 @@ annotation class Background(
 
 @Target(AnnotationTarget.ANNOTATION_CLASS)
 annotation class Divider(
-    val isValid: Boolean = true
+    val isValid: Boolean = true,
+    val visibleProperty: String = ""
 )
 
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY)
