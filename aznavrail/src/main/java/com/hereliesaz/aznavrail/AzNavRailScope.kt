@@ -6,15 +6,17 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
+import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 import java.util.Collections.emptySet
 
 interface AzNavRailScope {
     fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 130.dp, collapsedWidth: Dp = 80.dp, showFooter: Boolean = true)
-    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.CIRCLE)
+    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.CIRCLE, headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE)
     fun azAdvanced(isLoading: Boolean = false, infoScreen: Boolean = false, onDismissInfoScreen: (() -> Unit)? = null, overlayService: Class<out android.app.Service>? = null, onUndock: (() -> Unit)? = null, enableRailDragging: Boolean = false, onRailDrag: ((Float, Float) -> Unit)? = null, onOverlayDrag: ((Float, Float) -> Unit)? = null, onItemGloballyPositioned: ((String, Rect) -> Unit)? = null)
 
     fun azMenuItem(id: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
@@ -98,6 +100,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     // Theme
     var activeColor: Color = Color.Unspecified
     var defaultShape: AzButtonShape = AzButtonShape.CIRCLE
+    var headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE
 
     // Advanced
     var isLoading: Boolean = false
@@ -123,9 +126,10 @@ class AzNavRailScopeImpl : AzNavRailScope {
         this.showFooter = showFooter
     }
 
-    override fun azTheme(activeColor: Color, defaultShape: AzButtonShape) {
+    override fun azTheme(activeColor: Color, defaultShape: AzButtonShape, headerIconShape: AzHeaderIconShape) {
         this.activeColor = activeColor
         this.defaultShape = defaultShape
+        this.headerIconShape = headerIconShape
     }
 
     override fun azAdvanced(isLoading: Boolean, infoScreen: Boolean, onDismissInfoScreen: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?) {
@@ -151,7 +155,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     override fun azNestedRail(id: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, alignment: AzNestedRailAlignment, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, nestedContent: AzNavRailScope.() -> Unit) {
         val nestedScope = AzNavRailScopeImpl()
         nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, showFooter = this.showFooter)
-        nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape)
+        nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape)
         nestedScope.nestedContent()
 
         nestedScope.onClickMap.forEach { (k, v) -> onClickMap[k] = v }
@@ -236,7 +240,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         if (onRelocate != null) onRelocateMap[id] = onRelocate
         if (onFocus != null) onFocusMap[id] = onFocus
 
-        val finalScreenTitle = if (screenTitle == AzNavRail.noTitle) null else screenTitle ?: text
+        val finalScreenTitle = if (screenTitle == AzNavRailDefaults.NO_TITLE) null else screenTitle ?: text
 
         navItems.add(
             AzNavItem(
@@ -248,20 +252,20 @@ class AzNavRailScopeImpl : AzNavRailScope {
     }
 
     private fun addCycler(id: String, hostId: String? = null, options: List<String>, selectedOption: String, route: String?, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, info: String?, isRailItem: Boolean, isSubItem: Boolean, color: Color?, shape: AzButtonShape?, onClick: () -> Unit) {
-        val finalScreenTitle = if (screenTitle == AzNavRail.noTitle) null else screenTitle ?: selectedOption
+        val finalScreenTitle = if (screenTitle == AzNavRailDefaults.NO_TITLE) null else screenTitle ?: selectedOption
         onClickMap[id] = onClick
         navItems.add(AzNavItem(id = id, text = "", route = route, screenTitle = finalScreenTitle, isRailItem = isRailItem, isCycler = true, options = options, selectedOption = selectedOption, disabled = disabled, disabledOptions = disabledOptions, isSubItem = isSubItem, hostId = hostId, info = info, color = color, shape = shape ?: defaultShape))
     }
 
     private fun addToggle(id: String, hostId: String? = null, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String?, disabled: Boolean, screenTitle: String?, info: String?, isRailItem: Boolean, isSubItem: Boolean, color: Color?, shape: AzButtonShape?, onClick: () -> Unit) {
         val text = if (isChecked) toggleOnText else toggleOffText
-        val finalScreenTitle = if (screenTitle == AzNavRail.noTitle) null else screenTitle ?: text
+        val finalScreenTitle = if (screenTitle == AzNavRailDefaults.NO_TITLE) null else screenTitle ?: text
         onClickMap[id] = onClick
         navItems.add(AzNavItem(id = id, text = "", route = route, screenTitle = finalScreenTitle, isRailItem = isRailItem, isToggle = true, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, disabled = disabled, isSubItem = isSubItem, hostId = hostId, info = info, color = color, shape = shape ?: defaultShape))
     }
 
     private fun addItem(id: String, text: String, route: String?, screenTitle: String?, info: String?, isRailItem: Boolean, disabled: Boolean = false, isHost: Boolean = false, isSubItem: Boolean = false, hostId: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, onClick: () -> Unit) {
-        val finalScreenTitle = if (screenTitle == AzNavRail.noTitle) null else screenTitle ?: text
+        val finalScreenTitle = if (screenTitle == AzNavRailDefaults.NO_TITLE) null else screenTitle ?: text
         onClickMap[id] = onClick
         if (onFocus != null) onFocusMap[id] = onFocus
         navItems.add(AzNavItem(id = id, text = text, route = route, screenTitle = finalScreenTitle, isRailItem = isRailItem, disabled = disabled, isHost = isHost, isSubItem = isSubItem, hostId = hostId, info = info, classifiers = classifiers, content = content, color = color, shape = shape ?: defaultShape))
