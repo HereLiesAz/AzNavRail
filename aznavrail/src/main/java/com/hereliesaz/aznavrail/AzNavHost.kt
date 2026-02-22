@@ -1,3 +1,4 @@
+// FILE: ./aznavrail/src/main/java/com/hereliesaz/aznavrail/AzNavHost.kt
 package com.hereliesaz.aznavrail
 
 import android.app.Activity
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.MaterialTheme
@@ -179,13 +181,44 @@ fun AzHostActivityLayout(
         val topPadding = if (visualSide == AzVisualSide.TOP) railWidth else 0.dp
         val bottomPadding = if (visualSide == AzVisualSide.BOTTOM) railWidth else 0.dp
 
-        // Identify current active item for title display using inner rail scope for properties
+        // Identify active item and pull actual transient states
         val railScopeImpl = scope.getRailScopeImpl()
         val currentActiveItem = railScopeImpl.navItems.find { item ->
             (item.route != null && item.route == effectiveCurrentDestination) ||
-            item.classifiers.any { railScopeImpl.activeClassifiers.contains(it) }
+                    item.classifiers.any { railScopeImpl.activeClassifiers.contains(it) }
         }
-        val currentTitle = currentActiveItem?.screenTitle ?: currentActiveItem?.text
+
+        val currentTitle = currentActiveItem?.let { item ->
+            when {
+                item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
+                item.isCycler -> item.selectedOption ?: item.text
+                else -> if (item.screenTitle != null && item.screenTitle != AzNavRailDefaults.NO_TITLE) item.screenTitle else item.text
+            }
+        }
+
+        // Setup BIG 10%-20% boundary title on opposite side
+        val titleTop = with(density) { (screenHeight * 0.1f).toDp() }
+        val titleHeight = with(density) { (screenHeight * 0.1f).toDp() }
+        val titleAlignment = if (visualDockingSideProxy == AzDockingSide.LEFT) Alignment.CenterEnd else Alignment.CenterStart
+        val titlePaddingSide = if (visualDockingSideProxy == AzDockingSide.LEFT) Modifier.padding(end = 32.dp) else Modifier.padding(start = 32.dp)
+
+        if (currentTitle != null && currentTitle != AzNavRailDefaults.NO_TITLE && currentTitle.isNotBlank()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = titleTop)
+                    .height(titleHeight)
+                    .then(titlePaddingSide),
+                contentAlignment = titleAlignment
+            ) {
+                Text(
+                    text = currentTitle,
+                    style = MaterialTheme.typography.displayMedium, // Much bigger requirement
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+        }
 
         CompositionLocalProvider(LocalAzNavHostScope provides scope) {
             AzHostFragmentLayout(
@@ -196,8 +229,7 @@ fun AzHostActivityLayout(
                 topPadding = topPadding,
                 bottomPadding = bottomPadding,
                 items = scope.onscreenItems,
-                dockingSide = dockingSide,
-                currentTitle = currentTitle
+                dockingSide = dockingSide
             )
         }
 
@@ -232,8 +264,7 @@ fun AzHostFragmentLayout(
     topPadding: Dp,
     bottomPadding: Dp,
     items: List<AzOnscreenItem>,
-    dockingSide: AzDockingSide,
-    currentTitle: String? = null
+    dockingSide: AzDockingSide
 ) {
     Box(
         modifier = Modifier
@@ -248,23 +279,6 @@ fun AzHostFragmentLayout(
             }
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = finalAlignment) {
                 item.content()
-            }
-        }
-
-        // Display Screen Title if available
-        if (currentTitle != null && currentTitle != AzNavRailDefaults.NO_TITLE && currentTitle.isNotBlank()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                contentAlignment = Alignment.TopStart
-            ) {
-                Text(
-                    text = currentTitle,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
             }
         }
     }

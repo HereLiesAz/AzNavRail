@@ -1,11 +1,10 @@
+// FILE: ./aznavrail/src/main/java/com/hereliesaz/aznavrail/internal/Footer.kt
 package com.hereliesaz.aznavrail.internal
 
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -32,6 +31,7 @@ internal fun Footer(
 ) {
     val context = LocalContext.current
 
+    // Footer items strictly on their own rows (Column) and center aligned
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -46,35 +46,37 @@ internal fun Footer(
                     .clickable { onUndock() }
                     .padding(vertical = 8.dp)
             )
+            Spacer(modifier = Modifier.height(16.dp))
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Text(
-                text = "About",
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                modifier = Modifier.clickable {
+        Text(
+            text = "About",
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+            modifier = Modifier
+                .clickable {
                     try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/HereLiesAz/AzNavRail"))) } catch (e: Exception) {}
                 }
-            )
-            Text(
-                text = "Feedback",
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                modifier = Modifier.clickable {
+                .padding(vertical = 4.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Feedback",
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+            modifier = Modifier
+                .clickable {
                     try { context.startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:hereliesaz@gmail.com"))) } catch (e: Exception) {}
                 }
-            )
-            Text(
-                text = "Credit",
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                modifier = Modifier.clickable {
+                .padding(vertical = 4.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Credit",
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+            modifier = Modifier
+                .clickable {
                     try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://instagram.com/hereliesaz"))) } catch (e: Exception) {}
                 }
-            )
-        }
+                .padding(vertical = 4.dp)
+        )
     }
 }

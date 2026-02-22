@@ -1,3 +1,4 @@
+// FILE: ./aznavrail/src/main/java/com/hereliesaz/aznavrail/AzNavRailButton.kt
 package com.hereliesaz.aznavrail
 
 import androidx.compose.foundation.BorderStroke
@@ -14,7 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonColors
@@ -38,20 +39,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
+import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.util.text.AutoSizeText
 
-/**
- * A circular, text-only button with auto-sizing text, designed for the
- * navigation rail. Restored to 6.99 visual style.
- */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun AzNavRailButton(
     onClick: () -> Unit,
     text: String,
     modifier: Modifier = Modifier,
-    size: Dp = 72.dp,
+    size: Dp = AzNavRailDefaults.ButtonWidth,
     color: Color = MaterialTheme.colorScheme.primary,
     activeColor: Color = MaterialTheme.colorScheme.primary,
     colors: ButtonColors? = null,
@@ -70,15 +68,18 @@ internal fun AzNavRailButton(
     val buttonShape: Shape = when (shape) {
         AzButtonShape.CIRCLE -> CircleShape
         AzButtonShape.SQUARE -> RoundedCornerShape(0.dp)
-        AzButtonShape.RECTANGLE -> RoundedCornerShape(12.dp) // Restore M3 rounded look
+        AzButtonShape.RECTANGLE -> RoundedCornerShape(12.dp)
         AzButtonShape.NONE -> RoundedCornerShape(0.dp)
     }
 
+    // STRICT WIDTH COMPLIANCE for all shapes
     val buttonModifier = when (shape) {
         AzButtonShape.CIRCLE, AzButtonShape.SQUARE -> modifier
             .size(size)
             .aspectRatio(1f)
-        AzButtonShape.RECTANGLE, AzButtonShape.NONE -> modifier.height(48.dp)
+        AzButtonShape.RECTANGLE, AzButtonShape.NONE -> modifier
+            .width(size) // Fixed identical width
+            .height(48.dp) // Fixed height variant
     }
 
     val disabledColor = color.copy(alpha = 0.38f)
@@ -100,14 +101,15 @@ internal fun AzNavRailButton(
             }
             .combinedClickable(
                 interactionSource = interactionSource,
-                indication = null, // Surface handles indication
+                indication = null,
                 onClick = { if (enabled) onClick() },
                 onLongClick = { if (enabled && onLongClick != null) onLongClick() }
             ),
         interactionSource = interactionSource
     ) {
         Box(
-            modifier = Modifier.padding(contentPadding),
+            // If itemContent is present (Color/Img), we force 0 padding to Fill/Crop. Otherwise, apply text padding.
+            modifier = if (itemContent != null) Modifier else Modifier.padding(contentPadding),
             contentAlignment = Alignment.Center
         ) {
             Box(
@@ -131,10 +133,7 @@ internal fun AzNavRailButton(
                     )
                 }
             }
-
-            if (isLoading) {
-                AzLoad()
-            }
+            if (isLoading) AzLoad()
         }
     }
 }
@@ -143,15 +142,16 @@ internal fun AzNavRailButton(
 private fun ItemContentRenderer(itemContent: Any, color: Color, enabled: Boolean) {
     val context = LocalContext.current
     when (itemContent) {
-        is Color -> Box(modifier = Modifier.fillMaxSize().padding(4.dp).alpha(if (enabled) 1f else 0.5f).background(itemContent, CircleShape))
+        // Zero padding, completely fills shape
+        is Color -> Box(modifier = Modifier.fillMaxSize().alpha(if (enabled) 1f else 0.5f).background(itemContent))
         is Int -> {
             val isResource = try { context.resources.getResourceName(itemContent) != null } catch (e: Exception) { false }
             if (isResource) {
                 Image(
                     painter = painterResource(itemContent),
                     contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxSize().padding(4.dp)
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
                 )
             } else {
                 TextContent(itemContent.toString(), color)

@@ -1,3 +1,4 @@
+// FILE: ./aznavrail/src/main/java/com/hereliesaz/aznavrail/internal/RailItems.kt
 package com.hereliesaz.aznavrail.internal
 
 import androidx.compose.animation.AnimatedVisibility
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -51,6 +53,7 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalViewConfiguration
 
@@ -74,7 +77,6 @@ internal fun RailItems(
     val itemsToRender =
         if (packRailButtons) topLevelItems.filter { it.isRailItem } else topLevelItems
 
-    // Shared state for dragging
     var draggedItemId by remember { mutableStateOf<String?>(null) }
     var dragOffset by remember { mutableStateOf(0f) }
     var itemHeights by remember { mutableStateOf(mapOf<String, Int>()) }
@@ -82,12 +84,8 @@ internal fun RailItems(
     var hiddenMenuOpenId by remember { mutableStateOf<String?>(null) }
     var currentDropTargetIndex by remember { mutableStateOf<Int?>(null) }
 
-    // State for snapping animations
     val snappingOffsets = remember { androidx.compose.runtime.mutableStateMapOf<String, Animatable<Float, androidx.compose.animation.core.AnimationVector1D>>() }
-
-    // Track last tapped item for double-tap logic (backward compatibility)
     var lastTappedId by remember { mutableStateOf<String?>(null) }
-
     val coroutineScope = rememberCoroutineScope()
 
     Box {
@@ -95,7 +93,6 @@ internal fun RailItems(
             itemsToRender.forEach { item ->
                 key(item.id) {
                     if (item.isRailItem) {
-                        // Render the item (or wrap it)
                         DraggableRailItemWrapper(
                             item = item,
                             scope = scope,
@@ -116,48 +113,34 @@ internal fun RailItems(
                                 currentDropTargetIndex = scope.navItems.indexOfFirst { it.id == id }
                             },
                             onDragEnd = {
-                                // Commit the move on drop
                                 if (draggedItemId != null && currentDropTargetIndex != null) {
                                     val currentIdx = scope.navItems.indexOfFirst { it.id == draggedItemId }
                                     if (currentIdx != -1 && currentDropTargetIndex != -1 && currentIdx != currentDropTargetIndex) {
-                                        // Calculate snap offset
-                                        // Total distance item moved physically = Sum of heights of intervening items + spacing
-                                        // Current visual offset = dragOffset
-                                        // To be seamless at new position, initial offset at new pos = dragOffset - distance moved
-
                                         val spacingDp = if (packRailButtons) 0.dp else AzNavRailDefaults.RailContentVerticalArrangement
                                         val spacingPx = with(density) { spacingDp.roundToPx() }
-
                                         var movedDistance = 0
                                         if (currentDropTargetIndex!! > currentIdx) {
-                                            // Moving Down: Sum items from currentIdx + 1 to target
                                             for (i in (currentIdx + 1)..currentDropTargetIndex!!) {
                                                 movedDistance += (itemHeights[scope.navItems[i].id] ?: 0) + spacingPx
                                             }
                                         } else if (currentDropTargetIndex!! < currentIdx) {
-                                            // Moving Up: Sum items from target to currentIdx - 1
                                             for (i in currentDropTargetIndex!! until currentIdx) {
                                                 movedDistance -= ((itemHeights[scope.navItems[i].id] ?: 0) + spacingPx)
                                             }
                                         }
-
                                         val startSnapOffset = dragOffset - movedDistance
-
                                         val animatable = Animatable(startSnapOffset, Float.VectorConverter)
                                         snappingOffsets[draggedItemId!!] = animatable
-
                                         val capturedId = draggedItemId!!
                                         coroutineScope.launch {
                                             animatable.animateTo(0f)
                                             snappingOffsets.remove(capturedId)
                                         }
-
                                         RelocItemHandler.updateOrder(scope.navItems, draggedItemId!!, currentDropTargetIndex!!)
                                         val currentOrder = scope.navItems.map { it.id }
                                         scope.onRelocateMap[draggedItemId!!]?.invoke(currentIdx, currentDropTargetIndex!!, currentOrder)
                                     }
                                 }
-                                // Reset state
                                 draggedItemId = null
                                 dragOffset = 0f
                                 currentDropTargetIndex = null
@@ -211,12 +194,10 @@ internal fun RailItems(
 
                                                         var movedDistance = 0
                                                         if (currentDropTargetIndex!! > currentIdx) {
-                                                            // Moving Down: Sum items from currentIdx + 1 to target
                                                             for (i in (currentIdx + 1)..currentDropTargetIndex!!) {
                                                                 movedDistance += (itemHeights[scope.navItems[i].id] ?: 0) + spacingPx
                                                             }
                                                         } else if (currentDropTargetIndex!! < currentIdx) {
-                                                            // Moving Up: Sum items from target to currentIdx - 1
                                                             for (i in currentDropTargetIndex!! until currentIdx) {
                                                                 movedDistance -= ((itemHeights[scope.navItems[i].id] ?: 0) + spacingPx)
                                                             }
@@ -318,17 +299,17 @@ private fun DraggableRailItemWrapper(
             val draggedItem = scope.navItems[draggedStartIdx]
             if (item.hostId == draggedItem.hostId) {
                 if (draggedStartIdx < currentDropTargetIndex!!) {
-                     if (currentIdx > draggedStartIdx && currentIdx <= currentDropTargetIndex!!) {
-                         visualOffsetY = -myHeightDp
-                     } else {
-                         visualOffsetY = 0.dp
-                     }
+                    if (currentIdx > draggedStartIdx && currentIdx <= currentDropTargetIndex!!) {
+                        visualOffsetY = -myHeightDp
+                    } else {
+                        visualOffsetY = 0.dp
+                    }
                 } else if (draggedStartIdx > currentDropTargetIndex!!) {
-                     if (currentIdx >= currentDropTargetIndex!! && currentIdx < draggedStartIdx) {
-                         visualOffsetY = myHeightDp
-                     } else {
-                         visualOffsetY = 0.dp
-                     }
+                    if (currentIdx >= currentDropTargetIndex!! && currentIdx < draggedStartIdx) {
+                        visualOffsetY = myHeightDp
+                    } else {
+                        visualOffsetY = 0.dp
+                    }
                 } else {
                     visualOffsetY = 0.dp
                 }
@@ -336,7 +317,7 @@ private fun DraggableRailItemWrapper(
                 visualOffsetY = 0.dp
             }
         } else {
-             visualOffsetY = 0.dp
+            visualOffsetY = 0.dp
         }
     } else {
         visualOffsetY = 0.dp
@@ -441,26 +422,26 @@ private fun DraggableRailItemWrapper(
                         scope.onFocusMap[item.id]?.invoke()
 
                         if (isRouteSelected || isIdSelected) {
-                             onMenuOpen(item.id)
-                             onUpdateLastTappedId(item.id)
+                            onMenuOpen(item.id)
+                            onUpdateLastTappedId(item.id)
                         } else {
-                             onUpdateLastTappedId(item.id)
-                             if (onClickOverride != null) {
-                                 onClickOverride(item)
-                             } else {
-                                 scope.onClickMap[item.id]?.invoke()
-                                 item.route?.let { navController?.navigate(it) }
-                                 onItemSelected(item)
-                             }
+                            onUpdateLastTappedId(item.id)
+                            if (onClickOverride != null) {
+                                onClickOverride(item)
+                            } else {
+                                scope.onClickMap[item.id]?.invoke()
+                                item.route?.let { navController?.navigate(it) }
+                                onItemSelected(item)
+                            }
                         }
                     }
                 }
             }
         }
-        .onGloballyPositioned { coordinates ->
-             onHeightReported(item.id, coordinates.size.height)
-             onWidthReported(item.id, coordinates.size.width)
-        }
+            .onGloballyPositioned { coordinates ->
+                onHeightReported(item.id, coordinates.size.height)
+                onWidthReported(item.id, coordinates.size.width)
+            }
     } else {
         Modifier
     }
@@ -475,84 +456,84 @@ private fun DraggableRailItemWrapper(
     val isVisuallyActive = isSelected || isClassifierActive
 
     Box(modifier = Modifier.zIndex(if (isDragging) 1f else 0f)) {
-         Box(modifier = Modifier
-             .offset(y = finalOffsetY)
-             .alpha(alpha)
-         ) {
-             if (item.isRelocItem) {
-                 RailContent(
-                     item = item,
-                     navController = null,
-                     isSelected = isVisuallyActive,
-                     buttonSize = buttonSize,
-                     onClick = {},
-                     onRailCyclerClick = {},
-                     onItemClick = {},
-                     onHostClick = {},
-                     onItemGloballyPositioned = onItemGloballyPositioned,
-                     infoScreen = infoScreen,
-                     dragModifier = dragModifier,
-                     activeColor = scope.activeColor
-                 )
-             } else {
-                 RailContent(
-                     item = item,
-                     navController = navController,
-                     isSelected = isVisuallyActive,
-                     buttonSize = buttonSize,
-                     onClick = {
-                         scope.onFocusMap[item.id]?.invoke()
-                         if (onClickOverride != null) {
-                             onClickOverride(item)
-                         } else {
-                             scope.onClickMap[item.id]?.invoke()
-                         }
-                     },
-                     onRailCyclerClick = onRailCyclerClick,
-                     onItemClick = { onItemSelected(item) },
-                     onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
-                     onItemGloballyPositioned = onItemGloballyPositioned,
-                     infoScreen = infoScreen,
-                     dragModifier = dragModifier,
-                     activeColor = scope.activeColor
-                 )
-             }
-         }
+        Box(modifier = Modifier
+            .offset(y = finalOffsetY)
+            .alpha(alpha)
+        ) {
+            if (item.isRelocItem) {
+                RailContent(
+                    item = item,
+                    navController = null,
+                    isSelected = isVisuallyActive,
+                    buttonSize = buttonSize,
+                    onClick = {},
+                    onRailCyclerClick = {},
+                    onItemClick = {},
+                    onHostClick = {},
+                    onItemGloballyPositioned = onItemGloballyPositioned,
+                    infoScreen = infoScreen,
+                    dragModifier = dragModifier,
+                    activeColor = scope.activeColor
+                )
+            } else {
+                RailContent(
+                    item = item,
+                    navController = navController,
+                    isSelected = isVisuallyActive,
+                    buttonSize = buttonSize,
+                    onClick = {
+                        scope.onFocusMap[item.id]?.invoke()
+                        if (onClickOverride != null) {
+                            onClickOverride(item)
+                        } else {
+                            scope.onClickMap[item.id]?.invoke()
+                        }
+                    },
+                    onRailCyclerClick = onRailCyclerClick,
+                    onItemClick = { onItemSelected(item) },
+                    onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
+                    onItemGloballyPositioned = onItemGloballyPositioned,
+                    infoScreen = infoScreen,
+                    dragModifier = dragModifier,
+                    activeColor = scope.activeColor
+                )
+            }
+        }
 
-         if (hiddenMenuOpenId == item.id && !item.hiddenMenuItems.isNullOrEmpty()) {
-             HiddenMenuPopup(
-                 items = item.hiddenMenuItems!!,
-                 onDismiss = onHiddenMenuDismiss,
-                 onItemClick = { menuItem ->
-                      scope.hiddenMenuOnClickMap[menuItem.id]?.invoke()
-                      menuItem.route?.let { navController?.navigate(it) }
-                      onHiddenMenuDismiss()
-                 },
-                 onInputSubmit = { menuItem, value ->
-                      scope.hiddenMenuOnValueChangeMap[menuItem.id]?.invoke(value)
-                      onHiddenMenuDismiss()
-                 },
-                 backgroundColor = AzTextBoxDefaults.getBackgroundColor(),
-                 backgroundOpacity = AzTextBoxDefaults.getBackgroundOpacity(),
-                 anchorWidth = itemWidths[item.id] ?: 0
-             )
-         }
+        if (hiddenMenuOpenId == item.id && !item.hiddenMenuItems.isNullOrEmpty()) {
+            HiddenMenuPopup(
+                items = item.hiddenMenuItems!!,
+                onDismiss = onHiddenMenuDismiss,
+                onItemClick = { menuItem ->
+                    scope.hiddenMenuOnClickMap[menuItem.id]?.invoke()
+                    menuItem.route?.let { navController?.navigate(it) }
+                    onHiddenMenuDismiss()
+                },
+                onInputSubmit = { menuItem, value ->
+                    scope.hiddenMenuOnValueChangeMap[menuItem.id]?.invoke(value)
+                    onHiddenMenuDismiss()
+                },
+                backgroundColor = AzTextBoxDefaults.getBackgroundColor(),
+                backgroundOpacity = AzTextBoxDefaults.getBackgroundOpacity(),
+                anchorWidth = itemWidths[item.id] ?: 0
+            )
+        }
 
-         if (isDragging) {
-             Box(modifier = Modifier.offset { IntOffset(0, dragOffset.roundToInt()) }) {
-                 RailContent(
-                     item = item,
-                     navController = navController,
-                     isSelected = isSelected,
-                     buttonSize = buttonSize,
-                     onClick = null,
-                     onRailCyclerClick = {},
-                     onItemClick = {},
-                     infoScreen = infoScreen,
-                     activeColor = scope.activeColor
-                 )
-             }
-         }
+        if (isDragging) {
+            Box(modifier = Modifier.offset { IntOffset(0, dragOffset.roundToInt()) }) {
+                RailContent(
+                    item = item,
+                    navController = navController,
+                    isSelected = isSelected,
+                    buttonSize = buttonSize,
+                    onClick = null,
+                    onRailCyclerClick = {},
+                    onItemClick = {},
+                    infoScreen = infoScreen,
+                    activeColor = scope.activeColor
+                )
+            }
+        }
     }
 }
 
@@ -566,17 +547,22 @@ private fun HiddenMenuPopup(
     backgroundOpacity: Float,
     anchorWidth: Int
 ) {
+    val configuration = LocalConfiguration.current
+    // Constrain popup size to exactly 50% width limit
+    val halfWidth = (configuration.screenWidthDp / 2).dp
+
     Popup(
         alignment = androidx.compose.ui.Alignment.TopStart,
         offset = IntOffset(x = anchorWidth, y = 0),
         onDismissRequest = onDismiss,
         properties = PopupProperties(focusable = true)
     ) {
-         val surfaceColor = MaterialTheme.colorScheme.surface
-         val effectiveBg = if (backgroundColor == androidx.compose.ui.graphics.Color.Transparent) surfaceColor else backgroundColor
+        val surfaceColor = MaterialTheme.colorScheme.surface
+        val effectiveBg = if (backgroundColor == androidx.compose.ui.graphics.Color.Transparent) surfaceColor else backgroundColor
 
-         Column(
+        Column(
             modifier = Modifier
+                .width(halfWidth)
                 .background(effectiveBg.copy(alpha = 0.95f))
                 .border(1.dp, MaterialTheme.colorScheme.primary)
                 .padding(8.dp)

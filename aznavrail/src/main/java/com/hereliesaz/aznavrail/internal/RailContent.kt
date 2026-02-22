@@ -1,8 +1,8 @@
+// FILE: ./aznavrail/src/main/java/com/hereliesaz/aznavrail/internal/RailContent.kt
 package com.hereliesaz.aznavrail.internal
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -16,12 +16,6 @@ import com.hereliesaz.aznavrail.AzNavRailButton
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 
-/**
- * Composable for displaying a single item in the collapsed rail.
- *
- * @param item The navigation item to display.
- * @param buttonSize The size of the button.
- */
 @Composable
 internal fun RailContent(
     item: AzNavItem,
@@ -43,24 +37,15 @@ internal fun RailContent(
         else -> item.text
     }
 
-    // In infoScreen mode, only Host items are interactive.
     val isEnabled = if (infoScreen) item.isHost else !item.disabled
 
     val finalOnClick: () -> Unit = if (infoScreen) {
-        if (item.isHost) {
-            { onHostClick() }
-        } else {
-            {} // No-op
-        }
+        if (item.isHost) { { onHostClick() } } else { {} }
     } else if (item.isRelocItem) {
-        // Reloc items do not support navigation/clicking via RailContent;
-        // logic is handled by DraggableRailItemWrapper.
         {}
     } else {
         if (item.isHost) {
-            {
-                handleHostItemClick(item, navController, onClick, onItemClick, onHostClick)
-            }
+            { handleHostItemClick(item, navController, onClick, onItemClick, onHostClick) }
         } else if (item.isCycler) {
             {
                 onRailCyclerClick(item)
@@ -75,8 +60,10 @@ internal fun RailContent(
         }
     }
 
+    // Small margin applied uniformly on all sides to all items.
     Box(
-        modifier = (if (item.shape == AzButtonShape.RECTANGLE) Modifier.padding(vertical = 2.dp) else Modifier)
+        modifier = Modifier
+            .padding(4.dp)
             .onGloballyPositioned { coordinates ->
                 onItemGloballyPositioned?.invoke(item.id, coordinates.boundsInWindow())
             }
@@ -85,10 +72,10 @@ internal fun RailContent(
         AzNavRailButton(
             onClick = finalOnClick,
             text = textToShow,
-            modifier = Modifier.width(buttonSize),
+            modifier = Modifier,
             color = item.color ?: MaterialTheme.colorScheme.primary,
             activeColor = activeColor ?: MaterialTheme.colorScheme.primary,
-            size = buttonSize,
+            size = AzNavRailDefaults.ButtonWidth,
             shape = item.shape,
             enabled = isEnabled,
             isSelected = isSelected

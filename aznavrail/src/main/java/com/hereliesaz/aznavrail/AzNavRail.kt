@@ -1,3 +1,4 @@
+// FILE: ./aznavrail/src/main/java/com/hereliesaz/aznavrail/AzNavRail.kt
 package com.hereliesaz.aznavrail
 
 import android.content.Context
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -47,7 +49,6 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -102,7 +103,6 @@ fun AzNavRail(
     reverseLayout: Boolean = false,
     content: AzNavRailScope.() -> Unit
 ) {
-    // 0. Strict Host Protocol
     val isHostPresent = LocalAzNavHostPresent.current
     if (!isHostPresent) {
         Box(modifier = Modifier.fillMaxSize().background(Color.Red)) {
@@ -124,65 +124,42 @@ fun AzNavRail(
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
     val coroutineScope = rememberCoroutineScope()
 
-    // 1. Scope Resolution
     val scope = providedScope ?: remember { AzNavRailScopeImpl() }
-    if (providedScope == null) {
-        scope.reset()
-    }
+    if (providedScope == null) scope.reset()
     scope.apply(content)
 
-    // 2. PackageManager Data (6.99 implementation)
     val packageManager = context.packageManager
     val packageName = context.packageName
     val appName = remember(packageName) {
         try {
             packageManager.getApplicationLabel(packageManager.getApplicationInfo(packageName, 0)).toString()
         } catch (e: Exception) {
-            AzNavRailLogger.e("AzNavRail", "Error getting app name", e)
             "App"
         }
     }
     val appIcon = remember(packageName) {
-        try {
-            packageManager.getApplicationIcon(packageName)
-        } catch (e: Exception) {
-            null
-        }
+        try { packageManager.getApplicationIcon(packageName) } catch (e: Exception) { null }
     }
 
-    // 3. State Management
     var isExpandedInternal by rememberSaveable(initiallyExpanded) { mutableStateOf(initiallyExpanded) }
-    var isExpanded by remember { 
-        mutableStateOf(if (scope.noMenu) false else isExpandedInternal)
-    }
-    
+    var isExpanded by remember { mutableStateOf(if (scope.noMenu) false else isExpandedInternal) }
     var isFloating by remember { mutableStateOf(false) }
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
     var showFloatingButtons by remember { mutableStateOf(false) }
     var railContentHeight by remember { mutableStateOf(0f) }
-    
-    // Cycler Transient State (Sync logic from 6.99)
     val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
-    
-    val railWidth by animateDpAsState(
-        targetValue = if (isExpanded) scope.expandedWidth else scope.collapsedWidth,
-        animationSpec = tween(300),
-        label = "RailWidth"
-    )
 
-    // Navigation State
+    val railWidth by animateDpAsState(targetValue = if (isExpanded) scope.expandedWidth else scope.collapsedWidth)
+
     val effectiveNavController = navController ?: rememberNavController()
     val navBackStackEntry by effectiveNavController.currentBackStackEntryAsState()
     val actualCurrentDestination = currentDestination ?: navBackStackEntry?.destination?.route
     val hostStates = remember { mutableStateMapOf<String, Boolean>() }
 
-    // 4. Cycler Sync Logic (The "Missing Piece" from 6.99)
     LaunchedEffect(scope.navItems) {
         scope.navItems.forEach { item ->
-            if (item.isCycler) {
-                cyclerStates.putIfAbsent(item.id, CyclerTransientState(item.selectedOption ?: ""))
-            }
+            if (item.isCycler) cyclerStates.putIfAbsent(item.id, CyclerTransientState(item.selectedOption ?: ""))
         }
     }
 
@@ -195,17 +172,12 @@ fun AzNavRail(
                     if (item != null) {
                         coroutineScope.launch {
                             val options = item.options ?: emptyList()
-                            val currentStateInVm = item.selectedOption
-                            val targetState = state.displayedOption
-                            val currentIndexInVm = options.indexOf(currentStateInVm)
-                            val targetIndex = options.indexOf(targetState)
-
+                            val currentIndexInVm = options.indexOf(item.selectedOption)
+                            val targetIndex = options.indexOf(state.displayedOption)
                             if (currentIndexInVm != -1 && targetIndex != -1) {
                                 val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
                                 val onClick = scope.onClickMap[item.id]
-                                if (onClick != null) {
-                                    repeat(clicksToCatchUp) { onClick() }
-                                }
+                                if (onClick != null) repeat(clicksToCatchUp) { onClick() }
                             }
                             cyclerStates[id] = state.copy(job = null)
                         }
@@ -215,7 +187,6 @@ fun AzNavRail(
         }
     }
 
-    // Helper: Toggle Menu
     fun toggleExpanded() {
         if (!scope.infoScreen) {
             if (isFloating) {
@@ -227,7 +198,6 @@ fun AzNavRail(
         }
     }
 
-    // 5. Layout Logic
     val sizeModifier = if (isFloating) {
         if (orientation == AzOrientation.Vertical) Modifier.width(railWidth).wrapContentHeight()
         else Modifier.height(railWidth).wrapContentWidth()
@@ -236,13 +206,16 @@ fun AzNavRail(
         else Modifier.height(railWidth).fillMaxWidth()
     }
 
+    // Top 10% to Bottom 10% bounds rule enforced.
+    val safeTopDp = (configuration.screenHeightDp * 0.1f).dp
+    val safeBottomDp = (configuration.screenHeightDp * 0.1f).dp
     val safeZoneModifier = if (!isFloating && orientation == AzOrientation.Vertical) {
-        val safeTopDp = (configuration.screenHeightDp * 0.1f).dp
-        val safeBottomDp = (configuration.screenHeightDp * 0.1f).dp
         Modifier.padding(top = safeTopDp, bottom = safeBottomDp)
-    } else {
-        Modifier
-    }
+    } else { Modifier }
+
+    // No background shape when collapsed. Drawer visible only when expanded.
+    val surfaceColor = if (isExpanded && !isFloating) MaterialTheme.colorScheme.surface else Color.Transparent
+    val surfaceElevation = if (isExpanded && !isFloating) 2.dp else 0.dp
 
     Box(
         modifier = modifier,
@@ -265,8 +238,13 @@ fun AzNavRail(
                                     (screenHeightPx * 0.9f) - railContentHeight
                                 )
                             } else if (!disableSwipeToOpen && !scope.noMenu) {
-                                val isSwipeOut = if (visualDockingSide == AzDockingSide.LEFT) dragAmount.x > 20 else dragAmount.x < -20
-                                if (isSwipeOut && !isExpanded) isExpanded = true
+                                if (visualDockingSide == AzDockingSide.LEFT) {
+                                    if (dragAmount.x > 20 && !isExpanded) isExpanded = true
+                                    else if (dragAmount.x < -20 && isExpanded) isExpanded = false
+                                } else {
+                                    if (dragAmount.x < -20 && !isExpanded) isExpanded = true
+                                    else if (dragAmount.x > 20 && isExpanded) isExpanded = false
+                                }
                             }
                         },
                         onDragEnd = {
@@ -279,11 +257,11 @@ fun AzNavRail(
                     )
                 }
                 .then(if (isFloating) Modifier.shadow(8.dp, RectangleShape) else Modifier),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 2.dp
+            color = surfaceColor,
+            tonalElevation = surfaceElevation
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                // HEADER (6.99 implementation with real app data)
+                // Header handles Unconstrained App Name -> App Icon transformation logic
                 Row(
                     modifier = Modifier
                         .padding(AzNavRailDefaults.HeaderPadding)
@@ -308,62 +286,57 @@ fun AzNavRail(
                         },
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        modifier = Modifier.size(AzNavRailDefaults.HeaderIconSize),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (appIcon != null) {
-                            val baseModifier = Modifier.fillMaxSize()
-                            val clipModifier = when (scope.headerIconShape) {
-                                AzHeaderIconShape.CIRCLE -> baseModifier.clip(CircleShape)
-                                AzHeaderIconShape.ROUNDED -> baseModifier.clip(RoundedCornerShape(12.dp))
-                                else -> baseModifier
-                            }
-                            Image(
-                                painter = rememberAsyncImagePainter(appIcon),
-                                contentDescription = "App Icon",
-                                modifier = clipModifier
-                            )
-                        } else {
-                            Icon(Icons.Default.Menu, "Menu")
-                        }
-                    }
-                    
-                    if (isExpanded && scope.displayAppName) {
-                        Spacer(Modifier.width(AzNavRailDefaults.HeaderTextSpacer))
+                    if (scope.displayAppName && !isFloating) {
+                        // Unconstrained bleeding text
                         Text(
                             text = appName,
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.displaySmall,
                             fontWeight = FontWeight.Bold,
-                            maxLines = 1
+                            modifier = Modifier.requiredWidth(1000.dp),
+                            maxLines = 1,
+                            softWrap = false
                         )
+                    } else {
+                        // Reverts to identical App Icon logic
+                        Box(
+                            modifier = Modifier.size(AzNavRailDefaults.ButtonWidth),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (appIcon != null) {
+                                val baseModifier = Modifier.fillMaxSize()
+                                val clipModifier = when (scope.headerIconShape) {
+                                    AzHeaderIconShape.CIRCLE -> baseModifier.clip(CircleShape)
+                                    AzHeaderIconShape.ROUNDED -> baseModifier.clip(RoundedCornerShape(12.dp))
+                                    else -> baseModifier
+                                }
+                                Image(painter = rememberAsyncImagePainter(appIcon), contentDescription = "App Icon", modifier = clipModifier)
+                            } else {
+                                Icon(Icons.Default.Menu, "Menu")
+                            }
+                        }
                     }
                 }
 
                 if (isFloating && !showFloatingButtons) return@Column
 
-                // MAIN CONTENT
+                // MAIN CONTENT and MENU separation
                 Box(modifier = Modifier.weight(1f)) {
                     if (isExpanded) {
                         val scrollState = rememberScrollState()
                         Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .verticalScroll(scrollState)
+                            modifier = Modifier.fillMaxSize().verticalScroll(scrollState)
                         ) {
                             scope.navItems.filter { !it.isSubItem }.forEach { item ->
                                 MenuItem(
                                     item = item,
                                     navController = effectiveNavController,
                                     isSelected = (item.route != null && item.route == actualCurrentDestination) ||
-                                                item.classifiers.any { it in scope.activeClassifiers },
+                                            item.classifiers.any { it in scope.activeClassifiers },
                                     onClick = {
                                         scope.onClickMap[item.id]?.invoke()
                                         if (item.collapseOnClick) isExpanded = false
                                     },
-                                    onCyclerClick = {
-                                        scope.onClickMap[item.id]?.invoke()
-                                    },
+                                    onCyclerClick = { scope.onClickMap[item.id]?.invoke() },
                                     onToggle = { if (item.collapseOnClick) isExpanded = false },
                                     onItemClick = { if (item.collapseOnClick) isExpanded = false },
                                     onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
@@ -371,21 +344,19 @@ fun AzNavRail(
                                     infoScreen = scope.infoScreen,
                                     activeColor = scope.activeColor
                                 )
-                                
+
                                 if (hostStates[item.id] == true) {
                                     scope.navItems.filter { it.isSubItem && it.hostId == item.id }.forEach { subItem ->
                                         MenuItem(
                                             item = subItem,
                                             navController = effectiveNavController,
                                             isSelected = (subItem.route != null && subItem.route == actualCurrentDestination) ||
-                                                        subItem.classifiers.any { it in scope.activeClassifiers },
+                                                    subItem.classifiers.any { it in scope.activeClassifiers },
                                             onClick = {
                                                 scope.onClickMap[subItem.id]?.invoke()
                                                 if (subItem.collapseOnClick) isExpanded = false
                                             },
-                                            onCyclerClick = {
-                                                scope.onClickMap[subItem.id]?.invoke()
-                                            },
+                                            onCyclerClick = { scope.onClickMap[subItem.id]?.invoke() },
                                             onToggle = { if (subItem.collapseOnClick) isExpanded = false },
                                             onItemClick = { if (subItem.collapseOnClick) isExpanded = false },
                                             onItemGloballyPositioned = scope.onItemGloballyPositioned,
@@ -402,7 +373,7 @@ fun AzNavRail(
                             scope = scope,
                             navController = effectiveNavController,
                             currentDestination = actualCurrentDestination,
-                            buttonSize = scope.collapsedWidth,
+                            buttonSize = AzNavRailDefaults.ButtonWidth,
                             onRailCyclerClick = { item ->
                                 val state = cyclerStates[item.id]
                                 if (state != null && !item.disabled) {
@@ -412,7 +383,7 @@ fun AzNavRail(
                                     if (enabledOptions.isNotEmpty()) {
                                         val currentIndex = enabledOptions.indexOf(state.displayedOption)
                                         val nextOption = enabledOptions[(currentIndex + 1) % enabledOptions.size]
-                                        
+
                                         cyclerStates[item.id] = state.copy(
                                             displayedOption = nextOption,
                                             job = coroutineScope.launch {
@@ -428,36 +399,34 @@ fun AzNavRail(
                                 if (item.collapseOnClick && !scope.noMenu) isExpanded = false
                             },
                             hostStates = hostStates,
-                            packRailButtons = scope.packButtons,
+                            packRailButtons = isFloating || scope.packButtons, // Forced pack in FAB mode
                             onItemGloballyPositioned = scope.onItemGloballyPositioned,
                             infoScreen = scope.infoScreen
                         )
                     }
                 }
 
-                // FOOTER
+                // FIXED FOOTER (Does not scroll, pinned below menu)
                 if (scope.showFooter && isExpanded) {
-                    Footer(
-                        appName = appName,
-                        onToggle = { toggleExpanded() },
-                        onUndock = { 
-                            isFloating = true 
-                            isExpanded = false
-                            offsetY = screenHeightPx * 0.1f
-                            scope.onUndock?.invoke()
-                        },
-                        scope = scope,
-                        footerColor = scope.activeColor
-                    )
+                    Column {
+                        AzDivider()
+                        Footer(
+                            appName = appName,
+                            onToggle = { toggleExpanded() },
+                            onUndock = {
+                                isFloating = true
+                                isExpanded = false
+                                offsetY = screenHeightPx * 0.1f
+                                scope.onUndock?.invoke()
+                            },
+                            scope = scope,
+                            footerColor = scope.activeColor
+                        )
+                    }
                 }
             }
         }
     }
 
-    if (scope.infoScreen) {
-        HelpOverlay(
-            items = scope.navItems,
-            onDismiss = { scope.onDismissInfoScreen?.invoke() }
-        )
-    }
+    if (scope.infoScreen) HelpOverlay(items = scope.navItems, onDismiss = { scope.onDismissInfoScreen?.invoke() })
 }
