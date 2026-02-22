@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -64,6 +64,7 @@ internal fun MenuItem(
             infoScreen = infoScreen
         )
 
+        // STRICT RULE: No Rounded Corners. Changed shape to RectangleShape.
         if (showScreenTitle && item.screenTitle != AzNavRailDefaults.NO_TITLE) {
             val titleText = item.screenTitle ?: item.text
             if (titleText.isNotEmpty()) {
@@ -74,8 +75,8 @@ internal fun MenuItem(
                     Box(
                         modifier = Modifier
                             .padding(top = 12.dp, end = 16.dp)
-                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
-                            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RectangleShape)
+                            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), RectangleShape)
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Text(text = titleText, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
