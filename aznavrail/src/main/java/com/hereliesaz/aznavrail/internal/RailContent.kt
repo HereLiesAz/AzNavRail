@@ -7,6 +7,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -281,7 +282,7 @@ private fun DraggableItem(
             )
         }
 
-        // STRICT RULE: No Rounded Corners. Changed shape to RectangleShape.
+        // Screen Title Popup - Strict Square Compliance
         if (showScreenTitle && item.screenTitle != AzNavRailDefaults.NO_TITLE) {
             val titleText = item.screenTitle ?: item.text
             if (titleText.isNotEmpty()) {
@@ -304,6 +305,7 @@ private fun DraggableItem(
             }
         }
 
+        // Hidden Menu - Strict Square Compliance
         if (showHiddenMenu && item.hiddenMenuItems != null && item.hiddenMenuItems.isNotEmpty()) {
             Popup(
                 alignment = Alignment.TopEnd,
@@ -313,7 +315,8 @@ private fun DraggableItem(
             ) {
                 Column(
                     modifier = Modifier
-                        .background(MaterialTheme.colorScheme.surface, RectangleShape) // No rounded
+                        .background(MaterialTheme.colorScheme.surface, RectangleShape)
+                        .border(1.dp, MaterialTheme.colorScheme.outline, RectangleShape)
                         .padding(8.dp)
                         .width(IntrinsicSize.Max)
                 ) {
