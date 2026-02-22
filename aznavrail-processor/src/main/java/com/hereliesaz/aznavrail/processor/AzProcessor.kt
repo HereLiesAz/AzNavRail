@@ -138,12 +138,16 @@ class AzProcessor(
             if (advancedConfig.isLoadingProperty.isNotEmpty()) {
                  builder.addStatement("isLoading = instance?.%L ?: false,", advancedConfig.isLoadingProperty)
             } else if (advancedConfig.isLoading) {
-                 builder.addStatement("isLoading = instance?.%L ?: false,", advancedConfig.functionName)
+                 builder.addStatement("isLoading = false,")
             }
 
             if (advancedConfig.infoScreen) {
-                builder.addStatement("infoScreen = instance?.%L ?: false,", advancedConfig.functionName)
-                builder.addStatement("onDismissInfoScreen = { instance?.%L = false },", advancedConfig.functionName)
+                if (advancedConfig.functionName.isNotEmpty()) {
+                    builder.addStatement("infoScreen = instance?.%L ?: false,", advancedConfig.functionName)
+                    builder.addStatement("onDismissInfoScreen = { instance?.%L = false },", advancedConfig.functionName)
+                } else {
+                    builder.addStatement("infoScreen = false,")
+                }
             }
             if (advancedConfig.enableRailDragging) builder.addStatement("enableRailDragging = true,")
             if (advancedConfig.overlayServiceClass.isNotEmpty()) builder.addStatement("overlayService = %T::class.java,", ClassName.bestGuess(advancedConfig.overlayServiceClass))

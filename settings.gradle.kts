@@ -2,30 +2,32 @@ pluginManagement {
     plugins {
         id("com.android.application").version("8.13.0")
         id("com.android.library").version("8.13.0")
-        id("org.jetbrains.kotlin.android").version("2.2.21")
-        id("org.jetbrains.kotlin.plugin.compose").version("2.2.21")
-        id("org.jetbrains.kotlin.plugin.parcelize").version("2.2.21")
+        id("org.jetbrains.kotlin.android").version("2.0.21")
+        id("org.jetbrains.kotlin.jvm").version("2.0.21")
+        id("org.jetbrains.kotlin.plugin.compose").version("2.0.21")
+        id("org.jetbrains.kotlin.plugin.parcelize").version("2.0.21")
+        id("com.google.devtools.ksp").version("2.0.21-1.0.28")
     }
     repositories {
         google()
         mavenCentral()
         gradlePluginPortal()
-
     }
 }
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 dependencyResolutionManagement {
-  repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-  repositories {
-    google()
-    mavenCentral()
-      maven { url = uri("https://jitpack.io") }
-
-  }
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
 }
 
 rootProject.name = "AzNavRail"
 include(":SampleApp")
 include(":aznavrail")
+include(":aznavrail-annotation")
+include(":aznavrail-processor")

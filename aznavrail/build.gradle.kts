@@ -1,11 +1,10 @@
 import java.util.Random
 
 plugins {
-    id("com.android.library")
-    id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose")
-    id("maven-publish")
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.compose.compiler)
     alias(libs.plugins.parcelize)
+    id("maven-publish")
 }
 
 val generatedPin = (100000 + Random().nextInt(900000)).toString()
@@ -31,10 +30,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlin {
-        jvmToolchain(17)
-    }
-
     buildFeatures {
         compose = true
         buildConfig = true
@@ -54,6 +49,8 @@ android {
 }
 
 dependencies {
+    api(project(":aznavrail-annotation"))
+
     implementation(libs.androidx.core.ktx)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
