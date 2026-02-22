@@ -6,7 +6,6 @@ pluginManagement {
         id("org.jetbrains.kotlin.jvm").version("2.0.21")
         id("org.jetbrains.kotlin.plugin.compose").version("2.0.21")
         id("org.jetbrains.kotlin.plugin.parcelize").version("2.0.21")
-        id("com.google.devtools.ksp").version("2.0.21-1.0.28")
     }
     repositories {
         google()
@@ -29,5 +28,3 @@ dependencyResolutionManagement {
 rootProject.name = "AzNavRail"
 include(":SampleApp")
 include(":aznavrail")
-include(":aznavrail-annotation")
-include(":aznavrail-processor")

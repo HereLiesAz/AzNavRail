@@ -54,8 +54,6 @@ android {
 }
 
 dependencies {
-    api(project(":aznavrail-annotation"))
-
     implementation(libs.androidx.core.ktx)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)

@@ -18,6 +18,7 @@ import com.hereliesaz.aznavrail.AzHostActivityLayout
 import com.hereliesaz.aznavrail.AzNavHost
 import com.hereliesaz.aznavrail.AzTextBox
 import com.hereliesaz.aznavrail.AzToggle
+import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
 
 class MainActivity : ComponentActivity() {
@@ -39,7 +40,7 @@ class MainActivity : ComponentActivity() {
     val modes = listOf("Light", "Dark", "Auto")
 
     var dynamicTitle by mutableStateOf("Dynamic Item")
-    var dynamicBadge by mutableStateOf("1")
+    var dynamicBadge by mutableState of("1")
     var isItemVisible by mutableStateOf(true)
     var isItemDisabled by mutableStateOf(false)
 
@@ -54,22 +55,18 @@ class MainActivity : ComponentActivity() {
                     navController = navController,
                     initiallyExpanded = false
                 ) {
-                    // SECTOR 2: CONFIG
-                    azConfig(
+                    azSettings(
                         dockingSide = dockingSide,
-                        packButtons = packButtons,
-                        displayAppName = displayAppName,
+                        packRailButtons = packButtons,
+                        displayAppNameInHeader = displayAppName,
                         usePhysicalDocking = usePhysicalDocking,
                         noMenu = noMenu,
                         vibrate = vibrate,
-                        showFooter = showFooter
-                    )
-
-                    // SECTOR 3: ADVANCED
-                    azAdvanced(
+                        showFooter = showFooter,
                         isLoading = isLoading,
                         infoScreen = infoScreen,
-                        onDismissInfoScreen = { infoScreen = false }
+                        onDismissInfoScreen = { infoScreen = false },
+                        defaultShape = AzButtonShape.CIRCLE
                     )
 
                     // RAIL ITEMS: Explicitly defined and bound to state
