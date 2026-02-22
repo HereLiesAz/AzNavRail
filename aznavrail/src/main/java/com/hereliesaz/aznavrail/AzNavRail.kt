@@ -93,6 +93,7 @@ fun AzNavRail(
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
     var showFloatingButtons by remember { mutableStateOf(false) }
+    var railContentHeight by remember { mutableStateOf(0f) }
     
     // Sync scope config updates
     val railWidth by animateDpAsState(
@@ -139,15 +140,34 @@ fun AzNavRail(
                         offsetX += dragAmount.x
                         
                         // Strict Constraint: Rail movement restricted from Top 10% and Bottom 10%
-                        val minY = screenHeightPx * 0.1f
-                        val maxY = screenHeightPx * 0.9f
+                        // OffsetY moves the rail from its anchored position (TopStart).
+                        // To strictly clamp the VIEW, we need to know where it is.
+                        // Assuming start at 0,0 relative to parent.
+                        val minY = screenHeightPx * AzLayoutConfig.RailSafeTopPercent
+                        val maxY = screenHeightPx * (1f - AzLayoutConfig.RailSafeBottomPercent) - railContentHeight
                         
-                        // NOTE: Proper clamping requires absolute window coordinates which aren't readily available
-                        // in this context without OnGloballyPositioned. 
-                        // However, we can restrict delta updates if we were tracking absolute position.
-                        // Since `offsetY` is relative to the anchored TopStart, it approximates Y position if rail started at top.
-                        // We will apply the delta.
-                        offsetY += dragAmount.y
+                        // We check if applying delta would violate bounds
+                        val nextY = offsetY + dragAmount.y
+                        // We only allow move if it stays roughly within bounds (or moves towards them)
+                        // A simple clamp on the variable itself is robust for "floating" behavior relative to anchor
+                        // Note: If rail starts at top (0), then Y offset directly correlates to screen Y.
+                        
+                        // To strictly enforce "shouldn't be allowed into", we clamp the result.
+                        // But since we accumulate delta, we should clamp the accumulation.
+                        // However, user might start dragging from a "wrong" position if undocked.
+                        // We will allow free movement but clamp the rendering offset logic? No, update state.
+                        
+                        // We need to know initial position. `offsetY` is relative to initial render position.
+                        // For a rail, initial is 0 (Top).
+                        
+                        val proposedY = offsetY + dragAmount.y
+                        if (proposedY >= minY && proposedY <= maxY) {
+                            offsetY += dragAmount.y
+                        } else {
+                            // Allow moving back towards valid region
+                            if (proposedY < minY && dragAmount.y > 0) offsetY += dragAmount.y
+                            if (proposedY > maxY && dragAmount.y < 0) offsetY += dragAmount.y
+                        }
                     } else if (!disableSwipeToOpen) {
                         // Swipe from edge logic (Expand/Collapse)
                         // This logic respects "Swiping out from the edge of the screen should open up the menu"
@@ -172,17 +192,6 @@ fun AzNavRail(
                         offsetY = 0f
                         if (scope.vibrate) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     }
-                    
-                    // Simple constraint enforcement on drop (Snap to bounds)
-                    if (isFloating) {
-                        val currentAbsY = offsetY // Approximate
-                        val limitTop = screenHeightPx * 0.1f
-                        val limitBottom = screenHeightPx * 0.9f
-                        // If we could detect size, we would subtract height from limitBottom.
-                        // For now, allow loose bounds but ensure it's not totally gone.
-                        if (currentAbsY < limitTop) offsetY = limitTop
-                        // No bottom clamp implemented without height knowledge to avoid locking it offscreen
-                    }
                 }
             )
         }
@@ -204,7 +213,10 @@ fun AzNavRail(
                         } else {
                             isFloating = true // Float
                             isExpanded = false
-                            // Initial placement for float? Starts at anchor.
+                            // Reset to safe start if needed?
+                            // Default is 0,0 which is Top. If that violates 10%, we should push it down.
+                            val minY = screenHeightPx * 0.1f
+                            if (offsetY < minY) offsetY = minY
                         }
                         if (scope.vibrate) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         scope.onUndock?.invoke()
@@ -234,6 +246,11 @@ fun AzNavRail(
                 .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
                 .then(sizeModifier)
                 .then(dragModifier)
+                .onGloballyPositioned { coordinates ->
+                    if (isFloating) {
+                        railContentHeight = coordinates.size.height.toFloat()
+                    }
+                }
                 // STRICT RULE: No Rounded Corners.
                 .then(if (isFloating) Modifier.shadow(8.dp, RectangleShape) else Modifier),
             color = MaterialTheme.colorScheme.surface,
