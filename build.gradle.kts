@@ -1,3 +1,7 @@
-// This is the root build file.
-// The main library module is in the 'aznavrail' directory.
-// The sample app is in the 'SampleApp' directory.
+plugins {
+    alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.android.library) apply false
+    alias(libs.plugins.kotlin.android) apply false
+    alias(libs.plugins.parcelize) apply false
+    alias(libs.plugins.compose.compiler) apply false
+}

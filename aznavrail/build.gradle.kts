@@ -1,12 +1,18 @@
 import java.util.Random
 
 plugins {
-    alias(libs.plugins.android.library)
-    alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.parcelize)
+    id("com.android.library")
+    alias(libs.plugins.kotlin.android)
+    id("org.jetbrains.kotlin.plugin.compose")
     id("maven-publish")
+    alias(libs.plugins.parcelize)
 }
 
+// Unifying version across all modules via the version catalog
+group = "com.github.HereLiesAz.AzNavRail"
+version = System.getenv("JITPACK_VERSION") ?: libs.versions.aznavrail.get()
+
+// Random PIN generation for security features
 val generatedPin = (100000 + Random().nextInt(900000)).toString()
 
 android {
@@ -30,10 +36,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlin {
-        jvmToolchain(17)
-    }
-
     buildFeatures {
         compose = true
         buildConfig = true
@@ -52,6 +54,10 @@ android {
     }
 }
 
+kotlin {
+    jvmToolchain(17)
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(platform(libs.androidx.compose.bom))
@@ -62,9 +68,11 @@ dependencies {
     implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.androidx.compose.animation.core)
     implementation(libs.androidx.material.icons.extended)
+
     api(libs.coil.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.ui)
+
 
     testImplementation(libs.junit)
     testImplementation(libs.androidx.test.ext.junit)
@@ -75,10 +83,12 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
+
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 }
 
+// Security Feature: PIN Email Task
 tasks.register("sendPinEmail") {
     doLast {
         println("--------------------------------------------------")
@@ -99,22 +109,22 @@ afterEvaluate {
     if (releaseTask != null) {
         releaseTask.finalizedBy("sendPinEmail")
     }
-    
-    publishing {
-        publications {
-            create<MavenPublication>("release") {
-                from(components["release"])
-                groupId = "com.github.HereLiesAz"
-                artifactId = "AzNavRail"
-                version = "5.1"
-            }
-        }
-    }
 }
 
+// Documentation management
 tasks.register<Copy>("extractDocs") {
     description = "Extracts the AzNavRail Complete Guide to the project's docs directory."
     group = "documentation"
     from("src/main/resources/AZNAVRAIL_COMPLETE_GUIDE.md")
     into("${project.rootDir}/docs")
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            register<MavenPublication>("release") {
+                from(components["release"])
+            }
+        }
+    }
 }

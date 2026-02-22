@@ -4,7 +4,6 @@ import android.os.Parcelable
 import androidx.compose.ui.graphics.Color
 import kotlinx.parcelize.Parcelize
 import kotlinx.parcelize.RawValue
-import java.util.Collections.emptySet
 
 /**
  * The unified, stateless data model for any item in the navigation rail or menu.
