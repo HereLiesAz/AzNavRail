@@ -1,379 +1,110 @@
 package com.hereliesaz.aznavrail.internal
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
-import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.AzNavRailButton
-import com.hereliesaz.aznavrail.AzNavRailScopeImpl
-import com.hereliesaz.aznavrail.AzTextBox
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzNavItem
-import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
-import com.hereliesaz.aznavrail.model.AzOrientation
-import kotlin.math.roundToInt
-import kotlinx.coroutines.delay
 
+/**
+ * Composable for displaying a single item in the collapsed rail.
+ *
+ * @param item The navigation item to display.
+ * @param buttonSize The size of the button.
+ */
 @Composable
 internal fun RailContent(
-    items: List<AzNavItem>,
-    currentDestination: String?,
-    activeColor: Color,
-    shape: AzButtonShape,
-    activeClassifiers: Set<String>,
-    scope: AzNavRailScopeImpl,
-    navController: NavController?,
-    onItemSelected: (AzNavItem) -> Unit,
-    hostStates: Map<String, Boolean>,
-    packRailButtons: Boolean,
-    orientation: AzOrientation,
-    onItemGloballyPositioned: ((String, Rect) -> Unit)?,
-    infoScreen: Boolean,
-    reverseLayout: Boolean,
-    isRightDocked: Boolean
-) {
-    val isVertical = orientation == AzOrientation.Vertical
-    val topLevelItems = items.filter { !it.isSubItem }
-    val baseItems = if (packRailButtons) topLevelItems.filter { it.isRailItem } else topLevelItems
-    val itemsToRender = if (reverseLayout) baseItems.reversed() else baseItems
-
-    val draggedItemId = remember { mutableStateOf<String?>(null) }
-    val dragOffset = remember { mutableStateOf(0f) }
-    val currentDropTargetIndex = remember { mutableStateOf<Int?>(null) }
-    val mutableItems = remember(itemsToRender) { itemsToRender.toMutableList() }
-
-    val content = @Composable {
-        mutableItems.forEach { item ->
-            // Render the Host item
-            DraggableItem(
-                item = item,
-                scope = scope,
-                navController = navController,
-                currentDestination = currentDestination,
-                activeColor = activeColor,
-                defaultShape = shape,
-                activeClassifiers = activeClassifiers,
-                orientation = orientation,
-                onItemSelected = { selectedItem ->
-                    if (selectedItem.isHost) {
-                        // Toggle Host Logic:
-                        // We check if it's currently expanded in hostStates.
-                        // Since this callback is from the button click, the caller (AzNavRail) has likely updated the state
-                        // via the provided onClick map. However, we also need to trigger the UI update here.
-                        // Ideally, we pass a toggle callback. But scope.onClickMap handles logic.
-                        // Let's rely on hostStates update which should trigger recomposition.
-                        // We must ensure the item's onClick in scope toggles this state.
-                        onItemSelected(selectedItem)
-                    } else {
-                        onItemSelected(selectedItem)
-                    }
-                },
-                onItemGloballyPositioned = onItemGloballyPositioned,
-                infoScreen = infoScreen,
-                isRightDocked = isRightDocked,
-                draggedItemId = draggedItemId,
-                dragOffset = dragOffset,
-                currentDropTargetIndex = currentDropTargetIndex,
-                mutableItemsList = mutableItems,
-                itemsToRender = itemsToRender,
-                isHostExpanded = hostStates[item.id] == true
-            )
-
-            // Inline Expansion Logic
-            if (hostStates[item.id] == true) {
-                // Find sub-items
-                val subItems = items.filter { it.isSubItem && it.hostId == item.id }
-                // Render them immediately after the host
-                subItems.forEach { subItem ->
-                    DraggableItem(
-                        item = subItem,
-                        scope = scope,
-                        navController = navController,
-                        currentDestination = currentDestination,
-                        activeColor = activeColor,
-                        defaultShape = shape,
-                        activeClassifiers = activeClassifiers,
-                        orientation = orientation,
-                        onItemSelected = onItemSelected,
-                        onItemGloballyPositioned = onItemGloballyPositioned,
-                        infoScreen = infoScreen,
-                        isRightDocked = isRightDocked,
-                        draggedItemId = draggedItemId,
-                        dragOffset = dragOffset,
-                        currentDropTargetIndex = currentDropTargetIndex,
-                        mutableItemsList = mutableItems, // Note: Dragging sub-items might need separate list context
-                        itemsToRender = itemsToRender,
-                        isHostExpanded = false
-                    )
-                }
-            }
-        }
-    }
-
-    val scrollState = rememberScrollState()
-
-    if (isVertical) {
-        Column(
-            modifier = Modifier.verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(if (packRailButtons) 0.dp else 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) { content() }
-    } else {
-        Row(
-            modifier = Modifier.horizontalScroll(scrollState),
-            horizontalArrangement = Arrangement.spacedBy(if (packRailButtons) 0.dp else 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) { content() }
-    }
-}
-
-@Composable
-private fun DraggableItem(
     item: AzNavItem,
-    scope: AzNavRailScopeImpl,
     navController: NavController?,
-    currentDestination: String?,
-    activeColor: Color,
-    defaultShape: AzButtonShape,
-    activeClassifiers: Set<String>,
-    orientation: AzOrientation,
-    onItemSelected: (AzNavItem) -> Unit,
-    onItemGloballyPositioned: ((String, Rect) -> Unit)?,
-    infoScreen: Boolean,
-    isRightDocked: Boolean,
-    draggedItemId: MutableState<String?>,
-    dragOffset: MutableState<Float>,
-    currentDropTargetIndex: MutableState<Int?>,
-    mutableItemsList: MutableList<AzNavItem>,
-    itemsToRender: List<AzNavItem>,
-    isHostExpanded: Boolean
+    isSelected: Boolean,
+    buttonSize: Dp,
+    onClick: (() -> Unit)?,
+    onRailCyclerClick: (AzNavItem) -> Unit,
+    onItemClick: () -> Unit,
+    onHostClick: () -> Unit = {},
+    onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
+    infoScreen: Boolean = false,
+    dragModifier: Modifier = Modifier,
+    activeColor: androidx.compose.ui.graphics.Color? = null
 ) {
-    val hapticFeedback = LocalHapticFeedback.current
-    var showHiddenMenu by remember { mutableStateOf(false) }
-    var showScreenTitle by remember { mutableStateOf(false) }
-    var showNestedRail by remember { mutableStateOf(false) }
+    val textToShow = when {
+        item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
+        item.isCycler -> item.selectedOption ?: ""
+        else -> item.text
+    }
 
-    val isDragging = draggedItemId.value == item.id
-    val offset = if (isDragging) dragOffset.value else 0f
-    val isVertical = orientation == AzOrientation.Vertical
+    // In infoScreen mode, only Host items are interactive.
+    val isEnabled = if (infoScreen) item.isHost else !item.disabled
 
-    // Active Check for Reloc Focus logic
-    val isSelected = (item.route != null && currentDestination == item.route) || item.classifiers.any { activeClassifiers.contains(it) }
-
-    if (item.isNestedRail) {
-        Box {
-            AzNavRailButton(
-                onClick = { if (!infoScreen) showNestedRail = !showNestedRail },
-                text = item.text,
-                color = item.color ?: MaterialTheme.colorScheme.onSurface,
-                activeColor = activeColor,
-                shape = item.shape ?: defaultShape,
-                enabled = !item.disabled,
-                isSelected = isSelected,
-                itemContent = item.content,
-                onGloballyPositioned = { rect -> onItemGloballyPositioned?.invoke(item.id, rect) }
-            )
-            if (showNestedRail) {
-                Popup(
-                    alignment = if (isRightDocked) Alignment.TopEnd else Alignment.TopStart,
-                    onDismissRequest = { showNestedRail = false },
-                    properties = PopupProperties(focusable = true, dismissOnClickOutside = true)
-                ) {
-                    NestedRail(
-                        parentItem = item,
-                        items = item.nestedRailItems ?: emptyList(),
-                        currentDestination = currentDestination,
-                        activeColor = activeColor,
-                        activeClassifiers = activeClassifiers,
-                        onItemSelected = {
-                            onItemSelected(it)
-                            showNestedRail = false
-                        },
-                        alignment = item.nestedRailAlignment ?: AzNestedRailAlignment.VERTICAL,
-                        isRightDocked = isRightDocked
-                    )
-                }
+    val finalOnClick: () -> Unit = if (infoScreen) {
+        if (item.isHost) {
+            { onHostClick() }
+        } else {
+            {} // No-op
+        }
+    } else if (item.isRelocItem) {
+        // Reloc items do not support navigation/clicking via RailContent;
+        // logic is handled by DraggableRailItemWrapper.
+        {}
+    } else {
+        if (item.isHost) {
+            {
+                handleHostItemClick(item, navController, onClick, onItemClick, onHostClick)
+            }
+        } else if (item.isCycler) {
+            {
+                onRailCyclerClick(item)
+                onItemClick()
+            }
+        } else {
+            {
+                item.route?.let { navController?.navigate(it) }
+                onClick?.invoke()
+                onItemClick()
             }
         }
-        return
     }
 
     Box(
-        modifier = Modifier
-            .offset { if (isVertical) IntOffset(0, offset.roundToInt()) else IntOffset(offset.roundToInt(), 0) }
-            .zIndex(if (isDragging) 1f else 0f)
+        modifier = (if (item.shape == AzButtonShape.RECTANGLE) Modifier.padding(vertical = 2.dp) else Modifier)
+            .onGloballyPositioned { coordinates ->
+                onItemGloballyPositioned?.invoke(item.id, coordinates.boundsInWindow())
+            }
+            .then(dragModifier)
     ) {
-        val clickModifier = if (item.isRelocItem && !infoScreen) {
-            Modifier.pointerInput(Unit) {
-                detectDragGestures(
-                    onDragStart = {
-                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                        showHiddenMenu = false
-                        draggedItemId.value = item.id
-                    },
-                    onDragEnd = {
-                        val targetIdx = currentDropTargetIndex.value
-                        if (targetIdx != null && draggedItemId.value != null) {
-                            RelocItemHandler.updateOrder(mutableItemsList, draggedItemId.value!!, targetIdx)
-                            scope.onRelocateMap[draggedItemId.value!!]?.invoke(
-                                itemsToRender.indexOfFirst { it.id == draggedItemId.value },
-                                targetIdx,
-                                mutableItemsList.map { it.id }
-                            )
-                        }
-                        draggedItemId.value = null
-                        dragOffset.value = 0f
-                        currentDropTargetIndex.value = null
-                    },
-                    onDragCancel = {
-                        draggedItemId.value = null
-                        dragOffset.value = 0f
-                        currentDropTargetIndex.value = null
-                    },
-                    onDrag = { change, dragAmount ->
-                        change.consume()
-                        dragOffset.value += if (isVertical) dragAmount.y else dragAmount.x
-                        currentDropTargetIndex.value = RelocItemHandler.calculateTargetIndex(
-                            items = mutableItemsList,
-                            draggedItemId = draggedItemId.value!!,
-                            currentDragOffset = dragOffset.value,
-                            itemBounds = RelocItemHandler.itemBoundsCache,
-                            isVertical = isVertical
-                        )
-                    }
-                )
-            }
-        } else Modifier
-
-        Box(modifier = clickModifier) {
-            AzNavRailButton(
-                onClick = {
-                    if (infoScreen) return@AzNavRailButton
-                    showScreenTitle = true
-                    if (item.isRelocItem) {
-                        // Strict logic: Focus/Select first. If already focused, toggle hidden menu.
-                        if (isSelected) {
-                            showHiddenMenu = !showHiddenMenu
-                        } else {
-                            onItemSelected(item)
-                        }
-                    } else if (item.isHost) {
-                        // Host Toggle Logic
-                        scope.onClickMap[item.id]?.invoke() // This should toggle state in HostActivityLayout if managed there
-                        // But since state is local to RailContent mostly for UI, we rely on the parent state being passed down.
-                        // We also need to manually trigger the scope callback to update the map passed to us.
-                        // The `onItemSelected` passed from AzNavRail does `scope.onClickMap[item.id]?.invoke()`.
-                        onItemSelected(item)
-                    } else {
-                        onItemSelected(item)
-                    }
-                },
-                onLongClick = {
-                    if (infoScreen) return@AzNavRailButton
-                    showScreenTitle = true
-                    if (item.isRelocItem && !isDragging) {
-                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                        showHiddenMenu = false
-                        draggedItemId.value = item.id
-                    }
-                },
-                text = item.text,
-                color = item.color ?: MaterialTheme.colorScheme.onSurface,
-                activeColor = activeColor,
-                shape = item.shape ?: defaultShape,
-                enabled = !item.disabled,
-                isSelected = isSelected,
-                itemContent = item.content,
-                onGloballyPositioned = { rect ->
-                    if (item.isRelocItem) RelocItemHandler.itemBoundsCache[item.id] = rect
-                    onItemGloballyPositioned?.invoke(item.id, rect)
-                }
-            )
-        }
-
-        // Screen Title Popup - Strict Square Compliance
-        if (showScreenTitle && item.screenTitle != AzNavRailDefaults.NO_TITLE) {
-            val titleText = item.screenTitle ?: item.text
-            if (titleText.isNotEmpty()) {
-                Popup(
-                    alignment = if (isRightDocked) Alignment.TopStart else Alignment.TopEnd,
-                    properties = PopupProperties(focusable = false)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .padding(top = 12.dp)
-                            .then(if (isRightDocked) Modifier.padding(start = 32.dp) else Modifier.padding(end = 16.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant, RectangleShape)
-                            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), RectangleShape)
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text(text = titleText, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-                LaunchedEffect(Unit) { delay(1500); showScreenTitle = false }
-            }
-        }
-
-        // Hidden Menu - Strict Square Compliance
-        if (showHiddenMenu && item.hiddenMenuItems != null && item.hiddenMenuItems.isNotEmpty()) {
-            Popup(
-                alignment = Alignment.TopEnd,
-                offset = IntOffset(if (isRightDocked) -150 else 150, 0),
-                onDismissRequest = { showHiddenMenu = false },
-                properties = PopupProperties(focusable = true)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .background(MaterialTheme.colorScheme.surface, RectangleShape)
-                        .border(1.dp, MaterialTheme.colorScheme.outline, RectangleShape)
-                        .padding(8.dp)
-                        .width(IntrinsicSize.Max)
-                ) {
-                    item.hiddenMenuItems.forEach { hiddenItem ->
-                        if (hiddenItem.isInput) {
-                            var text by remember { mutableStateOf("") }
-                            AzTextBox(
-                                value = text,
-                                onValueChange = { text = it },
-                                hint = hiddenItem.hint ?: hiddenItem.text,
-                                onSubmit = {
-                                    showHiddenMenu = false
-                                }
-                            )
-                        } else {
-                            Text(
-                                text = hiddenItem.text,
-                                modifier = Modifier.fillMaxWidth().clickable {
-                                    if (hiddenItem.route != null && navController != null) navController.navigate(hiddenItem.route)
-                                    showHiddenMenu = false
-                                }.padding(8.dp)
-                            )
-                        }
-                    }
-                }
-            }
-        }
+        AzNavRailButton(
+            onClick = finalOnClick,
+            text = textToShow,
+            modifier = Modifier.width(buttonSize),
+            color = item.color ?: MaterialTheme.colorScheme.primary,
+            activeColor = activeColor ?: MaterialTheme.colorScheme.primary,
+            size = buttonSize,
+            shape = item.shape,
+            enabled = isEnabled,
+            isSelected = isSelected
+        )
     }
+}
+
+internal fun handleHostItemClick(
+    item: AzNavItem,
+    navController: NavController?,
+    onClick: (() -> Unit)?,
+    onItemClick: () -> Unit,
+    onHostClick: () -> Unit
+) {
+    onHostClick()
+    item.route?.let { navController?.navigate(it) }
+    onClick?.invoke()
+    onItemClick()
 }

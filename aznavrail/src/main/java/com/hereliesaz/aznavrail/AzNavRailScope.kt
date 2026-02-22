@@ -17,7 +17,7 @@ import java.util.Collections.emptySet
 interface AzNavRailScope {
     // Legacy/DSL split methods
     fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 130.dp, collapsedWidth: Dp = 80.dp, showFooter: Boolean = true)
-    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.RECTANGLE, headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE)
+    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.CIRCLE, headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE)
     fun azAdvanced(isLoading: Boolean = false, infoScreen: Boolean = false, onDismissInfoScreen: (() -> Unit)? = null, overlayService: Class<out android.app.Service>? = null, onUndock: (() -> Unit)? = null, enableRailDragging: Boolean = false, onRailDrag: ((Float, Float) -> Unit)? = null, onOverlayDrag: ((Float, Float) -> Unit)? = null, onItemGloballyPositioned: ((String, Rect) -> Unit)? = null)
 
     // Combined method matching AZNAVRAIL_COMPLETE_GUIDE.md
@@ -28,7 +28,7 @@ interface AzNavRailScope {
         collapsedRailWidth: Dp = 80.dp,
         showFooter: Boolean = true,
         isLoading: Boolean = false,
-        defaultShape: AzButtonShape = AzButtonShape.RECTANGLE,
+        defaultShape: AzButtonShape = AzButtonShape.CIRCLE,
         enableRailDragging: Boolean = false,
         headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
         onUndock: (() -> Unit)? = null,
@@ -124,7 +124,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
 
     // Theme
     var activeColor: Color = Color.Unspecified
-    var defaultShape: AzButtonShape = AzButtonShape.RECTANGLE // Strict: default is rectangle
+    var defaultShape: AzButtonShape = AzButtonShape.CIRCLE // Restored: default is circle
     var headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE // Default per legacy, overridden in UI
 
     // Advanced

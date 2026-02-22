@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -67,12 +68,9 @@ import java.util.Locale
 
 /**
  * A secret menu for debugging and location history syncing.
- *
  * Activated by long-pressing the @HereLiesAz footer item when a `secLoc`
  * (Developer Configuration) is passed.
- *
- * @param secLoc The target identifier for verification.
- * @return A lambda to trigger the secret screen dialog.
+ * Restored to 6.99 visual style (Rounded corners).
  */
 @Composable
 internal fun SecretScreens(
@@ -121,9 +119,8 @@ private fun SecLocMainDialog(
 @Composable
 private fun ModeSelectionDialog(onDismiss: () -> Unit, onSelectMode: (String) -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
-        // STRICT RULE: No Rounded Corners.
         Card(
-            shape = RectangleShape,
+            shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -146,9 +143,8 @@ private fun SecretCredentialsDialog(
     onUnlock: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
-        // STRICT RULE: No Rounded Corners.
         Card(
-            shape = RectangleShape,
+            shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(
@@ -211,12 +207,12 @@ private fun SecLocViewerDialog(onDismiss: () -> Unit) {
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        // STRICT RULE: No Rounded Corners.
+        val shape = RoundedCornerShape(16.dp)
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
-                .clip(RectangleShape)
+                .clip(shape)
                 .background(MaterialTheme.colorScheme.surface)
         ) {
             Column(
@@ -232,7 +228,7 @@ private fun SecLocViewerDialog(onDismiss: () -> Unit) {
                 )
 
                 Card(
-                    shape = RectangleShape,
+                    shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
                     modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
                 ) {
@@ -377,12 +373,12 @@ private fun SecLocHistoryDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        // STRICT RULE: No Rounded Corners.
+        val shape = RoundedCornerShape(16.dp)
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
-                .clip(RectangleShape)
+                .clip(shape)
                 .background(MaterialTheme.colorScheme.surface)
         ) {
             Column(
@@ -397,7 +393,7 @@ private fun SecLocHistoryDialog(
 
                 if (isSource) {
                     Card(
-                        shape = RectangleShape,
+                        shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                         modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
                     ) {
@@ -433,9 +429,8 @@ private fun HistoryList(
     ) {
         items(history) { entry ->
             val context = LocalContext.current
-            // STRICT RULE: No Rounded Corners.
             Card(
-                shape = RectangleShape,
+                shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 modifier = Modifier.fillMaxWidth().clickable {
                     try {

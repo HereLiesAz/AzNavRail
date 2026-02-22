@@ -4,13 +4,13 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
@@ -18,10 +18,7 @@ import androidx.compose.ui.unit.sp
 
 /**
  * A simple loading spinner component.
- *
- * It renders a rotating box with the text "loading..." inside.
- * The spinner rotates continuously on the Y-axis.
- * The color is derived from [MaterialTheme.colorScheme.primary].
+ * Restored to 6.99 circular style.
  */
 @Composable
 fun AzLoad() {
@@ -35,8 +32,6 @@ fun AzLoad() {
         )
     )
 
-    // STRICT RULE: No Rounded Corners. Changed CircleShape to RectangleShape.
-    // It's a rotating square now.
     Box(
         modifier = Modifier
             .size(120.dp)
@@ -46,7 +41,7 @@ fun AzLoad() {
             .border(
                 width = 2.dp,
                 color = MaterialTheme.colorScheme.primary,
-                shape = RectangleShape
+                shape = CircleShape
             ),
         contentAlignment = Alignment.Center
     ) {

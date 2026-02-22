@@ -180,14 +180,15 @@ fun AzForm(
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     CompositionLocalProvider(LocalContentColor provides outlineColor) {
-                        // STRICT RULE: No Rounded Corners. Used RectangleShape for background and border.
+                        // Restore 6.99 visual style (rounded) for submit button in form
+                        val shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
                         Box(
                             modifier = Modifier
                                 .clickable { onSubmit(formData.toMap()) }
-                                .background(AzTextBoxDefaults.getBackgroundColor().copy(alpha = AzTextBoxDefaults.getBackgroundOpacity()), RectangleShape)
+                                .background(AzTextBoxDefaults.getBackgroundColor().copy(alpha = AzTextBoxDefaults.getBackgroundOpacity()), shape)
                                 .then(
                                     if (!outlined) {
-                                        Modifier.border(1.dp, outlineColor, RectangleShape)
+                                        Modifier.border(1.dp, outlineColor, shape)
                                     } else {
                                         Modifier
                                     }

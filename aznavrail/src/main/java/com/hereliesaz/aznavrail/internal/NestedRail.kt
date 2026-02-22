@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -15,11 +16,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.AzNavRailButton
+import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 
@@ -38,16 +39,13 @@ internal fun NestedRail(
     val windowHeight = with(density) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
     val anchorBounds = RelocItemHandler.itemBoundsCache[parentItem.id]
 
-    val yOffset = if (alignment == AzNestedRailAlignment.VERTICAL && anchorBounds != null) {
-        ((windowHeight / 2f) - anchorBounds.top).toInt()
-    } else 0
-
-    // STRICT RULE: No Rounded Corners. Changed shape to RectangleShape.
+    // Restore 6.99 rounded visual style for nested rails
+    val surfaceShape = RoundedCornerShape(16.dp)
     val modifier = Modifier
         .then(if (isRightDocked) Modifier.padding(end = 16.dp) else Modifier.padding(start = 16.dp))
-        .clip(RectangleShape)
+        .clip(surfaceShape)
         .background(MaterialTheme.colorScheme.surfaceVariant)
-        .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), RectangleShape)
+        .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), surfaceShape)
         .padding(8.dp)
 
     if (alignment == AzNestedRailAlignment.VERTICAL) {
@@ -62,9 +60,7 @@ internal fun NestedRail(
                     text = item.text,
                     color = item.color ?: MaterialTheme.colorScheme.onSurface,
                     activeColor = activeColor,
-                    // STRICT RULE: Same size/shape as main items (Rectangle)
-                    shape = com.hereliesaz.aznavrail.model.AzButtonShape.RECTANGLE,
-                    // Explicitly pass default size to ensure parity
+                    shape = AzButtonShape.CIRCLE, // Restore 6.99 CircleShape for nested items
                     size = AzNavRailDefaults.ButtonSize,
                     enabled = !item.disabled,
                     isSelected = (item.route != null && currentDestination == item.route) || item.classifiers.any { activeClassifiers.contains(it) },
@@ -84,8 +80,7 @@ internal fun NestedRail(
                     text = item.text,
                     color = item.color ?: MaterialTheme.colorScheme.onSurface,
                     activeColor = activeColor,
-                    // STRICT RULE: Same size/shape as main items (Rectangle)
-                    shape = com.hereliesaz.aznavrail.model.AzButtonShape.RECTANGLE,
+                    shape = AzButtonShape.CIRCLE, // Restore 6.99 CircleShape for nested items
                     size = AzNavRailDefaults.ButtonSize,
                     enabled = !item.disabled,
                     isSelected = (item.route != null && currentDestination == item.route) || item.classifiers.any { activeClassifiers.contains(it) },

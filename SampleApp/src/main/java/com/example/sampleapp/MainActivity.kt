@@ -1,5 +1,8 @@
 package com.example.sampleapp
 
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,19 +12,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.hereliesaz.aznavrail.AzActivity
-import com.hereliesaz.aznavrail.AzNavRailScope
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.hereliesaz.aznavrail.AzHostActivityLayout
+import com.hereliesaz.aznavrail.AzNavHost
 import com.hereliesaz.aznavrail.AzTextBox
 import com.hereliesaz.aznavrail.AzToggle
-import com.hereliesaz.aznavrail.annotation.*
 import com.hereliesaz.aznavrail.model.AzDockingSide
 
-@Az(
-    app = App(dock = "LEFT"),
-    advanced = Advanced(isValid = true, isLoadingProperty = "isLoading", infoScreen = true)
-)
-class MainActivity : AzActivity() {
-    override val graph = AzGraph
+class MainActivity : ComponentActivity() {
 
     // --- Configuration State (for runtime changes from Home screen) ---
     var dockingSide by mutableStateOf(AzDockingSide.LEFT)
@@ -34,7 +33,6 @@ class MainActivity : AzActivity() {
     var isLoading by mutableStateOf(false)
     var infoScreen by mutableStateOf(false)
 
-
     // --- Reactive State for Live Dictatorship (v7.25) ---
     var wifiEnabled by mutableStateOf(true)
     var currentMode by mutableStateOf("Auto")
@@ -45,32 +43,92 @@ class MainActivity : AzActivity() {
     var isItemVisible by mutableStateOf(true)
     var isItemDisabled by mutableStateOf(false)
 
-    override fun AzNavRailScope.configureRail() {
-        azConfig(
-            dockingSide = dockingSide,
-            packButtons = packButtons,
-            displayAppName = displayAppName,
-            usePhysicalDocking = usePhysicalDocking,
-            noMenu = noMenu,
-            vibrate = vibrate,
-            showFooter = showFooter
-        )
-        azAdvanced(
-            infoScreen = infoScreen,
-            onDismissInfoScreen = { infoScreen = false },
-            isLoading = isLoading
-        )
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            MaterialTheme {
+                val navController = rememberNavController()
+
+                // THE BUREAUCRACY: Explicit Layout Usage (6.99 Style)
+                AzHostActivityLayout(
+                    navController = navController,
+                    initiallyExpanded = false
+                ) {
+                    // SECTOR 2: CONFIG
+                    azConfig(
+                        dockingSide = dockingSide,
+                        packButtons = packButtons,
+                        displayAppName = displayAppName,
+                        usePhysicalDocking = usePhysicalDocking,
+                        noMenu = noMenu,
+                        vibrate = vibrate,
+                        showFooter = showFooter
+                    )
+
+                    // SECTOR 3: ADVANCED
+                    azAdvanced(
+                        isLoading = isLoading,
+                        infoScreen = infoScreen,
+                        onDismissInfoScreen = { infoScreen = false }
+                    )
+
+                    // RAIL ITEMS: Explicitly defined and bound to state
+                    if (isItemVisible) {
+                        azRailItem(
+                            id = "dynamic_item",
+                            text = dynamicTitle,
+                            content = dynamicBadge,
+                            disabled = isItemDisabled,
+                            route = "dynamic_item"
+                        )
+                    }
+
+                    azRailToggle(
+                        id = "wifi_toggle",
+                        isChecked = wifiEnabled,
+                        toggleOnText = "Wi-Fi: On",
+                        toggleOffText = "Wi-Fi: Off",
+                        onClick = { wifiEnabled = !wifiEnabled }
+                    )
+
+                    azRailCycler(
+                        id = "mode_cycler",
+                        options = modes,
+                        selectedOption = currentMode,
+                        onClick = {
+                            val currentIndex = modes.indexOf(currentMode)
+                            currentMode = modes[(currentIndex + 1) % modes.size]
+                        }
+                    )
+
+                    azRailItem(
+                        id = "control_panel",
+                        content = android.R.drawable.ic_menu_edit,
+                        text = "Control Panel",
+                        route = "control_panel"
+                    )
+
+                    // ONSCREEN CONTENT: Explicitly managed layering
+                    onscreen {
+                        AzNavHost(
+                            startDestination = "dynamic_item",
+                            navController = navController
+                        ) {
+                            composable("dynamic_item") {
+                                DynamicItem()
+                            }
+                            composable("control_panel") {
+                                ControlPanel()
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    // --- Rail Items ---
+    // --- Content Screens ---
 
-    @Az(rail = RailItem(
-        isValid = true,
-        textProperty = "dynamicTitle",
-        iconTextProperty = "dynamicBadge",
-        visibleProperty = "isItemVisible",
-        disabledProperty = "isItemDisabled"
-    ))
     @Composable
     fun DynamicItem() {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -80,21 +138,8 @@ class MainActivity : AzActivity() {
         }
     }
 
-    @Az(toggle = Toggle(isValid = true, isCheckedProperty = "wifiEnabled", toggleOnText = "Wi-Fi: On", toggleOffText = "Wi-Fi: Off"))
-    fun WifiToggle() {
-        // This function is empty because the KSP processor handles the state change.
-        // It's required to give the annotation a target.
-    }
-
-    @Az(cycler = Cycler(isValid = true, optionsProperty = "modes", selectedOptionProperty = "currentMode"))
-    fun ModeCycler() {
-        // This function is empty for the same reason as WifiToggle.
-    }
-
-    @Az(rail = RailItem(isValid = true, icon = android.R.drawable.ic_menu_edit))
     @Composable
     fun ControlPanel() {
-        // This screen allows testing the reactive bindings
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
