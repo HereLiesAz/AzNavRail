@@ -61,6 +61,9 @@ internal object AzNavRailDefaults {
     val FooterSpacerHeight = 12.dp
     val HeaderHeightDp = 72.dp
     val ButtonSize = 48.dp
+    
+    /** Sentinel value for no title. */
+    const val NO_TITLE = "NO_TITLE_AZ_NAV_RAIL"
 }
 
 /**
