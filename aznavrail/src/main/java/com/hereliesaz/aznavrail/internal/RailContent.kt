@@ -66,8 +66,7 @@ internal fun RailContent(
 
     val content = @Composable {
         mutableItems.forEach { item ->
-            val isHostExpanded = hostStates[item.id] == true
-
+            // Render the Host item
             DraggableItem(
                 item = item,
                 scope = scope,
@@ -77,7 +76,20 @@ internal fun RailContent(
                 defaultShape = shape,
                 activeClassifiers = activeClassifiers,
                 orientation = orientation,
-                onItemSelected = onItemSelected,
+                onItemSelected = { selectedItem ->
+                    if (selectedItem.isHost) {
+                        // Toggle Host Logic:
+                        // We check if it's currently expanded in hostStates.
+                        // Since this callback is from the button click, the caller (AzNavRail) has likely updated the state
+                        // via the provided onClick map. However, we also need to trigger the UI update here.
+                        // Ideally, we pass a toggle callback. But scope.onClickMap handles logic.
+                        // Let's rely on hostStates update which should trigger recomposition.
+                        // We must ensure the item's onClick in scope toggles this state.
+                        onItemSelected(selectedItem)
+                    } else {
+                        onItemSelected(selectedItem)
+                    }
+                },
                 onItemGloballyPositioned = onItemGloballyPositioned,
                 infoScreen = infoScreen,
                 isRightDocked = isRightDocked,
@@ -85,15 +97,16 @@ internal fun RailContent(
                 dragOffset = dragOffset,
                 currentDropTargetIndex = currentDropTargetIndex,
                 mutableItemsList = mutableItems,
-                itemsToRender = itemsToRender
+                itemsToRender = itemsToRender,
+                isHostExpanded = hostStates[item.id] == true
             )
 
-            if (isHostExpanded) {
+            // Inline Expansion Logic
+            if (hostStates[item.id] == true) {
+                // Find sub-items
                 val subItems = items.filter { it.isSubItem && it.hostId == item.id }
-                val subItemsToRender = if (reverseLayout) subItems.reversed() else subItems
-                val mutableSubItems = remember(subItemsToRender) { subItemsToRender.toMutableList() }
-
-                mutableSubItems.forEach { subItem ->
+                // Render them immediately after the host
+                subItems.forEach { subItem ->
                     DraggableItem(
                         item = subItem,
                         scope = scope,
@@ -110,8 +123,9 @@ internal fun RailContent(
                         draggedItemId = draggedItemId,
                         dragOffset = dragOffset,
                         currentDropTargetIndex = currentDropTargetIndex,
-                        mutableItemsList = mutableSubItems,
-                        itemsToRender = subItemsToRender
+                        mutableItemsList = mutableItems, // Note: Dragging sub-items might need separate list context
+                        itemsToRender = itemsToRender,
+                        isHostExpanded = false
                     )
                 }
             }
@@ -153,7 +167,8 @@ private fun DraggableItem(
     dragOffset: MutableState<Float>,
     currentDropTargetIndex: MutableState<Int?>,
     mutableItemsList: MutableList<AzNavItem>,
-    itemsToRender: List<AzNavItem>
+    itemsToRender: List<AzNavItem>,
+    isHostExpanded: Boolean
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     var showHiddenMenu by remember { mutableStateOf(false) }
@@ -164,6 +179,9 @@ private fun DraggableItem(
     val offset = if (isDragging) dragOffset.value else 0f
     val isVertical = orientation == AzOrientation.Vertical
 
+    // Active Check for Reloc Focus logic
+    val isSelected = (item.route != null && currentDestination == item.route) || item.classifiers.any { activeClassifiers.contains(it) }
+
     if (item.isNestedRail) {
         Box {
             AzNavRailButton(
@@ -173,7 +191,7 @@ private fun DraggableItem(
                 activeColor = activeColor,
                 shape = item.shape ?: defaultShape,
                 enabled = !item.disabled,
-                isSelected = (item.route != null && currentDestination == item.route) || item.classifiers.any { activeClassifiers.contains(it) },
+                isSelected = isSelected,
                 itemContent = item.content,
                 onGloballyPositioned = { rect -> onItemGloballyPositioned?.invoke(item.id, rect) }
             )
@@ -254,8 +272,21 @@ private fun DraggableItem(
                 onClick = {
                     if (infoScreen) return@AzNavRailButton
                     showScreenTitle = true
-                    if (item.isRelocItem) showHiddenMenu = !showHiddenMenu
-                    else {
+                    if (item.isRelocItem) {
+                        // Strict logic: Focus/Select first. If already focused, toggle hidden menu.
+                        if (isSelected) {
+                            showHiddenMenu = !showHiddenMenu
+                        } else {
+                            onItemSelected(item)
+                        }
+                    } else if (item.isHost) {
+                        // Host Toggle Logic
+                        scope.onClickMap[item.id]?.invoke() // This should toggle state in HostActivityLayout if managed there
+                        // But since state is local to RailContent mostly for UI, we rely on the parent state being passed down.
+                        // We also need to manually trigger the scope callback to update the map passed to us.
+                        // The `onItemSelected` passed from AzNavRail does `scope.onClickMap[item.id]?.invoke()`.
+                        onItemSelected(item)
+                    } else {
                         onItemSelected(item)
                     }
                 },
@@ -273,7 +304,7 @@ private fun DraggableItem(
                 activeColor = activeColor,
                 shape = item.shape ?: defaultShape,
                 enabled = !item.disabled,
-                isSelected = (item.route != null && currentDestination == item.route) || item.classifiers.any { activeClassifiers.contains(it) },
+                isSelected = isSelected,
                 itemContent = item.content,
                 onGloballyPositioned = { rect ->
                     if (item.isRelocItem) RelocItemHandler.itemBoundsCache[item.id] = rect
