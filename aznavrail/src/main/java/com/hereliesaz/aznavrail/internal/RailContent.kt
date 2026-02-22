@@ -7,7 +7,6 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -16,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -281,6 +281,7 @@ private fun DraggableItem(
             )
         }
 
+        // STRICT RULE: No Rounded Corners. Changed shape to RectangleShape.
         if (showScreenTitle && item.screenTitle != AzNavRailDefaults.NO_TITLE) {
             val titleText = item.screenTitle ?: item.text
             if (titleText.isNotEmpty()) {
@@ -292,8 +293,8 @@ private fun DraggableItem(
                         modifier = Modifier
                             .padding(top = 12.dp)
                             .then(if (isRightDocked) Modifier.padding(start = 32.dp) else Modifier.padding(end = 16.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
-                            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RectangleShape)
+                            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), RectangleShape)
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Text(text = titleText, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -312,7 +313,7 @@ private fun DraggableItem(
             ) {
                 Column(
                     modifier = Modifier
-                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surface, RectangleShape) // No rounded
                         .padding(8.dp)
                         .width(IntrinsicSize.Max)
                 ) {
