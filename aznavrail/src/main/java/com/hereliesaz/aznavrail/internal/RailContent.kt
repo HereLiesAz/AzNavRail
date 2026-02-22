@@ -25,7 +25,6 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
-import com.hereliesaz.aznavrail.AzNavRail
 import com.hereliesaz.aznavrail.AzNavRailButton
 import com.hereliesaz.aznavrail.AzNavRailScopeImpl
 import com.hereliesaz.aznavrail.AzTextBox
@@ -282,7 +281,7 @@ private fun DraggableItem(
             )
         }
 
-        if (showScreenTitle && item.screenTitle != AzNavRail.noTitle) {
+        if (showScreenTitle && item.screenTitle != AzNavRailDefaults.NO_TITLE) {
             val titleText = item.screenTitle ?: item.text
             if (titleText.isNotEmpty()) {
                 Popup(
