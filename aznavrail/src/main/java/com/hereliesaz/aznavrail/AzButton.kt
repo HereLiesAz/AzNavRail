@@ -69,7 +69,7 @@ fun AzButton(
  * A toggle button that displays different text for its on and off states.
  *
  * @param isChecked Whether the toggle is currently in the "on" state.
- * @param onToggle The callback to be invoked when the button is toggled.
+ * @param onToggle The callback to be invoked when the button is toggled. Passes the new state.
  * @param toggleOnText The text to display when the toggle is on.
  * @param toggleOffText The text to display when the toggle is off.
  * @param modifier The modifier to be applied to the button.
@@ -82,7 +82,7 @@ fun AzButton(
 @Composable
 fun AzToggle(
     isChecked: Boolean,
-    onToggle: () -> Unit,
+    onToggle: (Boolean) -> Unit,
     toggleOnText: String,
     toggleOffText: String,
     modifier: Modifier = Modifier,
@@ -94,7 +94,7 @@ fun AzToggle(
 ) {
     val text = if (isChecked) toggleOnText else toggleOffText
     AzNavRailButton(
-        onClick = onToggle,
+        onClick = { onToggle(!isChecked) },
         text = text,
         color = color,
         activeColor = activeColor,
@@ -116,7 +116,7 @@ fun AzToggle(
  *
  * @param options The list of options to cycle through.
  * @param selectedOption The currently selected option (source of truth).
- * @param onCycle The callback to be invoked for the final selected option after a delay.
+ * @param onCycle The callback to be invoked for the final selected option after a delay. Passes the new selected option.
  * @param modifier The modifier to be applied to the button.
  * @param color The base color of the button's border and text.
  * @param activeColor The color used when the button is in an active state.
@@ -128,7 +128,7 @@ fun AzToggle(
 fun AzCycler(
     options: List<String>,
     selectedOption: String,
-    onCycle: () -> Unit,
+    onCycle: (String) -> Unit,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
     activeColor: Color = MaterialTheme.colorScheme.primary,
@@ -156,16 +156,7 @@ fun AzCycler(
 
             job = coroutineScope.launch {
                 delay(1000L)
-
-                val currentIndexInVm = options.indexOf(selectedOption)
-                val targetIndex = options.indexOf(displayedOption)
-
-                if (currentIndexInVm != -1 && targetIndex != -1) {
-                    val clicksToCatchUp = (targetIndex - currentIndexInVm + options.size) % options.size
-                    repeat(clicksToCatchUp) {
-                        onCycle()
-                    }
-                }
+                onCycle(displayedOption)
             }
         },
         text = displayedOption,

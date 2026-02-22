@@ -2,6 +2,7 @@ import java.util.Random
 
 plugins {
     alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.parcelize)
     id("maven-publish")
@@ -11,7 +12,7 @@ val generatedPin = (100000 + Random().nextInt(900000)).toString()
 
 android {
     namespace = "com.hereliesaz.aznavrail"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 26
@@ -28,6 +29,10 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlin {
+        jvmToolchain(17)
     }
 
     buildFeatures {

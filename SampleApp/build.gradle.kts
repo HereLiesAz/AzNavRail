@@ -35,7 +35,6 @@ android {
 
 dependencies {
     implementation(project(":aznavrail"))
-    implementation(project(":aznavrail-annotation"))
     ksp(project(":aznavrail-processor"))
 
     implementation(platform(libs.androidx.compose.bom))
