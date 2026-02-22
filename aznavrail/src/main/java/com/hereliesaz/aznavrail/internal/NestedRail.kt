@@ -62,7 +62,7 @@ internal fun NestedRail(
                     text = item.text,
                     color = item.color ?: MaterialTheme.colorScheme.onSurface,
                     activeColor = activeColor,
-                    shape = item.shape ?: com.hereliesaz.aznavrail.model.AzButtonShape.SQUARE, // Defaulting to Square/Rectangle preference
+                    shape = item.shape ?: com.hereliesaz.aznavrail.model.AzButtonShape.RECTANGLE, // Defaulting to Square/Rectangle preference
                     enabled = !item.disabled,
                     isSelected = (item.route != null && currentDestination == item.route) || item.classifiers.any { activeClassifiers.contains(it) },
                     itemContent = item.content
@@ -81,7 +81,7 @@ internal fun NestedRail(
                     text = item.text,
                     color = item.color ?: MaterialTheme.colorScheme.onSurface,
                     activeColor = activeColor,
-                    shape = item.shape ?: com.hereliesaz.aznavrail.model.AzButtonShape.SQUARE,
+                    shape = item.shape ?: com.hereliesaz.aznavrail.model.AzButtonShape.RECTANGLE,
                     enabled = !item.disabled,
                     isSelected = (item.route != null && currentDestination == item.route) || item.classifiers.any { activeClassifiers.contains(it) },
                     itemContent = item.content
