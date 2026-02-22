@@ -54,7 +54,7 @@ internal fun AzNavRailButton(
     activeColor: Color = MaterialTheme.colorScheme.primary,
     colors: ButtonColors? = null,
     size: Dp = AzNavRailDefaults.ButtonSize,
-    shape: AzButtonShape = AzButtonShape.CIRCLE,
+    shape: AzButtonShape = AzButtonShape.RECTANGLE,
     enabled: Boolean = true,
     isSelected: Boolean = false,
     isLoading: Boolean = false,
@@ -83,19 +83,28 @@ internal fun AzNavRailButton(
         contentPadding
     }
 
-    val shapeModifier = when (shape) {
-        AzButtonShape.CIRCLE -> CircleShape
-        AzButtonShape.SQUARE -> RoundedCornerShape(8.dp)
-        AzButtonShape.RECTANGLE -> RoundedCornerShape(8.dp)
-        AzButtonShape.NONE -> RectangleShape
-    }
+    // STRICT COMPLIANCE: Override all shapes to RectangleShape
+    val shapeModifier = RectangleShape
 
     val interactionSource = remember { MutableInteractionSource() }
 
+    // Logic: If user asked for RECTANGLE or NONE (or anything else since we override shape), use box sizing
+    // But we still want to respect the 'intent' of spacing if it was originally Circle/Square vs Rect.
+    // However, compliance dictates "NO rounded corners". It doesn't strictly say "everything is 36dp high".
+    // But AzNavRail usually has square/circle buttons as 48dp and rect as 36dp.
+    // We will keep the sizing logic but force the visual shape to Rectangle.
+    
     val btnModifier = if (shape == AzButtonShape.RECTANGLE || shape == AzButtonShape.NONE) {
         Modifier.padding(horizontal = 8.dp, vertical = 4.dp).defaultMinSize(minWidth = 64.dp, minHeight = 36.dp)
     } else {
-        Modifier.requiredSize(size) // FORCES the size so parents can never squish it
+        // Even if it was CIRCLE, we render it as a Square now (size x size).
+        Modifier.requiredSize(size) 
+    }
+
+    val borderModifier = if (shape != AzButtonShape.NONE) {
+        Modifier.border(3.dp, if (enabled) finalColor else disabledColor, shapeModifier)
+    } else {
+        Modifier
     }
 
     Box(
@@ -105,9 +114,7 @@ internal fun AzNavRailButton(
                 onGloballyPositioned?.invoke(coordinates.boundsInWindow())
             }
             .clip(shapeModifier)
-            .then(
-                if (shape != AzButtonShape.NONE) Modifier.border(3.dp, if (enabled) finalColor else disabledColor, shapeModifier) else Modifier
-            )
+            .then(borderModifier)
             .combinedClickable(
                 interactionSource = interactionSource,
                 indication = LocalIndication.current,
