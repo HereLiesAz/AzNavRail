@@ -1,5 +1,7 @@
 package com.hereliesaz.aznavrail
 
+import android.app.Activity
+import android.content.ContextWrapper
 import android.view.Surface
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
@@ -13,10 +15,14 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -26,11 +32,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
+import androidx.core.view.WindowCompat
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -38,8 +47,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.hereliesaz.aznavrail.internal.AzLayoutConfig
 import com.hereliesaz.aznavrail.internal.AzRailLayoutHelper
-import com.hereliesaz.aznavrail.internal.AzVisualSide
 import com.hereliesaz.aznavrail.internal.AzSafeZones
+import com.hereliesaz.aznavrail.internal.AzVisualSide
 import com.hereliesaz.aznavrail.model.AzDockingSide
 
 val LocalAzNavHostPresent = compositionLocalOf { false }
@@ -99,6 +108,24 @@ fun AzHostActivityLayout(
     disableSwipeToOpen: Boolean = false,
     content: AzNavHostScope.() -> Unit
 ) {
+    val context = LocalContext.current
+    LaunchedEffect(context) {
+        var currentContext = context
+        var activity: Activity? = null
+        while (currentContext is ContextWrapper) {
+            if (currentContext is Activity) {
+                activity = currentContext
+                break
+            }
+            currentContext = currentContext.baseContext
+        }
+        activity?.let {
+            WindowCompat.setDecorFitsSystemWindows(it.window, false)
+            it.window.statusBarColor = android.graphics.Color.TRANSPARENT
+            it.window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        }
+    }
+
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
     val effectiveIsLandscape = isLandscape ?: (configuration.screenWidthDp > configuration.screenHeightDp)
@@ -151,6 +178,13 @@ fun AzHostActivityLayout(
         val topPadding = if (visualSide == AzVisualSide.TOP) railWidth else 0.dp
         val bottomPadding = if (visualSide == AzVisualSide.BOTTOM) railWidth else 0.dp
 
+        // Identify current active item for title display
+        val currentActiveItem = scope.navItems.find { item ->
+            (item.route != null && item.route == effectiveCurrentDestination) ||
+            item.classifiers.any { scope.activeClassifiers.contains(it) }
+        }
+        val currentTitle = currentActiveItem?.screenTitle ?: currentActiveItem?.text
+
         CompositionLocalProvider(LocalAzNavHostScope provides scope) {
             AzHostFragmentLayout(
                 safeTop = safeTop,
@@ -160,7 +194,8 @@ fun AzHostActivityLayout(
                 topPadding = topPadding,
                 bottomPadding = bottomPadding,
                 items = scope.onscreenItems,
-                dockingSide = dockingSide
+                dockingSide = dockingSide,
+                currentTitle = currentTitle
             )
         }
 
@@ -195,7 +230,8 @@ fun AzHostFragmentLayout(
     topPadding: Dp,
     bottomPadding: Dp,
     items: List<AzOnscreenItem>,
-    dockingSide: AzDockingSide
+    dockingSide: AzDockingSide,
+    currentTitle: String? = null
 ) {
     Box(
         modifier = Modifier
@@ -210,6 +246,23 @@ fun AzHostFragmentLayout(
             }
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = finalAlignment) {
                 item.content()
+            }
+        }
+
+        // Display Screen Title if available
+        if (currentTitle != null && currentTitle != com.hereliesaz.aznavrail.internal.AzNavRailDefaults.NO_TITLE && currentTitle.isNotBlank()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                contentAlignment = Alignment.TopStart
+            ) {
+                Text(
+                    text = currentTitle,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
             }
         }
     }
