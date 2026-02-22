@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
     val modes = listOf("Light", "Dark", "Auto")
 
     var dynamicTitle by mutableStateOf("Dynamic Item")
-    var dynamicBadge by mutableState of("1")
+    var dynamicBadge by mutableStateOf("1")
     var isItemVisible by mutableStateOf(true)
     var isItemDisabled by mutableStateOf(false)
 
