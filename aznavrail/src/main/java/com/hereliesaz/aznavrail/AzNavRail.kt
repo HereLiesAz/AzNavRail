@@ -82,7 +82,6 @@ fun AzNavRail(
     // STRICT PROTOCOL: Check for Host
     val isHostPresent = LocalAzNavHostPresent.current
     if (!isHostPresent) {
-        // Fallback/Error screen for non-compliant usage
         Box(modifier = Modifier.fillMaxSize().background(Color.Red)) {
             Text(
                 "AzNavRail Error: Must be used inside AzHostActivityLayout",
@@ -99,6 +98,7 @@ fun AzNavRail(
     val density = LocalDensity.current
     val configuration = LocalConfiguration.current
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
+    val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
     
     // 1. Scope Resolution
     val scope = providedScope ?: remember { AzNavRailScopeImpl() }.apply(content)
@@ -143,79 +143,67 @@ fun AzNavRail(
     }
 
     // Gestures
-    val dragModifier = if (scope.enableRailDragging) {
-        Modifier.pointerInput(Unit) {
-            detectDragGestures(
-                onDragStart = {
-                    // Standard drag does NOT initiate floating mode. 
-                    // Floating mode is initiated by long-pressing the header icon.
-                },
-                onDrag = { change, dragAmount ->
-                    change.consume()
-                    if (isFloating) {
-                        offsetX += dragAmount.x
-                        
-                        // Strict Constraint: Rail movement restricted from Top 10% and Bottom 10%
-                        val minY = screenHeightPx * AzLayoutConfig.RailSafeTopPercent
-                        val maxY = screenHeightPx * (1f - AzLayoutConfig.RailSafeBottomPercent) - railContentHeight
-                        
-                        // Accumulate Y if it keeps us roughly within logical bounds relative to anchor
-                        val proposedY = offsetY + dragAmount.y
-                        
-                        // We allow movement, but we resist going into safe zones if possible
-                        // Simple clamp logic on the offset
-                        if (railContentHeight > 0) {
-                             if (proposedY >= minY && proposedY <= maxY) {
-                                 offsetY += dragAmount.y
-                             } else {
-                                 // Allow moving back towards valid region
-                                 if (proposedY < minY && dragAmount.y > 0) offsetY += dragAmount.y
-                                 if (proposedY > maxY && dragAmount.y < 0) offsetY += dragAmount.y
-                             }
-                        } else {
-                            // If height not measured yet, allow free movement
-                            offsetY += dragAmount.y
-                        }
-                    } else if (!disableSwipeToOpen) {
-                        // Swipe from edge logic (Expand/Collapse)
-                        if (dragAmount.x > AzNavRailDefaults.SWIPE_THRESHOLD_PX && !isExpanded && visualDockingSide == AzDockingSide.LEFT) {
-                            isExpanded = true
-                        } else if (dragAmount.x < -AzNavRailDefaults.SWIPE_THRESHOLD_PX && isExpanded && visualDockingSide == AzDockingSide.LEFT) {
-                            isExpanded = false
-                        }
-                        // Mirror for right docking
-                        if (dragAmount.x < -AzNavRailDefaults.SWIPE_THRESHOLD_PX && !isExpanded && visualDockingSide == AzDockingSide.RIGHT) {
-                            isExpanded = true
-                        } else if (dragAmount.x > AzNavRailDefaults.SWIPE_THRESHOLD_PX && isExpanded && visualDockingSide == AzDockingSide.RIGHT) {
-                            isExpanded = false
-                        }
-                    }
-                },
-                onDragEnd = {
-                    // Snap back logic if close to origin
-                    if (isFloating && offsetX * offsetX + offsetY * offsetY < AzNavRailDefaults.SNAP_BACK_RADIUS_PX * AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
-                        isFloating = false
-                        offsetX = 0f
-                        offsetY = 0f
-                        if (scope.vibrate) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+    val dragModifier = Modifier.pointerInput(Unit) {
+        detectDragGestures(
+            onDragStart = { },
+            onDrag = { change, dragAmount ->
+                change.consume()
+                if (isFloating) {
+                    offsetX += dragAmount.x
+                    
+                    // Floating Rail Constraint: Keep strictly between 10% and 90% vertical
+                    val minY = screenHeightPx * 0.1f
+                    // If height is known, clamp bottom edge to 90%, otherwise just clamp top anchor to 90%
+                    val maxY = if (railContentHeight > 0) {
+                        (screenHeightPx * 0.9f) - railContentHeight
+                    } else {
+                        screenHeightPx * 0.9f
                     }
                     
-                    // Simple constraint enforcement on drop (Snap to bounds if out)
-                    if (isFloating) {
-                        val limitTop = screenHeightPx * AzLayoutConfig.RailSafeTopPercent
-                        if (offsetY < limitTop) offsetY = limitTop
-                        
-                        val limitBottom = screenHeightPx * (1f - AzLayoutConfig.RailSafeBottomPercent) - railContentHeight
-                        if (railContentHeight > 0 && offsetY > limitBottom) {
-                            offsetY = limitBottom
+                    // We assume initial anchored position is 0 (Top).
+                    // We need to track total offset relative to that.
+                    val proposedY = offsetY + dragAmount.y
+                    
+                    // Strict clamping
+                    if (proposedY < minY) {
+                        offsetY = minY
+                    } else if (proposedY > maxY) {
+                        offsetY = maxY
+                    } else {
+                        offsetY = proposedY
+                    }
+                } else if (!disableSwipeToOpen) {
+                    // Standard Drawer Swipe Logic:
+                    // Swipe OUT (Away from dock) -> Open Menu
+                    // Swipe IN (Towards dock) -> Close Menu
+                    
+                    val isSwipeOut = if (visualDockingSide == AzDockingSide.LEFT) dragAmount.x > 0 else dragAmount.x < 0
+                    val isSwipeIn = if (visualDockingSide == AzDockingSide.LEFT) dragAmount.x < 0 else dragAmount.x > 0
+                    
+                    if (isSwipeOut && !isExpanded) {
+                        // Check threshold
+                        if (kotlin.math.abs(dragAmount.x) > 5) { // Sensitivity
+                            isExpanded = true
+                        }
+                    } else if (isSwipeIn && isExpanded) {
+                        if (kotlin.math.abs(dragAmount.x) > 5) {
+                            isExpanded = false
                         }
                     }
                 }
-            )
-        }
-    } else Modifier
+            },
+            onDragEnd = {
+                if (isFloating && offsetX * offsetX + offsetY * offsetY < AzNavRailDefaults.SNAP_BACK_RADIUS_PX * AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
+                    isFloating = false
+                    offsetX = 0f
+                    offsetY = 0f
+                    if (scope.vibrate) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                }
+            }
+        )
+    }
 
-    // Explicitly RectangleShape for the icon clipper (No Rounded Corners)
+    // Header Icon logic: Tap to toggle menu, Long-press to undock
     val headerIconModifier = Modifier
         .size(AzNavRailDefaults.HeaderIconSize)
         .clip(RectangleShape)
@@ -225,15 +213,17 @@ fun AzNavRail(
                 onLongPress = {
                     if (scope.enableRailDragging) {
                         if (isFloating) {
-                            isFloating = false // Dock
+                            // Dock
+                            isFloating = false 
                             offsetX = 0f
                             offsetY = 0f
                         } else {
-                            isFloating = true // Float
+                            // Float
+                            isFloating = true 
                             isExpanded = false
-                            // Reset to safe start if needed (e.g. if 0 is in safe zone)
-                            val limitTop = screenHeightPx * AzLayoutConfig.RailSafeTopPercent
-                            if (offsetY < limitTop) offsetY = limitTop
+                            // Initial Placement: Snap to safe zone if 0 is invalid
+                            val safeTop = screenHeightPx * 0.1f
+                            offsetY = safeTop
                         }
                         if (scope.vibrate) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         scope.onUndock?.invoke()
@@ -244,13 +234,23 @@ fun AzNavRail(
         }
 
     // Determine dimensions based on state
-    // When floating, we wrap content so it looks like a floating bar, not a full-height strip.
+    // When floating, we wrap content. When docked, full height (minus safe zones applied via padding).
     val sizeModifier = if (isFloating) {
         if (orientation == AzOrientation.Vertical) Modifier.width(railWidth).wrapContentHeight()
         else Modifier.height(railWidth).wrapContentWidth()
     } else {
         if (orientation == AzOrientation.Vertical) Modifier.width(railWidth).fillMaxHeight()
         else Modifier.height(railWidth).fillMaxWidth()
+    }
+
+    // Apply strict vertical padding when DOCKED to ensure rail stays out of 10%/10% zones.
+    // Floating rail handles this via drag clamping.
+    val verticalPaddingModifier = if (!isFloating && orientation == AzOrientation.Vertical) {
+        val safeTopDp = (configuration.screenHeightDp * 0.1f).dp
+        val safeBottomDp = (configuration.screenHeightDp * 0.1f).dp
+        Modifier.padding(top = safeTopDp, bottom = safeBottomDp)
+    } else {
+        Modifier
     }
 
     // Layout
@@ -261,6 +261,7 @@ fun AzNavRail(
         Surface(
             modifier = Modifier
                 .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
+                .then(verticalPaddingModifier) // Apply 10% safe zones when docked
                 .then(sizeModifier)
                 .then(dragModifier)
                 .onGloballyPositioned { coordinates ->
@@ -268,7 +269,6 @@ fun AzNavRail(
                         railContentHeight = coordinates.size.height.toFloat()
                     }
                 }
-                // STRICT RULE: No Rounded Corners.
                 .then(if (isFloating) Modifier.shadow(8.dp, RectangleShape) else Modifier),
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 2.dp,
@@ -343,6 +343,9 @@ fun AzNavRail(
                                 onUndock = { 
                                     isFloating = true 
                                     isExpanded = false
+                                    // Start floating at safe zone
+                                    val safeTop = screenHeightPx * 0.1f
+                                    offsetY = safeTop
                                     scope.onUndock?.invoke()
                                 },
                                 scope = scope,
