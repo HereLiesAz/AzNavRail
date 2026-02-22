@@ -46,6 +46,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.hereliesaz.aznavrail.internal.AzLayoutConfig
+import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.internal.AzRailLayoutHelper
 import com.hereliesaz.aznavrail.internal.AzSafeZones
 import com.hereliesaz.aznavrail.internal.AzVisualSide
@@ -178,10 +179,11 @@ fun AzHostActivityLayout(
         val topPadding = if (visualSide == AzVisualSide.TOP) railWidth else 0.dp
         val bottomPadding = if (visualSide == AzVisualSide.BOTTOM) railWidth else 0.dp
 
-        // Identify current active item for title display
-        val currentActiveItem = scope.navItems.find { item ->
+        // Identify current active item for title display using inner rail scope for properties
+        val railScopeImpl = scope.getRailScopeImpl()
+        val currentActiveItem = railScopeImpl.navItems.find { item ->
             (item.route != null && item.route == effectiveCurrentDestination) ||
-            item.classifiers.any { scope.activeClassifiers.contains(it) }
+            item.classifiers.any { railScopeImpl.activeClassifiers.contains(it) }
         }
         val currentTitle = currentActiveItem?.screenTitle ?: currentActiveItem?.text
 
@@ -250,7 +252,7 @@ fun AzHostFragmentLayout(
         }
 
         // Display Screen Title if available
-        if (currentTitle != null && currentTitle != com.hereliesaz.aznavrail.internal.AzNavRailDefaults.NO_TITLE && currentTitle.isNotBlank()) {
+        if (currentTitle != null && currentTitle != AzNavRailDefaults.NO_TITLE && currentTitle.isNotBlank()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
