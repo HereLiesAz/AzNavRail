@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -101,22 +102,26 @@ internal fun HelpOverlay(
         layoutItems.forEach { layoutItem ->
             val item = itemsWithInfo.find { it.id == layoutItem.id }
             if (item != null) {
+                // Info Card - STRICT SQUARE
                 Text(
                     text = "${item.text}: ${item.info}",
                     color = Color.White,
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier
                         .offset { IntOffset(100.dp.roundToPx(), layoutItem.top.roundToInt()) }
+                        .background(Color.DarkGray, RectangleShape) // No rounded corners
                         .padding(16.dp)
                 )
             }
         }
 
+        // FAB - STRICT SQUARE
         FloatingActionButton(
             onClick = onDismiss,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(32.dp)
+                .padding(32.dp),
+            shape = RectangleShape // No rounded corners
         ) {
             Icon(Icons.Default.Close, contentDescription = "Close Help")
         }
