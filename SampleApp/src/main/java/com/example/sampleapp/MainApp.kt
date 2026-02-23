@@ -12,7 +12,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -20,10 +19,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.hereliesaz.aznavrail.*
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
-import android.provider.Settings
-import android.content.Intent
-import androidx.core.content.ContextCompat
-import androidx.core.net.toUri
+import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
+
 @Composable
 fun MainApp() {
     val TAG = "SampleApp"
@@ -46,27 +43,10 @@ fun MainApp() {
         AzTextBoxDefaults.setSuggestionLimit(3)
     }
 
-    var useBasicOverlay by remember { mutableStateOf(false) }
     var isDockingRight by remember { mutableStateOf(false) }
     var noMenu by remember { mutableStateOf(false) }
     var showHelp by remember { mutableStateOf(false) }
     var usePhysicalDocking by remember { mutableStateOf(false) }
-
-    val context = LocalContext.current
-    val overlayServiceClass = if (useBasicOverlay) SampleBasicOverlayService::class.java else SampleOverlayService::class.java
-
-    val startOverlay = {
-        if (Settings.canDrawOverlays(context)) {
-            val intent = Intent(context, overlayServiceClass)
-            ContextCompat.startForegroundService(context, intent)
-        } else {
-            val intent = Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                "package:${context.packageName}".toUri()
-            )
-            context.startActivity(intent)
-        }
-    }
 
     val themeColor = MaterialTheme.colorScheme.primary
 
@@ -92,9 +72,7 @@ fun MainApp() {
 
         azAdvanced(
             isLoading = isLoading,
-            enableRailDragging = true,
-            onUndock = { startOverlay() },
-            overlayService = overlayServiceClass,
+            enableRailDragging = true, // Keeps FAB mode enabled (in-app floating)
             infoScreen = showHelp,
             onDismissInfoScreen = { showHelp = false }
         )
@@ -165,18 +143,6 @@ fun MainApp() {
             onClick = {
                 isDarkMode = !isDarkMode
                 Log.d(TAG, "Dark mode toggled to: $isDarkMode")
-            }
-        )
-
-        azMenuToggle(
-            id = "overlay-mode",
-            isChecked = useBasicOverlay,
-            toggleOnText = "Using Basic Overlay",
-            toggleOffText = "Using Foreground Overlay",
-            route = "overlay-mode",
-            onClick = {
-                useBasicOverlay = !useBasicOverlay
-                Log.d(TAG, "Overlay mode toggled to: $useBasicOverlay")
             }
         )
 
@@ -312,7 +278,7 @@ fun MainApp() {
             id = "nested-rail",
             text = "Vertical Nested",
             route = "nested-rail",
-            alignment = com.hereliesaz.aznavrail.model.AzNestedRailAlignment.VERTICAL
+            alignment = AzNestedRailAlignment.VERTICAL
         ) {
             azRailItem(id = "nested-1", text = "Nested Item 1", route = "nested-1")
             azRailItem(id = "nested-2", text = "Nested Item 2", route = "nested-2")
@@ -322,7 +288,7 @@ fun MainApp() {
             id = "nested-horizontal",
             text = "Horizontal Nested",
             route = "nested-horizontal",
-            alignment = com.hereliesaz.aznavrail.model.AzNestedRailAlignment.HORIZONTAL
+            alignment = AzNestedRailAlignment.HORIZONTAL
         ) {
             azRailItem(id = "nested-h-1", text = "H-Item 1", route = "nested-h-1")
             azRailItem(id = "nested-h-2", text = "H-Item 2", route = "nested-h-2")
@@ -502,7 +468,6 @@ fun MainApp() {
                 composable("menu-cycler") { ScreenContent("Menu Cycler Screen") }
                 composable("loading") { ScreenContent("Loading Screen") }
                 composable("physical-docking") { ScreenContent("Physical Docking Screen") }
-                composable("overlay-mode") { ScreenContent("Overlay Mode Screen") }
                 composable("docking-side") { ScreenContent("Docking Side Screen") }
                 composable("no-menu") { ScreenContent("No Menu Screen") }
                 composable("nested-rail") { ScreenContent("Nested Rail Screen") }
