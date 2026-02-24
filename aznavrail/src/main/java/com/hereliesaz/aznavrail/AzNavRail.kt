@@ -79,6 +79,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
+/**
+ * Annotation marking that the [AzNavRail] composable must be used within an [AzHostActivityLayout].
+ *
+ * This enforces strict layout rules (safe zones, padding, z-ordering) and ensures that the
+ * navigation rail behaves correctly within the application structure. Instantiating [AzNavRail]
+ * directly without the host wrapper will result in a runtime error or a visual warning.
+ */
 @RequiresOptIn(message = "AzNavRail must be used within AzHostActivityLayout to ensure safe zones and proper behavior.")
 @Retention(AnnotationRetention.BINARY)
 annotation class AzStrictLayout
@@ -87,6 +94,29 @@ object AzNavRail {
     const val EXTRA_ROUTE = "com.hereliesaz.aznavrail.extra.ROUTE"
 }
 
+/**
+ * The core composable for the AzNavRail navigation system.
+ *
+ * This component renders a vertical navigation rail that can expand into a full drawer menu.
+ * It supports advanced features like FAB mode (draggable rail), cyclers, toggles, hierarchical
+ * navigation, and strict layout enforcement via [AzHostActivityLayout].
+ *
+ * **Note:** This composable is marked with [AzStrictLayout] and should primarily be used via
+ * the [AzHostActivityLayout] wrapper, which handles placement and safe zones automatically.
+ *
+ * @param modifier The modifier to be applied to the rail container.
+ * @param navController The [NavHostController] used for navigation. If null, a new one is created.
+ * @param currentDestination The current route destination. If null, it is derived from the [navController].
+ * @param isLandscape Explicitly set the orientation mode. If null, it is derived from configuration.
+ * @param initiallyExpanded Whether the rail should be expanded (show menu) by default.
+ * @param disableSwipeToOpen Whether the swipe gesture to open the menu is disabled.
+ * @param providedScope An optional pre-configured [AzNavRailScopeImpl]. Used internally by [AzHostActivityLayout].
+ * @param orientation The orientation of the rail (Vertical or Horizontal). Default is Vertical.
+ * @param visualDockingSide The side of the screen where the rail is visually docked (Left or Right).
+ * @param railAlignment The alignment of the rail within its container.
+ * @param reverseLayout Whether to reverse the layout direction (e.g., for Right-to-Left languages or right docking).
+ * @param content The configuration block for the rail, defined using the [AzNavRailScope] DSL.
+ */
 @Composable
 fun AzNavRail(
     modifier: Modifier = Modifier,

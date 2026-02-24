@@ -99,6 +99,8 @@ object AzTextBoxDefaults {
  * A highly customizable text input box with integrated features like autocomplete, history,
  * password visibility toggling, and multi-line support.
  *
+ * It is designed to work seamlessly with [AzForm] but can also be used as a standalone component.
+ *
  * @param modifier The modifier to be applied to the text box.
  * @param value The input text to be shown in the text field. If null, the component manages its own state.
  * @param onValueChange The callback that is triggered when the input value updates.
@@ -118,6 +120,9 @@ object AzTextBoxDefaults {
  * @param focusRequester An optional [androidx.compose.ui.focus.FocusRequester] to control focus programmatically.
  * @param submitButtonContent Optional content for a built-in submit button.
  * @param onSubmit A callback invoked when the submit button is clicked or "Done" is pressed on the keyboard.
+ *
+ * @see AzForm
+ * @see AzTextBoxDefaults
  */
 @Composable
 fun AzTextBox(
