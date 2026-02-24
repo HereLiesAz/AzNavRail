@@ -65,7 +65,6 @@ import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.internal.AzLayoutConfig
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.internal.AzNavRailLogger
-import com.hereliesaz.aznavrail.internal.CenteredPopupPositionProvider
 import com.hereliesaz.aznavrail.internal.CyclerTransientState
 import com.hereliesaz.aznavrail.internal.Footer
 import com.hereliesaz.aznavrail.internal.HelpOverlay
@@ -233,17 +232,24 @@ fun AzNavRail(
                             change.consume()
                             if (isFloating) {
                                 offsetX += dragAmount.x
-                                offsetY = (offsetY + dragAmount.y).coerceIn(
-                                    screenHeightPx * 0.1f,
-                                    (screenHeightPx * 0.9f) - railContentHeight
-                                )
-                            } else if (!disableSwipeToOpen && !scope.noMenu) {
-                                if (visualDockingSide == AzDockingSide.LEFT) {
-                                    if (dragAmount.x > 20 && !isExpanded) isExpanded = true
-                                    else if (dragAmount.x < -20 && isExpanded) isExpanded = false
-                                } else {
-                                    if (dragAmount.x < -20 && !isExpanded) isExpanded = true
-                                    else if (dragAmount.x > 20 && isExpanded) isExpanded = false
+                                val minY = screenHeightPx * 0.1f
+                                val maxY = maxOf(minY, (screenHeightPx * 0.9f) - railContentHeight)
+                                offsetY = (offsetY + dragAmount.y).coerceIn(minY, maxY)
+                            } else {
+                                if (scope.enableRailDragging && kotlin.math.abs(dragAmount.y) > 20 && kotlin.math.abs(dragAmount.y) > kotlin.math.abs(dragAmount.x)) {
+                                    isFloating = true
+                                    isExpanded = false
+                                    offsetX = 0f
+                                    offsetY = screenHeightPx * 0.1f
+                                    if (scope.vibrate) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                } else if (!disableSwipeToOpen && !scope.noMenu) {
+                                    if (visualDockingSide == AzDockingSide.LEFT) {
+                                        if (dragAmount.x > 20 && !isExpanded) isExpanded = true
+                                        else if (dragAmount.x < -20 && isExpanded) isExpanded = false
+                                    } else {
+                                        if (dragAmount.x < -20 && !isExpanded) isExpanded = true
+                                        else if (dragAmount.x > 20 && isExpanded) isExpanded = false
+                                    }
                                 }
                             }
                         },
@@ -400,6 +406,7 @@ fun AzNavRail(
                             },
                             hostStates = hostStates,
                             packRailButtons = isFloating || scope.packButtons, // Forced pack in FAB mode
+                            visualDockingSide = visualDockingSide,
                             onItemGloballyPositioned = scope.onItemGloballyPositioned,
                             infoScreen = scope.infoScreen
                         )

@@ -1,7 +1,9 @@
+// FILE: ./aznavrail/src/main/java/com/hereliesaz/aznavrail/AzActivity.kt
 package com.hereliesaz.aznavrail
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
 
 interface AzGraphInterface {
     fun Run(activity: ComponentActivity)
@@ -12,6 +14,7 @@ abstract class AzActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         graph.Run(this)
     }
 

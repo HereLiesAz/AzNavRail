@@ -51,6 +51,11 @@ internal fun RailContent(
                 onRailCyclerClick(item)
                 onItemClick()
             }
+        } else if (item.isNestedRail) {
+            {
+                onClick?.invoke()
+                // Explicitly do not trigger navigate or collapse for NestedRail parent.
+            }
         } else {
             {
                 item.route?.let { navController?.navigate(it) }

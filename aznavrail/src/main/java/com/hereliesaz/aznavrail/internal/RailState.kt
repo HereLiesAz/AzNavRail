@@ -53,15 +53,52 @@ internal data class CyclerTransientState(
     val job: Job? = null
 )
 
-internal object CenteredPopupPositionProvider : PopupPositionProvider {
+/**
+ * Positions a vertical NestedRail popup at the exact center of the screen vertically,
+ * anchored to the left or right of the parent item's bounds.
+ */
+internal class DockedCenteredPopupPositionProvider(
+    private val isRightDocked: Boolean,
+    private val anchorWidthPx: Int
+) : PopupPositionProvider {
     override fun calculatePosition(
         anchorBounds: IntRect,
         windowSize: IntSize,
         layoutDirection: LayoutDirection,
         popupContentSize: IntSize
     ): IntOffset {
-        val x = (windowSize.width - popupContentSize.width) / 2
         val y = (windowSize.height - popupContentSize.height) / 2
+        val x = if (isRightDocked) {
+            anchorBounds.left - popupContentSize.width
+        } else {
+            anchorBounds.right
+        }
         return IntOffset(x, y)
+    }
+}
+
+/**
+ * Positions a horizontal NestedRail popup vertically aligned with the parent item,
+ * anchored strictly to the left or right edge of the parent item's bounds.
+ */
+internal class DockedHorizontalPopupPositionProvider(
+    private val isRightDocked: Boolean
+) : PopupPositionProvider {
+    override fun calculatePosition(
+        anchorBounds: IntRect,
+        windowSize: IntSize,
+        layoutDirection: LayoutDirection,
+        popupContentSize: IntSize
+    ): IntOffset {
+        // Vertically center the row relative to the parent button
+        val y = anchorBounds.top + (anchorBounds.height - popupContentSize.height) / 2
+        val x = if (isRightDocked) {
+            anchorBounds.left - popupContentSize.width
+        } else {
+            anchorBounds.right
+        }
+        // Ensure the popup doesn't bleed off the top or bottom of the screen
+        val safeY = y.coerceIn(0, windowSize.height - popupContentSize.height)
+        return IntOffset(x, safeY)
     }
 }

@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -29,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInWindow
@@ -67,9 +67,9 @@ internal fun AzNavRailButton(
 
     val buttonShape: Shape = when (shape) {
         AzButtonShape.CIRCLE -> CircleShape
-        AzButtonShape.SQUARE -> RoundedCornerShape(0.dp)
-        AzButtonShape.RECTANGLE -> RoundedCornerShape(12.dp)
-        AzButtonShape.NONE -> RoundedCornerShape(0.dp)
+        AzButtonShape.SQUARE -> RectangleShape
+        AzButtonShape.RECTANGLE -> RectangleShape
+        AzButtonShape.NONE -> RectangleShape
     }
 
     // STRICT WIDTH COMPLIANCE for all shapes

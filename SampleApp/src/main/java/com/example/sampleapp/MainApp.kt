@@ -1,3 +1,4 @@
+// FILE: ./SampleApp/src/main/java/com/example/sampleapp/MainApp.kt
 package com.example.sampleapp
 
 import android.util.Log
@@ -84,8 +85,8 @@ fun MainApp() {
         azRailToggle(
             id = "pack-rail",
             isChecked = packRailButtons,
-            toggleOnText = "Pack Rail",
-            toggleOffText = "Unpack Rail",
+            toggleOnText = "Packed",
+            toggleOffText = "Unpacked",
             route = "pack-rail",
             info = "Toggle to pack items together or space them out",
             onClick = {
@@ -110,6 +111,14 @@ fun MainApp() {
             content = android.R.drawable.ic_menu_agenda,
             info = "Demonstrates dynamic content with Resource ID",
             onClick = { Log.d(TAG, "Icon item clicked") }
+        )
+
+        azRailItem(
+            id = "none-shape",
+            text = "No Shape",
+            shape = AzButtonShape.NONE,
+            info = "Item with shape NONE",
+            onClick = { Log.d(TAG, "No Shape item clicked") }
         )
 
         azRailItem(
@@ -261,23 +270,33 @@ fun MainApp() {
             }
         )
 
-        // Reorderable Item Demo
+        // Reorderable Item Demo - Minimum 2 required!
         azRailRelocItem(
             id = "reloc-1",
             hostId = "rail-host",
             text = "Reloc Item 1",
             onRelocate = { from, to, newOrder ->
-                Log.d(TAG, "Relocated item from $from to $to. New order: $newOrder")
+                Log.d(TAG, "Relocated item 1 from $from to $to. New order: $newOrder")
             }
         ) {
-            // Hidden Menu
-            listItem(text = "Action", onClick = { Log.d(TAG, "Reloc action clicked") })
+            listItem(text = "Action 1", onClick = { Log.d(TAG, "Reloc 1 action clicked") })
         }
 
+        azRailRelocItem(
+            id = "reloc-2",
+            hostId = "rail-host",
+            text = "Reloc Item 2",
+            onRelocate = { from, to, newOrder ->
+                Log.d(TAG, "Relocated item 2 from $from to $to. New order: $newOrder")
+            }
+        ) {
+            listItem(text = "Action 2", onClick = { Log.d(TAG, "Reloc 2 action clicked") })
+        }
+
+        // Nested Rails do not get a route assigned to avoid navigation crashes when clicked to open!
         azNestedRail(
             id = "nested-rail",
             text = "Vertical Nested",
-            route = "nested-rail",
             alignment = AzNestedRailAlignment.VERTICAL
         ) {
             azRailItem(id = "nested-1", text = "Nested Item 1", route = "nested-1")
@@ -287,7 +306,6 @@ fun MainApp() {
         azNestedRail(
             id = "nested-horizontal",
             text = "Horizontal Nested",
-            route = "nested-horizontal",
             alignment = AzNestedRailAlignment.HORIZONTAL
         ) {
             azRailItem(id = "nested-h-1", text = "H-Item 1", route = "nested-h-1")
@@ -470,9 +488,11 @@ fun MainApp() {
                 composable("physical-docking") { ScreenContent("Physical Docking Screen") }
                 composable("docking-side") { ScreenContent("Docking Side Screen") }
                 composable("no-menu") { ScreenContent("No Menu Screen") }
-                composable("nested-rail") { ScreenContent("Nested Rail Screen") }
                 composable("nested-1") { ScreenContent("Nested Item 1 Screen") }
                 composable("nested-2") { ScreenContent("Nested Item 2 Screen") }
+                composable("nested-h-1") { ScreenContent("H-Item 1 Screen") }
+                composable("nested-h-2") { ScreenContent("H-Item 2 Screen") }
+                composable("nested-h-3") { ScreenContent("H-Item 3 Screen") }
             }
         }
     }

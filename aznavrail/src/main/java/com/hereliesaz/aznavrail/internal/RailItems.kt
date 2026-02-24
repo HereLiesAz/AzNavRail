@@ -44,7 +44,9 @@ import androidx.compose.material3.Text
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.AzNavRailScopeImpl
 import com.hereliesaz.aznavrail.AzTextBoxDefaults
+import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzNavItem
+import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -53,6 +55,7 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalViewConfiguration
@@ -68,6 +71,7 @@ internal fun RailItems(
     onItemSelected: (AzNavItem) -> Unit,
     hostStates: MutableMap<String, Boolean>,
     packRailButtons: Boolean,
+    visualDockingSide: AzDockingSide,
     onClickOverride: ((AzNavItem) -> Unit)? = null,
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
     infoScreen: Boolean = false
@@ -83,6 +87,7 @@ internal fun RailItems(
     var itemWidths by remember { mutableStateOf(mapOf<String, Int>()) }
     var hiddenMenuOpenId by remember { mutableStateOf<String?>(null) }
     var currentDropTargetIndex by remember { mutableStateOf<Int?>(null) }
+    var nestedRailOpenId by remember { mutableStateOf<String?>(null) }
 
     val snappingOffsets = remember { androidx.compose.runtime.mutableStateMapOf<String, Animatable<Float, androidx.compose.animation.core.AnimationVector1D>>() }
     var lastTappedId by remember { mutableStateOf<String?>(null) }
@@ -157,7 +162,10 @@ internal fun RailItems(
                             onHiddenMenuDismiss = { hiddenMenuOpenId = null },
                             lastTappedId = lastTappedId,
                             onUpdateLastTappedId = { id -> lastTappedId = id },
-                            snappingOffset = snappingOffsets[item.id]?.value
+                            snappingOffset = snappingOffsets[item.id]?.value,
+                            visualDockingSide = visualDockingSide,
+                            nestedRailOpenId = nestedRailOpenId,
+                            onNestedRailToggle = { nestedRailOpenId = it }
                         )
 
                         AnimatedVisibility(visible = item.isHost && (hostStates[item.id] ?: false)) {
@@ -235,7 +243,10 @@ internal fun RailItems(
                                             onHiddenMenuDismiss = { hiddenMenuOpenId = null },
                                             lastTappedId = lastTappedId,
                                             onUpdateLastTappedId = { id -> lastTappedId = id },
-                                            snappingOffset = snappingOffsets[subItem.id]?.value
+                                            snappingOffset = snappingOffsets[subItem.id]?.value,
+                                            visualDockingSide = visualDockingSide,
+                                            nestedRailOpenId = nestedRailOpenId,
+                                            onNestedRailToggle = { nestedRailOpenId = it }
                                         )
                                     }
                                 }
@@ -280,10 +291,14 @@ private fun DraggableRailItemWrapper(
     onHiddenMenuDismiss: () -> Unit,
     lastTappedId: String?,
     onUpdateLastTappedId: (String) -> Unit,
-    snappingOffset: Float?
+    snappingOffset: Float?,
+    visualDockingSide: AzDockingSide,
+    nestedRailOpenId: String?,
+    onNestedRailToggle: (String?) -> Unit
 ) {
     val isDragging = draggedItemId == item.id
     var visualOffsetY by remember { mutableStateOf(0.dp) }
+    val isRightDocked = visualDockingSide == AzDockingSide.RIGHT
 
     val myHeightPx = itemHeights[item.id] ?: 0
     val density = LocalDensity.current
@@ -483,7 +498,9 @@ private fun DraggableRailItemWrapper(
                     buttonSize = buttonSize,
                     onClick = {
                         scope.onFocusMap[item.id]?.invoke()
-                        if (onClickOverride != null) {
+                        if (item.isNestedRail) {
+                            onNestedRailToggle(if (nestedRailOpenId == item.id) null else item.id)
+                        } else if (onClickOverride != null) {
                             onClickOverride(item)
                         } else {
                             scope.onClickMap[item.id]?.invoke()
@@ -497,6 +514,55 @@ private fun DraggableRailItemWrapper(
                     dragModifier = dragModifier,
                     activeColor = scope.activeColor
                 )
+            }
+        }
+
+        if (nestedRailOpenId == item.id && item.isNestedRail) {
+            val anchorWidthPx = itemWidths[item.id] ?: 0
+            if (item.nestedRailAlignment == AzNestedRailAlignment.VERTICAL) {
+                Popup(
+                    popupPositionProvider = DockedCenteredPopupPositionProvider(isRightDocked, anchorWidthPx),
+                    onDismissRequest = { onNestedRailToggle(null) },
+                    properties = PopupProperties(focusable = true)
+                ) {
+                    NestedRail(
+                        parentItem = item,
+                        items = item.nestedRailItems ?: emptyList(),
+                        currentDestination = currentDestination,
+                        activeColor = scope.activeColor,
+                        activeClassifiers = scope.activeClassifiers,
+                        onItemSelected = { subItem ->
+                            scope.onClickMap[subItem.id]?.invoke()
+                            subItem.route?.let { navController?.navigate(it) }
+                            onItemSelected(subItem)
+                            onNestedRailToggle(null)
+                        },
+                        alignment = item.nestedRailAlignment,
+                        isRightDocked = isRightDocked
+                    )
+                }
+            } else {
+                Popup(
+                    popupPositionProvider = DockedHorizontalPopupPositionProvider(isRightDocked),
+                    onDismissRequest = { onNestedRailToggle(null) },
+                    properties = PopupProperties(focusable = true)
+                ) {
+                    NestedRail(
+                        parentItem = item,
+                        items = item.nestedRailItems ?: emptyList(),
+                        currentDestination = currentDestination,
+                        activeColor = scope.activeColor,
+                        activeClassifiers = scope.activeClassifiers,
+                        onItemSelected = { subItem ->
+                            scope.onClickMap[subItem.id]?.invoke()
+                            subItem.route?.let { navController?.navigate(it) }
+                            onItemSelected(subItem)
+                            onNestedRailToggle(null)
+                        },
+                        alignment = item.nestedRailAlignment ?: AzNestedRailAlignment.HORIZONTAL,
+                        isRightDocked = isRightDocked
+                    )
+                }
             }
         }
 
