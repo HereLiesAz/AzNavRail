@@ -165,8 +165,9 @@ fun AzHostActivityLayout(
         }
         activity?.let {
             WindowCompat.setDecorFitsSystemWindows(it.window, false)
-            it.window.statusBarColor = android.graphics.Color.TRANSPARENT
-            it.window.navigationBarColor = android.graphics.Color.TRANSPARENT
+            // Deprecated direct property access replaced with WindowCompat or ignored if handled by themes/edge-to-edge
+            // it.window.statusBarColor = android.graphics.Color.TRANSPARENT
+            // it.window.navigationBarColor = android.graphics.Color.TRANSPARENT
         }
     }
 

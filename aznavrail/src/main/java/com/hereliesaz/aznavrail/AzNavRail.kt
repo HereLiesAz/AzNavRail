@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
@@ -138,26 +140,15 @@ fun AzNavRail(
     if (!isHostPresent) {
         val errorMessage = """
             CRITICAL ERROR: AzNavRail invoked without AzHostActivityLayout!
-<<<<<<< Updated upstream
-
-            AzNavRail enforces strict layout rules for safe zones, rotation, and docking.
-            It MUST be wrapped in an AzHostActivityLayout.
-
-=======
             
             AzNavRail enforces strict layout rules for safe zones, rotation, and docking.
             It MUST be wrapped in an AzHostActivityLayout.
             
->>>>>>> Stashed changes
             Correct Usage:
             AzHostActivityLayout(navController = ...) {
                 // Your AzNavRail content here
             }
-<<<<<<< Updated upstream
-
-=======
             
->>>>>>> Stashed changes
             Or ensure you are using the generated AzGraph system.
         """.trimIndent()
 
@@ -192,16 +183,10 @@ fun AzNavRail(
                 )
             }
         }
-<<<<<<< Updated upstream
-
-        // Strictly throw in debug builds or if desired
-        throw IllegalStateException(errorMessage)
-=======
         
         // Strictly throw in debug builds or if desired
         // throw IllegalStateException(errorMessage)
         return
->>>>>>> Stashed changes
     }
 
     val context = LocalContext.current
@@ -286,8 +271,10 @@ fun AzNavRail(
     }
 
     val sizeModifier = if (isFloating) {
-        if (orientation == AzOrientation.Vertical) Modifier.width(railWidth).wrapContentHeight()
-        else Modifier.height(railWidth).wrapContentWidth()
+        // Enforce max height/width in FAB mode to ensure it fits within 10-90% safe zone
+        val maxFabSize = (configuration.screenHeightDp * 0.8f).dp
+        if (orientation == AzOrientation.Vertical) Modifier.width(railWidth).heightIn(max = maxFabSize).wrapContentHeight()
+        else Modifier.height(railWidth).widthIn(max = maxFabSize).wrapContentWidth()
     } else {
         if (orientation == AzOrientation.Vertical) Modifier.width(railWidth).fillMaxHeight()
         else Modifier.height(railWidth).fillMaxWidth()
@@ -301,7 +288,7 @@ fun AzNavRail(
     } else { Modifier }
 
     // No background shape when collapsed. Drawer visible only when expanded.
-    val surfaceColor = if (isExpanded && !isFloating) MaterialTheme.colorScheme.surface else Color.Transparent
+    val surfaceColor = Color.Transparent
     val surfaceElevation = if (isExpanded && !isFloating) 2.dp else 0.dp
 
     Box(
@@ -320,9 +307,10 @@ fun AzNavRail(
                             change.consume()
                             if (isFloating) {
                                 offsetX += dragAmount.x
+                                offsetY += dragAmount.y
                                 val minY = screenHeightPx * 0.1f
                                 val maxY = maxOf(minY, (screenHeightPx * 0.9f) - railContentHeight)
-                                offsetY = (offsetY + dragAmount.y).coerceIn(minY, maxY)
+                                offsetY = offsetY.coerceIn(minY, maxY)
                             } else {
                                 if (scope.enableRailDragging && kotlin.math.abs(dragAmount.y) > 20 && kotlin.math.abs(dragAmount.y) > kotlin.math.abs(dragAmount.x)) {
                                     isFloating = true
@@ -542,5 +530,5 @@ fun AzNavRail(
         }
     }
 
-    if (scope.infoScreen) HelpOverlay(items = scope.navItems, onDismiss = { scope.onDismissInfoScreen?.invoke() })
+    if (scope.infoScreen) HelpOverlay(items = scope.navItems, onDismiss = { scope.onDismissInfoScreen?.invoke() }, itemBoundsCache = scope.itemBoundsCache)
 }
