@@ -364,12 +364,13 @@ private fun DraggableRailItemWrapper(
                     if (scope.vibrate) {
                         hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                     }
-                    onDragStart(item.id)
+                    // onDragStart(item.id) -- Deferred until movement
                 }
 
                 var totalDragY = 0f
-                var hasMoved = false
-                var hasDragged = false
+                var hasMoved = false // Moved before long press
+                var hasDragged = false // Moved after long press
+                var dragStarted = false // Officially started dragging
                 var gestureCompletedSuccessfully = false
 
                 try {
@@ -394,28 +395,35 @@ private fun DraggableRailItemWrapper(
                             if (!isLongPress) {
                                 if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
                                     hasMoved = true
-                                    longPressJob?.cancel()
+                                    longPressJob.cancel()
                                 }
                             } else {
                                 change.consume()
-                                val dragY = (change.position - currentPosition).y
-                                totalDragY += dragY
-                                onDragDelta(dragY)
 
-                                if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
-                                    hasDragged = true
+                                if (!dragStarted) {
+                                    if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
+                                        dragStarted = true
+                                        onDragStart(item.id)
+                                    }
                                 }
 
-                                val currentIdx = scope.navItems.indexOfFirst { it.id == item.id }
-                                if (currentIdx != -1) {
-                                    val target = RelocItemHandler.calculateTargetIndex(
-                                        items = scope.navItems,
-                                        draggedItemId = item.id,
-                                        currentDragOffset = totalDragY,
-                                        itemHeights = itemHeightsState.value
-                                    )
-                                    if (target != null && target != currentDropTargetIndex) {
-                                        onDragTargetChange(target)
+                                if (dragStarted) {
+                                    val dragY = (change.position - currentPosition).y
+                                    totalDragY += dragY
+                                    onDragDelta(dragY)
+                                    hasDragged = true
+
+                                    val currentIdx = scope.navItems.indexOfFirst { it.id == item.id }
+                                    if (currentIdx != -1) {
+                                        val target = RelocItemHandler.calculateTargetIndex(
+                                            items = scope.navItems,
+                                            draggedItemId = item.id,
+                                            currentDragOffset = totalDragY,
+                                            itemHeights = itemHeightsState.value
+                                        )
+                                        if (target != null && target != currentDropTargetIndex) {
+                                            onDragTargetChange(target)
+                                        }
                                     }
                                 }
                             }
@@ -423,10 +431,11 @@ private fun DraggableRailItemWrapper(
                         currentPosition = change.position
                     }
                 } finally {
-                    longPressJob?.cancel()
+                    longPressJob.cancel()
                     if (isLongPress) {
-                        onDragEnd()
-                        if (!hasDragged) {
+                        if (dragStarted) {
+                            onDragEnd()
+                        } else {
                             scope.onFocusMap[item.id]?.invoke()
                             onMenuOpen(item.id)
                         }
@@ -436,18 +445,13 @@ private fun DraggableRailItemWrapper(
 
                         scope.onFocusMap[item.id]?.invoke()
 
-                        if (isRouteSelected || isIdSelected) {
-                            onMenuOpen(item.id)
-                            onUpdateLastTappedId(item.id)
+                        onUpdateLastTappedId(item.id)
+                        if (onClickOverride != null) {
+                            onClickOverride(item)
                         } else {
-                            onUpdateLastTappedId(item.id)
-                            if (onClickOverride != null) {
-                                onClickOverride(item)
-                            } else {
-                                scope.onClickMap[item.id]?.invoke()
-                                item.route?.let { navController?.navigate(it) }
-                                onItemSelected(item)
-                            }
+                            scope.onClickMap[item.id]?.invoke()
+                            item.route?.let { navController?.navigate(it) }
+                            onItemSelected(item)
                         }
                     }
                 }
@@ -571,7 +575,7 @@ private fun DraggableRailItemWrapper(
 
         if (hiddenMenuOpenId == item.id && !item.hiddenMenuItems.isNullOrEmpty()) {
             HiddenMenuPopup(
-                items = item.hiddenMenuItems ?: emptyList(),
+                items = item.hiddenMenuItems,
                 onDismiss = onHiddenMenuDismiss,
                 onItemClick = { menuItem ->
                     scope.hiddenMenuOnClickMap[menuItem.id]?.invoke()
