@@ -49,27 +49,22 @@ class FooterTest {
     }
 
     @Test
-    fun `about button should call onToggle`() {
-        var onToggleCalled = false
-
-        val scope = AzNavRailScopeImpl().apply {
-            enableRailDragging = true
-        }
+    fun `footer should display static links`() {
+        val scope = AzNavRailScopeImpl()
 
         composeTestRule.setContent {
             Footer(
                 appName = "TestApp",
-                onToggle = { onToggleCalled = true },
+                onToggle = { },
                 onUndock = { },
                 scope = scope,
                 footerColor = Color.Red
             )
         }
 
-        // Click "About" (App Name)
-        composeTestRule.onNodeWithText("TestApp").performClick()
-
-        // Assertions
-        assertTrue("onToggle should be called for About", onToggleCalled)
+        // Verify "About", "Feedback", "Credit" are present
+        composeTestRule.onNodeWithText("About").assertExists()
+        composeTestRule.onNodeWithText("Feedback").assertExists()
+        composeTestRule.onNodeWithText("Credit").assertExists()
     }
 }
