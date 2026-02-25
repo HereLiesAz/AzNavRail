@@ -17,8 +17,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * A simple loading spinner component.
- * Restored to 6.99 circular style.
+ * A standard loading spinner component for AzNavRail.
+ *
+ * It renders a rotating circular border with "loading..." text in the center.
+ * This component is used by [AzNavRail] when `isLoading` is set to true in `azAdvanced`,
+ * and by [AzButton] when its `isLoading` state is true.
+ *
+ * It uses a simple Y-axis rotation animation.
  */
 @Composable
 fun AzLoad() {

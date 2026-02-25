@@ -21,6 +21,22 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/**
+ * A standalone button component that matches the aesthetic of the AzNavRail.
+ *
+ * It automatically handles text resizing to fit the container and supports various shapes.
+ *
+ * @param onClick Callback invoked when the button is clicked.
+ * @param text The text to display.
+ * @param modifier The modifier to apply to the button.
+ * @param color The background color of the button.
+ * @param activeColor The color used when the button is in an active state (if applicable).
+ * @param colors Optional [ButtonColors] to override default colors.
+ * @param shape The shape of the button (Circle, Square, Rectangle, None).
+ * @param enabled Whether the button is enabled.
+ * @param isLoading If true, replaces text with a loading spinner.
+ * @param contentPadding Custom padding for the button content.
+ */
 @Composable
 fun AzButton(
     onClick: () -> Unit,
@@ -50,6 +66,22 @@ fun AzButton(
     )
 }
 
+/**
+ * A standalone toggle button.
+ *
+ * This button switches between two text states based on `isChecked`.
+ *
+ * @param isChecked The current state of the toggle.
+ * @param onToggle Callback invoked when the toggle is clicked, providing the new state.
+ * @param toggleOnText Text to display when checked.
+ * @param toggleOffText Text to display when unchecked.
+ * @param modifier The modifier to apply.
+ * @param color The background color.
+ * @param activeColor The active color.
+ * @param colors Optional color overrides.
+ * @param shape The shape of the button.
+ * @param enabled Whether the toggle is enabled.
+ */
 @Composable
 fun AzToggle(
     isChecked: Boolean,
@@ -77,6 +109,23 @@ fun AzToggle(
     )
 }
 
+/**
+ * A standalone cycler button.
+ *
+ * This button cycles through a list of options. It implements a safety delay: clicking cycles
+ * the visual display immediately, but the `onCycle` callback is only triggered after a short
+ * delay (1000ms) of inactivity to prevent accidental selection during rapid cycling.
+ *
+ * @param options The list of options to cycle through.
+ * @param selectedOption The currently selected option.
+ * @param onCycle Callback invoked when an option is settled upon.
+ * @param modifier The modifier to apply.
+ * @param color The background color.
+ * @param activeColor The active color.
+ * @param colors Optional color overrides.
+ * @param shape The shape of the button.
+ * @param enabled Whether the cycler is enabled.
+ */
 @Composable
 fun AzCycler(
     options: List<String>,

@@ -139,7 +139,7 @@ The generated `AzGraph` automatically wraps your content in `AzHostActivityLayou
 
 | Annotation | Key Parameters (v7.25) |
 | :--- | :--- |
-| `@App` | `dock` (String), `expandedWidth` (Int), `vibrate` (Boolean) |
+| `@App` | `dock` (String), `expandedWidth` (Int), `collapsedWidth` (Int), `vibrate` (Boolean), `usePhysicalDocking` (Boolean) |
 | `@RailItem` | `textProperty`, `iconTextProperty`, `visibleProperty`, `disabledProperty` |
 | `@Toggle` | `isCheckedProperty` (Required for dynamic binding) |
 | `@Cycler` | `optionsProperty`, `selectedOptionProperty`, `disabledOptionsProperty` |
