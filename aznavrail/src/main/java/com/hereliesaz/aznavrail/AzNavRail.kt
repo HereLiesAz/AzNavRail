@@ -311,6 +311,10 @@ fun AzNavRail(
                                 val minY = screenHeightPx * 0.1f
                                 val maxY = maxOf(minY, (screenHeightPx * 0.9f) - railContentHeight)
                                 offsetY = offsetY.coerceIn(minY, maxY)
+
+                                val minX = 0f
+                                val maxX = (configuration.screenWidthDp * density.density) - railWidth.toPx()
+                                offsetX = offsetX.coerceIn(minX, maxX)
                             } else {
                                 if (scope.enableRailDragging && kotlin.math.abs(dragAmount.y) > 20 && kotlin.math.abs(dragAmount.y) > kotlin.math.abs(dragAmount.x)) {
                                     isFloating = true
