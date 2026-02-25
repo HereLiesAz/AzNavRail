@@ -520,11 +520,11 @@ class OverlayService : AzNavRailOverlayService() {
 3.  **Automatic Flipping**: Alignments passed to `onscreen` (e.g., `TopStart`) are automatically mirrored if the rail is docked to the right.
 4.  **Backgrounds**: Use the `background(weight)` DSL to place full-screen content behind the UI (e.g., maps, camera feeds). Backgrounds ignore safe zones.
 
-[API Reference](/API.md)
+[API Reference](/docs/API.md)
 
-[Full DSL](/DSL.md)
+[Full DSL](/docs/DSL.md)
 
-[Project Structure](/PROJECT_STRUCTURE.md)
+[Project Structure](/docs/PROJECT_STRUCTURE.md)
 
 ## Documentation
 
