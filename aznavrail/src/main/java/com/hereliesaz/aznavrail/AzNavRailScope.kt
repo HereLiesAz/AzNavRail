@@ -129,7 +129,16 @@ interface AzNavRailScope {
      *
      * @param id Unique identifier.
      * @param text Text display.
+     * @param route The navigation route (optional).
+     * @param content Custom content.
+     * @param color Custom color.
+     * @param shape Custom shape.
      * @param alignment Orientation of the nested rail (VERTICAL or HORIZONTAL).
+     * @param disabled Whether the item is disabled.
+     * @param screenTitle Title to display when active.
+     * @param info Help info string.
+     * @param classifiers Active classifiers.
+     * @param onFocus Focus callback.
      * @param nestedContent DSL block to define the items within the nested rail.
      */
     fun azNestedRail(id: String, text: String = "", route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, alignment: AzNestedRailAlignment = AzNestedRailAlignment.VERTICAL, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, nestedContent: AzNavRailScope.() -> Unit)
@@ -145,6 +154,18 @@ interface AzNavRailScope {
 
     /**
      * Adds a toggle switch item to the rail.
+     *
+     * @param id Unique identifier.
+     * @param isChecked The current state of the toggle.
+     * @param toggleOnText Text to display when checked.
+     * @param toggleOffText Text to display when unchecked.
+     * @param route Optional navigation route.
+     * @param color Custom color.
+     * @param shape Custom shape.
+     * @param disabled Whether the item is disabled.
+     * @param screenTitle Title to display when active.
+     * @param info Help info string.
+     * @param onClick Click callback.
      */
     fun azRailToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
 
@@ -169,6 +190,17 @@ interface AzNavRailScope {
 
     /**
      * Adds a Host Item to the menu. Host items can contain sub-items which expand inline.
+     *
+     * @param id Unique identifier.
+     * @param text Text display.
+     * @param route Optional navigation route.
+     * @param content Custom content.
+     * @param color Custom color.
+     * @param shape Custom shape.
+     * @param disabled Whether the item is disabled.
+     * @param screenTitle Title to display when active.
+     * @param info Help info string.
+     * @param onClick Click callback.
      */
     fun azMenuHostItem(id: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
 
@@ -213,6 +245,19 @@ interface AzNavRailScope {
      * Adds a Relocatable Item to a Host Item in the rail.
      * This item supports drag-and-drop reordering within its cluster.
      *
+     * @param id Unique identifier.
+     * @param hostId The ID of the parent Host Item.
+     * @param text Text display.
+     * @param route Optional navigation route.
+     * @param content Custom content.
+     * @param color Custom color.
+     * @param shape Custom shape.
+     * @param disabled Whether the item is disabled.
+     * @param screenTitle Title to display when active.
+     * @param info Help info string.
+     * @param classifiers Active classifiers.
+     * @param onFocus Focus callback.
+     * @param onClick Click callback (selection).
      * @param onRelocate Callback invoked when the item is moved. Provides old index, new index, and the new ID order.
      * @param hiddenMenu Scope to define context menu actions available via tap-when-focused.
      */
@@ -225,14 +270,23 @@ interface AzNavRailScope {
 interface HiddenMenuScope {
     /**
      * Adds a clickable list item to the hidden menu.
+     *
+     * @param text The text to display.
+     * @param onClick The action to perform when clicked.
      */
     fun listItem(text: String, onClick: () -> Unit)
     /**
      * Adds a navigation list item to the hidden menu.
+     *
+     * @param text The text to display.
+     * @param route The route to navigate to.
      */
     fun listItem(text: String, route: String)
     /**
      * Adds a text input item to the hidden menu.
+     *
+     * @param hint The hint text for the input field.
+     * @param onValueChange Callback invoked when the input value changes.
      */
     fun inputItem(hint: String, onValueChange: (String) -> Unit)
 }

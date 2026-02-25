@@ -17,7 +17,7 @@ interface AzGraphInterface {
      *
      * @param activity The host [ComponentActivity].
      */
-    fun Run(activity: ComponentActivity)
+    fun run(activity: ComponentActivity)
 }
 
 /**
@@ -40,7 +40,7 @@ abstract class AzActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        graph.Run(this)
+        graph.run(this)
     }
 
     /**
