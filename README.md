@@ -19,6 +19,49 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 ## 🚀 Setup
 
 Add JitPack to your `settings.gradle.kts`:
+## Features
+
+- **Responsive Layout**: Automatically adjusts to orientation changes.
+- **Scrollable**: Both rail and menu are scrollable.
+- **DSL API**: Simple, declarative API.
+- **Multi-line Items**: Supports multi-line text.
+- **Stateless**: Hoist and manage state yourself.
+- **Shapes**: `CIRCLE`, `SQUARE`, `RECTANGLE`, or `NONE`. `RECTANGLE`/`NONE` auto-size width (fixed 36dp height).
+- **Smart Collapse**: Items collapse the rail after interaction.
+- **Delayed Cycler**: Built-in delay prevents accidental triggers.
+- **Custom Colors**: Apply custom colors to buttons.
+- **Dividers**: Add menu dividers.
+- **Automatic Header**: Displays app icon or name.
+- **Layout**: Pack buttons or preserve spacing.
+- **Disabled State**: Disable items or options.
+- **Loading State**: Built-in loading animation.
+- **Standalone Components**: `AzButton`, `AzToggle`, `AzCycler`, `AzDivider`, `AzRoller`.
+- **Navigation**: seamless Jetpack Navigation integration.
+- **Hierarchy**: Nested menus with host and sub-items.
+- **Draggable (FAB Mode)**: Detach and move the rail.
+- **Reorderable Items**: `AzRailRelocItem` allows user drag-and-drop reordering within clusters.
+    -   **Drag**: Long press (with vibration feedback) to start dragging.
+    -   **Hidden Menu**: Tap to focus/select. If already focused, tap again to open the hidden menu.
+- **System Overlay**: System-wide overlay support with automatic resizing and activity launching.
+- **Auto-sizing Text**: Text fits without wrapping (unless explicit newline).
+- **Toggles/Cyclers**: Simple state management.
+- **Gestures**: Swipe/tap to expand, collapse, or undock.
+- **`AzTextBox`**: Modern text box with autocomplete and submit button.
+- **`AzForm`**: Group multiple text boxes into a single form with a shared submit button.
+- **`AzRoller`**: A dropdown menu that works like a roller or slot machine, cycling through options infinitely.
+- **Info Screen**: Interactive help mode for onboarding with visual guides and coordinate display.
+- **Left/Right Docking**: Position the rail on the left or right side of the screen.
+- **No Menu Mode**: Treat all items as rail items, removing the side drawer.
+- **AzHostActivityLayout**: A layout container that enforces strict safe zones and automatic alignment rules.
+- **AzNavHost**: A wrapper around `androidx.navigation.compose.NavHost` for seamless integration.
+- **Smart Transitions**: `AzNavHost` automatically configures directional transitions (slide in/out) based on the docking side (e.g., standard LTR or mirrored for Right dock).
+- **Nested Rails**: `azNestedRail` allows for secondary popup rails (Vertical or Horizontal) triggered from a rail item.
+
+## AzNavRail for Android (Jetpack Compose)
+
+### Setup
+
+To use this library, add JitPack to your `settings.gradle.kts`:
 
 ~~~kotlin
 dependencyResolutionManagement {
@@ -146,11 +189,22 @@ fun SampleScreen() {
 
 ### AzLoad Animation
 
-The `AzLoad` component provides a loading animation. It can be used as a full-screen overlay managed by `AzNavRail` or as a standalone component.
+### 1. Strict Layout System
+`AzHostActivityLayout` enforces a "Constitution" for your UI to ensure consistency and usability:
+*   **Safe Zones:** Top 10% and Bottom 10% are reserved. Interactive content is pushed to the center 80%.
+*   **Automatic Padding:** Content in `onscreen` is automatically padded to avoid the rail, regardless of docking side or rotation.
+*   **Backgrounds:** Use `background(weight)` to place content *behind* the rail (e.g., maps).
 
-#### Full-Screen Overlay
+### 2. Navigation Items
+*   **`azRailItem`**: Always visible.
+*   **`azMenuItem`**: Visible only in the drawer.
+*   **`azNestedRail`**: Opens a secondary popup rail (Vertical/Horizontal).
+*   **`azRailRelocItem`**: Draggable items for user reordering.
 
-To show a loading animation in the middle of the screen (overlaying the rail and content), use the `isLoading` parameter in `azAdvanced`.
+### 3. Interactive Components
+Manage state directly in the rail without leaving the context.
+*   **Toggles:** `azRailToggle` / `azMenuToggle`.
+*   **Cyclers:** `azRailCycler` (multi-state buttons).
 
 ~~~kotlin
 AzNavRail(...) {
@@ -253,11 +307,14 @@ AzNavRail can function as a system-wide overlay (using `SYSTEM_ALERT_WINDOW`). T
 
 #### Features
 
-* **Dynamic Resizing**: The overlay window automatically expands to fill the screen during drag operations (for smooth movement) and shrinks to wrap its content when stationary (to unblock the underlying screen).
-* **Automatic Expansion**: When dropped, the rail items automatically expand.
-* **Automatic Activity Launching**: Clicking a navigation item in the overlay automatically brings the main application to the foreground and navigates to the associated route.
-* **Exclusive Host Expansion**: Expanding a host item collapses all other host items, ensuring the overlay size remains manageable.
-* **Footer Color Enforcement**: The footer text color matches the primary or first item color for consistency.
+---
+### Documentation
+
+The library includes a comprehensive **Complete Guide** (`docs/AZNAVRAIL_COMPLETE_GUIDE.md`) containing:
+* Full Getting Started instructions.
+* Complete API and DSL references.
+* Layout rules and best practices.
+* Complete Sample App source code.
 
 ## License
 

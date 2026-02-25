@@ -262,6 +262,8 @@ interface AzNavRailScope {
      * @param nestedRailAlignment The alignment of the nested rail (VERTICAL or HORIZONTAL).
      * @param nestedContent DSL block to define the items within the nested rail.
      * @param hiddenMenu Scope to define context menu actions available via tap-when-focused.
+     * @param nestedRailAlignment The alignment of the nested rail (VERTICAL or HORIZONTAL).
+     * @param nestedContent DSL block to define the items within the nested rail.
      */
     fun azRailRelocItem(id: String, hostId: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null, onRelocate: ((Int, Int, List<String>) -> Unit)? = null, nestedRailAlignment: AzNestedRailAlignment = AzNestedRailAlignment.VERTICAL, nestedContent: (AzNavRailScope.() -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit = {})
 }
