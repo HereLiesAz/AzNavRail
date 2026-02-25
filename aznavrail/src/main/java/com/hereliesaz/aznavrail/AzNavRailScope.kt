@@ -554,6 +554,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     }
 
     private fun addCycler(id: String, hostId: String? = null, options: List<String>, selectedOption: String, route: String?, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, info: String?, isRailItem: Boolean, isSubItem: Boolean, color: Color?, shape: AzButtonShape?, onClick: () -> Unit) {
+        checkId(id)
         require(options.contains(selectedOption)) {
             "Error adding item '$id': selectedOption '$selectedOption' must be present in the options list: $options"
         }
@@ -571,6 +572,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     }
 
     private fun addItem(id: String, text: String, route: String?, screenTitle: String?, info: String?, isRailItem: Boolean, disabled: Boolean = false, isHost: Boolean = false, isSubItem: Boolean = false, hostId: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, onClick: () -> Unit) {
+        checkId(id)
         require(text.isNotBlank()) {
             "Error adding item '$id': 'text' parameter cannot be blank."
         }
