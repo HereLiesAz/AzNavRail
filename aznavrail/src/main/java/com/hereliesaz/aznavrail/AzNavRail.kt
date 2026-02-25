@@ -138,15 +138,15 @@ fun AzNavRail(
     if (!isHostPresent) {
         val errorMessage = """
             CRITICAL ERROR: AzNavRail invoked without AzHostActivityLayout!
-            
+
             AzNavRail enforces strict layout rules for safe zones, rotation, and docking.
             It MUST be wrapped in an AzHostActivityLayout.
-            
+
             Correct Usage:
             AzHostActivityLayout(navController = ...) {
                 // Your AzNavRail content here
             }
-            
+
             Or ensure you are using the generated AzGraph system.
         """.trimIndent()
 
