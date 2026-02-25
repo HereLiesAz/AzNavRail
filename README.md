@@ -19,6 +19,49 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 ## 🚀 Setup
 
 Add JitPack to your `settings.gradle.kts`:
+## Features
+
+- **Responsive Layout**: Automatically adjusts to orientation changes.
+- **Scrollable**: Both rail and menu are scrollable.
+- **DSL API**: Simple, declarative API.
+- **Multi-line Items**: Supports multi-line text.
+- **Stateless**: Hoist and manage state yourself.
+- **Shapes**: `CIRCLE`, `SQUARE`, `RECTANGLE`, or `NONE`. `RECTANGLE`/`NONE` auto-size width (fixed 36dp height).
+- **Smart Collapse**: Items collapse the rail after interaction.
+- **Delayed Cycler**: Built-in delay prevents accidental triggers.
+- **Custom Colors**: Apply custom colors to buttons.
+- **Dividers**: Add menu dividers.
+- **Automatic Header**: Displays app icon or name.
+- **Layout**: Pack buttons or preserve spacing.
+- **Disabled State**: Disable items or options.
+- **Loading State**: Built-in loading animation.
+- **Standalone Components**: `AzButton`, `AzToggle`, `AzCycler`, `AzDivider`, `AzRoller`.
+- **Navigation**: seamless Jetpack Navigation integration.
+- **Hierarchy**: Nested menus with host and sub-items.
+- **Draggable (FAB Mode)**: Detach and move the rail.
+- **Reorderable Items**: `AzRailRelocItem` allows user drag-and-drop reordering within clusters.
+    -   **Drag**: Long press (with vibration feedback) to start dragging.
+    -   **Hidden Menu**: Tap to focus/select. If already focused, tap again to open the hidden menu.
+- **System Overlay**: System-wide overlay support with automatic resizing and activity launching.
+- **Auto-sizing Text**: Text fits without wrapping (unless explicit newline).
+- **Toggles/Cyclers**: Simple state management.
+- **Gestures**: Swipe/tap to expand, collapse, or undock.
+- **`AzTextBox`**: Modern text box with autocomplete and submit button.
+- **`AzForm`**: Group multiple text boxes into a single form with a shared submit button.
+- **`AzRoller`**: A dropdown menu that works like a roller or slot machine, cycling through options infinitely.
+- **Info Screen**: Interactive help mode for onboarding with visual guides and coordinate display.
+- **Left/Right Docking**: Position the rail on the left or right side of the screen.
+- **No Menu Mode**: Treat all items as rail items, removing the side drawer.
+- **AzHostActivityLayout**: A layout container that enforces strict safe zones and automatic alignment rules.
+- **AzNavHost**: A wrapper around `androidx.navigation.compose.NavHost` for seamless integration.
+- **Smart Transitions**: `AzNavHost` automatically configures directional transitions (slide in/out) based on the docking side (e.g., standard LTR or mirrored for Right dock).
+- **Nested Rails**: `azNestedRail` allows for secondary popup rails (Vertical or Horizontal) triggered from a rail item.
+
+## AzNavRail for Android (Jetpack Compose)
+
+### Setup
+
+To use this library, add JitPack to your `settings.gradle.kts`:
 
 ~~~kotlin
 dependencyResolutionManagement {
@@ -133,6 +176,13 @@ AzRoller(
 *   **Info Screen:** Set `infoScreen = true` in `azAdvanced` to overlay a tutorial mode with visual guides connecting items to their descriptions.
 
 ---
+### Documentation
+
+The library includes a comprehensive **Complete Guide** (`docs/AZNAVRAIL_COMPLETE_GUIDE.md`) containing:
+* Full Getting Started instructions.
+* Complete API and DSL references.
+* Layout rules and best practices.
+* Complete Sample App source code.
 
 ## License
 
