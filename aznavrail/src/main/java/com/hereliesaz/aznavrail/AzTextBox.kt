@@ -159,7 +159,7 @@ fun AzTextBox(
         }
     }
 
-    val text = if (isControlled) value!! else internalText
+    val text = if (isControlled) value ?: "" else internalText
 
     val onTextChange: (String) -> Unit = { newText ->
         if (!isControlled) {

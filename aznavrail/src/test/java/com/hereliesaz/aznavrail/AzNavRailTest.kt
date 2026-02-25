@@ -38,7 +38,14 @@ class AzNavRailTest {
                     isChecked = isCheckedState.value,
                     toggleOnText = "On",
                     toggleOffText = "Off",
-                    onClick = { isCheckedState.value = !isCheckedState.value }
+                    onClick = { isCheckedState.value = !isCheckedState.value },
+                    // Added default arguments as required by new API signature
+                    route = null,
+                    color = null,
+                    shape = null,
+                    disabled = false,
+                    screenTitle = null,
+                    info = null
                 )
                 onscreen { }
             }

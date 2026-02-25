@@ -8,19 +8,17 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.Before
 
 class AzNavRailScopeTest {
 
     private val scope = AzNavRailScopeImpl()
 
-<<<<<<< Updated upstream
-=======
-    @org.junit.Before
+    @Before
     fun setUp() {
         scope.reset()
     }
 
->>>>>>> Stashed changes
     @Test
     fun `azConfig updates configuration`() {
         scope.azConfig(
@@ -105,11 +103,7 @@ class AzNavRailScopeTest {
         assertEquals("nested", item.id)
         assertTrue(item.isNestedRail)
         assertEquals(AzNestedRailAlignment.HORIZONTAL, item.nestedRailAlignment)
-<<<<<<< Updated upstream
-
-=======
         
->>>>>>> Stashed changes
         assertNotNull(item.nestedRailItems)
         assertEquals(1, item.nestedRailItems?.size)
         assertEquals("sub1", item.nestedRailItems?.get(0)?.id)
@@ -147,29 +141,18 @@ class AzNavRailScopeTest {
     @Test
     fun `azRailHostItem and SubItems`() {
         scope.azRailHostItem("host", "Host")
-        scope.azRailSubItem("sub", "host", "Sub")
+        scope.azRailSubItem("sub", "host", "Sub", classifiers = emptySet(), onFocus = null, onClick = null)
 
         assertEquals(2, scope.navItems.size)
-<<<<<<< Updated upstream
-
-        val host = scope.navItems[0]
-        assertTrue(host.isHost)
-
-=======
         
         val host = scope.navItems[0]
         assertTrue(host.isHost)
         
->>>>>>> Stashed changes
         val sub = scope.navItems[1]
         assertTrue(sub.isSubItem)
         assertEquals("host", sub.hostId)
     }
-<<<<<<< Updated upstream
-
-=======
     
->>>>>>> Stashed changes
     @Test
     fun `azRailRelocItem sets up hidden menu`() {
         scope.azRailRelocItem(
@@ -179,11 +162,7 @@ class AzNavRailScopeTest {
         ) {
             listItem("Action") {}
         }
-<<<<<<< Updated upstream
-
-=======
         
->>>>>>> Stashed changes
         val item = scope.navItems[0]
         assertTrue(item.isRelocItem)
         assertNotNull(item.hiddenMenuItems)

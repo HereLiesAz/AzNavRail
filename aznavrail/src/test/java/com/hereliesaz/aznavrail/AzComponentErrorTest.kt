@@ -58,4 +58,10 @@ class AzComponentErrorTest {
             onClick = {}
         )
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `adding item with duplicate ID throws exception`() {
+        scope.azRailItem(id = "duplicate", text = "First")
+        scope.azRailItem(id = "duplicate", text = "Second")
+    }
 }
