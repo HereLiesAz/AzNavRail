@@ -315,7 +315,7 @@ fun AzHostFragmentLayout(
     ) {
         items.forEach { item ->
             val finalAlignment = if (dockingSide == AzDockingSide.RIGHT && item.alignment is BiasAlignment) {
-                BiasAlignment(horizontalBias = -(item.alignment as BiasAlignment).horizontalBias, verticalBias = (item.alignment as BiasAlignment).verticalBias)
+                BiasAlignment(horizontalBias = -item.alignment.horizontalBias, verticalBias = item.alignment.verticalBias)
             } else {
                 item.alignment
             }
