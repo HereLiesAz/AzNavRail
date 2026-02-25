@@ -313,14 +313,14 @@ private fun DraggableRailItemWrapper(
         if (currentIdx != -1 && draggedStartIdx != -1) {
             val draggedItem = scope.navItems[draggedStartIdx]
             if (item.hostId == draggedItem.hostId) {
-                if (draggedStartIdx < currentDropTargetIndex!!) {
-                    if (currentIdx > draggedStartIdx && currentIdx <= currentDropTargetIndex!!) {
+                if (draggedStartIdx < currentDropTargetIndex) {
+                    if (currentIdx > draggedStartIdx && currentIdx <= currentDropTargetIndex) {
                         visualOffsetY = -myHeightDp
                     } else {
                         visualOffsetY = 0.dp
                     }
-                } else if (draggedStartIdx > currentDropTargetIndex!!) {
-                    if (currentIdx >= currentDropTargetIndex!! && currentIdx < draggedStartIdx) {
+                } else if (draggedStartIdx > currentDropTargetIndex) {
+                    if (currentIdx >= currentDropTargetIndex && currentIdx < draggedStartIdx) {
                         visualOffsetY = myHeightDp
                     } else {
                         visualOffsetY = 0.dp
@@ -571,7 +571,7 @@ private fun DraggableRailItemWrapper(
 
         if (hiddenMenuOpenId == item.id && !item.hiddenMenuItems.isNullOrEmpty()) {
             HiddenMenuPopup(
-                items = item.hiddenMenuItems!!,
+                items = item.hiddenMenuItems ?: emptyList(),
                 onDismiss = onHiddenMenuDismiss,
                 onItemClick = { menuItem ->
                     scope.hiddenMenuOnClickMap[menuItem.id]?.invoke()
