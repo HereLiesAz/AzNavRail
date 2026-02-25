@@ -144,3 +144,13 @@ The generated `AzGraph` automatically wraps your content in `AzHostActivityLayou
 | `@Toggle` | `isCheckedProperty` (Required for dynamic binding) |
 | `@Cycler` | `optionsProperty`, `selectedOptionProperty`, `disabledOptionsProperty` |
 | `@Advanced`| `isLoadingProperty` |
+
+---
+
+## Help & Info Overlay
+
+The **Help Overlay** allows you to show a tutorial-like layer over your rail.
+-   Set `infoScreen = true` in `azAdvanced` or `azSettings` to activate it.
+-   Provide `info` text for your items (e.g., `azRailItem(..., info = "This is Home")`).
+
+**Auto-Wiring:** As of v7.25, the rail **automatically** calculates item positions for the help lines. You do not need to manually implement `onItemGloballyPositioned` unless you have custom needs.

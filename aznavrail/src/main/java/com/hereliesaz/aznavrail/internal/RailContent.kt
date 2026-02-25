@@ -70,7 +70,9 @@ internal fun RailContent(
         modifier = Modifier
             .padding(4.dp)
             .onGloballyPositioned { coordinates ->
-                onItemGloballyPositioned?.invoke(item.id, coordinates.boundsInWindow())
+                val bounds = coordinates.boundsInWindow()
+                RelocItemHandler.itemBoundsCache[item.id] = bounds
+                onItemGloballyPositioned?.invoke(item.id, bounds)
             }
             .then(dragModifier)
     ) {
