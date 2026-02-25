@@ -37,7 +37,7 @@ interface AzNavRailScope {
      * @param collapsedWidth The width of the rail when collapsed.
      * @param showFooter Whether to show the footer (Privacy, Terms, Help) in the menu.
      */
-    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 280.dp, collapsedWidth: Dp = 136.dp, showFooter: Boolean = true)
+    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 130.dp, collapsedWidth: Dp = 100.dp, showFooter: Boolean = true)
 
     /**
      * Configures the visual theme of the rail.

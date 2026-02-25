@@ -12,7 +12,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -302,6 +304,7 @@ fun AzNavRail(
                     modifier = Modifier
                         .padding(AzNavRailDefaults.HeaderPadding)
                         .height(AzNavRailDefaults.HeaderHeightDp)
+                        .fillMaxWidth() // Center alignment requires full width
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onTap = { toggleExpanded() },
@@ -320,7 +323,8 @@ fun AzNavRail(
                                 }
                             )
                         },
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center // Center content horizontally
                 ) {
                     if (scope.displayAppName && !isFloating) {
                         // Unconstrained bleeding text
@@ -356,7 +360,7 @@ fun AzNavRail(
                 if (isFloating && !showFloatingButtons) return@Column
 
                 // MAIN CONTENT and MENU separation
-                Box(modifier = Modifier.weight(1f)) {
+                BoxWithConstraints(modifier = Modifier.weight(1f)) {
                     if (isExpanded) {
                         val scrollState = rememberScrollState()
                         Column(
@@ -404,42 +408,59 @@ fun AzNavRail(
                             }
                         }
                     } else {
-                        RailItems(
-                            items = scope.navItems,
-                            scope = scope,
-                            navController = effectiveNavController,
-                            currentDestination = actualCurrentDestination,
-                            buttonSize = AzNavRailDefaults.ButtonWidth,
-                            onRailCyclerClick = { item ->
-                                val state = cyclerStates[item.id]
-                                if (state != null && !item.disabled) {
-                                    state.job?.cancel()
-                                    val options = item.options ?: emptyList()
-                                    val enabledOptions = options.filterNot { it in (item.disabledOptions ?: emptyList()) }
-                                    if (enabledOptions.isNotEmpty()) {
-                                        val currentIndex = enabledOptions.indexOf(state.displayedOption)
-                                        val nextOption = enabledOptions[(currentIndex + 1) % enabledOptions.size]
+                        // Calculate total height of items
+                        val totalItemHeight = scope.navItems.filter { it.isRailItem && !it.isSubItem }.sumOf {
+                            (AzNavRailDefaults.ButtonWidth.value + (if(scope.packButtons || isFloating) 0f else AzNavRailDefaults.RailContentVerticalArrangement.value)).toDouble()
+                        }.dp
 
-                                        cyclerStates[item.id] = state.copy(
-                                            displayedOption = nextOption,
-                                            job = coroutineScope.launch {
-                                                delay(1000L)
-                                                scope.onClickMap[item.id]?.invoke()
-                                                cyclerStates[item.id] = cyclerStates[item.id]?.copy(job = null) ?: state
-                                            }
-                                        )
+                        val availableHeight = maxHeight
+                        val isScrollable = totalItemHeight > (availableHeight * 0.8f)
+
+                        val scrollModifier = if (isScrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth() // Ensure column takes full width for centering
+                                .then(scrollModifier),
+                            horizontalAlignment = Alignment.CenterHorizontally // Center buttons horizontally
+                        ) {
+                            RailItems(
+                                items = scope.navItems,
+                                scope = scope,
+                                navController = effectiveNavController,
+                                currentDestination = actualCurrentDestination,
+                                buttonSize = AzNavRailDefaults.ButtonWidth,
+                                onRailCyclerClick = { item ->
+                                    val state = cyclerStates[item.id]
+                                    if (state != null && !item.disabled) {
+                                        state.job?.cancel()
+                                        val options = item.options ?: emptyList()
+                                        val enabledOptions = options.filterNot { it in (item.disabledOptions ?: emptyList()) }
+                                        if (enabledOptions.isNotEmpty()) {
+                                            val currentIndex = enabledOptions.indexOf(state.displayedOption)
+                                            val nextOption = enabledOptions[(currentIndex + 1) % enabledOptions.size]
+
+                                            cyclerStates[item.id] = state.copy(
+                                                displayedOption = nextOption,
+                                                job = coroutineScope.launch {
+                                                    delay(1000L)
+                                                    scope.onClickMap[item.id]?.invoke()
+                                                    cyclerStates[item.id] = cyclerStates[item.id]?.copy(job = null) ?: state
+                                                }
+                                            )
+                                        }
                                     }
-                                }
-                            },
-                            onItemSelected = { item ->
-                                if (item.collapseOnClick && !scope.noMenu) isExpanded = false
-                            },
-                            hostStates = hostStates,
-                            packRailButtons = isFloating || scope.packButtons, // Forced pack in FAB mode
-                            visualDockingSide = visualDockingSide,
-                            onItemGloballyPositioned = scope.onItemGloballyPositioned,
-                            infoScreen = scope.infoScreen
-                        )
+                                },
+                                onItemSelected = { item ->
+                                    if (item.collapseOnClick && !scope.noMenu) isExpanded = false
+                                },
+                                hostStates = hostStates,
+                                packRailButtons = isFloating || scope.packButtons, // Forced pack in FAB mode
+                                visualDockingSide = visualDockingSide,
+                                onItemGloballyPositioned = scope.onItemGloballyPositioned,
+                                infoScreen = scope.infoScreen
+                            )
+                        }
                     }
                 }
 
