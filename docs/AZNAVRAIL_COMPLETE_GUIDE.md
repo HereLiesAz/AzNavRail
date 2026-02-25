@@ -13,11 +13,12 @@ Welcome to the definitive "Encyclopedic" guide for **AzNavRail**. This document 
     *   [Docking & Orientation](#docking--orientation)
     *   [FAB Mode (Draggable Rail)](#fab-mode-draggable-rail)
     *   [Info Screen (Help Mode)](#info-screen-help-mode)
-3.  [Navigation Items](#navigation-items)
+3.  [Navigation Structure](#navigation-structure)
+    *   [Hosted vs. Nested Rails](#hosted-vs-nested-rails)
+    *   [Hosted Rails (Hierarchical)](#hosted-rails-hierarchical)
+    *   [Nested Rails (Popup)](#nested-rails-popup)
     *   [Standard Items](#standard-items)
-    *   [Nested Rails](#nested-rails)
     *   [Reorderable Items (Drag & Drop)](#reorderable-items-drag--drop)
-    *   [Host & Sub-Items](#host--sub-items)
 4.  [Interactive Components](#interactive-components)
     *   [Toggles](#toggles)
     *   [Cyclers](#cyclers)
@@ -92,7 +93,7 @@ azConfig(
 
 **Abilities:**
 *   **Activation:** Long-press the header icon OR swipe vertically on the rail. Triggers haptic feedback.
-*   **Drag Constraints:** Can be dragged anywhere vertically between the 10% and 90% safe zones.
+*   **Drag Constraints:** Can be dragged anywhere on the screen. The X-axis is constrained to the screen width, and the Y-axis is constrained to the 10-90% safe zones.
 *   **Auto-Fold:** If expanded, items fold up into the FAB while dragging and unfold when dropped.
 *   **Snapping:** Dragging close to the docking edge snaps it back to Rail Mode.
 
@@ -126,7 +127,63 @@ azRailItem(..., info = "This goes to Home")
 
 ---
 
-## Navigation Items
+## Navigation Structure
+
+### Hosted vs. Nested Rails
+
+It is crucial to understand the difference between the two hierarchical systems:
+
+| Feature | **Hosted Rails** | **Nested Rails** |
+| :--- | :--- | :--- |
+| **Visual Metaphor** | Accordion / Expansion | Popup / Overlay |
+| **Location** | Inline within the Rail or Menu | Floating next to the anchor item |
+| **Usage** | Primary navigation hierarchy (e.g., Settings categories) | Complex toolsets, deep sub-menus, or clutter reduction |
+| **Interaction** | Click to Expand/Collapse | Click to Open Popup (closes on outside click) |
+| **Context** | Shares the same visual container | Creates a new Z-ordered window |
+
+### Hosted Rails (Hierarchical)
+
+**Description:** Accordion-style hierarchy where parent items expand to reveal children inline.
+
+**Abilities:**
+*   **Exclusive Expansion:** Only one Host can be open at a time. Opening another auto-collapses the first.
+*   **Location:** Hosts can be in the Rail (always visible) or Menu (drawer only).
+
+**Usage:**
+~~~kotlin
+azRailHostItem(id = "settings", text = "Settings")
+// Child items MUST reference the parent's ID
+azRailSubItem(id = "wifi", hostId = "settings", text = "WiFi", route = "wifi")
+azRailSubItem(id = "bt", hostId = "settings", text = "Bluetooth", route = "bluetooth")
+~~~
+
+### Nested Rails (Popup)
+
+**Description:** A secondary rail that appears as a popup overlay when the parent item is clicked.
+
+**Abilities:**
+*   **Alignment:**
+    *   `VERTICAL`: Drops down from the item. Good for sub-menus.
+    *   `HORIZONTAL`: Slides out to the side. Good for tool palettes.
+*   **Positioning:** Automatically calculated relative to the anchor item's screen position.
+*   **Offset:** Horizontal rails have a configurable margin (default 8dp) to prevent overlap.
+*   **Reloc Integration:** Relocatable items (`azRailRelocItem`) can also host Nested Rails.
+
+**Limitations:**
+*   **Single Level:** Nested rails cannot contain *other* nested rails (depth limit 1).
+
+**Usage:**
+~~~kotlin
+azNestedRail(
+    id = "tools",
+    text = "Tools",
+    alignment = AzNestedRailAlignment.HORIZONTAL
+) {
+    // Define the content of the popup rail here
+    azRailItem("hammer", "Hammer")
+    azRailItem("wrench", "Wrench")
+}
+~~~
 
 ### Standard Items
 
@@ -150,36 +207,18 @@ azRailItem(
 )
 ~~~
 
-### Nested Rails
-
-**Description:** A secondary popup rail triggered by an item.
-
-**Abilities:**
-*   **Alignment:** `VERTICAL` (drops down) or `HORIZONTAL` (slides out).
-*   **Positioning:** Automatically calculated relative to the anchor item.
-*   **Offset:** Horizontal rails have a configurable margin (default 8dp).
-
-**Limitations:**
-*   **Single Level:** Nested rails cannot contain other nested rails.
-
-**Usage:**
-~~~kotlin
-azNestedRail(id = "tools", text = "Tools", alignment = AzNestedRailAlignment.HORIZONTAL) {
-    azRailItem("hammer", "Hammer")
-}
-~~~
-
 ### Reorderable Items (Drag & Drop)
 
 **Description:** Items that can be rearranged by the user.
 
 **Abilities:**
 *   **Cluster Logic:** Items can only be moved within their contiguous "cluster" (neighbors sharing the same `hostId` and type).
-*   **Interaction:**
+*   **Interaction Model:**
     *   **Tap:** Selects/Focuses the item.
     *   **Long Press + Drag:** Moves the item within its cluster (vibration confirmation on grab).
     *   **Long Press (No Drag):** Opens the Hidden Context Menu or Nested Rail.
-*   **Context Menu:** Supports `listItem` (actions) and `inputItem` (renaming).
+*   **Nested Rail Support:** Can host a Nested Rail via the `nestedContent` block.
+*   **Context Menu:** Supports `listItem` (actions) and `inputItem` (renaming) in the `hiddenMenu` block.
 
 **Limitations:**
 *   **Minimum 2:** You need at least 2 items to form a cluster.
@@ -187,23 +226,19 @@ azNestedRail(id = "tools", text = "Tools", alignment = AzNestedRailAlignment.HOR
 
 **Usage:**
 ~~~kotlin
-azRailRelocItem(id = "1", hostId = "favs", text = "A", onRelocate = { f, t, list -> }) {
+azRailRelocItem(
+    id = "1",
+    hostId = "favs",
+    text = "Favorite A",
+    onRelocate = { from, to, newOrder -> },
+    // Define Nested Rail (Popup) content
+    nestedContent = {
+        azRailItem("sub_action", "Sub Action")
+    }
+) {
+    // Define Hidden Context Menu (Fallback)
     listItem("Delete") { }
 }
-~~~
-
-### Host & Sub-Items
-
-**Description:** Accordion-style hierarchy.
-
-**Abilities:**
-*   **Exclusive Expansion:** Only one Host can be open at a time. Opening another auto-collapses the first.
-*   **Location:** Hosts can be in the Rail (always visible) or Menu (drawer only).
-
-**Usage:**
-~~~kotlin
-azRailHostItem(id = "settings", text = "Settings")
-azRailSubItem(id = "wifi", hostId = "settings", text = "WiFi")
 ~~~
 
 ---
