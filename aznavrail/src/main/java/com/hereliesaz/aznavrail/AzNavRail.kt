@@ -12,7 +12,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -79,6 +81,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
+/**
+ * Annotation marking that the [AzNavRail] composable must be used within an [AzHostActivityLayout].
+ *
+ * This enforces strict layout rules (safe zones, padding, z-ordering) and ensures that the
+ * navigation rail behaves correctly within the application structure. Instantiating [AzNavRail]
+ * directly without the host wrapper will result in a runtime error or a visual warning.
+ */
 @RequiresOptIn(message = "AzNavRail must be used within AzHostActivityLayout to ensure safe zones and proper behavior.")
 @Retention(AnnotationRetention.BINARY)
 annotation class AzStrictLayout
@@ -87,6 +96,29 @@ object AzNavRail {
     const val EXTRA_ROUTE = "com.hereliesaz.aznavrail.extra.ROUTE"
 }
 
+/**
+ * The core composable for the AzNavRail navigation system.
+ *
+ * This component renders a vertical navigation rail that can expand into a full drawer menu.
+ * It supports advanced features like FAB mode (draggable rail), cyclers, toggles, hierarchical
+ * navigation, and strict layout enforcement via [AzHostActivityLayout].
+ *
+ * **Note:** This composable is marked with [AzStrictLayout] and should primarily be used via
+ * the [AzHostActivityLayout] wrapper, which handles placement and safe zones automatically.
+ *
+ * @param modifier The modifier to be applied to the rail container.
+ * @param navController The [NavHostController] used for navigation. If null, a new one is created.
+ * @param currentDestination The current route destination. If null, it is derived from the [navController].
+ * @param isLandscape Explicitly set the orientation mode. If null, it is derived from configuration.
+ * @param initiallyExpanded Whether the rail should be expanded (show menu) by default.
+ * @param disableSwipeToOpen Whether the swipe gesture to open the menu is disabled.
+ * @param providedScope An optional pre-configured [AzNavRailScopeImpl]. Used internally by [AzHostActivityLayout].
+ * @param orientation The orientation of the rail (Vertical or Horizontal). Default is Vertical.
+ * @param visualDockingSide The side of the screen where the rail is visually docked (Left or Right).
+ * @param railAlignment The alignment of the rail within its container.
+ * @param reverseLayout Whether to reverse the layout direction (e.g., for Right-to-Left languages or right docking).
+ * @param content The configuration block for the rail, defined using the [AzNavRailScope] DSL.
+ */
 @Composable
 fun AzNavRail(
     modifier: Modifier = Modifier,
@@ -272,6 +304,7 @@ fun AzNavRail(
                     modifier = Modifier
                         .padding(AzNavRailDefaults.HeaderPadding)
                         .height(AzNavRailDefaults.HeaderHeightDp)
+                        .fillMaxWidth() // Center alignment requires full width
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onTap = { toggleExpanded() },
@@ -290,7 +323,8 @@ fun AzNavRail(
                                 }
                             )
                         },
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center // Center content horizontally
                 ) {
                     if (scope.displayAppName && !isFloating) {
                         // Unconstrained bleeding text
@@ -326,7 +360,7 @@ fun AzNavRail(
                 if (isFloating && !showFloatingButtons) return@Column
 
                 // MAIN CONTENT and MENU separation
-                Box(modifier = Modifier.weight(1f)) {
+                BoxWithConstraints(modifier = Modifier.weight(1f)) {
                     if (isExpanded) {
                         val scrollState = rememberScrollState()
                         Column(
@@ -374,42 +408,59 @@ fun AzNavRail(
                             }
                         }
                     } else {
-                        RailItems(
-                            items = scope.navItems,
-                            scope = scope,
-                            navController = effectiveNavController,
-                            currentDestination = actualCurrentDestination,
-                            buttonSize = AzNavRailDefaults.ButtonWidth,
-                            onRailCyclerClick = { item ->
-                                val state = cyclerStates[item.id]
-                                if (state != null && !item.disabled) {
-                                    state.job?.cancel()
-                                    val options = item.options ?: emptyList()
-                                    val enabledOptions = options.filterNot { it in (item.disabledOptions ?: emptyList()) }
-                                    if (enabledOptions.isNotEmpty()) {
-                                        val currentIndex = enabledOptions.indexOf(state.displayedOption)
-                                        val nextOption = enabledOptions[(currentIndex + 1) % enabledOptions.size]
+                        // Calculate total height of items
+                        val totalItemHeight = scope.navItems.filter { it.isRailItem && !it.isSubItem }.sumOf {
+                            (AzNavRailDefaults.ButtonWidth.value + (if(scope.packButtons || isFloating) 0f else AzNavRailDefaults.RailContentVerticalArrangement.value)).toDouble()
+                        }.dp
 
-                                        cyclerStates[item.id] = state.copy(
-                                            displayedOption = nextOption,
-                                            job = coroutineScope.launch {
-                                                delay(1000L)
-                                                scope.onClickMap[item.id]?.invoke()
-                                                cyclerStates[item.id] = cyclerStates[item.id]?.copy(job = null) ?: state
-                                            }
-                                        )
+                        val availableHeight = maxHeight
+                        val isScrollable = totalItemHeight > (availableHeight * 0.8f)
+
+                        val scrollModifier = if (isScrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth() // Ensure column takes full width for centering
+                                .then(scrollModifier),
+                            horizontalAlignment = Alignment.CenterHorizontally // Center buttons horizontally
+                        ) {
+                            RailItems(
+                                items = scope.navItems,
+                                scope = scope,
+                                navController = effectiveNavController,
+                                currentDestination = actualCurrentDestination,
+                                buttonSize = AzNavRailDefaults.ButtonWidth,
+                                onRailCyclerClick = { item ->
+                                    val state = cyclerStates[item.id]
+                                    if (state != null && !item.disabled) {
+                                        state.job?.cancel()
+                                        val options = item.options ?: emptyList()
+                                        val enabledOptions = options.filterNot { it in (item.disabledOptions ?: emptyList()) }
+                                        if (enabledOptions.isNotEmpty()) {
+                                            val currentIndex = enabledOptions.indexOf(state.displayedOption)
+                                            val nextOption = enabledOptions[(currentIndex + 1) % enabledOptions.size]
+
+                                            cyclerStates[item.id] = state.copy(
+                                                displayedOption = nextOption,
+                                                job = coroutineScope.launch {
+                                                    delay(1000L)
+                                                    scope.onClickMap[item.id]?.invoke()
+                                                    cyclerStates[item.id] = cyclerStates[item.id]?.copy(job = null) ?: state
+                                                }
+                                            )
+                                        }
                                     }
-                                }
-                            },
-                            onItemSelected = { item ->
-                                if (item.collapseOnClick && !scope.noMenu) isExpanded = false
-                            },
-                            hostStates = hostStates,
-                            packRailButtons = isFloating || scope.packButtons, // Forced pack in FAB mode
-                            visualDockingSide = visualDockingSide,
-                            onItemGloballyPositioned = scope.onItemGloballyPositioned,
-                            infoScreen = scope.infoScreen
-                        )
+                                },
+                                onItemSelected = { item ->
+                                    if (item.collapseOnClick && !scope.noMenu) isExpanded = false
+                                },
+                                hostStates = hostStates,
+                                packRailButtons = isFloating || scope.packButtons, // Forced pack in FAB mode
+                                visualDockingSide = visualDockingSide,
+                                onItemGloballyPositioned = scope.onItemGloballyPositioned,
+                                infoScreen = scope.infoScreen
+                            )
+                        }
                     }
                 }
 
