@@ -13,7 +13,8 @@ Welcome to the comprehensive guide for **AzNavRail**. This document details the 
 3.  [Live Dictatorship: Dynamic Binding](#live-dictatorship-dynamic-binding)
 4.  [State & Action Binding](#state--action-binding)
 5.  [Strict Layout Rules](#strict-layout-rules)
-6.  [Annotation Reference (@Az)](#annotation-reference-az)
+6.  [Info & Help Screen](#info--help-screen)
+7.  [Annotation Reference (@Az)](#annotation-reference-az)
 
 ---
 
@@ -132,6 +133,53 @@ The generated `AzGraph` automatically wraps your content in `AzHostActivityLayou
 1.  **Safe Zones**: Your UI content is strictly forbidden from the **Top 20%** and **Bottom 10%** of the screen.
 2.  **Rail Avoidance**: Content is automatically padded to avoid the rail.
 3.  **Aesthetic Purge**: The layout handles geometry. Your app's `MaterialTheme` handles the paint. 
+
+---
+
+## Info & Help Screen
+
+AzNavRail includes an interactive Info Screen that overlays the UI to explain navigation items.
+
+### Activation
+To activate the Info Screen, you must bind a boolean property to the `infoScreen` parameter in the `@Az(advanced = ...)` annotation.
+
+~~~kotlin
+// In MainActivity
+var showHelp by mutableStateOf(false)
+
+@Az(advanced = Advanced(
+    infoScreen = true, // Enables the binding
+    // Ideally this property name matches the variable in MainActivity
+    // but currently the KSP processor might infer it or require explicit naming depending on implementation.
+    // Check generated code or use manual config if KSP binding is limited.
+))
+~~~
+
+**Manual Activation (Fallback):**
+Override `configureRail` and use `azAdvanced`:
+
+~~~kotlin
+override fun AzNavRailScope.configureRail() {
+    azAdvanced(
+        infoScreen = showHelp,
+        onDismissInfoScreen = { showHelp = false }
+    )
+}
+~~~
+
+### Adding Info to Items
+To display information for a specific item, simply add the `info` string to its annotation or builder function.
+
+~~~kotlin
+@Az(rail = RailItem(info = "Navigates to the home dashboard."))
+@Composable
+fun Home() { ... }
+~~~
+
+When the Info Screen is active:
+1.  **Visual Connection**: A yellow line connects the rail item to its description card.
+2.  **Strict Square Aesthetics**: The description cards and the close button use `RECTANGLE` shapes (no rounded corners).
+3.  **Safe Zones**: Lines and cards respect the rail safe zones.
 
 ---
 

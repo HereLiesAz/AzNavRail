@@ -37,7 +37,7 @@ interface AzNavRailScope {
      * @param collapsedWidth The width of the rail when collapsed.
      * @param showFooter Whether to show the footer (Privacy, Terms, Help) in the menu.
      */
-    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 130.dp, collapsedWidth: Dp = 100.dp, showFooter: Boolean = true)
+    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 130.dp, collapsedWidth: Dp = 80.dp, showFooter: Boolean = true)
 
     /**
      * Configures the visual theme of the rail.
@@ -219,7 +219,7 @@ interface AzNavRailScope {
     /**
      * Adds a Sub Item to a Host Item in the rail.
      */
-    fun azRailSubItem(id: String, hostId: String, text: String = "", route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null)
+    fun azRailSubItem(id: String, hostId: String, text: String = "", route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)?, onClick: (() -> Unit)?)
 
     /**
      * Adds a Sub Toggle to a Host Item in the menu.
@@ -555,6 +555,9 @@ class AzNavRailScopeImpl : AzNavRailScope {
 
     private fun addCycler(id: String, hostId: String? = null, options: List<String>, selectedOption: String, route: String?, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, info: String?, isRailItem: Boolean, isSubItem: Boolean, color: Color?, shape: AzButtonShape?, onClick: () -> Unit) {
         checkId(id)
+        require(options.contains(selectedOption)) {
+            "Error adding item '$id': selectedOption '$selectedOption' must be present in the options list: $options"
+        }
         val finalScreenTitle = if (screenTitle == AzNavRailDefaults.NO_TITLE) null else screenTitle ?: selectedOption
         onClickMap[id] = onClick
         navItems.add(AzNavItem(id = id, text = "", route = route, screenTitle = finalScreenTitle, isRailItem = isRailItem, isCycler = true, options = options, selectedOption = selectedOption, disabled = disabled, disabledOptions = disabledOptions, isSubItem = isSubItem, hostId = hostId, info = info, color = color, shape = shape ?: defaultShape))
@@ -562,6 +565,9 @@ class AzNavRailScopeImpl : AzNavRailScope {
 
     private fun addToggle(id: String, hostId: String? = null, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String?, disabled: Boolean, screenTitle: String?, info: String?, isRailItem: Boolean, isSubItem: Boolean, color: Color?, shape: AzButtonShape?, onClick: () -> Unit) {
         checkId(id)
+        require(toggleOnText.isNotBlank() && toggleOffText.isNotBlank()) {
+            "Error adding item '$id': toggle text options cannot be blank."
+        }
         val text = if (isChecked) toggleOnText else toggleOffText
         val finalScreenTitle = if (screenTitle == AzNavRailDefaults.NO_TITLE) null else screenTitle ?: text
         onClickMap[id] = onClick
@@ -570,6 +576,9 @@ class AzNavRailScopeImpl : AzNavRailScope {
 
     private fun addItem(id: String, text: String, route: String?, screenTitle: String?, info: String?, isRailItem: Boolean, disabled: Boolean = false, isHost: Boolean = false, isSubItem: Boolean = false, hostId: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, onClick: () -> Unit) {
         checkId(id)
+        require(text.isNotBlank()) {
+           "Error adding item '$id': 'text' parameter cannot be blank."
+        }
         val finalScreenTitle = if (screenTitle == AzNavRailDefaults.NO_TITLE) null else screenTitle ?: text
         onClickMap[id] = onClick
         if (onFocus != null) onFocusMap[id] = onFocus

@@ -8,10 +8,16 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.Before
 
 class AzNavRailScopeTest {
 
     private val scope = AzNavRailScopeImpl()
+
+    @Before
+    fun setUp() {
+        scope.reset()
+    }
 
     @Test
     fun `azConfig updates configuration`() {
@@ -97,7 +103,7 @@ class AzNavRailScopeTest {
         assertEquals("nested", item.id)
         assertTrue(item.isNestedRail)
         assertEquals(AzNestedRailAlignment.HORIZONTAL, item.nestedRailAlignment)
-
+        
         assertNotNull(item.nestedRailItems)
         assertEquals(1, item.nestedRailItems?.size)
         assertEquals("sub1", item.nestedRailItems?.get(0)?.id)
@@ -135,18 +141,18 @@ class AzNavRailScopeTest {
     @Test
     fun `azRailHostItem and SubItems`() {
         scope.azRailHostItem("host", "Host")
-        scope.azRailSubItem("sub", "host", "Sub")
+        scope.azRailSubItem("sub", "host", "Sub", classifiers = emptySet(), onFocus = null, onClick = null)
 
         assertEquals(2, scope.navItems.size)
-
+        
         val host = scope.navItems[0]
         assertTrue(host.isHost)
-
+        
         val sub = scope.navItems[1]
         assertTrue(sub.isSubItem)
         assertEquals("host", sub.hostId)
     }
-
+    
     @Test
     fun `azRailRelocItem sets up hidden menu`() {
         scope.azRailRelocItem(
@@ -156,7 +162,7 @@ class AzNavRailScopeTest {
         ) {
             listItem("Action") {}
         }
-
+        
         val item = scope.navItems[0]
         assertTrue(item.isRelocItem)
         assertNotNull(item.hiddenMenuItems)

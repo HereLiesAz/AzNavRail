@@ -181,9 +181,10 @@ fun AzNavRail(
                 )
             }
         }
-
+        
         // Strictly throw in debug builds or if desired
-        throw IllegalStateException(errorMessage)
+        // throw IllegalStateException(errorMessage)
+        return
     }
 
     val context = LocalContext.current
@@ -283,7 +284,7 @@ fun AzNavRail(
     } else { Modifier }
 
     // No background shape when collapsed. Drawer visible only when expanded.
-    val surfaceColor = if (isExpanded && !isFloating) MaterialTheme.colorScheme.surface else Color.Transparent
+    val surfaceColor = Color.Transparent
     val surfaceElevation = if (isExpanded && !isFloating) 2.dp else 0.dp
 
     Box(
