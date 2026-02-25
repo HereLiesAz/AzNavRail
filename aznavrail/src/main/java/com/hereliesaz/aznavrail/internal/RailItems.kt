@@ -542,8 +542,9 @@ private fun DraggableRailItemWrapper(
                     )
                 }
             } else {
+                val marginPx = with(density) { 8.dp.roundToPx() }
                 Popup(
-                    popupPositionProvider = DockedHorizontalPopupPositionProvider(isRightDocked),
+                    popupPositionProvider = DockedHorizontalPopupPositionProvider(isRightDocked, marginPx),
                     onDismissRequest = { onNestedRailToggle(null) },
                     properties = PopupProperties(focusable = true)
                 ) {
