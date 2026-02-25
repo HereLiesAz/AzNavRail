@@ -102,7 +102,7 @@ class AzNavRailTest {
     @Test
     fun `azRailItem should add a rail item`() {
         val scope = AzNavRailScopeImpl()
-        scope.azRailItem("home", "Home", content = Color.Red, onClick = {}) 
+        scope.azRailItem("home", "Home", content = Color.Red, onClick = {}, classifiers = emptySet(), onFocus = null)
         val expectedItem = AzNavItem("home", "Home", isRailItem = true, content = Color.Red)
         assertEquals(expectedItem.id, scope.navItems[0].id)
         assertEquals(expectedItem.text, scope.navItems[0].text)
@@ -129,7 +129,7 @@ class AzNavRailTest {
     @Test
     fun `azRailToggle should add a rail toggle item`() {
         val scope = AzNavRailScopeImpl()
-        scope.azRailToggle("toggle", false, "On", "Off") {} 
+        scope.azRailToggle("toggle", false, "On", "Off", onClick = {})
         val expectedItem = AzNavItem("toggle", "", isRailItem = true, isToggle = true, isChecked = false, toggleOnText = "On", toggleOffText = "Off")
         assertEquals(expectedItem.id, scope.navItems[0].id)
         assertEquals(expectedItem.text, scope.navItems[0].text)
@@ -159,7 +159,7 @@ class AzNavRailTest {
     fun `azRailCycler should add a rail cycler item`() {
         val scope = AzNavRailScopeImpl()
         val options = listOf("A", "B", "C")
-        scope.azRailCycler("cycler", options, "B") {} 
+        scope.azRailCycler("cycler", options, "B", onClick = {})
         val expectedItem = AzNavItem("cycler", "", isRailItem = true, isCycler = true, options = options, selectedOption = "B")
         assertEquals(expectedItem.id, scope.navItems[0].id)
         assertEquals(expectedItem.text, scope.navItems[0].text)
@@ -179,7 +179,7 @@ class AzNavRailTest {
     @Test
     fun `azRailItem should add item with screenTitle`() {
         val scope = AzNavRailScopeImpl()
-        scope.azRailItem("favorites", "Favorites", onClick = {}, screenTitle = "My Favorites")
+        scope.azRailItem("favorites", "Favorites", onClick = {}, screenTitle = "My Favorites", classifiers = emptySet(), onFocus = null)
         assertEquals("My Favorites", scope.navItems[0].screenTitle)
     }
 
@@ -198,7 +198,7 @@ class AzNavRailTest {
     fun `azRailSubToggle should add a rail sub-toggle item`() {
         val scope = AzNavRailScopeImpl()
         scope.azRailHostItem("host", "Host", onClick = {})
-        scope.azRailSubToggle("sub_toggle", "host", false, "On", "Off") {}
+        scope.azRailSubToggle("sub_toggle", "host", false, "On", "Off", onClick = {})
         val expectedItem = AzNavItem("sub_toggle", "", isRailItem = true, isToggle = true, isChecked = false, toggleOnText = "On", toggleOffText = "Off", isSubItem = true, hostId = "host")
         assertEquals(expectedItem.id, scope.navItems[1].id)
         assertEquals(expectedItem.isRailItem, scope.navItems[1].isRailItem)
@@ -223,7 +223,7 @@ class AzNavRailTest {
         val scope = AzNavRailScopeImpl()
         val options = listOf("A", "B", "C")
         scope.azRailHostItem("host", "Host", onClick = {})
-        scope.azRailSubCycler("sub_cycler", "host", options, "B") {}
+        scope.azRailSubCycler("sub_cycler", "host", options, "B", onClick = {})
         val expectedItem = AzNavItem("sub_cycler", "", isRailItem = true, isCycler = true, options = options, selectedOption = "B", isSubItem = true, hostId = "host")
         assertEquals(expectedItem.id, scope.navItems[1].id)
         assertEquals(expectedItem.isRailItem, scope.navItems[1].isRailItem)
