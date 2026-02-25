@@ -27,6 +27,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 
+/**
+ * A versatile dropdown component that combines a text filter with a list of options.
+ *
+ * `AzRoller` behaves like a "slot machine" dropdown.
+ * - Clicking the text area allows the user to type and filter the options.
+ * - Clicking the dropdown arrow toggles the full list.
+ * - When typing, the dropdown automatically expands to show filtered results.
+ * - Supports custom values (users can type and submit a value not in the list).
+ *
+ * @param options The list of options to display in the dropdown.
+ * @param selectedOption The currently selected option.
+ * @param onOptionSelected Callback invoked when an option is selected.
+ * @param hint The hint text to display when the input is empty.
+ * @param enabled Whether the component is interactive.
+ * @param isError Whether the component is in an error state.
+ */
 @Composable
 fun AzRoller(
     options: List<String>,

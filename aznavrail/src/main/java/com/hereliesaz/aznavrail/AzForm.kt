@@ -107,6 +107,9 @@ internal data class AzFormEntry(
  * @param onSubmit A callback invoked when the form is submitted, providing a map of [entryName] to value.
  * @param submitButtonContent A composable for the submit button's content.
  * @param content The DSL block to define form entries.
+ *
+ * @see AzTextBox
+ * @see AzFormScope
  */
 @Composable
 fun AzForm(
