@@ -82,7 +82,8 @@ internal class DockedCenteredPopupPositionProvider(
  * anchored strictly to the left or right edge of the parent item's bounds.
  */
 internal class DockedHorizontalPopupPositionProvider(
-    private val isRightDocked: Boolean
+    private val isRightDocked: Boolean,
+    private val marginPx: Int = 0
 ) : PopupPositionProvider {
     override fun calculatePosition(
         anchorBounds: IntRect,
@@ -93,9 +94,9 @@ internal class DockedHorizontalPopupPositionProvider(
         // Vertically center the row relative to the parent button
         val y = anchorBounds.top + (anchorBounds.height - popupContentSize.height) / 2
         val x = if (isRightDocked) {
-            anchorBounds.left - popupContentSize.width // Left of anchor
+            anchorBounds.left - popupContentSize.width - marginPx // Left of anchor
         } else {
-            anchorBounds.right // Right of anchor
+            anchorBounds.right + marginPx // Right of anchor
         }
         // Ensure the popup doesn't bleed off the top or bottom of the screen
         val safeY = y.coerceIn(0, windowSize.height - popupContentSize.height)

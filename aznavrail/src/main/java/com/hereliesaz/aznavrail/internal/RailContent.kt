@@ -27,6 +27,7 @@ internal fun RailContent(
     onItemClick: () -> Unit,
     onHostClick: () -> Unit = {},
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
+    onBoundsCalculated: ((String, Rect) -> Unit)? = null,
     infoScreen: Boolean = false,
     dragModifier: Modifier = Modifier,
     activeColor: androidx.compose.ui.graphics.Color? = null
@@ -71,7 +72,7 @@ internal fun RailContent(
             .padding(4.dp)
             .onGloballyPositioned { coordinates ->
                 val bounds = coordinates.boundsInWindow()
-                RelocItemHandler.itemBoundsCache[item.id] = bounds
+                onBoundsCalculated?.invoke(item.id, bounds)
                 onItemGloballyPositioned?.invoke(item.id, bounds)
             }
             .then(dragModifier)

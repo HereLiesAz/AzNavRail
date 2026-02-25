@@ -8,8 +8,6 @@ import com.hereliesaz.aznavrail.model.AzNavItem
  */
 object RelocItemHandler {
 
-    val itemBoundsCache = mutableMapOf<String, Rect>()
-
     /**
      * Finds the contiguous cluster of RelocItems surrounding the given item.
      * Returns the start and end indices (inclusive) in the list.
