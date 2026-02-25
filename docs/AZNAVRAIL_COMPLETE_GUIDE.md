@@ -175,7 +175,10 @@ azNestedRail(id = "tools", text = "Tools", alignment = AzNestedRailAlignment.HOR
 
 **Abilities:**
 *   **Cluster Logic:** Items can only be moved within their contiguous "cluster" (neighbors sharing the same `hostId` and type).
-*   **Interaction:** Long-press to drag (vibration confirmation). Tap to Select. Tap (while selected) to open Context Menu.
+*   **Interaction:**
+    *   **Tap:** Selects/Focuses the item.
+    *   **Long Press + Drag:** Moves the item within its cluster (vibration confirmation on grab).
+    *   **Long Press (No Drag):** Opens the Hidden Context Menu or Nested Rail.
 *   **Context Menu:** Supports `listItem` (actions) and `inputItem` (renaming).
 
 **Limitations:**
