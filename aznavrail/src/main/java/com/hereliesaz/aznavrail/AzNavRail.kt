@@ -136,16 +136,54 @@ fun AzNavRail(
 ) {
     val isHostPresent = LocalAzNavHostPresent.current
     if (!isHostPresent) {
+        val errorMessage = """
+            CRITICAL ERROR: AzNavRail invoked without AzHostActivityLayout!
+
+            AzNavRail enforces strict layout rules for safe zones, rotation, and docking.
+            It MUST be wrapped in an AzHostActivityLayout.
+
+            Correct Usage:
+            AzHostActivityLayout(navController = ...) {
+                // Your AzNavRail content here
+            }
+
+            Or ensure you are using the generated AzGraph system.
+        """.trimIndent()
+
+        // Log the error for debugging
+        AzNavRailLogger.e("AzNavRail", errorMessage)
+
+        // Visual Error Feedback
         Box(modifier = Modifier.fillMaxSize().background(Color.Red)) {
-            Text(
-                "AzNavRail Error: Must be used inside AzHostActivityLayout",
-                color = Color.White,
-                modifier = Modifier.align(Alignment.Center),
-                textAlign = TextAlign.Center,
-                fontWeight = FontWeight.Bold
-            )
+            Column(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "AzNavRail Configuration Error",
+                    color = Color.White,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "Must be used inside AzHostActivityLayout.",
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    "Check Logcat for details.",
+                    color = Color.Yellow,
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
         }
-        return
+
+        // Strictly throw in debug builds or if desired
+        throw IllegalStateException(errorMessage)
     }
 
     val context = LocalContext.current

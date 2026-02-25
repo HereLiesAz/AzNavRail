@@ -36,6 +36,10 @@ This document provides a brief but thorough description of what each file in the
 | `API.md` | Direct documentation of the public-facing API. |
 | `DSL.md` | Direct documentation covering the builder Domain Specific Language parameters. |
 | `PROJECT_STRUCTURE.md` | Explains the layout of the repository. |
+| `DIMENSIONAL_COMPARISON.md` | Documents differences between major versions (v6.99 vs v7.25). |
+| `SECURITY.md` | Security policy and vulnerability reporting. |
+| `MIGRATION_GUIDE.md` | Guide for migrating to newer versions. |
+| `AZ_HIGH_INFERENCE.md` | Documentation for the annotation-based High-Inference system. |
 
 #### .github Directory
 
