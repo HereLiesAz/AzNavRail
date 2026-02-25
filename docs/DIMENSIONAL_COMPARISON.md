@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 # Dimensional Data Comparison: Tag 6.99 vs Current (v7.37)
 
 This document provides a comparative analysis of dimensional constants and default values between version 6.99 and the current codebase (v7.37).
@@ -5,6 +6,15 @@ This document provides a comparative analysis of dimensional constants and defau
 ## AzNavRailDefaults
 
 | Property | Tag 6.99 | Current (v7.37) | Comparison |
+=======
+# Dimensional Data Comparison: Tag 6.99 vs Current (v7.25)
+
+This document provides a comparative analysis of dimensional constants and default values between version 6.99 and the current codebase (v7.25).
+
+## AzNavRailDefaults
+
+| Property | Tag 6.99 | Current (v7.25) | Comparison |
+>>>>>>> Stashed changes
 | :--- | :--- | :--- | :--- |
 | `SWIPE_THRESHOLD_PX` | `20f` | `20f` | Unchanged |
 | `SNAP_BACK_RADIUS_PX` | `50f` | `50f` | Unchanged |
@@ -24,7 +34,11 @@ This document provides a comparative analysis of dimensional constants and defau
 
 ## AzLayoutConfig
 
+<<<<<<< Updated upstream
 | Property | Tag 6.99 | Current (v7.37) | Comparison |
+=======
+| Property | Tag 6.99 | Current (v7.25) | Comparison |
+>>>>>>> Stashed changes
 | :--- | :--- | :--- | :--- |
 | `SafeTopPercent` | `0.2f` | *Renamed* | Renamed to `ContentSafeTopPercent` |
 | `SafeBottomPercent` | `0.1f` | *Renamed* | Renamed to `ContentSafeBottomPercent` |
@@ -33,7 +47,11 @@ This document provides a comparative analysis of dimensional constants and defau
 
 ## AzNavRailScope Defaults
 
+<<<<<<< Updated upstream
 | Property | Tag 6.99 | Current (v7.37) | Comparison |
+=======
+| Property | Tag 6.99 | Current (v7.25) | Comparison |
+>>>>>>> Stashed changes
 | :--- | :--- | :--- | :--- |
 | `expandedWidth` | `260.dp` | `130.dp` | **Changed** (Reduced significantly) |
 | `collapsedWidth` | `80.dp` | `80.dp` | Unchanged |

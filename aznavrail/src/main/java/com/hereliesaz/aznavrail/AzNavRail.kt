@@ -138,15 +138,26 @@ fun AzNavRail(
     if (!isHostPresent) {
         val errorMessage = """
             CRITICAL ERROR: AzNavRail invoked without AzHostActivityLayout!
+<<<<<<< Updated upstream
 
             AzNavRail enforces strict layout rules for safe zones, rotation, and docking.
             It MUST be wrapped in an AzHostActivityLayout.
 
+=======
+            
+            AzNavRail enforces strict layout rules for safe zones, rotation, and docking.
+            It MUST be wrapped in an AzHostActivityLayout.
+            
+>>>>>>> Stashed changes
             Correct Usage:
             AzHostActivityLayout(navController = ...) {
                 // Your AzNavRail content here
             }
+<<<<<<< Updated upstream
 
+=======
+            
+>>>>>>> Stashed changes
             Or ensure you are using the generated AzGraph system.
         """.trimIndent()
 
@@ -181,9 +192,16 @@ fun AzNavRail(
                 )
             }
         }
+<<<<<<< Updated upstream
 
         // Strictly throw in debug builds or if desired
         throw IllegalStateException(errorMessage)
+=======
+        
+        // Strictly throw in debug builds or if desired
+        // throw IllegalStateException(errorMessage)
+        return
+>>>>>>> Stashed changes
     }
 
     val context = LocalContext.current

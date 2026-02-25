@@ -9,10 +9,17 @@ class RelocItemHandlerTest {
 
     private fun item(id: String, hostId: String? = null, isReloc: Boolean = false): AzNavItem {
         return AzNavItem(
+<<<<<<< Updated upstream
             id = id,
             text = "",
             isRailItem = true,
             isRelocItem = isReloc,
+=======
+            id = id, 
+            text = "", 
+            isRailItem = true, 
+            isRelocItem = isReloc, 
+>>>>>>> Stashed changes
             hostId = hostId,
             shape = AzButtonShape.CIRCLE
         )
@@ -36,7 +43,11 @@ class RelocItemHandlerTest {
 
         val cluster3 = RelocItemHandler.findCluster(items, "3")
         assertEquals(2..2, cluster3)
+<<<<<<< Updated upstream
 
+=======
+        
+>>>>>>> Stashed changes
         val cluster5 = RelocItemHandler.findCluster(items, "5")
         assertEquals(4..4, cluster5)
     }
@@ -50,7 +61,11 @@ class RelocItemHandlerTest {
         )
 
         RelocItemHandler.updateOrder(items, "1", 2)
+<<<<<<< Updated upstream
 
+=======
+        
+>>>>>>> Stashed changes
         assertEquals("2", items[0].id)
         assertEquals("3", items[1].id)
         assertEquals("1", items[2].id)
@@ -65,7 +80,11 @@ class RelocItemHandlerTest {
 
         // Attempt to move item "1" (host A) to index 1 (where host B item is)
         RelocItemHandler.updateOrder(items, "1", 1)
+<<<<<<< Updated upstream
 
+=======
+        
+>>>>>>> Stashed changes
         // Should not move because index 1 is not in cluster for item 1
         assertEquals("1", items[0].id)
         assertEquals("2", items[1].id)
@@ -82,7 +101,11 @@ class RelocItemHandlerTest {
 
         val target = RelocItemHandler.calculateTargetIndex(items, "1", 50f, heights)
         assertEquals(1, target)
+<<<<<<< Updated upstream
 
+=======
+        
+>>>>>>> Stashed changes
         val target2 = RelocItemHandler.calculateTargetIndex(items, "1", 150f, heights)
         assertEquals(2, target2)
     }
