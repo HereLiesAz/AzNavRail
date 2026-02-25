@@ -525,5 +525,5 @@ fun AzNavRail(
         }
     }
 
-    if (scope.infoScreen) HelpOverlay(items = scope.navItems, onDismiss = { scope.onDismissInfoScreen?.invoke() })
+    if (scope.infoScreen) HelpOverlay(items = scope.navItems, onDismiss = { scope.onDismissInfoScreen?.invoke() }, itemBoundsCache = scope.itemBoundsCache)
 }

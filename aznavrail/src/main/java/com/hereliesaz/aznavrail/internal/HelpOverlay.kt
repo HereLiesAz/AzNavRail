@@ -51,14 +51,15 @@ internal fun calculateHelpLayout(
 @Composable
 internal fun HelpOverlay(
     items: List<AzNavItem>,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    itemBoundsCache: Map<String, androidx.compose.ui.geometry.Rect> = emptyMap()
 ) {
     val itemsWithInfo = items.filter { !it.info.isNullOrBlank() }
     val safeZones = LocalAzSafeZones.current
     val density = LocalDensity.current
 
     val testItems = itemsWithInfo.mapNotNull { item ->
-        val bounds = RelocItemHandler.itemBoundsCache[item.id]
+        val bounds = itemBoundsCache[item.id]
         if (bounds != null) {
             HelpTargetItem(item.id, item.info!!, bounds.center.y)
         } else null
@@ -78,7 +79,7 @@ internal fun HelpOverlay(
                 val strokeWidth = 2.dp
 
                 layoutItems.forEach { layoutItem ->
-                    val bounds = RelocItemHandler.itemBoundsCache[layoutItem.id]
+                    val bounds = itemBoundsCache[layoutItem.id]
                     if (bounds != null) {
                         val isItemVisibleInRail = bounds.top >= safeZones.top.toPx() && bounds.bottom <= (size.height - safeZones.bottom.toPx())
                         if (isItemVisibleInRail) {
