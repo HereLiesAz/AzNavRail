@@ -32,7 +32,7 @@ internal object AzNavRailDefaults {
     val HeaderPadding = 8.dp
 
     // COMPULSORY: All rail items, buttons, and app icons share this strict unified width.
-    val ButtonWidth = 120.dp
+    val ButtonWidth = 72.dp
 
     val HeaderTextSpacer = 8.dp
     val RailContentHorizontalPadding = 4.dp
@@ -93,9 +93,9 @@ internal class DockedHorizontalPopupPositionProvider(
         // Vertically center the row relative to the parent button
         val y = anchorBounds.top + (anchorBounds.height - popupContentSize.height) / 2
         val x = if (isRightDocked) {
-            anchorBounds.left - popupContentSize.width
+            anchorBounds.left - popupContentSize.width // Left of anchor
         } else {
-            anchorBounds.right
+            anchorBounds.right // Right of anchor
         }
         // Ensure the popup doesn't bleed off the top or bottom of the screen
         val safeY = y.coerceIn(0, windowSize.height - popupContentSize.height)

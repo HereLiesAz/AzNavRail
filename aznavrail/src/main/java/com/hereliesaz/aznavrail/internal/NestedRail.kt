@@ -46,7 +46,7 @@ internal fun NestedRail(
     val modifier = Modifier
         .then(if (isRightDocked) Modifier.padding(end = 16.dp) else Modifier.padding(start = 16.dp))
         .clip(surfaceShape)
-        .background(MaterialTheme.colorScheme.surfaceVariant)
+        // .background(MaterialTheme.colorScheme.surfaceVariant) // Removed background per request
         .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), surfaceShape)
         .padding(8.dp)
 
