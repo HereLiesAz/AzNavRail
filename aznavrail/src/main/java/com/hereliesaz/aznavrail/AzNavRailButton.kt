@@ -57,7 +57,7 @@ internal fun AzNavRailButton(
     enabled: Boolean = true,
     isSelected: Boolean = false,
     isLoading: Boolean = false,
-    contentPadding: PaddingValues = PaddingValues(8.dp),
+    contentPadding: PaddingValues = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
     itemContent: Any? = null,
     onLongClick: (() -> Unit)? = null,
     onGloballyPositioned: ((Rect) -> Unit)? = null
@@ -125,7 +125,7 @@ internal fun AzNavRailButton(
                 } else {
                     AutoSizeText(
                         text = text,
-                        style = MaterialTheme.typography.bodyMedium.copy(
+                        style = MaterialTheme.typography.bodySmall.copy(
                             textAlign = TextAlign.Center,
                             color = finalColor
                         ),
@@ -177,7 +177,7 @@ private fun ItemContentRenderer(itemContent: Any, color: Color, enabled: Boolean
 private fun TextContent(text: String, color: Color) {
     AutoSizeText(
         text = text,
-        style = MaterialTheme.typography.bodyMedium.copy(textAlign = TextAlign.Center, color = color),
+        style = MaterialTheme.typography.bodySmall.copy(textAlign = TextAlign.Center, color = color),
         maxLines = 1,
         softWrap = false,
         alignment = Alignment.Center,
