@@ -274,8 +274,10 @@ interface AzNavRailScope {
      * @param onClick Click callback (selection).
      * @param onRelocate Callback invoked when the item is moved. Provides old index, new index, and the new ID order.
      * @param hiddenMenu Scope to define context menu actions available via tap-when-focused.
+     * @param nestedRailAlignment The alignment of the nested rail (VERTICAL or HORIZONTAL).
+     * @param nestedContent DSL block to define the items within the nested rail.
      */
-    fun azRailRelocItem(id: String, hostId: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null, onRelocate: ((Int, Int, List<String>) -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit = {})
+    fun azRailRelocItem(id: String, hostId: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null, onRelocate: ((Int, Int, List<String>) -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit = {}, nestedRailAlignment: AzNestedRailAlignment = AzNestedRailAlignment.VERTICAL, nestedContent: (AzNavRailScope.() -> Unit)? = null)
 }
 
 /**
@@ -545,7 +547,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         addCycler(id = id, hostId = hostId, options = options, selectedOption = selectedOption, route = route, disabled = disabled, disabledOptions = disabledOptions, screenTitle = screenTitle, info = info, isRailItem = true, isSubItem = true, color = color, shape = shape, onClick = onClick ?: {})
     }
 
-    override fun azRailRelocItem(id: String, hostId: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: (() -> Unit)?, onRelocate: ((Int, Int, List<String>) -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
+    override fun azRailRelocItem(id: String, hostId: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: (() -> Unit)?, onRelocate: ((Int, Int, List<String>) -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit, nestedRailAlignment: AzNestedRailAlignment, nestedContent: (AzNavRailScope.() -> Unit)?) {
         checkId(id)
         val hiddenMenuScope = HiddenMenuScopeImpl()
         hiddenMenuScope.hiddenMenu()
@@ -560,11 +562,27 @@ class AzNavRailScopeImpl : AzNavRailScope {
 
         val finalScreenTitle = if (screenTitle == AzNavRailDefaults.NO_TITLE) null else screenTitle ?: text
 
+        val nestedItems = if (nestedContent != null) {
+            val nestedScope = AzNavRailScopeImpl()
+            nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, showFooter = this.showFooter)
+            nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape)
+            nestedScope.nestedContent()
+
+            nestedScope.onClickMap.forEach { (k, v) -> onClickMap[k] = v }
+            nestedScope.onFocusMap.forEach { (k, v) -> onFocusMap[k] = v }
+            nestedScope.hiddenMenuOnClickMap.forEach { (k, v) -> hiddenMenuOnClickMap[k] = v }
+            nestedScope.hiddenMenuOnValueChangeMap.forEach { (k, v) -> hiddenMenuOnValueChangeMap[k] = v }
+            nestedScope.onRelocateMap.forEach { (k, v) -> onRelocateMap[k] = v }
+
+            nestedScope.navItems.toList()
+        } else null
+
         navItems.add(
             AzNavItem(
                 id = id, text = text, route = route, isRailItem = true, isSubItem = true, hostId = hostId,
                 isRelocItem = true, disabled = disabled, screenTitle = finalScreenTitle, info = info,
-                hiddenMenuItems = prefixedItems, classifiers = classifiers, content = content, color = color, shape = shape ?: defaultShape
+                hiddenMenuItems = prefixedItems, classifiers = classifiers, content = content, color = color, shape = shape ?: defaultShape,
+                isNestedRail = nestedContent != null, nestedRailAlignment = nestedRailAlignment, nestedRailItems = nestedItems
             )
         )
     }

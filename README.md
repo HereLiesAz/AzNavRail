@@ -6,6 +6,19 @@ A contemptably stubborn if not dictatorially restrictive navigation rail/menu--I
 
 This "navigrenuail" provides a vertical navigation rail that expands to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
 
+---
+
+## 📚 Documentation
+
+-   **[Complete Guide (The Bible)](/docs/AZNAVRAIL_COMPLETE_GUIDE.md)**: Comprehensive, encyclopedic reference for every feature.
+-   **[API Reference](/docs/API.md)**: Javadoc-style listing.
+-   **[DSL Reference](/docs/DSL.md)**: Quick look at DSL functions.
+
+---
+
+## 🚀 Setup
+
+Add JitPack to your `settings.gradle.kts`:
 ## Features
 
 - **Responsive Layout**: Automatically adjusts to orientation changes.
@@ -60,82 +73,109 @@ dependencyResolutionManagement {
 }
 ~~~
 
-And add the dependency to your app's `build.gradle.kts`:
+Add the dependency to your app's `build.gradle.kts`:
 
 ~~~kotlin
 dependencies {
-    implementation("com.github.HereLiesAz:AzNavRail:VERSION") // Replace VERSION with the latest version
+    implementation("com.github.HereLiesAz:AzNavRail:VERSION") // Replace VERSION with the latest release
 }
 ~~~
-### Usage
 
-**⚠️ STRICT USAGE PROTOCOL**
+---
 
-`AzNavRail` **MUST** be used within an `AzHostActivityLayout` container. The library enforces strict layout rules (safe zones, padding, z-ordering) and will throw a runtime error (or display a red warning screen) if `AzNavRail` is instantiated directly without a host wrapper.
+## 🛠️ The Golden Sample
 
-Do **NOT** use `Scaffold`. Use `AzHostActivityLayout` as your root.
-
-**The Golden Sample:**
+This is the standard, validated way to initialize `AzNavRail`. It **must** be wrapped in `AzHostActivityLayout`.
 
 ~~~kotlin
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import com.hereliesaz.aznavrail.AzHostActivityLayout
-import com.hereliesaz.aznavrail.AzNavHost
-import com.hereliesaz.aznavrail.model.AzDockingSide
+import com.hereliesaz.aznavrail.*
 
 @Composable
 fun SampleScreen() {
-    // You must explicitly manage the controller
     val navController = rememberNavController()
 
     AzHostActivityLayout(
         navController = navController,
         initiallyExpanded = false
     ) {
-        // SECTOR 1: VISUAL COMPLIANCE
-        azTheme(
-            activeColor = Color.Cyan,
-            expandedWidth = 280.dp
-        )
-
-        // SECTOR 2: BEHAVIORAL PROTOCOLS
+        // 1. CONFIGURATION
         azConfig(
             dockingSide = AzDockingSide.LEFT,
-            packButtons = true,
+            packButtons = true, // Tightly pack rail items
             displayAppName = true
         )
 
-        // SECTOR 3: SPECIAL OPERATIONS
-        // azAdvanced(...) // for overlays, help screens, etc.
+        azTheme(activeColor = Color.Cyan)
 
-        // NAVIGATION ITEMS
-        azRailItem(id = "home", text = "Home", route = "home")
-        azRailItem(id = "settings", text = "Settings", route = "settings")
+        // 2. NAVIGATION ITEMS
+        azRailItem(id = "home", text = "Home", route = "home", content = Icons.Default.Home)
+        azRailItem(id = "profile", text = "Profile", route = "profile")
 
-        // ONSCREEN CONTENT
+        // 3. MENU ONLY ITEMS
+        azMenuItem(id = "settings", text = "Settings", route = "settings")
+
+        // 4. ONSCREEN CONTENT
         // Use 'onscreen' to define your UI. 
         // Layout rules (safe zones, padding) are enforced automatically.
         onscreen(alignment = Alignment.Center) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                AzNavHost(startDestination = "home") {
-                    composable("home") { Text("Home Screen") }
-                    composable("settings") { Text("Settings Screen") }
-                }
+            AzNavHost(startDestination = "home") {
+                composable("home") { Text("Home Screen") }
+                composable("profile") { Text("Profile Screen") }
+                composable("settings") { Text("Settings Screen") }
             }
         }
     }
 }
 ~~~
 
+---
+
+## ✨ Features & Basics
+
+### 1. Strict Layout System
+`AzHostActivityLayout` enforces a "Constitution" for your UI to ensure consistency and usability:
+*   **Safe Zones:** Top 10% and Bottom 10% are reserved. Interactive content is pushed to the center 80%.
+*   **Automatic Padding:** Content in `onscreen` is automatically padded to avoid the rail, regardless of docking side or rotation.
+*   **Backgrounds:** Use `background(weight)` to place content *behind* the rail (e.g., maps).
+
+### 2. Navigation Items
+*   **`azRailItem`**: Always visible.
+*   **`azMenuItem`**: Visible only in the drawer.
+*   **`azNestedRail`**: Opens a secondary popup rail (Vertical/Horizontal).
+*   **`azRailRelocItem`**: Draggable items for user reordering.
+
+### 3. Interactive Components
+Manage state directly in the rail without leaving the context.
+*   **Toggles:** `azRailToggle` / `azMenuToggle`.
+*   **Cyclers:** `azRailCycler` (multi-state buttons).
+
+### 4. UI Components (Standalone)
+AzNavRail includes a suite of polished UI components that match the rail's aesthetic.
+
+**AzTextBox & AzForm:**
+Modern input fields with history, autocomplete, and validation.
+~~~kotlin
+AzForm(formName = "login", onSubmit = { ... }) {
+    entry("user", "Username")
+    entry("pass", "Password", secret = true)
+}
+~~~
+
+**AzRoller:**
+A "Slot Machine" style dropdown. Left-click to type, Right-click to roll.
+~~~kotlin
+AzRoller(
+    options = listOf("A", "B", "C"),
+    selectedOption = "A",
+    onOptionSelected = { ... }
+)
+~~~
+
+### 5. Advanced Modes
+*   **FAB Mode:** Long-press the header to detach the rail into a floating action button. Drag it anywhere!
+*   **Info Screen:** Set `infoScreen = true` in `azAdvanced` to overlay a tutorial mode with visual guides connecting items to their descriptions.
+
+---
 ### Documentation
 
 The library includes a comprehensive **Complete Guide** (`docs/AZNAVRAIL_COMPLETE_GUIDE.md`) containing:
@@ -145,7 +185,6 @@ The library includes a comprehensive **Complete Guide** (`docs/AZNAVRAIL_COMPLET
 * Complete Sample App source code.
 
 ## License
-
 
 Copyright 2024 The AzNavRail Authors
 
