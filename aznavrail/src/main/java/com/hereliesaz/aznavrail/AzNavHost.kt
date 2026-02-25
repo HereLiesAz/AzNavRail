@@ -58,10 +58,33 @@ val LocalAzNavHostPresent = compositionLocalOf { false }
 val LocalAzSafeZones = compositionLocalOf { AzSafeZones() }
 val LocalAzNavHostScope = staticCompositionLocalOf<AzNavHostScope?> { null }
 
+/**
+ * Extended scope for configuring both the AzNavRail and the hosted content.
+ *
+ * This scope inherits from [AzNavRailScope], allowing you to define rail items and settings,
+ * while also providing methods to define onscreen content and background layers.
+ */
 interface AzNavHostScope : AzNavRailScope {
+    /** The active [NavHostController]. */
     val navController: NavHostController
+    /** The current docking side of the rail. */
     val dockingSide: AzDockingSide
+
+    /**
+     * Adds a background layer behind the main content.
+     *
+     * @param weight The Z-order weight. Lower weights are drawn first (further back).
+     * @param content The composable content for the background.
+     */
     fun background(weight: Int = 0, content: @Composable () -> Unit)
+
+    /**
+     * Adds content to the main screen area, respecting safe zones and rail padding.
+     *
+     * @param alignment The alignment of the content within the safe area. Note: Alignment is
+     *                  automatically mirrored if the rail is docked on the right.
+     * @param content The composable content.
+     */
     fun onscreen(alignment: Alignment = Alignment.TopStart, content: @Composable () -> Unit)
 }
 
@@ -100,6 +123,24 @@ class AzNavHostScopeImpl(
     }
 }
 
+/**
+ * The mandatory top-level container for applications using AzNavRail.
+ *
+ * `AzHostActivityLayout` acts as the root of your screen hierarchy. It manages the layout of the
+ * navigation rail and the main content, enforcing strict safe zones (top 10%, bottom 10%) and
+ * applying correct padding based on the rail's position and device orientation.
+ *
+ * It provides an [AzNavHostScope] to its content lambda, allowing you to configure the rail
+ * and add onscreen content simultaneously.
+ *
+ * @param modifier The modifier for the layout.
+ * @param navController The [NavHostController] for navigation.
+ * @param currentDestination The current route. Auto-detected if null.
+ * @param isLandscape Explicitly set landscape mode. Auto-detected if null.
+ * @param initiallyExpanded Whether the rail is initially expanded.
+ * @param disableSwipeToOpen Disable swipe-to-open gesture for the rail menu.
+ * @param content The configuration block for rail items and onscreen content.
+ */
 @OptIn(AzStrictLayout::class)
 @Composable
 fun AzHostActivityLayout(
@@ -284,6 +325,23 @@ fun AzHostFragmentLayout(
     }
 }
 
+/**
+ * A convenience wrapper around [androidx.navigation.compose.NavHost] that integrates seamlessly with [AzHostActivityLayout].
+ *
+ * It automatically uses the [NavHostController] from the parent [AzHostActivityLayout] and configures
+ * default directional transitions based on the rail's docking side.
+ *
+ * @param startDestination The route for the start destination.
+ * @param modifier The modifier for the NavHost.
+ * @param navController The controller (defaults to the one provided by [AzHostActivityLayout]).
+ * @param contentAlignment The alignment of the content.
+ * @param route The route for the graph.
+ * @param enterTransition Callback to define enter transition.
+ * @param exitTransition Callback to define exit transition.
+ * @param popEnterTransition Callback to define pop enter transition.
+ * @param popExitTransition Callback to define pop exit transition.
+ * @param builder The builder closure to define the navigation graph.
+ */
 @Composable
 fun AzNavHost(
     startDestination: String,
