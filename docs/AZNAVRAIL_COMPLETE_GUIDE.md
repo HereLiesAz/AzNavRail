@@ -20,11 +20,8 @@ Welcome to the comprehensive guide for **AzNavRail**. This library provides a ro
     *   [AzButton, AzToggle, AzCycler](#azbutton-aztoggle-azcycler)
     *   [AzRoller](#azroller)
     *   [AzLoad](#azload)
-4.  [The High-Inference System (Annotation Processing)](#the-high-inference-system-annotation-processing)
-    *   [Setup](#setup)
-    *   [Live Dictatorship (State Binding)](#live-dictatorship-state-binding)
-5.  [Strict Layout Rules](#strict-layout-rules)
-6.  [Info & Help Screen](#info--help-screen)
+4.  [Strict Layout Rules](#strict-layout-rules)
+5.  [Info & Help Screen](#info--help-screen)
 
 ---
 
@@ -37,19 +34,6 @@ Add the dependency to your app's `build.gradle.kts`:
 ~~~kotlin
 dependencies {
     implementation("com.github.HereLiesAz:AzNavRail:VERSION") // Replace with latest version
-}
-~~~
-
-To use the **High-Inference System** (Annotation Processing), you must also add the KSP plugin and processor:
-
-~~~kotlin
-plugins {
-    id("com.google.devtools.ksp") version "2.2.21-2.0.5" // Match your Kotlin version
-}
-
-dependencies {
-    implementation("com.github.HereLiesAz.AzNavRail:aznavrail-annotation:7.25")
-    ksp("com.github.HereLiesAz.AzNavRail:aznavrail-processor:7.25")
 }
 ~~~
 
@@ -244,36 +228,6 @@ AzRoller(
 ### AzLoad
 
 A polished loading spinner. Use `AzLoad()` composable or `azAdvanced(isLoading = true)` for a full-screen overlay.
-
----
-
-## The High-Inference System (Annotation Processing)
-
-This system allows you to define your rail structure via annotations on your Activity and Composables, generating the wiring code automatically.
-
-### Live Dictatorship (State Binding)
-
-**v7.25 Flagship Feature**: Bind UI properties directly to `mutableStateOf` variables in your Activity by name.
-
-1.  **Define State**: In your `AzActivity`, define properties like `var isProMode by mutableStateOf(false)`.
-2.  **Bind**: In annotations, reference these properties by name string.
-
-~~~kotlin
-@Az(rail = RailItem(
-    icon = R.drawable.ic_star,
-    visibleProperty = "isProMode", // Hidden unless isProMode == true
-    textProperty = "dynamicLabel"  // Updates text automatically
-))
-@Composable
-fun ProFeature() { ... }
-~~~
-
-**Supported Bindings:**
-*   `visibleProperty`
-*   `disabledProperty`
-*   `textProperty`
-*   `iconTextProperty` (Badge)
-*   `isCheckedProperty` (For Toggles - bidirectional binding)
 
 ---
 

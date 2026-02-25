@@ -43,7 +43,6 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 - **AzNavHost**: A wrapper around `androidx.navigation.compose.NavHost` for seamless integration.
 - **Smart Transitions**: `AzNavHost` automatically configures directional transitions (slide in/out) based on the docking side (e.g., standard LTR or mirrored for Right dock).
 - **Nested Rails**: `azNestedRail` allows for secondary popup rails (Vertical or Horizontal) triggered from a rail item.
-- **Live Dictatorship**: Dynamic state binding via annotations (High-Inference System).
 
 ## AzNavRail for Android (Jetpack Compose)
 
