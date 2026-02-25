@@ -1,204 +1,302 @@
 # AzNavRail Complete Guide (v7.25)
 
-Welcome to the comprehensive guide for **AzNavRail**. This document details the **High-Inference System**, which is the absolute and only supported method for configuring the rail architecture. 
-
-**Version 7.25: The Live Dictatorship.** You no longer just annotate static structures. You bind your rail items directly to the reactive state of your Activity. When your state changes, the rail reacts instantly.
+Welcome to the comprehensive guide for **AzNavRail**. This library provides a robust, opinionated navigation rail and menu system for Jetpack Compose, featuring a streamlined DSL, strict layout enforcement, and advanced capabilities like FAB mode, nested rails, and system overlays.
 
 ---
 
 ## Table of Contents
 
 1.  [Getting Started](#getting-started)
-2.  [The Az Protocol (Architecture)](#the-az-protocol-architecture)
-3.  [Live Dictatorship: Dynamic Binding](#live-dictatorship-dynamic-binding)
-4.  [State & Action Binding](#state--action-binding)
+2.  [The Manual DSL (Recommended)](#the-manual-dsl-recommended)
+    *   [Layout & Hosting](#layout--hosting)
+    *   [Navigation Items](#navigation-items)
+    *   [Toggles, Cyclers, and Rollers](#toggles-cyclers-and-rollers)
+    *   [Nested Rails](#nested-rails)
+    *   [Reorderable Items](#reorderable-items)
+    *   [Configuration & Theme](#configuration--theme)
+    *   [Advanced Features](#advanced-features)
+3.  [UI Components](#ui-components)
+    *   [AzTextBox & AzForm](#aztextbox--azform)
+    *   [AzButton, AzToggle, AzCycler](#azbutton-aztoggle-azcycler)
+    *   [AzRoller](#azroller)
+    *   [AzLoad](#azload)
+4.  [The High-Inference System (Annotation Processing)](#the-high-inference-system-annotation-processing)
+    *   [Setup](#setup)
+    *   [Live Dictatorship (State Binding)](#live-dictatorship-state-binding)
 5.  [Strict Layout Rules](#strict-layout-rules)
 6.  [Info & Help Screen](#info--help-screen)
-7.  [Annotation Reference (@Az)](#annotation-reference-az)
 
 ---
 
 ## Getting Started
 
-### 1. Installation
+### Installation
 
-Add the **KSP Plugin** and dependencies to your app's `build.gradle.kts`.
+Add the dependency to your app's `build.gradle.kts`:
+
+~~~kotlin
+dependencies {
+    implementation("com.github.HereLiesAz:AzNavRail:VERSION") // Replace with latest version
+}
+~~~
+
+To use the **High-Inference System** (Annotation Processing), you must also add the KSP plugin and processor:
 
 ~~~kotlin
 plugins {
-    id("com.google.devtools.ksp") version "2.2.21-2.0.5"
+    id("com.google.devtools.ksp") version "2.2.21-2.0.5" // Match your Kotlin version
 }
 
 dependencies {
-    implementation("com.github.HereLiesAz.AzNavRail:aznavrail:7.25")
     implementation("com.github.HereLiesAz.AzNavRail:aznavrail-annotation:7.25")
     ksp("com.github.HereLiesAz.AzNavRail:aznavrail-processor:7.25")
 }
 ~~~
 
-### 2. The Constitution (App Setup)
+---
 
-Extend `AzActivity` and point it to the generated graph. In v7.25, annotation parameters like `dock` use **String literals** to prevent dependency cycles.
+## The Manual DSL (Recommended)
+
+The manual DSL offers full control over the rail's content and behavior directly within your Composable code.
+
+### Layout & Hosting
+
+**Strict Usage Protocol:** `AzNavRail` **MUST** be used within an `AzHostActivityLayout` container. This layout enforces safe zones, handles padding automatically, and manages the rail's Z-ordering.
 
 ~~~kotlin
-// 1. Define Global Rules (Note: dock is now a String "LEFT" or "RIGHT")
-@Az(app = App(dock = "LEFT", expandedWidth = 240, collapsedWidth = 80))
-class MainActivity : AzActivity() {
-    // 2. Link the Generated Graph
-    override val graph = AzGraph 
+AzHostActivityLayout(
+    navController = rememberNavController(),
+    initiallyExpanded = false
+) {
+    // 1. Configure the Rail
+    azConfig(dockingSide = AzDockingSide.LEFT)
 
-    // 3. The Runtime Escape Hatch (Optional)
-    override fun AzNavRailScope.configureRail() {
-        azConfig(
-            vibrate = true,
-            displayAppName = true
-        )
+    // 2. Add Items
+    azRailItem(id = "home", text = "Home", route = "home")
+
+    // 3. Define Content
+    onscreen(alignment = Alignment.Center) {
+        // Your UI goes here. It is automatically padded to avoid the rail.
+        AzNavHost(startDestination = "home") {
+            composable("home") { Text("Home Screen") }
+        }
     }
 }
 ~~~
 
----
+### Navigation Items
 
-## The Az Protocol (Architecture)
+*   **`azRailItem`**: Adds an item to the always-visible rail.
+*   **`azMenuItem`**: Adds an item to the expandable menu drawer only.
+*   **`azRailHostItem` / `azMenuHostItem`**: Adds a parent item that can contain sub-items.
+*   **`azRailSubItem` / `azMenuSubItem`**: Adds a child item to a host.
 
-The KSP Processor enforces the following architecture:
-
-1.  **Zero-Talk Inference**: If you do not provide an `id` or `text` in the annotation, it is derived from the symbol name (e.g., `fun WiFiSettings` -> ID: `wifi_settings`, Text: "WiFi Settings").
-2.  **Type Safety via Casting**: The generated `AzGraph` casts the generic `activity` to your specific `MainActivity`. This allows the rail to read and mutate your properties directly.
-
----
-
-## Live Dictatorship: Dynamic Binding
-
-This is the flagship feature of v7.25. You can bind UI properties to `mutableStateOf` variables in your Activity.
-
-### How it works:
-1.  Define a property in your `AzActivity`.
-2.  Reference that property by name (as a String) in the `@Az` annotation.
+**Parameters:**
+*   `id`: Unique String ID.
+*   `text`: Display label.
+*   `route`: Navigation destination (optional).
+*   `content`: Custom icon/content (Color, Drawable Res ID, or specific types).
+*   `info`: Help text for the Info Screen.
+*   `disabled`: Boolean to disable interaction.
+*   `classifiers`: Set of strings for programmatic highlighting.
 
 ~~~kotlin
-class MainActivity : AzActivity() {
-    override val graph = AzGraph
-    
-    // 1. Define reactive state
-    var isProMode by mutableStateOf(false)
-    var cartCount by mutableStateOf("0")
-}
+azRailItem(
+    id = "dashboard",
+    text = "Dashboard",
+    route = "dashboard",
+    content = R.drawable.ic_dashboard,
+    info = "View your main stats."
+)
+~~~
 
-// 2. Bind in the Composable
+### Toggles, Cyclers, and Rollers
+
+Manage state directly within the rail.
+
+*   **`azRailToggle` / `azMenuToggle`**: A switch with two states.
+*   **`azRailCycler` / `azMenuCycler`**: A button that cycles through a list of options.
+
+~~~kotlin
+azRailToggle(
+    id = "theme_toggle",
+    isChecked = isDarkTheme,
+    toggleOnText = "Dark",
+    toggleOffText = "Light",
+    onClick = { isDarkTheme = !isDarkTheme }
+)
+
+azRailCycler(
+    id = "filter_cycler",
+    options = listOf("All", "Active", "Completed"),
+    selectedOption = currentFilter,
+    onClick = { /* Logic to cycle to next option */ }
+)
+~~~
+
+### Nested Rails
+
+`azNestedRail` allows an item to open a secondary popup rail. This is useful for complex hierarchies without cluttering the main rail.
+
+*   **Vertical**: Expands downwards from the item.
+*   **Horizontal**: Expands sideways from the item.
+
+~~~kotlin
+azNestedRail(
+    id = "nested_tools",
+    text = "Tools",
+    alignment = AzNestedRailAlignment.HORIZONTAL
+) {
+    azRailItem("tool_1", "Hammer")
+    azRailItem("tool_2", "Wrench")
+}
+~~~
+
+### Reorderable Items
+
+`azRailRelocItem` creates items that users can drag and drop to reorder.
+
+*   **Long Press**: Starts dragging.
+*   **Tap**: Selects/Focuses.
+*   **Tap (Focused)**: Opens a hidden context menu (defined via `hiddenMenu`).
+
+~~~kotlin
+azRailRelocItem(
+    id = "fav_1",
+    hostId = "favorites",
+    text = "Favorite 1",
+    onRelocate = { from, to, newOrder -> /* Save new order */ }
+) {
+    listItem("Remove") { /* ... */ }
+    inputItem("Rename") { newName -> /* ... */ }
+}
+~~~
+
+### Configuration & Theme
+
+*   **`azConfig`**:
+    *   `dockingSide`: `LEFT` or `RIGHT`.
+    *   `packButtons`: If `true`, rail items are packed tightly at the top/center. If `false`, they are spaced out.
+    *   `noMenu`: Disables the drawer; all items effectively become rail items.
+    *   `displayAppName`: Shows app name in header instead of icon.
+*   **`azTheme`**:
+    *   `activeColor`: Tint color for active items.
+    *   `defaultShape`: `CIRCLE`, `SQUARE`, `RECTANGLE`, `NONE`.
+    *   `headerIconShape`: Shape of the top header icon.
+
+### Advanced Features
+
+*   **`azAdvanced`**:
+    *   `isLoading`: Shows a global loading spinner (`AzLoad`).
+    *   `infoScreen`: Activates the interactive Help Overlay.
+    *   `enableRailDragging`: Enables FAB Mode (detach and drag the rail).
+    *   `overlayService`: Class reference for System Overlay service.
+
+---
+
+## UI Components
+
+### AzTextBox & AzForm
+
+Modern text input components with autocomplete, history, and validation.
+
+*   **`AzTextBox`**:
+    *   `historyContext`: Namespaces autocomplete history.
+    *   `multiline`: Expands vertically.
+    *   `secret`: Masks input (password).
+    *   `onSubmit`: Callback for the built-in submit button.
+*   **`AzForm`**: Groups `AzTextBox` fields into a single submission unit.
+
+~~~kotlin
+AzForm(
+    formName = "login",
+    onSubmit = { data -> login(data["user"], data["pass"]) }
+) {
+    entry("user", "Username")
+    entry("pass", "Password", secret = true)
+}
+~~~
+
+### AzButton, AzToggle, AzCycler
+
+Standalone versions of the rail components for use in your `onscreen` content.
+
+~~~kotlin
+AzButton(
+    text = "Submit",
+    onClick = { submit() },
+    isLoading = isSubmitting
+)
+~~~
+
+### AzRoller
+
+A "Slot Machine" style dropdown. Left-click to type/filter, Right-click to scroll options like a roller.
+
+~~~kotlin
+AzRoller(
+    options = listOf("Apple", "Banana", "Cherry"),
+    selectedOption = currentFruit,
+    onOptionSelected = { currentFruit = it }
+)
+~~~
+
+### AzLoad
+
+A polished loading spinner. Use `AzLoad()` composable or `azAdvanced(isLoading = true)` for a full-screen overlay.
+
+---
+
+## The High-Inference System (Annotation Processing)
+
+This system allows you to define your rail structure via annotations on your Activity and Composables, generating the wiring code automatically.
+
+### Live Dictatorship (State Binding)
+
+**v7.25 Flagship Feature**: Bind UI properties directly to `mutableStateOf` variables in your Activity by name.
+
+1.  **Define State**: In your `AzActivity`, define properties like `var isProMode by mutableStateOf(false)`.
+2.  **Bind**: In annotations, reference these properties by name string.
+
+~~~kotlin
 @Az(rail = RailItem(
-    icon = R.drawable.ic_premium,
-    visibleProperty = "isProMode",   // Only shows if isProMode is true
-    iconTextProperty = "cartCount"   // Shows the count as a badge
+    icon = R.drawable.ic_star,
+    visibleProperty = "isProMode", // Hidden unless isProMode == true
+    textProperty = "dynamicLabel"  // Updates text automatically
 ))
 @Composable
-fun PremiumDashboard() { ... }
+fun ProFeature() { ... }
 ~~~
 
-### Supported Dynamic Fields:
-- `visibleProperty` (Boolean): Controls item visibility.
-- `disabledProperty` (Boolean): Controls whether the item is clickable/grayed out.
-- `textProperty` (String): Dynamically updates the label text.
-- `iconTextProperty` (String): Dynamically updates the badge/icon overlay text.
-- `isLoadingProperty` (Boolean): (Advanced) Controls the global loading spinner.
-
----
-
-## State & Action Binding
-
-The system dictates how an item behaves by examining the *shape* of the symbol you annotate.
-
-### 1. Screen Binding (Navigable Destinations)
-Annotate a **`@Composable` function**. Clicking the rail item opens the screen.
-
-### 2. Action Binding (Transient Executions)
-Annotate a **standard function**. Clicking the item executes the code and collapses the rail.
-
-### 3. State Puppeteering (Toggles & Cyclers)
-Annotate a `var` property with `@Az(toggle = ...)` or `@Az(cycler = ...)`. 
-
-**Important:** For `Toggle`, you **must** provide `isCheckedProperty` matching the variable name. The generated code will handle the mutation (e.g., `instance.isDarkMode = !instance.isDarkMode`).
-
-~~~kotlin
-@Az(toggle = Toggle(isCheckedProperty = "isDarkMode", toggleOnText = "DARK", toggleOffText = "LIGHT"))
-var isDarkMode by mutableStateOf(false)
-~~~
+**Supported Bindings:**
+*   `visibleProperty`
+*   `disabledProperty`
+*   `textProperty`
+*   `iconTextProperty` (Badge)
+*   `isCheckedProperty` (For Toggles - bidirectional binding)
 
 ---
 
 ## Strict Layout Rules
 
-The generated `AzGraph` automatically wraps your content in `AzHostActivityLayout`. This enforces:
+`AzHostActivityLayout` enforces a "Constitution" for your UI:
 
-1.  **Safe Zones**: Your UI content is strictly forbidden from the **Top 20%** and **Bottom 10%** of the screen.
-2.  **Rail Avoidance**: Content is automatically padded to avoid the rail.
-3.  **Aesthetic Purge**: The layout handles geometry. Your app's `MaterialTheme` handles the paint. 
+1.  **Safe Zones**: Content is forbidden in the **Top 10%** (Header) and **Bottom 10%** (Footer/Nav) areas.
+2.  **Rail Avoidance**: Padding is automatically applied to `onscreen` content to prevent overlap with the rail.
+3.  **Mirrored Alignment**: If you dock the rail to the `RIGHT`, `Alignment.TopStart` in `onscreen` effectively becomes `TopEnd` relative to the safe area (visual flip).
 
 ---
 
 ## Info & Help Screen
 
-AzNavRail includes an interactive Info Screen that overlays the UI to explain navigation items.
+A built-in tutorial mode.
 
-### Activation
-To activate the Info Screen, you must bind a boolean property to the `infoScreen` parameter in the `@Az(advanced = ...)` annotation.
+1.  **Activate**: Set `infoScreen = true` in `azAdvanced` (or via Live Dictatorship binding).
+2.  **Annotate**: Add `info = "Description..."` to your items.
+3.  **Experience**:
+    *   The UI dims.
+    *   Lines connect items to their descriptions.
+    *   Coordinates are visualized for debugging.
+    *   Host items remain interactive to explore nested help.
 
-~~~kotlin
-// In MainActivity
-var showHelp by mutableStateOf(false)
-
-@Az(advanced = Advanced(
-    infoScreen = true, // Enables the binding
-    // Ideally this property name matches the variable in MainActivity
-    // but currently the KSP processor might infer it or require explicit naming depending on implementation.
-    // Check generated code or use manual config if KSP binding is limited.
-))
-~~~
-
-**Manual Activation (Fallback):**
-Override `configureRail` and use `azAdvanced`:
-
-~~~kotlin
-override fun AzNavRailScope.configureRail() {
-    azAdvanced(
-        infoScreen = showHelp,
-        onDismissInfoScreen = { showHelp = false }
-    )
-}
-~~~
-
-### Adding Info to Items
-To display information for a specific item, simply add the `info` string to its annotation or builder function.
-
-~~~kotlin
-@Az(rail = RailItem(info = "Navigates to the home dashboard."))
-@Composable
-fun Home() { ... }
-~~~
-
-When the Info Screen is active:
-1.  **Visual Connection**: A yellow line connects the rail item to its description card.
-2.  **Strict Square Aesthetics**: The description cards and the close button use `RECTANGLE` shapes (no rounded corners).
-3.  **Safe Zones**: Lines and cards respect the rail safe zones.
-
----
-
-## Annotation Reference (@Az)
-
-| Annotation | Key Parameters (v7.25) |
-| :--- | :--- |
-| `@App` | `dock` (String), `expandedWidth` (Int), `collapsedWidth` (Int), `vibrate` (Boolean), `usePhysicalDocking` (Boolean) |
-| `@RailItem` | `textProperty`, `iconTextProperty`, `visibleProperty`, `disabledProperty` |
-| `@Toggle` | `isCheckedProperty` (Required for dynamic binding) |
-| `@Cycler` | `optionsProperty`, `selectedOptionProperty`, `disabledOptionsProperty` |
-| `@Advanced`| `isLoadingProperty` |
-
----
-
-## Help & Info Overlay
-
-The **Help Overlay** allows you to show a tutorial-like layer over your rail.
--   Set `infoScreen = true` in `azAdvanced` or `azSettings` to activate it.
--   Provide `info` text for your items (e.g., `azRailItem(..., info = "This is Home")`).
-
-**Auto-Wiring:** As of v7.25, the rail **automatically** calculates item positions for the help lines. You do not need to manually implement `onItemGloballyPositioned` unless you have custom needs.
+To exit, the user clicks the FAB in the bottom right, which triggers `onDismissInfoScreen`.

@@ -394,7 +394,7 @@ private fun DraggableRailItemWrapper(
                             if (!isLongPress) {
                                 if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
                                     hasMoved = true
-                                    longPressJob?.cancel()
+                                    longPressJob.cancel()
                                 }
                             } else {
                                 change.consume()
@@ -423,7 +423,7 @@ private fun DraggableRailItemWrapper(
                         currentPosition = change.position
                     }
                 } finally {
-                    longPressJob?.cancel()
+                    longPressJob.cancel()
                     if (isLongPress) {
                         onDragEnd()
                         if (!hasDragged) {
@@ -571,7 +571,7 @@ private fun DraggableRailItemWrapper(
 
         if (hiddenMenuOpenId == item.id && !item.hiddenMenuItems.isNullOrEmpty()) {
             HiddenMenuPopup(
-                items = item.hiddenMenuItems ?: emptyList(),
+                items = item.hiddenMenuItems,
                 onDismiss = onHiddenMenuDismiss,
                 onItemClick = { menuItem ->
                     scope.hiddenMenuOnClickMap[menuItem.id]?.invoke()
