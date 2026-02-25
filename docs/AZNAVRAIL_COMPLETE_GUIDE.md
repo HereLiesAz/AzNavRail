@@ -7,17 +7,22 @@ Welcome to the comprehensive guide for **AzNavRail**. This library provides a ro
 ## Table of Contents
 
 1.  [Getting Started](#getting-started)
-2.  [The Manual DSL (Recommended)](#the-manual-dsl-recommended)
-    *   [Layout & Hosting](#layout--hosting)
+2.  [The Manual DSL](#the-manual-dsl)
+    *   [Host Activity Layout](#host-activity-layout)
+    *   [Configuration](#configuration-azconfig)
+    *   [Theming](#theming-aztheme)
     *   [Navigation Items](#navigation-items)
-    *   [Toggles, Cyclers, and Rollers](#toggles-cyclers-and-rollers)
+    *   [Toggles & Cyclers](#toggles--cyclers)
+    *   [Hierarchical Navigation](#hierarchical-navigation)
     *   [Nested Rails](#nested-rails)
     *   [Reorderable Items](#reorderable-items)
-    *   [Configuration & Theme](#configuration--theme)
-    *   [Advanced Features](#advanced-features)
+    *   [Advanced Features](#advanced-features-azadvanced)
 3.  [UI Components](#ui-components)
-    *   [AzTextBox & AzForm](#aztextbox--azform)
-    *   [AzButton, AzToggle, AzCycler](#azbutton-aztoggle-azcycler)
+    *   [AzTextBox](#aztextbox)
+    *   [AzForm](#azform)
+    *   [AzButton](#azbutton)
+    *   [AzToggle](#aztoggle)
+    *   [AzCycler](#azcycler)
     *   [AzRoller](#azroller)
     *   [AzLoad](#azload)
 4.  [Strict Layout Rules](#strict-layout-rules)
@@ -39,11 +44,11 @@ dependencies {
 
 ---
 
-## The Manual DSL (Recommended)
+## The Manual DSL
 
 The manual DSL offers full control over the rail's content and behavior directly within your Composable code.
 
-### Layout & Hosting
+### Host Activity Layout
 
 **Strict Usage Protocol:** `AzNavRail` **MUST** be used within an `AzHostActivityLayout` container. This layout enforces safe zones, handles padding automatically, and manages the rail's Z-ordering.
 
@@ -52,205 +57,236 @@ AzHostActivityLayout(
     navController = rememberNavController(),
     initiallyExpanded = false
 ) {
-    // 1. Configure the Rail
-    azConfig(dockingSide = AzDockingSide.LEFT)
+    // Rail Configuration & Items...
 
-    // 2. Add Items
-    azRailItem(id = "home", text = "Home", route = "home")
-
-    // 3. Define Content
     onscreen(alignment = Alignment.Center) {
-        // Your UI goes here. It is automatically padded to avoid the rail.
-        AzNavHost(startDestination = "home") {
-            composable("home") { Text("Home Screen") }
-        }
+        // Your Content
     }
 }
 ~~~
 
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `navController` | `NavHostController` | **Required** | The navigation controller for the app. |
+| `currentDestination` | `String?` | `null` | Explicitly overrides the current route. If null, it's auto-detected. |
+| `isLandscape` | `Boolean?` | `null` | Explicitly sets orientation. If null, auto-detected from configuration. |
+| `initiallyExpanded` | `Boolean` | `false` | If true, the rail menu is expanded on launch (e.g., for tablets). |
+| `disableSwipeToOpen` | `Boolean` | `false` | Disables the edge swipe gesture to open the menu. |
+| `content` | `AzNavHostScope.() -> Unit` | **Required** | The DSL block for configuring the rail and adding onscreen content. |
+
+### Configuration (`azConfig`)
+
+Configures the behavioral and structural properties of the rail.
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `dockingSide` | `AzDockingSide` | `LEFT` | `LEFT` or `RIGHT`. Determines which side the rail is pinned to. |
+| `packButtons` | `Boolean` | `false` | If `true`, items are packed tightly at the top/center. If `false`, they are spaced out vertically. |
+| `noMenu` | `Boolean` | `false` | If `true`, the expandable menu drawer is disabled. All items effectively become rail items. |
+| `vibrate` | `Boolean` | `false` | Enables haptic feedback on interactions. |
+| `displayAppName` | `Boolean` | `false` | If `true`, displays the app name (from resources) in the header instead of the icon. |
+| `activeClassifiers` | `Set<String>` | `emptySet()` | A set of tags used to programmatically highlight items (see `azRailItem`). |
+| `usePhysicalDocking` | `Boolean` | `false` | If `true`, anchors the rail to the physical side of the device, rotating with it. |
+| `expandedWidth` | `Dp` | `130.dp` | Width of the rail when the menu is open. |
+| `collapsedWidth` | `Dp` | `80.dp` | Width of the rail when collapsed. |
+| `showFooter` | `Boolean` | `true` | Shows the footer (Privacy, Terms, Help) in the menu. |
+
+### Theming (`azTheme`)
+
+Configures the visual appearance of the rail.
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `activeColor` | `Color` | `Unspecified` | The tint color for active/selected items. |
+| `defaultShape` | `AzButtonShape` | `CIRCLE` | `CIRCLE`, `SQUARE`, `RECTANGLE`, `NONE`. Defaults shape for all items. |
+| `headerIconShape` | `AzHeaderIconShape` | `CIRCLE` | `CIRCLE`, `ROUNDED`, `NONE`. Shape of the top header icon. |
+
 ### Navigation Items
 
-*   **`azRailItem`**: Adds an item to the always-visible rail.
-*   **`azMenuItem`**: Adds an item to the expandable menu drawer only.
-*   **`azRailHostItem` / `azMenuHostItem`**: Adds a parent item that can contain sub-items.
-*   **`azRailSubItem` / `azMenuSubItem`**: Adds a child item to a host.
+Items are the core building blocks.
 
-**Parameters:**
-*   `id`: Unique String ID.
-*   `text`: Display label.
-*   `route`: Navigation destination (optional).
-*   `content`: Custom icon/content (Color, Drawable Res ID, or specific types).
-*   `info`: Help text for the Info Screen.
-*   `disabled`: Boolean to disable interaction.
-*   `classifiers`: Set of strings for programmatic highlighting.
+*   **`azRailItem`**: Always visible in the rail.
+*   **`azMenuItem`**: Visible only when the rail expands into a menu.
 
-~~~kotlin
-azRailItem(
-    id = "dashboard",
-    text = "Dashboard",
-    route = "dashboard",
-    content = R.drawable.ic_dashboard,
-    info = "View your main stats."
-)
-~~~
+| Parameter | Description |
+| :--- | :--- |
+| `id` | **Required**. Unique String ID. |
+| `text` | **Required**. Display label. |
+| `route` | Navigation destination. |
+| `content` | Custom content (`Color`, `Int` (Drawable Res), or `String` (URL - future)). |
+| `color` | Overrides the default active color for this item. |
+| `shape` | Overrides the default shape for this item. |
+| `disabled` | If `true`, the item is non-interactive and dimmed. |
+| `info` | Help text for the Info Screen. |
+| `classifiers` | Set of strings. If any match `azConfig.activeClassifiers`, the item is highlighted. |
+| `onFocus` | Callback when the item receives focus. |
+| `onClick` | Callback when the item is clicked. |
 
-### Toggles, Cyclers, and Rollers
+### Toggles & Cyclers
 
 Manage state directly within the rail.
 
-*   **`azRailToggle` / `azMenuToggle`**: A switch with two states.
-*   **`azRailCycler` / `azMenuCycler`**: A button that cycles through a list of options.
+*   **`azRailToggle` / `azMenuToggle`**: A binary switch.
+*   **`azRailCycler` / `azMenuCycler`**: Cycles through a list of options.
 
-~~~kotlin
-azRailToggle(
-    id = "theme_toggle",
-    isChecked = isDarkTheme,
-    toggleOnText = "Dark",
-    toggleOffText = "Light",
-    onClick = { isDarkTheme = !isDarkTheme }
-)
+**Toggle Parameters:**
+*   `isChecked`: Boolean state.
+*   `toggleOnText` / `toggleOffText`: Labels for each state.
 
-azRailCycler(
-    id = "filter_cycler",
-    options = listOf("All", "Active", "Completed"),
-    selectedOption = currentFilter,
-    onClick = { /* Logic to cycle to next option */ }
-)
-~~~
+**Cycler Parameters:**
+*   `options`: List of strings.
+*   `selectedOption`: Currently selected string.
+*   `disabledOptions`: List of strings that cannot be selected.
+
+### Hierarchical Navigation
+
+Create nested menu structures. Note: Only one host can be expanded at a time.
+
+*   **`azRailHostItem` / `azMenuHostItem`**: Parent item.
+*   **`azRailSubItem` / `azMenuSubItem`**: Child item. Requires `hostId`.
+
+**Sub-Item Parameters:**
+*   `hostId`: The `id` of the parent Host item.
+*   All other standard item parameters apply.
 
 ### Nested Rails
 
-`azNestedRail` allows an item to open a secondary popup rail. This is useful for complex hierarchies without cluttering the main rail.
+`azNestedRail` creates a secondary popup rail that appears when the item is clicked.
 
-*   **Vertical**: Expands downwards from the item.
-*   **Horizontal**: Expands sideways from the item.
-
-~~~kotlin
-azNestedRail(
-    id = "nested_tools",
-    text = "Tools",
-    alignment = AzNestedRailAlignment.HORIZONTAL
-) {
-    azRailItem("tool_1", "Hammer")
-    azRailItem("tool_2", "Wrench")
-}
-~~~
+| Parameter | Description |
+| :--- | :--- |
+| `alignment` | `VERTICAL` (expands down) or `HORIZONTAL` (expands sideways). |
+| `nestedContent` | DSL block to add items (`azRailItem`) to the popup rail. |
 
 ### Reorderable Items
 
-`azRailRelocItem` creates items that users can drag and drop to reorder.
+`azRailRelocItem` enables drag-and-drop reordering.
 
-*   **Long Press**: Starts dragging.
-*   **Tap**: Selects/Focuses.
-*   **Tap (Focused)**: Opens a hidden context menu (defined via `hiddenMenu`).
+*   **Long Press**: Drag to reorder.
+*   **Tap**: Focus.
+*   **Tap (Focused)**: Open context menu.
 
-~~~kotlin
-azRailRelocItem(
-    id = "fav_1",
-    hostId = "favorites",
-    text = "Favorite 1",
-    onRelocate = { from, to, newOrder -> /* Save new order */ }
-) {
-    listItem("Remove") { /* ... */ }
-    inputItem("Rename") { newName -> /* ... */ }
-}
-~~~
+**Parameters:**
+*   `onRelocate`: Callback `(fromIndex, toIndex, newOrderList) -> Unit`.
+*   `hiddenMenu`: DSL block to define context menu actions (`listItem`, `inputItem`).
 
-### Configuration & Theme
+### Advanced Features (`azAdvanced`)
 
-*   **`azConfig`**:
-    *   `dockingSide`: `LEFT` or `RIGHT`.
-    *   `packButtons`: If `true`, rail items are packed tightly at the top/center. If `false`, they are spaced out.
-    *   `noMenu`: Disables the drawer; all items effectively become rail items.
-    *   `displayAppName`: Shows app name in header instead of icon.
-*   **`azTheme`**:
-    *   `activeColor`: Tint color for active items.
-    *   `defaultShape`: `CIRCLE`, `SQUARE`, `RECTANGLE`, `NONE`.
-    *   `headerIconShape`: Shape of the top header icon.
-
-### Advanced Features
-
-*   **`azAdvanced`**:
-    *   `isLoading`: Shows a global loading spinner (`AzLoad`).
-    *   `infoScreen`: Activates the interactive Help Overlay.
-    *   `enableRailDragging`: Enables FAB Mode (detach and drag the rail).
-    *   `overlayService`: Class reference for System Overlay service.
+| Parameter | Description |
+| :--- | :--- |
+| `isLoading` | If `true`, shows a full-screen `AzLoad` spinner overlay. |
+| `infoScreen` | If `true`, activates the interactive Help/Tutorial overlay. |
+| `onDismissInfoScreen` | Callback to exit help mode. |
+| `enableRailDragging` | If `true`, enables **FAB Mode**. Long-press header to detach rail. |
+| `overlayService` | Class of the service extending `AzNavRailOverlayService` for system-wide usage. |
+| `onUndock` | Callback when rail is detached. |
 
 ---
 
 ## UI Components
 
-### AzTextBox & AzForm
+### AzTextBox
 
-Modern text input components with autocomplete, history, and validation.
+A feature-rich text input field.
 
-*   **`AzTextBox`**:
-    *   `historyContext`: Namespaces autocomplete history.
-    *   `multiline`: Expands vertically.
-    *   `secret`: Masks input (password).
-    *   `onSubmit`: Callback for the built-in submit button.
-*   **`AzForm`**: Groups `AzTextBox` fields into a single submission unit.
+| Parameter | Description |
+| :--- | :--- |
+| `value` / `onValueChange` | For controlled usage. |
+| `hint` | Placeholder text. |
+| `historyContext` | Key for namespacing autocomplete history. |
+| `multiline` | If `true`, allows multiple lines. |
+| `secret` | If `true`, masks input (password). |
+| `isError` | Visual error state. |
+| `submitButtonContent` | Composable for the built-in submit button. |
+| `onSubmit` | Callback when submit button is clicked. |
+
+### AzForm
+
+Groups multiple `AzTextBox` entries.
 
 ~~~kotlin
 AzForm(
     formName = "login",
-    onSubmit = { data -> login(data["user"], data["pass"]) }
+    onSubmit = { data -> /* data["username"] */ }
 ) {
-    entry("user", "Username")
-    entry("pass", "Password", secret = true)
+    entry("username", "User")
+    entry("password", "Pass", secret = true)
 }
 ~~~
 
-### AzButton, AzToggle, AzCycler
+### AzButton
 
-Standalone versions of the rail components for use in your `onscreen` content.
+Standalone button with loading state support.
+
+| Parameter | Description |
+| :--- | :--- |
+| `text` | Label text. |
+| `onClick` | Click handler. |
+| `isLoading` | If `true`, replaces text with a spinner (maintains size). |
+| `shape` | `AzButtonShape`. |
+
+### AzToggle
+
+Standalone binary switch.
 
 ~~~kotlin
-AzButton(
-    text = "Submit",
-    onClick = { submit() },
-    isLoading = isSubmitting
+AzToggle(
+    isChecked = state,
+    onToggle = { state = !state },
+    toggleOnText = "ON",
+    toggleOffText = "OFF"
+)
+~~~
+
+### AzCycler
+
+Standalone option cycler.
+
+~~~kotlin
+AzCycler(
+    options = listOf("A", "B", "C"),
+    selectedOption = current,
+    onCycle = { /* update current */ }
 )
 ~~~
 
 ### AzRoller
 
-A "Slot Machine" style dropdown. Left-click to type/filter, Right-click to scroll options like a roller.
+A "Slot Machine" dropdown.
+*   **Left Click**: Type to filter.
+*   **Right Click**: Roll to select.
 
 ~~~kotlin
 AzRoller(
-    options = listOf("Apple", "Banana", "Cherry"),
-    selectedOption = currentFruit,
-    onOptionSelected = { currentFruit = it }
+    options = listOf("A", "B", "C"),
+    selectedOption = "A",
+    onOptionSelected = { it }
 )
 ~~~
 
 ### AzLoad
 
-A polished loading spinner. Use `AzLoad()` composable or `azAdvanced(isLoading = true)` for a full-screen overlay.
+Polished loading spinner.
+
+~~~kotlin
+AzLoad() // Renders the spinner
+~~~
 
 ---
 
 ## Strict Layout Rules
 
-`AzHostActivityLayout` enforces a "Constitution" for your UI:
-
-1.  **Safe Zones**: Content is forbidden in the **Top 10%** (Header) and **Bottom 10%** (Footer/Nav) areas.
-2.  **Rail Avoidance**: Padding is automatically applied to `onscreen` content to prevent overlap with the rail.
-3.  **Mirrored Alignment**: If you dock the rail to the `RIGHT`, `Alignment.TopStart` in `onscreen` effectively becomes `TopEnd` relative to the safe area (visual flip).
+1.  **Top 10%**: Reserved for Header.
+2.  **Bottom 10%**: Reserved for Footer.
+3.  **Rail Padding**: `onscreen` content is padded by `collapsedWidth` on the docking side.
+4.  **Mirroring**: Alignments (e.g., `TopStart`) flip automatically if the rail is on the Right.
 
 ---
 
 ## Info & Help Screen
 
-A built-in tutorial mode.
-
-1.  **Activate**: Set `infoScreen = true` in `azAdvanced` (or via Live Dictatorship binding).
-2.  **Annotate**: Add `info = "Description..."` to your items.
-3.  **Experience**:
-    *   The UI dims.
-    *   Lines connect items to their descriptions.
-    *   Coordinates are visualized for debugging.
-    *   Host items remain interactive to explore nested help.
-
-To exit, the user clicks the FAB in the bottom right, which triggers `onDismissInfoScreen`.
+A built-in onboarding tool.
+1.  Set `infoScreen = true` in `azAdvanced`.
+2.  Add `info` text to any item.
+3.  The UI highlights items and draws connecting lines to their descriptions.
+4.  Displays coordinates for debugging.
