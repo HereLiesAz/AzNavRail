@@ -335,8 +335,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
     }
 
     // Config
-    var expandedWidth: Dp = 280.dp
-    var collapsedWidth: Dp = 136.dp
+    var expandedWidth: Dp = 130.dp
+    var collapsedWidth: Dp = 80.dp
     var showFooter: Boolean = true
     var dockingSide: AzDockingSide = AzDockingSide.LEFT
     var packButtons: Boolean = false
