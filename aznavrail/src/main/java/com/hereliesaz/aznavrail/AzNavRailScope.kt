@@ -70,8 +70,8 @@ interface AzNavRailScope {
     fun azSettings(
         displayAppNameInHeader: Boolean = false,
         packRailButtons: Boolean = false,
-        expandedRailWidth: Dp = 130.dp,
-        collapsedRailWidth: Dp = 80.dp,
+        expandedRailWidth: Dp = 280.dp,
+        collapsedRailWidth: Dp = 136.dp,
         showFooter: Boolean = true,
         isLoading: Boolean = false,
         defaultShape: AzButtonShape = AzButtonShape.CIRCLE,
@@ -333,8 +333,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
     }
 
     // Config
-    var expandedWidth: Dp = 130.dp
-    var collapsedWidth: Dp = 80.dp
+    var expandedWidth: Dp = 280.dp
+    var collapsedWidth: Dp = 136.dp
     var showFooter: Boolean = true
     var dockingSide: AzDockingSide = AzDockingSide.LEFT
     var packButtons: Boolean = false
@@ -436,6 +436,14 @@ class AzNavRailScopeImpl : AzNavRailScope {
         this.usePhysicalDocking = usePhysicalDocking
     }
 
+    private fun checkId(id: String) {
+        if (navItems.any { it.id == id }) {
+            throw IllegalArgumentException(
+                "Duplicate ID detected: '$id'. All items in AzNavRail must have a unique ID to ensure state consistency."
+            )
+        }
+    }
+
     override fun azMenuItem(id: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, onClick: (() -> Unit)?) {
         addItem(id = id, text = text, route = route, screenTitle = screenTitle, info = info, isRailItem = false, disabled = disabled, content = content, color = color, shape = shape, onClick = onClick ?: {})
     }
@@ -445,6 +453,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     }
 
     override fun azNestedRail(id: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, alignment: AzNestedRailAlignment, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, nestedContent: AzNavRailScope.() -> Unit) {
+        checkId(id)
         val nestedScope = AzNavRailScopeImpl()
         nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, showFooter = this.showFooter)
         nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape)
@@ -521,6 +530,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     }
 
     override fun azRailRelocItem(id: String, hostId: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: (() -> Unit)?, onRelocate: ((Int, Int, List<String>) -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
+        checkId(id)
         val hiddenMenuScope = HiddenMenuScopeImpl()
         hiddenMenuScope.hiddenMenu()
 
@@ -553,6 +563,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     }
 
     private fun addToggle(id: String, hostId: String? = null, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String?, disabled: Boolean, screenTitle: String?, info: String?, isRailItem: Boolean, isSubItem: Boolean, color: Color?, shape: AzButtonShape?, onClick: () -> Unit) {
+        checkId(id)
         val text = if (isChecked) toggleOnText else toggleOffText
         val finalScreenTitle = if (screenTitle == AzNavRailDefaults.NO_TITLE) null else screenTitle ?: text
         onClickMap[id] = onClick
