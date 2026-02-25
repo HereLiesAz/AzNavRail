@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
@@ -269,8 +271,10 @@ fun AzNavRail(
     }
 
     val sizeModifier = if (isFloating) {
-        if (orientation == AzOrientation.Vertical) Modifier.width(railWidth).wrapContentHeight()
-        else Modifier.height(railWidth).wrapContentWidth()
+        // Enforce max height/width in FAB mode to ensure it fits within 10-90% safe zone
+        val maxFabSize = (configuration.screenHeightDp * 0.8f).dp
+        if (orientation == AzOrientation.Vertical) Modifier.width(railWidth).heightIn(max = maxFabSize).wrapContentHeight()
+        else Modifier.height(railWidth).widthIn(max = maxFabSize).wrapContentWidth()
     } else {
         if (orientation == AzOrientation.Vertical) Modifier.width(railWidth).fillMaxHeight()
         else Modifier.height(railWidth).fillMaxWidth()
@@ -303,9 +307,10 @@ fun AzNavRail(
                             change.consume()
                             if (isFloating) {
                                 offsetX += dragAmount.x
+                                offsetY += dragAmount.y
                                 val minY = screenHeightPx * 0.1f
                                 val maxY = maxOf(minY, (screenHeightPx * 0.9f) - railContentHeight)
-                                offsetY = (offsetY + dragAmount.y).coerceIn(minY, maxY)
+                                offsetY = offsetY.coerceIn(minY, maxY)
                             } else {
                                 if (scope.enableRailDragging && kotlin.math.abs(dragAmount.y) > 20 && kotlin.math.abs(dragAmount.y) > kotlin.math.abs(dragAmount.x)) {
                                     isFloating = true
