@@ -58,6 +58,7 @@
     "eslint": "^8.48.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
+    "ip": "^2.0.1",
     "jest": "^29.6.4",
     "prettier": "^3.0.2",
     "react": "18.2.0",
@@ -76,7 +77,9 @@
   "packageManager": "yarn@3.6.1",
   "jest": {
     "preset": "react-native",
-    "setupFiles": ["<rootDir>/jest.setup.js"],
+    "setupFiles": [
+      "<rootDir>/jest.setup.js"
+    ],
     "modulePathIgnorePatterns": [
       "<rootDir>/example/node_modules",
       "<rootDir>/lib/"
@@ -150,5 +153,8 @@
         }
       ]
     ]
+  },
+  "overrides": {
+    "ip": "^2.0.1"
   }
 }

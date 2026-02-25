@@ -486,6 +486,7 @@ private fun DraggableRailItemWrapper(
                     onItemClick = {},
                     onHostClick = {},
                     onItemGloballyPositioned = onItemGloballyPositioned,
+                    onBoundsCalculated = { id, bounds -> scope.itemBoundsCache[id] = bounds },
                     infoScreen = infoScreen,
                     dragModifier = dragModifier,
                     activeColor = scope.activeColor
@@ -510,6 +511,7 @@ private fun DraggableRailItemWrapper(
                     onItemClick = { onItemSelected(item) },
                     onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
                     onItemGloballyPositioned = onItemGloballyPositioned,
+                            onBoundsCalculated = { id, bounds -> scope.itemBoundsCache[id] = bounds },
                     infoScreen = infoScreen,
                     dragModifier = dragModifier,
                     activeColor = scope.activeColor

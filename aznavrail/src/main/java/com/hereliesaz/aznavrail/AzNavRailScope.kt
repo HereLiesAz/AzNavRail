@@ -321,6 +321,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     val hiddenMenuOnClickMap = mutableMapOf<String, () -> Unit>()
     val hiddenMenuOnValueChangeMap = mutableMapOf<String, (String) -> Unit>()
     val onRelocateMap = mutableMapOf<String, (Int, Int, List<String>) -> Unit>()
+    val itemBoundsCache = mutableMapOf<String, Rect>()
     var navController: NavController? = null
 
     fun reset() {
@@ -330,6 +331,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         hiddenMenuOnClickMap.clear()
         hiddenMenuOnValueChangeMap.clear()
         onRelocateMap.clear()
+        itemBoundsCache.clear()
     }
 
     // Config
