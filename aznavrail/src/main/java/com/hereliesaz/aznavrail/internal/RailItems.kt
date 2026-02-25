@@ -571,7 +571,7 @@ private fun DraggableRailItemWrapper(
 
         if (hiddenMenuOpenId == item.id && !item.hiddenMenuItems.isNullOrEmpty()) {
             HiddenMenuPopup(
-                items = item.hiddenMenuItems,
+                items = item.hiddenMenuItems ?: emptyList(),
                 onDismiss = onHiddenMenuDismiss,
                 onItemClick = { menuItem ->
                     scope.hiddenMenuOnClickMap[menuItem.id]?.invoke()
