@@ -37,7 +37,7 @@ interface AzNavRailScope {
      * @param collapsedWidth The width of the rail when collapsed.
      * @param showFooter Whether to show the footer (Privacy, Terms, Help) in the menu.
      */
-    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 130.dp, collapsedWidth: Dp = 80.dp, showFooter: Boolean = true)
+    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 130.dp, collapsedWidth: Dp = 100.dp, showFooter: Boolean = true)
 
     /**
      * Configures the visual theme of the rail.
@@ -70,8 +70,8 @@ interface AzNavRailScope {
     fun azSettings(
         displayAppNameInHeader: Boolean = false,
         packRailButtons: Boolean = false,
-        expandedRailWidth: Dp = 130.dp,
-        collapsedRailWidth: Dp = 80.dp,
+        expandedRailWidth: Dp = 280.dp,
+        collapsedRailWidth: Dp = 136.dp,
         showFooter: Boolean = true,
         isLoading: Boolean = false,
         defaultShape: AzButtonShape = AzButtonShape.CIRCLE,
@@ -333,8 +333,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
     }
 
     // Config
-    var expandedWidth: Dp = 130.dp
-    var collapsedWidth: Dp = 80.dp
+    var expandedWidth: Dp = 280.dp
+    var collapsedWidth: Dp = 136.dp
     var showFooter: Boolean = true
     var dockingSide: AzDockingSide = AzDockingSide.LEFT
     var packButtons: Boolean = false
