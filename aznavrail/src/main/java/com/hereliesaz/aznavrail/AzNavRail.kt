@@ -428,7 +428,10 @@ fun AzNavRail(
                                     onToggle = { if (item.collapseOnClick) isExpanded = false },
                                     onItemClick = { if (item.collapseOnClick) isExpanded = false },
                                     onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
-                                    onItemGloballyPositioned = scope.onItemGloballyPositioned,
+                                    onItemGloballyPositioned = { id, bounds ->
+                                        scope.itemBoundsCache[id] = bounds
+                                        scope.onItemGloballyPositioned?.invoke(id, bounds)
+                                    },
                                     infoScreen = scope.infoScreen,
                                     activeColor = scope.activeColor
                                 )
@@ -447,7 +450,10 @@ fun AzNavRail(
                                             onCyclerClick = { scope.onClickMap[subItem.id]?.invoke() },
                                             onToggle = { if (subItem.collapseOnClick) isExpanded = false },
                                             onItemClick = { if (subItem.collapseOnClick) isExpanded = false },
-                                            onItemGloballyPositioned = scope.onItemGloballyPositioned,
+                                            onItemGloballyPositioned = { id, bounds ->
+                                                scope.itemBoundsCache[id] = bounds
+                                                scope.onItemGloballyPositioned?.invoke(id, bounds)
+                                            },
                                             infoScreen = scope.infoScreen,
                                             activeColor = scope.activeColor
                                         )

@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
@@ -325,7 +326,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     val hiddenMenuOnClickMap = mutableMapOf<String, () -> Unit>()
     val hiddenMenuOnValueChangeMap = mutableMapOf<String, (String) -> Unit>()
     val onRelocateMap = mutableMapOf<String, (Int, Int, List<String>) -> Unit>()
-    val itemBoundsCache = mutableMapOf<String, Rect>()
+    val itemBoundsCache = mutableStateMapOf<String, Rect>()
     var navController: NavController? = null
 
     fun reset() {
