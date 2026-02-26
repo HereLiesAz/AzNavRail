@@ -240,15 +240,35 @@ background(weight = 10) {
 ### Onscreen Content
 The main UI content, automatically padded to respect safe zones and rail width.
 
-```kotlin
-onscreen(alignment = Alignment.Center) {
-    AzNavHost(startDestination = "home", navController = navController) {
-        composable("home") {
-            // Main Screen Content
-        }
-    }
+**Usage:**
+~~~kotlin
+// Basic Usage
+azRailRelocItem(
+    id = "1",
+    hostId = "favs",
+    text = "Favorite A",
+    onRelocate = { from, to, newOrder -> }
+) {
+    // Define Hidden Context Menu (Fallback)
+    listItem("Delete") { }
 }
-```
+
+// As a Nested Rail Parent
+azRailRelocItem(
+    id = "tools_reloc",
+    hostId = "toolbar",
+    text = "Drag Me",
+    nestedRailAlignment = AzNestedRailAlignment.HORIZONTAL, // Customize direction
+    nestedContent = {
+        // This content appears in the popup when the item is clicked (not dragged)
+        azRailItem("hammer", "Hammer")
+        azRailItem("wrench", "Wrench")
+    }
+) {
+    // Hidden Menu (optional if nestedContent is provided)
+    listItem("Remove Tool") { }
+}
+~~~
 
 ---
 
