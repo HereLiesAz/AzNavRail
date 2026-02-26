@@ -53,6 +53,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
@@ -93,7 +94,11 @@ internal fun RailItems(
     var lastTappedId by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
-    Box {
+    Box(modifier = Modifier.pointerInput(Unit) {
+        detectTapGestures(onTap = {
+            if (nestedRailOpenId != null) nestedRailOpenId = null
+        })
+    }) {
         Column {
             itemsToRender.forEach { item ->
                 key(item.id) {
@@ -505,10 +510,13 @@ private fun DraggableRailItemWrapper(
                         scope.onFocusMap[item.id]?.invoke()
                         if (item.isNestedRail) {
                             onNestedRailToggle(if (nestedRailOpenId == item.id) null else item.id)
-                        } else if (onClickOverride != null) {
-                            onClickOverride(item)
                         } else {
-                            scope.onClickMap[item.id]?.invoke()
+                            if (nestedRailOpenId != null) onNestedRailToggle(null)
+                            if (onClickOverride != null) {
+                                onClickOverride(item)
+                            } else {
+                                scope.onClickMap[item.id]?.invoke()
+                            }
                         }
                     },
                     onRailCyclerClick = onRailCyclerClick,
@@ -529,7 +537,7 @@ private fun DraggableRailItemWrapper(
                 Popup(
                     popupPositionProvider = DockedCenteredPopupPositionProvider(isRightDocked, anchorWidthPx),
                     onDismissRequest = { onNestedRailToggle(null) },
-                    properties = PopupProperties(focusable = true)
+                    properties = PopupProperties(focusable = false, dismissOnBackPress = true, dismissOnClickOutside = false)
                 ) {
                     NestedRail(
                         parentItem = item,
@@ -552,7 +560,7 @@ private fun DraggableRailItemWrapper(
                 Popup(
                     popupPositionProvider = DockedHorizontalPopupPositionProvider(isRightDocked, marginPx),
                     onDismissRequest = { onNestedRailToggle(null) },
-                    properties = PopupProperties(focusable = true)
+                    properties = PopupProperties(focusable = false, dismissOnBackPress = true, dismissOnClickOutside = false)
                 ) {
                     NestedRail(
                         parentItem = item,
