@@ -428,8 +428,10 @@ fun AzNavRail(
                                     onToggle = { if (item.collapseOnClick) isExpanded = false },
                                     onItemClick = { if (item.collapseOnClick) isExpanded = false },
                                     onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
-                                    onItemGloballyPositioned = scope.onItemGloballyPositioned,
-                                    onBoundsCalculated = { id, bounds -> scope.itemBoundsCache[id] = bounds },
+                                    onItemGloballyPositioned = { id, bounds ->
+                                        scope.itemBoundsCache[id] = bounds
+                                        scope.onItemGloballyPositioned?.invoke(id, bounds)
+                                    },
                                     infoScreen = scope.infoScreen,
                                     activeColor = scope.activeColor
                                 )
