@@ -226,18 +226,31 @@ azRailItem(
 
 **Usage:**
 ~~~kotlin
+// Basic Usage
 azRailRelocItem(
     id = "1",
     hostId = "favs",
     text = "Favorite A",
-    onRelocate = { from, to, newOrder -> },
-    // Define Nested Rail (Popup) content
-    nestedContent = {
-        azRailItem("sub_action", "Sub Action")
-    }
+    onRelocate = { from, to, newOrder -> }
 ) {
     // Define Hidden Context Menu (Fallback)
     listItem("Delete") { }
+}
+
+// As a Nested Rail Parent
+azRailRelocItem(
+    id = "tools_reloc",
+    hostId = "toolbar",
+    text = "Drag Me",
+    nestedRailAlignment = AzNestedRailAlignment.HORIZONTAL, // Customize direction
+    nestedContent = {
+        // This content appears in the popup when the item is clicked (not dragged)
+        azRailItem("hammer", "Hammer")
+        azRailItem("wrench", "Wrench")
+    }
+) {
+    // Hidden Menu (optional if nestedContent is provided)
+    listItem("Remove Tool") { }
 }
 ~~~
 

@@ -282,15 +282,23 @@ fun MainApp() {
             listItem(text = "Action 1", onClick = { Log.d(TAG, "Reloc 1 action clicked") })
         }
 
+        // Explicitly demonstrating AzRailRelocItem as an AzNestedRail parent
         azRailRelocItem(
-            id = "reloc-2",
+            id = "reloc-nested-parent",
             hostId = "rail-host",
-            text = "Reloc Item 2",
+            text = "Reloc + Nested",
             onRelocate = { from, to, newOrder ->
                 Log.d(TAG, "Relocated item 2 from $from to $to. New order: $newOrder")
+            },
+            nestedRailAlignment = AzNestedRailAlignment.HORIZONTAL, // Customize popup direction
+            nestedContent = {
+                // This block defines the Nested Rail popup content
+                azRailItem("nested-tool-1", "Tool 1", onClick = { Log.d(TAG, "Tool 1 clicked") })
+                azRailItem("nested-tool-2", "Tool 2", onClick = { Log.d(TAG, "Tool 2 clicked") })
             }
         ) {
-            listItem(text = "Action 2", onClick = { Log.d(TAG, "Reloc 2 action clicked") })
+            // Hidden Menu is still available (fallback context actions)
+            listItem(text = "Remove", onClick = { Log.d(TAG, "Reloc Nested action clicked") })
         }
 
         // Nested Rails do not get a route assigned to avoid navigation crashes when clicked to open!
