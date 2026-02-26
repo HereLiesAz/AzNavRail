@@ -52,6 +52,7 @@ internal fun MenuItem(
     onItemClick: () -> Unit = {},
     onHostClick: () -> Unit = {},
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
+    onBoundsCalculated: ((String, Rect) -> Unit)? = null,
     infoScreen: Boolean = false,
     activeColor: androidx.compose.ui.graphics.Color? = null
 ) {
@@ -131,7 +132,9 @@ internal fun MenuItem(
 
     Box(
         modifier = Modifier.onGloballyPositioned { coordinates ->
-            onItemGloballyPositioned?.invoke(item.id, coordinates.boundsInWindow())
+            val bounds = coordinates.boundsInWindow()
+            onBoundsCalculated?.invoke(item.id, bounds)
+            onItemGloballyPositioned?.invoke(item.id, bounds)
         }
     ) {
         Row(
