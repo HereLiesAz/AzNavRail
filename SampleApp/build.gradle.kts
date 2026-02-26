@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.sampleapp"
+    namespace = "com.hereliesaz.SampleApp"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.sampleapp"
+        applicationId = "com.hereliesaz.SampleApp"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

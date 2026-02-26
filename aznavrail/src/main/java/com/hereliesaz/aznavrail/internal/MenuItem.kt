@@ -117,16 +117,10 @@ internal fun MenuItem(
     val effectiveActiveColor = activeColor ?: MaterialTheme.colorScheme.primary
     val effectiveDefaultColor = item.color ?: MaterialTheme.colorScheme.primary
 
-    val targetColor = if (isPressed) {
-        if (isSelected) effectiveDefaultColor else effectiveActiveColor
-    } else {
-        if (isSelected) effectiveActiveColor else effectiveDefaultColor
-    }
-
     val textColor = if (isDisabled) {
-        MaterialTheme.typography.bodyLarge.color.copy(alpha = 0.5f)
+        effectiveDefaultColor.copy(alpha = 0.5f)
     } else {
-        targetColor
+        effectiveDefaultColor
     }
 
     Box(
@@ -148,7 +142,7 @@ internal fun MenuItem(
                 lines.forEachIndexed { index, line ->
                     Text(
                         text = line,
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         color = textColor,
                         modifier = if (index > 0) Modifier.padding(start = 16.dp) else Modifier
                     )
