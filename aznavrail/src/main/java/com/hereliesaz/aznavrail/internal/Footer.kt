@@ -64,17 +64,17 @@ internal fun Footer(
             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
             modifier = Modifier
                 .clickable {
-                    try { context.startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:hereliesaz@gmail.com"))) } catch (e: Exception) {}
+                    try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/HereLiesAz/AzNavRail"))) } catch (e: Exception) {}
                 }
                 .padding(vertical = 4.dp)
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Credit",
+            text = "@HereLiesAz",
             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
             modifier = Modifier
                 .clickable {
-                    try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://instagram.com/hereliesaz"))) } catch (e: Exception) {}
+                    try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/HereLiesAz/AzNavRail"))) } catch (e: Exception) {}
                 }
                 .padding(vertical = 4.dp)
         )

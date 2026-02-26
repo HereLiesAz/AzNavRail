@@ -62,9 +62,9 @@ class FooterTest {
             )
         }
 
-        // Verify "About", "Feedback", "Credit" are present
+        // Verify "About", "Feedback", "@HereLiesAz" are present
         composeTestRule.onNodeWithText("About").assertExists()
         composeTestRule.onNodeWithText("Feedback").assertExists()
-        composeTestRule.onNodeWithText("Credit").assertExists()
+        composeTestRule.onNodeWithText("@HereLiesAz").assertExists()
     }
 }
