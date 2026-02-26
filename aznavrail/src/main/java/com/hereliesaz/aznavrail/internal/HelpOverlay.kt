@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalDensity
@@ -52,7 +53,7 @@ internal fun calculateHelpLayout(
 internal fun HelpOverlay(
     items: List<AzNavItem>,
     onDismiss: () -> Unit,
-    itemBoundsCache: Map<String, androidx.compose.ui.geometry.Rect> = emptyMap()
+    itemBoundsCache: Map<String, Rect> = emptyMap()
 ) {
     val itemsWithInfo = items.filter { !it.info.isNullOrBlank() }
     val safeZones = LocalAzSafeZones.current
@@ -70,6 +71,16 @@ internal fun HelpOverlay(
         calculateHelpLayout(testItems, topMarginPx)
     }
 
+    // Info card constant dimensions (as used in drawing logic below)
+    val cardOffsetX = with(density) { 100.dp.toPx() }
+    // Text padding (16.dp * 2) + approx height of text.
+    // We don't know the exact width/height of the card without measuring it,
+    // but we can approximate the connection point based on the offset.
+    // For "shortest path", we'll connect the centers of the facing edges.
+
+    // Assuming card is to the right of the rail items (standard LTR layout)
+    // Card X starts at 100.dp. Rail items are typically at 0..80.dp.
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -83,16 +94,48 @@ internal fun HelpOverlay(
                     if (bounds != null) {
                         val isItemVisibleInRail = bounds.top >= safeZones.top.toPx() && bounds.bottom <= (size.height - safeZones.bottom.toPx())
                         if (isItemVisibleInRail) {
-                            val itemCenterY = bounds.center.y
-                            val descriptionCenterY = layoutItem.top + 50f // approx center of text
 
-                            val startX = 300f
-                            val endX = bounds.left - 20f
+                            // Calculate approximate bounds of the info card
+                            // We know top and left (offset). We estimate height from layout logic.
+                            // We don't strictly know width, but the line connects to the left edge of the card.
+
+                            val cardTop = layoutItem.top
+                            val cardBottom = layoutItem.bottom
+                            val cardLeft = cardOffsetX
+                            val cardCenterY = (cardTop + cardBottom) / 2
+
+                            // Rail Item Bounds
+                            val itemRight = bounds.right
+                            val itemLeft = bounds.left
+                            val itemCenterY = bounds.center.y
+                            val itemCenterX = bounds.center.x
+
+                            // Determine Shortest Path
+                            // Standard Case: Rail on Left, Card on Right (offset 100dp > bounds.right usually)
+                            // We connect Rail.Right to Card.Left
+
+                            val start: Offset
+                            val end: Offset
+
+                            if (cardLeft > itemRight) {
+                                // Card is to the right of the item
+                                start = Offset(itemRight, itemCenterY)
+                                end = Offset(cardLeft, cardCenterY)
+                            } else if (itemLeft > cardLeft /* + width? */) {
+                                // Card is to the left (e.g. Right Docking?)
+                                // Not fully supported by current simple offset logic, but let's handle generic case
+                                start = Offset(itemLeft, itemCenterY)
+                                end = Offset(cardLeft, cardCenterY) // Connecting to left edge might be wrong if card is on left
+                            } else {
+                                // Overlap or unexpected layout. Connect centers.
+                                start = Offset(itemCenterX, itemCenterY)
+                                end = Offset(cardLeft, cardCenterY)
+                            }
 
                             drawLine(
                                 color = drawColor,
-                                start = Offset(startX, descriptionCenterY),
-                                end = Offset(endX, itemCenterY),
+                                start = start,
+                                end = end,
                                 strokeWidth = strokeWidth.toPx()
                             )
                         }

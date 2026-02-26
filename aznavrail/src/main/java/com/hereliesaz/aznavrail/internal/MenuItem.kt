@@ -52,7 +52,6 @@ internal fun MenuItem(
     onItemClick: () -> Unit = {},
     onHostClick: () -> Unit = {},
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
-    onBoundsCalculated: ((String, Rect) -> Unit)? = null,
     infoScreen: Boolean = false,
     activeColor: androidx.compose.ui.graphics.Color? = null
 ) {
