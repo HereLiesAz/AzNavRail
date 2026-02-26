@@ -132,9 +132,7 @@ internal fun MenuItem(
 
     Box(
         modifier = Modifier.onGloballyPositioned { coordinates ->
-            val bounds = coordinates.boundsInWindow()
-            onBoundsCalculated?.invoke(item.id, bounds)
-            onItemGloballyPositioned?.invoke(item.id, bounds)
+            onItemGloballyPositioned?.invoke(item.id, coordinates.boundsInWindow())
         }
     ) {
         Row(
