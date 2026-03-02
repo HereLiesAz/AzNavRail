@@ -7,9 +7,11 @@ import {
   TouchableOpacity,
   Text,
   Modal,
+  Linking,
 } from 'react-native';
 import { AzNavItem } from '../types';
 import { AzButton } from './AzButton';
+import { AzTextBox } from './AzTextBox';
 
 interface DraggableRailItemWrapperProps {
   item: AzNavItem;
@@ -98,18 +100,40 @@ export const DraggableRailItemWrapper: React.FC<DraggableRailItemWrapperProps> =
                   onPress={() => setShowHiddenMenu(false)}
               >
                   <View style={[styles.hiddenMenu, { top: menuPosition.y, left: menuPosition.x }]}>
-                       {item.hiddenMenu.map((menuItem, i) => (
-                           <TouchableOpacity
-                               key={i}
-                               style={styles.hiddenMenuItem}
-                               onPress={() => {
-                                   menuItem.onClick();
-                                   setShowHiddenMenu(false);
-                               }}
-                           >
-                               <Text style={styles.hiddenMenuItemText}>{menuItem.text}</Text>
-                           </TouchableOpacity>
-                       ))}
+                       {item.hiddenMenu.map((menuItem, i) => {
+                           if (menuItem.isInput) {
+                               return (
+                                   <View key={i} style={styles.hiddenMenuItem}>
+                                       <AzTextBox
+                                           hint={menuItem.hint}
+                                           onValueChange={menuItem.onValueChange}
+                                           onSubmit={(val) => {
+                                               if (menuItem.onValueChange) menuItem.onValueChange(val);
+                                               setShowHiddenMenu(false);
+                                           }}
+                                           showSubmitButton={true}
+                                           outlined={true}
+                                       />
+                                   </View>
+                               );
+                           }
+
+                           return (
+                               <TouchableOpacity
+                                   key={i}
+                                   style={styles.hiddenMenuItem}
+                                   onPress={() => {
+                                       if (menuItem.onClick) menuItem.onClick();
+                                       if (menuItem.route) {
+                                           Linking.openURL(menuItem.route).catch(err => console.error("Couldn't open URL", err));
+                                       }
+                                       setShowHiddenMenu(false);
+                                   }}
+                               >
+                                   <Text style={styles.hiddenMenuItemText}>{menuItem.text}</Text>
+                               </TouchableOpacity>
+                           );
+                       })}
                   </View>
               </TouchableOpacity>
           </Modal>
