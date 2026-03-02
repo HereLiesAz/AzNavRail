@@ -65,19 +65,21 @@ internal fun MenuItem(
     }
 
     // Interaction Logic:
-    // If infoScreen: only Host items are interactive.
+    // If infoScreen: only Host and Help items are interactive.
     // If normal: depends on item.disabled.
 
     // Visual Logic:
-    // If infoScreen: non-Host items look disabled (grey).
+    // If infoScreen: non-Host/Help items look disabled (grey).
     // If normal: disabled items look disabled.
 
-    val isDisabled = if (infoScreen) !item.isHost else item.disabled
+    val isDisabled = if (infoScreen) !(item.isHost || item.isHelpItem) else item.disabled
 
     val modifier = if (isDisabled) Modifier else {
         if (infoScreen) {
-             // Host item in infoScreen is interactive
-             Modifier.clickable(interactionSource = interactionSource, indication = null) { onHostClick() }
+             // Host or Help item in infoScreen is interactive
+             Modifier.clickable(interactionSource = interactionSource, indication = null) {
+                 if (item.isHelpItem) onClick?.invoke() else onHostClick()
+             }
         } else {
             // Normal mode
             if (item.isToggle) {
