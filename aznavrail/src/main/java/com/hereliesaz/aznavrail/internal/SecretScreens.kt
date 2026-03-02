@@ -50,7 +50,6 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import com.hereliesaz.aznavrail.AzButton
 import com.hereliesaz.aznavrail.AzTextBox
-import com.hereliesaz.aznavrail.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -171,8 +170,7 @@ private fun SecretCredentialsDialog(
                     secret = true,
                     isError = error,
                     onSubmit = { input ->
-                        val buildPin = BuildConfig.GENERATED_SEC_LOC_PIN
-                        if (input == secLoc || input == buildPin) {
+                        if (input == secLoc) {
                             onUnlock()
                         } else {
                             error = true
