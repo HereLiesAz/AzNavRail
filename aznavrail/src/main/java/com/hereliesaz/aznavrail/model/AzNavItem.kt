@@ -38,6 +38,7 @@ import kotlinx.parcelize.RawValue
  * @param isNestedRail If `true`, this item triggers a nested rail popup.
  * @param nestedRailAlignment The alignment of the nested rail.
  * @param nestedRailItems The list of items within the nested rail.
+ * @param isHelpItem If `true`, clicking this item toggles the Help/Info overlay.
  */
 @Parcelize
 data class AzNavItem(
@@ -70,5 +71,6 @@ data class AzNavItem(
     val content: @RawValue Any? = null,
     val isNestedRail: Boolean = false,
     val nestedRailAlignment: AzNestedRailAlignment? = null,
-    val nestedRailItems: List<AzNavItem>? = null
+    val nestedRailItems: List<AzNavItem>? = null,
+    val isHelpItem: Boolean = false
 ) : Parcelable

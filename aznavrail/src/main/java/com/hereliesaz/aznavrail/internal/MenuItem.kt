@@ -52,7 +52,7 @@ internal fun MenuItem(
     onItemClick: () -> Unit = {},
     onHostClick: () -> Unit = {},
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
-    infoScreen: Boolean = false,
+    helpEnabled: Boolean = false,
     activeColor: androidx.compose.ui.graphics.Color? = null
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -65,19 +65,21 @@ internal fun MenuItem(
     }
 
     // Interaction Logic:
-    // If infoScreen: only Host items are interactive.
+    // If helpEnabled: only Host and Help items are interactive.
     // If normal: depends on item.disabled.
 
     // Visual Logic:
-    // If infoScreen: non-Host items look disabled (grey).
+    // If helpEnabled: non-Host/Help items look disabled (grey).
     // If normal: disabled items look disabled.
 
-    val isDisabled = if (infoScreen) !item.isHost else item.disabled
+    val isDisabled = if (helpEnabled) !(item.isHost || item.isHelpItem) else item.disabled
 
     val modifier = if (isDisabled) Modifier else {
-        if (infoScreen) {
-             // Host item in infoScreen is interactive
-             Modifier.clickable(interactionSource = interactionSource, indication = null) { onHostClick() }
+        if (helpEnabled) {
+             // Host or Help item in helpEnabled mode is interactive
+             Modifier.clickable(interactionSource = interactionSource, indication = null) { 
+                 if (item.isHelpItem) onClick?.invoke() else onHostClick() 
+             }
         } else {
             // Normal mode
             if (item.isToggle) {

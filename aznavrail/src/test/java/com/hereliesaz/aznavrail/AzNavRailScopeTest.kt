@@ -51,12 +51,12 @@ class AzNavRailScopeTest {
     fun `azAdvanced updates advanced settings`() {
         scope.azAdvanced(
             isLoading = true,
-            infoScreen = true,
+            helpEnabled = true,
             enableRailDragging = true
         )
 
         assertTrue(scope.isLoading)
-        assertTrue(scope.infoScreen)
+        assertTrue(scope.helpEnabled)
         assertTrue(scope.enableRailDragging)
     }
 

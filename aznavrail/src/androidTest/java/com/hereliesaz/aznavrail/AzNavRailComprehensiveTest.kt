@@ -124,18 +124,32 @@ class AzNavRailComprehensiveTest {
     fun testHelpOverlayVisibility() {
         composeTestRule.setContent {
             AzHostActivityLayout(
-                navController = androidx.navigation.compose.rememberNavController()
+                navController = androidx.navigation.compose.rememberNavController(),
+                initiallyExpanded = true // Need menu open to see injected Help item if we trigger it from there
             ) {
-                azAdvanced(infoScreen = true)
+                azAdvanced(helpEnabled = true)
                 azRailItem(id = "help_item", text = "Help Me", info = "This is help text")
                 onscreen { }
             }
         }
 
-        // Verify help text is displayed
-        composeTestRule.onNodeWithText("Help Me: This is help text").assertExists()
+        // Verify injected Help menu item exists
+        composeTestRule.onNodeWithText("Help").assertExists()
 
-        // Verify Close button exists
-        composeTestRule.onNodeWithContentDescription("Close Help").assertExists()
+        // Trigger Help Overlay via the injected menu item
+        composeTestRule.onNodeWithText("Help").performClick()
+
+        // Verify help text is displayed in the overlay cards
+        // Title card
+        composeTestRule.onNodeWithText("Help Me").assertExists()
+        // Info text
+        composeTestRule.onNodeWithText("This is help text").assertExists()
+
+        // Verify "Tap to collapse" doesn't exist yet (not expanded)
+        composeTestRule.onNodeWithText("Tap to collapse").assertDoesNotExist()
+
+        // Tap card to expand
+        composeTestRule.onNodeWithText("Help Me").performClick()
+        composeTestRule.onNodeWithText("Tap to collapse").assertExists()
     }
 }
