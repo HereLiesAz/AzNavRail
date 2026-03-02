@@ -470,9 +470,13 @@ class AzNavRailScopeImpl : AzNavRailScope {
     override fun azHelpRailItem(id: String, text: String, content: Any?, color: Color?, shape: AzButtonShape?) {
         checkId(id)
         navItems.add(
-            AzNavItem(
-                id = id, text = text, isRailItem = true, content = content, color = color, shape = shape ?: defaultShape,
-                isHelpItem = true
+            AzNavItem.Help(
+                id = id,
+                text = text,
+                isRailItem = true,
+                content = content,
+                color = color,
+                shape = shape ?: defaultShape
             )
         )
     }

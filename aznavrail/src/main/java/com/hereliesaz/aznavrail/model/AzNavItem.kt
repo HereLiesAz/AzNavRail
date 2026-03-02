@@ -73,4 +73,26 @@ data class AzNavItem(
     val nestedRailAlignment: AzNestedRailAlignment? = null,
     val nestedRailItems: List<AzNavItem>? = null,
     val isHelpItem: Boolean = false
-) : Parcelable
+) : Parcelable {
+    companion object {
+        /**
+         * Factory method for creating an [AzNavItem] designated as a Help trigger.
+         */
+        fun Help(
+            id: String,
+            text: String = "Help",
+            isRailItem: Boolean = true,
+            content: Any? = null,
+            color: Color? = null,
+            shape: AzButtonShape = AzButtonShape.CIRCLE
+        ): AzNavItem = AzNavItem(
+            id = id,
+            text = text,
+            isRailItem = isRailItem,
+            isHelpItem = true,
+            content = content,
+            color = color,
+            shape = shape
+        )
+    }
+}

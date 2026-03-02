@@ -230,6 +230,15 @@ fun AzNavRail(
     val actualCurrentDestination = currentDestination ?: navBackStackEntry?.destination?.route
     val hostStates = remember { mutableStateMapOf<String, Boolean>() }
 
+    val toggleHelpOverlay = {
+        if (showHelpOverlay) {
+            showHelpOverlay = false
+            scope.onDismissHelp?.invoke()
+        } else {
+            showHelpOverlay = true
+        }
+    }
+
     LaunchedEffect(scope.navItems) {
         scope.navItems.forEach { item ->
             if (item.isCycler) cyclerStates.putIfAbsent(item.id, CyclerTransientState(item.selectedOption ?: ""))
@@ -416,11 +425,9 @@ fun AzNavRail(
                             modifier = Modifier.fillMaxSize().verticalScroll(scrollState)
                         ) {
                             val displayItems = if (scope.helpEnabled) {
-                                scope.navItems + AzNavItem(
-                                    id = "auto_help_item",
-                                    text = "Help",
-                                    isRailItem = false,
-                                    isHelpItem = true
+                                scope.navItems + AzNavItem.Help(
+                                    id = AzNavRailDefaults.AUTO_HELP_ID,
+                                    isRailItem = false
                                 )
                             } else {
                                 scope.navItems
@@ -434,7 +441,7 @@ fun AzNavRail(
                                             item.classifiers.any { it in scope.activeClassifiers },
                                     onClick = {
                                         if (item.isHelpItem) {
-                                            showHelpOverlay = !showHelpOverlay
+                                            toggleHelpOverlay()
                                         } else {
                                             scope.onClickMap[item.id]?.invoke()
                                         }
@@ -461,7 +468,7 @@ fun AzNavRail(
                                                     subItem.classifiers.any { it in scope.activeClassifiers },
                                             onClick = {
                                                 if (subItem.isHelpItem) {
-                                                    showHelpOverlay = !showHelpOverlay
+                                                    toggleHelpOverlay()
                                                 } else {
                                                     scope.onClickMap[subItem.id]?.invoke()
                                                 }
@@ -527,7 +534,7 @@ fun AzNavRail(
                                 },
                                 onItemSelected = { item ->
                                     if (item.isHelpItem) {
-                                        showHelpOverlay = !showHelpOverlay
+                                        toggleHelpOverlay()
                                     }
                                     if (item.collapseOnClick && !scope.noMenu) isExpanded = false
                                 },
@@ -566,10 +573,7 @@ fun AzNavRail(
     if (showHelpOverlay) {
         HelpOverlay(
             items = scope.navItems,
-            onDismiss = {
-                showHelpOverlay = false
-                scope.onDismissHelp?.invoke()
-            },
+            onDismiss = { toggleHelpOverlay() },
             itemBoundsCache = scope.itemBoundsCache
         )
     }
