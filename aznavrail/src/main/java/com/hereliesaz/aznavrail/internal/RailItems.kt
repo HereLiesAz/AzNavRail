@@ -353,6 +353,7 @@ private fun DraggableRailItemWrapper(
 
     val hapticFeedback = LocalHapticFeedback.current
     val viewConfiguration = LocalViewConfiguration.current
+    val nestedRailOpenIdState = rememberUpdatedState(nestedRailOpenId)
 
     val dragModifier = if (item.isRelocItem && !helpEnabled) {
         Modifier.pointerInput(item.id) {
@@ -458,9 +459,14 @@ private fun DraggableRailItemWrapper(
                                 // Explicitly toggle help overlay if it's a help item, even in helpEnabled mode
                                 onItemSelected(item)
                             } else {
-                                scope.onClickMap[item.id]?.invoke()
-                                item.route?.let { navController?.navigate(it) }
-                                onItemSelected(item)
+                                if (item.isNestedRail) {
+                                    onNestedRailToggle(if (nestedRailOpenIdState.value == item.id) null else item.id)
+                                    scope.onClickMap[item.id]?.invoke()
+                                } else {
+                                    scope.onClickMap[item.id]?.invoke()
+                                    item.route?.let { navController?.navigate(it) }
+                                    onItemSelected(item)
+                                }
                             }
                         }
                     }
@@ -515,6 +521,7 @@ private fun DraggableRailItemWrapper(
                         scope.onFocusMap[item.id]?.invoke()
                         if (item.isNestedRail) {
                             onNestedRailToggle(if (nestedRailOpenId == item.id) null else item.id)
+                            scope.onClickMap[item.id]?.invoke()
                         } else {
                             if (nestedRailOpenId != null) onNestedRailToggle(null)
                             if (onClickOverride != null) {
