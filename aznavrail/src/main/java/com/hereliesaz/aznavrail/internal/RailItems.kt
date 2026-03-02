@@ -455,9 +455,7 @@ private fun DraggableRailItemWrapper(
                             onClickOverride(item)
                         } else {
                             if (item.isHelpItem) {
-
                                 // Explicitly toggle help overlay if it's a help item, even in helpEnabled mode
-
                                 onItemSelected(item)
                             } else {
                                 scope.onClickMap[item.id]?.invoke()

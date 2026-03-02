@@ -449,7 +449,6 @@ fun AzNavRail(
                                         scope.onItemGloballyPositioned?.invoke(id, bounds)
                                     },
                                     helpEnabled = showHelpOverlay,
-
                                     activeColor = scope.activeColor
                                 )
 
@@ -476,7 +475,6 @@ fun AzNavRail(
                                                 scope.onItemGloballyPositioned?.invoke(id, bounds)
                                             },
                                             helpEnabled = showHelpOverlay,
-
                                             activeColor = scope.activeColor
                                         )
                                     }
@@ -538,7 +536,6 @@ fun AzNavRail(
                                 visualDockingSide = visualDockingSide,
                                 onItemGloballyPositioned = scope.onItemGloballyPositioned,
                                 helpEnabled = showHelpOverlay
-
                             )
                         }
                     }

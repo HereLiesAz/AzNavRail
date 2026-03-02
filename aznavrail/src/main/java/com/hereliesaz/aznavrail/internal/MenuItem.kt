@@ -65,7 +65,6 @@ internal fun MenuItem(
     }
 
     // Interaction Logic:
-
     // If helpEnabled: only Host and Help items are interactive.
     // If normal: depends on item.disabled.
 
@@ -78,8 +77,8 @@ internal fun MenuItem(
     val modifier = if (isDisabled) Modifier else {
         if (helpEnabled) {
              // Host or Help item in helpEnabled mode is interactive
-             Modifier.clickable(interactionSource = interactionSource, indication = null) { 
-                 if (item.isHelpItem) onClick?.invoke() else onHostClick() 
+             Modifier.clickable(interactionSource = interactionSource, indication = null) {
+                 if (item.isHelpItem) onClick?.invoke() else onHostClick()
              }
         } else {
             // Normal mode
