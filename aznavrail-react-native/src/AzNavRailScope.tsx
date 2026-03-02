@@ -393,41 +393,45 @@ export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
 
 export const AzSettings: React.FC<any> = (props) => {
     const context = useContext(AzNavRailContext);
+    const propsJson = JSON.stringify(props);
     useEffect(() => {
         if (context) {
             context.updateSettings(props);
         }
-    }, [context, props]);
+    }, [context, propsJson]);
     return null;
 };
 
 export const AzTheme: React.FC<any> = (props) => {
     const context = useContext(AzNavRailContext);
+    const propsJson = JSON.stringify(props);
     useEffect(() => {
         if (context) {
             context.updateSettings(props);
         }
-    }, [context, props]);
+    }, [context, propsJson]);
     return null;
 };
 
 export const AzConfig: React.FC<any> = (props) => {
     const context = useContext(AzNavRailContext);
+    const propsJson = JSON.stringify(props);
     useEffect(() => {
         if (context) {
             context.updateSettings(props);
         }
-    }, [context, props]);
+    }, [context, propsJson]);
     return null;
 };
 
 export const AzAdvanced: React.FC<any> = (props) => {
     const context = useContext(AzNavRailContext);
+    const propsJson = JSON.stringify(props);
     useEffect(() => {
         if (context) {
             context.updateSettings(props);
         }
-    }, [context, props]);
+    }, [context, propsJson]);
     return null;
 };
 

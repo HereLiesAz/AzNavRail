@@ -215,7 +215,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
     }).start();
 
     if (onExpandedChange) onExpandedChange(isExpanded);
-  }, [isExpanded, config.expandedRailWidth, config.collapsedRailWidth]);
+  }, [isExpanded, config.expandedRailWidth, config.collapsedRailWidth, onExpandedChange]);
 
   useEffect(() => {
       items.forEach(item => {
@@ -283,7 +283,8 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
 
   const adjustFloatingRailWithinBounds = (currentX: number, currentY: number) => {
       const screenHeight = screenHeightRef.current;
-      const contentHeight = headerHeight + (railItemsCount * 56) + 16;
+      const railItemsCountForDrag = itemsRef.current.filter(i => i.isRailItem && !i.isSubItem).length;
+      const contentHeight = headerHeight + (railItemsCountForDrag * 56) + 16;
       const bottomY = currentY + contentHeight;
       const limitY = screenHeight * 0.9;
       if (bottomY > limitY) {
@@ -353,7 +354,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
   ).current;
 
   const handleHeaderLongPress = () => {
-      if (enableRailDragging) {
+      if (config.enableRailDragging) {
           if (vibrate) Vibration.vibrate(50);
           if (isFloating) {
               setIsFloating(false);
@@ -378,7 +379,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
                adjustFloatingRailWithinBounds(currentX, currentY);
           }
       } else {
-          if (noMenu) return; // Prevent expansion if menu is disabled
+          if (config.noMenu) return; // Prevent expansion if menu is disabled
           setIsExpanded(!isExpanded);
       }
   };
@@ -389,8 +390,8 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
       const isRect = item.shape === AzButtonShape.RECTANGLE;
       const commonProps = {
           key: item.id,
-          color: activeColor && (item.isChecked || item.id === currentDestination) ? activeColor : item.color,
-          shape: item.shape || defaultShape,
+          color: config.activeColor && (item.isChecked || item.id === currentDestination) ? config.activeColor : item.color,
+          shape: item.shape || config.defaultShape,
           disabled: item.disabled,
           style: { marginBottom: isRect ? 2 : AzNavRailDefaults.RailContentVerticalArrangement }
       };
@@ -611,12 +612,12 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
   }, [items]);
 
   const getHeaderBorderRadius = () => {
-    if (headerIconShape === AzHeaderIconShape.SQUARE) return 0;
-    if (headerIconShape === AzHeaderIconShape.ROUNDED) return 8;
+    if (config.headerIconShape === AzHeaderIconShape.SQUARE) return 0;
+    if (config.headerIconShape === AzHeaderIconShape.ROUNDED) return 8;
     return 24;
   };
 
-  const flexDirection = dockingSide === AzDockingSide.RIGHT ? 'row-reverse' : 'row';
+  const flexDirection = config.dockingSide === AzDockingSide.RIGHT ? 'row-reverse' : 'row';
 
   return (
     <AzNavRailContext.Provider value={{ register, unregister, updateSettings }}>
@@ -640,7 +641,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
                 onPress={handleHeaderTap}
                 onLongPress={handleHeaderLongPress}
                 delayLongPress={500}
-                style={[styles.header, { flexDirection: dockingSide === AzDockingSide.RIGHT ? 'row-reverse' : 'row' }]}
+                style={[styles.header, { flexDirection: config.dockingSide === AzDockingSide.RIGHT ? 'row-reverse' : 'row' }]}
                 onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
                 accessibilityRole="button"
                 accessibilityLabel={isFloating ? "Undocked Rail" : (isExpanded ? "Collapse Menu" : "Expand Menu")}
@@ -650,7 +651,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
                      <Text style={{ color: 'white' }}>Icon</Text>
                  </View>
                  {(!isFloating && isExpanded && config.displayAppNameInHeader) && (
-                     <Text style={[styles.appName, { marginLeft: dockingSide === AzDockingSide.RIGHT ? 0 : 16, marginRight: dockingSide === AzDockingSide.RIGHT ? 16 : 0, flexShrink: 0, minWidth: 200 }]} numberOfLines={1}>App Name</Text>
+                     <Text style={[styles.appName, { marginLeft: config.dockingSide === AzDockingSide.RIGHT ? 0 : 16, marginRight: config.dockingSide === AzDockingSide.RIGHT ? 16 : 0, flexShrink: 0, minWidth: 200 }]} numberOfLines={1}>App Name</Text>
                  )}
             </TouchableOpacity>
 
@@ -681,7 +682,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
                     alignment={item.nestedRailAlignment || AzNestedRailAlignment.VERTICAL}
                     renderItem={(subItem, idx) => renderRailItem(subItem, idx)}
                     anchorPosition={anchorPosition}
-                    dockingSide={dockingSide}
+                    dockingSide={config.dockingSide}
                 />
             ))}
 
