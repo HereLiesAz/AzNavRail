@@ -9,7 +9,7 @@ const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen, sty
   const {
       text, isToggle, isChecked, toggleOnText, toggleOffText,
       isCycler, selectedOption, onClick, onFocus,
-      color, id, disabled
+      color, id, disabled, content
   } = item;
 
   const fitTextRef = useFitText();
@@ -23,12 +23,12 @@ const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen, sty
 
   const isInteractive = infoScreen ? !!onClickOverride : !disabled;
 
-  const handleClick = () => {
+  const handleClick = (e) => {
     if (!isInteractive) return;
 
     if (infoScreen) {
         if (onClickOverride) {
-            onClickOverride(); // Allow host expansion
+            onClickOverride(e); // Allow host expansion
         }
         return;
     }
@@ -39,7 +39,7 @@ const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen, sty
     }
 
     if (onClickOverride) {
-        onClickOverride();
+        onClickOverride(e);
     } else if (isCycler) {
       onCyclerClick();
     } else {
@@ -60,7 +60,17 @@ const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen, sty
             }}
             disabled={!isInteractive}
         >
-          <span className="button-text" ref={textRef}>{textToShow}</span>
+          {content ? (
+              <div className="button-content-wrapper" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {typeof content === 'string' && (content.startsWith('http') || content.startsWith('/') || content.startsWith('data:')) ? (
+                      <img src={content} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} />
+                  ) : (
+                      <div style={{ backgroundColor: content, width: '100%', height: '100%', borderRadius: 'inherit' }} />
+                  )}
+              </div>
+          ) : (
+              <span className="button-text" ref={textRef}>{textToShow}</span>
+          )}
         </button>
     </div>
   );
