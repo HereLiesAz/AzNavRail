@@ -53,8 +53,8 @@ interface AzNavRailScope {
      * Configures advanced features like loading states, help screens, and overlays.
      *
      * @param isLoading Whether to show a full-screen loading spinner.
-     * @param infoScreen Whether to show the interactive help overlay.
-     * @param onDismissInfoScreen Callback invoked when the info screen is dismissed.
+     * @param helpEnabled Whether to show the interactive help overlay.
+     * @param onDismissHelp Callback invoked when the help screen is dismissed.
      * @param overlayService The class of the service to use for the system overlay (FAB mode).
      * @param onUndock Callback invoked when the rail is undocked (FAB mode activated).
      * @param enableRailDragging Whether to allow the user to detach and drag the rail (FAB mode).
@@ -62,7 +62,7 @@ interface AzNavRailScope {
      * @param onOverlayDrag Callback invoked during overlay drag events.
      * @param onItemGloballyPositioned Callback invoked with the bounds of items (used for tutorials/help).
      */
-    fun azAdvanced(isLoading: Boolean = false, infoScreen: Boolean = false, onDismissInfoScreen: (() -> Unit)? = null, overlayService: Class<out android.app.Service>? = null, onUndock: (() -> Unit)? = null, enableRailDragging: Boolean = false, onRailDrag: ((Float, Float) -> Unit)? = null, onOverlayDrag: ((Float, Float) -> Unit)? = null, onItemGloballyPositioned: ((String, Rect) -> Unit)? = null)
+    fun azAdvanced(isLoading: Boolean = false, helpEnabled: Boolean = false, onDismissHelp: (() -> Unit)? = null, overlayService: Class<out android.app.Service>? = null, onUndock: (() -> Unit)? = null, enableRailDragging: Boolean = false, onRailDrag: ((Float, Float) -> Unit)? = null, onOverlayDrag: ((Float, Float) -> Unit)? = null, onItemGloballyPositioned: ((String, Rect) -> Unit)? = null)
 
     /**
      * A comprehensive configuration method combining settings, theme, and advanced options.
@@ -82,8 +82,8 @@ interface AzNavRailScope {
         overlayService: Class<out android.app.Service>? = null,
         onOverlayDrag: ((Float, Float) -> Unit)? = null,
         onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
-        infoScreen: Boolean = false,
-        onDismissInfoScreen: (() -> Unit)? = null,
+        helpEnabled: Boolean = false,
+        onDismissHelp: (() -> Unit)? = null,
         activeColor: Color? = null,
         vibrate: Boolean = false,
         dockingSide: AzDockingSide = AzDockingSide.LEFT,
@@ -106,6 +106,18 @@ interface AzNavRailScope {
      * @param onClick Callback invoked when the item is clicked.
      */
     fun azMenuItem(id: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, onClick: (() -> Unit)? = null)
+
+    /**
+     * Adds an explicit Help trigger item to the rail.
+     * When clicked, this item toggles the interactive Help/Info overlay.
+     *
+     * @param id Unique identifier.
+     * @param text Text display.
+     * @param content Custom content.
+     * @param color Custom color.
+     * @param shape Custom shape.
+     */
+    fun azHelpRailItem(id: String, text: String = "Help", content: Any? = null, color: Color? = null, shape: AzButtonShape? = null)
 
     /**
      * Adds an item to the always-visible rail.
@@ -358,8 +370,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
 
     // Advanced
     var isLoading: Boolean = false
-    var infoScreen: Boolean = false
-    var onDismissInfoScreen: (() -> Unit)? = null
+    var helpEnabled: Boolean = false
+    var onDismissHelp: (() -> Unit)? = null
     var overlayService: Class<out android.app.Service>? = null
     var onUndock: (() -> Unit)? = null
     var enableRailDragging: Boolean = false
@@ -386,10 +398,10 @@ class AzNavRailScopeImpl : AzNavRailScope {
         this.headerIconShape = headerIconShape
     }
 
-    override fun azAdvanced(isLoading: Boolean, infoScreen: Boolean, onDismissInfoScreen: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?) {
+    override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?) {
         this.isLoading = isLoading
-        this.infoScreen = infoScreen
-        this.onDismissInfoScreen = onDismissInfoScreen
+        this.helpEnabled = helpEnabled
+        this.onDismissHelp = onDismissHelp
         this.overlayService = overlayService
         this.onUndock = onUndock
         this.enableRailDragging = enableRailDragging || overlayService != null || onOverlayDrag != null
@@ -412,8 +424,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
         overlayService: Class<out android.app.Service>?,
         onOverlayDrag: ((Float, Float) -> Unit)?,
         onItemGloballyPositioned: ((String, Rect) -> Unit)?,
-        infoScreen: Boolean,
-        onDismissInfoScreen: (() -> Unit)?,
+        helpEnabled: Boolean,
+        onDismissHelp: (() -> Unit)?,
         activeColor: Color?,
         vibrate: Boolean,
         dockingSide: AzDockingSide,
@@ -434,8 +446,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
         this.overlayService = overlayService
         this.onOverlayDrag = onOverlayDrag
         this.onItemGloballyPositioned = onItemGloballyPositioned
-        this.infoScreen = infoScreen
-        this.onDismissInfoScreen = onDismissInfoScreen
+        this.helpEnabled = helpEnabled
+        this.onDismissHelp = onDismissHelp
         if (activeColor != null) this.activeColor = activeColor
         this.vibrate = vibrate
         this.dockingSide = dockingSide
@@ -453,6 +465,16 @@ class AzNavRailScopeImpl : AzNavRailScope {
 
     override fun azMenuItem(id: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, onClick: (() -> Unit)?) {
         addItem(id = id, text = text, route = route, screenTitle = screenTitle, info = info, isRailItem = false, disabled = disabled, content = content, color = color, shape = shape, onClick = onClick ?: {})
+    }
+
+    override fun azHelpRailItem(id: String, text: String, content: Any?, color: Color?, shape: AzButtonShape?) {
+        checkId(id)
+        navItems.add(
+            AzNavItem(
+                id = id, text = text, isRailItem = true, content = content, color = color, shape = shape ?: defaultShape,
+                isHelpItem = true
+            )
+        )
     }
 
     override fun azRailItem(id: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, onFocus: (() -> Unit)?, onClick: (() -> Unit)?) {
