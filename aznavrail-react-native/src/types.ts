@@ -16,6 +16,11 @@ export enum AzHeaderIconShape {
   ROUNDED = 'ROUNDED',
 }
 
+export enum AzNestedRailAlignment {
+  VERTICAL = 'VERTICAL',
+  HORIZONTAL = 'HORIZONTAL',
+}
+
 export interface AzNavRailSettings {
   displayAppNameInHeader?: boolean;
   packRailButtons?: boolean;
@@ -33,6 +38,19 @@ export interface AzNavRailSettings {
   vibrate?: boolean;
   headerIconShape?: AzHeaderIconShape;
   secLoc?: string;
+  usePhysicalDocking?: boolean;
+  activeClassifiers?: string[];
+  onItemGloballyPositioned?: (id: string, bounds: any) => void;
+}
+
+export interface HiddenMenuItem {
+  id: string;
+  text: string;
+  route?: string;
+  isInput?: boolean;
+  hint?: string;
+  onClick?: () => void;
+  onValueChange?: (value: string) => void;
 }
 
 export interface AzNavItem {
@@ -59,24 +77,34 @@ export interface AzNavItem {
   hostId?: string;
   isExpanded: boolean;
   onClick?: () => void;
+  onFocus?: () => void;
   // Reloc Item properties
   isRelocItem?: boolean;
-  hiddenMenu?: { text: string; onClick: () => void }[];
+  hiddenMenu?: HiddenMenuItem[];
   onRelocate?: (fromIndex: number, toIndex: number, newOrder: string[]) => void;
   // Info/Help
   info?: string;
+  // New properties for parity
+  classifiers?: string[];
+  content?: any;
+  isNestedRail?: boolean;
+  nestedRailAlignment?: AzNestedRailAlignment;
+  nestedRailItems?: AzNavItem[];
 }
 
 export interface AzNavItemProps {
   id: string;
-  text: string;
+  text?: string;
   route?: string;
   screenTitle?: string;
   disabled?: boolean;
   onClick?: () => void;
+  onFocus?: () => void;
   color?: string;
   shape?: AzButtonShape;
   info?: string;
+  content?: any;
+  classifiers?: string[];
 }
 
 export interface AzToggleProps extends AzNavItemProps {
@@ -106,6 +134,18 @@ export interface AzSubCyclerProps extends AzCyclerProps {
 }
 
 export interface AzRailRelocItemProps extends AzSubItemProps {
-    onRelocate: (fromIndex: number, toIndex: number, newOrder: string[]) => void;
-    hiddenMenu?: { text: string; onClick: () => void }[];
+    onRelocate?: (fromIndex: number, toIndex: number, newOrder: string[]) => void;
+    hiddenMenu?: { text: string; onClick: () => void }[] | ((scope: HiddenMenuScope) => void);
+    nestedRailAlignment?: AzNestedRailAlignment;
+    nestedContent?: React.ReactNode;
+}
+
+export interface AzNestedRailProps extends AzNavItemProps {
+    alignment?: AzNestedRailAlignment;
+    children: React.ReactNode;
+}
+
+export interface HiddenMenuScope {
+    listItem: (text: string, action: string | (() => void)) => void;
+    inputItem: (hint: string, onValueChange: (value: string) => void) => void;
 }

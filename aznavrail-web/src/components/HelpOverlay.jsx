@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import './HelpOverlay.css';
 
-const HelpOverlay = ({ items, railWidth, onDismiss }) => {
+const HelpOverlay = ({ items, railWidth, onDismiss, itemBounds }) => {
   const canvasRef = useRef(null);
   const descriptionsRef = useRef(null);
 
@@ -21,12 +21,11 @@ const HelpOverlay = ({ items, railWidth, onDismiss }) => {
     items.forEach(item => {
         if (!item.info) return;
 
-        // Find rail button or menu item
-        const itemEl = document.querySelector(`[data-az-nav-id="${item.id}"]`);
+        // Use itemBounds if provided, fallback to DOM lookup
+        const itemRect = itemBounds?.[item.id] || document.querySelector(`[data-az-nav-id="${item.id}"]`)?.getBoundingClientRect();
         const descEl = document.querySelector(`[data-az-desc-id="${item.id}"]`);
 
-        if (itemEl && descEl) {
-            const itemRect = itemEl.getBoundingClientRect();
+        if (itemRect && descEl) {
             const descRect = descEl.getBoundingClientRect();
 
             // Calculate points
@@ -85,7 +84,7 @@ const HelpOverlay = ({ items, railWidth, onDismiss }) => {
         if (railContainer) railContainer.removeEventListener('scroll', handleScroll);
     };
 
-  }, [items, railWidth]);
+  }, [items, railWidth, itemBounds]);
 
   return (
     <div className="az-help-overlay">
