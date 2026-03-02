@@ -74,8 +74,8 @@ fun MainApp() {
         azAdvanced(
             isLoading = isLoading,
             enableRailDragging = true, // Keeps FAB mode enabled (in-app floating)
-            infoScreen = showHelp,
-            onDismissInfoScreen = { showHelp = false }
+            helpEnabled = showHelp,
+            onDismissHelp = { showHelp = false }
         )
 
         // RAIL ITEMS
@@ -191,11 +191,9 @@ fun MainApp() {
             }
         )
 
-        azRailItem(
+        azHelpRailItem(
             id = "toggle-help",
-            text = "Help",
-            info = "Toggle help screen mode",
-            onClick = { showHelp = !showHelp }
+            text = "Help"
         )
 
         azDivider()

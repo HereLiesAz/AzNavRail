@@ -45,8 +45,8 @@ Controls system overrides, loading states, and floating window bindings.
 ~~~kotlin
 fun azAdvanced(
     isLoading: Boolean = false,
-    infoScreen: Boolean = false,
-    onDismissInfoScreen: (() -> Unit)? = null,
+    helpEnabled: Boolean = false,
+    onDismissHelp: (() -> Unit)? = null,
     overlayService: Class<out android.app.Service>? = null,
     onUndock: (() -> Unit)? = null,
     enableRailDragging: Boolean = false,
@@ -61,6 +61,7 @@ fun azAdvanced(
 The following functions are used to define the rail structure.
 
 * `azMenuItem(id, text, route, content, color, shape, disabled, screenTitle, info, onClick)`
+* `azHelpRailItem(id, text, content, color, shape)`
 * `azRailItem(id, text, route, content, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick)`
 * `@Composable azNestedRail(id, text, route, content, color, shape, alignment, disabled, screenTitle, info, classifiers, onFocus) { ... }`
 * `azMenuToggle(id, isChecked, toggleOnText, toggleOffText, route, color, shape, disabled, screenTitle, info, onClick)`

@@ -38,10 +38,10 @@ internal fun RailContent(
         else -> item.text
     }
 
-    val isEnabled = if (infoScreen) item.isHost else !item.disabled
+    val isEnabled = if (infoScreen) (item.isHost || item.isHelpItem) else !item.disabled
 
     val finalOnClick: () -> Unit = if (infoScreen) {
-        if (item.isHost) { { onHostClick() } } else { {} }
+        if (item.isHelpItem) { { onClick?.invoke() } } else if (item.isHost) { { onHostClick() } } else { {} }
     } else if (item.isRelocItem) {
         {}
     } else {

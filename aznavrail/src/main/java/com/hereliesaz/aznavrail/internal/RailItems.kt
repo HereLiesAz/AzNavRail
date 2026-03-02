@@ -454,9 +454,14 @@ private fun DraggableRailItemWrapper(
                         if (onClickOverride != null) {
                             onClickOverride(item)
                         } else {
-                            scope.onClickMap[item.id]?.invoke()
-                            item.route?.let { navController?.navigate(it) }
-                            onItemSelected(item)
+                            if (item.isHelpItem) {
+                                // Explicitly toggle help overlay if it's a help item, even in infoScreen mode
+                                onItemSelected(item)
+                            } else {
+                                scope.onClickMap[item.id]?.invoke()
+                                item.route?.let { navController?.navigate(it) }
+                                onItemSelected(item)
+                            }
                         }
                     }
                 }
@@ -515,7 +520,11 @@ private fun DraggableRailItemWrapper(
                             if (onClickOverride != null) {
                                 onClickOverride(item)
                             } else {
-                                scope.onClickMap[item.id]?.invoke()
+                                if (item.isHelpItem) {
+                                    onItemSelected(item)
+                                } else {
+                                    scope.onClickMap[item.id]?.invoke()
+                                }
                             }
                         }
                     },
