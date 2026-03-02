@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -78,6 +78,19 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
   const [showFloatingButtons, setShowFloatingButtons] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
   const [hostStates, setHostStates] = useState<Record<string, boolean>>({});
+
+  const subItemsMap = useMemo(() => {
+    const map: Record<string, AzNavItem[]> = {};
+    items.forEach((item) => {
+      if (item.hostId) {
+        if (!map[item.hostId]) {
+          map[item.hostId] = [];
+        }
+        map[item.hostId].push(item);
+      }
+    });
+    return map;
+  }, [items]);
 
   const railWidthAnim = useRef(new Animated.Value(initiallyExpanded ? expandedRailWidth : collapsedRailWidth)).current;
   const pan = useRef(new Animated.ValueXY()).current;
@@ -331,7 +344,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
 
   const renderRailItem = (item: AzNavItem, _index: number) => {
       const isExpandedHost = hostStates[item.id] || false;
-      const subItems = items.filter(i => i.hostId === item.id);
+      const subItems = subItemsMap[item.id] || [];
       const isRect = item.shape === AzButtonShape.RECTANGLE;
       const commonProps = {
           key: item.id,
@@ -416,7 +429,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
 
   const renderMenuItem = (item: AzNavItem, depth = 0): React.ReactNode => {
       const isExpandedHost = hostStates[item.id] || false;
-      const subItems = items.filter(i => i.hostId === item.id);
+      const subItems = subItemsMap[item.id] || [];
 
       return (
           <RailMenuItem
@@ -513,12 +526,17 @@ export const AzNavRail: React.FC<AzNavRailProps> = ({
   };
 
 
-  const effectiveRailItems = items.filter(i => {
+  const effectiveRailItems = useMemo(() => {
+    return items.filter(i => {
       if (i.isSubItem) return false;
       if (noMenu) return true;
       return i.isRailItem;
-  });
-  const menuItems = items.filter(i => !i.isSubItem);
+    });
+  }, [items, noMenu]);
+
+  const menuItems = useMemo(() => {
+    return items.filter(i => !i.isSubItem);
+  }, [items]);
 
   const getHeaderBorderRadius = () => {
     if (headerIconShape === AzHeaderIconShape.SQUARE) return 0;
