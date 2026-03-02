@@ -54,6 +54,20 @@ The bloated `azSettings` function has been destroyed. **Furthermore, `azTheme` h
 
 Parameters like `expandedWidth`, `collapsedWidth`, and `showFooter` have been absorbed into `azConfig` and the `@App` annotation.
 
-## Phase 4: Submit to the Synthetic Tongue
+## Phase 4: The Help/Info System Overhaul (v8.00)
+
+The help system has been promoted to a first-class citizen with explicit triggers and scrollable, interactive info cards.
+
+### 1. Explicit Help triggers
+The "automatic" FAB to exit help mode has been removed. Help mode must now be explicitly enabled in `azAdvanced` or `azSettings`.
+
+*   **DSL:** `infoScreen` → `helpEnabled`, `onDismissInfoScreen` → `onDismissHelp`.
+*   **Automatic Menu Item:** If `helpEnabled = true`, a "Help" item is automatically appended to your side menu.
+*   **Dedicated Rail Item:** Use `azHelpRailItem(id, text)` to add an explicit help trigger to the rail.
+
+### 2. Interactive Info Cards
+Info cards in the Help Overlay are now scrollable and support tap-to-expand. To dismiss the overlay, tap anywhere on the dark background.
+
+## Phase 5: Submit to the Synthetic Tongue
 
 The `AzNavRailScope` has been stripped of its human conveniences. If you are dynamically creating items that the annotations cannot reach, you must use the explicit, monolithic function signatures. Look at `DSL.md` for the exact parameters.
