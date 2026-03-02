@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import './AzNavRail.css';
 import MenuItem from './MenuItem';
 import AzNavRailButton from './AzNavRailButton';
 import HelpOverlay from './HelpOverlay';
+import AzNestedRailPopup from './AzNestedRailPopup';
 import { RelocItemHandler } from '../utils/RelocItemHandler';
 import AzDivider from './AzDivider';
+import AzTextBox from './AzTextBox';
 
 /**
  * An M3-style navigation rail that expands into a menu drawer for web applications.
@@ -68,6 +70,35 @@ const AzNavRail = ({
   const [dragOffset, setDragOffset] = useState(0);
   const [localNavItems, setLocalNavItems] = useState([]);
   const [hiddenMenuOpenId, setHiddenMenuOpenId] = useState(null);
+  const [nestedRailVisibleId, setNestedRailVisibleId] = useState(null);
+  const [anchorPosition, setAnchorPosition] = useState(null);
+  const [itemBounds, setItemBounds] = useState({});
+
+  const subItemsMap = useMemo(() => {
+    const map = {};
+    const processItem = (item) => {
+        if (item.hostId) {
+            if (!map[item.hostId]) map[item.hostId] = [];
+            // Avoid duplicates if item is already present
+            if (!map[item.hostId].some(i => i.id === item.id)) {
+                map[item.hostId].push(item);
+            }
+        }
+        if (item.items) {
+            // Also index nested items as sub-items of their parent
+            if (!map[item.id]) map[item.id] = [];
+            item.items.forEach(child => {
+                if (!map[item.id].some(i => i.id === child.id)) {
+                    map[item.id].push(child);
+                }
+                processItem(child);
+            });
+        }
+    };
+    localNavItems.forEach(processItem);
+    return map;
+  }, [localNavItems]);
+
   const cyclerTimers = useRef({});
   const dragStartY = useRef(0);
   const longPressTimer = useRef(null);
@@ -80,6 +111,16 @@ const AzNavRail = ({
   useEffect(() => {
       itemsRef.current = localNavItems;
   }, [localNavItems]);
+
+  const updateItemBound = useCallback((id, element) => {
+      if (!element) return;
+      const rect = element.getBoundingClientRect();
+      const bounds = { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
+      setItemBounds(prev => {
+          if (prev[id] && prev[id].top === bounds.top && prev[id].left === bounds.left) return prev;
+          return { ...prev, [id]: bounds };
+      });
+  }, []);
 
   const navItems = localNavItems;
 
@@ -136,6 +177,7 @@ const AzNavRail = ({
           // Check intersection
           return item.classifiers.some(c => activeClassifiers.includes(c));
       }
+      if (item.id === currentDestination) return true;
       return false;
   };
 
@@ -223,12 +265,13 @@ const AzNavRail = ({
         ? { ...item, selectedOption: cyclerStates[item.id]?.displayedOption }
         : item;
 
-      const isHost = item.items && item.items.length > 0;
+      const subItemsFromMap = subItemsMap[item.id] || [];
+      const subItemsFromProp = item.items || [];
+      const subItems = subItemsFromMap.length > 0 ? subItemsFromMap : subItemsFromProp;
+
+      const isHost = item.isHost || subItems.length > 0;
       const isHostExpanded = hostStates[item.id];
       const isActive = checkIsActive(item);
-
-      // Inject isActive into item for MenuItem (if it supported it) or pass as prop
-      // MenuItem logic update would be needed to use isActive prop visually
 
       return (
           <React.Fragment key={item.id}>
@@ -241,34 +284,39 @@ const AzNavRail = ({
                   isExpanded={isHostExpanded}
                   onHostClick={() => toggleHost(item)}
                   infoScreen={infoScreen}
-                  // Pass active state if MenuItem supports it, or modify item color?
-                  // Currently simple pass-through.
               />
               {isHost && isHostExpanded && (
                   <div className="az-nav-rail-subitems">
-                      {item.items.map(subItem => renderMenuItem(subItem, depth + 1))}
+                      {subItems.map(subItem => renderMenuItem(subItem, depth + 1))}
                   </div>
               )}
           </React.Fragment>
       );
   };
 
-  const getVisibleItems = () => {
+  const visibleItems = useMemo(() => {
     const visible = [];
     navItems.forEach(item => {
         if (item.isRailItem || item.items) {
             visible.push(item);
-            if (item.items && hostStates[item.id]) {
-               item.items.forEach(sub => {
+            if (hostStates[item.id]) {
+               const subItems = subItemsMap[item.id] || [];
+               subItems.forEach(sub => {
                    if (sub.isRailItem) visible.push(sub);
                });
             }
         }
     });
     return visible;
-  };
+  }, [navItems, hostStates, subItemsMap]);
 
-  const visibleItems = getVisibleItems();
+  const effectiveRailItems = useMemo(() => {
+    return navItems.filter(item => item.isRailItem || item.items || subItemsMap[item.id]);
+  }, [navItems, subItemsMap]);
+
+  const menuItems = useMemo(() => {
+    return navItems.filter(item => !item.isSubItem);
+  }, [navItems]);
 
   const getHeaderIconClass = () => {
       switch (headerIconShape) {
@@ -299,12 +347,11 @@ const AzNavRail = ({
         <div className="content">
           {isExpanded ? (
             <div className="menu">
-              {navItems.map(item => renderMenuItem(item))}
+              {menuItems.map(item => renderMenuItem(item))}
             </div>
           ) : (
             <div className={`rail ${packRailButtons ? 'packed' : ''}`} style={{overflowY: 'auto', maxHeight: '100%'}}>
-              {navItems
-                .filter(item => item.isRailItem || item.items)
+              {effectiveRailItems
                 .map(item => {
                   if (item.isDivider) return <AzDivider key={item.id} />;
 
@@ -316,9 +363,11 @@ const AzNavRail = ({
 
                   // For reloc items
                   if (item.isRelocItem) {
+                       const subItems = subItemsMap[item.id] || [];
                        return (
                           <div
                             key={item.id}
+                            ref={(el) => updateItemBound(item.id, el)}
                             onMouseDown={(e) => handleMouseDown(e, item)}
                             onDoubleClick={() => handleDoubleTap(item)}
                             style={{position: 'relative', width: '100%', display: 'flex', justifyContent: 'center'}}
@@ -326,6 +375,11 @@ const AzNavRail = ({
                               <AzNavRailButton
                                   item={{...finalItem, isActive}} // Pass isActive if Button supports it
                                   onCyclerClick={() => handleCyclerClick(item)}
+                                  onClickOverride={item.isNestedRail ? (e) => {
+                                      const rect = e.currentTarget.getBoundingClientRect();
+                                      setAnchorPosition({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
+                                      setNestedRailVisibleId(item.id);
+                                  } : undefined}
                                   infoScreen={infoScreen}
                                   style={{
                                       transform: draggedItemId === item.id ? `translateY(${dragOffset}px)` : 'none',
@@ -346,15 +400,54 @@ const AzNavRail = ({
                                       padding: '8px',
                                       width: '150px'
                                   }}>
-                                      {item.hiddenMenu.map((menuItem, idx) => (
-                                          <div key={idx} style={{padding: '8px', borderBottom: '1px solid #eee', cursor: 'pointer'}} onClick={(e) => {
-                                              e.stopPropagation(); // Prevent parent clicks
-                                              if(menuItem.onClick) menuItem.onClick();
-                                              setHiddenMenuOpenId(null);
-                                          }}>
-                                              {menuItem.text}
-                                          </div>
-                                      ))}
+                                      {(() => {
+                                          const menuItems = [];
+                                          if (typeof item.hiddenMenu === 'function') {
+                                              const scope = {
+                                                  listItem: (text, action) => {
+                                                      if (typeof action === 'string') {
+                                                          menuItems.push({ text, route: action });
+                                                      } else {
+                                                          menuItems.push({ text, onClick: action });
+                                                      }
+                                                  },
+                                                  inputItem: (hint, onValueChange) => {
+                                                      menuItems.push({ text: '', isInput: true, hint, onValueChange });
+                                                  }
+                                              };
+                                              item.hiddenMenu(scope);
+                                          } else {
+                                              menuItems.push(...item.hiddenMenu);
+                                          }
+
+                                          return menuItems.map((menuItem, idx) => {
+                                              if (menuItem.isInput) {
+                                                  return (
+                                                      <div key={idx} style={{padding: '4px'}} onClick={(e) => e.stopPropagation()}>
+                                                          <AzTextBox
+                                                              hint={menuItem.hint}
+                                                              onValueChange={menuItem.onValueChange}
+                                                              onSubmit={(val) => {
+                                                                  if (menuItem.onValueChange) menuItem.onValueChange(val);
+                                                                  setHiddenMenuOpenId(null);
+                                                              }}
+                                                              showSubmitButton={true}
+                                                          />
+                                                      </div>
+                                                  );
+                                              }
+                                              return (
+                                                  <div key={idx} style={{padding: '8px', borderBottom: '1px solid #eee', cursor: 'pointer'}} onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      if(menuItem.onClick) menuItem.onClick();
+                                                      if(menuItem.route) window.location.href = menuItem.route;
+                                                      setHiddenMenuOpenId(null);
+                                                  }}>
+                                                      {menuItem.text}
+                                                  </div>
+                                              );
+                                          });
+                                      })()}
                                   </div>
                               )}
                           </div>
@@ -362,29 +455,37 @@ const AzNavRail = ({
                   }
 
                   return (
-                    <React.Fragment key={item.id}>
+                    <div key={item.id} ref={(el) => updateItemBound(item.id, el)}>
                         <AzNavRailButton
                             item={{...finalItem, isActive}}
                             onCyclerClick={() => handleCyclerClick(item)}
-                            onClickOverride={item.items ? () => {
-                                if (infoScreen) {
-                                    toggleHost(item);
-                                } else {
-                                    setIsExpanded(true);
-                                    setHostStates(prev => ({ ...prev, [item.id]: true }));
+                            onClickOverride={(e) => {
+                                if (item.isNestedRail) {
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    setAnchorPosition({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
+                                    setNestedRailVisibleId(item.id);
+                                    return;
                                 }
-                            } : undefined}
+                                if (item.items || subItemsMap[item.id]) {
+                                    if (infoScreen) {
+                                        toggleHost(item);
+                                    } else {
+                                        setIsExpanded(true);
+                                        setHostStates(prev => ({ ...prev, [item.id]: true }));
+                                    }
+                                }
+                            }}
                             infoScreen={infoScreen}
                             style={{
                                 borderColor: isActive && activeColor ? activeColor : (item.color || 'blue')
                             }}
                         />
                         {/* Sub items rendering */}
-                        {item.items && hostStates[item.id] && (
-                            item.items.filter(sub => sub.isRailItem).map(sub => {
+                        {hostStates[item.id] && (
+                            (subItemsMap[item.id] || []).filter(sub => sub.isRailItem).map(sub => {
                                 const subActive = checkIsActive(sub);
                                 return (
-                                <div key={sub.id} onMouseDown={(e) => handleMouseDown(e, sub)} style={{position: 'relative'}}>
+                                <div key={sub.id} ref={(el) => updateItemBound(sub.id, el)} onMouseDown={(e) => handleMouseDown(e, sub)} style={{position: 'relative'}}>
                                     <AzNavRailButton
                                         item={{...sub, isActive: subActive}}
                                         onCyclerClick={() => handleCyclerClick(sub)}
@@ -398,7 +499,7 @@ const AzNavRail = ({
                                 </div>
                             )})
                         )}
-                    </React.Fragment>
+                    </div>
                   );
                 })}
             </div>
@@ -437,10 +538,31 @@ const AzNavRail = ({
     {infoScreen && (
         <HelpOverlay
             items={visibleItems}
+            itemBounds={itemBounds}
             railWidth={collapsedRailWidth}
             onDismiss={onDismissInfoScreen}
         />
     )}
+
+    {effectiveRailItems.filter(i => i.isNestedRail).map(item => (
+        <AzNestedRailPopup
+            key={`nested-${item.id}`}
+            visible={nestedRailVisibleId === item.id}
+            onDismiss={() => setNestedRailVisibleId(null)}
+            items={subItemsMap[item.id] || []}
+            alignment={item.nestedRailAlignment || 'VERTICAL'}
+            renderItem={(sub, idx) => (
+                <AzNavRailButton
+                    key={sub.id}
+                    item={sub}
+                    onCyclerClick={() => handleCyclerClick(sub)}
+                    infoScreen={infoScreen}
+                />
+            )}
+            anchorPosition={anchorPosition}
+            dockingSide={dockingSide}
+        />
+    ))}
     </>
   );
 };
