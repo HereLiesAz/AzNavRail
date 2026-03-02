@@ -220,6 +220,7 @@ fun AzNavRail(
     var offsetY by remember { mutableStateOf(0f) }
     var showFloatingButtons by remember { mutableStateOf(false) }
     var railContentHeight by remember { mutableStateOf(0f) }
+    var showHelpOverlay by remember { mutableStateOf(false) }
     val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
 
     val railWidth by animateDpAsState(targetValue = if (isExpanded) scope.expandedWidth else scope.collapsedWidth)
@@ -228,6 +229,15 @@ fun AzNavRail(
     val navBackStackEntry by effectiveNavController.currentBackStackEntryAsState()
     val actualCurrentDestination = currentDestination ?: navBackStackEntry?.destination?.route
     val hostStates = remember { mutableStateMapOf<String, Boolean>() }
+
+    val toggleHelpOverlay = {
+        if (showHelpOverlay) {
+            showHelpOverlay = false
+            scope.onDismissHelp?.invoke()
+        } else {
+            showHelpOverlay = true
+        }
+    }
 
     LaunchedEffect(scope.navItems) {
         scope.navItems.forEach { item ->
@@ -260,7 +270,7 @@ fun AzNavRail(
     }
 
     fun toggleExpanded() {
-        if (!scope.infoScreen) {
+        if (!showHelpOverlay) {
             if (isFloating) {
                 showFloatingButtons = !showFloatingButtons
             } else if (!scope.noMenu) {
@@ -414,14 +424,27 @@ fun AzNavRail(
                         Column(
                             modifier = Modifier.fillMaxSize().verticalScroll(scrollState)
                         ) {
-                            scope.navItems.filter { !it.isSubItem }.forEach { item ->
+                            val displayItems = if (scope.helpEnabled) {
+                                scope.navItems + AzNavItem.Help(
+                                    id = AzNavRailDefaults.AUTO_HELP_ID,
+                                    isRailItem = false
+                                )
+                            } else {
+                                scope.navItems
+                            }
+
+                            displayItems.filter { !it.isSubItem }.forEach { item ->
                                 MenuItem(
                                     item = item,
                                     navController = effectiveNavController,
                                     isSelected = (item.route != null && item.route == actualCurrentDestination) ||
                                             item.classifiers.any { it in scope.activeClassifiers },
                                     onClick = {
-                                        scope.onClickMap[item.id]?.invoke()
+                                        if (item.isHelpItem) {
+                                            toggleHelpOverlay()
+                                        } else {
+                                            scope.onClickMap[item.id]?.invoke()
+                                        }
                                         if (item.collapseOnClick) isExpanded = false
                                     },
                                     onCyclerClick = { scope.onClickMap[item.id]?.invoke() },
@@ -432,19 +455,23 @@ fun AzNavRail(
                                         scope.itemBoundsCache[id] = bounds
                                         scope.onItemGloballyPositioned?.invoke(id, bounds)
                                     },
-                                    infoScreen = scope.infoScreen,
+                                    helpEnabled = showHelpOverlay,
                                     activeColor = scope.activeColor
                                 )
 
                                 if (hostStates[item.id] == true) {
-                                    scope.navItems.filter { it.isSubItem && it.hostId == item.id }.forEach { subItem ->
+                                    displayItems.filter { it.isSubItem && it.hostId == item.id }.forEach { subItem ->
                                         MenuItem(
                                             item = subItem,
                                             navController = effectiveNavController,
                                             isSelected = (subItem.route != null && subItem.route == actualCurrentDestination) ||
                                                     subItem.classifiers.any { it in scope.activeClassifiers },
                                             onClick = {
-                                                scope.onClickMap[subItem.id]?.invoke()
+                                                if (subItem.isHelpItem) {
+                                                    toggleHelpOverlay()
+                                                } else {
+                                                    scope.onClickMap[subItem.id]?.invoke()
+                                                }
                                                 if (subItem.collapseOnClick) isExpanded = false
                                             },
                                             onCyclerClick = { scope.onClickMap[subItem.id]?.invoke() },
@@ -454,7 +481,7 @@ fun AzNavRail(
                                                 scope.itemBoundsCache[id] = bounds
                                                 scope.onItemGloballyPositioned?.invoke(id, bounds)
                                             },
-                                            infoScreen = scope.infoScreen,
+                                            helpEnabled = showHelpOverlay,
                                             activeColor = scope.activeColor
                                         )
                                     }
@@ -506,13 +533,16 @@ fun AzNavRail(
                                     }
                                 },
                                 onItemSelected = { item ->
+                                    if (item.isHelpItem) {
+                                        toggleHelpOverlay()
+                                    }
                                     if (item.collapseOnClick && !scope.noMenu) isExpanded = false
                                 },
                                 hostStates = hostStates,
                                 packRailButtons = isFloating || scope.packButtons, // Forced pack in FAB mode
                                 visualDockingSide = visualDockingSide,
                                 onItemGloballyPositioned = scope.onItemGloballyPositioned,
-                                infoScreen = scope.infoScreen
+                                helpEnabled = showHelpOverlay
                             )
                         }
                     }
@@ -540,5 +570,11 @@ fun AzNavRail(
         }
     }
 
-    if (scope.infoScreen) HelpOverlay(items = scope.navItems, onDismiss = { scope.onDismissInfoScreen?.invoke() }, itemBoundsCache = scope.itemBoundsCache)
+    if (showHelpOverlay) {
+        HelpOverlay(
+            items = scope.navItems,
+            onDismiss = { toggleHelpOverlay() },
+            itemBoundsCache = scope.itemBoundsCache
+        )
+    }
 }

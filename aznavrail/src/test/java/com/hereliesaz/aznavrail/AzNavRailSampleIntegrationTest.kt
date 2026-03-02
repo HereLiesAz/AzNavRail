@@ -28,7 +28,7 @@ class AzNavRailSampleIntegrationTest {
         scope.azAdvanced(
             isLoading = true,
             enableRailDragging = true,
-            infoScreen = true
+            helpEnabled = true
         )
 
         assertEquals(true, scope.packButtons)
@@ -38,7 +38,7 @@ class AzNavRailSampleIntegrationTest {
         assertEquals(AzButtonShape.RECTANGLE, scope.defaultShape)
         assertEquals(true, scope.isLoading)
         assertEquals(true, scope.enableRailDragging)
-        assertEquals(true, scope.infoScreen)
+        assertEquals(true, scope.helpEnabled)
     }
 
     @Test
