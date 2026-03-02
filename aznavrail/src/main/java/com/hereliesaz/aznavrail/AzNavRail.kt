@@ -448,7 +448,7 @@ fun AzNavRail(
                                         scope.itemBoundsCache[id] = bounds
                                         scope.onItemGloballyPositioned?.invoke(id, bounds)
                                     },
-                                    infoScreen = showHelpOverlay,
+                                    helpEnabled = showHelpOverlay,
                                     activeColor = scope.activeColor
                                 )
 
@@ -474,7 +474,7 @@ fun AzNavRail(
                                                 scope.itemBoundsCache[id] = bounds
                                                 scope.onItemGloballyPositioned?.invoke(id, bounds)
                                             },
-                                            infoScreen = showHelpOverlay,
+                                            helpEnabled = showHelpOverlay,
                                             activeColor = scope.activeColor
                                         )
                                     }
@@ -535,7 +535,7 @@ fun AzNavRail(
                                 packRailButtons = isFloating || scope.packButtons, // Forced pack in FAB mode
                                 visualDockingSide = visualDockingSide,
                                 onItemGloballyPositioned = scope.onItemGloballyPositioned,
-                                infoScreen = showHelpOverlay
+                                helpEnabled = showHelpOverlay
                             )
                         }
                     }

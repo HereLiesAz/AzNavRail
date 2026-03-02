@@ -75,7 +75,7 @@ internal fun RailItems(
     visualDockingSide: AzDockingSide,
     onClickOverride: ((AzNavItem) -> Unit)? = null,
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
-    infoScreen: Boolean = false
+    helpEnabled: Boolean = false
 ) {
     val density = LocalDensity.current
     val topLevelItems = items.filter { !it.isSubItem }
@@ -114,7 +114,7 @@ internal fun RailItems(
                             hostStates = hostStates,
                             onClickOverride = onClickOverride,
                             onItemGloballyPositioned = onItemGloballyPositioned,
-                            infoScreen = infoScreen,
+                            helpEnabled = helpEnabled,
                             draggedItemId = draggedItemId,
                             dragOffset = dragOffset,
                             currentDropTargetIndex = currentDropTargetIndex,
@@ -189,7 +189,7 @@ internal fun RailItems(
                                             hostStates = hostStates,
                                             onClickOverride = onClickOverride,
                                             onItemGloballyPositioned = onItemGloballyPositioned,
-                                            infoScreen = infoScreen,
+                                            helpEnabled = helpEnabled,
                                             draggedItemId = draggedItemId,
                                             dragOffset = dragOffset,
                                             currentDropTargetIndex = currentDropTargetIndex,
@@ -278,7 +278,7 @@ private fun DraggableRailItemWrapper(
     hostStates: MutableMap<String, Boolean>,
     onClickOverride: ((AzNavItem) -> Unit)?,
     onItemGloballyPositioned: ((String, Rect) -> Unit)?,
-    infoScreen: Boolean,
+    helpEnabled: Boolean,
     draggedItemId: String?,
     dragOffset: Float,
     currentDropTargetIndex: Int?,
@@ -354,7 +354,7 @@ private fun DraggableRailItemWrapper(
     val hapticFeedback = LocalHapticFeedback.current
     val viewConfiguration = LocalViewConfiguration.current
 
-    val dragModifier = if (item.isRelocItem && !infoScreen) {
+    val dragModifier = if (item.isRelocItem && !helpEnabled) {
         Modifier.pointerInput(item.id) {
             awaitEachGesture {
                 val down = awaitFirstDown(requireUnconsumed = false)
@@ -455,7 +455,7 @@ private fun DraggableRailItemWrapper(
                             onClickOverride(item)
                         } else {
                             if (item.isHelpItem) {
-                                // Explicitly toggle help overlay if it's a help item, even in infoScreen mode
+                                // Explicitly toggle help overlay if it's a help item, even in helpEnabled mode
                                 onItemSelected(item)
                             } else {
                                 scope.onClickMap[item.id]?.invoke()
@@ -501,7 +501,7 @@ private fun DraggableRailItemWrapper(
                     onHostClick = {},
                     onItemGloballyPositioned = onItemGloballyPositioned,
                     onBoundsCalculated = { id, bounds -> scope.itemBoundsCache[id] = bounds },
-                    infoScreen = infoScreen,
+                    helpEnabled = helpEnabled,
                     dragModifier = dragModifier,
                     activeColor = scope.activeColor
                 )
@@ -533,7 +533,7 @@ private fun DraggableRailItemWrapper(
                     onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
                     onItemGloballyPositioned = onItemGloballyPositioned,
                             onBoundsCalculated = { id, bounds -> scope.itemBoundsCache[id] = bounds },
-                    infoScreen = infoScreen,
+                    helpEnabled = helpEnabled,
                     dragModifier = dragModifier,
                     activeColor = scope.activeColor
                 )
@@ -619,7 +619,7 @@ private fun DraggableRailItemWrapper(
                     onClick = null,
                     onRailCyclerClick = {},
                     onItemClick = {},
-                    infoScreen = infoScreen,
+                    helpEnabled = helpEnabled,
                     activeColor = scope.activeColor
                 )
             }
