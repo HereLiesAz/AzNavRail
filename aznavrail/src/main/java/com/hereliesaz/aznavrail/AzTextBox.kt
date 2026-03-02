@@ -150,19 +150,15 @@ fun AzTextBox(
         "AzTextBox cannot be both multiline and secret."
     }
 
-    val isControlled = value != null && onValueChange != null
-    var internalText by remember { mutableStateOf(value ?: "") }
+    var internalText by remember { mutableStateOf("") }
 
-    LaunchedEffect(value) {
-        if (value != null && !isControlled) {
-            internalText = value
-        }
-    }
+    // Determine effective text
+    val text = value ?: internalText
 
-    val text = if (isControlled) value else internalText
-
+    // Logic Fix: Ensure internal text updates if we are in uncontrolled mode (value == null),
+    // but allow the developer's onValueChange to handle it if in controlled mode.
     val onTextChange: (String) -> Unit = { newText ->
-        if (!isControlled) {
+        if (value == null) {
             internalText = newText
         }
         onValueChange?.invoke(newText)
