@@ -15,7 +15,8 @@ const MenuItem = ({ item, depth = 0, onToggle, onCyclerClick, isHost, isExpanded
     selectedOption,
     onClick,
     isDivider,
-    color = 'currentColor'
+    color = 'currentColor',
+    onFocus
   } = item;
 
   if (isDivider) {
@@ -29,6 +30,8 @@ const MenuItem = ({ item, depth = 0, onToggle, onCyclerClick, isHost, isExpanded
         }
         return;
     }
+
+    if (onFocus) onFocus();
 
     if (isHost) {
         onHostClick();

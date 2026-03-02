@@ -156,7 +156,9 @@ fun SampleScreen() {
 `AzNavRail` includes an interactive "Help Mode" (formerly Info Screen), ideal for onboarding or help sections.
 
 - **Activation**: Explicitly enable via `helpEnabled = true` in `azAdvanced`.
+
 - **Triggering**: 
+
     - **Auto Menu Item**: A "Help" item is automatically added to the bottom of the drawer menu.
     - **Explicit Trigger**: Use `azHelpRailItem(id, text)` to place a dedicated help button in the rail.
 - **Behavior**:

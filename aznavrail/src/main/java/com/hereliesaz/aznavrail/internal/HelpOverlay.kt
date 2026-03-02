@@ -54,7 +54,7 @@ internal fun HelpOverlay(
                     if (itemBounds != null && cardBounds != null) {
                         val isItemVisible = itemBounds.top >= safeZones.top.toPx() &&
                                 itemBounds.bottom <= (size.height - safeZones.bottom.toPx())
-                        
+
                         // Only draw line if both are somewhat visible
                         if (isItemVisible) {
                             val start = Offset(itemBounds.right, itemBounds.center.y)
@@ -81,7 +81,7 @@ internal fun HelpOverlay(
         ) {
             items(itemsWithInfo, key = { it.id }) { item ->
                 val isExpanded = expandedItemId == item.id
-                
+
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()

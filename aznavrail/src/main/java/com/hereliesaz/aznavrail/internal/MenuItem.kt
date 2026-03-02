@@ -65,6 +65,7 @@ internal fun MenuItem(
     }
 
     // Interaction Logic:
+
     // If helpEnabled: only Host and Help items are interactive.
     // If normal: depends on item.disabled.
 
