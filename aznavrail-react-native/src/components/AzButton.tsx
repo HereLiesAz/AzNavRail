@@ -1,14 +1,16 @@
 import React from 'react';
-import { TouchableOpacity, Text, ViewStyle, TextStyle } from 'react-native';
+import { TouchableOpacity, Text, ViewStyle, TextStyle, View } from 'react-native';
 import { AzButtonShape } from '../types';
+import { AzLoad } from './AzLoad';
 
-interface AzButtonProps {
+export interface AzButtonProps {
   text: string;
   onClick: () => void;
   color?: string;
   shape?: AzButtonShape;
   style?: ViewStyle;
-  disabled?: boolean;
+  enabled?: boolean;
+  isLoading?: boolean;
   testID?: string;
 }
 
@@ -18,7 +20,8 @@ export const AzButton: React.FC<AzButtonProps> = ({
   color = '#6200ee', // Default primary color
   shape = AzButtonShape.CIRCLE,
   style,
-  disabled = false,
+  enabled = true,
+  isLoading = false,
   testID,
 }) => {
   const isCircle = shape === AzButtonShape.CIRCLE;
@@ -35,7 +38,7 @@ export const AzButton: React.FC<AzButtonProps> = ({
     backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
-    opacity: disabled ? 0.5 : 1,
+    opacity: enabled ? 1 : 0.5,
     ...style,
   };
 
@@ -65,24 +68,32 @@ export const AzButton: React.FC<AzButtonProps> = ({
 
   const hasNewline = text.includes('\n');
 
+  const content = isLoading ? (
+    <View style={{ transform: [{ scale: 0.5 }] }}>
+      <AzLoad />
+    </View>
+  ) : (
+    <Text
+      style={textStyle}
+      adjustsFontSizeToFit={!hasNewline}
+      numberOfLines={hasNewline ? undefined : 1}
+      minimumFontScale={0.1}
+    >
+      {text}
+    </Text>
+  );
+
   return (
     <TouchableOpacity
       onPress={onClick}
-      disabled={disabled}
+      disabled={!enabled || isLoading}
       style={containerStyle}
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={text}
-      accessibilityState={{ disabled }}
+      accessibilityState={{ disabled: !enabled || isLoading }}
     >
-      <Text
-        style={textStyle}
-        adjustsFontSizeToFit={!hasNewline}
-        numberOfLines={hasNewline ? undefined : 1}
-        minimumFontScale={0.1}
-      >
-        {text}
-      </Text>
+      {content}
     </TouchableOpacity>
   );
 };
