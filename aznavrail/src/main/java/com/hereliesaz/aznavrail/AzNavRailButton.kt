@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.model.AzButtonShape
+import com.hereliesaz.aznavrail.model.AzComposableContent
 import com.hereliesaz.aznavrail.util.text.AutoSizeText
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -151,6 +152,7 @@ private fun ItemContentRenderer(itemContent: Any, color: Color, enabled: Boolean
     when (itemContent) {
         // Zero padding, completely fills shape
         is Color -> Box(modifier = Modifier.fillMaxSize().alpha(if (enabled) 1f else 0.5f).background(itemContent))
+        is AzComposableContent -> itemContent.content()
         is Int -> {
             val isResource = try { context.resources.getResourceName(itemContent) != null } catch (e: Exception) { false }
             if (isResource) {
