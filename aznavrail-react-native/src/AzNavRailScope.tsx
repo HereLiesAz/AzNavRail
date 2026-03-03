@@ -1,9 +1,10 @@
 import React, { useEffect, useContext, useRef } from 'react';
-import { AzNavItem, AzButtonShape, AzNavItemProps, AzToggleProps, AzCyclerProps, AzHostItemProps, AzSubItemProps, AzSubToggleProps, AzSubCyclerProps, AzRailRelocItemProps } from './types';
+import { AzNavItem, AzButtonShape, AzNavItemProps, AzToggleProps, AzCyclerProps, AzHostItemProps, AzSubItemProps, AzSubToggleProps, AzSubCyclerProps, AzRailRelocItemProps, AzNestedRailProps, AzNestedRailAlignment, HiddenMenuScope } from './types';
 
 export const AzNavRailContext = React.createContext<{
   register: (item: AzNavItem) => void;
   unregister: (id: string) => void;
+  updateSettings: (settings: any) => void;
 } | null>(null);
 
 const useAzItem = (item: AzNavItem) => {
@@ -335,8 +336,34 @@ export const AzMenuSubCycler: React.FC<AzSubCyclerProps> = (props) => {
 };
 
 export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
+    let hiddenMenuItems: any[] = [];
+    if (props.hiddenMenu) {
+        if (typeof props.hiddenMenu === 'function') {
+            const scope: HiddenMenuScope = {
+                listItem: (text, action) => {
+                    if (typeof action === 'string') {
+                        hiddenMenuItems.push({ id: `hidden_${hiddenMenuItems.length}`, text, route: action });
+                    } else {
+                        hiddenMenuItems.push({ id: `hidden_${hiddenMenuItems.length}`, text, onClick: action });
+                    }
+                },
+                inputItem: (hint, onValueChange) => {
+                    hiddenMenuItems.push({ id: `input_${hiddenMenuItems.length}`, text: '', isInput: true, hint, onValueChange });
+                }
+            };
+            props.hiddenMenu(scope);
+        } else {
+            hiddenMenuItems = props.hiddenMenu.map((item, i) => ({
+                id: `hidden_${i}`,
+                text: item.text,
+                onClick: item.onClick
+            }));
+        }
+    }
+
     useAzItem({
         ...props,
+        text: props.text || '',
         isRailItem: true,
         isHost: false,
         isSubItem: true,
@@ -345,11 +372,95 @@ export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
         isCycler: false,
         isDivider: false,
         collapseOnClick: false,
-        shape: AzButtonShape.NONE,
+        shape: props.shape || AzButtonShape.NONE,
         disabled: props.disabled || false,
         isExpanded: false,
         toggleOnText: '',
         toggleOffText: '',
+        hiddenMenu: hiddenMenuItems,
+        nestedRailAlignment: props.nestedRailAlignment || AzNestedRailAlignment.VERTICAL,
     });
+    return (
+        <AzNavRailContext.Consumer>
+            {(ctx) => (
+                <AzNavRailContext.Provider value={ctx}>
+                    {props.nestedContent}
+                </AzNavRailContext.Provider>
+            )}
+        </AzNavRailContext.Consumer>
+    );
+};
+
+export const AzSettings: React.FC<any> = (props) => {
+    const context = useContext(AzNavRailContext);
+    const propsJson = JSON.stringify(props);
+    useEffect(() => {
+        if (context) {
+            context.updateSettings(props);
+        }
+    }, [context, propsJson]);
     return null;
+};
+
+export const AzTheme: React.FC<any> = (props) => {
+    const context = useContext(AzNavRailContext);
+    const propsJson = JSON.stringify(props);
+    useEffect(() => {
+        if (context) {
+            context.updateSettings(props);
+        }
+    }, [context, propsJson]);
+    return null;
+};
+
+export const AzConfig: React.FC<any> = (props) => {
+    const context = useContext(AzNavRailContext);
+    const propsJson = JSON.stringify(props);
+    useEffect(() => {
+        if (context) {
+            context.updateSettings(props);
+        }
+    }, [context, propsJson]);
+    return null;
+};
+
+export const AzAdvanced: React.FC<any> = (props) => {
+    const context = useContext(AzNavRailContext);
+    const propsJson = JSON.stringify(props);
+    useEffect(() => {
+        if (context) {
+            context.updateSettings(props);
+        }
+    }, [context, propsJson]);
+    return null;
+};
+
+export const AzNestedRail: React.FC<AzNestedRailProps> = (props) => {
+    useAzItem({
+        ...props,
+        text: props.text || '',
+        isRailItem: true,
+        isToggle: false,
+        isCycler: false,
+        isDivider: false,
+        collapseOnClick: false,
+        shape: props.shape || AzButtonShape.CIRCLE,
+        disabled: props.disabled || false,
+        isHost: false,
+        isSubItem: false,
+        isExpanded: false,
+        toggleOnText: '',
+        toggleOffText: '',
+        isNestedRail: true,
+        nestedRailAlignment: props.alignment || AzNestedRailAlignment.VERTICAL,
+    });
+    return (
+        <AzNavRailContext.Consumer>
+            {(ctx) => (
+                <AzNavRailContext.Provider value={ctx}>
+                    {props.children}
+                </AzNavRailContext.Provider>
+            )}
+        </AzNavRailContext.Consumer>
+    );
 };

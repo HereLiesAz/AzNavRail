@@ -9,7 +9,7 @@ navigationCompose = "2.9.7"
 
 # Plugins
 kotlin = "2.3.10"
-androidLibrary = "8.13.2"
+androidLibrary = "9.0.1"
 activityCompose = "1.12.4"
 junit = "4.13.2"
 androidx-test-ext-junit = "1.3.0"
