@@ -112,8 +112,7 @@ internal fun AzNavRailButton(
             .onGloballyPositioned { coordinates ->
                 onGloballyPositioned?.invoke(coordinates.boundsInWindow())
             }
-            .then(clickableModifier),
-        interactionSource = interactionSource
+            .then(clickableModifier)
     ) {
         Box(
             // If itemContent is present (Color/Img), we force 0 padding to Fill/Crop. Otherwise, apply text padding.
