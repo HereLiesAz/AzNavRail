@@ -46,7 +46,7 @@ import com.hereliesaz.aznavrail.util.text.AutoSizeText
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun AzNavRailButton(
-    onClick: () -> Unit,
+    onClick: (() -> Unit)?,
     text: String,
     modifier: Modifier = Modifier,
     size: Dp = AzNavRailDefaults.ButtonWidth,
@@ -92,9 +92,18 @@ internal fun AzNavRailButton(
         finalColor.copy(alpha = 0.25f)
     }
 
+    val clickableModifier = if (enabled && (onClick != null || onLongClick != null)) {
+        Modifier.combinedClickable(
+            interactionSource = interactionSource,
+            indication = null,
+            onClick = { onClick?.invoke() },
+            onLongClick = { onLongClick?.invoke() }
+        )
+    } else {
+        Modifier
+    }
+
     Surface(
-        onClick = onClick,
-        enabled = enabled,
         shape = buttonShape,
         color = containerColor,
         contentColor = finalColor,
@@ -103,13 +112,7 @@ internal fun AzNavRailButton(
             .onGloballyPositioned { coordinates ->
                 onGloballyPositioned?.invoke(coordinates.boundsInWindow())
             }
-            .combinedClickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = { if (enabled) onClick() },
-                onLongClick = { if (enabled && onLongClick != null) onLongClick() }
-            ),
-        interactionSource = interactionSource
+            .then(clickableModifier)
     ) {
         Box(
             // If itemContent is present (Color/Img), we force 0 padding to Fill/Crop. Otherwise, apply text padding.

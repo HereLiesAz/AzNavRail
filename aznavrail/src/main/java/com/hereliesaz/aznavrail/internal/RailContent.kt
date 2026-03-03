@@ -28,7 +28,7 @@ internal fun RailContent(
     onHostClick: () -> Unit = {},
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
     onBoundsCalculated: ((String, Rect) -> Unit)? = null,
-    infoScreen: Boolean = false,
+    helpEnabled: Boolean = false,
     dragModifier: Modifier = Modifier,
     activeColor: androidx.compose.ui.graphics.Color? = null
 ) {
@@ -38,12 +38,12 @@ internal fun RailContent(
         else -> item.text
     }
 
-    val isEnabled = if (infoScreen) item.isHost else !item.disabled
+    val isEnabled = if (helpEnabled) (item.isHost || item.isHelpItem) else !item.disabled
 
-    val finalOnClick: () -> Unit = if (infoScreen) {
-        if (item.isHost) { { onHostClick() } } else { {} }
+    val finalOnClick: (() -> Unit)? = if (helpEnabled) {
+        if (item.isHelpItem) { { onClick?.invoke() } } else if (item.isHost) { { onHostClick() } } else { null }
     } else if (item.isRelocItem) {
-        {}
+        null
     } else {
         if (item.isHost) {
             { handleHostItemClick(item, navController, onClick, onItemClick, onHostClick) }

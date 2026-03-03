@@ -46,6 +46,7 @@ internal object AzNavRailDefaults {
     val HeaderHeightDp = 72.dp
 
     const val NO_TITLE = "NO_TITLE_AZ_NAV_RAIL"
+    const val AUTO_HELP_ID = "AZ_AUTO_HELP_ID_INTERNAL"
 }
 
 internal data class CyclerTransientState(
