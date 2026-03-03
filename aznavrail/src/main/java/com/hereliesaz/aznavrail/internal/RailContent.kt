@@ -40,10 +40,10 @@ internal fun RailContent(
 
     val isEnabled = if (helpEnabled) (item.isHost || item.isHelpItem) else !item.disabled
 
-    val finalOnClick: () -> Unit = if (helpEnabled) {
-        if (item.isHelpItem) { { onClick?.invoke() } } else if (item.isHost) { { onHostClick() } } else { {} }
+    val finalOnClick: (() -> Unit)? = if (helpEnabled) {
+        if (item.isHelpItem) { { onClick?.invoke() } } else if (item.isHost) { { onHostClick() } } else { null }
     } else if (item.isRelocItem) {
-        {}
+        null
     } else {
         if (item.isHost) {
             { handleHostItemClick(item, navController, onClick, onItemClick, onHostClick) }
