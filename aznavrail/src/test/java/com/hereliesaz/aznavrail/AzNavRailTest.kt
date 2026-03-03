@@ -53,7 +53,7 @@ class AzNavRailTest {
 
         // Verify initial state
         composeTestRule.onNodeWithText("Off").assertExists()
-        
+
         // Perform click
         composeTestRule.onNodeWithText("Off").performClick()
 
