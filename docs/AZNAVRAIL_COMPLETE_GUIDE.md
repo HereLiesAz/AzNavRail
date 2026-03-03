@@ -58,8 +58,8 @@ Enables complex behaviors like drag-and-drop and help overlays.
 azAdvanced(
     isLoading = isLoading,               // Boolean: Show global loading overlay
     enableRailDragging = true,           // Boolean: Enable FAB Mode (detach rail)
-    infoScreen = showHelp,               // Boolean: Show Help Overlay
-    onDismissInfoScreen = { showHelp = false }
+    helpEnabled = showHelp,              // Boolean: Show Help Overlay
+    onDismissHelp = { showHelp = false }
 )
 ```
 
@@ -71,6 +71,7 @@ Items are added sequentially. The order in the DSL determines the order in the r
 
 ### Standard Items
 *   **Menu Item:** Only appears in the expanded drawer.
+*   **Help Rail Item:** Dedicated trigger for the Help overlay.
 *   **Rail Item:** Appears in the rail (and drawer).
 *   **Content Types:** Supports Text, resource IDs (Icons), and `Color`.
 
@@ -86,6 +87,9 @@ azMenuItem(
 
 // Multi-line text support
 azMenuItem(id = "multi-line", text = "This is a\nmulti-line item", route = "multi-line")
+
+// Help trigger rail item
+azHelpRailItem(id = "help-trigger", text = "Get Help")
 
 // Rail item with Color content
 azRailItem(id = "color-item", text = "Color", content = Color.Red)

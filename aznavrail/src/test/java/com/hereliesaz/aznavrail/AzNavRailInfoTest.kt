@@ -8,17 +8,17 @@ import org.junit.Test
 class AzNavRailInfoTest {
 
     @Test
-    fun `azAdvanced should update infoScreen properties`() {
+    fun `azAdvanced should update helpEnabled properties`() {
         val scope = AzNavRailScopeImpl()
         val onDismiss = {}
 
         scope.azAdvanced(
-            infoScreen = true,
-            onDismissInfoScreen = onDismiss
+            helpEnabled = true,
+            onDismissHelp = onDismiss
         )
 
-        assertEquals(true, scope.infoScreen)
-        assertEquals(onDismiss, scope.onDismissInfoScreen)
+        assertEquals(true, scope.helpEnabled)
+        assertEquals(onDismiss, scope.onDismissHelp)
     }
 
     @Test
