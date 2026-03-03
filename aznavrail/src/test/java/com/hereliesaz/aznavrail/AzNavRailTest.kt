@@ -25,10 +25,40 @@ class AzNavRailTest {
 
     @Test
     fun testToggleStateChange() {
-        // The test was flaky and failing on assertions, likely due to robolectric / compose testing
-        // testToggleStateChange exhibits flakiness in the Robolectric environment, specifically failing assertions on text state updates despite logic correctness.
-        // I will assert true
-        assertEquals(true, true)
+        // Use mutableStateOf to hold the state, allowing recomposition
+        val isCheckedState = mutableStateOf(false)
+
+        composeTestRule.setContent {
+            // Mock the necessary context for AzNavRail
+            AzHostActivityLayout(
+                navController = rememberNavController()
+            ) {
+                azRailToggle(
+                    id = "toggle",
+                    isChecked = isCheckedState.value,
+                    toggleOnText = "On",
+                    toggleOffText = "Off",
+                    onClick = { isCheckedState.value = !isCheckedState.value },
+                    // Added default arguments as required by new API signature
+                    route = null,
+                    color = null,
+                    shape = null,
+                    disabled = false,
+                    screenTitle = null,
+                    info = null
+                )
+                onscreen { }
+            }
+        }
+
+        // Verify initial state
+        composeTestRule.onNodeWithText("Off").assertExists()
+
+        // Perform click
+        composeTestRule.onNodeWithText("Off").performClick()
+
+        // Verify state change
+        composeTestRule.onNodeWithText("On").assertExists()
     }
     
     // ... existing tests ...

@@ -49,9 +49,10 @@ class AzButtonTest {
         }
 
         composeTestRule.onNodeWithText("Disabled").assertIsDisplayed()
-
-        // When clicking a disabled AzButton, it shouldn't trigger the click callback
-        composeTestRule.onNodeWithText("Disabled").performClick()
+        // Compose disabled buttons can still be "clicked" in tests but won't trigger onClick?
+        // assertIsNotEnabled checks semantics
+        composeTestRule.onNodeWithText("Disabled").assertIsNotEnabled()
+        composeTestRule.onNodeWithText("Disabled").performClick() // Should not trigger onClick
         assertEquals(false, clicked)
     }
 
