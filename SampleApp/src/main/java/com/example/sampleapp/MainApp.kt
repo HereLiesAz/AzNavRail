@@ -10,8 +10,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.composable
@@ -307,6 +314,30 @@ fun MainApp() {
         ) {
             azRailItem(id = "nested-1", text = "Nested Item 1", route = "nested-1")
             azRailItem(id = "nested-2", text = "Nested Item 2", route = "nested-2")
+
+            // Example of using custom @Composable content in a nested item
+            azRailItem(
+                id = "nested-custom",
+                text = "Size Slider",
+                content = com.hereliesaz.aznavrail.model.AzComposableContent {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .pointerInput(Unit) {
+                                detectVerticalDragGestures { change, _ ->
+                                    change.consume()
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .background(Color.White, CircleShape)
+                        )
+                    }
+                }
+            )
         }
 
         azNestedRail(
