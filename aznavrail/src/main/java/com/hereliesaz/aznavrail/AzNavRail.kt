@@ -424,7 +424,8 @@ fun AzNavRail(
                         Column(
                             modifier = Modifier.fillMaxSize().verticalScroll(scrollState)
                         ) {
-                            val displayItems = if (scope.helpEnabled) {
+                            val hasExplicitHelpItem = scope.navItems.any { it.isHelpItem }
+                            val displayItems = if (scope.helpEnabled && !hasExplicitHelpItem) {
                                 scope.navItems + AzNavItem.Help(
                                     id = AzNavRailDefaults.AUTO_HELP_ID,
                                     isRailItem = false

@@ -319,13 +319,15 @@ fun MainApp() {
             azRailItem(
                 id = "nested-custom",
                 text = "Size Slider",
-                content = com.hereliesaz.aznavrail.model.AzComposableContent {
+                content = com.hereliesaz.aznavrail.model.AzComposableContent { isEnabled ->
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .pointerInput(Unit) {
-                                detectVerticalDragGestures { change, _ ->
-                                    change.consume()
+                            .pointerInput(isEnabled) {
+                                if (isEnabled) {
+                                    detectVerticalDragGestures { change, _ ->
+                                        change.consume()
+                                    }
                                 }
                             },
                         contentAlignment = Alignment.Center

@@ -107,14 +107,16 @@ azRailItem(id = "profile", text = "Profile", disabled = true, route = "profile")
 azRailItem(
     id = "size_item",
     text = "Size",
-    content = AzComposableContent {
+    content = AzComposableContent { isEnabled ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(Unit) {
-                    detectVerticalDragGestures { change, dragAmount ->
-                        change.consume()
-                        // Drag logic
+                .pointerInput(isEnabled) {
+                    if (isEnabled) {
+                        detectVerticalDragGestures { change, dragAmount ->
+                            change.consume()
+                            // Drag logic
+                        }
                     }
                 },
             contentAlignment = Alignment.Center
