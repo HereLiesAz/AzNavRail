@@ -54,7 +54,7 @@ internal fun Footer(
             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
             modifier = Modifier
                 .clickable {
-                    try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/HereLiesAz/AzNavRail"))) } catch (e: Exception) {}
+                    try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(scope.appRepositoryUrl))) } catch (e: Exception) {}
                 }
                 .padding(vertical = 4.dp)
         )
@@ -64,7 +64,13 @@ internal fun Footer(
             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
             modifier = Modifier
                 .clickable {
-                    try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/HereLiesAz/AzNavRail"))) } catch (e: Exception) {}
+                    try {
+                        val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
+                            data = Uri.parse("mailto:hereliesaz@gmail.com")
+                            putExtra(Intent.EXTRA_SUBJECT, appName)
+                        }
+                        context.startActivity(Intent.createChooser(emailIntent, "Send feedback"))
+                    } catch (e: Exception) {}
                 }
                 .padding(vertical = 4.dp)
         )
@@ -74,7 +80,7 @@ internal fun Footer(
             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
             modifier = Modifier
                 .clickable {
-                    try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/HereLiesAz/AzNavRail"))) } catch (e: Exception) {}
+                    try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://instagram.com/HereLiesAz"))) } catch (e: Exception) {}
                 }
                 .padding(vertical = 4.dp)
         )

@@ -102,6 +102,31 @@ azRailItem(id = "none-shape", text = "No Shape", shape = AzButtonShape.NONE)
 
 // Disabled item
 azRailItem(id = "profile", text = "Profile", disabled = true, route = "profile")
+
+// Rail item with custom @Composable content via AzComposableContent
+azRailItem(
+    id = "size_item",
+    text = "Size",
+    content = AzComposableContent {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures { change, dragAmount ->
+                        change.consume()
+                        // Drag logic
+                    }
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .background(Color.White, CircleShape)
+            )
+        }
+    }
+)
 ```
 
 ### Toggles
