@@ -72,7 +72,8 @@ data class AzNavItem(
     val isNestedRail: Boolean = false,
     val nestedRailAlignment: AzNestedRailAlignment? = null,
     val nestedRailItems: List<AzNavItem>? = null,
-    val isHelpItem: Boolean = false
+    val isHelpItem: Boolean = false,
+    val keepNestedRailOpen: Boolean = false
 ) : Parcelable {
     companion object {
         /**

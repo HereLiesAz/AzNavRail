@@ -496,7 +496,7 @@ fun AzNavRail(
                         }.dp
 
                         val availableHeight = maxHeight
-                        val isScrollable = totalItemHeight > (availableHeight * 0.8f)
+                        val isScrollable = totalItemHeight > (availableHeight * 0.65f)
 
                         val scrollModifier = if (isScrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier
 

@@ -99,8 +99,6 @@ internal class DockedHorizontalPopupPositionProvider(
         } else {
             anchorBounds.right + marginPx // Right of anchor
         }
-        // Ensure the popup doesn't bleed off the top or bottom of the screen
-        val safeY = y.coerceIn(0, windowSize.height - popupContentSize.height)
-        return IntOffset(x, safeY)
+        return IntOffset(x, y)
     }
 }
