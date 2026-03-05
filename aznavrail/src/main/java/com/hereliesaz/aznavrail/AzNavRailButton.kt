@@ -152,7 +152,7 @@ private fun ItemContentRenderer(itemContent: Any, color: Color, enabled: Boolean
     when (itemContent) {
         // Zero padding, completely fills shape
         is Color -> Box(modifier = Modifier.fillMaxSize().alpha(if (enabled) 1f else 0.5f).background(itemContent))
-        is AzComposableContent -> itemContent.content()
+        is AzComposableContent -> itemContent.content(enabled)
         is Int -> {
             val isResource = try { context.resources.getResourceName(itemContent) != null } catch (e: Exception) { false }
             if (isResource) {

@@ -1,6 +1,7 @@
 package com.hereliesaz.aznavrail.model
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 
 /**
  * A wrapper to provide custom @Composable content for AzNavRail items.
@@ -11,12 +12,13 @@ import androidx.compose.runtime.Composable
  * azRailItem(
  *     id = "custom_item",
  *     text = "Custom",
- *     content = AzComposableContent {
- *         Box(modifier = Modifier.fillMaxSize()) {
+ *     content = AzComposableContent { isEnabled ->
+ *         Box(modifier = Modifier.fillMaxSize().alpha(if (isEnabled) 1f else 0.5f)) {
  *             // Custom layout
  *         }
  *     }
  * )
  * ```
  */
-class AzComposableContent(val content: @Composable () -> Unit)
+@Immutable
+data class AzComposableContent(val content: @Composable (isEnabled: Boolean) -> Unit)
