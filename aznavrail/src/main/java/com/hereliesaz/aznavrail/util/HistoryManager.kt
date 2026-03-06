@@ -57,12 +57,10 @@ object HistoryManager {
             if (!historyFile.exists()) return@withLock
 
             try {
-                val lines = historyFile.readLines(Charsets.UTF_8)
+                val newHistory = mutableListOf<String>()
+                historyFile.forEachLine(Charsets.UTF_8) { newHistory.add(it) }
                 synchronized(histories) {
-                    histories.getOrPut(historyContext) { mutableListOf() }.apply {
-                        clear()
-                        addAll(lines)
-                    }
+                    histories[historyContext] = newHistory
                 }
             } catch (e: IOException) {
                 // Silently ignore, no history will be loaded.
