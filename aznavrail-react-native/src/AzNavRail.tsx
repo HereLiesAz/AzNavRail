@@ -117,19 +117,6 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
     return map;
   }, [items]);
 
-  const subItemsMap = useMemo(() => {
-    const map: Record<string, AzNavItem[]> = {};
-    items.forEach((item) => {
-      if (item.hostId) {
-        if (!map[item.hostId]) {
-          map[item.hostId] = [];
-        }
-        map[item.hostId].push(item);
-      }
-    });
-    return map;
-  }, [items]);
-
   const railWidthAnim = useRef(new Animated.Value(initiallyExpanded ? expandedRailWidth : collapsedRailWidth)).current;
   const pan = useRef(new Animated.ValueXY()).current;
   const panValue = useRef({ x: 0, y: 0 });
