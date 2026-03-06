@@ -232,7 +232,8 @@ Secondary rails that open in a popup overlay. Do NOT assign a route to the paren
 azNestedRail(
     id = "nested-rail",
     text = "Vertical Nested",
-    alignment = AzNestedRailAlignment.VERTICAL
+    alignment = AzNestedRailAlignment.VERTICAL,
+    keepNestedRailOpen = true // Remains open until parent is tapped again
 ) {
     azRailItem(id = "nested-1", text = "Nested Item 1", route = "nested-1")
 }
@@ -290,6 +291,7 @@ azRailRelocItem(
     hostId = "toolbar",
     text = "Drag Me",
     nestedRailAlignment = AzNestedRailAlignment.HORIZONTAL, // Customize direction
+    keepNestedRailOpen = true, // Remains open until parent is tapped again
     nestedContent = {
         // This content appears in the popup when the item is clicked (not dragged)
         azRailItem("hammer", "Hammer")

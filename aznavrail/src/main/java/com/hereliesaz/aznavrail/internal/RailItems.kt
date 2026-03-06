@@ -96,7 +96,12 @@ internal fun RailItems(
 
     Box(modifier = Modifier.pointerInput(Unit) {
         detectTapGestures(onTap = {
-            if (nestedRailOpenId != null) nestedRailOpenId = null
+            if (nestedRailOpenId != null) {
+                val openNestedItem = scope.navItems.find { it.id == nestedRailOpenId }
+                if (openNestedItem?.keepNestedRailOpen != true) {
+                    nestedRailOpenId = null
+                }
+            }
         })
     }) {
         Column {
@@ -523,7 +528,12 @@ private fun DraggableRailItemWrapper(
                             onNestedRailToggle(if (nestedRailOpenId == item.id) null else item.id)
                             scope.onClickMap[item.id]?.invoke()
                         } else {
-                            if (nestedRailOpenId != null) onNestedRailToggle(null)
+                            if (nestedRailOpenId != null) {
+                                val openItem = scope.navItems.find { it.id == nestedRailOpenId }
+                                if (openItem?.keepNestedRailOpen != true) {
+                                    onNestedRailToggle(null)
+                                }
+                            }
                             if (onClickOverride != null) {
                                 onClickOverride(item)
                             } else {
@@ -565,7 +575,9 @@ private fun DraggableRailItemWrapper(
                             scope.onClickMap[subItem.id]?.invoke()
                             subItem.route?.let { navController?.navigate(it) }
                             onItemSelected(subItem)
-                            onNestedRailToggle(null)
+                            if (!item.keepNestedRailOpen) {
+                                onNestedRailToggle(null)
+                            }
                         },
                         alignment = item.nestedRailAlignment,
                         isRightDocked = isRightDocked
@@ -588,7 +600,9 @@ private fun DraggableRailItemWrapper(
                             scope.onClickMap[subItem.id]?.invoke()
                             subItem.route?.let { navController?.navigate(it) }
                             onItemSelected(subItem)
-                            onNestedRailToggle(null)
+                            if (!item.keepNestedRailOpen) {
+                                onNestedRailToggle(null)
+                            }
                         },
                         alignment = item.nestedRailAlignment ?: AzNestedRailAlignment.HORIZONTAL,
                         isRightDocked = isRightDocked
