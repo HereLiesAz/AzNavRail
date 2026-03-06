@@ -73,8 +73,8 @@ class HistoryManagerBenchmark {
                 contains.add(item)
             }
 
-            // Early exit if we have enough of both
-            if (startsWith.size >= maxSuggestions && contains.size >= maxSuggestions) {
+            // Early exit if we have enough startsWith matches
+            if (startsWith.size >= maxSuggestions) {
                 break
             }
         }
