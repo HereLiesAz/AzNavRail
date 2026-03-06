@@ -81,12 +81,14 @@ object HistoryManager {
                         entriesToWrite = histories[historyContext]?.toList() ?: emptyList()
                     }
 
+                    val lineSeparator = System.lineSeparator()
+                    val lineSeparatorSize = lineSeparator.toByteArray(Charsets.UTF_8).size
                     for (entry in entriesToWrite) {
-                        val entryWithNewline = entry + System.lineSeparator()
-                        val entrySize = entryWithNewline.toByteArray(Charsets.UTF_8).size
                         if (maxSizeBytes == 0) break // Do not save if limit is 0KB
+                        val entrySize = entry.toByteArray(Charsets.UTF_8).size + lineSeparatorSize
                         if (currentSize + entrySize <= maxSizeBytes) {
-                            writer.write(entryWithNewline)
+                            writer.write(entry)
+                            writer.write(lineSeparator)
                             currentSize += entrySize
                         } else {
                             break
