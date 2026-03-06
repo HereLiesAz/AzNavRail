@@ -491,7 +491,7 @@ fun AzNavRail(
                         }
                     } else {
                         // Calculate total height of items
-                        val totalItemHeight = scope.navItems.filter { it.isRailItem && !it.isSubItem }.sumOf {
+                        val totalItemHeight = scope.navItems.filter { it.isRailItem && (!it.isSubItem || hostStates[it.hostId] == true) }.sumOf {
                             (AzNavRailDefaults.ButtonWidth.value + (if(scope.packButtons || isFloating) 0f else AzNavRailDefaults.RailContentVerticalArrangement.value)).toDouble()
                         }.dp
 
