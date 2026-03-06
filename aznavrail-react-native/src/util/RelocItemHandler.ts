@@ -29,26 +29,43 @@ export class RelocItemHandler {
     }
 
     static reorderItems(items: AzNavItem[], itemId: string, hostId: string, targetClusterIndex: number): AzNavItem[] {
-        const cluster = this.getCluster(items, hostId);
-        if (targetClusterIndex < 0 || targetClusterIndex >= cluster.length) return items;
+        // Find cluster start and length directly
+        let clusterStartGlobalIndex = -1;
+        let clusterSize = 0;
+        let currentClusterIndex = -1;
 
-        const currentClusterIndex = cluster.findIndex(i => i.id === itemId);
-        if (currentClusterIndex === -1 || currentClusterIndex === targetClusterIndex) return items;
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            if (item.hostId === hostId) {
+                if (item.isRelocItem) {
+                    if (clusterStartGlobalIndex === -1) {
+                        clusterStartGlobalIndex = i;
+                    }
+                    if (item.id === itemId) {
+                        currentClusterIndex = clusterSize;
+                    }
+                    clusterSize++;
+                } else if (clusterStartGlobalIndex !== -1) {
+                    break;
+                }
+            } else if (clusterStartGlobalIndex !== -1) {
+                break;
+            }
+        }
 
-        // Create new order within cluster
-        const newCluster = [...cluster];
-        const [movedItem] = newCluster.splice(currentClusterIndex, 1);
-        newCluster.splice(targetClusterIndex, 0, movedItem);
-
-        // Map back to main list
-        // We need to find where the cluster starts in the main list
-        const clusterStartGlobalIndex = items.findIndex(i => i.id === cluster[0].id);
-
-        if (clusterStartGlobalIndex === -1) return items;
+        if (
+            clusterStartGlobalIndex === -1 ||
+            targetClusterIndex < 0 ||
+            targetClusterIndex >= clusterSize ||
+            currentClusterIndex === -1 ||
+            currentClusterIndex === targetClusterIndex
+        ) {
+            return items;
+        }
 
         const newItems = [...items];
-        // Replace the cluster segment
-        newItems.splice(clusterStartGlobalIndex, cluster.length, ...newCluster);
+        const [movedItem] = newItems.splice(clusterStartGlobalIndex + currentClusterIndex, 1);
+        newItems.splice(clusterStartGlobalIndex + targetClusterIndex, 0, movedItem);
 
         return newItems;
     }
