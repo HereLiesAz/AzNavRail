@@ -49,7 +49,7 @@ Add JitPack to your `settings.gradle.kts`:
 - **`AzTextBox`**: Modern text box with autocomplete and submit button.
 - **`AzForm`**: Group multiple text boxes into a single form with a shared submit button.
 - **`AzRoller`**: A dropdown menu that works like a roller or slot machine, cycling through options infinitely.
-- **Info Screen**: Interactive help mode for onboarding with visual guides and coordinate display.
+- **Help Overlay**: Interactive help mode for onboarding with visual guides and coordinate display.
 - **Left/Right Docking**: Position the rail on the left or right side of the screen.
 - **No Menu Mode**: Treat all items as rail items, removing the side drawer.
 - **AzHostActivityLayout**: A layout container that enforces strict safe zones and automatic alignment rules.
@@ -153,7 +153,7 @@ fun SampleScreen() {
 
 ### Help Overlay (Help Mode)
 
-`AzNavRail` includes an interactive "Help Mode" (formerly Info Screen), ideal for onboarding or help sections.
+`AzNavRail` includes an interactive "Help Mode" (formerly Help Overlay), ideal for onboarding or help sections.
 
 - **Activation**: Explicitly enable via `helpEnabled = true` in `azAdvanced`.
 - **Triggering**:
