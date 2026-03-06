@@ -2,9 +2,10 @@ import { historyManager } from '../util/HistoryManager';
 
 describe('HistoryManager', () => {
   beforeEach(() => {
-    // Reset internal state by clearing the history record.
-    // We can do this by using a workaround or just adding specific test entries.
-    // Since we can't easily clear history via public API, we'll use unique contexts for tests.
+    // Reset internal state before each test to ensure isolation.
+    (historyManager as any).history = {};
+    // Reset limit to default value, as it can be modified by tests.
+    historyManager.setLimit(5);
   });
 
   describe('getSuggestions', () => {
