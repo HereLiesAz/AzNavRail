@@ -501,15 +501,21 @@ class AzNavRailScopeImpl : AzNavRailScope {
 
     override fun azHelpSubItem(id: String, hostId: String, text: String, content: Any?, color: Color?, shape: AzButtonShape?) {
         checkId(id)
+        if (navItems.none { it.id == hostId }) {
+            throw IllegalArgumentException("Host item with ID '$hostId' must be added before adding its sub-items.")
+        }
         navItems.add(
-            AzNavItem.Help(
+            AzNavItem(
                 id = id,
                 text = text,
                 isRailItem = true,
+                isHelpItem = true,
+                isSubItem = true,
+                hostId = hostId,
                 content = content,
                 color = color,
                 shape = shape ?: defaultShape
-            ).copy(isSubItem = true, hostId = hostId)
+            )
         )
     }
 

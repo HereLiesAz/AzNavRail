@@ -493,16 +493,18 @@ fun AzNavRail(
                         // Calculate total height of items
                         // We only include sub-items if they belong to a standard HostItem that expands inline.
                         // Sub-items belonging to a NestedRail (which is a popup) should NOT be included in the main rail's height.
-                        val totalItemHeight = scope.navItems.filter { item ->
-                            if (!item.isRailItem) return@filter false
-                            if (!item.isSubItem) return@filter true
-                            // If it's a sub-item, check if its host is expanded.
-                            // ALSO ensure the host is NOT a NestedRail, because NestedRails render as popups.
-                            val host = scope.navItems.find { it.id == item.hostId }
-                            val isHostExpanded = hostStates[item.hostId] == true
-                            val isHostNestedRail = host?.isNestedRail == true
-                            isHostExpanded && !isHostNestedRail
-                        }.sumOf {
+                        val isItemVisible = { item: AzNavItem ->
+                            if (!item.isRailItem) false
+                            else if (!item.isSubItem) true
+                            else {
+                                val host = scope.navItems.find { it.id == item.hostId }
+                                val isHostExpanded = hostStates[item.hostId] == true
+                                val isHostNestedRail = host?.isNestedRail == true
+                                isHostExpanded && !isHostNestedRail
+                            }
+                        }
+                        
+                        val totalItemHeight = scope.navItems.filter(isItemVisible).sumOf {
                             (AzNavRailDefaults.ButtonWidth.value + (if(scope.packButtons || isFloating) 0f else AzNavRailDefaults.RailContentVerticalArrangement.value)).toDouble()
                         }.dp
 

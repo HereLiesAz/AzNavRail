@@ -47,10 +47,25 @@ const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen, sty
     }
   };
 
+  const ariaProps = {};
+  if (isToggle) {
+    ariaProps['aria-checked'] = isChecked;
+    ariaProps.role = 'switch';
+  } else if (item.isHost) {
+    ariaProps['aria-expanded'] = item.isExpanded;
+  } else if (isCycler) {
+    ariaProps['aria-label'] = `${text} ${selectedOption}`;
+  } else if (item.isNestedRail) {
+    ariaProps['aria-expanded'] = item.isExpanded;
+    ariaProps['aria-haspopup'] = 'true';
+  }
+
+  const shapeClass = item.shape ? item.shape.toLowerCase() : 'circle';
+
   return (
     <div style={{ position: 'relative' }} data-az-nav-id={id}>
         <button
-            className={`az-nav-rail-button ${!isInteractive ? 'disabled' : ''}`}
+            className={`az-nav-rail-button ${shapeClass} ${!isInteractive ? 'disabled' : ''}`}
             onClick={handleClick}
             style={{
                 borderColor: color || 'blue',
@@ -59,6 +74,7 @@ const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen, sty
                 ...style
             }}
             disabled={!isInteractive}
+            {...ariaProps}
         >
           {content ? (
               <div className="button-content-wrapper" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

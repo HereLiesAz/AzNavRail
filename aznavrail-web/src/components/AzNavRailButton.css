@@ -23,4 +23,13 @@
   white-space: normal; /* Allow wrapping for multi-word strings */
   overflow-wrap: break-word;
   color: #000;
+}.az-nav-rail-button.square {
+  border-radius: 0;
+}
+.az-nav-rail-button.rectangle {
+  border-radius: 0;
+}
+.az-nav-rail-button.none {
+  border: none;
+  background-color: transparent;
 }
