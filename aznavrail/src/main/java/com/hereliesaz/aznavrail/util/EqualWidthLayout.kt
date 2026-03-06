@@ -2,7 +2,7 @@ package com.hereliesaz.aznavrail.util
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -14,20 +14,21 @@ fun EqualWidthLayout(
     verticalSpacing: Dp = 0.dp,
     content: @Composable () -> Unit
 ) {
-    SubcomposeLayout(modifier = modifier) { constraints ->
-        val placeables = subcompose(0, content).map { it.measure(constraints) }
-
-        val maxWidth = placeables.maxOfOrNull { it.width } ?: 0
+    Layout(
+        modifier = modifier,
+        content = content
+    ) { measurables, constraints ->
+        val maxWidth = measurables.maxOfOrNull { it.maxIntrinsicWidth(constraints.maxHeight) } ?: 0
         val newConstraints = constraints.copy(minWidth = maxWidth, maxWidth = maxWidth)
 
-        val newPlaceables = subcompose(1, content).map { it.measure(newConstraints) }
+        val placeables = measurables.map { it.measure(newConstraints) }
 
         val spacingPx = verticalSpacing.toPx()
-        val totalHeight = (newPlaceables.sumOf { it.height } + (spacingPx * (newPlaceables.size - 1))).coerceAtLeast(0f)
+        val totalHeight = (placeables.sumOf { it.height } + (spacingPx * (placeables.size - 1))).coerceAtLeast(0f)
 
         layout(newConstraints.maxWidth, totalHeight.roundToInt()) {
             var y = 0f
-            newPlaceables.forEach { placeable ->
+            placeables.forEach { placeable ->
                 placeable.place(0, y.roundToInt())
                 y += placeable.height + spacingPx
             }
