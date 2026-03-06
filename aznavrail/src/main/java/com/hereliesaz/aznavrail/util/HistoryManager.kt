@@ -57,8 +57,7 @@ object HistoryManager {
             if (!historyFile.exists()) return@withLock
 
             try {
-                val newHistory = mutableListOf<String>()
-                historyFile.forEachLine(Charsets.UTF_8) { newHistory.add(it) }
+                val newHistory = historyFile.useLines(Charsets.UTF_8) { it.toMutableList() }
                 synchronized(histories) {
                     histories[historyContext] = newHistory
                 }
