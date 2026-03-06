@@ -126,7 +126,7 @@ export const AzTextBox: React.FC<AzTextBoxProps> = ({
         <TextInput
           value={currentValue}
           onChangeText={handleChange}
-          placeholder={hint}
+          placeholder={currentValue.trim().length > 0 ? '' : hint}
           placeholderTextColor={outlineColor + '80'}
           secureTextEntry={secret && !isSecretVisible}
           multiline={effectiveMultiline}
