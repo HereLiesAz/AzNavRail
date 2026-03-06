@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -94,6 +95,22 @@ internal fun RailItems(
     var lastTappedId by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
+    val spacingDp = if (packRailButtons) 0.dp else AzNavRailDefaults.RailContentVerticalArrangement
+    val spacingPx = with(density) { spacingDp.roundToPx() }
+
+    val prefixSums by remember(scope.navItems, spacingPx) {
+        derivedStateOf {
+            val sums = IntArray(scope.navItems.size + 1)
+            var currentSum = 0
+            for (i in scope.navItems.indices) {
+                sums[i] = currentSum
+                currentSum += (itemHeights[scope.navItems[i].id] ?: 0) + spacingPx
+            }
+            sums[scope.navItems.size] = currentSum
+            sums
+        }
+    }
+
     Box(modifier = Modifier.pointerInput(Unit) {
         detectTapGestures(onTap = {
             if (nestedRailOpenId != null) {
@@ -131,17 +148,11 @@ internal fun RailItems(
                                 if (draggedItemId != null && currentDropTargetIndex != null) {
                                     val currentIdx = scope.navItems.indexOfFirst { it.id == draggedItemId }
                                     if (currentIdx != -1 && currentDropTargetIndex != -1 && currentIdx != currentDropTargetIndex) {
-                                        val spacingDp = if (packRailButtons) 0.dp else AzNavRailDefaults.RailContentVerticalArrangement
-                                        val spacingPx = with(density) { spacingDp.roundToPx() }
                                         var movedDistance = 0
                                         if (currentDropTargetIndex!! > currentIdx) {
-                                            for (i in (currentIdx + 1)..currentDropTargetIndex!!) {
-                                                movedDistance += (itemHeights[scope.navItems[i].id] ?: 0) + spacingPx
-                                            }
+                                            movedDistance = prefixSums[currentDropTargetIndex!! + 1] - prefixSums[currentIdx + 1]
                                         } else if (currentDropTargetIndex!! < currentIdx) {
-                                            for (i in currentDropTargetIndex!! until currentIdx) {
-                                                movedDistance -= ((itemHeights[scope.navItems[i].id] ?: 0) + spacingPx)
-                                            }
+                                            movedDistance = -(prefixSums[currentIdx] - prefixSums[currentDropTargetIndex!!])
                                         }
                                         val startSnapOffset = dragOffset - movedDistance
                                         val animatable = Animatable(startSnapOffset, Float.VectorConverter)
@@ -207,18 +218,11 @@ internal fun RailItems(
                                                     val currentIdx = scope.navItems.indexOfFirst { it.id == draggedItemId }
                                                     if (currentIdx != -1 && currentDropTargetIndex != -1 && currentIdx != currentDropTargetIndex) {
 
-                                                        val spacingDp = if (packRailButtons) 0.dp else AzNavRailDefaults.RailContentVerticalArrangement
-                                                        val spacingPx = with(density) { spacingDp.roundToPx() }
-
                                                         var movedDistance = 0
                                                         if (currentDropTargetIndex!! > currentIdx) {
-                                                            for (i in (currentIdx + 1)..currentDropTargetIndex!!) {
-                                                                movedDistance += (itemHeights[scope.navItems[i].id] ?: 0) + spacingPx
-                                                            }
+                                                            movedDistance = prefixSums[currentDropTargetIndex!! + 1] - prefixSums[currentIdx + 1]
                                                         } else if (currentDropTargetIndex!! < currentIdx) {
-                                                            for (i in currentDropTargetIndex!! until currentIdx) {
-                                                                movedDistance -= ((itemHeights[scope.navItems[i].id] ?: 0) + spacingPx)
-                                                            }
+                                                            movedDistance = -(prefixSums[currentIdx] - prefixSums[currentDropTargetIndex!!])
                                                         }
 
                                                         val startSnapOffset = dragOffset - movedDistance

@@ -36,6 +36,8 @@ jest.mock('react-native', () => {
     Text: ({children, ...props}) => React.createElement('Text', props, children),
     TouchableOpacity: ({children, onPress, ...props}) => React.createElement('TouchableOpacity', {onPress, ...props}, children),
     ScrollView: ({children, ...props}) => React.createElement('ScrollView', props, children),
+    ActivityIndicator: ({children, ...props}) => React.createElement('ActivityIndicator', props, children),
+    TextInput: ({children, ...props}) => React.createElement('TextInput', props, children),
     PanResponder: {
         create: () => ({ panHandlers: {} }),
     },

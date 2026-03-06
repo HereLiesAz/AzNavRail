@@ -46,6 +46,7 @@ describe('AzButton', () => {
     const touchable = component.root.findByType(TouchableOpacity);
     expect(touchable.props.style.borderColor).toBe('transparent');
     expect(touchable.props.style.borderWidth).toBe(0);
+    expect(touchable.props.style.height).toBe(48);
   });
 
   it('renders with custom color', () => {
@@ -105,5 +106,21 @@ describe('AzButton', () => {
 
     expect(textNode.props.numberOfLines).toBe(1);
     expect(textNode.props.adjustsFontSizeToFit).toBe(true);
+  });
+
+  it('renders correctly with custom style', () => {
+    const customStyle = { margin: 10 };
+    const component = renderer.create(<AzButton {...defaultProps} style={customStyle} shape={AzButtonShape.NONE} />);
+    const touchable = component.root.findByType(TouchableOpacity);
+
+    expect(touchable.props.style.margin).toBe(10);
+  });
+
+  it('renders gracefully when an unknown shape is provided', () => {
+    // @ts-ignore: Intentionally passing an invalid shape to test the fallback/else branch
+    const component = renderer.create(<AzButton {...defaultProps} shape={"UNKNOWN_SHAPE"} />);
+    const touchable = component.root.findByType(TouchableOpacity);
+    // Since it doesn't match CIRCLE, SQUARE, RECTANGLE, or NONE, it shouldn't set width/height from the shape logic
+    expect(touchable.props.style.height).toBeUndefined();
   });
 });

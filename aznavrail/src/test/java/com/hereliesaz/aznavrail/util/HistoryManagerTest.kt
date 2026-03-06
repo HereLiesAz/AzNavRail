@@ -145,4 +145,21 @@ class HistoryManagerTest {
         assertEquals(1, suggestionsB.size)
         assertEquals("entry1", suggestionsB.first())
     }
+
+    @Test
+    fun loadHistory_withIOException_handlesGracefully() = runBlocking<Unit> {
+        val testContext = "io_exception_test"
+        val errorFile = File(context.filesDir, "az_text_box_history_io_exception_test.txt")
+
+        // Make it a directory so reading it throws an IOException
+        errorFile.mkdir()
+
+        // Force history to load by getting suggestions
+        val suggestions = HistoryManager.getSuggestions("", testContext)
+
+        // It should gracefully return an empty list, not crash
+        assertTrue(suggestions.isEmpty())
+
+        errorFile.delete()
+    }
 }

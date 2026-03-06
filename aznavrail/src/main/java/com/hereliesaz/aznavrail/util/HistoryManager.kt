@@ -57,12 +57,9 @@ object HistoryManager {
             if (!historyFile.exists()) return@withLock
 
             try {
-                val lines = historyFile.readLines(Charsets.UTF_8)
+                val newHistory = historyFile.useLines(Charsets.UTF_8) { it.toMutableList() }
                 synchronized(histories) {
-                    histories.getOrPut(historyContext) { mutableListOf() }.apply {
-                        clear()
-                        addAll(lines)
-                    }
+                    histories[historyContext] = newHistory
                 }
             } catch (e: IOException) {
                 // Silently ignore, no history will be loaded.
@@ -81,12 +78,14 @@ object HistoryManager {
                         entriesToWrite = histories[historyContext]?.toList() ?: emptyList()
                     }
 
+                    val lineSeparator = System.lineSeparator()
+                    val lineSeparatorSize = lineSeparator.toByteArray(Charsets.UTF_8).size
                     for (entry in entriesToWrite) {
-                        val entryWithNewline = entry + System.lineSeparator()
-                        val entrySize = entryWithNewline.toByteArray(Charsets.UTF_8).size
                         if (maxSizeBytes == 0) break // Do not save if limit is 0KB
+                        val entrySize = entry.toByteArray(Charsets.UTF_8).size + lineSeparatorSize
                         if (currentSize + entrySize <= maxSizeBytes) {
-                            writer.write(entryWithNewline)
+                            writer.write(entry)
+                            writer.write(lineSeparator)
                             currentSize += entrySize
                         } else {
                             break
@@ -131,11 +130,32 @@ object HistoryManager {
             if (query.isBlank()) {
                 history.take(maxSuggestions)
             } else {
-                val (startsWith, contains) = history
-                    .filter { it.contains(query, ignoreCase = true) && !it.equals(query, ignoreCase = true) }
-                    .partition { it.startsWith(query, ignoreCase = true) }
+                val startsWith = ArrayList<String>(maxSuggestions)
+                val contains = ArrayList<String>(maxSuggestions)
 
-                (startsWith + contains).take(maxSuggestions)
+                for (item in history) {
+                    if (item.equals(query, ignoreCase = true)) continue
+
+                    if (item.startsWith(query, ignoreCase = true)) {
+                        if (startsWith.size < maxSuggestions) {
+                            startsWith.add(item)
+                        }
+                    } else if (contains.size < maxSuggestions && item.contains(query, ignoreCase = true)) {
+                        contains.add(item)
+                    }
+
+                    if (startsWith.size >= maxSuggestions) {
+                        break
+                    }
+                }
+
+                val result = ArrayList<String>(maxSuggestions)
+                result.addAll(startsWith)
+                val needed = maxSuggestions - result.size
+                if (needed > 0) {
+                    result.addAll(contains.take(needed))
+                }
+                result
             }
         }
     }
