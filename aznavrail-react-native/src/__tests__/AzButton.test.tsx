@@ -3,7 +3,6 @@ import { render, fireEvent } from '@testing-library/react-native';
 import { AzButton } from '../components/AzButton';
 import { AzButtonShape } from '../types';
 import { AzLoad } from '../components/AzLoad';
-import { Text, TouchableOpacity } from 'react-native';
 
 describe('AzButton', () => {
   const defaultProps = {
