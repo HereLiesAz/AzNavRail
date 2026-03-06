@@ -109,9 +109,9 @@ private fun SecLocMainDialog(
             onSelectMode = { selectedMode = it }
         )
     } else if (selectedMode == "SOURCE") {
-        SecLocSourceDialog(onDismiss = onDismiss)
+        SecLocSourceDialog(secLoc = secLoc, onDismiss = onDismiss)
     } else {
-        SecLocViewerDialog(onDismiss = onDismiss)
+        SecLocViewerDialog(secLoc = secLoc, onDismiss = onDismiss)
     }
 }
 
@@ -186,15 +186,16 @@ private fun SecretCredentialsDialog(
 }
 
 @Composable
-private fun SecLocSourceDialog(onDismiss: () -> Unit) {
+private fun SecLocSourceDialog(secLoc: String, onDismiss: () -> Unit) {
     SecLocHistoryDialog(
+        secLoc = secLoc,
         isSource = true,
         onDismiss = onDismiss
     )
 }
 
 @Composable
-private fun SecLocViewerDialog(onDismiss: () -> Unit) {
+private fun SecLocViewerDialog(secLoc: String, onDismiss: () -> Unit) {
     var sourceIp by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMsg by remember { mutableStateOf<String?>(null) }
@@ -252,7 +253,7 @@ private fun SecLocViewerDialog(onDismiss: () -> Unit) {
                                 errorMsg = null
                                 coroutineScope.launch {
                                     try {
-                                        val logs = SecLocNetworkUtils.fetchLogs(sourceIp)
+                                        val logs = SecLocNetworkUtils.fetchLogs(sourceIp, secLoc)
                                         history.clear()
                                         history.addAll(logs)
                                         if (logs.isEmpty()) {
@@ -292,6 +293,7 @@ private fun SecLocViewerDialog(onDismiss: () -> Unit) {
 @SuppressLint("MissingPermission")
 @Composable
 private fun SecLocHistoryDialog(
+    secLoc: String,
     isSource: Boolean,
     onDismiss: () -> Unit
 ) {
@@ -315,7 +317,7 @@ private fun SecLocHistoryDialog(
         if (isSource) {
             serverIp = SecLocNetworkUtils.getLocalIpAddress()
             coroutineScope.launch(Dispatchers.IO) {
-                SecLocNetworkUtils.startServer(context)
+                SecLocNetworkUtils.startServer(context, secLoc)
             }
         }
     }
@@ -463,7 +465,7 @@ data class SecLocEntry(
     val provider: String
 )
 
-private object SecLocLogManager {
+internal object SecLocLogManager {
     private const val FILE_NAME = "secloc_history.log"
 
     suspend fun appendLog(context: Context, entry: SecLocEntry) = withContext(Dispatchers.IO) {
@@ -506,7 +508,7 @@ private object SecLocLogManager {
     }
 }
 
-private object SecLocNetworkUtils {
+internal object SecLocNetworkUtils {
     private const val PORT = 10203
     private var serverSocket: ServerSocket? = null
     private var isRunning = false
@@ -530,7 +532,7 @@ private object SecLocNetworkUtils {
         return null
     }
 
-    suspend fun startServer(context: Context) = withContext(Dispatchers.IO) {
+    suspend fun startServer(context: Context, secret: String) = withContext(Dispatchers.IO) {
         if (isRunning) return@withContext
         try {
             serverSocket = ServerSocket(PORT)
@@ -539,14 +541,22 @@ private object SecLocNetworkUtils {
                 try {
                     val client = serverSocket?.accept()
                     client?.let { socket ->
-                        val writer = PrintWriter(socket.getOutputStream(), true)
-                        val file = SecLocLogManager.getLogFile(context)
-                        if (file.exists()) {
-                            file.forEachLine { line ->
-                                writer.println(line)
+                        socket.soTimeout = 5000 // Prevent blocking indefinitely
+                        val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
+                        val clientSecret = reader.readLine()
+
+                        if (clientSecret == secret) {
+                            val writer = PrintWriter(socket.getOutputStream(), true)
+                            val file = SecLocLogManager.getLogFile(context)
+                            if (file.exists()) {
+                                file.forEachLine { line ->
+                                    writer.println(line)
+                                }
                             }
+                            writer.flush()
+                        } else {
+                            Log.w("SecLocServer", "Unauthorized access attempt")
                         }
-                        writer.flush()
                         socket.close()
                     }
                 } catch (e: Exception) {
@@ -570,11 +580,15 @@ private object SecLocNetworkUtils {
         serverSocket = null
     }
 
-    suspend fun fetchLogs(ip: String): List<SecLocEntry> = withContext(Dispatchers.IO) {
+    suspend fun fetchLogs(ip: String, secret: String): List<SecLocEntry> = withContext(Dispatchers.IO) {
         val list = mutableListOf<SecLocEntry>()
         var socket: Socket? = null
         try {
             socket = Socket(ip, PORT)
+            val writer = PrintWriter(socket.getOutputStream(), true)
+            writer.println(secret)
+            writer.flush()
+
             val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
             var line: String? = reader.readLine()
             while (line != null) {
