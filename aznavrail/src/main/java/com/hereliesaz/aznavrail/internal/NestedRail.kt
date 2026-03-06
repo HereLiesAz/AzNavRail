@@ -52,8 +52,9 @@ internal fun NestedRail(
 
     // Restricted to 80% screen to enforce scrolling constraints
     if (alignment == AzNestedRailAlignment.VERTICAL) {
+        val scrollState = rememberScrollState()
         Column(
-            modifier = modifier.heightIn(max = maxH).verticalScroll(rememberScrollState()),
+            modifier = modifier.heightIn(max = maxH).verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -72,8 +73,9 @@ internal fun NestedRail(
             }
         }
     } else {
+        val scrollState = rememberScrollState()
         Row(
-            modifier = modifier.widthIn(max = maxW).horizontalScroll(rememberScrollState()),
+            modifier = modifier.widthIn(max = maxW).horizontalScroll(scrollState),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
