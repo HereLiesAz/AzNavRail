@@ -131,11 +131,32 @@ object HistoryManager {
             if (query.isBlank()) {
                 history.take(maxSuggestions)
             } else {
-                val (startsWith, contains) = history
-                    .filter { it.contains(query, ignoreCase = true) && !it.equals(query, ignoreCase = true) }
-                    .partition { it.startsWith(query, ignoreCase = true) }
+                val startsWith = ArrayList<String>(maxSuggestions)
+                val contains = ArrayList<String>(maxSuggestions)
 
-                (startsWith + contains).take(maxSuggestions)
+                for (item in history) {
+                    if (item.equals(query, ignoreCase = true)) continue
+
+                    if (item.startsWith(query, ignoreCase = true)) {
+                        if (startsWith.size < maxSuggestions) {
+                            startsWith.add(item)
+                        }
+                    } else if (contains.size < maxSuggestions && item.contains(query, ignoreCase = true)) {
+                        contains.add(item)
+                    }
+
+                    if (startsWith.size >= maxSuggestions) {
+                        break
+                    }
+                }
+
+                val result = ArrayList<String>(maxSuggestions)
+                result.addAll(startsWith)
+                val needed = maxSuggestions - result.size
+                if (needed > 0) {
+                    result.addAll(contains.take(needed))
+                }
+                result
             }
         }
     }
