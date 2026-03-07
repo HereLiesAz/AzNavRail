@@ -47,14 +47,18 @@ export const RailMenuItem: React.FC<RailMenuItemProps> = ({
 
     const displayText = item.text || (item.isChecked ? item.toggleOnText : item.toggleOffText) || displayOption || '';
 
+    const accessibilityState: any = {};
+    if (item.isToggle) accessibilityState.checked = item.isChecked;
+    if (item.isHost || item.isNestedRail) accessibilityState.expanded = isExpandedHost;
+
     return (
         <View>
             <TouchableOpacity
                 onPress={handlePress}
                 style={[styles.menuItem, { paddingLeft: 16 + (depth * 16) }]}
-                accessibilityRole="menuitem"
+                accessibilityRole={item.isToggle ? "switch" : "menuitem"}
                 accessibilityLabel={displayText}
-                accessibilityState={{ expanded: item.isHost ? isExpandedHost : undefined }}
+                accessibilityState={accessibilityState}
             >
                 <Text style={[styles.menuItemText, { fontWeight: item.isHost ? 'bold' : 'normal' }]}>
                     {displayText}
@@ -73,7 +77,7 @@ const styles = StyleSheet.create({
   menuItem: {
       padding: 16,
       flexDirection: 'row',
-      justifyContent: 'space-between',
+      justifyContent: 'center',
       alignItems: 'center',
   },
   menuItemText: {

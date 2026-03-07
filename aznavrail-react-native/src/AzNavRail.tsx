@@ -528,71 +528,51 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
       };
 
       const handleCredit = () => {
-          Linking.openURL('https://www.instagram.com/hereliesaz').catch(e => console.error("Could not open Credit", e));
+         Linking.openURL('https://instagram.com/HereLiesAz').catch(e => console.error("Could not open Credit", e));
       };
 
       const handleSecLocTrigger = () => {
-          if (secLoc) {
-              if (vibrate) Vibration.vibrate(100);
-              Alert.alert("Secret Screens", "This feature relies on native Android location services and is not currently available in the React Native version.");
+          setSecLocClicks(prev => prev + 1);
+          if (secLocClicks >= 9) {
+              setSecLocVisible(true);
+              setSecLocClicks(0);
           }
       };
 
-      // Dummy props for flat footer items
-      const dummyProps = {
-          depth: 0,
-          isExpandedHost: false,
-          onToggleHost: () => {},
-          renderSubItems: () => null,
-      };
-
       return (
-        <View style={styles.footer}>
+        <View style={[styles.footer, { alignItems: 'center' }]}>
              <View style={styles.divider} />
              {enableRailDragging && (
-                 <RailMenuItem
-                    item={{ id: 'undock', text: 'Undock', isRailItem: false, color: footerColor } as AzNavItem}
-                    onItemClick={handleUndock}
-                    {...dummyProps}
-                 />
+                 <TouchableOpacity onPress={handleUndock} style={{ paddingVertical: 8 }}><Text style={{ fontSize: 10, color: footerColor }}>Undock</Text></TouchableOpacity>
              )}
-             <RailMenuItem
-                item={{ id: 'about', text: 'About', isRailItem: false, color: footerColor } as AzNavItem}
-                onItemClick={handleAbout}
-                {...dummyProps}
-             />
-             <RailMenuItem
-                 item={{ id: 'feedback', text: 'Feedback', isRailItem: false, color: footerColor } as AzNavItem}
-                 onItemClick={handleFeedback}
-                 {...dummyProps}
-             />
-             <TouchableOpacity
-                onPress={handleCredit}
-                onLongPress={handleSecLocTrigger}
-                delayLongPress={500}
-             >
-                 <RailMenuItem
-                     item={{ id: 'credit', text: '@HereLiesAz', isRailItem: false, color: footerColor } as AzNavItem}
-                     onItemClick={handleCredit} // Just to reuse styling
-                     {...dummyProps}
-                 />
-             </TouchableOpacity>
+             <TouchableOpacity onPress={handleAbout} style={{ paddingVertical: 4 }}><Text style={{ fontSize: 10, color: footerColor }}>About</Text></TouchableOpacity>
+             <TouchableOpacity onPress={handleFeedback} style={{ paddingVertical: 4 }}><Text style={{ fontSize: 10, color: footerColor }}>Feedback</Text></TouchableOpacity>
+             <TouchableOpacity onPress={handleCredit} onLongPress={handleSecLocTrigger} delayLongPress={500} style={{ paddingVertical: 4 }}><Text style={{ fontSize: 10, color: footerColor }}>@HereLiesAz</Text></TouchableOpacity>
         </View>
       );
   };
 
 
   const effectiveRailItems = useMemo(() => {
-    return items.filter(i => {
-      if (i.isSubItem) return false;
-      if (config.noMenu) return true;
-      return i.isRailItem;
+    const list = [];
+    items.forEach(i => {
+      if (!i.isSubItem && (config.noMenu || i.isRailItem)) {
+          list.push(i);
+          if (hostStates[i.id] && !i.isNestedRail) {
+              const subItems = subItemsMap[i.id] || [];
+              subItems.forEach(sub => {
+                  if (sub.isRailItem) list.push(sub);
+              });
+          }
+      }
     });
-  }, [items, config.noMenu]);
+    return list;
+  }, [items, config.noMenu, hostStates, subItemsMap]);
 
   const railItemsCount = useMemo(() => {
-      return items.filter(i => i.isRailItem && !i.isSubItem).length;
-  }, [items]);
+      // Includes expanded sub-items for height calculation
+      return effectiveRailItems.length;
+  }, [effectiveRailItems]);
 
   const menuItems = useMemo(() => {
     return items.filter(i => !i.isSubItem);

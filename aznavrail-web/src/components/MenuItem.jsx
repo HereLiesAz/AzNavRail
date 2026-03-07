@@ -23,9 +23,15 @@ const MenuItem = ({ item, depth = 0, onToggle, onCyclerClick, isHost, isExpanded
     return <div className="az-menu-divider" style={{ backgroundColor: color, opacity: 0.2 }} />;
   }
 
+  const isInteractive = infoScreen ? (isHost || item.isHelpItem) : !item.disabled;
+
   const handleClick = () => {
+    if (!isInteractive) return;
+
     if (infoScreen) {
-        if (isHost) {
+        if (item.isHelpItem && onClick) {
+            onClick();
+        } else if (isHost) {
             onHostClick();
         }
         return;
@@ -47,12 +53,26 @@ const MenuItem = ({ item, depth = 0, onToggle, onCyclerClick, isHost, isExpanded
 
   const paddingLeft = 16 + (depth * 16);
 
+  const ariaProps = {};
+  if (isToggle) {
+    ariaProps['aria-checked'] = isChecked;
+    ariaProps.role = 'switch';
+  } else if (isHost) {
+    ariaProps['aria-expanded'] = isExpanded;
+  } else if (isCycler) {
+    ariaProps['aria-label'] = `${text} ${selectedOption}`;
+  } else if (item.isNestedRail) {
+    ariaProps['aria-expanded'] = isExpanded;
+    ariaProps['aria-haspopup'] = 'true';
+  }
+
   return (
     <div
         className="az-menu-item"
         style={{ color: color, paddingLeft: `${paddingLeft}px`, position: 'relative' }}
         onClick={handleClick}
         data-az-nav-id={item.id}
+        {...ariaProps}
     >
         {isToggle ? (
             <div className="az-menu-item-content toggle">

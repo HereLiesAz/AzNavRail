@@ -75,7 +75,7 @@
   ],
   "packageManager": "yarn@3.6.1",
   "jest": {
-    "preset": "react-native",
+
     "setupFiles": [
       "<rootDir>/jest.setup.js"
     ],

@@ -464,3 +464,28 @@ export const AzNestedRail: React.FC<AzNestedRailProps> = (props) => {
         </AzNavRailContext.Consumer>
     );
 };
+
+export const AzHelpRailItem: React.FC<AzNavItemProps> = (props) => {
+    useAzItem({
+        ...props,
+        isRailItem: true,
+        isHelpItem: true
+    });
+    return null;
+};
+
+export const AzHelpSubItem: React.FC<AzSubItemProps> = (props) => {
+    // Validate hostId contextually via useAzItem or parent scope,
+    // Note: hostId validation on the web/rn side is handled by AzNavRail directly linking items.
+    // For parity we strictly enforce passing hostId.
+    if (!props.hostId) {
+        console.warn("AzHelpSubItem requires a valid hostId");
+    }
+    useAzItem({
+        ...props,
+        isRailItem: true,
+        isHelpItem: true,
+        isSubItem: true
+    });
+    return null;
+};

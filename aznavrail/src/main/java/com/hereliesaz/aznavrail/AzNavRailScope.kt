@@ -121,6 +121,19 @@ interface AzNavRailScope {
     fun azHelpRailItem(id: String, text: String = "Help", content: Any? = null, color: Color? = null, shape: AzButtonShape? = null)
 
     /**
+     * Adds an explicit Help trigger item as a SubItem to a Host Item.
+     * When clicked, this item toggles the interactive Help/Info overlay.
+     *
+     * @param id Unique identifier.
+     * @param hostId The unique identifier of the parent Host Item.
+     * @param text Text display.
+     * @param content Custom content.
+     * @param color Custom color.
+     * @param shape Custom shape.
+     */
+    fun azHelpSubItem(id: String, hostId: String, text: String = "Help", content: Any? = null, color: Color? = null, shape: AzButtonShape? = null)
+
+    /**
      * Adds an item to the always-visible rail.
      *
      * @param id Unique identifier for the item.
@@ -479,6 +492,26 @@ class AzNavRailScopeImpl : AzNavRailScope {
                 id = id,
                 text = text,
                 isRailItem = true,
+                content = content,
+                color = color,
+                shape = shape ?: defaultShape
+            )
+        )
+    }
+
+    override fun azHelpSubItem(id: String, hostId: String, text: String, content: Any?, color: Color?, shape: AzButtonShape?) {
+        checkId(id)
+        if (navItems.none { it.id == hostId }) {
+            throw IllegalArgumentException("Host item with ID '$hostId' must be added before adding its sub-items.")
+        }
+        navItems.add(
+            AzNavItem(
+                id = id,
+                text = text,
+                isRailItem = true,
+                isHelpItem = true,
+                isSubItem = true,
+                hostId = hostId,
                 content = content,
                 color = color,
                 shape = shape ?: defaultShape
