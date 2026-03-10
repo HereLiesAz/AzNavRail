@@ -62,8 +62,7 @@ function App() {
                 isCycler: true,
                 info: 'Change app theme',
                 options: ['Light', 'Dark', 'System'],
-                selectedOption: 'System',
-                onClick: (val) => console.log('Theme:', val)
+                selectedOption: 'System'
             }
         ]
     }
