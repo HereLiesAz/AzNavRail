@@ -503,7 +503,7 @@ fun AzNavRail(
                                 isHostExpanded && !isHostNestedRail
                             }
                         }
-                        
+
                         val totalItemHeight = scope.navItems.filter(isItemVisible).sumOf {
                             (AzNavRailDefaults.ButtonWidth.value + (if(scope.packButtons || isFloating) 0f else AzNavRailDefaults.RailContentVerticalArrangement.value)).toDouble()
                         }.dp

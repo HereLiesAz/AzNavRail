@@ -554,16 +554,25 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
 
 
   const effectiveRailItems = useMemo(() => {
-    return items.filter(i => {
-      if (i.isSubItem) return false;
-      if (config.noMenu) return true;
-      return i.isRailItem;
+    const list = [];
+    items.forEach(i => {
+      if (!i.isSubItem && (config.noMenu || i.isRailItem)) {
+          list.push(i);
+          if (hostStates[i.id] && !i.isNestedRail) {
+              const subItems = subItemsMap[i.id] || [];
+              subItems.forEach(sub => {
+                  if (sub.isRailItem) list.push(sub);
+              });
+          }
+      }
     });
-  }, [items, config.noMenu]);
+    return list;
+  }, [items, config.noMenu, hostStates, subItemsMap]);
 
   const railItemsCount = useMemo(() => {
-      return items.filter(i => i.isRailItem && !i.isSubItem).length;
-  }, [items]);
+      // Includes expanded sub-items for height calculation
+      return effectiveRailItems.length;
+  }, [effectiveRailItems]);
 
   const menuItems = useMemo(() => {
     return items.filter(i => !i.isSubItem);

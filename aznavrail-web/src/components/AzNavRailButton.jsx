@@ -21,13 +21,15 @@ const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen, sty
     return text;
   })();
 
-  const isInteractive = infoScreen ? !!onClickOverride : !disabled;
+  const isInteractive = infoScreen ? (!!onClickOverride || item.isHelpItem) : !disabled;
 
   const handleClick = (e) => {
     if (!isInteractive) return;
 
     if (infoScreen) {
-        if (onClickOverride) {
+        if (item.isHelpItem && onClick) {
+            onClick(e);
+        } else if (onClickOverride) {
             onClickOverride(e); // Allow host expansion
         }
         return;

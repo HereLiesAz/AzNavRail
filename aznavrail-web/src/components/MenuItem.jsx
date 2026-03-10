@@ -23,9 +23,15 @@ const MenuItem = ({ item, depth = 0, onToggle, onCyclerClick, isHost, isExpanded
     return <div className="az-menu-divider" style={{ backgroundColor: color, opacity: 0.2 }} />;
   }
 
+  const isInteractive = infoScreen ? (isHost || item.isHelpItem) : !item.disabled;
+
   const handleClick = () => {
+    if (!isInteractive) return;
+
     if (infoScreen) {
-        if (isHost) {
+        if (item.isHelpItem && onClick) {
+            onClick();
+        } else if (isHost) {
             onHostClick();
         }
         return;
