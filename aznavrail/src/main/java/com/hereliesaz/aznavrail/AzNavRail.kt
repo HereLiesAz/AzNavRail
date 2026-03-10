@@ -434,57 +434,61 @@ fun AzNavRail(
                                 scope.navItems
                             }
 
-                            displayItems.filter { !it.isSubItem }.forEach { item ->
-                                MenuItem(
-                                    item = item,
-                                    navController = effectiveNavController,
-                                    isSelected = (item.route != null && item.route == actualCurrentDestination) ||
-                                            item.classifiers.any { it in scope.activeClassifiers },
-                                    onClick = {
-                                        if (item.isHelpItem) {
-                                            toggleHelpOverlay()
-                                        } else {
-                                            scope.onClickMap[item.id]?.invoke()
-                                        }
-                                        if (item.collapseOnClick) isExpanded = false
-                                    },
-                                    onCyclerClick = { scope.onClickMap[item.id]?.invoke() },
-                                    onToggle = { if (item.collapseOnClick) isExpanded = false },
-                                    onItemClick = { if (item.collapseOnClick) isExpanded = false },
-                                    onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
-                                    onItemGloballyPositioned = { id, bounds ->
-                                        scope.itemBoundsCache[id] = bounds
-                                        scope.onItemGloballyPositioned?.invoke(id, bounds)
-                                    },
-                                    helpEnabled = showHelpOverlay,
-                                    activeColor = scope.activeColor
-                                )
+                            displayItems.forEach { item ->
+                                if (!item.isSubItem) {
+                                    MenuItem(
+                                        item = item,
+                                        navController = effectiveNavController,
+                                        isSelected = (item.route != null && item.route == actualCurrentDestination) ||
+                                                item.classifiers.any { it in scope.activeClassifiers },
+                                        onClick = {
+                                            if (item.isHelpItem) {
+                                                toggleHelpOverlay()
+                                            } else {
+                                                scope.onClickMap[item.id]?.invoke()
+                                            }
+                                            if (item.collapseOnClick) isExpanded = false
+                                        },
+                                        onCyclerClick = { scope.onClickMap[item.id]?.invoke() },
+                                        onToggle = { if (item.collapseOnClick) isExpanded = false },
+                                        onItemClick = { if (item.collapseOnClick) isExpanded = false },
+                                        onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
+                                        onItemGloballyPositioned = { id, bounds ->
+                                            scope.itemBoundsCache[id] = bounds
+                                            scope.onItemGloballyPositioned?.invoke(id, bounds)
+                                        },
+                                        helpEnabled = showHelpOverlay,
+                                        activeColor = scope.activeColor
+                                    )
 
-                                if (hostStates[item.id] == true) {
-                                    displayItems.filter { it.isSubItem && it.hostId == item.id }.forEach { subItem ->
-                                        MenuItem(
-                                            item = subItem,
-                                            navController = effectiveNavController,
-                                            isSelected = (subItem.route != null && subItem.route == actualCurrentDestination) ||
-                                                    subItem.classifiers.any { it in scope.activeClassifiers },
-                                            onClick = {
-                                                if (subItem.isHelpItem) {
-                                                    toggleHelpOverlay()
-                                                } else {
-                                                    scope.onClickMap[subItem.id]?.invoke()
-                                                }
-                                                if (subItem.collapseOnClick) isExpanded = false
-                                            },
-                                            onCyclerClick = { scope.onClickMap[subItem.id]?.invoke() },
-                                            onToggle = { if (subItem.collapseOnClick) isExpanded = false },
-                                            onItemClick = { if (subItem.collapseOnClick) isExpanded = false },
-                                            onItemGloballyPositioned = { id, bounds ->
-                                                scope.itemBoundsCache[id] = bounds
-                                                scope.onItemGloballyPositioned?.invoke(id, bounds)
-                                            },
-                                            helpEnabled = showHelpOverlay,
-                                            activeColor = scope.activeColor
-                                        )
+                                    if (hostStates[item.id] == true) {
+                                        displayItems.forEach { subItem ->
+                                            if (subItem.isSubItem && subItem.hostId == item.id) {
+                                                MenuItem(
+                                                    item = subItem,
+                                                    navController = effectiveNavController,
+                                                    isSelected = (subItem.route != null && subItem.route == actualCurrentDestination) ||
+                                                            subItem.classifiers.any { it in scope.activeClassifiers },
+                                                    onClick = {
+                                                        if (subItem.isHelpItem) {
+                                                            toggleHelpOverlay()
+                                                        } else {
+                                                            scope.onClickMap[subItem.id]?.invoke()
+                                                        }
+                                                        if (subItem.collapseOnClick) isExpanded = false
+                                                    },
+                                                    onCyclerClick = { scope.onClickMap[subItem.id]?.invoke() },
+                                                    onToggle = { if (subItem.collapseOnClick) isExpanded = false },
+                                                    onItemClick = { if (subItem.collapseOnClick) isExpanded = false },
+                                                    onItemGloballyPositioned = { id, bounds ->
+                                                        scope.itemBoundsCache[id] = bounds
+                                                        scope.onItemGloballyPositioned?.invoke(id, bounds)
+                                                    },
+                                                    helpEnabled = showHelpOverlay,
+                                                    activeColor = scope.activeColor
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
