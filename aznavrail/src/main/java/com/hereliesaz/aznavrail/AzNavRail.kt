@@ -223,7 +223,25 @@ fun AzNavRail(
     var showHelpOverlay by remember { mutableStateOf(false) }
     val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
 
-    val railWidth by animateDpAsState(targetValue = if (isExpanded) scope.expandedWidth else scope.collapsedWidth)
+    val isVerticalNestedRailOpen = remember(scope.nestedRailOpenId) {
+        val id = scope.nestedRailOpenId
+        if (id != null) {
+            val item = scope.navItems.find { it.id == id }
+            item?.nestedRailAlignment == com.hereliesaz.aznavrail.model.AzNestedRailAlignment.VERTICAL
+        } else {
+            false
+        }
+    }
+
+    val targetRailWidth = if (isVerticalNestedRailOpen) {
+        AzNavRailDefaults.ButtonWidth
+    } else if (isExpanded) {
+        scope.expandedWidth
+    } else {
+        scope.collapsedWidth
+    }
+
+    val railWidth by animateDpAsState(targetValue = targetRailWidth)
 
     val effectiveNavController = navController ?: rememberNavController()
     val navBackStackEntry by effectiveNavController.currentBackStackEntryAsState()
