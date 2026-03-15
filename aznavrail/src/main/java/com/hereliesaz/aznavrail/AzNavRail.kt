@@ -78,6 +78,7 @@ import com.hereliesaz.aznavrail.internal.SecretScreens
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
+import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 import com.hereliesaz.aznavrail.model.AzOrientation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -223,18 +224,12 @@ fun AzNavRail(
     var showHelpOverlay by remember { mutableStateOf(false) }
     val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
 
-    val isVerticalNestedRailOpen = remember(scope.nestedRailOpenId) {
-        val id = scope.nestedRailOpenId
-        if (id != null) {
-            val item = scope.navItems.find { it.id == id }
-            item?.nestedRailAlignment == com.hereliesaz.aznavrail.model.AzNestedRailAlignment.VERTICAL
-        } else {
-            false
-        }
-    }
+    val isVerticalNestedRailOpen = scope.nestedRailOpenId?.let { id ->
+        scope.navItems.any { it.id == id && it.nestedRailAlignment == AzNestedRailAlignment.VERTICAL }
+    } ?: false
 
     // Shrink button size and rail width further when a vertical nested rail is open
-    val activeButtonSize = if (isVerticalNestedRailOpen) 56.dp else AzNavRailDefaults.ButtonWidth
+    val activeButtonSize = if (isVerticalNestedRailOpen) AzNavRailDefaults.ShrunkButtonWidth else AzNavRailDefaults.ButtonWidth
 
     val targetRailWidth = if (isVerticalNestedRailOpen) {
         activeButtonSize + (AzNavRailDefaults.RailContentHorizontalPadding * 2)

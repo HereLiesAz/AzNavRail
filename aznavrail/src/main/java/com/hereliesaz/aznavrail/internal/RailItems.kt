@@ -92,7 +92,7 @@ internal fun RailItems(
     var currentDropTargetIndex by remember { mutableStateOf<Int?>(null) }
     var nestedRailOpenId by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(nestedRailOpenId) {
+    LaunchedEffect(nestedRailOpenId, scope) {
         scope.nestedRailOpenId = nestedRailOpenId
     }
 
