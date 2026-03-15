@@ -51,7 +51,7 @@ internal fun Footer(
 
         Text(
             text = "About",
-            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, color = footerColor),
             modifier = Modifier
                 .clickable {
                     try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(scope.appRepositoryUrl))) } catch (e: Exception) {}
@@ -61,7 +61,7 @@ internal fun Footer(
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "Feedback",
-            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, color = footerColor),
             modifier = Modifier
                 .clickable {
                     try {
@@ -77,7 +77,7 @@ internal fun Footer(
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "@HereLiesAz",
-            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, color = footerColor),
             modifier = Modifier
                 .clickable {
                     try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://instagram.com/HereLiesAz"))) } catch (e: Exception) {}
