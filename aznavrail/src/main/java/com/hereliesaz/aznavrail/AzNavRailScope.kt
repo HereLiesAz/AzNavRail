@@ -5,6 +5,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
@@ -356,6 +359,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     val onRelocateMap = mutableMapOf<String, (Int, Int, List<String>) -> Unit>()
     val itemBoundsCache = mutableStateMapOf<String, Rect>()
     var navController: NavController? = null
+    var nestedRailOpenId: String? by mutableStateOf<String?>(null)
 
     fun reset() {
         navItems.clear()
@@ -365,6 +369,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         hiddenMenuOnValueChangeMap.clear()
         onRelocateMap.clear()
         itemBoundsCache.clear()
+        nestedRailOpenId = null
     }
 
     // Config
