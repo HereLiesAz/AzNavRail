@@ -369,7 +369,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         hiddenMenuOnValueChangeMap.clear()
         onRelocateMap.clear()
         itemBoundsCache.clear()
-        nestedRailOpenId = null
+
     }
 
     // Config
