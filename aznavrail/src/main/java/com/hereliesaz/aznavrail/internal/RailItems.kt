@@ -94,6 +94,10 @@ internal fun RailItems(
 
 
 
+    LaunchedEffect(nestedRailOpenId, scope) {
+        scope.nestedRailOpenId = nestedRailOpenId
+    }
+
     val snappingOffsets = remember { androidx.compose.runtime.mutableStateMapOf<String, Animatable<Float, androidx.compose.animation.core.AnimationVector1D>>() }
     var lastTappedId by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
