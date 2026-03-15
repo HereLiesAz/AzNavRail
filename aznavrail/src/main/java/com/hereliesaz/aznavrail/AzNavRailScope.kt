@@ -359,7 +359,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     val onRelocateMap = mutableMapOf<String, (Int, Int, List<String>) -> Unit>()
     val itemBoundsCache = mutableStateMapOf<String, Rect>()
     var navController: NavController? = null
-    var nestedRailOpenId: String? by androidx.compose.runtime.mutableStateOf<String?>(null)
+    var nestedRailOpenId: String? by mutableStateOf<String?>(null)
 
     fun reset() {
         navItems.clear()
