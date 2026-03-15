@@ -57,6 +57,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -89,7 +90,9 @@ internal fun RailItems(
     var itemWidths by remember { mutableStateOf(mapOf<String, Int>()) }
     var hiddenMenuOpenId by remember { mutableStateOf<String?>(null) }
     var currentDropTargetIndex by remember { mutableStateOf<Int?>(null) }
-    var nestedRailOpenId by remember { mutableStateOf<String?>(null) }
+
+
+
 
     val snappingOffsets = remember { androidx.compose.runtime.mutableStateMapOf<String, Animatable<Float, androidx.compose.animation.core.AnimationVector1D>>() }
     var lastTappedId by remember { mutableStateOf<String?>(null) }
@@ -113,10 +116,10 @@ internal fun RailItems(
 
     Box(modifier = Modifier.pointerInput(Unit) {
         detectTapGestures(onTap = {
-            if (nestedRailOpenId != null) {
-                val openNestedItem = scope.navItems.find { it.id == nestedRailOpenId }
+            if (scope.nestedRailOpenId != null) {
+                val openNestedItem = scope.navItems.find { it.id == scope.nestedRailOpenId }
                 if (openNestedItem?.keepNestedRailOpen != true) {
-                    nestedRailOpenId = null
+                    scope.nestedRailOpenId = null
                 }
             }
         })
@@ -185,8 +188,8 @@ internal fun RailItems(
                             onUpdateLastTappedId = { id -> lastTappedId = id },
                             snappingOffset = snappingOffsets[item.id]?.value,
                             visualDockingSide = visualDockingSide,
-                            nestedRailOpenId = nestedRailOpenId,
-                            onNestedRailToggle = { nestedRailOpenId = it }
+                            nestedRailOpenId = scope.nestedRailOpenId,
+                            onNestedRailToggle = { scope.nestedRailOpenId = it }
                         )
 
                         AnimatedVisibility(visible = item.isHost && (hostStates[item.id] ?: false)) {
@@ -259,8 +262,8 @@ internal fun RailItems(
                                             onUpdateLastTappedId = { id -> lastTappedId = id },
                                             snappingOffset = snappingOffsets[subItem.id]?.value,
                                             visualDockingSide = visualDockingSide,
-                                            nestedRailOpenId = nestedRailOpenId,
-                                            onNestedRailToggle = { nestedRailOpenId = it }
+                                            nestedRailOpenId = scope.nestedRailOpenId,
+                                            onNestedRailToggle = { scope.nestedRailOpenId = it }
                                         )
                                     }
                                 }
@@ -529,11 +532,11 @@ private fun DraggableRailItemWrapper(
                     onClick = {
                         scope.onFocusMap[item.id]?.invoke()
                         if (item.isNestedRail) {
-                            onNestedRailToggle(if (nestedRailOpenId == item.id) null else item.id)
+                            onNestedRailToggle(if (scope.nestedRailOpenId == item.id) null else item.id)
                             scope.onClickMap[item.id]?.invoke()
                         } else {
-                            if (nestedRailOpenId != null) {
-                                val openItem = scope.navItems.find { it.id == nestedRailOpenId }
+                            if (scope.nestedRailOpenId != null) {
+                                val openItem = scope.navItems.find { it.id == scope.nestedRailOpenId }
                                 if (openItem?.keepNestedRailOpen != true) {
                                     onNestedRailToggle(null)
                                 }
@@ -561,7 +564,7 @@ private fun DraggableRailItemWrapper(
             }
         }
 
-        if (nestedRailOpenId == item.id && item.isNestedRail) {
+        if (scope.nestedRailOpenId == item.id && item.isNestedRail) {
             val anchorWidthPx = itemWidths[item.id] ?: 0
             if (item.nestedRailAlignment == AzNestedRailAlignment.VERTICAL) {
                 Popup(

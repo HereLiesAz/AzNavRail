@@ -80,7 +80,7 @@ internal fun AzNavRailButton(
             .aspectRatio(1f)
         AzButtonShape.RECTANGLE, AzButtonShape.NONE -> modifier
             .width(size) // Fixed identical width
-            .height(48.dp) // Fixed height variant
+            .height(40.dp) // Decreased fixed height variant
     }
 
     val disabledColor = color.copy(alpha = 0.38f)
