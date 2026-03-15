@@ -224,19 +224,23 @@ fun AzNavRail(
     var showHelpOverlay by remember { mutableStateOf(false) }
     val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
 
-    val isVerticalNestedRailOpen = scope.nestedRailOpenId?.let { id ->
-        scope.navItems.any { it.id == id && it.nestedRailAlignment == AzNestedRailAlignment.VERTICAL }
-    } ?: false
+    val isVerticalNestedRailOpen by remember {
+        derivedStateOf {
+            scope.nestedRailOpenId?.let { id ->
+                scope.navItems.any { it.id == id && it.nestedRailAlignment == AzNestedRailAlignment.VERTICAL }
+            } ?: false
+        }
+    }
 
     // Shrink button size and rail width further when a vertical nested rail is open
     val activeButtonSize = if (isVerticalNestedRailOpen) AzNavRailDefaults.ShrunkButtonWidth else AzNavRailDefaults.ButtonWidth
 
-    val targetRailWidth = if (isVerticalNestedRailOpen) {
-        activeButtonSize + (AzNavRailDefaults.RailContentHorizontalPadding * 2)
-    } else if (isExpanded) {
+    val targetRailWidth = if (isExpanded) {
         scope.expandedWidth
+    } else if (isVerticalNestedRailOpen) {
+        60.dp
     } else {
-        activeButtonSize + (AzNavRailDefaults.RailContentHorizontalPadding * 2)
+        scope.collapsedWidth
     }
 
     val railWidth by animateDpAsState(targetValue = targetRailWidth)
@@ -413,7 +417,7 @@ fun AzNavRail(
                     } else {
                         // Reverts to identical App Icon logic
                         Box(
-                            modifier = Modifier.size(activeButtonSize),
+                            modifier = Modifier.size(minOf(100.dp, targetRailWidth)),
                             contentAlignment = Alignment.Center
                         ) {
                             if (appIcon != null) {

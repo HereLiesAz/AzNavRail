@@ -42,7 +42,7 @@ interface AzNavRailScope {
      * @param showFooter Whether to show the footer (Privacy, Terms, Help) in the menu.
      * @param appRepositoryUrl The URL of the application's repository to link to in the footer's "About" section. Defaults to the AzNavRail repo.
      */
-    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 160.dp, collapsedWidth: Dp = 72.dp, showFooter: Boolean = true, appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail")
+    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 160.dp, collapsedWidth: Dp = 100.dp, showFooter: Boolean = true, appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail")
 
     /**
      * Configures the visual theme of the rail.
@@ -374,7 +374,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
 
     // Config
     var expandedWidth: Dp = 160.dp
-    var collapsedWidth: Dp = 72.dp
+    var collapsedWidth: Dp = 100.dp
     var showFooter: Boolean = true
     var appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail"
     var dockingSide: AzDockingSide = AzDockingSide.LEFT
