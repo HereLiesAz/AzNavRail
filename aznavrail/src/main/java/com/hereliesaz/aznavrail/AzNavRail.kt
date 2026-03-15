@@ -236,7 +236,7 @@ fun AzNavRail(
     } else if (isExpanded) {
         scope.expandedWidth
     } else {
-        scope.collapsedWidth
+        activeButtonSize + (AzNavRailDefaults.RailContentHorizontalPadding * 2)
     }
 
     val railWidth by animateDpAsState(targetValue = targetRailWidth)
