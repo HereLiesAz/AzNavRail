@@ -91,7 +91,7 @@ internal fun RailItems(
     var currentDropTargetIndex by remember { mutableStateOf<Int?>(null) }
     var nestedRailOpenId by remember { mutableStateOf<String?>(null) }
 
-    androidx.compose.runtime.LaunchedEffect(nestedRailOpenId) {
+    LaunchedEffect(nestedRailOpenId) {
         scope.nestedRailOpenId = nestedRailOpenId
     }
 
