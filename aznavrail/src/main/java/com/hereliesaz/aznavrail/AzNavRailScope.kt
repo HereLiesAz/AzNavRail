@@ -5,6 +5,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
@@ -39,7 +42,7 @@ interface AzNavRailScope {
      * @param showFooter Whether to show the footer (Privacy, Terms, Help) in the menu.
      * @param appRepositoryUrl The URL of the application's repository to link to in the footer's "About" section. Defaults to the AzNavRail repo.
      */
-    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 160.dp, collapsedWidth: Dp = 112.dp, showFooter: Boolean = true, appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail")
+    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 160.dp, collapsedWidth: Dp = 100.dp, showFooter: Boolean = true, appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail")
 
     /**
      * Configures the visual theme of the rail.
@@ -356,6 +359,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     val onRelocateMap = mutableMapOf<String, (Int, Int, List<String>) -> Unit>()
     val itemBoundsCache = mutableStateMapOf<String, Rect>()
     var navController: NavController? = null
+    var nestedRailOpenId: String? by mutableStateOf(null)
 
     fun reset() {
         navItems.clear()
@@ -365,11 +369,12 @@ class AzNavRailScopeImpl : AzNavRailScope {
         hiddenMenuOnValueChangeMap.clear()
         onRelocateMap.clear()
         itemBoundsCache.clear()
+        nestedRailOpenId = null
     }
 
     // Config
     var expandedWidth: Dp = 160.dp
-    var collapsedWidth: Dp = 112.dp
+    var collapsedWidth: Dp = 100.dp
     var showFooter: Boolean = true
     var appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail"
     var dockingSide: AzDockingSide = AzDockingSide.LEFT

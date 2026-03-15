@@ -231,6 +231,8 @@ azRailRelocItem(
 
 Secondary rails that open in a popup overlay. Do NOT assign a route to the parent item.
 
+**Dynamic Bumping Effect:** When a vertical nested rail is opened, the main navigation rail will dynamically decrease its width (shrinking to the button width) to simulate the nested rail bumping it out of the way. Closing the nested rail restores the main rail to its original width.
+
 ```kotlin
 // Vertical Nested Rail
 azNestedRail(

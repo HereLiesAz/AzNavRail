@@ -57,6 +57,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -90,6 +91,10 @@ internal fun RailItems(
     var hiddenMenuOpenId by remember { mutableStateOf<String?>(null) }
     var currentDropTargetIndex by remember { mutableStateOf<Int?>(null) }
     var nestedRailOpenId by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(nestedRailOpenId, scope) {
+        scope.nestedRailOpenId = nestedRailOpenId
+    }
 
     val snappingOffsets = remember { androidx.compose.runtime.mutableStateMapOf<String, Animatable<Float, androidx.compose.animation.core.AnimationVector1D>>() }
     var lastTappedId by remember { mutableStateOf<String?>(null) }

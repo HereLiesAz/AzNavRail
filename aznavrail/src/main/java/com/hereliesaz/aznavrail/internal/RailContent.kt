@@ -83,7 +83,7 @@ internal fun RailContent(
             modifier = Modifier,
             color = item.color ?: MaterialTheme.colorScheme.primary,
             activeColor = activeColor ?: MaterialTheme.colorScheme.primary,
-            size = AzNavRailDefaults.ButtonWidth,
+            size = buttonSize,
             shape = item.shape,
             enabled = isEnabled,
             isSelected = isSelected
