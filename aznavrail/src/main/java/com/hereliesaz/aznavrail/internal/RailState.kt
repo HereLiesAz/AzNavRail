@@ -32,7 +32,8 @@ internal object AzNavRailDefaults {
     val HeaderPadding = 8.dp
 
     // COMPULSORY: All rail items, buttons, and app icons share this strict unified width.
-    val ButtonWidth = 100.dp
+    val ButtonWidth = 72.dp
+    val ShrunkButtonWidth = 56.dp
 
     val HeaderTextSpacer = 8.dp
     val RailContentHorizontalPadding = 4.dp
