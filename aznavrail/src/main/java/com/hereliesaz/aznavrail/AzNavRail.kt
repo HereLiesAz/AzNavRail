@@ -224,13 +224,7 @@ fun AzNavRail(
     val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
 
     val isVerticalNestedRailOpen = remember(scope.nestedRailOpenId) {
-        val id = scope.nestedRailOpenId
-        if (id != null) {
-            val item = scope.navItems.find { it.id == id }
-            item?.nestedRailAlignment == com.hereliesaz.aznavrail.model.AzNestedRailAlignment.VERTICAL
-        } else {
-            false
-        }
+        scope.navItems.find { it.id == scope.nestedRailOpenId }?.nestedRailAlignment == com.hereliesaz.aznavrail.model.AzNestedRailAlignment.VERTICAL
     }
 
     // Shrink button size and rail width further when a vertical nested rail is open
