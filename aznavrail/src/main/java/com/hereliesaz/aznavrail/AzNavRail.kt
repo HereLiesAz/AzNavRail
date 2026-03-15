@@ -233,8 +233,11 @@ fun AzNavRail(
         }
     }
 
+    // Shrink button size and rail width further when a vertical nested rail is open
+    val activeButtonSize = if (isVerticalNestedRailOpen) 56.dp else AzNavRailDefaults.ButtonWidth
+
     val targetRailWidth = if (isVerticalNestedRailOpen) {
-        AzNavRailDefaults.ButtonWidth
+        activeButtonSize + (AzNavRailDefaults.RailContentHorizontalPadding * 2)
     } else if (isExpanded) {
         scope.expandedWidth
     } else {
@@ -415,7 +418,7 @@ fun AzNavRail(
                     } else {
                         // Reverts to identical App Icon logic
                         Box(
-                            modifier = Modifier.size(AzNavRailDefaults.ButtonWidth),
+                            modifier = Modifier.size(activeButtonSize),
                             contentAlignment = Alignment.Center
                         ) {
                             if (appIcon != null) {
@@ -527,7 +530,7 @@ fun AzNavRail(
                         }
 
                         val totalItemHeight = scope.navItems.filter(isItemVisible).sumOf {
-                            (AzNavRailDefaults.ButtonWidth.value + (if(scope.packButtons || isFloating) 0f else AzNavRailDefaults.RailContentVerticalArrangement.value)).toDouble()
+                            (activeButtonSize.value + (if(scope.packButtons || isFloating) 0f else AzNavRailDefaults.RailContentVerticalArrangement.value)).toDouble()
                         }.dp
 
                         val availableHeight = maxHeight
@@ -546,7 +549,7 @@ fun AzNavRail(
                                 scope = scope,
                                 navController = effectiveNavController,
                                 currentDestination = actualCurrentDestination,
-                                buttonSize = AzNavRailDefaults.ButtonWidth,
+                                buttonSize = activeButtonSize,
                                 onRailCyclerClick = { item ->
                                     val state = cyclerStates[item.id]
                                     if (state != null && !item.disabled) {
