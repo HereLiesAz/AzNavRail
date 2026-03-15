@@ -144,7 +144,7 @@ internal fun MenuItem(
                 lines.forEachIndexed { index, line ->
                     Text(
                         text = line,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleLarge,
                         color = textColor,
                         modifier = if (index > 0) Modifier.padding(start = 16.dp) else Modifier
                     )
