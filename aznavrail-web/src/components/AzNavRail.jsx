@@ -186,6 +186,7 @@ const AzNavRail = ({
 
       dragStartY.current = e.clientY;
       const initialIndex = itemsRef.current.findIndex(it => it.id === item.id);
+      let currentIndex = initialIndex;
 
       longPressTimer.current = setTimeout(() => {
           setHiddenMenuOpenId(null); // Close menu if dragging starts
@@ -207,19 +208,18 @@ const AzNavRail = ({
               const slotsMoved = Math.round(diff / itemHeight);
               const currentItems = itemsRef.current;
 
-              if (slotsMoved !== 0) {
-                  const currentIndex = currentItems.findIndex(it => it.id === item.id);
-                  if (currentIndex !== -1) {
-                      const targetIndex = currentIndex + slotsMoved;
-                      if (targetIndex >= 0 && targetIndex < currentItems.length) {
-                          const cluster = RelocItemHandler.findCluster(currentItems, item.id);
-                          if (cluster && targetIndex >= cluster.start && targetIndex <= cluster.end) {
-                              const newItems = RelocItemHandler.updateOrder(currentItems, item.id, targetIndex);
-                              if (newItems !== currentItems) {
-                                  setLocalNavItems(newItems);
-                                  dragStartY.current = moveEvent.clientY;
-                                  setDragOffset(0);
-                              }
+              if (slotsMoved !== 0 && currentIndex !== -1) {
+                  const targetIndex = currentIndex + slotsMoved;
+                  if (targetIndex >= 0 && targetIndex < currentItems.length) {
+                      const cluster = RelocItemHandler.findCluster(currentItems, item.id, currentIndex);
+                      if (cluster && targetIndex >= cluster.start && targetIndex <= cluster.end) {
+                          const newItems = RelocItemHandler.updateOrder(currentItems, item.id, targetIndex, currentIndex);
+                          if (newItems !== currentItems) {
+                              itemsRef.current = newItems;
+                              setLocalNavItems(newItems);
+                              currentIndex = targetIndex;
+                              dragStartY.current = moveEvent.clientY;
+                              setDragOffset(0);
                           }
                       }
                   }
@@ -232,9 +232,7 @@ const AzNavRail = ({
               clearTimeout(longPressTimer.current);
           }
           const finalItems = itemsRef.current;
-          const initialIdx = itemsRef.current.findIndex(it => it.id === item.id); // Re-find in case index changed?
-          // Actually itemsRef updates on state change, so finding by ID is safer.
-          const finalIndex = finalItems.findIndex(it => it.id === item.id);
+          const finalIndex = currentIndex;
 
           if (item.onRelocate && initialIndex !== -1 && finalIndex !== -1 && initialIndex !== finalIndex) {
                 // Trigger relocate only if moved
