@@ -1,7 +1,10 @@
 
 export const RelocItemHandler = {
-  findCluster: (items, itemId) => {
-    const index = items.findIndex(it => it.id === itemId);
+  findCluster: (items, itemId, knownIndex = -1) => {
+    let index = knownIndex;
+    if (index === -1 || index >= items.length || items[index].id !== itemId) {
+        index = items.findIndex(it => it.id === itemId);
+    }
     if (index === -1) return null;
 
     const item = items[index];
@@ -30,12 +33,12 @@ export const RelocItemHandler = {
     return { start, end };
   },
 
-  updateOrder: (items, draggedId, targetIndex) => {
-    const currentIndex = items.findIndex(it => it.id === draggedId);
+  updateOrder: (items, draggedId, targetIndex, knownCurrentIndex = -1) => {
+    const currentIndex = knownCurrentIndex !== -1 ? knownCurrentIndex : items.findIndex(it => it.id === draggedId);
     if (currentIndex === -1 || currentIndex === targetIndex) return items;
 
     // Check cluster
-    const cluster = RelocItemHandler.findCluster(items, draggedId);
+    const cluster = RelocItemHandler.findCluster(items, draggedId, currentIndex);
     if (!cluster || targetIndex < cluster.start || targetIndex > cluster.end) return items;
 
     const newItems = [...items];
