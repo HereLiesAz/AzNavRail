@@ -102,12 +102,15 @@ fun MainApp() {
             }
         )
 
-        // Demonstrating Dynamic Content (Color)
+        // Demonstrating Dynamic Content (Color) and Custom Texts/Colors
         azRailItem(
             id = "color-item",
             text = "Color",
+            menuText = "Custom Menu Text",
+            textColor = Color.White,
+            fillColor = Color.Blue,
             content = Color.Red,
-            info = "Demonstrates dynamic content with Color",
+            info = "Demonstrates dynamic content with Color and Custom Text/Colors",
             onClick = { Log.d(TAG, "Color item clicked") }
         )
 

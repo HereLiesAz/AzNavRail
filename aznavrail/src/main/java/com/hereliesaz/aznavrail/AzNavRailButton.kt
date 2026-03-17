@@ -53,6 +53,8 @@ internal fun AzNavRailButton(
     size: Dp = AzNavRailDefaults.ButtonWidth,
     color: Color = MaterialTheme.colorScheme.primary,
     activeColor: Color = MaterialTheme.colorScheme.primary,
+    textColor: Color? = null,
+    fillColor: Color? = null,
     colors: ButtonColors? = null,
     shape: AzButtonShape = AzButtonShape.CIRCLE,
     enabled: Boolean = true,
@@ -87,11 +89,16 @@ internal fun AzNavRailButton(
     val targetColor = if (isPressed || isSelected) activeColor else color
     val finalColor = if (enabled) targetColor else disabledColor
 
+    val baseFillColor = fillColor ?: finalColor
+    val activeFillColor = fillColor ?: activeColor
+
     val containerColor = if (isSelected && !isPressed) {
-        activeColor.copy(alpha = 0.12f)
+        activeFillColor.copy(alpha = 0.12f)
     } else {
-        finalColor.copy(alpha = 0.25f)
+        baseFillColor.copy(alpha = 0.25f)
     }
+
+    val finalTextColor = textColor ?: finalColor
 
     val clickableModifier = if (enabled && (onClick != null || onLongClick != null)) {
         Modifier.combinedClickable(
@@ -125,13 +132,13 @@ internal fun AzNavRailButton(
                 contentAlignment = Alignment.Center
             ) {
                 if (itemContent != null) {
-                    ItemContentRenderer(itemContent, finalColor, enabled)
+                    ItemContentRenderer(itemContent, finalTextColor, enabled)
                 } else {
                     AutoSizeText(
                         text = text,
                         style = MaterialTheme.typography.bodySmall.copy(
                             textAlign = TextAlign.Center,
-                            color = finalColor
+                            color = finalTextColor
                         ),
                         modifier = Modifier.fillMaxSize(),
                         maxLines = if (text.contains("\n")) Int.MAX_VALUE else 1,
