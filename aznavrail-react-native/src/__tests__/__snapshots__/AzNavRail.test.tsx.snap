@@ -1,0 +1,102 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`AzNavRail renders correctly with rail items 1`] = `
+<View
+  style={
+    {
+      "flex": 1,
+      "flexDirection": "row",
+      "height": "100%",
+    }
+  }
+>
+  <View
+    style={
+      [
+        {
+          "backgroundColor": "#f0f0f0",
+          "borderColor": "#ddd",
+          "overflow": "hidden",
+        },
+        {
+          "borderLeftWidth": 0,
+          "borderRightWidth": 1,
+          "height": "100%",
+          "position": "relative",
+          "transform": [],
+          "width": Value {
+            "addListener": [MockFunction],
+            "interpolate": [MockFunction],
+            "removeListener": [MockFunction],
+            "setValue": [MockFunction],
+            "val": 80,
+          },
+          "zIndex": 1,
+        },
+      ]
+    }
+  >
+    <TouchableOpacity
+      accessibilityHint="Double tap to toggle, long press to drag"
+      accessibilityLabel="Expand Menu"
+      accessibilityRole="button"
+      delayLongPress={500}
+      onLayout={[Function]}
+      onLongPress={[Function]}
+      onPress={[Function]}
+      style={
+        [
+          {
+            "alignItems": "center",
+            "padding": 16,
+          },
+          {
+            "flexDirection": "row",
+          },
+        ]
+      }
+    >
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "backgroundColor": "gray",
+            "borderRadius": 24,
+            "height": 48,
+            "justifyContent": "center",
+            "width": 48,
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "color": "white",
+            }
+          }
+        >
+          Icon
+        </Text>
+      </View>
+    </TouchableOpacity>
+    <ScrollView
+      contentContainerStyle={
+        {
+          "alignItems": "center",
+          "paddingHorizontal": 12,
+          "paddingVertical": 8,
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      {
+        "flex": 1,
+        "marginBottom": "10%",
+        "marginTop": "20%",
+      }
+    }
+  />
+</View>
+`;

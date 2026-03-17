@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
+import android.util.Log
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -59,9 +61,30 @@ internal fun MenuItem(
     val isPressed by interactionSource.collectIsPressedAsState()
 
     val textToShow = when {
-        item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
-        item.isCycler -> item.selectedOption ?: ""
-        else -> item.text
+        item.isToggle -> if (item.isChecked == true) item.menuToggleOnText ?: item.toggleOnText else item.menuToggleOffText ?: item.toggleOffText
+        item.isCycler -> {
+            // Find the index of the selected option, and use the menu option at that index if available.
+            // If configuration is inconsistent, log a warning so it is visible during development.
+            val index = item.options?.indexOf(item.selectedOption) ?: -1
+            val menuOptions = item.menuOptions
+
+            if (index != -1 && menuOptions != null && index in menuOptions.indices) {
+                menuOptions[index]
+            } else {
+                if (menuOptions != null) {
+                    Log.w(
+                        "MenuItem",
+                        "Cycler configuration mismatch for item='${item.text}': " +
+                            "selectedOption='${item.selectedOption}', " +
+                            "index=$index, " +
+                            "optionsSize=${item.options?.size}, " +
+                            "menuOptionsSize=${menuOptions.size}"
+                    )
+                }
+                item.selectedOption ?: ""
+            }
+        }
+        else -> item.menuText ?: item.text
     }
 
     // Interaction Logic:
@@ -117,7 +140,7 @@ internal fun MenuItem(
     }
 
     val effectiveActiveColor = activeColor ?: MaterialTheme.colorScheme.primary
-    val effectiveDefaultColor = item.color ?: MaterialTheme.colorScheme.primary
+    val effectiveDefaultColor = item.textColor ?: item.color ?: MaterialTheme.colorScheme.primary
 
     val textColor = if (isDisabled) {
         effectiveDefaultColor.copy(alpha = 0.5f)
@@ -125,10 +148,18 @@ internal fun MenuItem(
         effectiveDefaultColor
     }
 
+    val backgroundColor = if (isSelected && !isPressed) {
+        (item.fillColor ?: effectiveActiveColor).copy(alpha = 0.12f)
+    } else {
+        androidx.compose.ui.graphics.Color.Transparent
+    }
+
     Box(
-        modifier = Modifier.onGloballyPositioned { coordinates ->
-            onItemGloballyPositioned?.invoke(item.id, coordinates.boundsInWindow())
-        }
+        modifier = Modifier
+            .onGloballyPositioned { coordinates ->
+                onItemGloballyPositioned?.invoke(item.id, coordinates.boundsInWindow())
+            }
+            .background(backgroundColor)
     ) {
         Row(
             modifier = modifier

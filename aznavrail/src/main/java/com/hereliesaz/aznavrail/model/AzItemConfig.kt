@@ -3,22 +3,25 @@ package com.hereliesaz.aznavrail.model
 import androidx.compose.ui.graphics.Color
 
 /**
- * Configuration data class for an AzNavRail item.
- *
- * @param color The color of the item.
- * @param shape The shape of the item.
- * @param disabled Whether the item is disabled.
- * @param screenTitle The title to display on the screen when this item is active.
- * @param info The help text for the info screen.
- * @param classifiers A set of strings to classify this item.
- * @param onFocus Callback invoked when the item gains focus.
+ * Internal configuration object used to group common parameters
+ * passed from the DSL methods to the internal helper functions
+ * ([addItem], [addToggle], [addCycler]) in order to avoid excessively
+ * long parameter lists.
  */
 data class AzItemConfig(
-    val color: Color? = null,
-    val shape: AzButtonShape? = null,
-    val disabled: Boolean = false,
+    val route: String? = null,
     val screenTitle: String? = null,
     val info: String? = null,
+    val isRailItem: Boolean = false,
+    val disabled: Boolean = false,
+    val isHost: Boolean = false,
+    val isSubItem: Boolean = false,
+    val hostId: String? = null,
     val classifiers: Set<String> = emptySet(),
-    val onFocus: (() -> Unit)? = null
+    val onFocus: (() -> Unit)? = null,
+    val content: Any? = null,
+    val color: Color? = null,
+    val textColor: Color? = null,
+    val fillColor: Color? = null,
+    val shape: AzButtonShape? = null
 )

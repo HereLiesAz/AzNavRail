@@ -116,6 +116,8 @@ object AzTextBoxDefaults {
  * @param trailingIcon An optional composable to display at the end of the text box (before system icons).
  * @param enabled Whether the text box is enabled and interactive.
  * @param outlineColor The color for the outline, text, and icons.
+ * @param textColor The color for the text (overrides outlineColor).
+ * @param fillColor The background fill color of the text box (overrides AzTextBoxDefaults.backgroundColor).
  * @param showClearButton Whether to show the clear/reveal button.
  * @param focusRequester An optional [androidx.compose.ui.focus.FocusRequester] to control focus programmatically.
  * @param submitButtonContent Optional content for a built-in submit button.
@@ -141,6 +143,8 @@ fun AzTextBox(
     trailingIcon: @Composable (() -> Unit)? = null,
     enabled: Boolean = true,
     outlineColor: Color = MaterialTheme.colorScheme.primary,
+    textColor: Color? = null,
+    fillColor: Color? = null,
     showClearButton: Boolean = true,
     focusRequester: androidx.compose.ui.focus.FocusRequester? = null,
     submitButtonContent: (@Composable () -> Unit)? = null,
@@ -167,7 +171,7 @@ fun AzTextBox(
     var suggestions by remember { mutableStateOf<List<String>>(emptyList()) }
     val context = LocalContext.current
     val suggestionLimit = AzTextBoxDefaults.getSuggestionLimit()
-    val backgroundColor = AzTextBoxDefaults.getBackgroundColor().copy(alpha = AzTextBoxDefaults.getBackgroundOpacity())
+    val backgroundColor = fillColor ?: AzTextBoxDefaults.getBackgroundColor().copy(alpha = AzTextBoxDefaults.getBackgroundOpacity())
     var isPasswordVisible by remember { mutableStateOf(false) }
     var componentHeight by remember { mutableIntStateOf(0) }
     var componentWidth by remember { mutableIntStateOf(0) }
@@ -178,6 +182,14 @@ fun AzTextBox(
         outlineColor.copy(alpha = 0.5f)
     } else {
         outlineColor
+    }
+
+    val effectiveTextColor = if (isError) {
+        MaterialTheme.colorScheme.error
+    } else if (!enabled) {
+        (textColor ?: outlineColor).copy(alpha = 0.5f)
+    } else {
+        textColor ?: outlineColor
     }
 
     LaunchedEffect(suggestionLimit) {
@@ -223,7 +235,7 @@ fun AzTextBox(
                         .padding(horizontal = 12.dp, vertical = 8.dp)
                         .testTag(hint)
                         .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier),
-                    textStyle = TextStyle(fontSize = 10.sp, color = effectiveColor),
+                    textStyle = TextStyle(fontSize = 10.sp, color = effectiveTextColor),
                     singleLine = !multiline,
                     cursorBrush = SolidColor(effectiveColor),
                     visualTransformation = if (secret && !isPasswordVisible) PasswordVisualTransformation() else VisualTransformation.None,
@@ -243,7 +255,7 @@ fun AzTextBox(
                         }
                         Box(modifier = Modifier.weight(1f)) {
                             if (text.isEmpty()) {
-                                Text(text = hint, fontSize = 10.sp, color = if(enabled) Color.Gray else Color.Gray.copy(alpha = 0.5f))
+                                Text(text = hint, fontSize = 10.sp, color = if(enabled) effectiveTextColor.copy(alpha = 0.5f) else effectiveTextColor.copy(alpha = 0.3f))
                             }
                             innerTextField()
                         }
@@ -294,7 +306,7 @@ fun AzTextBox(
             }
             if (submitButtonContent != null) {
                 Spacer(modifier = Modifier.width(8.dp))
-                CompositionLocalProvider(LocalContentColor provides effectiveColor) {
+                CompositionLocalProvider(LocalContentColor provides effectiveTextColor) {
                     Box(
                         modifier = Modifier
                             .then(if (enabled) Modifier.clickable {
