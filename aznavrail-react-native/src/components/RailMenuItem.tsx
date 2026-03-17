@@ -45,7 +45,28 @@ export const RailMenuItem: React.FC<RailMenuItemProps> = ({
         }
     };
 
-    const displayText = item.text || (item.isChecked ? item.toggleOnText : item.toggleOffText) || displayOption || '';
+
+    let displayText = item.menuText ?? item.text;
+    if (item.isToggle) {
+        displayText = item.isChecked
+            ? (item.menuToggleOnText ?? item.toggleOnText)
+            : (item.menuToggleOffText ?? item.toggleOffText);
+    } else if (item.isCycler) {
+        if (item.options && displayOption) {
+            const idx = item.options.indexOf(displayOption);
+            if (idx !== -1 && item.menuOptions && idx >= 0 && idx < item.menuOptions.length) {
+                displayText = item.menuOptions[idx];
+            } else {
+                if (item.menuOptions) {
+                    console.warn(`Cycler configuration mismatch for item='${item.text}': selectedOption='${displayOption}', index=${idx}, optionsSize=${item.options.length}, menuOptionsSize=${item.menuOptions.length}`);
+                }
+                displayText = displayOption;
+            }
+        } else {
+            displayText = displayOption || '';
+        }
+    }
+
 
     const accessibilityState: any = {};
     if (item.isToggle) accessibilityState.checked = item.isChecked;
@@ -55,12 +76,12 @@ export const RailMenuItem: React.FC<RailMenuItemProps> = ({
         <View>
             <TouchableOpacity
                 onPress={handlePress}
-                style={[styles.menuItem, { paddingLeft: 16 + (depth * 16) }]}
+                style={[styles.menuItem, { paddingLeft: 16 + (depth * 16), backgroundColor: (!item.isHost) ? `${item.fillColor ?? item.color ?? '#000000'}1F` : 'transparent' }]}
                 accessibilityRole={item.isToggle ? "switch" : "menuitem"}
                 accessibilityLabel={displayText}
                 accessibilityState={accessibilityState}
             >
-                <Text style={[styles.menuItemText, { fontWeight: item.isHost ? 'bold' : 'normal' }]}>
+                <Text style={[styles.menuItemText, { fontWeight: item.isHost ? 'bold' : 'normal', color: item.textColor ?? item.color ?? '#000000' }]}>
                     {displayText}
                 </Text>
                 {item.isHost && (

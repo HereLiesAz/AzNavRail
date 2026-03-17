@@ -1,5 +1,5 @@
 import React, { useEffect, useContext, useRef } from 'react';
-import { AzNavItem, AzButtonShape, AzNavItemProps, AzToggleProps, AzCyclerProps, AzHostItemProps, AzSubItemProps, AzSubToggleProps, AzSubCyclerProps, AzRailRelocItemProps, AzNestedRailProps, AzNestedRailAlignment, HiddenMenuScope } from './types';
+import { AzNavItem, AzButtonShape, AzNavItemProps, AzToggleProps, AzCyclerProps, AzHostItemProps, AzSubItemProps, AzSubToggleProps, AzSubCyclerProps, AzRailRelocItemProps, AzNestedRailProps, AzNestedRailAlignment, HiddenMenuScope, AzItemConfig } from './types';
 
 export const AzNavRailContext = React.createContext<{
   register: (item: AzNavItem) => void;
@@ -22,8 +22,14 @@ const useAzItem = (item: AzNavItem) => {
                    prev.disabled === item.disabled &&
                    prev.isChecked === item.isChecked &&
                    prev.selectedOption === item.selectedOption &&
+                   prev.menuText === item.menuText &&
+                   prev.menuToggleOnText === item.menuToggleOnText &&
+                   prev.menuToggleOffText === item.menuToggleOffText &&
+                   prev.textColor === item.textColor &&
+                   prev.fillColor === item.fillColor &&
                    // Compare arrays
                    JSON.stringify(prev.options) === JSON.stringify(item.options) &&
+                   JSON.stringify(prev.menuOptions) === JSON.stringify(item.menuOptions) &&
                    prev.shape === item.shape &&
                    prev.color === item.color &&
                    prev.info === item.info &&

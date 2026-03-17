@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
+import android.util.Log
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -62,11 +63,24 @@ internal fun MenuItem(
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.menuToggleOnText ?: item.toggleOnText else item.menuToggleOffText ?: item.toggleOffText
         item.isCycler -> {
-            // Find the index of the selected option, and use the menu option at that index if available
+            // Find the index of the selected option, and use the menu option at that index if available.
+            // If configuration is inconsistent, log a warning so it is visible during development.
             val index = item.options?.indexOf(item.selectedOption) ?: -1
-            if (index != -1 && item.menuOptions != null && index < item.menuOptions.size) {
-                item.menuOptions[index]
+            val menuOptions = item.menuOptions
+
+            if (index != -1 && menuOptions != null && index in menuOptions.indices) {
+                menuOptions[index]
             } else {
+                if (menuOptions != null) {
+                    Log.w(
+                        "MenuItem",
+                        "Cycler configuration mismatch for item='${item.text}': " +
+                            "selectedOption='${item.selectedOption}', " +
+                            "index=$index, " +
+                            "optionsSize=${item.options?.size}, " +
+                            "menuOptionsSize=${menuOptions.size}"
+                    )
+                }
                 item.selectedOption ?: ""
             }
         }

@@ -46,6 +46,7 @@ export interface AzNavRailSettings {
 export interface HiddenMenuItem {
   id: string;
   text: string;
+  menuText?: string;
   route?: string;
   isInput?: boolean;
   hint?: string;
@@ -56,16 +57,22 @@ export interface HiddenMenuItem {
 export interface AzNavItem {
   id: string;
   text: string;
+  menuText?: string;
   route?: string;
   screenTitle?: string;
   isRailItem: boolean;
   color?: string;
+  textColor?: string;
+  fillColor?: string;
   isToggle: boolean;
   isChecked?: boolean;
   toggleOnText: string;
   toggleOffText: string;
+  menuToggleOnText?: string;
+  menuToggleOffText?: string;
   isCycler: boolean;
   options?: string[];
+  menuOptions?: string[];
   selectedOption?: string;
   isDivider: boolean;
   collapseOnClick: boolean;
@@ -88,19 +95,23 @@ export interface AzNavItem {
   classifiers?: string[];
   content?: any;
   isNestedRail?: boolean;
+  isHelpItem?: boolean;
   nestedRailAlignment?: AzNestedRailAlignment;
   nestedRailItems?: AzNavItem[];
 }
 
 export interface AzNavItemProps {
   id: string;
-  text?: string;
+  text: string;
+  menuText?: string;
   route?: string;
   screenTitle?: string;
   disabled?: boolean;
   onClick?: () => void;
   onFocus?: () => void;
   color?: string;
+  textColor?: string;
+  fillColor?: string;
   shape?: AzButtonShape;
   info?: string;
   content?: any;
@@ -111,10 +122,13 @@ export interface AzToggleProps extends AzNavItemProps {
   isChecked: boolean;
   toggleOnText: string;
   toggleOffText: string;
+  menuToggleOnText?: string;
+  menuToggleOffText?: string;
 }
 
 export interface AzCyclerProps extends AzNavItemProps {
   options: string[];
+  menuOptions?: string[];
   selectedOption: string;
   disabledOptions?: string[];
 }
@@ -148,4 +162,22 @@ export interface AzNestedRailProps extends AzNavItemProps {
 export interface HiddenMenuScope {
     listItem: (text: string, action: string | (() => void)) => void;
     inputItem: (hint: string, onValueChange: (value: string) => void) => void;
+}
+
+export interface AzItemConfig {
+  route?: string;
+  screenTitle?: string;
+  info?: string;
+  isRailItem: boolean;
+  disabled?: boolean;
+  isHost?: boolean;
+  isSubItem?: boolean;
+  hostId?: string | null;
+  classifiers?: string[];
+  onFocus?: () => void;
+  content?: any;
+  color?: string;
+  textColor?: string;
+  fillColor?: string;
+  shape?: AzButtonShape;
 }
