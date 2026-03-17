@@ -65,6 +65,18 @@ azAdvanced(
 
 ---
 
+
+### D. Item Customization (Colors & Text)
+Most navigation items (`azRailItem`, `azMenuItem`, toggles, cyclers, etc.) support overriding their display text and colors when shown in the menu versus the rail:
+- `menuText`: Optional alternate text to display when the item is expanded in the side menu (overrides `text`).
+- `menuToggleOnText`, `menuToggleOffText`: Optional alternate text for toggles when in the menu.
+- `menuOptions`: Optional alternate list of strings for cyclers when in the menu.
+- `textColor`: Custom color for the text itself.
+- `fillColor`: Custom color for the button's translucent background surface.
+
+### E. Menu Font Size & Theming
+The expanded menu text font size (and the footer items text size) is strictly controlled by your app's `MaterialTheme.typography.titleLarge`. To adjust the text size inside the side menu drawer, simply customize the `titleLarge` attribute in your app's typography theme!
+
 ## 3. Navigation Items (DSL)
 
 Items are added sequentially. The order in the DSL determines the order in the rail/menu.

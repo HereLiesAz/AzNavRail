@@ -83,6 +83,8 @@ internal fun RailContent(
             modifier = Modifier,
             color = item.color ?: MaterialTheme.colorScheme.primary,
             activeColor = activeColor ?: MaterialTheme.colorScheme.primary,
+            textColor = item.textColor,
+            fillColor = item.fillColor,
             size = buttonSize,
             shape = item.shape,
             enabled = isEnabled,

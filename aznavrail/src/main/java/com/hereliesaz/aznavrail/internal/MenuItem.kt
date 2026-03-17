@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -59,9 +60,17 @@ internal fun MenuItem(
     val isPressed by interactionSource.collectIsPressedAsState()
 
     val textToShow = when {
-        item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
-        item.isCycler -> item.selectedOption ?: ""
-        else -> item.text
+        item.isToggle -> if (item.isChecked == true) item.menuToggleOnText ?: item.toggleOnText else item.menuToggleOffText ?: item.toggleOffText
+        item.isCycler -> {
+            // Find the index of the selected option, and use the menu option at that index if available
+            val index = item.options?.indexOf(item.selectedOption) ?: -1
+            if (index != -1 && item.menuOptions != null && index < item.menuOptions.size) {
+                item.menuOptions[index]
+            } else {
+                item.selectedOption ?: ""
+            }
+        }
+        else -> item.menuText ?: item.text
     }
 
     // Interaction Logic:
@@ -117,7 +126,7 @@ internal fun MenuItem(
     }
 
     val effectiveActiveColor = activeColor ?: MaterialTheme.colorScheme.primary
-    val effectiveDefaultColor = item.color ?: MaterialTheme.colorScheme.primary
+    val effectiveDefaultColor = item.textColor ?: item.color ?: MaterialTheme.colorScheme.primary
 
     val textColor = if (isDisabled) {
         effectiveDefaultColor.copy(alpha = 0.5f)
@@ -125,10 +134,18 @@ internal fun MenuItem(
         effectiveDefaultColor
     }
 
+    val backgroundColor = if (isSelected && !isPressed) {
+        (item.fillColor ?: effectiveActiveColor).copy(alpha = 0.12f)
+    } else {
+        androidx.compose.ui.graphics.Color.Transparent
+    }
+
     Box(
-        modifier = Modifier.onGloballyPositioned { coordinates ->
-            onItemGloballyPositioned?.invoke(item.id, coordinates.boundsInWindow())
-        }
+        modifier = Modifier
+            .onGloballyPositioned { coordinates ->
+                onItemGloballyPositioned?.invoke(item.id, coordinates.boundsInWindow())
+            }
+            .background(backgroundColor)
     ) {
         Row(
             modifier = modifier
