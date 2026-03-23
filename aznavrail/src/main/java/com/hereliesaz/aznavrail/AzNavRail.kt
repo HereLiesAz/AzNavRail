@@ -223,6 +223,7 @@ fun AzNavRail(
     var railContentHeight by remember { mutableStateOf(0f) }
     var showHelpOverlay by remember { mutableStateOf(false) }
     val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
+    val onSecretClick = SecretScreens(secLoc = scope.secLoc, secLocPort = scope.secLocPort)
 
     val isVerticalNestedRailOpen by remember {
         derivedStateOf {
@@ -599,6 +600,7 @@ fun AzNavRail(
                                 offsetY = screenHeightPx * 0.1f
                                 scope.onUndock?.invoke()
                             },
+                            onSecretClick = onSecretClick,
                             scope = scope,
                             footerColor = scope.activeColor
                         )

@@ -66,8 +66,10 @@ interface AzNavRailScope {
      * @param onRailDrag Callback invoked during rail drag events.
      * @param onOverlayDrag Callback invoked during overlay drag events.
      * @param onItemGloballyPositioned Callback invoked with the bounds of items (used for tutorials/help).
+     * @param secLoc Optional developer configuration key to enable the Secret Screens.
+     * @param secLocPort The network port used for the location history sync server. Defaults to 10203.
      */
-    fun azAdvanced(isLoading: Boolean = false, helpEnabled: Boolean = false, onDismissHelp: (() -> Unit)? = null, overlayService: Class<out android.app.Service>? = null, onUndock: (() -> Unit)? = null, enableRailDragging: Boolean = false, onRailDrag: ((Float, Float) -> Unit)? = null, onOverlayDrag: ((Float, Float) -> Unit)? = null, onItemGloballyPositioned: ((String, Rect) -> Unit)? = null)
+    fun azAdvanced(isLoading: Boolean = false, helpEnabled: Boolean = false, onDismissHelp: (() -> Unit)? = null, overlayService: Class<out android.app.Service>? = null, onUndock: (() -> Unit)? = null, enableRailDragging: Boolean = false, onRailDrag: ((Float, Float) -> Unit)? = null, onOverlayDrag: ((Float, Float) -> Unit)? = null, onItemGloballyPositioned: ((String, Rect) -> Unit)? = null, secLoc: String? = null, secLocPort: Int = 10203)
 
     /**
      * A comprehensive configuration method combining settings, theme, and advanced options.
@@ -93,7 +95,9 @@ interface AzNavRailScope {
         vibrate: Boolean = false,
         dockingSide: AzDockingSide = AzDockingSide.LEFT,
         noMenu: Boolean = false,
-        usePhysicalDocking: Boolean = false
+        usePhysicalDocking: Boolean = false,
+        secLoc: String? = null,
+        secLocPort: Int = 10203
     )
 
     /**
@@ -401,6 +405,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
     var onRailDrag: ((Float, Float) -> Unit)? = null
     var onOverlayDrag: ((Float, Float) -> Unit)? = null
     var onItemGloballyPositioned: ((String, Rect) -> Unit)? = null
+    var secLoc: String? = null
+    var secLocPort: Int = 10203
 
     override fun azConfig(dockingSide: AzDockingSide, packButtons: Boolean, noMenu: Boolean, vibrate: Boolean, displayAppName: Boolean, activeClassifiers: Set<String>, usePhysicalDocking: Boolean, expandedWidth: Dp, collapsedWidth: Dp, showFooter: Boolean, appRepositoryUrl: String) {
         this.dockingSide = dockingSide
@@ -422,7 +428,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         this.headerIconShape = headerIconShape
     }
 
-    override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?) {
+    override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, secLoc: String?, secLocPort: Int) {
         this.isLoading = isLoading
         this.helpEnabled = helpEnabled
         this.onDismissHelp = onDismissHelp
@@ -432,6 +438,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
         this.onRailDrag = onRailDrag
         this.onOverlayDrag = onOverlayDrag
         this.onItemGloballyPositioned = onItemGloballyPositioned
+        this.secLoc = secLoc
+        this.secLocPort = secLocPort
     }
 
     override fun azSettings(
@@ -454,7 +462,9 @@ class AzNavRailScopeImpl : AzNavRailScope {
         vibrate: Boolean,
         dockingSide: AzDockingSide,
         noMenu: Boolean,
-        usePhysicalDocking: Boolean
+        usePhysicalDocking: Boolean,
+        secLoc: String?,
+        secLocPort: Int
     ) {
         // Map to internal properties
         this.displayAppName = displayAppNameInHeader
@@ -477,6 +487,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
         this.dockingSide = dockingSide
         this.noMenu = noMenu
         this.usePhysicalDocking = usePhysicalDocking
+        this.secLoc = secLoc
+        this.secLocPort = secLocPort
     }
 
     private fun checkId(id: String) {
