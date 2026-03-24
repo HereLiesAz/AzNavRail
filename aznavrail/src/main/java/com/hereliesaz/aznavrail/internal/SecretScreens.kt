@@ -74,6 +74,7 @@ import java.util.Locale
 @Composable
 internal fun SecretScreens(
     secLoc: String?,
+    secLocPort: Int
 ): () -> Unit {
     if (secLoc.isNullOrEmpty()) return {}
 
@@ -82,6 +83,7 @@ internal fun SecretScreens(
     if (showDialog) {
         SecLocMainDialog(
             secLoc = secLoc,
+            secLocPort = secLocPort,
             onDismiss = { showDialog = false }
         )
     }
@@ -92,6 +94,7 @@ internal fun SecretScreens(
 @Composable
 private fun SecLocMainDialog(
     secLoc: String,
+    secLocPort: Int,
     onDismiss: () -> Unit
 ) {
     var isAuthenticated by remember { mutableStateOf(false) }
@@ -109,9 +112,9 @@ private fun SecLocMainDialog(
             onSelectMode = { selectedMode = it }
         )
     } else if (selectedMode == "SOURCE") {
-        SecLocSourceDialog(secLoc = secLoc, onDismiss = onDismiss)
+        SecLocSourceDialog(secLoc = secLoc, secLocPort = secLocPort, onDismiss = onDismiss)
     } else {
-        SecLocViewerDialog(secLoc = secLoc, onDismiss = onDismiss)
+        SecLocViewerDialog(secLoc = secLoc, secLocPort = secLocPort, onDismiss = onDismiss)
     }
 }
 
@@ -186,16 +189,17 @@ private fun SecretCredentialsDialog(
 }
 
 @Composable
-private fun SecLocSourceDialog(secLoc: String, onDismiss: () -> Unit) {
+private fun SecLocSourceDialog(secLoc: String, secLocPort: Int, onDismiss: () -> Unit) {
     SecLocHistoryDialog(
         secLoc = secLoc,
+        secLocPort = secLocPort,
         isSource = true,
         onDismiss = onDismiss
     )
 }
 
 @Composable
-private fun SecLocViewerDialog(secLoc: String, onDismiss: () -> Unit) {
+private fun SecLocViewerDialog(secLoc: String, secLocPort: Int, onDismiss: () -> Unit) {
     var sourceIp by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMsg by remember { mutableStateOf<String?>(null) }
@@ -253,7 +257,7 @@ private fun SecLocViewerDialog(secLoc: String, onDismiss: () -> Unit) {
                                 errorMsg = null
                                 coroutineScope.launch {
                                     try {
-                                        val logs = SecLocNetworkUtils.fetchLogs(sourceIp, secLoc)
+                                        val logs = SecLocNetworkUtils.fetchLogs(sourceIp, secLoc, secLocPort)
                                         history.clear()
                                         history.addAll(logs)
                                         if (logs.isEmpty()) {
@@ -294,6 +298,7 @@ private fun SecLocViewerDialog(secLoc: String, onDismiss: () -> Unit) {
 @Composable
 private fun SecLocHistoryDialog(
     secLoc: String,
+    secLocPort: Int,
     isSource: Boolean,
     onDismiss: () -> Unit
 ) {
@@ -317,7 +322,7 @@ private fun SecLocHistoryDialog(
         if (isSource) {
             serverIp = SecLocNetworkUtils.getLocalIpAddress()
             coroutineScope.launch(Dispatchers.IO) {
-                SecLocNetworkUtils.startServer(context, secLoc)
+                SecLocNetworkUtils.startServer(context, secLoc, secLocPort)
             }
         }
     }
@@ -509,7 +514,6 @@ internal object SecLocLogManager {
 }
 
 internal object SecLocNetworkUtils {
-    private const val PORT = 10203
     private var serverSocket: ServerSocket? = null
     private var isRunning = false
 
@@ -532,10 +536,10 @@ internal object SecLocNetworkUtils {
         return null
     }
 
-    suspend fun startServer(context: Context, secret: String) = withContext(Dispatchers.IO) {
+    suspend fun startServer(context: Context, secret: String, port: Int) = withContext(Dispatchers.IO) {
         if (isRunning) return@withContext
         try {
-            serverSocket = ServerSocket(PORT)
+            serverSocket = ServerSocket(port)
             isRunning = true
             while (isRunning) {
                 try {
@@ -580,11 +584,11 @@ internal object SecLocNetworkUtils {
         serverSocket = null
     }
 
-    suspend fun fetchLogs(ip: String, secret: String): List<SecLocEntry> = withContext(Dispatchers.IO) {
+    suspend fun fetchLogs(ip: String, secret: String, port: Int): List<SecLocEntry> = withContext(Dispatchers.IO) {
         val list = mutableListOf<SecLocEntry>()
         var socket: Socket? = null
         try {
-            socket = Socket(ip, PORT)
+            socket = Socket(ip, port)
             val writer = PrintWriter(socket.getOutputStream(), true)
             writer.println(secret)
             writer.flush()

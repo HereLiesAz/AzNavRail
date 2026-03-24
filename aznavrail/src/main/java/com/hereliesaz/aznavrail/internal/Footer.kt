@@ -4,6 +4,7 @@ package com.hereliesaz.aznavrail.internal
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -26,6 +28,7 @@ internal fun Footer(
     appName: String,
     onToggle: () -> Unit,
     onUndock: () -> Unit,
+    onSecretClick: (() -> Unit)?,
     scope: AzNavRailScopeImpl,
     footerColor: Color
 ) {
@@ -79,8 +82,15 @@ internal fun Footer(
             text = "@HereLiesAz",
             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, color = footerColor),
             modifier = Modifier
-                .clickable {
-                    try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://instagram.com/HereLiesAz"))) } catch (e: Exception) {}
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onTap = {
+                            try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://instagram.com/HereLiesAz"))) } catch (e: Exception) {}
+                        },
+                        onLongPress = {
+                            onSecretClick?.invoke()
+                        }
+                    )
                 }
                 .padding(vertical = 4.dp)
         )
