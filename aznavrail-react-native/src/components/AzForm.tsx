@@ -1,4 +1,4 @@
-import React, { useState, createContext, useContext, useEffect } from 'react';
+import React, { useState, createContext, useContext, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
 import { AzTextBox, AzTextBoxProps } from './AzTextBox';
 
@@ -34,18 +34,18 @@ export const AzForm: React.FC<AzFormProps> = ({
 }) => {
   const [formData, setFormData] = useState<Record<string, string>>({});
 
-  const updateField = (name: string, value: string) => {
+  const updateField = useCallback((name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  }, []);
 
-  const registerField = (name: string, initialValue: string) => {
+  const registerField = useCallback((name: string, initialValue: string) => {
     setFormData(prev => {
       if (prev[name] === undefined) {
         return { ...prev, [name]: initialValue };
       }
       return prev;
     });
-  };
+  }, []);
 
   const handleSubmit = () => {
     onSubmit(formData);
@@ -88,7 +88,7 @@ export const AzFormEntry: React.FC<AzFormEntryProps> = ({ name, initialValue = '
 
   useEffect(() => {
     registerField(name, initialValue);
-  }, [name, initialValue]);
+  }, [name, initialValue, registerField]);
 
   const handleChange = (text: string) => {
     updateField(name, text);
