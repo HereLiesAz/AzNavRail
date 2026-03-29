@@ -23,6 +23,7 @@ import './AzTextBox.css';
  */
 const AzTextBox = ({
   value,
+  initialValue = '',
   onValueChange,
   hint,
   isError = false,
@@ -38,8 +39,12 @@ const AzTextBox = ({
   className = '',
   style = {}
 }) => {
+  const [internalValue, setInternalValue] = useState(initialValue);
   const [isRevealed, setIsRevealed] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const isControlled = value !== undefined;
+  const currentValue = isControlled ? value : internalValue;
 
   // Handle outside click to close suggestions
   const containerRef = useRef(null);
@@ -53,8 +58,17 @@ const AzTextBox = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleValueChange = (newVal) => {
+    if (!isControlled) {
+      setInternalValue(newVal);
+    }
+    if (onValueChange) {
+      onValueChange(newVal);
+    }
+  };
+
   const handleClear = () => {
-    onValueChange('');
+    handleValueChange('');
     if (containerRef.current?.querySelector('input, textarea')) {
       containerRef.current.querySelector('input, textarea').focus();
     }
@@ -62,7 +76,7 @@ const AzTextBox = ({
 
   const handleSubmit = () => {
     if (onSubmit) {
-      onSubmit(value);
+      onSubmit(currentValue);
       setShowSuggestions(false);
     }
   };
@@ -74,7 +88,7 @@ const AzTextBox = ({
   };
 
   const handleSuggestionClick = (suggestion) => {
-    onValueChange(suggestion);
+    handleValueChange(suggestion);
     setShowSuggestions(false);
   };
 
@@ -82,7 +96,7 @@ const AzTextBox = ({
   const InputComponent = multiline ? 'textarea' : 'input';
 
   const filteredSuggestions = suggestions.filter(s =>
-    s.toLowerCase().includes(value.toLowerCase()) && s !== value
+    s.toLowerCase().includes(currentValue.toLowerCase()) && s !== currentValue
   );
 
   return (
@@ -103,9 +117,9 @@ const AzTextBox = ({
 
         <InputComponent
           className="az-textbox-input"
-          value={value}
+          value={currentValue}
           onChange={(e) => {
-            onValueChange(e.target.value);
+            handleValueChange(e.target.value);
             setShowSuggestions(true);
           }}
           onFocus={() => {
@@ -120,7 +134,7 @@ const AzTextBox = ({
           style={{ color: 'inherit' }}
         />
 
-        {value && enabled && !readOnly && (
+        {currentValue && enabled && !readOnly && (
           <div className="az-textbox-icon action" onClick={secret ? () => setIsRevealed(!isRevealed) : handleClear}>
             {secret ? (isRevealed ? '👁️' : '👁️‍🗨️') : '✕'}
           </div>

@@ -353,8 +353,8 @@ export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
                         hiddenMenuItems.push({ id: `hidden_${hiddenMenuItems.length}`, text, onClick: action });
                     }
                 },
-                inputItem: (hint, onValueChange) => {
-                    hiddenMenuItems.push({ id: `input_${hiddenMenuItems.length}`, text: '', isInput: true, hint, onValueChange });
+                inputItem: (hint, onValueChange, initialValue = '') => {
+                    hiddenMenuItems.push({ id: `input_${hiddenMenuItems.length}`, text: '', isInput: true, hint, initialValue, onValueChange });
                 }
             };
             props.hiddenMenu(scope);

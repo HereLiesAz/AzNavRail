@@ -330,6 +330,14 @@ interface HiddenMenuScope {
      * @param onValueChange Callback invoked when the input value changes.
      */
     fun inputItem(hint: String, onValueChange: (String) -> Unit)
+    /**
+     * Adds a text input item to the hidden menu with an initial value.
+     *
+     * @param hint The hint text for the input field.
+     * @param initialValue The pre-filled initial value.
+     * @param onValueChange Callback invoked when the input value changes.
+     */
+    fun inputItem(hint: String, initialValue: String, onValueChange: (String) -> Unit)
 }
 
 internal class HiddenMenuScopeImpl : HiddenMenuScope {
@@ -349,8 +357,12 @@ internal class HiddenMenuScopeImpl : HiddenMenuScope {
     }
 
     override fun inputItem(hint: String, onValueChange: (String) -> Unit) {
+        inputItem(hint, "", onValueChange)
+    }
+
+    override fun inputItem(hint: String, initialValue: String, onValueChange: (String) -> Unit) {
         val id = "hidden_item_${items.size}"
-        items.add(com.hereliesaz.aznavrail.model.HiddenMenuItem(id = id, text = "", isInput = true, hint = hint))
+        items.add(com.hereliesaz.aznavrail.model.HiddenMenuItem(id = id, text = "", isInput = true, hint = hint, initialValue = initialValue))
         onValueChangeMap[id] = onValueChange
     }
 }

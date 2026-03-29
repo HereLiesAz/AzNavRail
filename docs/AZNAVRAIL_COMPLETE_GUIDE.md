@@ -337,7 +337,7 @@ AzForm(
     formName = "loginForm",
     onSubmit = { formData -> /* Map<String, String> */ }
 ) {
-    entry(entryName = "username", hint = "Username")
+    entry(entryName = "username", hint = "Username", initialValue = "AzRailFan") // Pre-filled!
     entry(entryName = "password", hint = "Password", secret = true) // Password mask
     entry(entryName = "bio", hint = "Biography", multiline = true)  // Multi-line
 }

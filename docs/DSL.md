@@ -56,6 +56,12 @@ fun azAdvanced(
 )
 ~~~
 
+## Hidden Menu Builders (for `azRailRelocItem`)
+* `listItem(text, route)`
+* `listItem(text, onClick)`
+* `inputItem(hint, onValueChange)`
+* `inputItem(hint, initialValue, onValueChange)`
+
 ## Item Builders
 
 The following functions are used to define the rail structure.

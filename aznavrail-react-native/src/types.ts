@@ -50,6 +50,7 @@ export interface HiddenMenuItem {
   route?: string;
   isInput?: boolean;
   hint?: string;
+  initialValue?: string;
   onClick?: () => void;
   onValueChange?: (value: string) => void;
 }
@@ -161,7 +162,10 @@ export interface AzNestedRailProps extends AzNavItemProps {
 
 export interface HiddenMenuScope {
     listItem: (text: string, action: string | (() => void)) => void;
-    inputItem: (hint: string, onValueChange: (value: string) => void) => void;
+    /**
+     * Adds a text input item to the hidden menu with an optional initial value.
+     */
+    inputItem: (hint: string, onValueChange: (value: string) => void, initialValue?: string) => void;
 }
 
 export interface AzItemConfig {

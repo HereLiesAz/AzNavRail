@@ -15,6 +15,7 @@ export const AzTextBoxDefaults = {
 
 export interface AzTextBoxProps {
   value?: string;
+  initialValue?: string;
   onValueChange?: (text: string) => void;
   hint?: string;
   outlined?: boolean;
@@ -48,9 +49,10 @@ export const AzTextBox: React.FC<AzTextBoxProps> = ({
   backgroundColor = 'transparent',
   backgroundOpacity = 1,
   enabled = true,
+  initialValue = '',
 }) => {
   const isControlled = controlledValue !== undefined;
-  const [internalValue, setInternalValue] = useState('');
+  const [internalValue, setInternalValue] = useState(initialValue);
   const [isSecretVisible, setIsSecretVisible] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
