@@ -382,6 +382,8 @@ private fun DraggableRailItemWrapper(
                     if (scope.vibrate) {
                         hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                     }
+                    scope.onFocusMap[item.id]?.invoke()
+                    onMenuOpen(item.id)
                     // onDragStart(item.id) -- Deferred until movement
                 }
 
@@ -421,6 +423,7 @@ private fun DraggableRailItemWrapper(
                                 if (!dragStarted) {
                                     if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
                                         dragStarted = true
+                                        onHiddenMenuDismiss()
                                         onDragStart(item.id)
                                     }
                                 }
@@ -453,9 +456,6 @@ private fun DraggableRailItemWrapper(
                     if (isLongPress) {
                         if (dragStarted) {
                             onDragEnd()
-                        } else {
-                            scope.onFocusMap[item.id]?.invoke()
-                            onMenuOpen(item.id)
                         }
                     } else if (!hasMoved && gestureCompletedSuccessfully) {
                         val isRouteSelected = item.route != null && item.route == currentDestination

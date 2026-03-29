@@ -33,7 +33,8 @@ class FooterTest {
                 onToggle = { onToggleCalled = true },
                 onUndock = { onUndockCalled = true },
                 scope = scope,
-                footerColor = Color.Red
+                footerColor = Color.Red,
+                onSecretClick = {}
             )
         }
 
@@ -58,7 +59,8 @@ class FooterTest {
                 onToggle = { },
                 onUndock = { },
                 scope = scope,
-                footerColor = Color.Red
+                footerColor = Color.Red,
+                onSecretClick = {}
             )
         }
 
