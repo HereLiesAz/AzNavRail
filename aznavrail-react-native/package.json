@@ -75,7 +75,6 @@
   ],
   "packageManager": "yarn@3.6.1",
   "jest": {
-
     "setupFiles": [
       "<rootDir>/jest.setup.js"
     ],
@@ -153,11 +152,7 @@
       ]
     ]
   },
-  "resolutions": {
-    "ip": "^2.0.2"
-  },
   "overrides": {
-    "fast-xml-parser": "^5.3.6",
-    "ip": "^2.0.2"
+    "fast-xml-parser": "^5.3.6"
   }
 }

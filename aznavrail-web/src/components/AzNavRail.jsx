@@ -409,8 +409,8 @@ const AzNavRail = ({
                                                           menuItems.push({ text, onClick: action });
                                                       }
                                                   },
-                                                  inputItem: (hint, onValueChange) => {
-                                                      menuItems.push({ text: '', isInput: true, hint, onValueChange });
+                                                  inputItem: (hint, onValueChange, initialValue = '') => {
+                                                      menuItems.push({ text: '', isInput: true, hint, initialValue, onValueChange });
                                                   }
                                               };
                                               item.hiddenMenu(scope);
@@ -423,6 +423,7 @@ const AzNavRail = ({
                                                   return (
                                                       <div key={idx} style={{padding: '4px'}} onClick={(e) => e.stopPropagation()}>
                                                           <AzTextBox
+                                                              initialValue={menuItem.initialValue}
                                                               hint={menuItem.hint}
                                                               onValueChange={menuItem.onValueChange}
                                                               onSubmit={(val) => {

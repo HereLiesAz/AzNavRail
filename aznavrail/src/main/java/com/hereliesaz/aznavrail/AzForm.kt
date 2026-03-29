@@ -63,7 +63,8 @@ class AzFormScope {
         isError: Boolean = false,       
         enabled: Boolean = true,
         keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-        keyboardActions: KeyboardActions = KeyboardActions.Default
+        keyboardActions: KeyboardActions = KeyboardActions.Default,
+        initialValue: String = ""
     ) {
         entries.add(AzFormEntry(
             entryName = entryName,
@@ -74,7 +75,8 @@ class AzFormScope {
             isError = isError,
             keyboardOptions = keyboardOptions,
             keyboardActions = keyboardActions,
-            enabled = enabled
+            enabled = enabled,
+            initialValue = initialValue
         ))
     }
 }
@@ -88,7 +90,8 @@ internal data class AzFormEntry(
     val isError: Boolean,
     val keyboardOptions: KeyboardOptions,
     val keyboardActions: KeyboardActions,
-    val enabled: Boolean
+    val enabled: Boolean,
+    val initialValue: String = ""
 )
 
 /**
@@ -134,7 +137,7 @@ fun AzForm(
     ) {
         mutableStateMapOf<String, String>().apply {
             scope.entries.forEach { entry ->
-                this[entry.entryName] = ""
+                this[entry.entryName] = entry.initialValue
             }
         }
     }

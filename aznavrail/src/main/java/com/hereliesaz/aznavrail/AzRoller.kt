@@ -55,6 +55,12 @@ fun AzRoller(
     var expanded by remember { mutableStateOf(false) }
     var filterText by remember { mutableStateOf(selectedOption ?: "") }
 
+    LaunchedEffect(selectedOption, expanded) {
+        if (!expanded) {
+            filterText = selectedOption ?: ""
+        }
+    }
+
     val filteredOptions = remember(filterText, options) {
         if (filterText.isEmpty()) options else options.filter { it.contains(filterText, ignoreCase = true) }
     }

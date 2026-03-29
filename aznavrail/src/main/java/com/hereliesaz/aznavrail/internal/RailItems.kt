@@ -687,7 +687,7 @@ private fun HiddenMenuPopup(
         ) {
             items.forEach { menuItem ->
                 if (menuItem.isInput) {
-                    var text by remember { mutableStateOf("") }
+                    var text by remember { mutableStateOf(menuItem.initialValue) }
                     com.hereliesaz.aznavrail.AzTextBox(
                         modifier = Modifier.padding(8.dp),
                         hint = menuItem.hint ?: "",

@@ -105,6 +105,7 @@ export const DraggableRailItemWrapper: React.FC<DraggableRailItemWrapperProps> =
                                return (
                                    <View key={i} style={styles.hiddenMenuItem}>
                                        <AzTextBox
+                                           initialValue={menuItem.initialValue}
                                            hint={menuItem.hint}
                                            onValueChange={menuItem.onValueChange}
                                            onSubmit={(val) => {

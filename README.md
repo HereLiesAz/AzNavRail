@@ -295,7 +295,7 @@ azRailRelocItem(
 ) {
     // Hidden Menu (Tap to select -> Long Press to open)
     listItem("Action 1") { /* ... */ }
-    inputItem("Rename") { newName -> /* ... */ }
+    inputItem("Rename", initialValue = "Item 1") { newName -> /* ... */ }
 }
 ~~~
 
