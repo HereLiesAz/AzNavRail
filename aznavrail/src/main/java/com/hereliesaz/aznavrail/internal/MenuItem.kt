@@ -171,13 +171,17 @@ internal fun MenuItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             val lines = textToShow.split('\n')
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 lines.forEachIndexed { index, line ->
                     Text(
                         text = line,
                         style = MaterialTheme.typography.titleLarge,
                         color = textColor,
-                        modifier = if (index > 0) Modifier.padding(start = 16.dp) else Modifier
+                        modifier = Modifier,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                 }
             }

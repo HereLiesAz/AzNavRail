@@ -22,6 +22,7 @@ interface DraggableRailItemWrapperProps {
   onDragMove: (dy: number, index: number) => void;
   offsetY: Animated.Value;
   style?: any;
+  translucentBackground?: string;
 }
 
 export const DraggableRailItemWrapper: React.FC<DraggableRailItemWrapperProps> = ({
@@ -32,6 +33,7 @@ export const DraggableRailItemWrapper: React.FC<DraggableRailItemWrapperProps> =
   onDragMove,
   offsetY,
   style,
+  translucentBackground,
 }) => {
   const pan = useRef(new Animated.ValueXY()).current;
   const [isDragging, setIsDragging] = useState(false);
@@ -112,7 +114,7 @@ export const DraggableRailItemWrapper: React.FC<DraggableRailItemWrapperProps> =
                   activeOpacity={1}
                   onPress={closeMenu}
               >
-                  <View style={[styles.hiddenMenu, { top: menuPosition.y, left: menuPosition.x }]}>
+                  <View style={[styles.hiddenMenu, { top: menuPosition.y, left: menuPosition.x }, translucentBackground ? { backgroundColor: translucentBackground } : {}]}>
                        {item.hiddenMenu.map((menuItem, i) => {
                            if (menuItem.isInput) {
                                return (

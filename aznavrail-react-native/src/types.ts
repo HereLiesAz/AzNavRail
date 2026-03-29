@@ -37,6 +37,7 @@ export interface AzNavRailSettings {
   activeColor?: string;
   vibrate?: boolean;
   headerIconShape?: AzHeaderIconShape;
+  translucentBackground?: string;
   secLoc?: string;
   usePhysicalDocking?: boolean;
   activeClassifiers?: string[];
