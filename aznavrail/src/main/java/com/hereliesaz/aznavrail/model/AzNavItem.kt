@@ -79,6 +79,8 @@ data class AzNavItem(
     val info: String? = null,
     val isRelocItem: Boolean = false,
     val hiddenMenuItems: List<HiddenMenuItem>? = null,
+    val forceHiddenMenuOpen: Boolean = false,
+    val onHiddenMenuDismiss: (() -> Unit)? = null,
     val classifiers: Set<String> = emptySet(),
     val content: @RawValue Any? = null,
     val isNestedRail: Boolean = false,

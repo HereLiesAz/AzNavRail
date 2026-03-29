@@ -315,6 +315,14 @@ private fun DraggableRailItemWrapper(
 ) {
     val isDragging = draggedItemId == item.id
     var visualOffsetY by remember { mutableStateOf(0.dp) }
+
+    androidx.compose.runtime.LaunchedEffect(item.forceHiddenMenuOpen) {
+        if (item.forceHiddenMenuOpen) {
+            onMenuOpen(item.id)
+        } else if (hiddenMenuOpenId == item.id) {
+            onHiddenMenuDismiss()
+        }
+    }
     val isRightDocked = visualDockingSide == AzDockingSide.RIGHT
 
     val myHeightPx = itemHeights[item.id] ?: 0
@@ -621,14 +629,19 @@ private fun DraggableRailItemWrapper(
         if (hiddenMenuOpenId == item.id && !item.hiddenMenuItems.isNullOrEmpty()) {
             HiddenMenuPopup(
                 items = item.hiddenMenuItems,
-                onDismiss = onHiddenMenuDismiss,
+                onDismiss = {
+                    item.onHiddenMenuDismiss?.invoke()
+                    onHiddenMenuDismiss()
+                },
                 onItemClick = { menuItem ->
                     scope.hiddenMenuOnClickMap[menuItem.id]?.invoke()
                     menuItem.route?.let { navController?.navigate(it) }
+                    item.onHiddenMenuDismiss?.invoke()
                     onHiddenMenuDismiss()
                 },
                 onInputSubmit = { menuItem, value ->
                     scope.hiddenMenuOnValueChangeMap[menuItem.id]?.invoke(value)
+                    item.onHiddenMenuDismiss?.invoke()
                     onHiddenMenuDismiss()
                 },
                 backgroundColor = AzTextBoxDefaults.getBackgroundColor(),

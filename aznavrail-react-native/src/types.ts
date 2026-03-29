@@ -89,6 +89,8 @@ export interface AzNavItem {
   // Reloc Item properties
   isRelocItem?: boolean;
   hiddenMenu?: HiddenMenuItem[];
+  forceHiddenMenuOpen?: boolean;
+  onHiddenMenuDismiss?: () => void;
   onRelocate?: (fromIndex: number, toIndex: number, newOrder: string[]) => void;
   // Info/Help
   info?: string;
@@ -151,6 +153,8 @@ export interface AzSubCyclerProps extends AzCyclerProps {
 export interface AzRailRelocItemProps extends AzSubItemProps {
     onRelocate?: (fromIndex: number, toIndex: number, newOrder: string[]) => void;
     hiddenMenu?: { text: string; onClick: () => void }[] | ((scope: HiddenMenuScope) => void);
+    forceHiddenMenuOpen?: boolean;
+    onHiddenMenuDismiss?: () => void;
     nestedRailAlignment?: AzNestedRailAlignment;
     nestedContent?: React.ReactNode;
 }
@@ -163,9 +167,10 @@ export interface AzNestedRailProps extends AzNavItemProps {
 export interface HiddenMenuScope {
     listItem: (text: string, action: string | (() => void)) => void;
     /**
-     * Adds a text input item to the hidden menu with an optional initial value.
+     * Adds a text input item to the hidden menu.
+     * Supports either `inputItem(hint, onValueChange)` or `inputItem(hint, initialValue, onValueChange)`
      */
-    inputItem: (hint: string, onValueChange: (value: string) => void, initialValue?: string) => void;
+    inputItem: (hint: string, arg2: string | ((value: string) => void), arg3?: (value: string) => void) => void;
 }
 
 export interface AzItemConfig {

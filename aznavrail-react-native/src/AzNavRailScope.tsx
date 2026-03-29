@@ -353,7 +353,16 @@ export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
                         hiddenMenuItems.push({ id: `hidden_${hiddenMenuItems.length}`, text, onClick: action });
                     }
                 },
-                inputItem: (hint, onValueChange, initialValue = '') => {
+                inputItem: (hint, arg2, arg3) => {
+                    let initialValue = '';
+                    let onValueChange: (value: string) => void;
+
+                    if (typeof arg2 === 'string') {
+                        initialValue = arg2;
+                        onValueChange = arg3 as (value: string) => void;
+                    } else {
+                        onValueChange = arg2;
+                    }
                     hiddenMenuItems.push({ id: `input_${hiddenMenuItems.length}`, text: '', isInput: true, hint, initialValue, onValueChange });
                 }
             };
@@ -384,6 +393,8 @@ export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
         toggleOnText: '',
         toggleOffText: '',
         hiddenMenu: hiddenMenuItems,
+        forceHiddenMenuOpen: props.forceHiddenMenuOpen,
+        onHiddenMenuDismiss: props.onHiddenMenuDismiss,
         nestedRailAlignment: props.nestedRailAlignment || AzNestedRailAlignment.VERTICAL,
     });
     return (

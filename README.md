@@ -289,6 +289,8 @@ azRailRelocItem(
     id = "reloc-1",
     hostId = "host-1",
     text = "Item 1",
+    forceHiddenMenuOpen = false, // Programmatically open the hidden menu!
+    onHiddenMenuDismiss = { /* Menu dismissed */ },
     onRelocate = { from, to, newOrder ->
         // Handle new order (List<String>)
     }
