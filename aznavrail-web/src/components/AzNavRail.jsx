@@ -36,6 +36,7 @@ const AzNavRail = ({
     noMenu = false,
     activeClassifiers = [], // Array of strings
     activeColor,
+    translucentBackground,
     packRailButtons = false,
     headerIconShape = 'CIRCLE'
   } = settings;
@@ -73,12 +74,25 @@ const AzNavRail = ({
   const [nestedRailVisibleId, setNestedRailVisibleId] = useState(null);
 
   useEffect(() => {
-      let openId = null;
-      localNavItems.forEach(item => {
-          if (item.forceHiddenMenuOpen) openId = item.id;
-      });
-      setHiddenMenuOpenId(openId);
+      const openItem = localNavItems.find(item => item.forceHiddenMenuOpen);
+      if (openItem) {
+          setHiddenMenuOpenId(openItem.id);
+      }
   }, [localNavItems]);
+
+  useEffect(() => {
+      const handleClickOutside = (e) => {
+          if (hiddenMenuOpenId && !e.target.closest('.hidden-menu-popup')) {
+              const item = localNavItems.find(i => i.id === hiddenMenuOpenId);
+              if (item && item.onHiddenMenuDismiss) {
+                  item.onHiddenMenuDismiss();
+              }
+              setHiddenMenuOpenId(null);
+          }
+      };
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [hiddenMenuOpenId, localNavItems]);
   const [anchorPosition, setAnchorPosition] = useState(null);
   const [itemBounds, setItemBounds] = useState({});
 
@@ -401,7 +415,7 @@ const AzNavRail = ({
                                       right: dockingSide === 'RIGHT' ? '100%' : 'auto',
                                       top: 0,
                                       zIndex: 1000,
-                                      background: 'white',
+                                      background: translucentBackground || 'white',
                                       border: '1px solid black',
                                       padding: '8px',
                                       width: '150px'
@@ -423,9 +437,17 @@ const AzNavRail = ({
 
                                                       if (typeof arg2 === 'string') {
                                                           initialValue = arg2;
-                                                          onValueChange = arg3;
-                                                      } else {
+                                                          if (typeof arg3 !== 'function') {
+                                                              console.warn("inputItem requires an onValueChange function callback.");
+                                                              onValueChange = () => {};
+                                                          } else {
+                                                              onValueChange = arg3;
+                                                          }
+                                                      } else if (typeof arg2 === 'function') {
                                                           onValueChange = arg2;
+                                                      } else {
+                                                          console.warn("inputItem requires an onValueChange function callback.");
+                                                          onValueChange = () => {};
                                                       }
                                                       menuItems.push({ text: '', isInput: true, hint, initialValue, onValueChange });
                                                   }
@@ -527,10 +549,10 @@ const AzNavRail = ({
 
       {showFooter && isExpanded && (
         <div className="footer" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px', color: activeColor || 'currentColor' }}>
-             <div style={{ padding: '8px 0', fontWeight: 'bold' }}>{appName}</div>
-             <div style={{ padding: '4px 0', fontSize: '10px' }}>About</div>
-             <div style={{ padding: '4px 0', fontSize: '10px' }}>Feedback</div>
-             <div style={{ padding: '4px 0', fontSize: '10px' }}>@HereLiesAz</div>
+             <div className="az-menu-item-text" style={{ padding: '8px 0', fontWeight: 'bold' }}>{appName}</div>
+             <div className="az-menu-item-text" style={{ padding: '4px 0' }}>About</div>
+             <div className="az-menu-item-text" style={{ padding: '4px 0' }}>Feedback</div>
+             <div className="az-menu-item-text" style={{ padding: '4px 0', opacity: 0.5 }}>@HereLiesAz</div>
         </div>
       )}
 

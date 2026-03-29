@@ -54,6 +54,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
       onDismissInfoScreen,
       activeColor,
       headerIconShape = AzHeaderIconShape.CIRCLE,
+      translucentBackground,
       vibrate = false,
       secLoc,
       onExpandedChange,
@@ -91,6 +92,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
       infoScreen: dslOverrides.infoScreen ?? infoScreen,
       activeColor: dslOverrides.activeColor ?? activeColor,
       headerIconShape: dslOverrides.headerIconShape ?? headerIconShape,
+      translucentBackground: dslOverrides.translucentBackground ?? translucentBackground,
       vibrate: dslOverrides.vibrate ?? vibrate,
       onItemGloballyPositioned: dslOverrides.onItemGloballyPositioned,
   };
@@ -395,6 +397,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
                   onDragMove={handleRelocDragMove}
                   offsetY={itemOffsets.current[item.id] || new Animated.Value(0)}
                   style={commonProps.style}
+                  translucentBackground={config.translucentBackground}
               />
           );
       }
@@ -405,6 +408,8 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
                  <AzButton
                      {...commonProps}
                      text={item.text}
+                     content={item.content}
+                     hasCustomContent={!!item.content}
                      onClick={() => {
                          setHostStates(prev => ({...prev, [item.id]: !prev[item.id]}));
                          logInteraction('Host toggled', item.text);
@@ -455,6 +460,8 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
             <AzButton
                 {...commonProps}
                 text={item.text}
+                content={item.content}
+                hasCustomContent={!!item.content}
                 onClick={() => {
                     logInteraction('Item clicked', item.text);
                     if (item.isNestedRail) {
@@ -543,11 +550,11 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
         <View style={[styles.footer, { alignItems: 'center' }]}>
              <View style={styles.divider} />
              {enableRailDragging && (
-                 <TouchableOpacity onPress={handleUndock} style={{ paddingVertical: 8 }}><Text style={{ fontSize: 10, color: footerColor }}>Undock</Text></TouchableOpacity>
+                 <TouchableOpacity onPress={handleUndock} style={{ paddingVertical: 8 }}><Text style={[styles.menuItemText, { color: footerColor, fontWeight: 'bold' }]}>{`Undock`}</Text></TouchableOpacity>
              )}
-             <TouchableOpacity onPress={handleAbout} style={{ paddingVertical: 4 }}><Text style={{ fontSize: 10, color: footerColor }}>About</Text></TouchableOpacity>
-             <TouchableOpacity onPress={handleFeedback} style={{ paddingVertical: 4 }}><Text style={{ fontSize: 10, color: footerColor }}>Feedback</Text></TouchableOpacity>
-             <TouchableOpacity onPress={handleCredit} onLongPress={handleSecLocTrigger} delayLongPress={500} style={{ paddingVertical: 4 }}><Text style={{ fontSize: 10, color: footerColor }}>@HereLiesAz</Text></TouchableOpacity>
+             <TouchableOpacity onPress={handleAbout} style={{ paddingVertical: 4 }}><Text style={[styles.menuItemText, { color: footerColor }]}>About</Text></TouchableOpacity>
+             <TouchableOpacity onPress={handleFeedback} style={{ paddingVertical: 4 }}><Text style={[styles.menuItemText, { color: footerColor }]}>Feedback</Text></TouchableOpacity>
+             <TouchableOpacity onPress={handleCredit} onLongPress={handleSecLocTrigger} delayLongPress={500} style={{ paddingVertical: 4 }}><Text style={[styles.menuItemText, { color: footerColor, opacity: 0.5 }]}>@HereLiesAz</Text></TouchableOpacity>
         </View>
       );
   };

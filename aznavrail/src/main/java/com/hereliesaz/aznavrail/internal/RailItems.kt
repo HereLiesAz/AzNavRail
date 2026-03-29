@@ -319,8 +319,6 @@ private fun DraggableRailItemWrapper(
     androidx.compose.runtime.LaunchedEffect(item.forceHiddenMenuOpen) {
         if (item.forceHiddenMenuOpen) {
             onMenuOpen(item.id)
-        } else if (hiddenMenuOpenId == item.id) {
-            onHiddenMenuDismiss()
         }
     }
     val isRightDocked = visualDockingSide == AzDockingSide.RIGHT
@@ -644,7 +642,7 @@ private fun DraggableRailItemWrapper(
                     item.onHiddenMenuDismiss?.invoke()
                     onHiddenMenuDismiss()
                 },
-                backgroundColor = AzTextBoxDefaults.getBackgroundColor(),
+                backgroundColor = if (scope.translucentBackground != androidx.compose.ui.graphics.Color.Unspecified) scope.translucentBackground else AzTextBoxDefaults.getBackgroundColor(),
                 backgroundOpacity = AzTextBoxDefaults.getBackgroundOpacity(),
                 anchorWidth = itemWidths[item.id] ?: 0
             )
@@ -694,7 +692,7 @@ private fun HiddenMenuPopup(
         Column(
             modifier = Modifier
                 .width(halfWidth)
-                .background(effectiveBg.copy(alpha = 0.95f))
+                .background(effectiveBg.copy(alpha = backgroundOpacity))
                 .border(1.dp, MaterialTheme.colorScheme.primary)
                 .padding(8.dp)
         ) {

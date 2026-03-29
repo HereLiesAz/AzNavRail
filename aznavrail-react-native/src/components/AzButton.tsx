@@ -12,6 +12,8 @@ export interface AzButtonProps {
   enabled?: boolean;
   isLoading?: boolean;
   testID?: string;
+  hasCustomContent?: boolean;
+  content?: React.ReactNode;
 }
 
 export const AzButton: React.FC<AzButtonProps> = ({
@@ -23,6 +25,8 @@ export const AzButton: React.FC<AzButtonProps> = ({
   enabled = true,
   isLoading = false,
   testID,
+  hasCustomContent = false,
+  content: customContentNode,
 }) => {
   const isCircle = shape === AzButtonShape.CIRCLE;
   const isSquare = shape === AzButtonShape.SQUARE;
@@ -42,22 +46,26 @@ export const AzButton: React.FC<AzButtonProps> = ({
     ...style,
   };
 
-  if (isCircle) {
-    containerStyle.width = size;
-    containerStyle.height = size;
-    containerStyle.borderRadius = size / 2;
-  } else if (isSquare) {
-    containerStyle.width = size;
-    containerStyle.height = size;
-    containerStyle.borderRadius = 0;
-  } else if (isRectangle) {
-    containerStyle.height = size;
-    // Width is determined by content or parent
-    containerStyle.paddingHorizontal = 8;
-    containerStyle.borderRadius = 0;
-  } else if (isNone) {
-     // Invisible rectangle
-     containerStyle.height = size;
+  if (hasCustomContent) {
+    containerStyle.minWidth = size;
+  } else {
+    if (isCircle) {
+      containerStyle.width = size;
+      containerStyle.height = size;
+      containerStyle.borderRadius = size / 2;
+    } else if (isSquare) {
+      containerStyle.width = size;
+      containerStyle.height = size;
+      containerStyle.borderRadius = 0;
+    } else if (isRectangle) {
+      containerStyle.height = size;
+      // Width is determined by content or parent
+      containerStyle.paddingHorizontal = 8;
+      containerStyle.borderRadius = 0;
+    } else if (isNone) {
+       // Invisible rectangle
+       containerStyle.height = size;
+    }
   }
 
   const textStyle: TextStyle = {
@@ -72,6 +80,8 @@ export const AzButton: React.FC<AzButtonProps> = ({
     <View style={{ transform: [{ scale: 0.5 }] }}>
       <AzLoad />
     </View>
+  ) : customContentNode ? (
+    customContentNode
   ) : (
     <Text
       style={textStyle}

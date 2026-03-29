@@ -51,8 +51,9 @@ interface AzNavRailScope {
      * @param activeColor The color used for active/selected items.
      * @param defaultShape The default shape for buttons (Circle, Square, Rectangle, None).
      * @param headerIconShape The shape of the header icon (Circle, Rounded, None).
+     * @param translucentBackground The translucent background color for the rail and popup menus.
      */
-    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.CIRCLE, headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE)
+    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.CIRCLE, headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE, translucentBackground: Color = Color.Unspecified)
 
     /**
      * Configures advanced features like loading states, help screens, and overlays.
@@ -406,6 +407,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     var activeColor: Color = Color.Unspecified
     var defaultShape: AzButtonShape = AzButtonShape.CIRCLE // Restored: default is circle
     var headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE // Default per legacy, overridden in UI
+    var translucentBackground: Color = Color.Unspecified
 
     // Advanced
     var isLoading: Boolean = false
@@ -434,10 +436,11 @@ class AzNavRailScopeImpl : AzNavRailScope {
         this.appRepositoryUrl = appRepositoryUrl
     }
 
-    override fun azTheme(activeColor: Color, defaultShape: AzButtonShape, headerIconShape: AzHeaderIconShape) {
+    override fun azTheme(activeColor: Color, defaultShape: AzButtonShape, headerIconShape: AzHeaderIconShape, translucentBackground: Color) {
         this.activeColor = activeColor
         this.defaultShape = defaultShape
         this.headerIconShape = headerIconShape
+        this.translucentBackground = translucentBackground
     }
 
     override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, secLoc: String?, secLocPort: Int) {
@@ -563,7 +566,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         checkId(id)
         val nestedScope = AzNavRailScopeImpl()
         nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, showFooter = this.showFooter, appRepositoryUrl = this.appRepositoryUrl)
-        nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape)
+        nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape, translucentBackground = this.translucentBackground)
         nestedScope.nestedContent()
 
         nestedScope.onClickMap.forEach { (k, v) -> onClickMap[k] = v }
@@ -655,7 +658,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         val nestedItems = if (nestedContent != null) {
             val nestedScope = AzNavRailScopeImpl()
             nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, showFooter = this.showFooter)
-            nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape)
+            nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape, translucentBackground = this.translucentBackground)
             nestedScope.nestedContent()
 
             nestedScope.onClickMap.forEach { (k, v) -> onClickMap[k] = v }

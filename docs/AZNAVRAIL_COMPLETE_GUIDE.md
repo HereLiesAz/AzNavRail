@@ -47,7 +47,8 @@ Controls visual style defaults.
 ```kotlin
 azTheme(
     defaultShape = AzButtonShape.RECTANGLE, // Default shape for all items
-    activeColor = MaterialTheme.colorScheme.primary // Color for active state
+    activeColor = MaterialTheme.colorScheme.primary, // Color for active state
+    translucentBackground = Color.Black.copy(alpha = 0.5f) // Set the background color for menus/overlays!
 )
 ```
 
@@ -102,6 +103,11 @@ azRailItem(id = "icon-item", text = "Icon", content = android.R.drawable.ic_menu
 
 // Rail item with specific shape override
 azRailItem(id = "none-shape", text = "No Shape", shape = AzButtonShape.NONE)
+
+// Rail item with Custom Composable Content Size
+azRailItem(id = "wide-composable", text = "Wide", content = AzComposableContent {
+    Box(Modifier.width(120.dp).background(Color.Blue))
+}) // Will not clip to rail width!
 
 // Disabled item
 azRailItem(id = "profile", text = "Profile", disabled = true, route = "profile")

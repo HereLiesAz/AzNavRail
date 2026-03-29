@@ -85,7 +85,7 @@ export const RailMenuItem: React.FC<RailMenuItemProps> = ({
                     {displayText}
                 </Text>
                 {item.isHost && (
-                    <Text>{isExpandedHost ? '▲' : '▼'}</Text>
+                    <Text style={{ marginLeft: 8 }}>{isExpandedHost ? '▲' : '▼'}</Text>
                 )}
             </TouchableOpacity>
 
@@ -103,5 +103,7 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
       fontSize: 16,
+      textAlign: 'center',
+      flex: 1,
   },
 });

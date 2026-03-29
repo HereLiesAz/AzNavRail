@@ -353,15 +353,23 @@ export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
                         hiddenMenuItems.push({ id: `hidden_${hiddenMenuItems.length}`, text, onClick: action });
                     }
                 },
-                inputItem: (hint, arg2, arg3) => {
+                inputItem: (hint: string, arg2: any, arg3?: any) => {
                     let initialValue = '';
                     let onValueChange: (value: string) => void;
 
                     if (typeof arg2 === 'string') {
                         initialValue = arg2;
-                        onValueChange = arg3 as (value: string) => void;
-                    } else {
+                        if (typeof arg3 !== 'function') {
+                            console.warn("inputItem requires an onValueChange function callback.");
+                            onValueChange = () => {};
+                        } else {
+                            onValueChange = arg3;
+                        }
+                    } else if (typeof arg2 === 'function') {
                         onValueChange = arg2;
+                    } else {
+                        console.warn("inputItem requires an onValueChange function callback.");
+                        onValueChange = () => {};
                     }
                     hiddenMenuItems.push({ id: `input_${hiddenMenuItems.length}`, text: '', isInput: true, hint, initialValue, onValueChange });
                 }

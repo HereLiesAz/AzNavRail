@@ -37,6 +37,7 @@ export interface AzNavRailSettings {
   activeColor?: string;
   vibrate?: boolean;
   headerIconShape?: AzHeaderIconShape;
+  translucentBackground?: string;
   secLoc?: string;
   usePhysicalDocking?: boolean;
   activeClassifiers?: string[];
@@ -168,9 +169,12 @@ export interface HiddenMenuScope {
     listItem: (text: string, action: string | (() => void)) => void;
     /**
      * Adds a text input item to the hidden menu.
-     * Supports either `inputItem(hint, onValueChange)` or `inputItem(hint, initialValue, onValueChange)`
      */
-    inputItem: (hint: string, arg2: string | ((value: string) => void), arg3?: (value: string) => void) => void;
+    inputItem(hint: string, onValueChange: (value: string) => void): void;
+    /**
+     * Adds a text input item to the hidden menu with an initial value.
+     */
+    inputItem(hint: string, initialValue: string, onValueChange: (value: string) => void): void;
 }
 
 export interface AzItemConfig {

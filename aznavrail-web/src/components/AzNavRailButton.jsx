@@ -64,6 +64,8 @@ const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen, sty
 
   const shapeClass = item.shape ? item.shape.toLowerCase() : 'circle';
 
+  const isReactNode = content && React.isValidElement(content);
+
   return (
     <div style={{ position: 'relative' }} data-az-nav-id={id}>
         <button
@@ -73,19 +75,27 @@ const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen, sty
                 borderColor: color || 'blue',
                 opacity: isInteractive ? 1 : 0.5,
                 cursor: isInteractive ? 'pointer' : 'default',
+                width: isReactNode ? 'auto' : undefined,
+                minWidth: '64px',
+                height: isReactNode ? 'auto' : undefined,
+                minHeight: '64px',
                 ...style
             }}
             disabled={!isInteractive}
             {...ariaProps}
         >
           {content ? (
-              <div className="button-content-wrapper" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {typeof content === 'string' && (content.startsWith('http') || content.startsWith('/') || content.startsWith('data:')) ? (
-                      <img src={content} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} />
-                  ) : (
-                      <div style={{ backgroundColor: content, width: '100%', height: '100%', borderRadius: 'inherit' }} />
-                  )}
-              </div>
+              isReactNode ? (
+                  content
+              ) : (
+                  <div className="button-content-wrapper" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {typeof content === 'string' && (content.startsWith('http') || content.startsWith('/') || content.startsWith('data:')) ? (
+                          <img src={content} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} />
+                      ) : (
+                          <div style={{ backgroundColor: content, width: '100%', height: '100%', borderRadius: 'inherit' }} />
+                      )}
+                  </div>
+              )
           ) : (
               <span className="button-text" ref={textRef}>{textToShow}</span>
           )}
