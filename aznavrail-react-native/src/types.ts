@@ -89,6 +89,8 @@ export interface AzNavItem {
   // Reloc Item properties
   isRelocItem?: boolean;
   hiddenMenu?: HiddenMenuItem[];
+  forceHiddenMenuOpen?: boolean;
+  onHiddenMenuDismiss?: () => void;
   onRelocate?: (fromIndex: number, toIndex: number, newOrder: string[]) => void;
   // Info/Help
   info?: string;
@@ -151,6 +153,8 @@ export interface AzSubCyclerProps extends AzCyclerProps {
 export interface AzRailRelocItemProps extends AzSubItemProps {
     onRelocate?: (fromIndex: number, toIndex: number, newOrder: string[]) => void;
     hiddenMenu?: { text: string; onClick: () => void }[] | ((scope: HiddenMenuScope) => void);
+    forceHiddenMenuOpen?: boolean;
+    onHiddenMenuDismiss?: () => void;
     nestedRailAlignment?: AzNestedRailAlignment;
     nestedContent?: React.ReactNode;
 }

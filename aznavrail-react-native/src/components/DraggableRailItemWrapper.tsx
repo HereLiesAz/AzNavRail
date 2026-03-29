@@ -38,6 +38,21 @@ export const DraggableRailItemWrapper: React.FC<DraggableRailItemWrapperProps> =
   const [showHiddenMenu, setShowHiddenMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
 
+  useEffect(() => {
+      if (item.forceHiddenMenuOpen) {
+          setShowHiddenMenu(true);
+      } else if (showHiddenMenu) {
+          setShowHiddenMenu(false);
+      }
+  }, [item.forceHiddenMenuOpen]);
+
+  const closeMenu = () => {
+      setShowHiddenMenu(false);
+      if (item.onHiddenMenuDismiss) {
+          item.onHiddenMenuDismiss();
+      }
+  };
+
   // Create a listener for offset updates
   useEffect(() => {
      // If this item is being displaced by another item being dragged
@@ -92,12 +107,12 @@ export const DraggableRailItemWrapper: React.FC<DraggableRailItemWrapperProps> =
           <Modal
               transparent={true}
               visible={showHiddenMenu}
-              onRequestClose={() => setShowHiddenMenu(false)}
+              onRequestClose={closeMenu}
           >
               <TouchableOpacity
                   style={styles.modalOverlay}
                   activeOpacity={1}
-                  onPress={() => setShowHiddenMenu(false)}
+                  onPress={closeMenu}
               >
                   <View style={[styles.hiddenMenu, { top: menuPosition.y, left: menuPosition.x }]}>
                        {item.hiddenMenu.map((menuItem, i) => {
@@ -110,7 +125,7 @@ export const DraggableRailItemWrapper: React.FC<DraggableRailItemWrapperProps> =
                                            onValueChange={menuItem.onValueChange}
                                            onSubmit={(val) => {
                                                if (menuItem.onValueChange) menuItem.onValueChange(val);
-                                               setShowHiddenMenu(false);
+                                               closeMenu();
                                            }}
                                            showSubmitButton={true}
                                            outlined={true}

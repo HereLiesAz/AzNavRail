@@ -71,6 +71,14 @@ const AzNavRail = ({
   const [localNavItems, setLocalNavItems] = useState([]);
   const [hiddenMenuOpenId, setHiddenMenuOpenId] = useState(null);
   const [nestedRailVisibleId, setNestedRailVisibleId] = useState(null);
+
+  useEffect(() => {
+      let openId = null;
+      localNavItems.forEach(item => {
+          if (item.forceHiddenMenuOpen) openId = item.id;
+      });
+      setHiddenMenuOpenId(openId);
+  }, [localNavItems]);
   const [anchorPosition, setAnchorPosition] = useState(null);
   const [itemBounds, setItemBounds] = useState({});
 
@@ -437,6 +445,7 @@ const AzNavRail = ({
                                                               onValueChange={menuItem.onValueChange}
                                                               onSubmit={(val) => {
                                                                   if (menuItem.onValueChange) menuItem.onValueChange(val);
+                                                                  if (item.onHiddenMenuDismiss) item.onHiddenMenuDismiss();
                                                                   setHiddenMenuOpenId(null);
                                                               }}
                                                               showSubmitButton={true}
@@ -449,6 +458,7 @@ const AzNavRail = ({
                                                       e.stopPropagation();
                                                       if(menuItem.onClick) menuItem.onClick();
                                                       if(menuItem.route) window.location.href = menuItem.route;
+                                                      if(item.onHiddenMenuDismiss) item.onHiddenMenuDismiss();
                                                       setHiddenMenuOpenId(null);
                                                   }}>
                                                       {menuItem.text}

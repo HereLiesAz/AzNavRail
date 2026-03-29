@@ -393,6 +393,8 @@ export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
         toggleOnText: '',
         toggleOffText: '',
         hiddenMenu: hiddenMenuItems,
+        forceHiddenMenuOpen: props.forceHiddenMenuOpen,
+        onHiddenMenuDismiss: props.onHiddenMenuDismiss,
         nestedRailAlignment: props.nestedRailAlignment || AzNestedRailAlignment.VERTICAL,
     });
     return (
