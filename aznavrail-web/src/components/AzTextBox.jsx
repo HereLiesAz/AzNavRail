@@ -44,6 +44,13 @@ const AzTextBox = ({
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const isControlled = value !== undefined;
+
+  useEffect(() => {
+    if (!isControlled) {
+      setInternalValue(initialValue);
+    }
+  }, [initialValue, isControlled]);
+
   const currentValue = isControlled ? value : internalValue;
 
   // Handle outside click to close suggestions

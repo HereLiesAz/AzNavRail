@@ -409,7 +409,16 @@ const AzNavRail = ({
                                                           menuItems.push({ text, onClick: action });
                                                       }
                                                   },
-                                                  inputItem: (hint, onValueChange, initialValue = '') => {
+                                                  inputItem: (hint, arg2, arg3) => {
+                                                      let initialValue = '';
+                                                      let onValueChange;
+
+                                                      if (typeof arg2 === 'string') {
+                                                          initialValue = arg2;
+                                                          onValueChange = arg3;
+                                                      } else {
+                                                          onValueChange = arg2;
+                                                      }
                                                       menuItems.push({ text: '', isInput: true, hint, initialValue, onValueChange });
                                                   }
                                               };

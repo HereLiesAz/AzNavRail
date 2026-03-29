@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   TextInput,
@@ -56,6 +56,12 @@ export const AzTextBox: React.FC<AzTextBoxProps> = ({
   const [isSecretVisible, setIsSecretVisible] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  useEffect(() => {
+    if (!isControlled) {
+      setInternalValue(initialValue);
+    }
+  }, [initialValue, isControlled]);
 
   const currentValue = isControlled ? controlledValue : internalValue;
 
