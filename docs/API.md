@@ -91,7 +91,10 @@ fun azConfig(
 Standalone components designed to be used **inside** your `@Composable` screens.
 
 ### `AzTextBox`
-A high-ground text input field with support for autocomplete, password masking, and multiline text.
+A high-ground text input field with support for autocomplete, password masking, multiline text, and pre-filled initial values.
+
+### `AzForm`
+A form builder component for managing and grouping multiple `AzTextBox` fields together. Form entries now strictly enforce and securely support initial pre-filled values (`initialValue`) across platform variants.
 
 ### `AzToggle`
 A standalone toggle switch matching the rail's aesthetic.

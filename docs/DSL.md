@@ -56,6 +56,12 @@ fun azAdvanced(
 )
 ~~~
 
+## Hidden Menu Builders (for `azRailRelocItem`)
+* `listItem(text, route)`
+* `listItem(text, onClick)`
+* `inputItem(hint, onValueChange)`
+* `inputItem(hint, initialValue, onValueChange)`
+
 ## Item Builders
 
 The following functions are used to define the rail structure.
@@ -77,4 +83,4 @@ The following functions are used to define the rail structure.
 * `azRailSubToggle(id, hostId, isChecked, toggleOnText, toggleOffText, route, color, shape, disabled, screenTitle, info, onClick)`
 * `azMenuSubCycler(id, hostId, options, selectedOption, route, color, shape, disabled, disabledOptions, screenTitle, info, onClick)`
 * `azRailSubCycler(id, hostId, options, selectedOption, route, color, shape, disabled, disabledOptions, screenTitle, info, onClick)`
-* `azRailRelocItem(id, hostId, text, route, content, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick, onRelocate) { ... }`
+* `azRailRelocItem(id, hostId, text, route, content, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick, onRelocate, forceHiddenMenuOpen, onHiddenMenuDismiss) { ... }`

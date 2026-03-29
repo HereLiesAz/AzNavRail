@@ -48,10 +48,10 @@ export const AzRoller: React.FC<AzRollerProps> = ({
   }
 
   useEffect(() => {
-      if (selectedOption) {
-          setFilterText(selectedOption);
+      if (!expanded) {
+          setFilterText(selectedOption || '');
       }
-  }, [selectedOption]);
+  }, [selectedOption, expanded]);
 
   const handleSelect = (option: string) => {
     onOptionSelected(option);

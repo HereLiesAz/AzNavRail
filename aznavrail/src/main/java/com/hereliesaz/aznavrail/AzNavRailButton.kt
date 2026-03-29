@@ -11,6 +11,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -76,13 +77,17 @@ internal fun AzNavRailButton(
     }
 
     // STRICT WIDTH COMPLIANCE for all shapes
-    val buttonModifier = when (shape) {
-        AzButtonShape.CIRCLE, AzButtonShape.SQUARE -> modifier
-            .size(size)
-            .aspectRatio(1f)
-        AzButtonShape.RECTANGLE, AzButtonShape.NONE -> modifier
-            .width(size) // Fixed identical width
-            .height(40.dp) // Decreased fixed height variant
+    val buttonModifier = if (itemContent is AzComposableContent) {
+        modifier.defaultMinSize(minWidth = size)
+    } else {
+        when (shape) {
+            AzButtonShape.CIRCLE, AzButtonShape.SQUARE -> modifier
+                .size(size)
+                .aspectRatio(1f)
+            AzButtonShape.RECTANGLE, AzButtonShape.NONE -> modifier
+                .width(size) // Fixed identical width
+                .height(40.dp) // Decreased fixed height variant
+        }
     }
 
     val disabledColor = color.copy(alpha = 0.38f)

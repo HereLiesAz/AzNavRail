@@ -218,6 +218,8 @@ azRailRelocItem(
     id = "reloc-1",
     hostId = "rail-host", // Cluster ID
     text = "Reloc Item 1",
+    forceHiddenMenuOpen = false, // Programmatic control for hidden context menu
+    onHiddenMenuDismiss = { /* Menu was closed! */ },
     onRelocate = { from, to, newOrder -> /* handle reorder */ }
 ) {
     // Hidden Context Menu (Tap to open)
@@ -337,7 +339,7 @@ AzForm(
     formName = "loginForm",
     onSubmit = { formData -> /* Map<String, String> */ }
 ) {
-    entry(entryName = "username", hint = "Username")
+    entry(entryName = "username", hint = "Username", initialValue = "AzRailFan") // Pre-filled!
     entry(entryName = "password", hint = "Password", secret = true) // Password mask
     entry(entryName = "bio", hint = "Biography", multiline = true)  // Multi-line
 }

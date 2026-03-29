@@ -315,6 +315,12 @@ private fun DraggableRailItemWrapper(
 ) {
     val isDragging = draggedItemId == item.id
     var visualOffsetY by remember { mutableStateOf(0.dp) }
+
+    androidx.compose.runtime.LaunchedEffect(item.forceHiddenMenuOpen) {
+        if (item.forceHiddenMenuOpen) {
+            onMenuOpen(item.id)
+        }
+    }
     val isRightDocked = visualDockingSide == AzDockingSide.RIGHT
 
     val myHeightPx = itemHeights[item.id] ?: 0
@@ -621,17 +627,22 @@ private fun DraggableRailItemWrapper(
         if (hiddenMenuOpenId == item.id && !item.hiddenMenuItems.isNullOrEmpty()) {
             HiddenMenuPopup(
                 items = item.hiddenMenuItems,
-                onDismiss = onHiddenMenuDismiss,
+                onDismiss = {
+                    item.onHiddenMenuDismiss?.invoke()
+                    onHiddenMenuDismiss()
+                },
                 onItemClick = { menuItem ->
                     scope.hiddenMenuOnClickMap[menuItem.id]?.invoke()
                     menuItem.route?.let { navController?.navigate(it) }
+                    item.onHiddenMenuDismiss?.invoke()
                     onHiddenMenuDismiss()
                 },
                 onInputSubmit = { menuItem, value ->
                     scope.hiddenMenuOnValueChangeMap[menuItem.id]?.invoke(value)
+                    item.onHiddenMenuDismiss?.invoke()
                     onHiddenMenuDismiss()
                 },
-                backgroundColor = AzTextBoxDefaults.getBackgroundColor(),
+                backgroundColor = if (scope.translucentBackground != androidx.compose.ui.graphics.Color.Unspecified) scope.translucentBackground else AzTextBoxDefaults.getBackgroundColor(),
                 backgroundOpacity = AzTextBoxDefaults.getBackgroundOpacity(),
                 anchorWidth = itemWidths[item.id] ?: 0
             )
@@ -681,13 +692,13 @@ private fun HiddenMenuPopup(
         Column(
             modifier = Modifier
                 .width(halfWidth)
-                .background(effectiveBg.copy(alpha = 0.95f))
+                .background(effectiveBg.copy(alpha = backgroundOpacity))
                 .border(1.dp, MaterialTheme.colorScheme.primary)
                 .padding(8.dp)
         ) {
             items.forEach { menuItem ->
                 if (menuItem.isInput) {
-                    var text by remember { mutableStateOf("") }
+                    var text by remember { mutableStateOf(menuItem.initialValue) }
                     com.hereliesaz.aznavrail.AzTextBox(
                         modifier = Modifier.padding(8.dp),
                         hint = menuItem.hint ?: "",

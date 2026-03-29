@@ -9,5 +9,6 @@ data class HiddenMenuItem(
     val text: String,
     val route: String? = null,
     val isInput: Boolean = false,
-    val hint: String? = null
+    val hint: String? = null,
+    val initialValue: String = ""
 ) : Parcelable

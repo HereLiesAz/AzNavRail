@@ -71,6 +71,13 @@ const AzNavRail = ({
   const [localNavItems, setLocalNavItems] = useState([]);
   const [hiddenMenuOpenId, setHiddenMenuOpenId] = useState(null);
   const [nestedRailVisibleId, setNestedRailVisibleId] = useState(null);
+
+  useEffect(() => {
+      const openItem = localNavItems.find(item => item.forceHiddenMenuOpen);
+      if (openItem) {
+          setHiddenMenuOpenId(openItem.id);
+      }
+  }, [localNavItems]);
   const [anchorPosition, setAnchorPosition] = useState(null);
   const [itemBounds, setItemBounds] = useState({});
 
@@ -409,8 +416,25 @@ const AzNavRail = ({
                                                           menuItems.push({ text, onClick: action });
                                                       }
                                                   },
-                                                  inputItem: (hint, onValueChange) => {
-                                                      menuItems.push({ text: '', isInput: true, hint, onValueChange });
+                                                  inputItem: (hint, arg2, arg3) => {
+                                                      let initialValue = '';
+                                                      let onValueChange;
+
+                                                      if (typeof arg2 === 'string') {
+                                                          initialValue = arg2;
+                                                          if (typeof arg3 !== 'function') {
+                                                              console.warn("inputItem requires an onValueChange function callback.");
+                                                              onValueChange = () => {};
+                                                          } else {
+                                                              onValueChange = arg3;
+                                                          }
+                                                      } else if (typeof arg2 === 'function') {
+                                                          onValueChange = arg2;
+                                                      } else {
+                                                          console.warn("inputItem requires an onValueChange function callback.");
+                                                          onValueChange = () => {};
+                                                      }
+                                                      menuItems.push({ text: '', isInput: true, hint, initialValue, onValueChange });
                                                   }
                                               };
                                               item.hiddenMenu(scope);
@@ -423,10 +447,12 @@ const AzNavRail = ({
                                                   return (
                                                       <div key={idx} style={{padding: '4px'}} onClick={(e) => e.stopPropagation()}>
                                                           <AzTextBox
+                                                              initialValue={menuItem.initialValue}
                                                               hint={menuItem.hint}
                                                               onValueChange={menuItem.onValueChange}
                                                               onSubmit={(val) => {
                                                                   if (menuItem.onValueChange) menuItem.onValueChange(val);
+                                                                  if (item.onHiddenMenuDismiss) item.onHiddenMenuDismiss();
                                                                   setHiddenMenuOpenId(null);
                                                               }}
                                                               showSubmitButton={true}
@@ -439,6 +465,7 @@ const AzNavRail = ({
                                                       e.stopPropagation();
                                                       if(menuItem.onClick) menuItem.onClick();
                                                       if(menuItem.route) window.location.href = menuItem.route;
+                                                      if(item.onHiddenMenuDismiss) item.onHiddenMenuDismiss();
                                                       setHiddenMenuOpenId(null);
                                                   }}>
                                                       {menuItem.text}

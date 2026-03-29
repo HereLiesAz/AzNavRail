@@ -353,8 +353,25 @@ export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
                         hiddenMenuItems.push({ id: `hidden_${hiddenMenuItems.length}`, text, onClick: action });
                     }
                 },
-                inputItem: (hint, onValueChange) => {
-                    hiddenMenuItems.push({ id: `input_${hiddenMenuItems.length}`, text: '', isInput: true, hint, onValueChange });
+                inputItem: (hint: string, arg2: any, arg3?: any) => {
+                    let initialValue = '';
+                    let onValueChange: (value: string) => void;
+
+                    if (typeof arg2 === 'string') {
+                        initialValue = arg2;
+                        if (typeof arg3 !== 'function') {
+                            console.warn("inputItem requires an onValueChange function callback.");
+                            onValueChange = () => {};
+                        } else {
+                            onValueChange = arg3;
+                        }
+                    } else if (typeof arg2 === 'function') {
+                        onValueChange = arg2;
+                    } else {
+                        console.warn("inputItem requires an onValueChange function callback.");
+                        onValueChange = () => {};
+                    }
+                    hiddenMenuItems.push({ id: `input_${hiddenMenuItems.length}`, text: '', isInput: true, hint, initialValue, onValueChange });
                 }
             };
             props.hiddenMenu(scope);
@@ -384,6 +401,8 @@ export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
         toggleOnText: '',
         toggleOffText: '',
         hiddenMenu: hiddenMenuItems,
+        forceHiddenMenuOpen: props.forceHiddenMenuOpen,
+        onHiddenMenuDismiss: props.onHiddenMenuDismiss,
         nestedRailAlignment: props.nestedRailAlignment || AzNestedRailAlignment.VERTICAL,
     });
     return (

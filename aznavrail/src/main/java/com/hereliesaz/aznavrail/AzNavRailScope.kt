@@ -51,8 +51,9 @@ interface AzNavRailScope {
      * @param activeColor The color used for active/selected items.
      * @param defaultShape The default shape for buttons (Circle, Square, Rectangle, None).
      * @param headerIconShape The shape of the header icon (Circle, Rounded, None).
+     * @param translucentBackground The translucent background color for the rail and popup menus.
      */
-    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.CIRCLE, headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE)
+    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.CIRCLE, headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE, translucentBackground: Color = Color.Unspecified)
 
     /**
      * Configures advanced features like loading states, help screens, and overlays.
@@ -299,10 +300,10 @@ interface AzNavRailScope {
      * @param nestedContent DSL block to define the items within the nested rail.
      * @param keepNestedRailOpen If true, the nested rail remains open until the parent item is tapped again.
      * @param hiddenMenu Scope to define context menu actions available via tap-when-focused.
-     * @param nestedRailAlignment The alignment of the nested rail (VERTICAL or HORIZONTAL).
-     * @param nestedContent DSL block to define the items within the nested rail.
+     * @param forceHiddenMenuOpen Programmatic control to explicitly show or hide the hidden menu.
+     * @param onHiddenMenuDismiss Callback invoked when the hidden menu dismisses itself.
      */
-    fun azRailRelocItem(id: String, hostId: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null, onRelocate: ((Int, Int, List<String>) -> Unit)? = null, nestedRailAlignment: AzNestedRailAlignment = AzNestedRailAlignment.VERTICAL, keepNestedRailOpen: Boolean = false, nestedContent: (AzNavRailScope.() -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit = {})
+    fun azRailRelocItem(id: String, hostId: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null, onRelocate: ((Int, Int, List<String>) -> Unit)? = null, nestedRailAlignment: AzNestedRailAlignment = AzNestedRailAlignment.VERTICAL, keepNestedRailOpen: Boolean = false, nestedContent: (AzNavRailScope.() -> Unit)? = null, forceHiddenMenuOpen: Boolean = false, onHiddenMenuDismiss: (() -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit = {})
 }
 
 /**
@@ -330,6 +331,14 @@ interface HiddenMenuScope {
      * @param onValueChange Callback invoked when the input value changes.
      */
     fun inputItem(hint: String, onValueChange: (String) -> Unit)
+    /**
+     * Adds a text input item to the hidden menu with an initial value.
+     *
+     * @param hint The hint text for the input field.
+     * @param initialValue The pre-filled initial value.
+     * @param onValueChange Callback invoked when the input value changes.
+     */
+    fun inputItem(hint: String, initialValue: String, onValueChange: (String) -> Unit)
 }
 
 internal class HiddenMenuScopeImpl : HiddenMenuScope {
@@ -349,8 +358,12 @@ internal class HiddenMenuScopeImpl : HiddenMenuScope {
     }
 
     override fun inputItem(hint: String, onValueChange: (String) -> Unit) {
+        inputItem(hint, "", onValueChange)
+    }
+
+    override fun inputItem(hint: String, initialValue: String, onValueChange: (String) -> Unit) {
         val id = "hidden_item_${items.size}"
-        items.add(com.hereliesaz.aznavrail.model.HiddenMenuItem(id = id, text = "", isInput = true, hint = hint))
+        items.add(com.hereliesaz.aznavrail.model.HiddenMenuItem(id = id, text = "", isInput = true, hint = hint, initialValue = initialValue))
         onValueChangeMap[id] = onValueChange
     }
 }
@@ -394,6 +407,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     var activeColor: Color = Color.Unspecified
     var defaultShape: AzButtonShape = AzButtonShape.CIRCLE // Restored: default is circle
     var headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE // Default per legacy, overridden in UI
+    var translucentBackground: Color = Color.Unspecified
 
     // Advanced
     var isLoading: Boolean = false
@@ -422,10 +436,11 @@ class AzNavRailScopeImpl : AzNavRailScope {
         this.appRepositoryUrl = appRepositoryUrl
     }
 
-    override fun azTheme(activeColor: Color, defaultShape: AzButtonShape, headerIconShape: AzHeaderIconShape) {
+    override fun azTheme(activeColor: Color, defaultShape: AzButtonShape, headerIconShape: AzHeaderIconShape, translucentBackground: Color) {
         this.activeColor = activeColor
         this.defaultShape = defaultShape
         this.headerIconShape = headerIconShape
+        this.translucentBackground = translucentBackground
     }
 
     override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, secLoc: String?, secLocPort: Int) {
@@ -551,7 +566,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         checkId(id)
         val nestedScope = AzNavRailScopeImpl()
         nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, showFooter = this.showFooter, appRepositoryUrl = this.appRepositoryUrl)
-        nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape)
+        nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape, translucentBackground = this.translucentBackground)
         nestedScope.nestedContent()
 
         nestedScope.onClickMap.forEach { (k, v) -> onClickMap[k] = v }
@@ -625,7 +640,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         addCycler(id = id, options = options, menuOptions = menuOptions, selectedOption = selectedOption, disabledOptions = disabledOptions, config = AzItemConfig(hostId = hostId, route = route, disabled = disabled, screenTitle = screenTitle, info = info, isRailItem = true, isSubItem = true, color = color, textColor = textColor, fillColor = fillColor, shape = shape), onClick = onClick ?: {})
     }
 
-    override fun azRailRelocItem(id: String, hostId: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, onFocus: (() -> Unit)?, onClick: (() -> Unit)?, onRelocate: ((Int, Int, List<String>) -> Unit)?, nestedRailAlignment: AzNestedRailAlignment, keepNestedRailOpen: Boolean, nestedContent: (AzNavRailScope.() -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
+    override fun azRailRelocItem(id: String, hostId: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, onFocus: (() -> Unit)?, onClick: (() -> Unit)?, onRelocate: ((Int, Int, List<String>) -> Unit)?, nestedRailAlignment: AzNestedRailAlignment, keepNestedRailOpen: Boolean, nestedContent: (AzNavRailScope.() -> Unit)?, forceHiddenMenuOpen: Boolean, onHiddenMenuDismiss: (() -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
         checkId(id)
         val hiddenMenuScope = HiddenMenuScopeImpl()
         hiddenMenuScope.hiddenMenu()
@@ -643,7 +658,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         val nestedItems = if (nestedContent != null) {
             val nestedScope = AzNavRailScopeImpl()
             nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, showFooter = this.showFooter)
-            nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape)
+            nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape, translucentBackground = this.translucentBackground)
             nestedScope.nestedContent()
 
             nestedScope.onClickMap.forEach { (k, v) -> onClickMap[k] = v }
@@ -659,7 +674,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
             AzNavItem(
                 id = id, text = text, menuText = menuText, route = route, isRailItem = true, isSubItem = true, hostId = hostId,
                 isRelocItem = true, disabled = disabled, screenTitle = finalScreenTitle, info = info,
-                hiddenMenuItems = prefixedItems, classifiers = classifiers, content = content, color = color, textColor = textColor, fillColor = fillColor, shape = shape ?: defaultShape,
+                hiddenMenuItems = prefixedItems, forceHiddenMenuOpen = forceHiddenMenuOpen, onHiddenMenuDismiss = onHiddenMenuDismiss, classifiers = classifiers, content = content, color = color, textColor = textColor, fillColor = fillColor, shape = shape ?: defaultShape,
                 isNestedRail = nestedContent != null, nestedRailAlignment = nestedRailAlignment, nestedRailItems = nestedItems,
                 keepNestedRailOpen = keepNestedRailOpen
             )

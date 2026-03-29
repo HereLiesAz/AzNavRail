@@ -289,13 +289,15 @@ azRailRelocItem(
     id = "reloc-1",
     hostId = "host-1",
     text = "Item 1",
+    forceHiddenMenuOpen = false, // Programmatically open the hidden menu!
+    onHiddenMenuDismiss = { /* Menu dismissed */ },
     onRelocate = { from, to, newOrder ->
         // Handle new order (List<String>)
     }
 ) {
     // Hidden Menu (Tap to select -> Long Press to open)
     listItem("Action 1") { /* ... */ }
-    inputItem("Rename") { newName -> /* ... */ }
+    inputItem("Rename", initialValue = "Item 1") { newName -> /* ... */ }
 }
 ~~~
 

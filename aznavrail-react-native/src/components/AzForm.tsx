@@ -1,12 +1,14 @@
-import React, { useState, createContext, useContext } from 'react';
+import React, { useState, createContext, useContext, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
 import { AzTextBox, AzTextBoxProps } from './AzTextBox';
 
 interface AzFormContextType {
   updateField: (name: string, value: string) => void;
+  registerField: (name: string, value: string) => void;
   formName: string;
   outlineColor: string;
   outlined: boolean;
+  formData: Record<string, string>;
 }
 
 const AzFormContext = createContext<AzFormContextType | undefined>(undefined);
@@ -32,16 +34,25 @@ export const AzForm: React.FC<AzFormProps> = ({
 }) => {
   const [formData, setFormData] = useState<Record<string, string>>({});
 
-  const updateField = (name: string, value: string) => {
+  const updateField = useCallback((name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  }, []);
+
+  const registerField = useCallback((name: string, initialValue: string) => {
+    setFormData(prev => {
+      if (prev[name] === undefined) {
+        return { ...prev, [name]: initialValue };
+      }
+      return prev;
+    });
+  }, []);
 
   const handleSubmit = () => {
     onSubmit(formData);
   };
 
   return (
-    <AzFormContext.Provider value={{ updateField, formName, outlineColor, outlined }}>
+    <AzFormContext.Provider value={{ updateField, registerField, formName, outlineColor, outlined, formData }}>
       <View style={[styles.container, style]}>
         {children}
         <TouchableOpacity
@@ -64,25 +75,33 @@ export const AzForm: React.FC<AzFormProps> = ({
 
 interface AzFormEntryProps extends Omit<AzTextBoxProps, 'onSubmit' | 'submitButtonContent'> {
   name: string;
+  initialValue?: string;
 }
 
-export const AzFormEntry: React.FC<AzFormEntryProps> = ({ name, ...props }) => {
+export const AzFormEntry: React.FC<AzFormEntryProps> = ({ name, initialValue = '', ...props }) => {
   const context = useContext(AzFormContext);
   if (!context) {
     throw new Error('AzFormEntry must be used within an AzForm');
   }
 
-  const { updateField, formName, outlineColor, outlined } = context;
+  const { updateField, registerField, formName, outlineColor, outlined, formData } = context;
+
+  useEffect(() => {
+    registerField(name, initialValue);
+  }, [name, initialValue, registerField]);
 
   const handleChange = (text: string) => {
     updateField(name, text);
     if (props.onValueChange) props.onValueChange(text);
   };
 
+  const value = formData[name] !== undefined ? formData[name] : initialValue;
+
   return (
     <View style={{ flexDirection: 'row', marginBottom: 8 }}>
       <AzTextBox
         {...props}
+        value={value}
         onValueChange={handleChange}
         historyContext={formName} // Use formName as history context
         outlineColor={outlineColor} // Inherit
