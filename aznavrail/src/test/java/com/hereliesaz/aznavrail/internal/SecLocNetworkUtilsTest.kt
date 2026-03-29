@@ -48,12 +48,12 @@ class SecLocNetworkUtilsTest {
 
         // Start server in background
         val job = launch(Dispatchers.IO) {
-            SecLocNetworkUtils.startServer(context, secret)
+            SecLocNetworkUtils.startServer(context, secret, 10203)
         }
 
         delay(500) // Wait for server to start
 
-        val logs = SecLocNetworkUtils.fetchLogs("127.0.0.1", secret)
+        val logs = SecLocNetworkUtils.fetchLogs("127.0.0.1", secret, 10203)
 
         assertEquals(1, logs.size)
         assertEquals(1.0, logs[0].lat, 0.0)
@@ -70,7 +70,7 @@ class SecLocNetworkUtilsTest {
 
         // Start server in background
         val job = launch(Dispatchers.IO) {
-            SecLocNetworkUtils.startServer(context, secret)
+            SecLocNetworkUtils.startServer(context, secret, 10203)
         }
 
         delay(500) // Wait for server to start
