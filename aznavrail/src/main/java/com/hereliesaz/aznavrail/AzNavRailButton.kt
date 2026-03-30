@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
@@ -77,18 +78,17 @@ internal fun AzNavRailButton(
     }
 
     // STRICT WIDTH COMPLIANCE for all shapes
-    val buttonModifier = if (itemContent is AzComposableContent) {
-        modifier.defaultMinSize(minWidth = size)
-    } else {
-        when (shape) {
-            AzButtonShape.CIRCLE, AzButtonShape.SQUARE -> modifier
-                .size(size)
-                .aspectRatio(1f)
-            AzButtonShape.RECTANGLE, AzButtonShape.NONE -> modifier
-                .width(size) // Fixed identical width
-                .height(40.dp) // Decreased fixed height variant
-        }
+    val buttonModifier = when (shape) {
+        AzButtonShape.CIRCLE, AzButtonShape.SQUARE -> modifier
+            .size(size)
+            .aspectRatio(1f)
+        AzButtonShape.RECTANGLE, AzButtonShape.NONE -> modifier
+            .width(size) // Fixed identical width
+            .height(40.dp) // Decreased fixed height variant
     }
+
+    // Clip to shape explicitly to ensure custom content doesn't draw outside bounds
+    val clippedModifier = buttonModifier.clip(buttonShape)
 
     val disabledColor = color.copy(alpha = 0.38f)
     val targetColor = if (isPressed || isSelected) activeColor else color
@@ -121,7 +121,7 @@ internal fun AzNavRailButton(
         color = containerColor,
         contentColor = finalColor,
         border = if (shape == AzButtonShape.NONE) null else BorderStroke(3.dp, finalColor),
-        modifier = buttonModifier
+        modifier = clippedModifier
             .onGloballyPositioned { coordinates ->
                 onGloballyPositioned?.invoke(coordinates.boundsInWindow())
             }

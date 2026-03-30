@@ -65,6 +65,18 @@ function App() {
                 selectedOption: 'System'
             }
         ]
+    },
+    {
+      id: 'customContent',
+      text: 'Custom',
+      route: 'Custom',
+      isRailItem: true,
+      info: 'Item with custom content that tests strict button sizing',
+      content: (
+          <div style={{ width: '200px', height: '200px', backgroundColor: 'purple', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ color: 'white' }}>Too Big</span>
+          </div>
+      )
     }
   ];
 

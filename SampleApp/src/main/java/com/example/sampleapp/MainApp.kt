@@ -337,9 +337,13 @@ fun MainApp() {
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(24.dp)
-                                .background(Color.White, CircleShape)
-                        )
+                                .width(300.dp)
+                                .height(50.dp)
+                                .background(Color.Red),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("Wide Content (Should Clip)", color = if (isEnabled) Color.White else Color.Gray)
+                        }
                     }
                 }
             )

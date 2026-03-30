@@ -43,6 +43,7 @@ export const AzButton: React.FC<AzButtonProps> = ({
     alignItems: 'center',
     justifyContent: 'center',
     opacity: enabled ? 1 : 0.5,
+    overflow: 'hidden',
     ...style,
   };
 
