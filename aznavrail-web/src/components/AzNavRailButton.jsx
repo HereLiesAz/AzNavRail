@@ -75,10 +75,13 @@ const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen, sty
                 borderColor: color || 'blue',
                 opacity: isInteractive ? 1 : 0.5,
                 cursor: isInteractive ? 'pointer' : 'default',
-                width: isReactNode ? 'auto' : undefined,
+                width: '64px',
                 minWidth: '64px',
-                height: isReactNode ? 'auto' : undefined,
+                maxWidth: '64px',
+                height: '64px',
                 minHeight: '64px',
+                maxHeight: '64px',
+                overflow: 'hidden',
                 ...style
             }}
             disabled={!isInteractive}

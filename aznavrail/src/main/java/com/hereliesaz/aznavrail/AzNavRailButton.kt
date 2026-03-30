@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
@@ -86,6 +87,9 @@ internal fun AzNavRailButton(
             .height(40.dp) // Decreased fixed height variant
     }
 
+    // Clip to shape explicitly to ensure custom content doesn't draw outside bounds
+    val clippedModifier = buttonModifier.clip(buttonShape)
+
     val disabledColor = color.copy(alpha = 0.38f)
     val targetColor = if (isPressed || isSelected) activeColor else color
     val finalColor = if (enabled) targetColor else disabledColor
@@ -117,7 +121,7 @@ internal fun AzNavRailButton(
         color = containerColor,
         contentColor = finalColor,
         border = if (shape == AzButtonShape.NONE) null else BorderStroke(3.dp, finalColor),
-        modifier = buttonModifier
+        modifier = clippedModifier
             .onGloballyPositioned { coordinates ->
                 onGloballyPositioned?.invoke(coordinates.boundsInWindow())
             }
