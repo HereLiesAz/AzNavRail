@@ -178,7 +178,7 @@ export const DraggableRailItemWrapper: React.FC<DraggableRailItemWrapperProps> =
                     text={item.text}
                     color={item.color}
                     shape={item.shape}
-                    disabled={item.disabled}
+                    enabled={!item.disabled}
                     // Pass a dummy click handler since we handle clicks on the wrapper for gesture conflict resolution
                     onClick={() => {}}
                 />

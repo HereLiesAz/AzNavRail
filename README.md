@@ -319,7 +319,7 @@ AzNavRail can function as a system-wide overlay (using `SYSTEM_ALERT_WINDOW`). T
 The expanded menu text font size (and the footer items text size) is strictly controlled by your app's `MaterialTheme.typography.titleLarge`. To adjust the text size inside the side menu drawer, simply customize the `titleLarge` attribute in your app's typography theme!
 
 #### Customizing Item Text and Colors
-Navigation items support overriding their display text and colors when shown in the menu versus the rail using `menuText`, `menuToggleOnText`, `menuToggleOffText`, `menuOptions`, `textColor`, and `fillColor` properties!
+Navigation items support overriding their display text and colors when shown in the menu versus the rail using `menuText`, `menuToggleOnText`, `menuToggleOffText`, `menuOptions`, `textColor`, and `fillColor` properties! By default, the `fillColor` (translucent background) is automatically computed to be Black (with 25% opacity), unless the item's main color is Black, in which case it is set to White (with 25% opacity) to ensure proper contrast.
 
 ### Documentation
 

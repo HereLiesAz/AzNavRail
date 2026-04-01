@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, ViewStyle, TextStyle, View } from 'react-native';
+import { TouchableOpacity, Text, ViewStyle, TextStyle, View, StyleSheet } from 'react-native';
 import { AzButtonShape } from '../types';
 import { AzLoad } from './AzLoad';
 
@@ -7,6 +7,7 @@ export interface AzButtonProps {
   text: string;
   onClick: () => void;
   color?: string;
+  fillColor?: string;
   shape?: AzButtonShape;
   style?: ViewStyle;
   enabled?: boolean;
@@ -20,6 +21,7 @@ export const AzButton: React.FC<AzButtonProps> = ({
   text,
   onClick,
   color = '#6200ee', // Default primary color
+  fillColor,
   shape = AzButtonShape.CIRCLE,
   style,
   enabled = true,
@@ -46,6 +48,11 @@ export const AzButton: React.FC<AzButtonProps> = ({
     overflow: 'hidden',
     ...style,
   };
+
+  const lowercaseColor = color.toLowerCase();
+  const defaultFillColor = (lowercaseColor === 'black' || lowercaseColor === '#000000' || lowercaseColor === '#000') ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)';
+
+  const actualFillColor = fillColor || defaultFillColor;
 
   if (hasCustomContent) {
     containerStyle.minWidth = size;
@@ -104,6 +111,7 @@ export const AzButton: React.FC<AzButtonProps> = ({
       accessibilityLabel={text}
       accessibilityState={{ disabled: !enabled || isLoading }}
     >
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: actualFillColor, zIndex: -1, borderRadius: containerStyle.borderRadius }]} pointerEvents="none" />
       {content}
     </TouchableOpacity>
   );
