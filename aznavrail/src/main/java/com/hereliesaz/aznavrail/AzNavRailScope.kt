@@ -143,6 +143,15 @@ interface AzNavRailScope {
     fun azHelpSubItem(id: String, hostId: String, text: String = "Help", content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, menuText: String? = null, textColor: Color? = null, fillColor: Color? = null)
 
     /**
+     * Provides a list mapping Item IDs to Help Strings.
+     * When a help card is displayed, it will show the existing `item.info` (if present)
+     * followed by the help text from this list (if present). If both are provided, the list text comes second.
+     *
+     * @param list A map of Item IDs to their corresponding help text.
+     */
+    fun azHelpList(list: Map<String, String>)
+
+    /**
      * Adds an item to the always-visible rail.
      *
      * @param id Unique identifier for the item.
@@ -376,6 +385,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     val hiddenMenuOnValueChangeMap = mutableMapOf<String, (String) -> Unit>()
     val onRelocateMap = mutableMapOf<String, (Int, Int, List<String>) -> Unit>()
     val itemBoundsCache = mutableStateMapOf<String, Rect>()
+    val helpTextMap = mutableStateMapOf<String, String>()
     var navController: NavController? = null
     var nestedRailOpenId: String? by mutableStateOf(null)
 
@@ -387,7 +397,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         hiddenMenuOnValueChangeMap.clear()
         onRelocateMap.clear()
         itemBoundsCache.clear()
-
+        helpTextMap.clear()
     }
 
     // Config
@@ -556,6 +566,11 @@ class AzNavRailScopeImpl : AzNavRailScope {
                 shape = shape ?: defaultShape
             )
         )
+    }
+
+    override fun azHelpList(list: Map<String, String>) {
+        helpTextMap.clear()
+        helpTextMap.putAll(list)
     }
 
     override fun azRailItem(id: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, onFocus: (() -> Unit)?, onClick: (() -> Unit)?) {

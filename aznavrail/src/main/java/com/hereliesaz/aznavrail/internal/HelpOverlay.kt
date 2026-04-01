@@ -29,9 +29,12 @@ import com.hereliesaz.aznavrail.model.AzNavItem
 internal fun HelpOverlay(
     items: List<AzNavItem>,
     onDismiss: () -> Unit,
-    itemBoundsCache: Map<String, Rect> = emptyMap()
+    itemBoundsCache: Map<String, Rect> = emptyMap(),
+    helpTextMap: Map<String, String> = emptyMap()
 ) {
-    val itemsWithInfo = remember(items) { items.filter { !it.info.isNullOrBlank() } }
+    val itemsWithInfo = remember(items, helpTextMap) {
+        items.filter { !it.info.isNullOrBlank() || !helpTextMap[it.id].isNullOrBlank() }
+    }
     val safeZones = LocalAzSafeZones.current
     val density = LocalDensity.current
 
@@ -100,8 +103,13 @@ internal fun HelpOverlay(
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(4.dp))
+
+                    val inlineInfo = item.info?.takeIf { it.isNotBlank() }
+                    val listInfo = helpTextMap[item.id]?.takeIf { it.isNotBlank() }
+                    val combinedText = listOfNotNull(inlineInfo, listInfo).joinToString("\n\n")
+
                     Text(
-                        text = item.info ?: "",
+                        text = combinedText,
                         color = Color.White,
                         style = MaterialTheme.typography.bodyLarge,
                         maxLines = if (isExpanded) Int.MAX_VALUE else 2,

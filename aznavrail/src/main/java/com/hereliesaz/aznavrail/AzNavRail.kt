@@ -614,7 +614,8 @@ fun AzNavRail(
         HelpOverlay(
             items = scope.navItems,
             onDismiss = { toggleHelpOverlay() },
-            itemBoundsCache = scope.itemBoundsCache
+            itemBoundsCache = scope.itemBoundsCache,
+            helpTextMap = scope.helpTextMap
         )
     }
 }

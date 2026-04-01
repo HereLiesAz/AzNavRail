@@ -95,6 +95,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
       translucentBackground: dslOverrides.translucentBackground ?? translucentBackground,
       vibrate: dslOverrides.vibrate ?? vibrate,
       onItemGloballyPositioned: dslOverrides.onItemGloballyPositioned,
+      helpList: dslOverrides.helpList ?? props.helpList,
   };
 
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded && !config.noMenu);
@@ -676,11 +677,17 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
                     <ScrollView contentContainerStyle={{ padding: 20 }}>
                         <Text style={styles.infoTitle}>Help & Info</Text>
                         {items.map(i => {
-                            if (!i.info) return null;
+                            const inlineInfo = i.info;
+                            const listInfo = config.helpList?.[i.id];
+                            const hasInfo = inlineInfo || listInfo;
+                            if (!hasInfo) return null;
+
+                            const combinedText = [inlineInfo, listInfo].filter(Boolean).join('\n\n');
+
                             return (
                                 <View key={i.id} style={styles.infoItem}>
                                     <Text style={styles.infoItemTitle}>{i.text}</Text>
-                                    <Text style={styles.infoItemText}>{i.info}</Text>
+                                    <Text style={styles.infoItemText}>{combinedText}</Text>
                                 </View>
                             );
                         })}

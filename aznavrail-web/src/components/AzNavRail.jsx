@@ -38,7 +38,8 @@ const AzNavRail = ({
     activeColor,
     translucentBackground,
     packRailButtons = false,
-    headerIconShape = 'CIRCLE'
+    headerIconShape = 'CIRCLE',
+    helpList = {}
   } = settings;
 
   // If noMenu is true, we force expanded to false, unless infoScreen overrides (which it doesn't really)
@@ -582,6 +583,7 @@ const AzNavRail = ({
             itemBounds={itemBounds}
             railWidth={collapsedRailWidth}
             onDismiss={onDismissInfoScreen}
+            helpList={helpList}
         />
     )}
 

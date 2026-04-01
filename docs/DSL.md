@@ -68,6 +68,7 @@ The following functions are used to define the rail structure.
 
 * `azMenuItem(id, text, route, content, color, shape, disabled, screenTitle, info, onClick)`
 * `azHelpRailItem(id, text, content, color, shape)`
+* `azHelpList(list)`
 * `azRailItem(id, text, route, content, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick)`
 * `@Composable azNestedRail(id, text, route, content, color, shape, alignment, disabled, screenTitle, info, classifiers, onFocus) { ... }`
 * `azMenuToggle(id, isChecked, toggleOnText, toggleOffText, route, color, shape, disabled, screenTitle, info, onClick)`

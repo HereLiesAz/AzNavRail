@@ -193,6 +193,16 @@ export const AzDivider: React.FC = () => {
     return null;
 };
 
+export const AzHelpList: React.FC<{ helpList: Record<string, string> }> = ({ helpList }) => {
+    const context = useContext(AzNavRailContext);
+    useEffect(() => {
+        if (context) {
+            context.updateSettings({ helpList });
+        }
+    }, [context, helpList]);
+    return null;
+};
+
 export const AzRailHostItem: React.FC<AzHostItemProps> = (props) => {
     useAzItem({
         ...props,

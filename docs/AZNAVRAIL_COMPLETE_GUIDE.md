@@ -86,11 +86,17 @@ azMenuItem(
     onClick = { /* log click */ }
 )
 
+// Map item IDs to help text (displays appended to inline 'info')
+azHelpList(mapOf("home" to "Additional help string via list"))
+
 // Multi-line text support
 azMenuItem(id = "multi-line", text = "This is a\nmulti-line item", route = "multi-line")
 
 // Help trigger rail item
 azHelpRailItem(id = "help-trigger", text = "Get Help")
+
+// External help text mapping
+azHelpList(mapOf("rail-1" to "Help string for rail 1"))
 
 // Help trigger as a sub-item
 azHelpSubItem(id = "help-sub-trigger", hostId = "rail-host", text = "Get Help Here")

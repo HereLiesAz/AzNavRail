@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import './HelpOverlay.css';
 
-const HelpOverlay = ({ items, railWidth, onDismiss, itemBounds }) => {
+const HelpOverlay = ({ items, railWidth, onDismiss, itemBounds, helpList = {} }) => {
   const canvasRef = useRef(null);
   const descriptionsRef = useRef(null);
 
@@ -19,7 +19,8 @@ const HelpOverlay = ({ items, railWidth, onDismiss, itemBounds }) => {
     ctx.lineWidth = 2;
 
     items.forEach(item => {
-        if (!item.info) return;
+        const hasInfo = item.info || helpList[item.id];
+        if (!hasInfo) return;
 
         // Use itemBounds if provided, fallback to DOM lookup
         const itemRect = itemBounds?.[item.id] || document.querySelector(`[data-az-nav-id="${item.id}"]`)?.getBoundingClientRect();
@@ -84,7 +85,7 @@ const HelpOverlay = ({ items, railWidth, onDismiss, itemBounds }) => {
         if (railContainer) railContainer.removeEventListener('scroll', handleScroll);
     };
 
-  }, [items, railWidth, itemBounds]);
+  }, [items, railWidth, itemBounds, helpList]);
 
   return (
     <div className="az-help-overlay">
@@ -93,11 +94,17 @@ const HelpOverlay = ({ items, railWidth, onDismiss, itemBounds }) => {
         style={{ marginLeft: railWidth }}
         ref={descriptionsRef}
       >
-        {items.filter(i => i.info).map(item => (
-            <div key={item.id} className="az-help-card" data-az-desc-id={item.id}>
-                {item.info}
-            </div>
-        ))}
+        {items.filter(i => i.info || helpList[i.id]).map(item => {
+            const inlineInfo = item.info;
+            const listInfo = helpList[item.id];
+            const combinedText = [inlineInfo, listInfo].filter(Boolean).join('\n\n');
+
+            return (
+                <div key={item.id} className="az-help-card" data-az-desc-id={item.id}>
+                    {combinedText}
+                </div>
+            );
+        })}
       </div>
       <canvas ref={canvasRef} className="az-help-canvas" />
       <button className="az-fab-exit" onClick={onDismiss}>✕</button>
