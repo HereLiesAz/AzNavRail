@@ -67,7 +67,8 @@ const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen, sty
   const isReactNode = content && React.isValidElement(content);
 
   const effectiveColor = color || 'blue';
-  const computedFillColor = (effectiveColor === 'black' || effectiveColor === '#000000' || effectiveColor === '#000')
+  const lowerColor = effectiveColor.toLowerCase();
+  const computedFillColor = (lowerColor === 'black' || lowerColor === '#000000' || lowerColor === '#000')
       ? 'rgba(255, 255, 255, 0.25)'
       : 'rgba(0, 0, 0, 0.25)';
   const finalFillColor = item.fillColor || computedFillColor;
