@@ -159,6 +159,7 @@ fun SampleScreen() {
 - **Triggering**:
     - **Auto Menu Item**: A "Help" item is automatically added to the bottom of the drawer menu.
     - **Explicit Trigger**: Use `azHelpRailItem(id, text)` to place a dedicated help button in the rail.
+    - **Help List**: An optional mapping of `RailItem` IDs to help texts to display in the help cards along with the item's `info` property. The text from `helpList` is displayed second.
 - **Behavior**:
     - **Visual Guides**: Dynamic lines connect interactive info cards to their corresponding rail items.
     - **Interactive Info Cards**: Cards are displayed in a scrollable list. Tap any card to expand it for more detail.

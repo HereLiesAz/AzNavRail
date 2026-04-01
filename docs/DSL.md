@@ -52,7 +52,8 @@ fun azAdvanced(
     enableRailDragging: Boolean = false,
     onRailDrag: ((Float, Float) -> Unit)? = null,
     onOverlayDrag: ((Float, Float) -> Unit)? = null,
-    onItemGloballyPositioned: ((String, Rect) -> Unit)? = null
+    onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
+    helpList: Map<String, String> = emptyMap()
 )
 ~~~
 

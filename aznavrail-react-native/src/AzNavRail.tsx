@@ -59,6 +59,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
       secLoc,
       onExpandedChange,
       onInteraction,
+      helpList = {},
   } = props;
   const logInteraction = useCallback(
     (action: string, details?: string) => {
@@ -95,6 +96,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
       translucentBackground: dslOverrides.translucentBackground ?? translucentBackground,
       vibrate: dslOverrides.vibrate ?? vibrate,
       onItemGloballyPositioned: dslOverrides.onItemGloballyPositioned,
+      helpList: dslOverrides.helpList ?? helpList,
   };
 
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded && !config.noMenu);
@@ -676,11 +678,21 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
                     <ScrollView contentContainerStyle={{ padding: 20 }}>
                         <Text style={styles.infoTitle}>Help & Info</Text>
                         {items.map(i => {
-                            if (!i.info) return null;
+                            const infoText = i.info?.trim();
+                            const listText = config.helpList?.[i.id]?.trim();
+                            if (!infoText && !listText) return null;
+
+                            const titleText = i.text?.trim() || `Item ${i.id}`;
+
                             return (
                                 <View key={i.id} style={styles.infoItem}>
-                                    <Text style={styles.infoItemTitle}>{i.text}</Text>
-                                    <Text style={styles.infoItemText}>{i.info}</Text>
+                                    <Text style={styles.infoItemTitle}>{titleText}</Text>
+                                    {infoText && <Text style={styles.infoItemText}>{infoText}</Text>}
+                                    {listText && (
+                                        <Text style={[styles.infoItemText, infoText ? { marginTop: 8 } : {}]}>
+                                            {listText}
+                                        </Text>
+                                    )}
                                 </View>
                             );
                         })}

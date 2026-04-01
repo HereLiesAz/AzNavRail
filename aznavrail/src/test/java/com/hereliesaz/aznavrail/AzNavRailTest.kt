@@ -245,15 +245,15 @@ class AzNavRailTest {
     fun `azAdvanced should update overlayService`() {
         val scope = AzNavRailScopeImpl()
         scope.azAdvanced(overlayService = android.app.Service::class.java)
-        assertEquals(android.app.Service::class.java, scope.overlayService)
+        assertEquals(android.app.Service::class.java, scope.advancedConfig.overlayService)
     }
 
     @Test
     fun `azAdvanced with overlayService should enable enableRailDragging`() {
         val scope = AzNavRailScopeImpl()
         scope.azAdvanced(overlayService = android.app.Service::class.java, enableRailDragging = false)
-        assertEquals(android.app.Service::class.java, scope.overlayService)
-        assertEquals(true, scope.enableRailDragging)
+        assertEquals(android.app.Service::class.java, scope.advancedConfig.overlayService)
+        assertEquals(true, scope.advancedConfig.enableRailDragging)
     }
 
     @Test

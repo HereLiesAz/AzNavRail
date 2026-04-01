@@ -24,7 +24,7 @@ class FooterTest {
         var onToggleCalled = false
 
         val scope = AzNavRailScopeImpl().apply {
-            enableRailDragging = true
+            advancedConfig = com.hereliesaz.aznavrail.model.AzAdvancedConfig(enableRailDragging = true)
         }
 
         composeTestRule.setContent {

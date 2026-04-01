@@ -36,9 +36,9 @@ class AzNavRailSampleIntegrationTest {
         assertEquals(true, scope.noMenu)
         assertEquals(true, scope.usePhysicalDocking)
         assertEquals(AzButtonShape.RECTANGLE, scope.defaultShape)
-        assertEquals(true, scope.isLoading)
-        assertEquals(true, scope.enableRailDragging)
-        assertEquals(true, scope.helpEnabled)
+        assertEquals(true, scope.advancedConfig.isLoading)
+        assertEquals(true, scope.advancedConfig.enableRailDragging)
+        assertEquals(true, scope.advancedConfig.helpEnabled)
     }
 
     @Test

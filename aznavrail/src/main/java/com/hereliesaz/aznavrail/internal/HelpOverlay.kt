@@ -29,9 +29,12 @@ import com.hereliesaz.aznavrail.model.AzNavItem
 internal fun HelpOverlay(
     items: List<AzNavItem>,
     onDismiss: () -> Unit,
-    itemBoundsCache: Map<String, Rect> = emptyMap()
+    itemBoundsCache: Map<String, Rect> = emptyMap(),
+    helpList: Map<String, String> = emptyMap()
 ) {
-    val itemsWithInfo = remember(items) { items.filter { !it.info.isNullOrBlank() } }
+    val itemsWithInfo = remember(items, helpList) {
+        items.filter { !it.info.isNullOrBlank() || !helpList[it.id].isNullOrBlank() }
+    }
     val safeZones = LocalAzSafeZones.current
     val density = LocalDensity.current
 
@@ -100,13 +103,30 @@ internal fun HelpOverlay(
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = item.info ?: "",
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodyLarge,
-                        maxLines = if (isExpanded) Int.MAX_VALUE else 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    val infoText = item.info
+                    val listText = helpList[item.id]
+
+                    if (!infoText.isNullOrBlank()) {
+                        Text(
+                            text = infoText,
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyLarge,
+                            maxLines = if (isExpanded) Int.MAX_VALUE else 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    if (!listText.isNullOrBlank()) {
+                        if (!infoText.isNullOrBlank()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                        Text(
+                            text = listText,
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyLarge,
+                            maxLines = if (isExpanded) Int.MAX_VALUE else 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                     if (isExpanded) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
