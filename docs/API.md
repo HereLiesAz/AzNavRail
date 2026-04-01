@@ -53,6 +53,7 @@ All items now support the following **Reactive Binding Fields**. Provide the nam
 #### `Advanced` (Class Level)
 * `isLoadingProperty`: Binds the global loading spinner to a `Boolean` property.
 * `helpEnabled`: If true, binds to a property of the same name to show/hide the help overlay.
+* `helpList`: An optional mapping of `RailItem` IDs to help texts to be shown in the help overlay alongside `info`.
 
 #### `App` (Class Level)
 * `dock`: `String` ("LEFT" or "RIGHT").

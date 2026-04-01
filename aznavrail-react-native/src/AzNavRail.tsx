@@ -678,14 +678,19 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
                     <ScrollView contentContainerStyle={{ padding: 20 }}>
                         <Text style={styles.infoTitle}>Help & Info</Text>
                         {items.map(i => {
-                            if (!i.info && !config.helpList?.[i.id]) return null;
+                            const infoText = i.info?.trim();
+                            const listText = config.helpList?.[i.id]?.trim();
+                            if (!infoText && !listText) return null;
+
+                            const titleText = i.text?.trim() || `Item ${i.id}`;
+
                             return (
                                 <View key={i.id} style={styles.infoItem}>
-                                    <Text style={styles.infoItemTitle}>{i.text}</Text>
-                                    {i.info && <Text style={styles.infoItemText}>{i.info}</Text>}
-                                    {config.helpList?.[i.id] && (
-                                        <Text style={[styles.infoItemText, i.info ? { marginTop: 8 } : {}]}>
-                                            {config.helpList[i.id]}
+                                    <Text style={styles.infoItemTitle}>{titleText}</Text>
+                                    {infoText && <Text style={styles.infoItemText}>{infoText}</Text>}
+                                    {listText && (
+                                        <Text style={[styles.infoItemText, infoText ? { marginTop: 8 } : {}]}>
+                                            {listText}
                                         </Text>
                                     )}
                                 </View>

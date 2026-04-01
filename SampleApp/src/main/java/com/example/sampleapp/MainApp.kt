@@ -82,7 +82,8 @@ fun MainApp() {
             isLoading = isLoading,
             enableRailDragging = true, // Keeps FAB mode enabled (in-app floating)
             helpEnabled = showHelp,
-            onDismissHelp = { showHelp = false }
+            onDismissHelp = { showHelp = false },
+            helpList = mapOf("home" to "This is a test helpList text!")
         )
 
         // RAIL ITEMS

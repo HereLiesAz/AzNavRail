@@ -223,7 +223,7 @@ fun AzNavRail(
     var railContentHeight by remember { mutableStateOf(0f) }
     var showHelpOverlay by remember { mutableStateOf(false) }
     val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
-    val onSecretClick = SecretScreens(secLoc = scope.secLoc, secLocPort = scope.secLocPort)
+    val onSecretClick = SecretScreens(secLoc = scope.advancedConfig.secLoc, secLocPort = scope.advancedConfig.secLocPort)
 
     val isVerticalNestedRailOpen by remember {
         derivedStateOf {
@@ -254,7 +254,7 @@ fun AzNavRail(
     val toggleHelpOverlay = {
         if (showHelpOverlay) {
             showHelpOverlay = false
-            scope.onDismissHelp?.invoke()
+            scope.advancedConfig.onDismissHelp?.invoke()
         } else {
             showHelpOverlay = true
         }
@@ -347,7 +347,7 @@ fun AzNavRail(
                                 val maxX = (configuration.screenWidthDp * density.density) - railWidth.toPx()
                                 offsetX = offsetX.coerceIn(minX, maxX)
                             } else {
-                                if (scope.enableRailDragging && kotlin.math.abs(dragAmount.y) > 20 && kotlin.math.abs(dragAmount.y) > kotlin.math.abs(dragAmount.x)) {
+                                if (scope.advancedConfig.enableRailDragging && kotlin.math.abs(dragAmount.y) > 20 && kotlin.math.abs(dragAmount.y) > kotlin.math.abs(dragAmount.x)) {
                                     isFloating = true
                                     isExpanded = false
                                     offsetX = 0f
@@ -388,7 +388,7 @@ fun AzNavRail(
                             detectTapGestures(
                                 onTap = { toggleExpanded() },
                                 onLongPress = {
-                                    if (scope.enableRailDragging) {
+                                    if (scope.advancedConfig.enableRailDragging) {
                                         isFloating = !isFloating
                                         if (isFloating) {
                                             isExpanded = false
@@ -446,7 +446,7 @@ fun AzNavRail(
                             modifier = Modifier.fillMaxSize().verticalScroll(scrollState)
                         ) {
                             val hasExplicitHelpItem = scope.navItems.any { it.isHelpItem }
-                            val displayItems = if (scope.helpEnabled && !hasExplicitHelpItem) {
+                            val displayItems = if (scope.advancedConfig.helpEnabled && !hasExplicitHelpItem) {
                                 scope.navItems + AzNavItem.Help(
                                     id = AzNavRailDefaults.AUTO_HELP_ID,
                                     isRailItem = false
@@ -476,7 +476,7 @@ fun AzNavRail(
                                         onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
                                         onItemGloballyPositioned = { id, bounds ->
                                             scope.itemBoundsCache[id] = bounds
-                                            scope.onItemGloballyPositioned?.invoke(id, bounds)
+                                            scope.advancedConfig.onItemGloballyPositioned?.invoke(id, bounds)
                                         },
                                         helpEnabled = showHelpOverlay,
                                         activeColor = scope.activeColor
@@ -503,7 +503,7 @@ fun AzNavRail(
                                                     onItemClick = { if (subItem.collapseOnClick) isExpanded = false },
                                                     onItemGloballyPositioned = { id, bounds ->
                                                         scope.itemBoundsCache[id] = bounds
-                                                        scope.onItemGloballyPositioned?.invoke(id, bounds)
+                                                        scope.advancedConfig.onItemGloballyPositioned?.invoke(id, bounds)
                                                     },
                                                     helpEnabled = showHelpOverlay,
                                                     activeColor = scope.activeColor
@@ -580,7 +580,7 @@ fun AzNavRail(
                                 hostStates = hostStates,
                                 packRailButtons = isFloating || scope.packButtons, // Forced pack in FAB mode
                                 visualDockingSide = visualDockingSide,
-                                onItemGloballyPositioned = scope.onItemGloballyPositioned,
+                                onItemGloballyPositioned = scope.advancedConfig.onItemGloballyPositioned,
                                 helpEnabled = showHelpOverlay
                             )
                         }
@@ -598,7 +598,7 @@ fun AzNavRail(
                                 isFloating = true
                                 isExpanded = false
                                 offsetY = screenHeightPx * 0.1f
-                                scope.onUndock?.invoke()
+                                scope.advancedConfig.onUndock?.invoke()
                             },
                             onSecretClick = onSecretClick,
                             scope = scope,
@@ -615,7 +615,7 @@ fun AzNavRail(
             items = scope.navItems,
             onDismiss = { toggleHelpOverlay() },
             itemBoundsCache = scope.itemBoundsCache,
-            helpList = scope.helpList
+            helpList = scope.advancedConfig.helpList
         )
     }
 }

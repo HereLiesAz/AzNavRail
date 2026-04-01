@@ -57,11 +57,11 @@ class AzNavRailScopeTest {
             secLocPort = 5555
         )
 
-        assertTrue(scope.isLoading)
-        assertTrue(scope.helpEnabled)
-        assertTrue(scope.enableRailDragging)
-        assertEquals("secret-key", scope.secLoc)
-        assertEquals(5555, scope.secLocPort)
+        assertTrue(scope.advancedConfig.isLoading)
+        assertTrue(scope.advancedConfig.helpEnabled)
+        assertTrue(scope.advancedConfig.enableRailDragging)
+        assertEquals("secret-key", scope.advancedConfig.secLoc)
+        assertEquals(5555, scope.advancedConfig.secLocPort)
     }
 
     @Test

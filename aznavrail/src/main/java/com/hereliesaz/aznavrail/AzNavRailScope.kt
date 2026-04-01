@@ -17,6 +17,7 @@ import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 import com.hereliesaz.aznavrail.model.AzItemConfig
+import com.hereliesaz.aznavrail.model.AzAdvancedConfig
 import java.util.Collections.emptySet
 
 /**
@@ -412,18 +413,9 @@ class AzNavRailScopeImpl : AzNavRailScope {
     var translucentBackground: Color = Color.Unspecified
 
     // Advanced
-    var isLoading: Boolean = false
-    var helpEnabled: Boolean = false
-    var onDismissHelp: (() -> Unit)? = null
-    var overlayService: Class<out android.app.Service>? = null
-    var onUndock: (() -> Unit)? = null
-    var enableRailDragging: Boolean = false
-    var onRailDrag: ((Float, Float) -> Unit)? = null
-    var onOverlayDrag: ((Float, Float) -> Unit)? = null
-    var onItemGloballyPositioned: ((String, Rect) -> Unit)? = null
-    var secLoc: String? = null
-    var secLocPort: Int = 10203
-    var helpList: Map<String, String> = emptyMap()
+    // Advanced
+    var advancedConfig: AzAdvancedConfig = AzAdvancedConfig()
+
 
     override fun azConfig(dockingSide: AzDockingSide, packButtons: Boolean, noMenu: Boolean, vibrate: Boolean, displayAppName: Boolean, activeClassifiers: Set<String>, usePhysicalDocking: Boolean, expandedWidth: Dp, collapsedWidth: Dp, showFooter: Boolean, appRepositoryUrl: String) {
         this.dockingSide = dockingSide
@@ -447,18 +439,20 @@ class AzNavRailScopeImpl : AzNavRailScope {
     }
 
     override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, secLoc: String?, secLocPort: Int, helpList: Map<String, String>) {
-        this.isLoading = isLoading
-        this.helpEnabled = helpEnabled
-        this.onDismissHelp = onDismissHelp
-        this.overlayService = overlayService
-        this.onUndock = onUndock
-        this.enableRailDragging = enableRailDragging || overlayService != null || onOverlayDrag != null
-        this.onRailDrag = onRailDrag
-        this.onOverlayDrag = onOverlayDrag
-        this.onItemGloballyPositioned = onItemGloballyPositioned
-        this.secLoc = secLoc
-        this.secLocPort = secLocPort
-        this.helpList = helpList
+        this.advancedConfig = AzAdvancedConfig(
+            isLoading = isLoading,
+            helpEnabled = helpEnabled,
+            onDismissHelp = onDismissHelp,
+            overlayService = overlayService,
+            onUndock = onUndock,
+            enableRailDragging = enableRailDragging || overlayService != null || onOverlayDrag != null,
+            onRailDrag = onRailDrag,
+            onOverlayDrag = onOverlayDrag,
+            onItemGloballyPositioned = onItemGloballyPositioned,
+            secLoc = secLoc,
+            secLocPort = secLocPort,
+            helpList = helpList
+        )
     }
 
     override fun azSettings(
@@ -492,24 +486,27 @@ class AzNavRailScopeImpl : AzNavRailScope {
         this.expandedWidth = expandedRailWidth
         this.collapsedWidth = collapsedRailWidth
         this.showFooter = showFooter
-        this.isLoading = isLoading
         this.defaultShape = defaultShape
-        this.enableRailDragging = enableRailDragging
         this.headerIconShape = headerIconShape
-        this.onUndock = onUndock
-        this.overlayService = overlayService
-        this.onOverlayDrag = onOverlayDrag
-        this.onItemGloballyPositioned = onItemGloballyPositioned
-        this.helpEnabled = helpEnabled
-        this.onDismissHelp = onDismissHelp
         if (activeColor != null) this.activeColor = activeColor
         this.vibrate = vibrate
         this.dockingSide = dockingSide
         this.noMenu = noMenu
         this.usePhysicalDocking = usePhysicalDocking
-        this.secLoc = secLoc
-        this.secLocPort = secLocPort
-        this.helpList = helpList
+
+        this.advancedConfig = AzAdvancedConfig(
+            isLoading = isLoading,
+            enableRailDragging = enableRailDragging || overlayService != null || onOverlayDrag != null,
+            onUndock = onUndock,
+            overlayService = overlayService,
+            onOverlayDrag = onOverlayDrag,
+            onItemGloballyPositioned = onItemGloballyPositioned,
+            helpEnabled = helpEnabled,
+            onDismissHelp = onDismissHelp,
+            secLoc = secLoc,
+            secLocPort = secLocPort,
+            helpList = helpList
+        )
     }
 
     private fun checkId(id: String) {

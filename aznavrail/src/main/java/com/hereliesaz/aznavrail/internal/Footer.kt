@@ -41,7 +41,7 @@ internal fun Footer(
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (scope.enableRailDragging || scope.onUndock != null) {
+        if (scope.advancedConfig.enableRailDragging || scope.advancedConfig.onUndock != null) {
             Text(
                 text = "Undock",
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, color = footerColor),

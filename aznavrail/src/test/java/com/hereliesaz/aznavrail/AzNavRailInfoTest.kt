@@ -17,8 +17,8 @@ class AzNavRailInfoTest {
             onDismissHelp = onDismiss
         )
 
-        assertEquals(true, scope.helpEnabled)
-        assertEquals(onDismiss, scope.onDismissHelp)
+        assertEquals(true, scope.advancedConfig.helpEnabled)
+        assertEquals(onDismiss, scope.advancedConfig.onDismissHelp)
     }
 
     @Test
