@@ -52,14 +52,7 @@ export const AzButton: React.FC<AzButtonProps> = ({
   const lowercaseColor = color.toLowerCase();
   const defaultFillColor = (lowercaseColor === 'black' || lowercaseColor === '#000000' || lowercaseColor === '#000') ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)';
 
-  let actualFillColor = defaultFillColor;
-  if (fillColor) {
-      if (fillColor.startsWith('#') && (fillColor.length === 7 || fillColor.length === 4)) {
-          actualFillColor = fillColor + (fillColor.length === 7 ? '40' : '4');
-      } else {
-          actualFillColor = fillColor;
-      }
-  }
+  const actualFillColor = fillColor || defaultFillColor;
 
   if (hasCustomContent) {
     containerStyle.minWidth = size;
