@@ -36,9 +36,10 @@ const AzButton = ({
 
   const shapeClass = `az-button-shape-${shape.toLowerCase()}`;
 
-  const computedFillColor = (color === 'black' || color === '#000000' || color === '#000')
+  const lowerColor = color.toLowerCase();
+  const computedFillColor = (lowerColor === 'black' || lowerColor === '#000000' || lowerColor === '#000')
       ? 'rgba(255, 255, 255, 0.25)'
-      : (color === 'currentColor' ? 'transparent' : 'rgba(0, 0, 0, 0.25)');
+      : 'rgba(0, 0, 0, 0.25)';
   const finalFillColor = fillColor || computedFillColor;
 
   const customStyle = {
