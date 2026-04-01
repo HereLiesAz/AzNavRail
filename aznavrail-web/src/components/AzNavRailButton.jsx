@@ -66,13 +66,20 @@ const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen, sty
 
   const isReactNode = content && React.isValidElement(content);
 
+  const effectiveColor = color || 'blue';
+  const computedFillColor = (effectiveColor === 'black' || effectiveColor === '#000000' || effectiveColor === '#000')
+      ? 'rgba(255, 255, 255, 0.25)'
+      : 'rgba(0, 0, 0, 0.25)';
+  const finalFillColor = item.fillColor || computedFillColor;
+
   return (
     <div style={{ position: 'relative' }} data-az-nav-id={id}>
         <button
             className={`az-nav-rail-button ${shapeClass} ${!isInteractive ? 'disabled' : ''}`}
             onClick={handleClick}
             style={{
-                borderColor: color || 'blue',
+                borderColor: effectiveColor,
+                backgroundColor: finalFillColor,
                 opacity: isInteractive ? 1 : 0.5,
                 cursor: isInteractive ? 'pointer' : 'default',
                 width: '64px',

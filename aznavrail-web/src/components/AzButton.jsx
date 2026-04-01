@@ -11,6 +11,7 @@ import './AzButton.css';
  * @param {function} props.onClick - The click handler.
  * @param {string} [props.shape='RECTANGLE'] - The shape of the button (CIRCLE, SQUARE, RECTANGLE, ROUNDED, NONE).
  * @param {string} [props.color='currentColor'] - The color of the button (border and text).
+ * @param {string} [props.fillColor] - The custom background fill color of the button.
  * @param {boolean} [props.isLoading=false] - Whether the button is in a loading state.
  * @param {boolean} [props.enabled=true] - Whether the button is enabled.
  * @param {object} [props.contentPadding] - Custom padding.
@@ -22,6 +23,7 @@ const AzButton = ({
   onClick,
   shape = 'RECTANGLE',
   color = 'currentColor',
+  fillColor,
   isLoading = false,
   enabled = true,
   contentPadding,
@@ -34,8 +36,14 @@ const AzButton = ({
 
   const shapeClass = `az-button-shape-${shape.toLowerCase()}`;
 
+  const computedFillColor = (color === 'black' || color === '#000000' || color === '#000')
+      ? 'rgba(255, 255, 255, 0.25)'
+      : (color === 'currentColor' ? 'transparent' : 'rgba(0, 0, 0, 0.25)');
+  const finalFillColor = fillColor || computedFillColor;
+
   const customStyle = {
     borderColor: color,
+    backgroundColor: finalFillColor,
     color: color,
     ...style,
     ...(contentPadding ? { padding: contentPadding } : {})

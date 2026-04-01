@@ -94,8 +94,11 @@ internal fun AzNavRailButton(
     val targetColor = if (isPressed || isSelected) activeColor else color
     val finalColor = if (enabled) targetColor else disabledColor
 
-    val baseFillColor = fillColor ?: finalColor
-    val activeFillColor = fillColor ?: activeColor
+    val computedFillColor = if (finalColor == Color.Black) Color.White else Color.Black
+    val computedActiveFillColor = if (activeColor == Color.Black) Color.White else Color.Black
+
+    val baseFillColor = fillColor ?: computedFillColor
+    val activeFillColor = fillColor ?: computedActiveFillColor
 
     val containerColor = if (isSelected && !isPressed) {
         activeFillColor.copy(alpha = 0.12f)

@@ -8,6 +8,7 @@ interface AzCyclerProps {
   selectedOption: string;
   onCycle: (option: string) => void;
   color?: string;
+  fillColor?: string;
   shape?: AzButtonShape;
   style?: ViewStyle;
   disabled?: boolean;
@@ -20,6 +21,7 @@ export const AzCycler: React.FC<AzCyclerProps> = ({
   selectedOption,
   onCycle,
   color,
+  fillColor,
   shape,
   style,
   disabled,
@@ -78,9 +80,10 @@ export const AzCycler: React.FC<AzCyclerProps> = ({
       text={displayOption}
       onClick={handlePress}
       color={color}
+      fillColor={fillColor}
       shape={shape}
       style={style}
-      disabled={disabled}
+      enabled={!disabled}
       testID={testID}
     />
   );

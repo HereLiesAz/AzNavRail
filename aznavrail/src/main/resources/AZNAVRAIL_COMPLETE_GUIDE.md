@@ -73,7 +73,7 @@ Most navigation items (`azRailItem`, `azMenuItem`, toggles, cyclers, etc.) suppo
 - `menuToggleOnText`, `menuToggleOffText`: Optional alternate text for toggles when in the menu.
 - `menuOptions`: Optional alternate list of strings for cyclers when in the menu.
 - `textColor`: Custom color for the text itself.
-- `fillColor`: Custom color for the button's translucent background surface.
+- `fillColor`: Custom color for the button's translucent background surface. By default, the `fillColor` is Black (with 25% opacity), unless the item's main color is Black, in which case it is White (with 25% opacity) to ensure proper contrast.
 
 ### E. Menu Font Size & Theming
 The expanded menu text font size (and the footer items text size) is strictly controlled by your app's `MaterialTheme.typography.titleLarge`. To adjust the text size inside the side menu drawer, simply customize the `titleLarge` attribute in your app's typography theme!

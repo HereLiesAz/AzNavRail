@@ -409,6 +409,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
              <View key={item.id} style={{ alignItems: 'center', width: '100%' }}>
                  <AzButton
                      {...commonProps}
+                     fillColor={item.fillColor}
                      text={item.text}
                      content={item.content}
                      hasCustomContent={!!item.content}
@@ -426,6 +427,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
           return (
               <AzCycler
                   {...commonProps}
+                  fillColor={item.fillColor}
                   options={item.options || []}
                   selectedOption={item.selectedOption || ''}
                   onCycle={() => {
@@ -439,6 +441,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
           return (
               <AzToggle
                   {...commonProps}
+                  fillColor={item.fillColor}
                   isChecked={item.isChecked || false}
                   toggleOnText={item.toggleOnText}
                   toggleOffText={item.toggleOffText}
@@ -461,6 +464,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
           >
             <AzButton
                 {...commonProps}
+                fillColor={item.fillColor}
                 text={item.text}
                 content={item.content}
                 hasCustomContent={!!item.content}
