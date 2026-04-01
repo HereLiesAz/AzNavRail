@@ -59,6 +59,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
       secLoc,
       onExpandedChange,
       onInteraction,
+      helpList = {},
   } = props;
   const logInteraction = useCallback(
     (action: string, details?: string) => {
@@ -95,6 +96,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
       translucentBackground: dslOverrides.translucentBackground ?? translucentBackground,
       vibrate: dslOverrides.vibrate ?? vibrate,
       onItemGloballyPositioned: dslOverrides.onItemGloballyPositioned,
+      helpList: dslOverrides.helpList ?? helpList,
   };
 
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded && !config.noMenu);
@@ -676,11 +678,16 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
                     <ScrollView contentContainerStyle={{ padding: 20 }}>
                         <Text style={styles.infoTitle}>Help & Info</Text>
                         {items.map(i => {
-                            if (!i.info) return null;
+                            if (!i.info && !config.helpList?.[i.id]) return null;
                             return (
                                 <View key={i.id} style={styles.infoItem}>
                                     <Text style={styles.infoItemTitle}>{i.text}</Text>
-                                    <Text style={styles.infoItemText}>{i.info}</Text>
+                                    {i.info && <Text style={styles.infoItemText}>{i.info}</Text>}
+                                    {config.helpList?.[i.id] && (
+                                        <Text style={[styles.infoItemText, i.info ? { marginTop: 8 } : {}]}>
+                                            {config.helpList[i.id]}
+                                        </Text>
+                                    )}
                                 </View>
                             );
                         })}
