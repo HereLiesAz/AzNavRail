@@ -42,6 +42,7 @@ export interface AzNavRailSettings {
   usePhysicalDocking?: boolean;
   activeClassifiers?: string[];
   onItemGloballyPositioned?: (id: string, bounds: any) => void;
+  helpList?: Record<string, string>;
 }
 
 export interface HiddenMenuItem {
