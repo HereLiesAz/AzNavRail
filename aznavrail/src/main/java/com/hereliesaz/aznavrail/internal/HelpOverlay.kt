@@ -31,17 +31,11 @@ internal fun HelpOverlay(
     onDismiss: () -> Unit,
     itemBoundsCache: Map<String, Rect> = emptyMap(),
     helpList: Map<String, String> = emptyMap(),
-    nestedRailOpenId: String? = null
+    tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap(),
+    onTutorialLaunch: ((String) -> Unit)? = null
 ) {
-    val itemsWithInfo = remember(items, helpList, nestedRailOpenId) {
-        val flatItems = items.toMutableList()
-        if (nestedRailOpenId != null) {
-            val nestedHost = items.find { it.id == nestedRailOpenId }
-            if (nestedHost?.nestedRailItems != null) {
-                flatItems.addAll(nestedHost.nestedRailItems)
-            }
-        }
-        flatItems.filter { !it.info.isNullOrBlank() || !helpList[it.id].isNullOrBlank() }
+    val itemsWithInfo = remember(items, helpList, tutorials) {
+        items.filter { !it.info.isNullOrBlank() || !helpList[it.id].isNullOrBlank() || tutorials.containsKey(it.id) }
     }
     val safeZones = LocalAzSafeZones.current
     val density = LocalDensity.current
@@ -91,6 +85,7 @@ internal fun HelpOverlay(
             Spacer(modifier = Modifier.height(16.dp)) // Equivalent to top contentPadding
             itemsWithInfo.forEach { item ->
                 val isExpanded = expandedItemId == item.id
+                val hasTutorial = tutorials.containsKey(item.id)
 
                 Column(
                     modifier = Modifier
@@ -99,7 +94,13 @@ internal fun HelpOverlay(
                             cardBoundsCache[item.id] = coords.boundsInWindow()
                         }
                         .background(Color.DarkGray, RectangleShape)
-                        .clickable { expandedItemId = if (isExpanded) null else item.id }
+                        .clickable {
+                            if (hasTutorial) {
+                                onTutorialLaunch?.invoke(item.id)
+                            } else {
+                                expandedItemId = if (isExpanded) null else item.id
+                            }
+                        }
                         .padding(16.dp)
                         .animateContentSize()
                 ) {
@@ -139,6 +140,13 @@ internal fun HelpOverlay(
                         Text(
                             text = "Tap to collapse",
                             color = Color.Gray,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    } else if (hasTutorial && !isExpanded) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Tap to start tutorial",
+                            color = Color.Cyan,
                             style = MaterialTheme.typography.labelSmall
                         )
                     }
