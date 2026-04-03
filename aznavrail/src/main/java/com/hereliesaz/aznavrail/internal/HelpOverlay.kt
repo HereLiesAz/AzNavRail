@@ -31,7 +31,9 @@ internal fun HelpOverlay(
     onDismiss: () -> Unit,
     itemBoundsCache: Map<String, Rect> = emptyMap(),
     helpList: Map<String, String> = emptyMap(),
-    nestedRailOpenId: String? = null
+    nestedRailOpenId: String? = null,
+    tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap(),
+    onTutorialLaunch: ((String) -> Unit)? = null
 ) {
     val itemsWithInfo = remember(items, helpList, nestedRailOpenId) {
         val flatItems = items.toMutableList()
