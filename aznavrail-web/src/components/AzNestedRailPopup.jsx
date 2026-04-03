@@ -11,7 +11,8 @@ const AzNestedRailPopup = ({
     alignment = 'VERTICAL',
     renderItem,
     anchorPosition,
-    dockingSide = 'LEFT'
+    dockingSide = 'LEFT',
+    helpList = {}
 }) => {
     if (!visible) return null;
 

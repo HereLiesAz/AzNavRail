@@ -593,7 +593,9 @@ private fun DraggableRailItemWrapper(
                             }
                         },
                         alignment = item.nestedRailAlignment,
-                        isRightDocked = isRightDocked
+                        isRightDocked = isRightDocked,
+                        helpList = scope.advancedConfig.helpList,
+                        onItemGloballyPositioned = { id, bounds -> scope.itemBoundsCache[id] = bounds }
                     )
                 }
             } else {
@@ -618,7 +620,9 @@ private fun DraggableRailItemWrapper(
                             }
                         },
                         alignment = item.nestedRailAlignment ?: AzNestedRailAlignment.HORIZONTAL,
-                        isRightDocked = isRightDocked
+                        isRightDocked = isRightDocked,
+                        helpList = scope.advancedConfig.helpList,
+                        onItemGloballyPositioned = { id, bounds -> scope.itemBoundsCache[id] = bounds }
                     )
                 }
             }
