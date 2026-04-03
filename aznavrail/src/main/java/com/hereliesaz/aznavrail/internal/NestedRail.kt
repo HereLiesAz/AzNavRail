@@ -22,6 +22,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInWindow
 import com.hereliesaz.aznavrail.AzNavRailButton
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzNavItem
@@ -36,7 +38,9 @@ internal fun NestedRail(
     activeClassifiers: Set<String>,
     onItemSelected: (AzNavItem) -> Unit,
     alignment: AzNestedRailAlignment,
-    isRightDocked: Boolean
+    isRightDocked: Boolean,
+    helpList: Map<String, String> = emptyMap(),
+    onItemGloballyPositioned: ((String, androidx.compose.ui.geometry.Rect) -> Unit)? = null
 ) {
     val configuration = LocalConfiguration.current
     val maxH = (configuration.screenHeightDp * 0.8f).dp
@@ -59,19 +63,23 @@ internal fun NestedRail(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             items.forEach { item ->
-                AzNavRailButton(
-                    onClick = { onItemSelected(item) },
-                    text = item.text,
-                    color = item.color ?: MaterialTheme.colorScheme.onSurface,
-                    activeColor = activeColor,
-                    textColor = item.textColor,
-                    fillColor = item.fillColor,
-                    shape = AzButtonShape.CIRCLE,
-                    size = AzNavRailDefaults.ButtonWidth,
-                    enabled = !item.disabled,
-                    isSelected = (item.route != null && currentDestination == item.route) || item.classifiers.any { activeClassifiers.contains(it) },
-                    itemContent = item.content
-                )
+                androidx.compose.foundation.layout.Box(modifier = Modifier.onGloballyPositioned { coords ->
+                    onItemGloballyPositioned?.invoke(item.id, coords.boundsInWindow())
+                }) {
+                    AzNavRailButton(
+                        onClick = { onItemSelected(item) },
+                        text = item.text,
+                        color = item.color ?: MaterialTheme.colorScheme.onSurface,
+                        activeColor = activeColor,
+                        textColor = item.textColor,
+                        fillColor = item.fillColor,
+                        shape = AzButtonShape.CIRCLE,
+                        size = AzNavRailDefaults.ButtonWidth,
+                        enabled = !item.disabled,
+                        isSelected = (item.route != null && currentDestination == item.route) || item.classifiers.any { activeClassifiers.contains(it) },
+                        itemContent = item.content
+                    )
+                }
             }
         }
     } else {
@@ -82,19 +90,23 @@ internal fun NestedRail(
             verticalAlignment = Alignment.CenterVertically
         ) {
             items.forEach { item ->
-                AzNavRailButton(
-                    onClick = { onItemSelected(item) },
-                    text = item.text,
-                    color = item.color ?: MaterialTheme.colorScheme.onSurface,
-                    activeColor = activeColor,
-                    textColor = item.textColor,
-                    fillColor = item.fillColor,
-                    shape = AzButtonShape.CIRCLE,
-                    size = AzNavRailDefaults.ButtonWidth,
-                    enabled = !item.disabled,
-                    isSelected = (item.route != null && currentDestination == item.route) || item.classifiers.any { activeClassifiers.contains(it) },
-                    itemContent = item.content
-                )
+                androidx.compose.foundation.layout.Box(modifier = Modifier.onGloballyPositioned { coords ->
+                    onItemGloballyPositioned?.invoke(item.id, coords.boundsInWindow())
+                }) {
+                    AzNavRailButton(
+                        onClick = { onItemSelected(item) },
+                        text = item.text,
+                        color = item.color ?: MaterialTheme.colorScheme.onSurface,
+                        activeColor = activeColor,
+                        textColor = item.textColor,
+                        fillColor = item.fillColor,
+                        shape = AzButtonShape.CIRCLE,
+                        size = AzNavRailDefaults.ButtonWidth,
+                        enabled = !item.disabled,
+                        isSelected = (item.route != null && currentDestination == item.route) || item.classifiers.any { activeClassifiers.contains(it) },
+                        itemContent = item.content
+                    )
+                }
             }
         }
     }

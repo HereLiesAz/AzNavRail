@@ -1,9 +1,21 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import './HelpOverlay.css';
 
-const HelpOverlay = ({ items, railWidth, onDismiss, itemBounds, helpList = {} }) => {
+const HelpOverlay = ({ items, railWidth, onDismiss, itemBounds, helpList = {}, nestedRailVisibleId = null }) => {
   const canvasRef = useRef(null);
   const descriptionsRef = useRef(null);
+  const [expandedItemId, setExpandedItemId] = useState(null);
+
+  const allItems = React.useMemo(() => {
+      const list = [...items];
+      if (nestedRailVisibleId) {
+          const nestedHost = items.find(i => i.id === nestedRailVisibleId);
+          if (nestedHost?.nestedRailItems) {
+              list.push(...nestedHost.nestedRailItems);
+          }
+      }
+      return list;
+  }, [items, nestedRailVisibleId]);
 
   const drawArrows = () => {
     const canvas = canvasRef.current;
@@ -18,7 +30,7 @@ const HelpOverlay = ({ items, railWidth, onDismiss, itemBounds, helpList = {} })
     ctx.strokeStyle = 'gray';
     ctx.lineWidth = 2;
 
-    items.forEach(item => {
+    allItems.forEach(item => {
         const infoText = item.info?.trim();
         const listText = helpList[item.id]?.trim();
         if (!infoText && !listText) return;
@@ -86,31 +98,61 @@ const HelpOverlay = ({ items, railWidth, onDismiss, itemBounds, helpList = {} })
         if (railContainer) railContainer.removeEventListener('scroll', handleScroll);
     };
 
-  }, [items, railWidth, itemBounds, helpList]);
+  }, [allItems, railWidth, itemBounds, helpList]);
+
+  const isNestedRailOpen = nestedRailVisibleId !== null;
+  const effectiveMarginLeft = isNestedRailOpen ? `calc(${railWidth} + 120px)` : railWidth;
 
   return (
     <div className="az-help-overlay">
       <div
         className="az-help-descriptions"
-        style={{ marginLeft: railWidth }}
+        style={{ marginLeft: effectiveMarginLeft }}
         ref={descriptionsRef}
       >
-        {items.map(item => {
+        {allItems.map(item => {
             const infoText = item.info?.trim();
             const listText = helpList[item.id]?.trim();
             if (!infoText && !listText) return null;
 
             const titleText = (item.text || '').trim() || `Item ${item.id}`;
+            const isExpanded = expandedItemId === item.id;
 
             return (
-                <div key={item.id} className="az-help-card" data-az-desc-id={item.id}>
+                <div
+                    key={item.id}
+                    className="az-help-card"
+                    data-az-desc-id={item.id}
+                    onClick={() => setExpandedItemId(isExpanded ? null : item.id)}
+                    style={{ cursor: 'pointer' }}
+                >
                     <div style={{ fontWeight: 'bold', color: 'var(--md-sys-color-primary, #6200ee)', marginBottom: '8px' }}>
                         {titleText}
                     </div>
-                    {infoText && <div>{infoText}</div>}
+                    {infoText && (
+                        <div style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: isExpanded ? 'unset' : 1,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                        }}>{infoText}</div>
+                    )}
                     {listText && (
-                        <div style={{ marginTop: infoText ? '8px' : '0px' }}>
+                        <div style={{
+                            marginTop: infoText ? '8px' : '0px',
+                            display: '-webkit-box',
+                            WebkitLineClamp: isExpanded ? 'unset' : 1,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                        }}>
                             {listText}
+                        </div>
+                    )}
+                    {isExpanded && (
+                        <div style={{ marginTop: '8px', fontSize: '0.8em', color: 'gray' }}>
+                            Tap to collapse
                         </div>
                     )}
                 </div>
