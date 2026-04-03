@@ -119,7 +119,7 @@ fun AzTutorialOverlay(
             AnimatedContent(
                 targetState = currentCard,
                 transitionSpec = {
-                    fadeIn(animationSpec = tween(300)) with fadeOut(animationSpec = tween(300))
+                    fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
                 },
                 label = "TutorialCardTransition"
             ) { card ->
