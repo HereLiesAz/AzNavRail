@@ -85,30 +85,9 @@ fun MainApp() {
             enableRailDragging = true, // Keeps FAB mode enabled (in-app floating)
             helpEnabled = showHelp,
             onDismissHelp = { showHelp = false },
-            helpList = mapOf("home" to "This is a test helpList text!"),
-            tutorials = mapOf(
-                "multi-line" to azTutorial {
-                    scene(
-                        id = "scene1",
-                        content = {
-                            Box(modifier = Modifier.fillMaxSize().background(Color.DarkGray)) {
-                                Text("This is a scripted background scene for the tutorial!", color = Color.White, modifier = Modifier.align(Alignment.Center))
-                            }
-                        }
-                    ) {
-                        card(
-                            title = "Welcome to the Tutorial",
-                            text = "This is a custom tutorial card. Tapping Next will highlight an item.",
-                            highlight = AzHighlight.FullScreen
-                        )
-                        card(
-                            title = "Highlighting",
-                            text = "Now we're highlighting the Home item in the rail.",
-                            highlight = AzHighlight.Item("home"),
-                            actionText = "Finish"
-                        )
-                    }
-                }
+            helpList = mapOf(
+                "home" to "This is a test helpList text!",
+                "nested-1" to "Nested helpList entries work too!"
             )
         )
 
@@ -342,7 +321,7 @@ fun MainApp() {
             text = "Vertical Nested",
             alignment = AzNestedRailAlignment.VERTICAL
         ) {
-            azRailItem(id = "nested-1", text = "Nested Item 1", route = "nested-1")
+            azRailItem(id = "nested-1", text = "Nested Item 1", route = "nested-1", info = "This is a nested item. Tap the card to expand it and read the full help text, demonstrating that nested items report bounds correctly!")
             azRailItem(id = "nested-2", text = "Nested Item 2", route = "nested-2")
 
             // Example of using custom @Composable content in a nested item

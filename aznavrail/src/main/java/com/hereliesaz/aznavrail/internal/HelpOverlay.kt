@@ -31,11 +31,17 @@ internal fun HelpOverlay(
     onDismiss: () -> Unit,
     itemBoundsCache: Map<String, Rect> = emptyMap(),
     helpList: Map<String, String> = emptyMap(),
-    tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap(),
-    onTutorialLaunch: ((String) -> Unit)? = null
+    nestedRailOpenId: String? = null
 ) {
-    val itemsWithInfo = remember(items, helpList, tutorials) {
-        items.filter { !it.info.isNullOrBlank() || !helpList[it.id].isNullOrBlank() || tutorials.containsKey(it.id) }
+    val itemsWithInfo = remember(items, helpList, nestedRailOpenId) {
+        val flatItems = items.toMutableList()
+        if (nestedRailOpenId != null) {
+            val nestedHost = items.find { it.id == nestedRailOpenId }
+            if (nestedHost?.nestedRailItems != null) {
+                flatItems.addAll(nestedHost.nestedRailItems)
+            }
+        }
+        flatItems.filter { !it.info.isNullOrBlank() || !helpList[it.id].isNullOrBlank() }
     }
     val safeZones = LocalAzSafeZones.current
     val density = LocalDensity.current

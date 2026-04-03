@@ -60,10 +60,13 @@ azAdvanced(
     isLoading = isLoading,               // Boolean: Show global loading overlay
     enableRailDragging = true,           // Boolean: Enable FAB Mode (detach rail)
     helpEnabled = showHelp,              // Boolean: Show Help Overlay
-    helpList = mapOf("home" to "Home screen") // Map<String, String>: Extra help texts
+    helpList = mapOf("home" to "Home screen"), // Map<String, String>: Extra help texts
     onDismissHelp = { showHelp = false }
 )
 ```
+
+> **Note on Help Overlay:**
+> The `HelpOverlay` displays a short, truncated entry for each item to conserve space. Tapping a help card expands it to reveal the full description and any extra text provided in `helpList`. Furthermore, `helpList` can be supplied dynamically to `AzNestedRail` components for distinct, localized help data.
 
 ---
 

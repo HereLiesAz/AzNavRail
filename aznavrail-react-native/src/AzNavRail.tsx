@@ -11,6 +11,8 @@ import {
   Linking,
   Alert,
   Vibration,
+  UIManager,
+  findNodeHandle,
 } from 'react-native';
 import { AzNavRailContext } from './AzNavRailScope';
 import { AzNavItem, AzNavRailSettings, AzButtonShape, AzDockingSide, AzHeaderIconShape, AzNestedRailAlignment } from './types';
@@ -110,11 +112,17 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
 
   const handleItemLayout = useCallback((id: string, e: any) => {
       const target = e.target as any;
-      if (target && target.measureInWindow) {
-          target.measureInWindow((x: number, y: number, width: number, height: number) => {
-              const bounds = { x, y, width, height };
-              setItemBounds(prev => ({ ...prev, [id]: bounds }));
-              if (config.onItemGloballyPositioned) config.onItemGloballyPositioned(id, bounds);
+      if (target) {
+          UIManager.measureInWindow(target, (x: number, y: number, width: number, height: number) => {
+              if (x !== undefined && y !== undefined && width !== undefined && height !== undefined) {
+                  const bounds = { x, y, width, height };
+                  setItemBounds(prev => ({ ...prev, [id]: bounds }));
+                  if (config.onItemGloballyPositioned) config.onItemGloballyPositioned(id, bounds);
+              } else {
+                  const bounds = { ...e.nativeEvent.layout };
+                  setItemBounds(prev => ({ ...prev, [id]: bounds }));
+                  if (config.onItemGloballyPositioned) config.onItemGloballyPositioned(id, bounds);
+              }
           });
       } else {
           const bounds = { ...e.nativeEvent.layout };
