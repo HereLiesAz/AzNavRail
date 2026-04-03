@@ -31,9 +31,11 @@ internal fun HelpOverlay(
     onDismiss: () -> Unit,
     itemBoundsCache: Map<String, Rect> = emptyMap(),
     helpList: Map<String, String> = emptyMap(),
-    nestedRailOpenId: String? = null
+    nestedRailOpenId: String? = null,
+    tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap(),
+    onTutorialLaunch: ((String) -> Unit)? = null
 ) {
-    val itemsWithInfo = remember(items, helpList, nestedRailOpenId) {
+    val itemsWithInfo = remember(items, helpList, nestedRailOpenId, tutorials) {
         val flatItems = items.toMutableList()
         if (nestedRailOpenId != null) {
             val nestedHost = items.find { it.id == nestedRailOpenId }
@@ -41,7 +43,7 @@ internal fun HelpOverlay(
                 flatItems.addAll(nestedHost.nestedRailItems)
             }
         }
-        flatItems.filter { !it.info.isNullOrBlank() || !helpList[it.id].isNullOrBlank() }
+        flatItems.filter { !it.info.isNullOrBlank() || !helpList[it.id].isNullOrBlank() || tutorials.containsKey(it.id) }
     }
     val safeZones = LocalAzSafeZones.current
     val density = LocalDensity.current
@@ -101,11 +103,7 @@ internal fun HelpOverlay(
                         }
                         .background(Color.DarkGray, RectangleShape)
                         .clickable {
-                            if (hasTutorial) {
-                                onTutorialLaunch?.invoke(item.id)
-                            } else {
-                                expandedItemId = if (isExpanded) null else item.id
-                            }
+                            expandedItemId = if (isExpanded) null else item.id
                         }
                         .padding(16.dp)
                         .animateContentSize()
@@ -142,16 +140,28 @@ internal fun HelpOverlay(
                         )
                     }
                     if (isExpanded) {
+                        if (hasTutorial) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Start Tutorial",
+                                color = Color.Cyan,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .clickable { onTutorialLaunch?.invoke(item.id) }
+                                    .padding(vertical = 4.dp)
+                            )
+                        }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "Tap to collapse",
                             color = Color.Gray,
                             style = MaterialTheme.typography.labelSmall
                         )
-                    } else if (hasTutorial && !isExpanded) {
+                    } else if (hasTutorial) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Tap to start tutorial",
+                            text = "Tutorial available (Tap to expand)",
                             color = Color.Cyan,
                             style = MaterialTheme.typography.labelSmall
                         )
