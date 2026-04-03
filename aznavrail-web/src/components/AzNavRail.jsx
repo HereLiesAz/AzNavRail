@@ -582,6 +582,8 @@ const AzNavRail = ({
             itemBounds={itemBounds}
             railWidth={collapsedRailWidth}
             onDismiss={onDismissInfoScreen}
+            nestedRailVisibleId={nestedRailVisibleId}
+            helpList={helpList}
         />
     )}
 
@@ -598,6 +600,7 @@ const AzNavRail = ({
                     item={sub}
                     onCyclerClick={() => handleCyclerClick(sub)}
                     infoScreen={infoScreen}
+                    onItemGloballyPositioned={(id, rect) => setItemBounds(prev => ({...prev, [id]: rect}))}
                 />
             )}
             anchorPosition={anchorPosition}

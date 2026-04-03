@@ -161,9 +161,10 @@ fun SampleScreen() {
     - **Explicit Trigger**: Use `azHelpRailItem(id, text)` to place a dedicated help button in the rail.
     - **Help List**: An optional mapping of `RailItem` IDs to help texts to display in the help cards along with the item's `info` property. The text from `helpList` is displayed second.
 - **Behavior**:
-    - **Visual Guides**: Dynamic lines connect interactive info cards to their corresponding rail items.
-    - **Interactive Info Cards**: Cards are displayed in a scrollable list. Tap any card to expand it for more detail.
+    - **Visual Guides**: Dynamic lines connect interactive info cards to their corresponding rail items (even if they are scrolled off-screen).
+    - **Interactive Info Cards**: Cards are displayed in a scrollable list showing short, truncated text by default. Tap any card to expand it for the full description.
     - **Line Persistence**: Connection lines update in real-time as you scroll through the help cards or the rail.
+    - **Nested Rail Support**: Help cards automatically resize and pad themselves to prevent overlapping when a nested rail is open, and lines will draw correctly to nested items when their specific `helpList` or `info` is provided.
     - **Contextual Interactivity**: Main navigation items are disabled while the overlay is active. However, **Host Items** remain interactive, allowing users to navigate hierarchical structures within the help context.
 - **Exit**: Tap anywhere on the dark background overlay to dismiss the mode.
 

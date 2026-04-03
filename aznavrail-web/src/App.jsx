@@ -36,6 +36,16 @@ function App() {
       onClick: () => setCurrentPage('Home'),
       info: 'Go to the home screen.'
     },
+    {
+      id: 'nested-group',
+      text: 'Nested Rail',
+      isRailItem: true,
+      isNestedRail: true,
+      nestedRailItems: [
+        { id: 'nested1', text: 'Nested 1', route: 'nested1', info: 'This is a nested item. The card should be shifted so it does not overlap the nested rail.', onClick: () => setCurrentPage('Nested 1') },
+        { id: 'nested2', text: 'Nested 2', route: 'nested2', info: 'Tapping this card will expand it so you can see all of this really, really, really long text.', onClick: () => setCurrentPage('Nested 2') }
+      ]
+    },
     ...relocItems,
     {
       id: 'features',
@@ -90,7 +100,11 @@ function App() {
                 appName: 'Demo App',
                 infoScreen: infoScreen,
                 onDismissInfoScreen: () => setInfoScreen(false),
-                dockingSide: 'LEFT'
+                dockingSide: 'LEFT',
+                helpList: {
+                    'home': 'This is a test helpList text!',
+                    'nested1': 'Nested helpList entries work too!'
+                }
             }
         }}
     >

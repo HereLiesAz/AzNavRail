@@ -83,7 +83,10 @@ fun MainApp() {
             enableRailDragging = true, // Keeps FAB mode enabled (in-app floating)
             helpEnabled = showHelp,
             onDismissHelp = { showHelp = false },
-            helpList = mapOf("home" to "This is a test helpList text!")
+            helpList = mapOf(
+                "home" to "This is a test helpList text!",
+                "nested-1" to "Nested helpList entries work too!"
+            )
         )
 
         // RAIL ITEMS
@@ -316,7 +319,7 @@ fun MainApp() {
             text = "Vertical Nested",
             alignment = AzNestedRailAlignment.VERTICAL
         ) {
-            azRailItem(id = "nested-1", text = "Nested Item 1", route = "nested-1")
+            azRailItem(id = "nested-1", text = "Nested Item 1", route = "nested-1", info = "This is a nested item. Tap the card to expand it and read the full help text, demonstrating that nested items report bounds correctly!")
             azRailItem(id = "nested-2", text = "Nested Item 2", route = "nested-2")
 
             // Example of using custom @Composable content in a nested item
