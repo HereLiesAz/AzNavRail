@@ -71,8 +71,9 @@ interface AzNavRailScope {
      * @param secLoc Optional developer configuration key to enable the Secret Screens.
      * @param secLocPort The network port used for the location history sync server. Defaults to 10203.
      * @param helpList An optional map of Item ID to help text.
+     * @param tutorials An optional map of Item ID to interactive AzTutorials.
      */
-    fun azAdvanced(isLoading: Boolean = false, helpEnabled: Boolean = false, onDismissHelp: (() -> Unit)? = null, overlayService: Class<out android.app.Service>? = null, onUndock: (() -> Unit)? = null, enableRailDragging: Boolean = false, onRailDrag: ((Float, Float) -> Unit)? = null, onOverlayDrag: ((Float, Float) -> Unit)? = null, onItemGloballyPositioned: ((String, Rect) -> Unit)? = null, secLoc: String? = null, secLocPort: Int = 10203, helpList: Map<String, String> = emptyMap())
+    fun azAdvanced(isLoading: Boolean = false, helpEnabled: Boolean = false, onDismissHelp: (() -> Unit)? = null, overlayService: Class<out android.app.Service>? = null, onUndock: (() -> Unit)? = null, enableRailDragging: Boolean = false, onRailDrag: ((Float, Float) -> Unit)? = null, onOverlayDrag: ((Float, Float) -> Unit)? = null, onItemGloballyPositioned: ((String, Rect) -> Unit)? = null, secLoc: String? = null, secLocPort: Int = 10203, helpList: Map<String, String> = emptyMap(), tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap())
 
     /**
      * A comprehensive configuration method combining settings, theme, and advanced options.
@@ -101,7 +102,8 @@ interface AzNavRailScope {
         usePhysicalDocking: Boolean = false,
         secLoc: String? = null,
         secLocPort: Int = 10203,
-        helpList: Map<String, String> = emptyMap()
+        helpList: Map<String, String> = emptyMap(),
+        tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap()
     )
 
     /**
@@ -438,7 +440,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         this.translucentBackground = translucentBackground
     }
 
-    override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, secLoc: String?, secLocPort: Int, helpList: Map<String, String>) {
+    override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, secLoc: String?, secLocPort: Int, helpList: Map<String, String>, tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial>) {
         this.advancedConfig = AzAdvancedConfig(
             isLoading = isLoading,
             helpEnabled = helpEnabled,
@@ -451,7 +453,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
             onItemGloballyPositioned = onItemGloballyPositioned,
             secLoc = secLoc,
             secLocPort = secLocPort,
-            helpList = helpList
+            helpList = helpList,
+            tutorials = tutorials
         )
     }
 
@@ -478,7 +481,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
         usePhysicalDocking: Boolean,
         secLoc: String?,
         secLocPort: Int,
-        helpList: Map<String, String>
+        helpList: Map<String, String>,
+        tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial>
     ) {
         // Map to internal properties
         this.displayAppName = displayAppNameInHeader
@@ -505,7 +509,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
             onDismissHelp = onDismissHelp,
             secLoc = secLoc,
             secLocPort = secLocPort,
-            helpList = helpList
+            helpList = helpList,
+            tutorials = tutorials
         )
     }
 
