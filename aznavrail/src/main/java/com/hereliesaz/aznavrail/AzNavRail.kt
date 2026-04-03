@@ -615,7 +615,8 @@ fun AzNavRail(
             items = scope.navItems,
             onDismiss = { toggleHelpOverlay() },
             itemBoundsCache = scope.itemBoundsCache,
-            helpList = scope.advancedConfig.helpList
+            helpList = scope.advancedConfig.helpList,
+            nestedRailOpenId = scope.nestedRailOpenId
         )
     }
 }

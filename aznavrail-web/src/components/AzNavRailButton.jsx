@@ -5,7 +5,7 @@ import './AzNavRailButton.css';
 /**
  * A circular button for the collapsed navigation rail.
  */
-const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen, style }) => {
+const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen, style, onItemGloballyPositioned }) => {
   const {
       text, isToggle, isChecked, toggleOnText, toggleOffText,
       isCycler, selectedOption, onClick, onFocus,
@@ -73,8 +73,16 @@ const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen, sty
       : 'rgba(0, 0, 0, 0.25)';
   const finalFillColor = item.fillColor || computedFillColor;
 
+  const wrapperRef = React.useRef(null);
+
+  React.useEffect(() => {
+      if (onItemGloballyPositioned && wrapperRef.current) {
+          onItemGloballyPositioned(id, wrapperRef.current.getBoundingClientRect());
+      }
+  }, [id, onItemGloballyPositioned]);
+
   return (
-    <div style={{ position: 'relative' }} data-az-nav-id={id}>
+    <div style={{ position: 'relative' }} data-az-nav-id={id} ref={wrapperRef}>
         <button
             className={`az-nav-rail-button ${shapeClass} ${!isInteractive ? 'disabled' : ''}`}
             onClick={handleClick}

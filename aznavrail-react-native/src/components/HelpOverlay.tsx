@@ -1,0 +1,177 @@
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { AzNavItem } from '../types';
+
+interface HelpOverlayProps {
+    items: AzNavItem[];
+    onDismiss: () => void;
+    helpList: Record<string, string>;
+    itemBounds: Record<string, { x: number, y: number, width: number, height: number }>;
+    nestedRailVisibleId?: string | null;
+}
+
+export const HelpOverlay: React.FC<HelpOverlayProps> = ({ items, onDismiss, helpList, itemBounds, nestedRailVisibleId = null }) => {
+    const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+    const [cardBounds, setCardBounds] = useState<Record<string, { x: number, y: number, width: number, height: number }>>({});
+
+    const isNestedRailOpen = nestedRailVisibleId !== null;
+    const paddingLeft = isNestedRailOpen ? 240 : 120;
+
+    const allItems = [...items];
+    if (nestedRailVisibleId) {
+        const nestedHost = items.find(i => i.id === nestedRailVisibleId);
+        if (nestedHost?.nestedRailItems) {
+            allItems.push(...nestedHost.nestedRailItems);
+        }
+    }
+
+    const [scrollY, setScrollY] = useState(0);
+
+    const itemsWithInfo = allItems.filter(i => {
+        const infoText = i.info?.trim();
+        const listText = helpList?.[i.id]?.trim();
+        return infoText || listText;
+    });
+
+    return (
+        <View style={styles.overlay}>
+            {/* Draw Lines */}
+            {itemsWithInfo.map(item => {
+                const navBounds = itemBounds[item.id];
+                const descBounds = cardBounds[item.id];
+
+                if (navBounds && descBounds) {
+                    const startX = navBounds.x + navBounds.width;
+                    const startY = navBounds.y + navBounds.height / 2;
+                    const endX = descBounds.x;
+                    // Apply scroll offset to description card Y coordinate for lines
+                    const endY = descBounds.y + descBounds.height / 2 - scrollY;
+                    const elbowX = (startX + endX) / 2;
+
+                    return (
+                        <View key={`line-${item.id}`} style={StyleSheet.absoluteFill} pointerEvents="none">
+                            {/* Horizontal segment from button to elbow */}
+                            <View style={{
+                                position: 'absolute',
+                                left: Math.min(startX, elbowX),
+                                top: startY,
+                                width: Math.abs(elbowX - startX),
+                                height: 2,
+                                backgroundColor: 'yellow'
+                            }} />
+                            {/* Vertical segment from elbow to desc Y */}
+                            <View style={{
+                                position: 'absolute',
+                                left: elbowX,
+                                top: Math.min(startY, endY),
+                                width: 2,
+                                height: Math.abs(endY - startY),
+                                backgroundColor: 'yellow'
+                            }} />
+                            {/* Horizontal segment from elbow to desc */}
+                            <View style={{
+                                position: 'absolute',
+                                left: Math.min(elbowX, endX),
+                                top: endY,
+                                width: Math.abs(endX - elbowX),
+                                height: 2,
+                                backgroundColor: 'yellow'
+                            }} />
+                        </View>
+                    );
+                }
+                return null;
+            })}
+
+            {/* Background Tap to Dismiss */}
+            <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onDismiss} activeOpacity={1} />
+
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={[styles.scrollContent, { paddingLeft }]}
+                scrollEventThrottle={16}
+                onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
+            >
+                {itemsWithInfo.map(i => {
+                    const infoText = i.info?.trim();
+                    const listText = helpList?.[i.id]?.trim();
+                    const titleText = i.text?.trim() || `Item ${i.id}`;
+                    const isExpanded = expandedItemId === i.id;
+
+                    return (
+                        <TouchableOpacity
+                            key={i.id}
+                            style={styles.card}
+                            activeOpacity={0.8}
+                            onPress={() => setExpandedItemId(isExpanded ? null : i.id)}
+                            onLayout={(e) => {
+                                const layout = e.nativeEvent.layout;
+                                setCardBounds(prev => ({
+                                    ...prev,
+                                    [i.id]: layout
+                                }));
+                            }}
+                        >
+                            <Text style={styles.cardTitle}>{titleText}</Text>
+                            {infoText && (
+                                <Text
+                                    style={styles.cardText}
+                                    numberOfLines={isExpanded ? undefined : 1}
+                                >
+                                    {infoText}
+                                </Text>
+                            )}
+                            {listText && (
+                                <Text
+                                    style={[styles.cardText, infoText ? { marginTop: 8 } : {}]}
+                                    numberOfLines={isExpanded ? undefined : 1}
+                                >
+                                    {listText}
+                                </Text>
+                            )}
+                            {isExpanded && (
+                                <Text style={styles.tapToCollapse}>Tap to collapse</Text>
+                            )}
+                        </TouchableOpacity>
+                    );
+                })}
+            </ScrollView>
+        </View>
+    );
+};
+
+const styles = StyleSheet.create({
+    overlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        zIndex: 9999,
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
+        paddingVertical: 32,
+        paddingRight: 16,
+    },
+    card: {
+        backgroundColor: '#333',
+        padding: 16,
+        marginBottom: 16,
+        borderRadius: 8,
+    },
+    cardTitle: {
+        color: 'yellow',
+        fontWeight: 'bold',
+        fontSize: 16,
+        marginBottom: 4,
+    },
+    cardText: {
+        color: 'white',
+        fontSize: 14,
+    },
+    tapToCollapse: {
+        color: 'gray',
+        fontSize: 12,
+        marginTop: 8,
+    }
+});
