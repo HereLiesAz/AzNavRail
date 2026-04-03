@@ -13,7 +13,7 @@ import {
   Vibration,
 } from 'react-native';
 import { AzNavRailContext } from './AzNavRailScope';
-import { AzNavItem, AzNavRailSettings, AzButtonShape, AzDockingSide, AzHeaderIconShape } from './types';
+import { AzNavItem, AzNavRailSettings, AzButtonShape, AzDockingSide, AzHeaderIconShape, AzNestedRailAlignment } from './types';
 import { AzNavRailDefaults } from './AzNavRailDefaults';
 import { AzButton } from './components/AzButton';
 import { AzToggle } from './components/AzToggle';
@@ -23,6 +23,7 @@ import { AzLoad } from './components/AzLoad';
 import { DraggableRailItemWrapper } from './components/DraggableRailItemWrapper';
 import { RelocItemHandler } from './util/RelocItemHandler';
 import { AzNestedRailPopup } from './components/AzNestedRailPopup';
+import { HelpOverlay } from './components/HelpOverlay';
 
 interface AzNavRailProps extends AzNavRailSettings {
   children: React.ReactNode;
@@ -56,7 +57,6 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
       headerIconShape = AzHeaderIconShape.CIRCLE,
       translucentBackground,
       vibrate = false,
-      secLoc,
       onExpandedChange,
       onInteraction,
       helpList = {},
@@ -107,6 +107,21 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
   const [nestedRailVisible, setNestedRailVisible] = useState<string | null>(null);
   const [anchorPosition, setAnchorPosition] = useState<{ x: number, y: number, width: number, height: number } | undefined>(undefined);
   const [itemBounds, setItemBounds] = useState<Record<string, any>>({});
+
+  const handleItemLayout = useCallback((id: string, e: any) => {
+      const target = e.target as any;
+      if (target && target.measureInWindow) {
+          target.measureInWindow((x: number, y: number, width: number, height: number) => {
+              const bounds = { x, y, width, height };
+              setItemBounds(prev => ({ ...prev, [id]: bounds }));
+              if (config.onItemGloballyPositioned) config.onItemGloballyPositioned(id, bounds);
+          });
+      } else {
+          const bounds = { ...e.nativeEvent.layout };
+          setItemBounds(prev => ({ ...prev, [id]: bounds }));
+          if (config.onItemGloballyPositioned) config.onItemGloballyPositioned(id, bounds);
+      }
+  }, [config]);
 
   const subItemsMap = useMemo(() => {
     const map: Record<string, AzNavItem[]> = {};
@@ -456,11 +471,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
       return (
           <View
               key={item.id}
-              onLayout={(!isFloating || config.infoScreen || item.isNestedRail) ? (e) => {
-                  const bounds = { ...e.nativeEvent.layout };
-                  setItemBounds(prev => ({ ...prev, [item.id]: bounds }));
-                  if (config.onItemGloballyPositioned) config.onItemGloballyPositioned(item.id, bounds);
-              } : undefined}
+              onLayout={(!isFloating || config.infoScreen || item.isNestedRail) ? (e) => handleItemLayout(item.id, e) : undefined}
           >
             <AzButton
                 {...commonProps}
@@ -495,11 +506,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
       return (
           <View
               key={item.id}
-              onLayout={(config.infoScreen || item.isHost) ? (e) => {
-                  const bounds = { ...e.nativeEvent.layout };
-                  setItemBounds(prev => ({ ...prev, [item.id]: bounds }));
-                  if (config.onItemGloballyPositioned) config.onItemGloballyPositioned(item.id, bounds);
-              } : undefined}
+              onLayout={(config.infoScreen || item.isHost) ? (e) => handleItemLayout(item.id, e) : undefined}
           >
               <RailMenuItem
                   item={item}
@@ -660,9 +667,14 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
                     onDismiss={() => setNestedRailVisible(null)}
                     items={subItemsMap[item.id] || []}
                     alignment={item.nestedRailAlignment || AzNestedRailAlignment.VERTICAL}
-                    renderItem={(subItem, idx) => renderRailItem(subItem, idx)}
+                    renderItem={(subItem, idx) => (
+                        <View key={`wrap-${subItem.id}`} onLayout={(e) => handleItemLayout(subItem.id, e)}>
+                            {renderRailItem(subItem, idx)}
+                        </View>
+                    )}
                     anchorPosition={anchorPosition}
                     dockingSide={config.dockingSide}
+                    helpList={config.helpList}
                 />
             ))}
 
@@ -678,36 +690,13 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
             )}
 
             {infoScreen && (
-                <View style={styles.infoOverlay}>
-                    <ScrollView contentContainerStyle={{ padding: 20 }}>
-                        <Text style={styles.infoTitle}>Help & Info</Text>
-                        {items.map(i => {
-                            const infoText = i.info?.trim();
-                            const listText = config.helpList?.[i.id]?.trim();
-                            if (!infoText && !listText) return null;
-
-                            const titleText = i.text?.trim() || `Item ${i.id}`;
-
-                            return (
-                                <View key={i.id} style={styles.infoItem}>
-                                    <Text style={styles.infoItemTitle}>{titleText}</Text>
-                                    {infoText && <Text style={styles.infoItemText}>{infoText}</Text>}
-                                    {listText && (
-                                        <Text style={[styles.infoItemText, infoText ? { marginTop: 8 } : {}]}>
-                                            {listText}
-                                        </Text>
-                                    )}
-                                </View>
-                            );
-                        })}
-                    </ScrollView>
-                    <TouchableOpacity
-                        style={styles.closeInfoButton}
-                        onPress={onDismissInfoScreen}
-                    >
-                        <Text style={{color:'white'}}>X</Text>
-                    </TouchableOpacity>
-                </View>
+                <HelpOverlay
+                    items={items}
+                    helpList={config.helpList || {}}
+                    onDismiss={onDismissInfoScreen!}
+                    itemBounds={itemBounds}
+                    nestedRailVisibleId={nestedRailVisible}
+                />
             )}
         </View>
     </AzNavRailContext.Provider>

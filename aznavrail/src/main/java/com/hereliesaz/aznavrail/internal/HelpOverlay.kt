@@ -4,8 +4,8 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -43,6 +43,10 @@ internal fun HelpOverlay(
     val cardBoundsCache = remember { mutableStateMapOf<String, Rect>() }
     var expandedItemId by remember { mutableStateOf<String?>(null) }
 
+    // Calculate dynamic padding to avoid overlapping nested rails
+    val isNestedRailOpen = nestedRailOpenId != null
+    val dynamicStartPadding = if (isNestedRailOpen) 240.dp else 120.dp
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -57,34 +61,29 @@ internal fun HelpOverlay(
                     val cardBounds = cardBoundsCache[item.id]
 
                     if (itemBounds != null && cardBounds != null) {
-                        val isItemVisible = itemBounds.top >= safeZones.top.toPx() &&
-                                itemBounds.bottom <= (size.height - safeZones.bottom.toPx())
+                        val start = Offset(itemBounds.right, itemBounds.center.y)
+                        val end = Offset(cardBounds.left, cardBounds.center.y)
 
-                        // Only draw line if both are somewhat visible
-                        if (isItemVisible) {
-                            val start = Offset(itemBounds.right, itemBounds.center.y)
-                            val end = Offset(cardBounds.left, cardBounds.center.y)
-
-                            drawLine(
-                                color = drawColor,
-                                start = start,
-                                end = end,
-                                strokeWidth = strokeWidth.toPx()
-                            )
-                        }
+                        drawLine(
+                            color = drawColor,
+                            start = start,
+                            end = end,
+                            strokeWidth = strokeWidth.toPx()
+                        )
                     }
                 }
             }
     ) {
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = 120.dp, end = 16.dp) // Leave space for rail
-                .padding(top = safeZones.top, bottom = safeZones.bottom),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(vertical = 32.dp)
+                .padding(start = dynamicStartPadding, end = 16.dp) // Leave space for rail + nested rail
+                .padding(top = safeZones.top, bottom = safeZones.bottom)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(itemsWithInfo, key = { it.id }) { item ->
+            Spacer(modifier = Modifier.height(16.dp)) // Equivalent to top contentPadding
+            itemsWithInfo.forEach { item ->
                 val isExpanded = expandedItemId == item.id
                 val hasTutorial = tutorials.containsKey(item.id)
 
@@ -120,7 +119,7 @@ internal fun HelpOverlay(
                             text = infoText,
                             color = Color.White,
                             style = MaterialTheme.typography.bodyLarge,
-                            maxLines = if (isExpanded) Int.MAX_VALUE else 2,
+                            maxLines = if (isExpanded) Int.MAX_VALUE else 1,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
@@ -132,7 +131,7 @@ internal fun HelpOverlay(
                             text = listText,
                             color = Color.White,
                             style = MaterialTheme.typography.bodyLarge,
-                            maxLines = if (isExpanded) Int.MAX_VALUE else 2,
+                            maxLines = if (isExpanded) Int.MAX_VALUE else 1,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
@@ -153,6 +152,7 @@ internal fun HelpOverlay(
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(16.dp)) // Equivalent to bottom contentPadding
         }
     }
 }
