@@ -253,16 +253,18 @@ fun AzNavRail(
     val actualCurrentDestination = currentDestination ?: navBackStackEntry?.destination?.route
     val hostStates = remember { mutableStateMapOf<String, Boolean>() }
 
-    val toggleHelpOverlay = { itemId: String? ->
-        if (itemId != null && scope.advancedConfig.tutorials.containsKey(itemId)) {
-            activeTutorialId = itemId
-            showHelpOverlay = false // ensure help overlay is closed
-        } else {
-            if (showHelpOverlay) {
-                showHelpOverlay = false
-                scope.advancedConfig.onDismissHelp?.invoke()
+    val toggleHelpOverlay = remember(scope) {
+        { itemId: String? ->
+            if (itemId != null && scope.advancedConfig.tutorials.containsKey(itemId)) {
+                activeTutorialId = itemId
+                showHelpOverlay = false // ensure help overlay is closed
             } else {
-                showHelpOverlay = true
+                if (showHelpOverlay) {
+                    showHelpOverlay = false
+                    scope.advancedConfig.onDismissHelp?.invoke()
+                } else {
+                    showHelpOverlay = true
+                }
             }
         }
     }
@@ -623,7 +625,8 @@ fun AzNavRail(
             onDismiss = { toggleHelpOverlay(null) },
             itemBoundsCache = scope.itemBoundsCache,
             helpList = scope.advancedConfig.helpList,
-            nestedRailOpenId = scope.nestedRailOpenId
+            tutorials = scope.advancedConfig.tutorials,
+            onTutorialLaunch = { id -> toggleHelpOverlay(id) }
         )
     }
 

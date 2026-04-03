@@ -12,9 +12,9 @@ sealed class AzHighlight {
     /** Highlights an item based on its ID. The system must find the item's globally positioned bounds. */
     data class Item(val id: String) : AzHighlight()
     /** Highlights the entire screen or provides a general highlight without a specific bounds. */
-    data object FullScreen : AzHighlight()
+    object FullScreen : AzHighlight()
     /** No highlight. */
-    data object None : AzHighlight()
+    object None : AzHighlight()
 }
 
 /**

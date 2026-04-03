@@ -41,8 +41,8 @@ fun AzTutorialOverlay(
     onDismiss: () -> Unit,
     itemBoundsCache: Map<String, Rect> = emptyMap()
 ) {
-    var currentSceneIndex by remember(tutorial) { mutableStateOf(0) }
-    var currentCardIndex by remember(tutorial) { mutableStateOf(0) }
+    var currentSceneIndex by remember { mutableStateOf(0) }
+    var currentCardIndex by remember { mutableStateOf(0) }
 
     if (currentSceneIndex >= tutorial.scenes.size) {
         LaunchedEffect(Unit) {
@@ -119,7 +119,7 @@ fun AzTutorialOverlay(
             AnimatedContent(
                 targetState = currentCard,
                 transitionSpec = {
-                    fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
+                    fadeIn(animationSpec = tween(300)).togetherWith(fadeOut(animationSpec = tween(300)))
                 },
                 label = "TutorialCardTransition"
             ) { card ->
