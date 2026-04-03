@@ -91,6 +91,7 @@ internal fun HelpOverlay(
             Spacer(modifier = Modifier.height(16.dp)) // Equivalent to top contentPadding
             itemsWithInfo.forEach { item ->
                 val isExpanded = expandedItemId == item.id
+                val hasTutorial = tutorials.containsKey(item.id)
 
                 Column(
                     modifier = Modifier
@@ -99,7 +100,13 @@ internal fun HelpOverlay(
                             cardBoundsCache[item.id] = coords.boundsInWindow()
                         }
                         .background(Color.DarkGray, RectangleShape)
-                        .clickable { expandedItemId = if (isExpanded) null else item.id }
+                        .clickable {
+                            if (hasTutorial) {
+                                onTutorialLaunch?.invoke(item.id)
+                            } else {
+                                expandedItemId = if (isExpanded) null else item.id
+                            }
+                        }
                         .padding(16.dp)
                         .animateContentSize()
                 ) {
@@ -139,6 +146,13 @@ internal fun HelpOverlay(
                         Text(
                             text = "Tap to collapse",
                             color = Color.Gray,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    } else if (hasTutorial && !isExpanded) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Tap to start tutorial",
+                            color = Color.Cyan,
                             style = MaterialTheme.typography.labelSmall
                         )
                     }
