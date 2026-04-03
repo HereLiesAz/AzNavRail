@@ -28,6 +28,8 @@ import com.hereliesaz.aznavrail.*
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
+import com.hereliesaz.aznavrail.tutorial.AzHighlight
+import com.hereliesaz.aznavrail.tutorial.azTutorial
 
 @Composable
 fun MainApp() {
@@ -83,7 +85,31 @@ fun MainApp() {
             enableRailDragging = true, // Keeps FAB mode enabled (in-app floating)
             helpEnabled = showHelp,
             onDismissHelp = { showHelp = false },
-            helpList = mapOf("home" to "This is a test helpList text!")
+            helpList = mapOf("home" to "This is a test helpList text!"),
+            tutorials = mapOf(
+                "multi-line" to azTutorial {
+                    scene(
+                        id = "scene1",
+                        content = {
+                            Box(modifier = Modifier.fillMaxSize().background(Color.DarkGray)) {
+                                Text("This is a scripted background scene for the tutorial!", color = Color.White, modifier = Modifier.align(Alignment.Center))
+                            }
+                        }
+                    ) {
+                        card(
+                            title = "Welcome to the Tutorial",
+                            text = "This is a custom tutorial card. Tapping Next will highlight an item.",
+                            highlight = AzHighlight.FullScreen
+                        )
+                        card(
+                            title = "Highlighting",
+                            text = "Now we're highlighting the Home item in the rail.",
+                            highlight = AzHighlight.Item("home"),
+                            actionText = "Finish"
+                        )
+                    }
+                }
+            )
         )
 
         // RAIL ITEMS
