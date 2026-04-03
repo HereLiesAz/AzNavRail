@@ -17,71 +17,78 @@ export const HelpOverlay: React.FC<HelpOverlayProps> = ({ items, onDismiss, help
     const isNestedRailOpen = nestedRailVisibleId !== null;
     const paddingLeft = isNestedRailOpen ? 240 : 120;
 
-    const allItems = [...items];
-    if (nestedRailVisibleId) {
-        const nestedHost = items.find(i => i.id === nestedRailVisibleId);
-        if (nestedHost?.nestedRailItems) {
-            allItems.push(...nestedHost.nestedRailItems);
+    const allItems = React.useMemo(() => {
+        const list = [...items];
+        if (nestedRailVisibleId) {
+            const nestedHost = items.find(i => i.id === nestedRailVisibleId);
+            if (nestedHost?.nestedRailItems) {
+                list.push(...nestedHost.nestedRailItems);
+            }
         }
-    }
+        return list;
+    }, [items, nestedRailVisibleId]);
 
     const [scrollY, setScrollY] = useState(0);
 
-    const itemsWithInfo = allItems.filter(i => {
-        const infoText = i.info?.trim();
-        const listText = helpList?.[i.id]?.trim();
-        return infoText || listText;
-    });
+    const itemsWithInfo = React.useMemo(() => {
+        return allItems.filter(i => {
+            const infoText = i.info?.trim();
+            const listText = helpList?.[i.id]?.trim();
+            return infoText || listText;
+        });
+    }, [allItems, helpList]);
 
     return (
         <View style={styles.overlay}>
             {/* Draw Lines */}
-            {itemsWithInfo.map(item => {
-                const navBounds = itemBounds[item.id];
-                const descBounds = cardBounds[item.id];
+            <View style={StyleSheet.absoluteFill} pointerEvents="none">
+                {itemsWithInfo.map(item => {
+                    const navBounds = itemBounds[item.id];
+                    const descBounds = cardBounds[item.id];
 
-                if (navBounds && descBounds) {
-                    const startX = navBounds.x + navBounds.width;
-                    const startY = navBounds.y + navBounds.height / 2;
-                    const endX = descBounds.x;
-                    // Apply scroll offset to description card Y coordinate for lines
-                    const endY = descBounds.y + descBounds.height / 2 - scrollY;
-                    const elbowX = (startX + endX) / 2;
+                    if (navBounds && descBounds) {
+                        const startX = navBounds.x + navBounds.width;
+                        const startY = navBounds.y + navBounds.height / 2;
+                        const endX = descBounds.x;
+                        // Apply scroll offset to description card Y coordinate for lines
+                        const endY = descBounds.y + descBounds.height / 2 - scrollY;
+                        const elbowX = (startX + endX) / 2;
 
-                    return (
-                        <View key={`line-${item.id}`} style={StyleSheet.absoluteFill} pointerEvents="none">
-                            {/* Horizontal segment from button to elbow */}
-                            <View style={{
-                                position: 'absolute',
-                                left: Math.min(startX, elbowX),
-                                top: startY,
-                                width: Math.abs(elbowX - startX),
-                                height: 2,
-                                backgroundColor: 'yellow'
-                            }} />
-                            {/* Vertical segment from elbow to desc Y */}
-                            <View style={{
-                                position: 'absolute',
-                                left: elbowX,
-                                top: Math.min(startY, endY),
-                                width: 2,
-                                height: Math.abs(endY - startY),
-                                backgroundColor: 'yellow'
-                            }} />
-                            {/* Horizontal segment from elbow to desc */}
-                            <View style={{
-                                position: 'absolute',
-                                left: Math.min(elbowX, endX),
-                                top: endY,
-                                width: Math.abs(endX - elbowX),
-                                height: 2,
-                                backgroundColor: 'yellow'
-                            }} />
-                        </View>
-                    );
-                }
-                return null;
-            })}
+                        return (
+                            <React.Fragment key={`line-${item.id}`}>
+                                {/* Horizontal segment from button to elbow */}
+                                <View style={{
+                                    position: 'absolute',
+                                    left: Math.min(startX, elbowX),
+                                    top: startY,
+                                    width: Math.abs(elbowX - startX),
+                                    height: 2,
+                                    backgroundColor: 'yellow'
+                                }} />
+                                {/* Vertical segment from elbow to desc Y */}
+                                <View style={{
+                                    position: 'absolute',
+                                    left: elbowX,
+                                    top: Math.min(startY, endY),
+                                    width: 2,
+                                    height: Math.abs(endY - startY),
+                                    backgroundColor: 'yellow'
+                                }} />
+                                {/* Horizontal segment from elbow to desc */}
+                                <View style={{
+                                    position: 'absolute',
+                                    left: Math.min(elbowX, endX),
+                                    top: endY,
+                                    width: Math.abs(endX - elbowX),
+                                    height: 2,
+                                    backgroundColor: 'yellow'
+                                }} />
+                            </React.Fragment>
+                        );
+                    }
+                    return null;
+                })}
+            </View>
 
             {/* Background Tap to Dismiss */}
             <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onDismiss} activeOpacity={1} />

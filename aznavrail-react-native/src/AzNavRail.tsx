@@ -108,6 +108,21 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
   const [anchorPosition, setAnchorPosition] = useState<{ x: number, y: number, width: number, height: number } | undefined>(undefined);
   const [itemBounds, setItemBounds] = useState<Record<string, any>>({});
 
+  const handleItemLayout = useCallback((id: string, e: any) => {
+      const target = e.target as any;
+      if (target && target.measureInWindow) {
+          target.measureInWindow((x: number, y: number, width: number, height: number) => {
+              const bounds = { x, y, width, height };
+              setItemBounds(prev => ({ ...prev, [id]: bounds }));
+              if (config.onItemGloballyPositioned) config.onItemGloballyPositioned(id, bounds);
+          });
+      } else {
+          const bounds = { ...e.nativeEvent.layout };
+          setItemBounds(prev => ({ ...prev, [id]: bounds }));
+          if (config.onItemGloballyPositioned) config.onItemGloballyPositioned(id, bounds);
+      }
+  }, [config]);
+
   const subItemsMap = useMemo(() => {
     const map: Record<string, AzNavItem[]> = {};
     items.forEach((item) => {
@@ -456,20 +471,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
       return (
           <View
               key={item.id}
-              onLayout={(!isFloating || config.infoScreen || item.isNestedRail) ? (e) => {
-                  const target = e.target as any;
-                  if (target && target.measureInWindow) {
-                      target.measureInWindow((x: number, y: number, width: number, height: number) => {
-                          const bounds = { x, y, width, height };
-                          setItemBounds(prev => ({ ...prev, [item.id]: bounds }));
-                          if (config.onItemGloballyPositioned) config.onItemGloballyPositioned(item.id, bounds);
-                      });
-                  } else {
-                      const bounds = { ...e.nativeEvent.layout };
-                      setItemBounds(prev => ({ ...prev, [item.id]: bounds }));
-                      if (config.onItemGloballyPositioned) config.onItemGloballyPositioned(item.id, bounds);
-                  }
-              } : undefined}
+              onLayout={(!isFloating || config.infoScreen || item.isNestedRail) ? (e) => handleItemLayout(item.id, e) : undefined}
           >
             <AzButton
                 {...commonProps}
@@ -504,20 +506,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
       return (
           <View
               key={item.id}
-              onLayout={(config.infoScreen || item.isHost) ? (e) => {
-                  const target = e.target as any;
-                  if (target && target.measureInWindow) {
-                      target.measureInWindow((x: number, y: number, width: number, height: number) => {
-                          const bounds = { x, y, width, height };
-                          setItemBounds(prev => ({ ...prev, [item.id]: bounds }));
-                          if (config.onItemGloballyPositioned) config.onItemGloballyPositioned(item.id, bounds);
-                      });
-                  } else {
-                      const bounds = { ...e.nativeEvent.layout };
-                      setItemBounds(prev => ({ ...prev, [item.id]: bounds }));
-                      if (config.onItemGloballyPositioned) config.onItemGloballyPositioned(item.id, bounds);
-                  }
-              } : undefined}
+              onLayout={(config.infoScreen || item.isHost) ? (e) => handleItemLayout(item.id, e) : undefined}
           >
               <RailMenuItem
                   item={item}
@@ -679,17 +668,7 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
                     items={subItemsMap[item.id] || []}
                     alignment={item.nestedRailAlignment || AzNestedRailAlignment.VERTICAL}
                     renderItem={(subItem, idx) => (
-                        <View key={`wrap-${subItem.id}`} onLayout={(e) => {
-                            const target = e.target as any;
-                            if (target && target.measureInWindow) {
-                                target.measureInWindow((x: number, y: number, width: number, height: number) => {
-                                    setItemBounds(prev => ({ ...prev, [subItem.id]: { x, y, width, height } }));
-                                });
-                            } else {
-                                const bounds = { ...e.nativeEvent.layout };
-                                setItemBounds(prev => ({ ...prev, [subItem.id]: bounds }));
-                            }
-                        }}>
+                        <View key={`wrap-${subItem.id}`} onLayout={(e) => handleItemLayout(subItem.id, e)}>
                             {renderRailItem(subItem, idx)}
                         </View>
                     )}
