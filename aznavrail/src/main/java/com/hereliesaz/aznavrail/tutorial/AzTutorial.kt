@@ -14,7 +14,7 @@ sealed class AzHighlight {
     /** Highlights the entire screen or provides a general highlight without a specific bounds. */
     data object FullScreen : AzHighlight()
     /** No highlight. */
-    object None : AzHighlight()
+    data object None : AzHighlight()
 }
 
 /**
