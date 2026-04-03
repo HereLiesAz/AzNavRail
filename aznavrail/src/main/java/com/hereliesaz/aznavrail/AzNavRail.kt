@@ -80,6 +80,7 @@ import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 import com.hereliesaz.aznavrail.model.AzOrientation
+import com.hereliesaz.aznavrail.tutorial.AzTutorialOverlay
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -222,6 +223,7 @@ fun AzNavRail(
     var showFloatingButtons by remember { mutableStateOf(false) }
     var railContentHeight by remember { mutableStateOf(0f) }
     var showHelpOverlay by remember { mutableStateOf(false) }
+    var activeTutorialId by remember { mutableStateOf<String?>(null) }
     val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
     val onSecretClick = SecretScreens(secLoc = scope.advancedConfig.secLoc, secLocPort = scope.advancedConfig.secLocPort)
 
@@ -251,12 +253,19 @@ fun AzNavRail(
     val actualCurrentDestination = currentDestination ?: navBackStackEntry?.destination?.route
     val hostStates = remember { mutableStateMapOf<String, Boolean>() }
 
-    val toggleHelpOverlay = {
-        if (showHelpOverlay) {
-            showHelpOverlay = false
-            scope.advancedConfig.onDismissHelp?.invoke()
-        } else {
-            showHelpOverlay = true
+    val toggleHelpOverlay = remember(scope) {
+        { itemId: String? ->
+            if (itemId != null && scope.advancedConfig.tutorials.containsKey(itemId)) {
+                activeTutorialId = itemId
+                showHelpOverlay = false // ensure help overlay is closed
+            } else {
+                if (showHelpOverlay) {
+                    showHelpOverlay = false
+                    scope.advancedConfig.onDismissHelp?.invoke()
+                } else {
+                    showHelpOverlay = true
+                }
+            }
         }
     }
 
@@ -464,7 +473,7 @@ fun AzNavRail(
                                                 item.classifiers.any { it in scope.activeClassifiers },
                                         onClick = {
                                             if (item.isHelpItem) {
-                                                toggleHelpOverlay()
+                                                toggleHelpOverlay(item.id)
                                             } else {
                                                 scope.onClickMap[item.id]?.invoke()
                                             }
@@ -492,7 +501,7 @@ fun AzNavRail(
                                                             subItem.classifiers.any { it in scope.activeClassifiers },
                                                     onClick = {
                                                         if (subItem.isHelpItem) {
-                                                            toggleHelpOverlay()
+                                                            toggleHelpOverlay(subItem.id)
                                                         } else {
                                                             scope.onClickMap[subItem.id]?.invoke()
                                                         }
@@ -573,7 +582,7 @@ fun AzNavRail(
                                 },
                                 onItemSelected = { item ->
                                     if (item.isHelpItem) {
-                                        toggleHelpOverlay()
+                                        toggleHelpOverlay(item.id)
                                     }
                                     if (item.collapseOnClick && !scope.noMenu) isExpanded = false
                                 },
@@ -613,10 +622,20 @@ fun AzNavRail(
     if (showHelpOverlay) {
         HelpOverlay(
             items = scope.navItems,
-            onDismiss = { toggleHelpOverlay() },
+            onDismiss = { toggleHelpOverlay(null) },
             itemBoundsCache = scope.itemBoundsCache,
             helpList = scope.advancedConfig.helpList,
             nestedRailOpenId = scope.nestedRailOpenId
         )
+    }
+
+    activeTutorialId?.let { tutorialId ->
+        scope.advancedConfig.tutorials[tutorialId]?.let { tutorial ->
+            AzTutorialOverlay(
+                tutorial = tutorial,
+                onDismiss = { activeTutorialId = null },
+                itemBoundsCache = scope.itemBoundsCache
+            )
+        }
     }
 }

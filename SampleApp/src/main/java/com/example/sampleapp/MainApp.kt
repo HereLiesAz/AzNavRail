@@ -28,6 +28,8 @@ import com.hereliesaz.aznavrail.*
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
+import com.hereliesaz.aznavrail.tutorial.AzHighlight
+import com.hereliesaz.aznavrail.tutorial.azTutorial
 
 @Composable
 fun MainApp() {
