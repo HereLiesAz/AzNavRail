@@ -344,3 +344,43 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+
+## Tutorial Framework
+
+AzNavRail features a powerful tutorial framework allowing you to script interactive scenes, dim the screen, and highlight specific items via an easy-to-use DSL. Tutorials are passed in `azAdvanced` or `azSettings`. When a tutorial is associated with an item ID, tapping that item's Help card will launch the tutorial sequence.
+
+```kotlin
+import com.hereliesaz.aznavrail.tutorial.AzHighlight
+import com.hereliesaz.aznavrail.tutorial.azTutorial
+
+azAdvanced(
+    helpEnabled = true,
+    tutorials = mapOf(
+        "my-item-id" to azTutorial {
+            // A scene displays custom composable content underneath the tutorial overlay
+            scene(
+                id = "scene1",
+                content = {
+                    Box(Modifier.fillMaxSize().background(Color.DarkGray)) {
+                        Text("Scripted App Screen", color = Color.White)
+                    }
+                }
+            ) {
+                // Cards display textual instructions with next/skip actions
+                card(
+                    title = "Welcome",
+                    text = "Welcome to the tutorial.",
+                    highlight = AzHighlight.FullScreen
+                )
+                card(
+                    title = "Highlighting",
+                    text = "Notice the highlighted item.",
+                    highlight = AzHighlight.Item("my-item-id"),
+                    actionText = "Finish"
+                )
+            }
+        }
+    )
+)
+```

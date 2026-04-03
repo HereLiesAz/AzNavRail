@@ -52,18 +52,7 @@ fun AzTutorialOverlay(
     }
 
     val currentScene = tutorial.scenes[currentSceneIndex]
-
-    // Check if we finished cards for the current scene
-    if (currentCardIndex >= currentScene.cards.size) {
-        LaunchedEffect(currentSceneIndex, currentCardIndex) {
-            currentScene.onComplete?.invoke()
-            currentSceneIndex++
-            currentCardIndex = 0
-        }
-        return
-    }
-
-    val currentCard = currentScene.cards[currentCardIndex]
+    val currentCard = currentScene.cards.getOrNull(currentCardIndex) ?: return
 
     // Determine the highlight bounds based on the current card
     val highlightBounds = remember(currentCard.highlight, itemBoundsCache) {
@@ -95,7 +84,13 @@ fun AzTutorialOverlay(
                     drawRect(color = Color.Black.copy(alpha = 0.7f))
 
                     // Punch out the highlight area if it exists
-                    if (highlightBounds != null) {
+                    if (currentCard.highlight is AzHighlight.FullScreen) {
+                        // Punch out the whole screen
+                        drawRect(
+                            color = Color.Transparent,
+                            blendMode = BlendMode.Clear
+                        )
+                    } else if (highlightBounds != null) {
                         drawRoundRect(
                             color = Color.Transparent,
                             topLeft = Offset(highlightBounds.left, highlightBounds.top),
@@ -161,7 +156,13 @@ fun AzTutorialOverlay(
                         Button(
                             onClick = {
                                 card.onAction?.invoke()
-                                currentCardIndex++
+                                if (currentCardIndex + 1 >= currentScene.cards.size) {
+                                    currentScene.onComplete?.invoke()
+                                    currentSceneIndex++
+                                    currentCardIndex = 0
+                                } else {
+                                    currentCardIndex++
+                                }
                             }
                         ) {
                             Text(card.actionText)
