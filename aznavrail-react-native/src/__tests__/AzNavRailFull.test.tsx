@@ -58,7 +58,7 @@ describe('AzNavRail Full Suite', () => {
 
     const root = component.root;
     const buttons = root.findAllByType(AzButton);
-    const hostBtn = buttons.find((b: any) => b.props.text === 'Host');
+    const hostBtn = buttons.find((b) => b.props.text === 'Host');
 
     // Expand host
     await renderer.act(async () => {
