@@ -108,7 +108,7 @@ class AzTextBoxTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Initial").performTextInput(" Update")
+        composeTestRule.onNodeWithText("Initial").performTextReplacement("Updated")
 
         // In controlled mode, internal text shouldn't be updated by AzTextBox itself,
         // so the visual state should remain "Initial" because we aren't updating `value`
@@ -117,8 +117,6 @@ class AzTextBoxTest {
         composeTestRule.onNodeWithText("Initial").assertIsDisplayed()
 
         // However, the callback SHOULD be fired with the expected new text
-        // performTextInput appends " Update", wait - in compose testing performTextInput
-        // might insert at beginning or end depending on cursor. It returned " UpdateInitial"
-        assertEquals(" UpdateInitial", capturedValue)
+        assertEquals("Updated", capturedValue)
     }
 }
