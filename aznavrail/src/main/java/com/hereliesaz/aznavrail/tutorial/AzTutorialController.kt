@@ -1,6 +1,7 @@
 package com.hereliesaz.aznavrail.tutorial
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -16,8 +17,10 @@ class AzTutorialController(
     initialActiveTutorialId: String? = null,
     initialReadTutorials: List<String> = emptyList()
 ) {
+    private val _activeTutorialId = mutableStateOf<String?>(initialActiveTutorialId)
+
     /** The ID of the currently active tutorial. Null if no tutorial is active. */
-    val activeTutorialId = mutableStateOf<String?>(initialActiveTutorialId)
+    val activeTutorialId: State<String?> get() = _activeTutorialId
 
     private val _readTutorials = mutableStateListOf<String>().apply {
         addAll(initialReadTutorials)
@@ -30,14 +33,14 @@ class AzTutorialController(
      * Starts a tutorial with the given [id].
      */
     fun startTutorial(id: String) {
-        activeTutorialId.value = id
+        _activeTutorialId.value = id
     }
 
     /**
      * Ends the currently active tutorial.
      */
     fun endTutorial() {
-        activeTutorialId.value = null
+        _activeTutorialId.value = null
     }
 
     /**
@@ -57,11 +60,10 @@ class AzTutorialController(
     }
 
     companion object {
-        val Saver: Saver<AzTutorialController, Any> = Saver(
+        val Saver: Saver<AzTutorialController, List<Any?>> = Saver(
             save = { listOf(it.activeTutorialId.value, ArrayList(it._readTutorials)) },
-            restore = {
+            restore = { list ->
                 @Suppress("UNCHECKED_CAST")
-                val list = it as List<Any?>
                 AzTutorialController(
                     initialActiveTutorialId = list[0] as String?,
                     initialReadTutorials = list[1] as ArrayList<String>
@@ -73,8 +75,13 @@ class AzTutorialController(
 
 /**
  * CompositionLocal to provide the [AzTutorialController] to the tree.
+ *
+ * A controller is expected to be provided by a parent composable; the default
+ * fails fast to surface missing providers during development.
  */
-val LocalAzTutorialController = compositionLocalOf { AzTutorialController() }
+val LocalAzTutorialController = compositionLocalOf<AzTutorialController> {
+    error("AzTutorialController not provided")
+}
 
 @Composable
 fun rememberAzTutorialController(): AzTutorialController {
