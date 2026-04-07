@@ -19,6 +19,6 @@ data class AzAdvancedConfig(
     val onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
     val secLoc: String? = null,
     val secLocPort: Int = 10203,
-    val helpList: Map<String, String> = emptyMap(),
+    val helpList: Map<String, Any> = emptyMap(),
     val tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap()
 )

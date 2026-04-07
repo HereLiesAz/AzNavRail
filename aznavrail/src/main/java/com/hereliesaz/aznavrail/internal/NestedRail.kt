@@ -39,7 +39,7 @@ internal fun NestedRail(
     onItemSelected: (AzNavItem) -> Unit,
     alignment: AzNestedRailAlignment,
     isRightDocked: Boolean,
-    helpList: Map<String, String> = emptyMap(),
+    helpList: Map<String, Any> = emptyMap(),
     onItemGloballyPositioned: ((String, androidx.compose.ui.geometry.Rect) -> Unit)? = null
 ) {
     val configuration = LocalConfiguration.current
