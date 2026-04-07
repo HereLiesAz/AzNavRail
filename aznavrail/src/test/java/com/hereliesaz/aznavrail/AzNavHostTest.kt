@@ -30,13 +30,13 @@ class AzNavHostTest {
                 currentDestination = "home"
             ) {
                 background(weight = 10) {
-                    compositionOrder.add("bg10")
+                    SideEffect { compositionOrder.add("bg10") }
                 }
                 background(weight = 1) {
-                    compositionOrder.add("bg1")
+                    SideEffect { compositionOrder.add("bg1") }
                 }
                 background(weight = 5) {
-                    compositionOrder.add("bg5")
+                    SideEffect { compositionOrder.add("bg5") }
                 }
             }
         }
