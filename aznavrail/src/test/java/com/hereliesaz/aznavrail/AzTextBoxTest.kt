@@ -93,7 +93,7 @@ class AzTextBoxTest {
         // Wait for coroutines
         composeTestRule.waitForIdle()
 
-        assert(submittedValue == "my_secret_password")
+        org.junit.Assert.assertEquals("my_secret_password", submittedValue)
 
         // The secret should not be in the history
         kotlinx.coroutines.runBlocking {
