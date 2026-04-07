@@ -93,7 +93,7 @@ describe('AzNavRail Full Suite', () => {
   });
 
   it('enforces NONE shape for SubItems regardless of props', async () => {
-    let component: any;
+    let component: renderer.ReactTestRenderer;
     await renderer.act(async () => {
         component = renderer.create(
           <AzNavRail initiallyExpanded={false}>
