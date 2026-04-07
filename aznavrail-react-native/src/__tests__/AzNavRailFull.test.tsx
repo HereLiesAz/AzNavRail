@@ -45,7 +45,7 @@ describe('AzNavRail Full Suite', () => {
   it('handles RelocItemHandler drag and drop reordering', async () => {
     const mockOnRelocate = jest.fn();
 
-    let component: any;
+    let component: renderer.ReactTestRenderer;
     await renderer.act(async () => {
         component = renderer.create(
           <AzNavRail initiallyExpanded={false}>
