@@ -225,7 +225,7 @@ fun AzNavRail(
     var railContentHeight by remember { mutableStateOf(0f) }
     var showHelpOverlay by remember { mutableStateOf(false) }
     val tutorialController = LocalAzTutorialController.current
-    val activeTutorialId by tutorialController.activeTutorialId
+    var activeTutorialId by tutorialController.activeTutorialId
     val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
     val onSecretClick = SecretScreens(secLoc = scope.advancedConfig.secLoc, secLocPort = scope.advancedConfig.secLocPort)
 
