@@ -69,7 +69,7 @@ describe('AzNavRail Full Suite', () => {
     expect(wrappers.length).toBe(2);
 
     // Get the first item's wrapper (reloc1)
-    const firstWrapper = wrappers.find((w: any) => w.props.item.id === 'reloc1');
+    const firstWrapper = wrappers.find((w) => w.props.item.id === 'reloc1');
 
     // Find its index in the items array. The wrapper gets index from mapping over `effectiveRailItems`
     const index = firstWrapper.props.index;
