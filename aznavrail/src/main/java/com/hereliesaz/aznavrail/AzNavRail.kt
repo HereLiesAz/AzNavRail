@@ -4,7 +4,6 @@ package com.hereliesaz.aznavrail
 import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
