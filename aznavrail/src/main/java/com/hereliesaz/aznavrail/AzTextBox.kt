@@ -159,8 +159,6 @@ fun AzTextBox(
     // Determine effective text
     val text = value ?: internalText
 
-    // Logic Fix: Ensure internal text updates if we are in uncontrolled mode (value == null),
-    // but allow the developer's onValueChange to handle it if in controlled mode.
     val onTextChange: (String) -> Unit = { newText ->
         if (value == null) {
             internalText = newText
@@ -311,7 +309,9 @@ fun AzTextBox(
                         modifier = Modifier
                             .then(if (enabled) Modifier.clickable {
                                 onSubmit(text)
-                                HistoryManager.addEntry(text, historyContext)
+                                if (!secret) {
+                                    HistoryManager.addEntry(text, historyContext)
+                                }
                                 if (onValueChange == null) {
                                     onTextChange("")
                                 }

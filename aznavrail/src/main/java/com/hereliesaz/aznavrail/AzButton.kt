@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.model.AzButtonShape
+import com.hereliesaz.aznavrail.model.AzComposableContent
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -50,8 +51,12 @@ fun AzButton(
     shape: AzButtonShape = AzButtonShape.CIRCLE,
     enabled: Boolean = true,
     isLoading: Boolean = false,
-    contentPadding: PaddingValues? = null
+    contentPadding: PaddingValues? = null,
+    itemContent: @Composable (() -> Unit)? = null
 ) {
+    val composableContent = itemContent?.let {
+        AzComposableContent { _ -> it() }
+    }
     AzNavRailButton(
         onClick = onClick,
         text = text,
@@ -66,7 +71,8 @@ fun AzButton(
         enabled = enabled,
         isSelected = false,
         isLoading = isLoading,
-        contentPadding = contentPadding ?: PaddingValues(8.dp)
+        contentPadding = contentPadding ?: PaddingValues(8.dp),
+        itemContent = composableContent
     )
 }
 
@@ -99,9 +105,13 @@ fun AzToggle(
     fillColor: Color? = null,
     colors: ButtonColors? = null,
     shape: AzButtonShape = AzButtonShape.CIRCLE,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    itemContent: @Composable (() -> Unit)? = null
 ) {
     val text = if (isChecked) toggleOnText else toggleOffText
+    val composableContent = itemContent?.let {
+        AzComposableContent { _ -> it() }
+    }
     AzNavRailButton(
         onClick = { onToggle(!isChecked) },
         text = text,
@@ -113,7 +123,8 @@ fun AzToggle(
         size = AzNavRailDefaults.ButtonWidth,
         shape = shape,
         enabled = enabled,
-        isSelected = false
+        isSelected = false,
+        itemContent = composableContent
     )
 }
 
@@ -146,11 +157,16 @@ fun AzCycler(
     fillColor: Color? = null,
     colors: ButtonColors? = null,
     shape: AzButtonShape = AzButtonShape.CIRCLE,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    itemContent: @Composable (() -> Unit)? = null
 ) {
     var displayedOption by rememberSaveable(selectedOption) { mutableStateOf(selectedOption) }
     var job by remember { mutableStateOf<Job?>(null) }
     val coroutineScope = rememberCoroutineScope()
+
+    val composableContent = itemContent?.let {
+        AzComposableContent { _ -> it() }
+    }
 
     LaunchedEffect(selectedOption) {
         job?.cancel()
@@ -178,6 +194,7 @@ fun AzCycler(
         size = AzNavRailDefaults.ButtonWidth,
         shape = shape,
         enabled = enabled,
-        isSelected = false
+        isSelected = false,
+        itemContent = composableContent
     )
 }

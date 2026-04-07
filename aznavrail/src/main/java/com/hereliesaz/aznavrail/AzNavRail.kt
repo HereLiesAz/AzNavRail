@@ -623,6 +623,7 @@ fun AzNavRail(
     if (showHelpOverlay) {
         HelpOverlay(
             items = scope.navItems,
+            helpLineColors = scope.helpLineColors,
             onDismiss = { toggleHelpOverlay(null) },
             itemBoundsCache = scope.itemBoundsCache,
             helpList = scope.advancedConfig.helpList,
