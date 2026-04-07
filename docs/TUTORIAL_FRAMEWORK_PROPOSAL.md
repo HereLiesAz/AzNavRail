@@ -87,3 +87,10 @@ azTutorial(id = "first_run_tutorial", title = "Welcome to the App") {
 ```
 
 *This framework will be developed in an upcoming ticket as an extension to the completed tap-to-expand HelpOverlay feature.*
+## Programmatic Control
+
+The state of a tutorial (whether it's running, what scene is active, and which card is displaying) will be managed by `AzTutorialController`.
+
+- The application can optionally provide `onComplete` or `onDismiss` callbacks at the `AzTutorial` and `AzScene` levels.
+- The `HelpOverlay` and other parts of the application can trigger tutorials via `LocalAzTutorialController.current.startTutorial(id)`.
+- The `AzTutorialController` also tracks which tutorials have been read via `isTutorialRead(id)` and `markTutorialRead(id)`.
