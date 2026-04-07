@@ -12,7 +12,8 @@ import androidx.compose.runtime.remember
  */
 class AzTutorialController {
     /** The ID of the currently active tutorial. Null if no tutorial is active. */
-    val activeTutorialId = mutableStateOf<String?>(null)
+    private val _activeTutorialId = mutableStateOf<String?>(null)
+    val activeTutorialId: androidx.compose.runtime.State<String?> get() = _activeTutorialId
 
     private val _readTutorials = mutableStateListOf<String>()
 
