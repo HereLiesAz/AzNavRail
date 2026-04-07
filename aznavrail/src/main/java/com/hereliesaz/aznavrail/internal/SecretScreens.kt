@@ -41,7 +41,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -61,9 +60,11 @@ import java.net.Inet4Address
 import java.net.NetworkInterface
 import java.net.ServerSocket
 import java.net.Socket
+import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.delay
 
 /**
  * A secret menu for debugging and location history syncing.
@@ -423,7 +424,7 @@ private fun SecLocHistoryDialog(
 }
 
 @Composable
-private fun HistoryList(
+internal fun HistoryList(
     history: List<SecLocEntry>,
     dateFormatter: SimpleDateFormat,
     modifier: Modifier = Modifier
@@ -549,7 +550,10 @@ internal object SecLocNetworkUtils {
                         val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
                         val clientSecret = reader.readLine()
 
-                        if (clientSecret == secret) {
+                        val clientBytes = clientSecret?.toByteArray(Charsets.UTF_8) ?: ByteArray(0)
+                        val secretBytes = secret.toByteArray(Charsets.UTF_8)
+
+                        if (MessageDigest.isEqual(clientBytes, secretBytes)) {
                             val writer = PrintWriter(socket.getOutputStream(), true)
                             val file = SecLocLogManager.getLogFile(context)
                             if (file.exists()) {
@@ -560,6 +564,7 @@ internal object SecLocNetworkUtils {
                             writer.flush()
                         } else {
                             Log.w("SecLocServer", "Unauthorized access attempt")
+                            delay(3000L) // Prevent brute-force attacks
                         }
                         socket.close()
                     }

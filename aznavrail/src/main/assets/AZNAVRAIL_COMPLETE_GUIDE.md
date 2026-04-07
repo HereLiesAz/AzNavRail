@@ -47,7 +47,8 @@ Controls visual style defaults.
 ```kotlin
 azTheme(
     defaultShape = AzButtonShape.RECTANGLE, // Default shape for all items
-    activeColor = MaterialTheme.colorScheme.primary // Color for active state
+    activeColor = MaterialTheme.colorScheme.primary, // Color for active state
+    helpLineColors = listOf(Color.Red, Color.Green, Color.Blue) // Colors for Help card lines
 )
 ```
 
@@ -327,6 +328,19 @@ azRailRelocItem(
 ## 8. Standalone Components
 
 These components are used within your screens (e.g., inside `AzNavHost`), not inside the rail configuration.
+
+### Standalone Buttons
+You can use `AzButton`, `AzToggle`, and `AzCycler` anywhere in your app to match the aesthetic of the rail. They support text or custom composable content.
+
+```kotlin
+AzButton(
+    text = "Click Me",
+    onClick = { /* Do something */ },
+    shape = AzButtonShape.RECTANGLE,
+    color = MaterialTheme.colorScheme.secondary,
+    itemContent = { Icon(Icons.Default.Add, contentDescription = "Add") } // Optional custom content
+)
+```
 
 ### AzTextBox
 Advanced text input with history support.

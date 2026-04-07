@@ -21,7 +21,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.assertIsDisplayed
+import org.junit.Assert.assertEquals
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
@@ -68,5 +72,51 @@ class AzTextBoxTest {
 
         // "apple" should be visible if suggestions are showing.
         composeTestRule.onNodeWithText("apple").assertIsDisplayed()
+    }
+
+    @Test
+    fun azTextBox_uncontrolledMode_updatesInternalText() {
+        var capturedValue = ""
+        composeTestRule.setContent {
+            AzTextBox(
+                value = null, // uncontrolled mode
+                onValueChange = { capturedValue = it },
+                onSubmit = {},
+                hint = "Hint"
+            )
+        }
+
+        composeTestRule.onNodeWithTag("Hint").performTextInput("Hello")
+
+        // Assert text displayed
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Hello").assertIsDisplayed()
+
+        // Assert onValueChange was called correctly
+        assertEquals("Hello", capturedValue)
+    }
+
+    @Test
+    fun azTextBox_controlledMode_doesNotUpdateInternalText() {
+        var capturedValue = ""
+        composeTestRule.setContent {
+            AzTextBox(
+                value = "Initial", // controlled mode
+                onValueChange = { capturedValue = it },
+                onSubmit = {},
+                hint = "Hint"
+            )
+        }
+
+        composeTestRule.onNodeWithText("Initial").performTextReplacement("Updated")
+
+        // In controlled mode, internal text shouldn't be updated by AzTextBox itself,
+        // so the visual state should remain "Initial" because we aren't updating `value`
+        // in our `onValueChange` callback in this test scope.
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Initial").assertIsDisplayed()
+
+        // However, the callback SHOULD be fired with the expected new text
+        assertEquals("Updated", capturedValue)
     }
 }

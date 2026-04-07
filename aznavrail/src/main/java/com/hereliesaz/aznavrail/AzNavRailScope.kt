@@ -53,8 +53,9 @@ interface AzNavRailScope {
      * @param defaultShape The default shape for buttons (Circle, Square, Rectangle, None).
      * @param headerIconShape The shape of the header icon (Circle, Rounded, None).
      * @param translucentBackground The translucent background color for the rail and popup menus.
+     * @param helpLineColors List of colors to use for the connecting lines in the Help overlay.
      */
-    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.CIRCLE, headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE, translucentBackground: Color = Color.Unspecified)
+    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.CIRCLE, headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE, translucentBackground: Color = Color.Unspecified, helpLineColors: List<Color> = emptyList())
 
     /**
      * Configures advanced features like loading states, help screens, and overlays.
@@ -103,7 +104,8 @@ interface AzNavRailScope {
         secLoc: String? = null,
         secLocPort: Int = 10203,
         helpList: Map<String, String> = emptyMap(),
-        tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap()
+        tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap(),
+        helpLineColors: List<Color> = emptyList()
     )
 
     /**
@@ -346,20 +348,24 @@ interface HiddenMenuScope {
     fun inputItem(hint: String, initialValue: String, onValueChange: (String) -> Unit)
 }
 
-internal class HiddenMenuScopeImpl : HiddenMenuScope {
-    val items = mutableListOf<com.hereliesaz.aznavrail.model.HiddenMenuItem>()
-    val onClickMap = mutableMapOf<String, () -> Unit>()
-    val onValueChangeMap = mutableMapOf<String, (String) -> Unit>()
+internal class HiddenMenuScopeImpl(
+    private val parentId: String,
+    private val targetOnClickMap: MutableMap<String, () -> Unit>,
+    private val targetOnValueChangeMap: MutableMap<String, (String) -> Unit>
+) : HiddenMenuScope {
+    var items: MutableList<com.hereliesaz.aznavrail.model.HiddenMenuItem>? = null
 
     override fun listItem(text: String, onClick: () -> Unit) {
-        val id = "hidden_item_${items.size}"
-        items.add(com.hereliesaz.aznavrail.model.HiddenMenuItem(id = id, text = text))
-        onClickMap[id] = onClick
+        val list = items ?: mutableListOf<com.hereliesaz.aznavrail.model.HiddenMenuItem>().also { items = it }
+        val id = "${parentId}_hidden_item_${list.size}"
+        list.add(com.hereliesaz.aznavrail.model.HiddenMenuItem(id = id, text = text))
+        targetOnClickMap[id] = onClick
     }
 
     override fun listItem(text: String, route: String) {
-        val id = "hidden_item_${items.size}"
-        items.add(com.hereliesaz.aznavrail.model.HiddenMenuItem(id = id, text = text, route = route))
+        val list = items ?: mutableListOf<com.hereliesaz.aznavrail.model.HiddenMenuItem>().also { items = it }
+        val id = "${parentId}_hidden_item_${list.size}"
+        list.add(com.hereliesaz.aznavrail.model.HiddenMenuItem(id = id, text = text, route = route))
     }
 
     override fun inputItem(hint: String, onValueChange: (String) -> Unit) {
@@ -367,9 +373,10 @@ internal class HiddenMenuScopeImpl : HiddenMenuScope {
     }
 
     override fun inputItem(hint: String, initialValue: String, onValueChange: (String) -> Unit) {
-        val id = "hidden_item_${items.size}"
-        items.add(com.hereliesaz.aznavrail.model.HiddenMenuItem(id = id, text = "", isInput = true, hint = hint, initialValue = initialValue))
-        onValueChangeMap[id] = onValueChange
+        val list = items ?: mutableListOf<com.hereliesaz.aznavrail.model.HiddenMenuItem>().also { items = it }
+        val id = "${parentId}_hidden_item_${list.size}"
+        list.add(com.hereliesaz.aznavrail.model.HiddenMenuItem(id = id, text = "", isInput = true, hint = hint, initialValue = initialValue))
+        targetOnValueChangeMap[id] = onValueChange
     }
 }
 
@@ -413,6 +420,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     var defaultShape: AzButtonShape = AzButtonShape.CIRCLE // Restored: default is circle
     var headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE // Default per legacy, overridden in UI
     var translucentBackground: Color = Color.Unspecified
+    var helpLineColors: List<Color> = emptyList()
 
     // Advanced
     // Advanced
@@ -433,11 +441,12 @@ class AzNavRailScopeImpl : AzNavRailScope {
         this.appRepositoryUrl = appRepositoryUrl
     }
 
-    override fun azTheme(activeColor: Color, defaultShape: AzButtonShape, headerIconShape: AzHeaderIconShape, translucentBackground: Color) {
+    override fun azTheme(activeColor: Color, defaultShape: AzButtonShape, headerIconShape: AzHeaderIconShape, translucentBackground: Color, helpLineColors: List<Color>) {
         this.activeColor = activeColor
         this.defaultShape = defaultShape
         this.headerIconShape = headerIconShape
         this.translucentBackground = translucentBackground
+        this.helpLineColors = helpLineColors
     }
 
     override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, secLoc: String?, secLocPort: Int, helpList: Map<String, String>, tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial>) {
@@ -482,7 +491,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
         secLoc: String?,
         secLocPort: Int,
         helpList: Map<String, String>,
-        tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial>
+        tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial>,
+        helpLineColors: List<Color>
     ) {
         // Map to internal properties
         this.displayAppName = displayAppNameInHeader
@@ -497,6 +507,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         this.dockingSide = dockingSide
         this.noMenu = noMenu
         this.usePhysicalDocking = usePhysicalDocking
+        this.helpLineColors = helpLineColors
 
         this.advancedConfig = AzAdvancedConfig(
             isLoading = isLoading,
@@ -650,12 +661,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
 
     override fun azRailRelocItem(id: String, hostId: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, onFocus: (() -> Unit)?, onClick: (() -> Unit)?, onRelocate: ((Int, Int, List<String>) -> Unit)?, nestedRailAlignment: AzNestedRailAlignment, keepNestedRailOpen: Boolean, nestedContent: (AzNavRailScope.() -> Unit)?, forceHiddenMenuOpen: Boolean, onHiddenMenuDismiss: (() -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
         checkId(id)
-        val hiddenMenuScope = HiddenMenuScopeImpl()
+        val hiddenMenuScope = HiddenMenuScopeImpl(id, hiddenMenuOnClickMap, hiddenMenuOnValueChangeMap)
         hiddenMenuScope.hiddenMenu()
-
-        hiddenMenuScope.onClickMap.forEach { (key, value) -> hiddenMenuOnClickMap["${id}_$key"] = value }
-        hiddenMenuScope.onValueChangeMap.forEach { (key, value) -> hiddenMenuOnValueChangeMap["${id}_$key"] = value }
-        val prefixedItems = hiddenMenuScope.items.map { it.copy(id = "${id}_${it.id}") }
 
         if (onClick != null) onClickMap[id] = onClick
         if (onRelocate != null) onRelocateMap[id] = onRelocate
@@ -682,7 +689,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
             AzNavItem(
                 id = id, text = text, menuText = menuText, route = route, isRailItem = true, isSubItem = true, hostId = hostId,
                 isRelocItem = true, disabled = disabled, screenTitle = finalScreenTitle, info = info,
-                hiddenMenuItems = prefixedItems, forceHiddenMenuOpen = forceHiddenMenuOpen, onHiddenMenuDismiss = onHiddenMenuDismiss, classifiers = classifiers, content = content, color = color, textColor = textColor, fillColor = fillColor, shape = shape ?: defaultShape,
+                hiddenMenuItems = hiddenMenuScope.items, forceHiddenMenuOpen = forceHiddenMenuOpen, onHiddenMenuDismiss = onHiddenMenuDismiss, classifiers = classifiers, content = content, color = color, textColor = textColor, fillColor = fillColor, shape = shape ?: defaultShape,
                 isNestedRail = nestedContent != null, nestedRailAlignment = nestedRailAlignment, nestedRailItems = nestedItems,
                 keepNestedRailOpen = keepNestedRailOpen
             )

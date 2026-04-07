@@ -25,9 +25,12 @@ import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.LocalAzSafeZones
 import com.hereliesaz.aznavrail.model.AzNavItem
 
+import androidx.compose.foundation.BorderStroke
+
 @Composable
 internal fun HelpOverlay(
     items: List<AzNavItem>,
+    helpLineColors: List<Color> = emptyList(),
     onDismiss: () -> Unit,
     itemBoundsCache: Map<String, Rect> = emptyMap(),
     helpList: Map<String, String> = emptyMap(),
@@ -54,6 +57,8 @@ internal fun HelpOverlay(
     // Calculate dynamic padding to avoid overlapping nested rails
     val isNestedRailOpen = nestedRailOpenId != null
     val dynamicStartPadding = if (isNestedRailOpen) 240.dp else 120.dp
+    val defaultColors = listOf(Color.Red, Color.Green, Color.Blue, Color.Cyan, Color.Magenta, Color.Yellow)
+    val colorPalette = if (helpLineColors.isNotEmpty()) helpLineColors else defaultColors
 
     Box(
         modifier = Modifier
@@ -61,10 +66,10 @@ internal fun HelpOverlay(
             .background(Color.Black.copy(alpha = 0.7f))
             .clickable(onClick = onDismiss) // Background tap to dismiss
             .drawBehind {
-                val drawColor = Color.Yellow
-                val strokeWidth = 2.dp
+                val strokeWidth = 4.dp
 
-                itemsWithInfo.forEach { item ->
+                itemsWithInfo.forEachIndexed { index, item ->
+                    val drawColor = colorPalette[index % colorPalette.size]
                     val itemBounds = itemBoundsCache[item.id]
                     val cardBounds = cardBoundsCache[item.id]
 
@@ -91,26 +96,33 @@ internal fun HelpOverlay(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Spacer(modifier = Modifier.height(16.dp)) // Equivalent to top contentPadding
-            itemsWithInfo.forEach { item ->
+            itemsWithInfo.forEachIndexed { index, item ->
                 val isExpanded = expandedItemId == item.id
                 val hasTutorial = tutorials.containsKey(item.id)
+                val cardColor = colorPalette[index % colorPalette.size]
 
+                androidx.compose.material3.Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .animateContentSize(),
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = RectangleShape,
+                    border = BorderStroke(2.dp, cardColor)
+                ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .onGloballyPositioned { coords ->
                             cardBoundsCache[item.id] = coords.boundsInWindow()
                         }
-                        .background(Color.DarkGray, RectangleShape)
                         .clickable {
                             expandedItemId = if (isExpanded) null else item.id
                         }
                         .padding(16.dp)
-                        .animateContentSize()
                 ) {
                     Text(
                         text = item.text.ifBlank { "Item ${item.id}" },
-                        color = Color.Yellow,
+                        color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -121,7 +133,7 @@ internal fun HelpOverlay(
                     if (!infoText.isNullOrBlank()) {
                         Text(
                             text = infoText,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSurface,
                             style = MaterialTheme.typography.bodyLarge,
                             maxLines = if (isExpanded) Int.MAX_VALUE else 1,
                             overflow = TextOverflow.Ellipsis
@@ -133,7 +145,7 @@ internal fun HelpOverlay(
                         }
                         Text(
                             text = listText,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSurface,
                             style = MaterialTheme.typography.bodyLarge,
                             maxLines = if (isExpanded) Int.MAX_VALUE else 1,
                             overflow = TextOverflow.Ellipsis
@@ -144,7 +156,7 @@ internal fun HelpOverlay(
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = "Start Tutorial",
-                                color = Color.Cyan,
+                                color = MaterialTheme.colorScheme.primary,
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier
@@ -155,17 +167,18 @@ internal fun HelpOverlay(
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "Tap to collapse",
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                             style = MaterialTheme.typography.labelSmall
                         )
                     } else if (hasTutorial) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "Tutorial available (Tap to expand)",
-                            color = Color.Cyan,
+                            color = MaterialTheme.colorScheme.primary,
                             style = MaterialTheme.typography.labelSmall
                         )
                     }
+                }
                 }
             }
             Spacer(modifier = Modifier.height(16.dp)) // Equivalent to bottom contentPadding

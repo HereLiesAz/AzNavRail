@@ -3,7 +3,6 @@ package com.hereliesaz.aznavrail
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.drawable.Drawable
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -624,6 +623,7 @@ fun AzNavRail(
     if (showHelpOverlay) {
         HelpOverlay(
             items = scope.navItems,
+            helpLineColors = scope.helpLineColors,
             onDismiss = { toggleHelpOverlay(null) },
             itemBoundsCache = scope.itemBoundsCache,
             helpList = scope.advancedConfig.helpList,
