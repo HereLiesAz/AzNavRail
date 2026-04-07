@@ -53,7 +53,9 @@ class AzTutorialController {
 /**
  * CompositionLocal to provide the [AzTutorialController] to the tree.
  */
-val LocalAzTutorialController = compositionLocalOf { AzTutorialController() }
+val LocalAzTutorialController = androidx.compose.runtime.staticCompositionLocalOf<AzTutorialController> {
+    error("No AzTutorialController provided. Ensure your content is wrapped in AzHostActivityLayout.")
+}
 
 @Composable
 fun rememberAzTutorialController(): AzTutorialController {
