@@ -1,12 +1,12 @@
 package com.hereliesaz.aznavrail
 
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import com.hereliesaz.aznavrail.model.AzButtonShape
-import com.hereliesaz.aznavrail.model.AzDockingSide
 import android.content.Context
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.test.core.app.ApplicationProvider
+import com.hereliesaz.aznavrail.model.AzButtonShape
+import com.hereliesaz.aznavrail.model.AzDockingSide
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Test
