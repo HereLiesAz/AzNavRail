@@ -1,5 +1,6 @@
 package com.hereliesaz.aznavrail
 
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.navigation.compose.rememberNavController
 import org.junit.Assert.assertEquals
