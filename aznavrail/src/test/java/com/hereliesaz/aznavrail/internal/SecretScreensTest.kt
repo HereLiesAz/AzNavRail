@@ -1,72 +1,96 @@
 package com.hereliesaz.aznavrail.internal
 
-import android.content.ActivityNotFoundException
+import android.Manifest
+import android.app.Application
 import android.content.Context
-import android.content.ContextWrapper
-import android.content.Intent
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.platform.LocalContext
+import android.location.LocationListener
+import android.location.LocationManager
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.Implementation
+import org.robolectric.annotation.Implements
 import org.robolectric.shadows.ShadowLog
-import java.text.SimpleDateFormat
-import java.util.Locale
+import org.junit.Assert.assertTrue
+import android.os.Looper
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onAllNodesWithText
+
+@Implements(LocationManager::class)
+class ExceptionShadowLocationManager : org.robolectric.shadows.ShadowLocationManager() {
+
+    @Implementation
+    override fun requestLocationUpdates(
+        provider: String,
+        minTimeMs: Long,
+        minDistanceM: Float,
+        listener: LocationListener,
+        looper: Looper?
+    ) {
+        throw SecurityException("Mocked SecurityException")
+    }
+
+    @Implementation
+    override fun requestLocationUpdates(
+        provider: String,
+        minTimeMs: Long,
+        minDistanceM: Float,
+        listener: LocationListener
+    ) {
+        throw SecurityException("Mocked SecurityException")
+    }
+
+    @Implementation
+    override fun getProviders(enabledOnly: Boolean): MutableList<String> {
+        val list = mutableListOf<String>()
+        list.add(LocationManager.GPS_PROVIDER)
+        list.add(LocationManager.NETWORK_PROVIDER)
+        return list
+    }
+}
 
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [33], shadows = [ExceptionShadowLocationManager::class])
 class SecretScreensTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
 
     @Test
-    fun historyList_itemClick_handlesMapException() {
-        val baseContext = ApplicationProvider.getApplicationContext<Context>()
-        var exceptionThrown = false
+    fun testRequestLocationUpdatesException() {
+        ShadowLog.stream = System.out
 
-        val mockContext = object : ContextWrapper(baseContext) {
-            override fun startActivity(intent: Intent?) {
-                exceptionThrown = true
-                throw ActivityNotFoundException("Simulated exception")
-            }
-        }
-
-        val entries = listOf(
-            SecLocEntry(
-                timestamp = 1600000000000L,
-                lat = 10.0,
-                lng = 20.0,
-                provider = "gps"
-            )
-        )
-        val dateFormatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        Shadows.shadowOf(app).grantPermissions(Manifest.permission.ACCESS_FINE_LOCATION)
 
         composeTestRule.setContent {
-            CompositionLocalProvider(LocalContext provides mockContext) {
-                HistoryList(
-                    history = entries,
-                    dateFormatter = dateFormatter
-                )
+            val trigger = SecretScreens("1234", 1234)
+            androidx.compose.runtime.LaunchedEffect(Unit) {
+                trigger()
             }
         }
 
-        // The item displays the provider
-        composeTestRule.onNodeWithText("Provider: gps").performClick()
+        composeTestRule.waitForIdle()
 
-        // Test should pass without crashing, and our mock should have been called
-        assertTrue("Mock context startActivity should have been called", exceptionThrown)
+        composeTestRule.onAllNodes(hasSetTextAction())[0].performTextInput("1234")
+        composeTestRule.onNodeWithText("Unlock").performClick()
+        composeTestRule.waitForIdle()
 
-        // Verify that the error log was printed
+        composeTestRule.onNodeWithText("Run as Source (Server)").performClick()
+        composeTestRule.waitForIdle()
+
         val logs = ShadowLog.getLogsForTag("SecretScreens")
-        val hasErrorLog = logs.any { log ->
-            log.type == android.util.Log.ERROR && log.msg == "Could not open map"
-        }
-        assertTrue("Expected error log 'Could not open map' for SecretScreens", hasErrorLog)
+        val errorLog = logs.find { it.msg.contains("Error requesting location updates") }
+
+        assertTrue("Expected an error log about location updates, but found none.", errorLog != null)
     }
 }
