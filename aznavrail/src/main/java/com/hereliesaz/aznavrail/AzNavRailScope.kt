@@ -346,20 +346,24 @@ interface HiddenMenuScope {
     fun inputItem(hint: String, initialValue: String, onValueChange: (String) -> Unit)
 }
 
-internal class HiddenMenuScopeImpl : HiddenMenuScope {
-    val items = mutableListOf<com.hereliesaz.aznavrail.model.HiddenMenuItem>()
-    val onClickMap = mutableMapOf<String, () -> Unit>()
-    val onValueChangeMap = mutableMapOf<String, (String) -> Unit>()
+internal class HiddenMenuScopeImpl(
+    private val parentId: String,
+    private val targetOnClickMap: MutableMap<String, () -> Unit>,
+    private val targetOnValueChangeMap: MutableMap<String, (String) -> Unit>
+) : HiddenMenuScope {
+    var items: MutableList<com.hereliesaz.aznavrail.model.HiddenMenuItem>? = null
 
     override fun listItem(text: String, onClick: () -> Unit) {
-        val id = "hidden_item_${items.size}"
-        items.add(com.hereliesaz.aznavrail.model.HiddenMenuItem(id = id, text = text))
-        onClickMap[id] = onClick
+        val list = items ?: mutableListOf<com.hereliesaz.aznavrail.model.HiddenMenuItem>().also { items = it }
+        val id = "${parentId}_hidden_item_${list.size}"
+        list.add(com.hereliesaz.aznavrail.model.HiddenMenuItem(id = id, text = text))
+        targetOnClickMap[id] = onClick
     }
 
     override fun listItem(text: String, route: String) {
-        val id = "hidden_item_${items.size}"
-        items.add(com.hereliesaz.aznavrail.model.HiddenMenuItem(id = id, text = text, route = route))
+        val list = items ?: mutableListOf<com.hereliesaz.aznavrail.model.HiddenMenuItem>().also { items = it }
+        val id = "${parentId}_hidden_item_${list.size}"
+        list.add(com.hereliesaz.aznavrail.model.HiddenMenuItem(id = id, text = text, route = route))
     }
 
     override fun inputItem(hint: String, onValueChange: (String) -> Unit) {
@@ -367,9 +371,10 @@ internal class HiddenMenuScopeImpl : HiddenMenuScope {
     }
 
     override fun inputItem(hint: String, initialValue: String, onValueChange: (String) -> Unit) {
-        val id = "hidden_item_${items.size}"
-        items.add(com.hereliesaz.aznavrail.model.HiddenMenuItem(id = id, text = "", isInput = true, hint = hint, initialValue = initialValue))
-        onValueChangeMap[id] = onValueChange
+        val list = items ?: mutableListOf<com.hereliesaz.aznavrail.model.HiddenMenuItem>().also { items = it }
+        val id = "${parentId}_hidden_item_${list.size}"
+        list.add(com.hereliesaz.aznavrail.model.HiddenMenuItem(id = id, text = "", isInput = true, hint = hint, initialValue = initialValue))
+        targetOnValueChangeMap[id] = onValueChange
     }
 }
 
@@ -650,12 +655,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
 
     override fun azRailRelocItem(id: String, hostId: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, onFocus: (() -> Unit)?, onClick: (() -> Unit)?, onRelocate: ((Int, Int, List<String>) -> Unit)?, nestedRailAlignment: AzNestedRailAlignment, keepNestedRailOpen: Boolean, nestedContent: (AzNavRailScope.() -> Unit)?, forceHiddenMenuOpen: Boolean, onHiddenMenuDismiss: (() -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
         checkId(id)
-        val hiddenMenuScope = HiddenMenuScopeImpl()
+        val hiddenMenuScope = HiddenMenuScopeImpl(id, hiddenMenuOnClickMap, hiddenMenuOnValueChangeMap)
         hiddenMenuScope.hiddenMenu()
-
-        hiddenMenuScope.onClickMap.forEach { (key, value) -> hiddenMenuOnClickMap["${id}_$key"] = value }
-        hiddenMenuScope.onValueChangeMap.forEach { (key, value) -> hiddenMenuOnValueChangeMap["${id}_$key"] = value }
-        val prefixedItems = hiddenMenuScope.items.map { it.copy(id = "${id}_${it.id}") }
 
         if (onClick != null) onClickMap[id] = onClick
         if (onRelocate != null) onRelocateMap[id] = onRelocate
@@ -682,7 +683,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
             AzNavItem(
                 id = id, text = text, menuText = menuText, route = route, isRailItem = true, isSubItem = true, hostId = hostId,
                 isRelocItem = true, disabled = disabled, screenTitle = finalScreenTitle, info = info,
-                hiddenMenuItems = prefixedItems, forceHiddenMenuOpen = forceHiddenMenuOpen, onHiddenMenuDismiss = onHiddenMenuDismiss, classifiers = classifiers, content = content, color = color, textColor = textColor, fillColor = fillColor, shape = shape ?: defaultShape,
+                hiddenMenuItems = hiddenMenuScope.items, forceHiddenMenuOpen = forceHiddenMenuOpen, onHiddenMenuDismiss = onHiddenMenuDismiss, classifiers = classifiers, content = content, color = color, textColor = textColor, fillColor = fillColor, shape = shape ?: defaultShape,
                 isNestedRail = nestedContent != null, nestedRailAlignment = nestedRailAlignment, nestedRailItems = nestedItems,
                 keepNestedRailOpen = keepNestedRailOpen
             )
