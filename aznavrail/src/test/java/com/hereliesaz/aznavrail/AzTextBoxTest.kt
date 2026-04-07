@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.performClick
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
@@ -68,5 +69,36 @@ class AzTextBoxTest {
 
         // "apple" should be visible if suggestions are showing.
         composeTestRule.onNodeWithText("apple").assertIsDisplayed()
+    }
+
+    @Test
+    fun azTextBox_secret_field_does_not_save_history() {
+        val testContext = "secret_test_context"
+        var submittedValue = ""
+
+        composeTestRule.setContent {
+            AzTextBox(
+                value = "my_secret_password",
+                onValueChange = {},
+                historyContext = testContext,
+                secret = true,
+                submitButtonContent = { androidx.compose.material3.Text("Submit") },
+                onSubmit = { submittedValue = it }
+            )
+        }
+
+        // Simulate a submit button click
+        composeTestRule.onNodeWithText("Submit").performClick()
+
+        // Wait for coroutines
+        composeTestRule.waitForIdle()
+
+        org.junit.Assert.assertEquals("my_secret_password", submittedValue)
+
+        // The secret should not be in the history
+        kotlinx.coroutines.runBlocking {
+            val suggestions = HistoryManager.getSuggestions("my_secret", testContext)
+            org.junit.Assert.assertTrue(suggestions.isEmpty())
+        }
     }
 }
