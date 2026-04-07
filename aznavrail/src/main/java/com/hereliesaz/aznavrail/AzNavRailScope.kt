@@ -74,7 +74,7 @@ interface AzNavRailScope {
      * @param helpList An optional map of Item ID to help text.
      * @param tutorials An optional map of Item ID to interactive AzTutorials.
      */
-    fun azAdvanced(isLoading: Boolean = false, helpEnabled: Boolean = false, onDismissHelp: (() -> Unit)? = null, overlayService: Class<out android.app.Service>? = null, onUndock: (() -> Unit)? = null, enableRailDragging: Boolean = false, onRailDrag: ((Float, Float) -> Unit)? = null, onOverlayDrag: ((Float, Float) -> Unit)? = null, onItemGloballyPositioned: ((String, Rect) -> Unit)? = null, secLoc: String? = null, secLocPort: Int = 10203, helpList: Map<String, String> = emptyMap(), tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap())
+    fun azAdvanced(isLoading: Boolean = false, helpEnabled: Boolean = false, onDismissHelp: (() -> Unit)? = null, overlayService: Class<out android.app.Service>? = null, onUndock: (() -> Unit)? = null, enableRailDragging: Boolean = false, onRailDrag: ((Float, Float) -> Unit)? = null, onOverlayDrag: ((Float, Float) -> Unit)? = null, onItemGloballyPositioned: ((String, Rect) -> Unit)? = null, secLoc: String? = null, secLocPort: Int = 10203, helpList: Map<String, Any> = emptyMap(), tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap())
 
     /**
      * A comprehensive configuration method combining settings, theme, and advanced options.
@@ -103,7 +103,7 @@ interface AzNavRailScope {
         usePhysicalDocking: Boolean = false,
         secLoc: String? = null,
         secLocPort: Int = 10203,
-        helpList: Map<String, String> = emptyMap(),
+        helpList: Map<String, Any> = emptyMap(),
         tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap(),
         helpLineColors: List<Color> = emptyList()
     )
@@ -449,7 +449,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         this.helpLineColors = helpLineColors
     }
 
-    override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, secLoc: String?, secLocPort: Int, helpList: Map<String, String>, tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial>) {
+    override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, secLoc: String?, secLocPort: Int, helpList: Map<String, Any>, tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial>) {
         this.advancedConfig = AzAdvancedConfig(
             isLoading = isLoading,
             helpEnabled = helpEnabled,
@@ -490,7 +490,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         usePhysicalDocking: Boolean,
         secLoc: String?,
         secLocPort: Int,
-        helpList: Map<String, String>,
+        helpList: Map<String, Any>,
         tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial>,
         helpLineColors: List<Color>
     ) {
