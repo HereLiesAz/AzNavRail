@@ -414,3 +414,23 @@ azAdvanced(
     )
 )
 ```
+
+### Programmatic Control (AzTutorialController)
+
+You can programmatically initiate, end, and check the completion status of tutorials using the `AzTutorialController`, accessible via a `CompositionLocal` anywhere within the `AzNavHost` hierarchy.
+
+```kotlin
+import com.hereliesaz.aznavrail.tutorial.LocalAzTutorialController
+
+@Composable
+fun MyScreen() {
+    val tutorialController = LocalAzTutorialController.current
+
+    // Check if the tutorial was completed
+    val hasReadTutorial = tutorialController.isTutorialRead("my-item-id")
+
+    Button(onClick = { tutorialController.startTutorial("my-item-id") }) {
+        Text("Replay Tutorial")
+    }
+}
+```

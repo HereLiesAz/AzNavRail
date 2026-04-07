@@ -52,6 +52,8 @@ import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.internal.AzRailLayoutHelper
 import com.hereliesaz.aznavrail.internal.AzSafeZones
 import com.hereliesaz.aznavrail.internal.AzVisualSide
+import com.hereliesaz.aznavrail.tutorial.LocalAzTutorialController
+import com.hereliesaz.aznavrail.tutorial.rememberAzTutorialController
 import com.hereliesaz.aznavrail.model.AzDockingSide
 
 val LocalAzNavHostPresent = compositionLocalOf { false }
@@ -262,7 +264,12 @@ fun AzHostActivityLayout(
             }
         }
 
-        CompositionLocalProvider(LocalAzNavHostScope provides scope) {
+        val tutorialController = rememberAzTutorialController()
+
+        CompositionLocalProvider(
+            LocalAzNavHostScope provides scope,
+            LocalAzTutorialController provides tutorialController
+        ) {
             AzHostFragmentLayout(
                 safeTop = safeTop,
                 safeBottom = safeBottom,
@@ -277,7 +284,8 @@ fun AzHostActivityLayout(
 
         CompositionLocalProvider(
             LocalAzNavHostPresent provides true,
-            LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom)
+            LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom),
+            LocalAzTutorialController provides tutorialController
         ) {
             AzNavRail(
                 modifier = Modifier.fillMaxSize(),

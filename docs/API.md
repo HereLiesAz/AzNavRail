@@ -114,3 +114,25 @@ The base class for your Activity.
 
 ### `AzGraph` (Generated)
 The KSP processor generates this object. It casts the `activity` to your specific instance type to access the bound properties, ensuring **Recomposition** occurs whenever your `mutableStateOf` properties change.
+
+---
+
+## 5. Tutorial Framework API
+
+The tutorial framework allows programmatic control over scripted interactive scenes and highlights.
+
+### `AzTutorialController`
+A controller for managing tutorial states, allowing external systems to initiate, end, and track read status for tutorials. It is accessible anywhere within the `AzNavHost` tree via a `CompositionLocal`.
+
+**Accessing the Controller:**
+~~~kotlin
+val tutorialController = LocalAzTutorialController.current
+~~~
+
+**Methods & Properties:**
+* `val activeTutorialId: State<String?>`: The ID of the currently active tutorial.
+* `val readTutorials: List<String>`: A list of tutorial IDs that have been marked as read.
+* `fun startTutorial(id: String)`: Programmatically starts the tutorial with the given ID.
+* `fun endTutorial()`: Ends the currently active tutorial.
+* `fun markTutorialRead(id: String)`: Marks a specific tutorial ID as read.
+* `fun isTutorialRead(id: String): Boolean`: Checks if a tutorial has been marked as read.
