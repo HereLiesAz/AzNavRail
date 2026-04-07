@@ -84,7 +84,7 @@ class AzTextBoxTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Hint").performTextInput("Hello")
+        composeTestRule.onNodeWithTag("Hint").performTextInput("Hello")
 
         // Assert text displayed
         composeTestRule.waitForIdle()
