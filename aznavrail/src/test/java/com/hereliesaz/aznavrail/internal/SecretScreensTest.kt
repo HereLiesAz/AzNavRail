@@ -45,7 +45,7 @@ class SecretScreensTest {
                 provider = "gps"
             )
         )
-        val dateFormatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        val dateFormatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
 
         composeTestRule.setContent {
             CompositionLocalProvider(LocalContext provides mockContext) {
