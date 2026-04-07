@@ -53,8 +53,9 @@ interface AzNavRailScope {
      * @param defaultShape The default shape for buttons (Circle, Square, Rectangle, None).
      * @param headerIconShape The shape of the header icon (Circle, Rounded, None).
      * @param translucentBackground The translucent background color for the rail and popup menus.
+     * @param helpLineColors List of colors to use for the connecting lines in the Help overlay.
      */
-    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.CIRCLE, headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE, translucentBackground: Color = Color.Unspecified)
+    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.CIRCLE, headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE, translucentBackground: Color = Color.Unspecified, helpLineColors: List<Color> = emptyList())
 
     /**
      * Configures advanced features like loading states, help screens, and overlays.
@@ -103,7 +104,8 @@ interface AzNavRailScope {
         secLoc: String? = null,
         secLocPort: Int = 10203,
         helpList: Map<String, String> = emptyMap(),
-        tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap()
+        tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap(),
+        helpLineColors: List<Color> = emptyList()
     )
 
     /**
@@ -413,6 +415,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     var defaultShape: AzButtonShape = AzButtonShape.CIRCLE // Restored: default is circle
     var headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE // Default per legacy, overridden in UI
     var translucentBackground: Color = Color.Unspecified
+    var helpLineColors: List<Color> = emptyList()
 
     // Advanced
     // Advanced
@@ -433,11 +436,12 @@ class AzNavRailScopeImpl : AzNavRailScope {
         this.appRepositoryUrl = appRepositoryUrl
     }
 
-    override fun azTheme(activeColor: Color, defaultShape: AzButtonShape, headerIconShape: AzHeaderIconShape, translucentBackground: Color) {
+    override fun azTheme(activeColor: Color, defaultShape: AzButtonShape, headerIconShape: AzHeaderIconShape, translucentBackground: Color, helpLineColors: List<Color>) {
         this.activeColor = activeColor
         this.defaultShape = defaultShape
         this.headerIconShape = headerIconShape
         this.translucentBackground = translucentBackground
+        this.helpLineColors = helpLineColors
     }
 
     override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, secLoc: String?, secLocPort: Int, helpList: Map<String, String>, tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial>) {
@@ -482,7 +486,8 @@ class AzNavRailScopeImpl : AzNavRailScope {
         secLoc: String?,
         secLocPort: Int,
         helpList: Map<String, String>,
-        tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial>
+        tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial>,
+        helpLineColors: List<Color>
     ) {
         // Map to internal properties
         this.displayAppName = displayAppNameInHeader
@@ -497,6 +502,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         this.dockingSide = dockingSide
         this.noMenu = noMenu
         this.usePhysicalDocking = usePhysicalDocking
+        this.helpLineColors = helpLineColors
 
         this.advancedConfig = AzAdvancedConfig(
             isLoading = isLoading,
