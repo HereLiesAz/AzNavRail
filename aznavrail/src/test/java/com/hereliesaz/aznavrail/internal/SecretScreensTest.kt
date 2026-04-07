@@ -22,7 +22,7 @@ class SecretScreensTest {
     val composeTestRule = createComposeRule()
 
     @Test
-    fun secLocViewerDialog_showsError_onSyncFailure() = runTest {
+    fun secLocViewerDialog_showsError_onSyncFailure() {
         composeTestRule.setContent {
             val showDialog = SecretScreens(secLoc = "my_secret", secLocPort = 10203)
             LaunchedEffect(Unit) {
