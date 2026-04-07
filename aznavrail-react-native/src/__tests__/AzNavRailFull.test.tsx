@@ -18,7 +18,7 @@ describe('AzNavRail Full Suite', () => {
   });
 
   it('renders loading overlay at root level when isLoading is true', async () => {
-    let component: any;
+    let component: renderer.ReactTestRenderer;
     await renderer.act(async () => {
       component = renderer.create(
         <AzNavRail isLoading={true}>
