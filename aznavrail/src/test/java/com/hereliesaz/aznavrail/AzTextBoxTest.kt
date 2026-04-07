@@ -98,7 +98,7 @@ class AzTextBoxTest {
         // The secret should not be in the history
         kotlinx.coroutines.runBlocking {
             val suggestions = HistoryManager.getSuggestions("my_secret", testContext)
-            assert(suggestions.isEmpty())
+            org.junit.Assert.assertTrue(suggestions.isEmpty())
         }
     }
 }
