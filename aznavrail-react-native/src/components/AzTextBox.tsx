@@ -88,7 +88,9 @@ export const AzTextBox: React.FC<AzTextBoxProps> = ({
 
   const handleSubmit = () => {
     if (!enabled) return;
-    historyManager.addEntry(historyContext, currentValue);
+    if (!secret) {
+      historyManager.addEntry(historyContext, currentValue);
+    }
     if (onSubmit) onSubmit(currentValue);
     setShowSuggestions(false);
     if (!isControlled) {

@@ -1,0 +1,79 @@
+
+> Configure project :aznavrail
+WARNING: The option setting 'android.disallowKotlinSourceSets=false' is experimental.
+The current default is 'true'.
+WARNING: The option setting 'android.usesSdkInManifest.disallowed=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.sdk.defaultTargetSdkToCompileSdkIfUnset=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.enableAppCompileTimeRClass=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.builtInKotlin=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.newDsl=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.r8.optimizedResourceShrinking=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.defaults.buildfeatures.resvalues=true' is deprecated.
+The current default is 'false'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+w: [33m[1m⚠️ Deprecated 'org.jetbrains.kotlin.android' plugin usage[0m[0m
+The 'org.jetbrains.kotlin.android' plugin in project ':aznavrail' is no longer required for Kotlin support since AGP 9.0.
+[32m[1mSolution:[0m[0m
+[32m[3mRemove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.[0m[0m
+[36mSee [0m[34mhttps://kotl.in/gradle/agp-built-in-kotlin[0m[36m for more details.[0m
+
+
+> Configure project :SampleApp
+w: [33m[1m⚠️ Deprecated 'org.jetbrains.kotlin.android' plugin usage[0m[0m
+The 'org.jetbrains.kotlin.android' plugin in project ':SampleApp' is no longer required for Kotlin support since AGP 9.0.
+[32m[1mSolution:[0m[0m
+[32m[3mRemove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.[0m[0m
+[36mSee [0m[34mhttps://kotl.in/gradle/agp-built-in-kotlin[0m[36m for more details.[0m
+
+
+> Task :aznavrail:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :aznavrail:preBuild UP-TO-DATE
+> Task :aznavrail:preDebugBuild UP-TO-DATE
+> Task :aznavrail:generateDebugBuildConfig UP-TO-DATE
+> Task :aznavrail:generateDebugResValues UP-TO-DATE
+> Task :aznavrail:generateDebugResources UP-TO-DATE
+> Task :aznavrail:packageDebugResources UP-TO-DATE
+> Task :aznavrail:processDebugNavigationResources UP-TO-DATE
+> Task :aznavrail:parseDebugLocalResources UP-TO-DATE
+> Task :aznavrail:generateDebugRFile UP-TO-DATE
+> Task :aznavrail:compileDebugKotlin UP-TO-DATE
+> Task :aznavrail:javaPreCompileDebug UP-TO-DATE
+> Task :aznavrail:compileDebugJavaWithJavac UP-TO-DATE
+> Task :aznavrail:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :aznavrail:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :aznavrail:preDebugUnitTestBuild UP-TO-DATE
+> Task :aznavrail:writeDebugAarMetadata UP-TO-DATE
+> Task :aznavrail:checkDebugUnitTestAarMetadata UP-TO-DATE
+> Task :aznavrail:compileDebugLibraryResources UP-TO-DATE
+> Task :aznavrail:generateDebugUnitTestResValues UP-TO-DATE
+> Task :aznavrail:mapDebugUnitTestSourceSetPaths UP-TO-DATE
+> Task :aznavrail:generateDebugUnitTestResources UP-TO-DATE
+> Task :aznavrail:mergeDebugUnitTestResources UP-TO-DATE
+> Task :aznavrail:extractDeepLinksDebug UP-TO-DATE
+> Task :aznavrail:processDebugManifest UP-TO-DATE
+> Task :aznavrail:processDebugUnitTestManifest UP-TO-DATE
+> Task :aznavrail:processDebugUnitTestResources UP-TO-DATE
+> Task :aznavrail:compileDebugUnitTestKotlin UP-TO-DATE
+> Task :aznavrail:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :aznavrail:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :aznavrail:generateDebugUnitTestAssets UP-TO-DATE
+> Task :aznavrail:generateDebugAssets UP-TO-DATE
+> Task :aznavrail:mergeDebugAssets UP-TO-DATE
+> Task :aznavrail:mergeDebugUnitTestAssets UP-TO-DATE
+> Task :aznavrail:packageDebugUnitTestForUnitTest UP-TO-DATE
+> Task :aznavrail:generateDebugUnitTestConfig UP-TO-DATE
+> Task :aznavrail:processDebugJavaRes UP-TO-DATE
+> Task :aznavrail:processDebugUnitTestJavaRes UP-TO-DATE
+> Task :aznavrail:testDebugUnitTest
