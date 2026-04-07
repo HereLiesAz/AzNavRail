@@ -37,15 +37,18 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun AzTutorialOverlay(
+    tutorialId: String,
     tutorial: AzTutorial,
     onDismiss: () -> Unit,
     itemBoundsCache: Map<String, Rect> = emptyMap()
 ) {
     var currentSceneIndex by remember { mutableStateOf(0) }
     var currentCardIndex by remember { mutableStateOf(0) }
+    val tutorialController = LocalAzTutorialController.current
 
     if (currentSceneIndex >= tutorial.scenes.size) {
         LaunchedEffect(Unit) {
+            tutorialController.markTutorialRead(tutorialId)
             onDismiss()
         }
         return
@@ -146,7 +149,10 @@ fun AzTutorialOverlay(
                     ) {
                         // Skip button to dismiss tutorial entirely
                         Button(
-                            onClick = onDismiss,
+                            onClick = {
+                                tutorialController.markTutorialRead(tutorialId)
+                                onDismiss()
+                            },
                             colors = ButtonDefaults.textButtonColors()
                         ) {
                             Text("Skip Tutorial")

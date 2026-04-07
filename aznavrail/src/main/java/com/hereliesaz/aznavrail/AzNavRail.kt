@@ -81,6 +81,7 @@ import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 import com.hereliesaz.aznavrail.model.AzOrientation
 import com.hereliesaz.aznavrail.tutorial.AzTutorialOverlay
+import com.hereliesaz.aznavrail.tutorial.LocalAzTutorialController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -223,7 +224,8 @@ fun AzNavRail(
     var showFloatingButtons by remember { mutableStateOf(false) }
     var railContentHeight by remember { mutableStateOf(0f) }
     var showHelpOverlay by remember { mutableStateOf(false) }
-    var activeTutorialId by remember { mutableStateOf<String?>(null) }
+    val tutorialController = LocalAzTutorialController.current
+    var activeTutorialId by tutorialController.activeTutorialId
     val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
     val onSecretClick = SecretScreens(secLoc = scope.advancedConfig.secLoc, secLocPort = scope.advancedConfig.secLocPort)
 
@@ -256,7 +258,7 @@ fun AzNavRail(
     val toggleHelpOverlay = remember(scope) {
         { itemId: String? ->
             if (itemId != null && scope.advancedConfig.tutorials.containsKey(itemId)) {
-                activeTutorialId = itemId
+                tutorialController.startTutorial(itemId)
                 showHelpOverlay = false // ensure help overlay is closed
             } else {
                 if (showHelpOverlay) {
@@ -634,8 +636,9 @@ fun AzNavRail(
     activeTutorialId?.let { tutorialId ->
         scope.advancedConfig.tutorials[tutorialId]?.let { tutorial ->
             AzTutorialOverlay(
+                tutorialId = tutorialId,
                 tutorial = tutorial,
-                onDismiss = { activeTutorialId = null },
+                onDismiss = { tutorialController.endTutorial() },
                 itemBoundsCache = scope.itemBoundsCache
             )
         }
