@@ -49,11 +49,7 @@ internal fun HelpOverlay(
         }
         flatItems.filter { item ->
             val listTextRaw = helpList[item.id]
-            val hasValidListText = when (listTextRaw) {
-                is String -> listTextRaw.isNotBlank()
-                is Int -> listTextRaw != 0
-                else -> false
-            }
+            val hasValidListText = listTextRaw != null && (listTextRaw !is String || listTextRaw.isNotBlank())
             !item.info.isNullOrBlank() || hasValidListText || tutorials.containsKey(item.id)
         }
     }
@@ -138,11 +134,7 @@ internal fun HelpOverlay(
                     Spacer(modifier = Modifier.height(4.dp))
                     val infoText = item.info
                     val listTextRaw = helpList[item.id]
-                    val listText = when (listTextRaw) {
-                        is Int -> if (listTextRaw != 0) stringResource(id = listTextRaw) else null
-                        is String -> listTextRaw
-                        else -> null
-                    }
+                    val listText = if (listTextRaw is Int) stringResource(id = listTextRaw) else listTextRaw as? String
 
                     if (!infoText.isNullOrBlank()) {
                         Text(
