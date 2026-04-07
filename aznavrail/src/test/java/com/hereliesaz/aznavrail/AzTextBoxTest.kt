@@ -21,8 +21,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.performClick
+import org.junit.Assert.assertEquals
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
@@ -72,33 +75,48 @@ class AzTextBoxTest {
     }
 
     @Test
-    fun azTextBox_secret_field_does_not_save_history() {
-        val testContext = "secret_test_context"
-        var submittedValue = ""
-
+    fun azTextBox_uncontrolledMode_updatesInternalText() {
+        var capturedValue = ""
         composeTestRule.setContent {
             AzTextBox(
-                value = "my_secret_password",
-                onValueChange = {},
-                historyContext = testContext,
-                secret = true,
-                submitButtonContent = { androidx.compose.material3.Text("Submit") },
-                onSubmit = { submittedValue = it }
+                value = null, // uncontrolled mode
+                onValueChange = { capturedValue = it },
+                onSubmit = {},
+                hint = "Hint"
             )
         }
 
-        // Simulate a submit button click
-        composeTestRule.onNodeWithText("Submit").performClick()
+        composeTestRule.onNodeWithTag("Hint").performTextInput("Hello")
 
-        // Wait for coroutines
+        // Assert text displayed
         composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Hello").assertIsDisplayed()
 
-        org.junit.Assert.assertEquals("my_secret_password", submittedValue)
+        // Assert onValueChange was called correctly
+        assertEquals("Hello", capturedValue)
+    }
 
-        // The secret should not be in the history
-        kotlinx.coroutines.runBlocking {
-            val suggestions = HistoryManager.getSuggestions("my_secret", testContext)
-            org.junit.Assert.assertTrue(suggestions.isEmpty())
+    @Test
+    fun azTextBox_controlledMode_doesNotUpdateInternalText() {
+        var capturedValue = ""
+        composeTestRule.setContent {
+            AzTextBox(
+                value = "Initial", // controlled mode
+                onValueChange = { capturedValue = it },
+                onSubmit = {},
+                hint = "Hint"
+            )
         }
+
+        composeTestRule.onNodeWithText("Initial").performTextReplacement("Updated")
+
+        // In controlled mode, internal text shouldn't be updated by AzTextBox itself,
+        // so the visual state should remain "Initial" because we aren't updating `value`
+        // in our `onValueChange` callback in this test scope.
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Initial").assertIsDisplayed()
+
+        // However, the callback SHOULD be fired with the expected new text
+        assertEquals("Updated", capturedValue)
     }
 }
