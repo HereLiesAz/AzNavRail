@@ -177,7 +177,7 @@ describe('useFitText', () => {
   it('does not crash if element has no parent', () => {
     const TestComponent = () => {
       const ref = useFitText();
-      React.useEffect(() => {
+      React.useLayoutEffect(() => {
         const div = document.createElement('div');
         ref.current = div;
       }, [ref]);
