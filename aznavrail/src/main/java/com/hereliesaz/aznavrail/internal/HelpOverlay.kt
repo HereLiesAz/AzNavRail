@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -33,7 +34,7 @@ internal fun HelpOverlay(
     helpLineColors: List<Color> = emptyList(),
     onDismiss: () -> Unit,
     itemBoundsCache: Map<String, Rect> = emptyMap(),
-    helpList: Map<String, String> = emptyMap(),
+    helpList: Map<String, Any> = emptyMap(),
     nestedRailOpenId: String? = null,
     tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap(),
     onTutorialLaunch: ((String) -> Unit)? = null
@@ -46,7 +47,11 @@ internal fun HelpOverlay(
                 flatItems.addAll(nestedHost.nestedRailItems)
             }
         }
-        flatItems.filter { !it.info.isNullOrBlank() || !helpList[it.id].isNullOrBlank() || tutorials.containsKey(it.id) }
+        flatItems.filter { item ->
+            val listTextRaw = helpList[item.id]
+            val hasValidListText = listTextRaw != null && (listTextRaw !is String || listTextRaw.isNotBlank())
+            !item.info.isNullOrBlank() || hasValidListText || tutorials.containsKey(item.id)
+        }
     }
     val safeZones = LocalAzSafeZones.current
     val density = LocalDensity.current
@@ -128,7 +133,8 @@ internal fun HelpOverlay(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     val infoText = item.info
-                    val listText = helpList[item.id]
+                    val listTextRaw = helpList[item.id]
+                    val listText = if (listTextRaw is Int) stringResource(id = listTextRaw) else listTextRaw as? String
 
                     if (!infoText.isNullOrBlank()) {
                         Text(
