@@ -424,7 +424,7 @@ private fun SecLocHistoryDialog(
 }
 
 @Composable
-private fun HistoryList(
+internal fun HistoryList(
     history: List<SecLocEntry>,
     dateFormatter: SimpleDateFormat,
     modifier: Modifier = Modifier
