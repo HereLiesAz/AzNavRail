@@ -311,7 +311,9 @@ fun AzTextBox(
                         modifier = Modifier
                             .then(if (enabled) Modifier.clickable {
                                 onSubmit(text)
-                                HistoryManager.addEntry(text, historyContext)
+                                if (!secret) {
+                                    HistoryManager.addEntry(text, historyContext)
+                                }
                                 if (onValueChange == null) {
                                     onTextChange("")
                                 }
