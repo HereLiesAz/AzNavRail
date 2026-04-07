@@ -551,8 +551,8 @@ internal object SecLocNetworkUtils {
                         val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
                         val clientSecret = reader.readLine()
 
-                        val clientBytes = clientSecret?.toByteArray() ?: ByteArray(0)
-                        val secretBytes = secret.toByteArray()
+                        val clientBytes = clientSecret?.toByteArray(Charsets.UTF_8) ?: ByteArray(0)
+                        val secretBytes = secret.toByteArray(Charsets.UTF_8)
 
                         if (MessageDigest.isEqual(clientBytes, secretBytes)) {
                             val writer = PrintWriter(socket.getOutputStream(), true)
