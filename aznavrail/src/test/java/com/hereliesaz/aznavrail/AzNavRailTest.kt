@@ -2,14 +2,10 @@ package com.hereliesaz.aznavrail
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzNavItem
-import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import org.junit.Assert.assertEquals
 import org.junit.Rule
