@@ -40,14 +40,14 @@ internal fun HelpOverlay(
     onTutorialLaunch: ((String) -> Unit)? = null
 ) {
     val itemsWithInfo = remember(items, helpList, nestedRailOpenId, tutorials) {
-        val flatItems = items.toMutableList()
-        if (nestedRailOpenId != null) {
-            val nestedHost = items.find { it.id == nestedRailOpenId }
-            if (nestedHost?.nestedRailItems != null) {
-                flatItems.addAll(nestedHost.nestedRailItems)
-            }
+        val baseSequence = items.asSequence()
+        val nestedSequence = if (nestedRailOpenId != null) {
+            items.find { it.id == nestedRailOpenId }?.nestedRailItems?.asSequence() ?: emptySequence()
+        } else {
+            emptySequence()
         }
-        flatItems.filter { item ->
+
+        (baseSequence + nestedSequence).filter { item ->
             val listTextRaw = helpList[item.id]
             val hasValidListText = when (listTextRaw) {
                 is String -> listTextRaw.isNotBlank()
@@ -55,7 +55,7 @@ internal fun HelpOverlay(
                 else -> false
             }
             !item.info.isNullOrBlank() || hasValidListText || tutorials.containsKey(item.id)
-        }
+        }.toList()
     }
     val safeZones = LocalAzSafeZones.current
     val density = LocalDensity.current
