@@ -440,9 +440,17 @@ internal fun HistoryList(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 modifier = Modifier.fillMaxWidth().clickable {
                     try {
-                        val uri = Uri.parse("geo:${entry.lat},${entry.lng}?q=${entry.lat},${entry.lng}")
-                        val intent = Intent(Intent.ACTION_VIEW, uri)
-                        context.startActivity(intent)
+                        if (entry.lat in -90.0..90.0 && entry.lng in -180.0..180.0) {
+                            val uri = Uri.parse("geo:${entry.lat},${entry.lng}?q=${entry.lat},${entry.lng}")
+                            if (uri.scheme == "geo") {
+                                val intent = Intent(Intent.ACTION_VIEW, uri)
+                                context.startActivity(intent)
+                            } else {
+                                Log.w("SecretScreens", "Invalid URI scheme: ${uri.scheme}")
+                            }
+                        } else {
+                            Log.w("SecretScreens", "Invalid coordinates: lat=${entry.lat}, lng=${entry.lng}")
+                        }
                     } catch (e: Exception) {
                         Log.e("SecretScreens", "Could not open map", e)
                     }
