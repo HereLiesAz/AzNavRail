@@ -18,6 +18,9 @@ export interface AzButtonProps {
   content?: React.ReactNode;
 }
 
+// Default size for circle/square
+const BUTTON_SIZE = 72; // dp equivalent
+
 export const AzButton: React.FC<AzButtonProps> = ({
   text,
   onClick,
@@ -37,9 +40,6 @@ export const AzButton: React.FC<AzButtonProps> = ({
   const isRectangle = shape === AzButtonShape.RECTANGLE;
   const isNone = shape === AzButtonShape.NONE;
 
-  // Default size for circle/square
-  const size = 72; // dp equivalent
-
   const containerStyle: ViewStyle = {
     borderColor: isNone ? 'transparent' : color,
     borderWidth: isNone ? 0 : 3,
@@ -57,24 +57,24 @@ export const AzButton: React.FC<AzButtonProps> = ({
   const actualFillColor = fillColor || defaultFillColor;
 
   if (hasCustomContent) {
-    containerStyle.minWidth = size;
+    containerStyle.minWidth = BUTTON_SIZE;
   } else {
     if (isCircle) {
-      containerStyle.width = size;
-      containerStyle.height = size;
-      containerStyle.borderRadius = size / 2;
+      containerStyle.width = BUTTON_SIZE;
+      containerStyle.height = BUTTON_SIZE;
+      containerStyle.borderRadius = BUTTON_SIZE / 2;
     } else if (isSquare) {
-      containerStyle.width = size;
-      containerStyle.height = size;
+      containerStyle.width = BUTTON_SIZE;
+      containerStyle.height = BUTTON_SIZE;
       containerStyle.borderRadius = 0;
     } else if (isRectangle) {
-      containerStyle.minWidth = size;
+      containerStyle.width = BUTTON_SIZE;
       containerStyle.height = 40;
       containerStyle.paddingHorizontal = 8;
       containerStyle.borderRadius = 0;
     } else if (isNone) {
        // Invisible rectangle
-       containerStyle.width = size;
+       containerStyle.width = BUTTON_SIZE;
        containerStyle.height = 40;
     }
   }
