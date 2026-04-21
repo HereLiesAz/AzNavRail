@@ -68,7 +68,7 @@ export const AzButton: React.FC<AzButtonProps> = ({
       containerStyle.height = size;
       containerStyle.borderRadius = 0;
     } else if (isRectangle) {
-      containerStyle.width = size;
+      containerStyle.minWidth = size;
       containerStyle.height = 40;
       containerStyle.paddingHorizontal = 8;
       containerStyle.borderRadius = 0;
