@@ -1,4 +1,4 @@
-with open('./aznavrail-web/src/components/AzNavRail.jsx', 'r') as f:
+with open('./aznavrail-react/src/web/AzNavRail.jsx', 'r') as f:
     content = f.read()
 
 replacement_footer = """      {showFooter && isExpanded && (
@@ -18,5 +18,5 @@ content = content.replace("""      {showFooter && isExpanded && (
         </div>
       )}""", replacement_footer)
 
-with open('./aznavrail-web/src/components/AzNavRail.jsx', 'w') as f:
+with open('./aznavrail-react/src/web/AzNavRail.jsx', 'w') as f:
     f.write(content)
