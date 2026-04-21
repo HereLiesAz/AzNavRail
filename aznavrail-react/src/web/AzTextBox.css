@@ -1,0 +1,84 @@
+.az-textbox-container {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+  position: relative;
+  width: 100%;
+}
+
+.az-textbox-wrapper {
+  display: flex;
+  align-items: center;
+  border: 2px solid;
+  padding: 4px 8px;
+  height: 48px; /* Standard height */
+  box-sizing: border-box;
+  background-color: transparent;
+  transition: opacity 0.2s;
+}
+
+.az-textbox-wrapper.multiline {
+  height: auto;
+  min-height: 48px;
+}
+
+.az-textbox-wrapper.error {
+  /* Error styling is handled by passing color prop usually, but we can add a class */
+}
+
+.az-textbox-wrapper.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.az-textbox-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  color: inherit;
+  width: 100%;
+  padding: 0;
+  margin: 0 8px;
+}
+
+.az-textbox-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+}
+
+.az-textbox-submit {
+  border: 2px solid;
+  background: transparent;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.az-textbox-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white; /* Should be configurable or match theme */
+  border: 1px solid #ccc;
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.az-textbox-suggestion-item {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.az-textbox-suggestion-item:hover {
+  background-color: #f0f0f0;
+}
