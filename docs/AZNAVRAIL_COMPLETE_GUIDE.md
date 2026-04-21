@@ -23,6 +23,48 @@ AzHostActivityLayout(
 }
 ```
 
+
+**React (React Native / react-native-web) Equivalent:**
+While Android uses `AzHostActivityLayout` and a DSL to manage positioning and Safe Zones automatically, React projects explicitly construct their layout and pass properties and arrays of objects. The React version enforces the same visual rules via standard flex layouts.
+
+```tsx
+import { AzNavRail, AzNavItem, AzNavRailSettings } from '@HereLiesAz/aznavrail-react';
+import { View } from 'react-native';
+
+const settings: AzNavRailSettings = {
+    dockingSide: AzDockingSide.LEFT,
+    packRailButtons: false,
+    usePhysicalDocking: false,
+    defaultShape: AzButtonShape.RECTANGLE,
+    activeColor: '#6200EE',
+    translucentBackground: 'rgba(0,0,0,0.5)',
+    enableRailDragging: true,
+    isLoading: false,
+    helpList: { "home": "Home screen" },
+    infoScreen: false,
+    onDismissInfoScreen: () => {},
+};
+
+const items: AzNavItem[] = [
+    // Define items array here
+];
+
+export default function AppLayout() {
+    return (
+        <View style={{ flex: 1, flexDirection: 'row' }}>
+            <AzNavRail
+                appName="My App"
+                items={items}
+                expanded={false}
+                settings={settings}
+                onToggleExpand={() => {}}
+            />
+            {/* Background and Onscreen Content */}
+        </View>
+    );
+}
+```
+
 ---
 
 ## 2. Rail Configuration (DSL)
@@ -41,6 +83,7 @@ azConfig(
 )
 ```
 
+
 ### B. Theming (`azTheme`)
 Controls visual style defaults.
 
@@ -51,6 +94,18 @@ azTheme(
     translucentBackground = Color.Black.copy(alpha = 0.5f) // Set the background color for menus/overlays!
 )
 ```
+
+**React Implementation:**
+```tsx
+const settings: AzNavRailSettings = {
+    defaultShape: AzButtonShape.RECTANGLE,
+    activeColor: '#6200EE',
+    translucentBackground: 'rgba(0,0,0,0.5)',
+};
+// Pass this object to the settings prop on AzNavRail
+```
+
+
 
 ### C. Advanced Features (`azAdvanced`)
 Enables complex behaviors like drag-and-drop and help overlays.
@@ -64,6 +119,19 @@ azAdvanced(
     onDismissHelp = { showHelp = false }
 )
 ```
+
+**React Implementation:**
+```tsx
+const settings: AzNavRailSettings = {
+    isLoading: isLoading,
+    enableRailDragging: true,
+    infoScreen: showHelp,
+    helpList: { "home": "Home screen" },
+    onDismissInfoScreen: () => setShowHelp(false),
+};
+// Pass this object to the settings prop on AzNavRail
+```
+
 
 > **Note on Help Overlay:**
 > The `HelpOverlay` displays a short, truncated entry for each item to conserve space. Tapping a help card expands it to reveal the full description and any extra text provided in `helpList`. Furthermore, `helpList` can be supplied dynamically to `AzNestedRail` components for distinct, localized help data.
@@ -142,6 +210,17 @@ azRailItem(
         }
     }
 )
+```
+
+**React Implementation:**
+```tsx
+// Tutorials are mapped through helpList in React
+const settings: AzNavRailSettings = {
+    infoScreen: true,
+    helpList: {
+        "item-1": "Help text for item 1"
+    }
+};
 ```
 
 ### Toggles

@@ -17,15 +17,15 @@ import {
 import { AzNavRailContext } from './AzNavRailScope';
 import { AzNavItem, AzNavRailSettings, AzButtonShape, AzDockingSide, AzHeaderIconShape, AzNestedRailAlignment } from './types';
 import { AzNavRailDefaults } from './AzNavRailDefaults';
-import { AzButton } from './native/AzButton';
-import { AzToggle } from './native/AzToggle';
-import { AzCycler } from './native/AzCycler';
-import { RailMenuItem } from './native/RailMenuItem';
-import { AzLoad } from './native/AzLoad';
-import { DraggableRailItemWrapper } from './native/DraggableRailItemWrapper';
+import { AzButton } from './components/AzButton';
+import { AzToggle } from './components/AzToggle';
+import { AzCycler } from './components/AzCycler';
+import { RailMenuItem } from './components/RailMenuItem';
+import { AzLoad } from './components/AzLoad';
+import { DraggableRailItemWrapper } from './components/DraggableRailItemWrapper';
 import { RelocItemHandler } from './util/RelocItemHandler';
-import { AzNestedRailPopup } from './native/AzNestedRailPopup';
-import { HelpOverlay } from './native/HelpOverlay';
+import { AzNestedRailPopup } from './components/AzNestedRailPopup';
+import { HelpOverlay } from './components/HelpOverlay';
 
 interface AzNavRailProps extends AzNavRailSettings {
   children: React.ReactNode;
