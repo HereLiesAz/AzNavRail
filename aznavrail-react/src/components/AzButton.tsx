@@ -57,7 +57,7 @@ export const AzButton: React.FC<AzButtonProps> = ({
   const actualFillColor = fillColor || defaultFillColor;
 
   if (hasCustomContent) {
-    containerStyle.width = BUTTON_SIZE;
+    containerStyle.minWidth = BUTTON_SIZE;
   } else {
     if (isCircle) {
       containerStyle.width = BUTTON_SIZE;
