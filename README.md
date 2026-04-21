@@ -193,6 +193,54 @@ fun SampleScreen() {
 
 ### AzLoad Animation
 
+
+#### React Quick Start
+
+```tsx
+import { AzNavRail, AzNavItem, AzButtonShape, AzDockingSide } from '@HereLiesAz/aznavrail-react';
+
+export default function App() {
+  const [expanded, setExpanded] = useState(false);
+
+  const items: AzNavItem[] = [
+    {
+      id: "home",
+      text: "Home",
+      isRailItem: true,
+      onClick: () => console.log("Home clicked"),
+      shape: AzButtonShape.CIRCLE,
+    },
+    {
+      id: "settings",
+      text: "Settings",
+      isRailItem: true,
+      onClick: () => console.log("Settings clicked"),
+      shape: AzButtonShape.RECTANGLE,
+    }
+  ];
+
+  return (
+    <View style={{ flex: 1, flexDirection: 'row' }}>
+      <AzNavRail
+        appName="My App"
+        appIcon={require('./assets/icon.png')}
+        items={items}
+        expanded={expanded}
+        onToggleExpand={() => setExpanded(!expanded)}
+        settings={{
+            dockingSide: AzDockingSide.LEFT,
+            activeColor: '#6200EE'
+        }}
+      />
+      <View style={{ flex: 1 }}>
+        {/* Main Content */}
+      </View>
+    </View>
+  );
+}
+```
+
+
 ### 1. Strict Layout System
 `AzHostActivityLayout` enforces a "Constitution" for your UI to ensure consistency and usability:
 *   **Safe Zones:** Top 10% and Bottom 10% are reserved. Interactive content is pushed to the center 80%.
@@ -261,6 +309,21 @@ AzRoller(
 - **Typing Support**: Users can type to filter or find options, or enter a value not present in the list. As you type, the dropdown automatically filters to show only matching options. The list automatically manages transparency to ensure the input is visible while typing.
 - **Dropdown Reset**: Clicking the dropdown arrow while typing exits "Text Mode" and re-opens the full list in "Slot Machine" mode.
 
+
+**React Implementation:**
+```tsx
+import { AzRoller } from '@HereLiesAz/aznavrail-react';
+
+<AzRoller
+    options={["Cherry", "Bell", "Bar"]}
+    selectedOption="Cherry"
+    onOptionSelected={(option) => { /* handle selection */ }}
+    hint="Select Item"
+    enabled={true}
+/>
+```
+
+
 ### Hierarchical Navigation
 
 `AzNavRail` supports hierarchical navigation with host and sub-items. This allows you to create nested menus that are easy to navigate.
@@ -302,6 +365,31 @@ azRailRelocItem(
     inputItem("Rename", initialValue = "Item 1") { newName -> /* ... */ }
 }
 ~~~
+
+
+**React Implementation:**
+```tsx
+import { AzRailRelocItemProps, HiddenMenuScope } from '@HereLiesAz/aznavrail-react';
+
+const relocItem: AzRailRelocItemProps = {
+    id: "reloc-1",
+    hostId: "host-1",
+    text: "Item 1",
+    isRailItem: false,
+    isSubItem: true,
+    forceHiddenMenuOpen: false,
+    onHiddenMenuDismiss: () => { /* Menu dismissed */ },
+    onRelocate: (fromIndex, toIndex, newOrder) => {
+        // Handle new order
+    },
+    hiddenMenu: (scope: HiddenMenuScope) => {
+        scope.listItem("Action 1", () => { /* ... */ });
+        scope.inputItem("Rename", "Item 1", (newName) => { /* ... */ });
+    }
+};
+// Pass this object within the items array to AzNavRail
+```
+
 
 - **Drag-and-Drop**: Long-press (triggers a vibration) and drag an item to move it. Other items will animate to create an empty slot at the potential drop target.
 - **Cluster Constraints**: Items can only be moved within their "cluster" — a contiguous group of relocation items under the same host. They cannot jump over standard items or move to a different host.

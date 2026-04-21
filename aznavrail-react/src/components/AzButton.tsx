@@ -8,6 +8,7 @@ export interface AzButtonProps {
   onClick: () => void;
   color?: string;
   fillColor?: string;
+  textColor?: string;
   shape?: AzButtonShape;
   style?: ViewStyle;
   enabled?: boolean;
@@ -17,11 +18,15 @@ export interface AzButtonProps {
   content?: React.ReactNode;
 }
 
+// Default size for circle/square
+const BUTTON_SIZE = 72; // dp equivalent
+
 export const AzButton: React.FC<AzButtonProps> = ({
   text,
   onClick,
   color = '#6200ee', // Default primary color
   fillColor,
+  textColor,
   shape = AzButtonShape.CIRCLE,
   style,
   enabled = true,
@@ -35,12 +40,9 @@ export const AzButton: React.FC<AzButtonProps> = ({
   const isRectangle = shape === AzButtonShape.RECTANGLE;
   const isNone = shape === AzButtonShape.NONE;
 
-  // Default size for circle/square
-  const size = 48; // dp equivalent
-
   const containerStyle: ViewStyle = {
     borderColor: isNone ? 'transparent' : color,
-    borderWidth: isNone ? 0 : 2,
+    borderWidth: isNone ? 0 : 3,
     backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
@@ -55,29 +57,30 @@ export const AzButton: React.FC<AzButtonProps> = ({
   const actualFillColor = fillColor || defaultFillColor;
 
   if (hasCustomContent) {
-    containerStyle.minWidth = size;
+    containerStyle.width = BUTTON_SIZE;
   } else {
     if (isCircle) {
-      containerStyle.width = size;
-      containerStyle.height = size;
-      containerStyle.borderRadius = size / 2;
+      containerStyle.width = BUTTON_SIZE;
+      containerStyle.height = BUTTON_SIZE;
+      containerStyle.borderRadius = BUTTON_SIZE / 2;
     } else if (isSquare) {
-      containerStyle.width = size;
-      containerStyle.height = size;
+      containerStyle.width = BUTTON_SIZE;
+      containerStyle.height = BUTTON_SIZE;
       containerStyle.borderRadius = 0;
     } else if (isRectangle) {
-      containerStyle.height = size;
-      // Width is determined by content or parent
+      containerStyle.width = BUTTON_SIZE;
+      containerStyle.height = 40;
       containerStyle.paddingHorizontal = 8;
       containerStyle.borderRadius = 0;
     } else if (isNone) {
        // Invisible rectangle
-       containerStyle.height = size;
+       containerStyle.width = BUTTON_SIZE;
+       containerStyle.height = 40;
     }
   }
 
   const textStyle: TextStyle = {
-    color: color,
+    color: textColor || color,
     textAlign: 'center',
     fontWeight: 'bold',
   };
