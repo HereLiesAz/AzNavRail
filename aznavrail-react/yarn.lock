@@ -2833,9 +2833,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"aznavrail-react-native@workspace:.":
+"aznavrail-react@workspace:.":
   version: 0.0.0-use.local
-  resolution: "aznavrail-react-native@workspace:."
+  resolution: "aznavrail-react@workspace:."
   dependencies:
     "@tsconfig/react-native": ^3.0.8
     "@types/jest": ^29.5.5
@@ -2855,7 +2855,9 @@ __metadata:
     typescript: ^5.2.2
   peerDependencies:
     react: "*"
+    react-dom: "*"
     react-native: "*"
+    react-native-web: "*"
   languageName: unknown
   linkType: soft
 
