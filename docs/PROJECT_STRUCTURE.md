@@ -4,7 +4,6 @@ This project is a monorepo containing the following packages:
 
 -   `aznavrail`: The core Android library.
 -   `SampleApp`: A sample Android application that demonstrates how to use the `aznavrail` library.
--   `aznavrail-web`: The web version of the `aznavrail` library.
 
 ### File Dictionary
 
