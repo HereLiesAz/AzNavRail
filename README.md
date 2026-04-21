@@ -267,9 +267,46 @@ AzNavRail(...) {
 }
 ~~~
 
+
+**React Implementation:**
+```tsx
+import { AzNavItem } from '@HereLiesAz/aznavrail-react';
+
+const items: AzNavItem[] = [
+    {
+        id: "power",
+        isRailItem: true,
+        isToggle: true,
+        isChecked: isPowerOn,
+        toggleOnText: "Power On",
+        toggleOffText: "Power Off",
+        onClick: () => setPowerOn(!isPowerOn),
+        // ...
+    },
+    {
+        id: "mode",
+        isRailItem: true,
+        isCycler: true,
+        options: ["Auto", "Cool", "Heat"],
+        selectedOption: currentMode,
+        // ...
+    }
+];
+```
+
+
 #### Standalone Usage
 
 You can also use `AzLoad` directly in your composables.
+
+
+**React Implementation:**
+```tsx
+import { AzLoad } from '@HereLiesAz/aznavrail-react';
+
+<AzLoad size={48} color="#6200EE" />
+```
+
 
 ### Standalone Buttons
 
@@ -332,6 +369,31 @@ import { AzRoller } from '@HereLiesAz/aznavrail-react';
 -   **Sub-Items**: These are nested items that are only visible when their host item is expanded. They can also be placed in the rail or the menu.
 -   **Exclusive Expansion**: Only one host item can be expanded at a time. Expanding a host item automatically collapses any other open host items.
 
+
+**React Implementation:**
+```tsx
+const items: AzNavItem[] = [
+    {
+        id: "host-1",
+        text: "Host Item",
+        isRailItem: true,
+        isHost: true,
+        isExpanded: isHost1Expanded,
+        onClick: () => setHost1Expanded(!isHost1Expanded),
+        // ...
+    },
+    {
+        id: "sub-1",
+        text: "Sub Item",
+        isRailItem: true,
+        isSubItem: true,
+        hostId: "host-1",
+        // ...
+    }
+];
+```
+
+
 ### Draggable Rail (FAB Mode)
 
 The rail can be detached and moved around the screen by long-pressing the header icon, which activates "FAB Mode". To enable this feature, set `enableRailDragging = true` in the `azAdvanced` block.
@@ -344,6 +406,18 @@ The rail can be detached and moved around the screen by long-pressing the header
 - **Deactivation**:
     - **Snapping**: Drag the FAB close to its original docked position to snap it back into place, exiting FAB mode.
     - **Long Press**: Long-pressing the FAB will also immediately re-dock the rail.
+
+
+**React Implementation:**
+```tsx
+import { AzNavRailSettings } from '@HereLiesAz/aznavrail-react';
+
+const settings: AzNavRailSettings = {
+    enableRailDragging: true
+};
+// Pass settings to AzNavRail
+```
+
 
 ### Reorderable Items (AzRailRelocItem)
 
@@ -410,6 +484,29 @@ The expanded menu text font size (and the footer items text size) is strictly co
 #### Customizing Item Text and Colors
 Navigation items support overriding their display text and colors when shown in the menu versus the rail using `menuText`, `menuToggleOnText`, `menuToggleOffText`, `menuOptions`, `textColor`, and `fillColor` properties! By default, the `fillColor` (translucent background) is automatically computed to be Black (with 25% opacity), unless the item's main color is Black, in which case it is set to White (with 25% opacity) to ensure proper contrast.
 
+
+**React Implementation:**
+```tsx
+// Fonts and colors can be passed as props directly.
+// The expanded menu text size can be handled via CSS or React Native styles
+// depending on your implementation environment.
+const settings: AzNavRailSettings = {
+    activeColor: '#6200EE'
+};
+
+const items: AzNavItem[] = [
+    {
+        id: "custom",
+        text: "Custom Color",
+        color: '#FF0000',
+        textColor: '#FFFFFF',
+        fillColor: 'rgba(255,0,0,0.25)',
+        // ...
+    }
+];
+```
+
+
 ### Documentation
 
 The library includes a comprehensive **Complete Guide** (`docs/AZNAVRAIL_COMPLETE_GUIDE.md`) containing:
@@ -472,4 +569,19 @@ azAdvanced(
         }
     )
 )
+```
+
+
+**React Implementation:**
+```tsx
+import { AzNavRailSettings } from '@HereLiesAz/aznavrail-react';
+
+const settings: AzNavRailSettings = {
+    infoScreen: true,
+    helpList: {
+        "my-item-id": "This item has extended help information."
+    },
+    onDismissInfoScreen: () => { /* Handle dismissal */ }
+};
+// Pass settings to AzNavRail
 ```

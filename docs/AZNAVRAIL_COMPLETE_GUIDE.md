@@ -83,6 +83,7 @@ azConfig(
 )
 ```
 
+
 ### B. Theming (`azTheme`)
 Controls visual style defaults.
 
@@ -93,6 +94,18 @@ azTheme(
     translucentBackground = Color.Black.copy(alpha = 0.5f) // Set the background color for menus/overlays!
 )
 ```
+
+**React Implementation:**
+```tsx
+const settings: AzNavRailSettings = {
+    defaultShape: AzButtonShape.RECTANGLE,
+    activeColor: '#6200EE',
+    translucentBackground: 'rgba(0,0,0,0.5)',
+};
+// Pass this object to the settings prop on AzNavRail
+```
+
+
 
 ### C. Advanced Features (`azAdvanced`)
 Enables complex behaviors like drag-and-drop and help overlays.
@@ -106,6 +119,19 @@ azAdvanced(
     onDismissHelp = { showHelp = false }
 )
 ```
+
+**React Implementation:**
+```tsx
+const settings: AzNavRailSettings = {
+    isLoading: isLoading,
+    enableRailDragging: true,
+    infoScreen: showHelp,
+    helpList: { "home": "Home screen" },
+    onDismissInfoScreen: () => setShowHelp(false),
+};
+// Pass this object to the settings prop on AzNavRail
+```
+
 
 > **Note on Help Overlay:**
 > The `HelpOverlay` displays a short, truncated entry for each item to conserve space. Tapping a help card expands it to reveal the full description and any extra text provided in `helpList`. Furthermore, `helpList` can be supplied dynamically to `AzNestedRail` components for distinct, localized help data.
@@ -184,6 +210,17 @@ azRailItem(
         }
     }
 )
+```
+
+**React Implementation:**
+```tsx
+// Tutorials are mapped through helpList in React
+const settings: AzNavRailSettings = {
+    infoScreen: true,
+    helpList: {
+        "item-1": "Help text for item 1"
+    }
+};
 ```
 
 ### Toggles
