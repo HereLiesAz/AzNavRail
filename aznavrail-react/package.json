@@ -1,7 +1,7 @@
 {
-  "name": "@HereLiesAz/aznavrail-react",
+  "name": "aznavrail-react",
   "version": "0.1.0",
-  "description": "A contemptably stubborn navigation rail for React Native",
+  "description": "A contemptably stubborn navigation rail for React and React Native",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
   "react-native": "src/index",
@@ -68,6 +68,7 @@
   },
   "peerDependencies": {
     "react": "*",
+    "react-dom": "*",
     "react-native": "*",
     "react-native-web": "*"
   },
