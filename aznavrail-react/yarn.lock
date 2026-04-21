@@ -5,6 +5,33 @@ __metadata:
   version: 6
   cacheKey: 8
 
+"@HereLiesAz/aznavrail-react@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "@HereLiesAz/aznavrail-react@workspace:."
+  dependencies:
+    "@tsconfig/react-native": ^3.0.8
+    "@types/jest": ^29.5.5
+    "@types/node": ^24.10.1
+    "@types/react": ^18.2.21
+    "@types/react-native": 0.72.2
+    "@types/react-test-renderer": ^19.1.0
+    eslint: ^8.48.0
+    eslint-config-prettier: ^9.0.0
+    eslint-plugin-prettier: ^5.0.0
+    jest: ^29.6.4
+    prettier: ^3.0.2
+    react: 18.2.0
+    react-native: 0.72.4
+    react-native-builder-bob: ^0.21.3
+    react-test-renderer: 18.2.0
+    typescript: ^5.2.2
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+    react-native-web: "*"
+  languageName: unknown
+  linkType: soft
+
 "@babel/code-frame@npm:^7.0.0, @babel/code-frame@npm:^7.12.13, @babel/code-frame@npm:^7.28.6, @babel/code-frame@npm:^7.29.0":
   version: 7.29.0
   resolution: "@babel/code-frame@npm:7.29.0"
@@ -2832,32 +2859,6 @@ __metadata:
   checksum: ee6eb8cd8a0ab1b58bd2a3ed6c415e93e773573a91d31df9d5ef559baafa9dab37d3b096fa7993e84585cac3697b2af6ddb9086f45d3ac8cae821bb2aab65682
   languageName: node
   linkType: hard
-
-"aznavrail-react-native@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "aznavrail-react-native@workspace:."
-  dependencies:
-    "@tsconfig/react-native": ^3.0.8
-    "@types/jest": ^29.5.5
-    "@types/node": ^24.10.1
-    "@types/react": ^18.2.21
-    "@types/react-native": 0.72.2
-    "@types/react-test-renderer": ^19.1.0
-    eslint: ^8.48.0
-    eslint-config-prettier: ^9.0.0
-    eslint-plugin-prettier: ^5.0.0
-    jest: ^29.6.4
-    prettier: ^3.0.2
-    react: 18.2.0
-    react-native: 0.72.4
-    react-native-builder-bob: ^0.21.3
-    react-test-renderer: 18.2.0
-    typescript: ^5.2.2
-  peerDependencies:
-    react: "*"
-    react-native: "*"
-  languageName: unknown
-  linkType: soft
 
 "babel-core@npm:^7.0.0-bridge.0":
   version: 7.0.0-bridge.0

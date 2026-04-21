@@ -4,7 +4,6 @@ This project is a monorepo containing the following packages:
 
 -   `aznavrail`: The core Android library.
 -   `SampleApp`: A sample Android application that demonstrates how to use the `aznavrail` library.
--   `aznavrail-web`: The web version of the `aznavrail` library.
 
 ### File Dictionary
 
@@ -17,8 +16,7 @@ This document provides a brief but thorough description of what each file in the
 | `.github/` | Contains GitHub Actions workflows for CI/CD. |
 | `SampleApp/` | An Android application that demonstrates how to use the `aznavrail` library. |
 | `aznavrail/` | The core `aznavrail` Android library module. |
-| `aznavrail-react-native/` | The React Native version of the `aznavrail` library. |
-| `aznavrail-web/` | The web version of the `aznavrail` library. |
+| `aznavrail-react/` | The React and React Native version of the `aznavrail` library. |
 | `docs/` | Contains detailed documentation guides. |
 | `gradle/` | Contains the Gradle wrapper files. |
 | `.gitignore` | Specifies intentionally untracked files to ignore. |
@@ -92,16 +90,6 @@ The `aznavrail` directory contains the core `aznavrail` Android library module.
 | `src/main/java/com/hereliesaz/aznavrail/internal/RelocItemHandler.kt` | Handles drag, drop, bounds, and cluster bounding for Reorderable items. |
 | `src/main/java/com/hereliesaz/aznavrail/internal/SecretScreens.kt` | Location logger utility unlocked via PIN check on the footer. |
 
-#### aznavrail-react-native Directory
+#### aznavrail-react Directory
 
-Contains the React Native translation of the framework. Built using Bob.
-
-#### aznavrail-web Directory
-
-The `aznavrail-web` directory contains the web version of the `aznavrail` library built with React & Vite.
-
-| File/Directory | Description |
-| --- | --- |
-| `src/` | Contains the source code for the `aznavrail-web` library. |
-| `package.json` | Lists the project dependencies and scripts. |
-| `vite.config.js` | Vite configuration file for UMD and ES builds. |
+Contains the React and React Native translation of the framework. Built using Bob.

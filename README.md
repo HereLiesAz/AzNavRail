@@ -193,6 +193,54 @@ fun SampleScreen() {
 
 ### AzLoad Animation
 
+
+#### React Quick Start
+
+```tsx
+import { AzNavRail, AzNavItem, AzButtonShape, AzDockingSide } from '@HereLiesAz/aznavrail-react';
+
+export default function App() {
+  const [expanded, setExpanded] = useState(false);
+
+  const items: AzNavItem[] = [
+    {
+      id: "home",
+      text: "Home",
+      isRailItem: true,
+      onClick: () => console.log("Home clicked"),
+      shape: AzButtonShape.CIRCLE,
+    },
+    {
+      id: "settings",
+      text: "Settings",
+      isRailItem: true,
+      onClick: () => console.log("Settings clicked"),
+      shape: AzButtonShape.RECTANGLE,
+    }
+  ];
+
+  return (
+    <View style={{ flex: 1, flexDirection: 'row' }}>
+      <AzNavRail
+        appName="My App"
+        appIcon={require('./assets/icon.png')}
+        items={items}
+        expanded={expanded}
+        onToggleExpand={() => setExpanded(!expanded)}
+        settings={{
+            dockingSide: AzDockingSide.LEFT,
+            activeColor: '#6200EE'
+        }}
+      />
+      <View style={{ flex: 1 }}>
+        {/* Main Content */}
+      </View>
+    </View>
+  );
+}
+```
+
+
 ### 1. Strict Layout System
 `AzHostActivityLayout` enforces a "Constitution" for your UI to ensure consistency and usability:
 *   **Safe Zones:** Top 10% and Bottom 10% are reserved. Interactive content is pushed to the center 80%.
@@ -219,9 +267,46 @@ AzNavRail(...) {
 }
 ~~~
 
+
+**React Implementation:**
+```tsx
+import { AzNavItem } from '@HereLiesAz/aznavrail-react';
+
+const items: AzNavItem[] = [
+    {
+        id: "power",
+        isRailItem: true,
+        isToggle: true,
+        isChecked: isPowerOn,
+        toggleOnText: "Power On",
+        toggleOffText: "Power Off",
+        onClick: () => setPowerOn(!isPowerOn),
+        // ...
+    },
+    {
+        id: "mode",
+        isRailItem: true,
+        isCycler: true,
+        options: ["Auto", "Cool", "Heat"],
+        selectedOption: currentMode,
+        // ...
+    }
+];
+```
+
+
 #### Standalone Usage
 
 You can also use `AzLoad` directly in your composables.
+
+
+**React Implementation:**
+```tsx
+import { AzLoad } from '@HereLiesAz/aznavrail-react';
+
+<AzLoad size={48} color="#6200EE" />
+```
+
 
 ### Standalone Buttons
 
@@ -261,6 +346,21 @@ AzRoller(
 - **Typing Support**: Users can type to filter or find options, or enter a value not present in the list. As you type, the dropdown automatically filters to show only matching options. The list automatically manages transparency to ensure the input is visible while typing.
 - **Dropdown Reset**: Clicking the dropdown arrow while typing exits "Text Mode" and re-opens the full list in "Slot Machine" mode.
 
+
+**React Implementation:**
+```tsx
+import { AzRoller } from '@HereLiesAz/aznavrail-react';
+
+<AzRoller
+    options={["Cherry", "Bell", "Bar"]}
+    selectedOption="Cherry"
+    onOptionSelected={(option) => { /* handle selection */ }}
+    hint="Select Item"
+    enabled={true}
+/>
+```
+
+
 ### Hierarchical Navigation
 
 `AzNavRail` supports hierarchical navigation with host and sub-items. This allows you to create nested menus that are easy to navigate.
@@ -268,6 +368,31 @@ AzRoller(
 -   **Host Items**: These are top-level items that can contain sub-items. They can be placed in the rail or the menu.
 -   **Sub-Items**: These are nested items that are only visible when their host item is expanded. They can also be placed in the rail or the menu.
 -   **Exclusive Expansion**: Only one host item can be expanded at a time. Expanding a host item automatically collapses any other open host items.
+
+
+**React Implementation:**
+```tsx
+const items: AzNavItem[] = [
+    {
+        id: "host-1",
+        text: "Host Item",
+        isRailItem: true,
+        isHost: true,
+        isExpanded: isHost1Expanded,
+        onClick: () => setHost1Expanded(!isHost1Expanded),
+        // ...
+    },
+    {
+        id: "sub-1",
+        text: "Sub Item",
+        isRailItem: true,
+        isSubItem: true,
+        hostId: "host-1",
+        // ...
+    }
+];
+```
+
 
 ### Draggable Rail (FAB Mode)
 
@@ -281,6 +406,18 @@ The rail can be detached and moved around the screen by long-pressing the header
 - **Deactivation**:
     - **Snapping**: Drag the FAB close to its original docked position to snap it back into place, exiting FAB mode.
     - **Long Press**: Long-pressing the FAB will also immediately re-dock the rail.
+
+
+**React Implementation:**
+```tsx
+import { AzNavRailSettings } from '@HereLiesAz/aznavrail-react';
+
+const settings: AzNavRailSettings = {
+    enableRailDragging: true
+};
+// Pass settings to AzNavRail
+```
+
 
 ### Reorderable Items (AzRailRelocItem)
 
@@ -303,6 +440,31 @@ azRailRelocItem(
 }
 ~~~
 
+
+**React Implementation:**
+```tsx
+import { AzRailRelocItemProps, HiddenMenuScope } from '@HereLiesAz/aznavrail-react';
+
+const relocItem: AzRailRelocItemProps = {
+    id: "reloc-1",
+    hostId: "host-1",
+    text: "Item 1",
+    isRailItem: false,
+    isSubItem: true,
+    forceHiddenMenuOpen: false,
+    onHiddenMenuDismiss: () => { /* Menu dismissed */ },
+    onRelocate: (fromIndex, toIndex, newOrder) => {
+        // Handle new order
+    },
+    hiddenMenu: (scope: HiddenMenuScope) => {
+        scope.listItem("Action 1", () => { /* ... */ });
+        scope.inputItem("Rename", "Item 1", (newName) => { /* ... */ });
+    }
+};
+// Pass this object within the items array to AzNavRail
+```
+
+
 - **Drag-and-Drop**: Long-press (triggers a vibration) and drag an item to move it. Other items will animate to create an empty slot at the potential drop target.
 - **Cluster Constraints**: Items can only be moved within their "cluster" — a contiguous group of relocation items under the same host. They cannot jump over standard items or move to a different host.
 - **Hidden Menu**: Tapping the item brings it into focus (selects it). Long-pressing the item *without dragging* opens the contextual menu. This menu supports list items and input fields.
@@ -321,6 +483,29 @@ The expanded menu text font size (and the footer items text size) is strictly co
 
 #### Customizing Item Text and Colors
 Navigation items support overriding their display text and colors when shown in the menu versus the rail using `menuText`, `menuToggleOnText`, `menuToggleOffText`, `menuOptions`, `textColor`, and `fillColor` properties! By default, the `fillColor` (translucent background) is automatically computed to be Black (with 25% opacity), unless the item's main color is Black, in which case it is set to White (with 25% opacity) to ensure proper contrast.
+
+
+**React Implementation:**
+```tsx
+// Fonts and colors can be passed as props directly.
+// The expanded menu text size can be handled via CSS or React Native styles
+// depending on your implementation environment.
+const settings: AzNavRailSettings = {
+    activeColor: '#6200EE'
+};
+
+const items: AzNavItem[] = [
+    {
+        id: "custom",
+        text: "Custom Color",
+        color: '#FF0000',
+        textColor: '#FFFFFF',
+        fillColor: 'rgba(255,0,0,0.25)',
+        // ...
+    }
+];
+```
+
 
 ### Documentation
 
@@ -384,4 +569,19 @@ azAdvanced(
         }
     )
 )
+```
+
+
+**React Implementation:**
+```tsx
+import { AzNavRailSettings } from '@HereLiesAz/aznavrail-react';
+
+const settings: AzNavRailSettings = {
+    infoScreen: true,
+    helpList: {
+        "my-item-id": "This item has extended help information."
+    },
+    onDismissInfoScreen: () => { /* Handle dismissal */ }
+};
+// Pass settings to AzNavRail
 ```
