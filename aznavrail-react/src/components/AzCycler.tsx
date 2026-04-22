@@ -30,7 +30,7 @@ export const AzCycler: React.FC<AzCyclerProps> = ({
 }) => {
   // Local state to show the currently "previewed" option
   const [displayOption, setDisplayOption] = useState(selectedOption);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sync local state if external selection changes (e.g. initial load or external update)
   useEffect(() => {

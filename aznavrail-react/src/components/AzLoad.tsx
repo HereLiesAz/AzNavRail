@@ -1,9 +1,14 @@
 import React from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 
-export const AzLoad: React.FC = () => (
+interface AzLoadProps {
+    size?: number | 'small' | 'large';
+    color?: string;
+}
+
+export const AzLoad: React.FC<AzLoadProps> = ({ size = "large", color = "#6200ee" }) => (
     <View style={styles.container}>
-        <ActivityIndicator size="large" color="#6200ee" />
+        <ActivityIndicator size={size} color={color} />
     </View>
 );
 

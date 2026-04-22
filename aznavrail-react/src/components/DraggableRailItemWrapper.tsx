@@ -70,7 +70,7 @@ export const DraggableRailItemWrapper: React.FC<DraggableRailItemWrapperProps> =
         setIsDragging(true);
         pan.setOffset({
            x: 0, // Constrain horizontal
-           y: (pan.y as any)._value
+           y: (pan.y as any).__getValue()
         });
         onDragStart(index);
       },

@@ -20,7 +20,7 @@ export const RailMenuItem: React.FC<RailMenuItemProps> = ({
     renderSubItems
 }) => {
     const [displayOption, setDisplayOption] = useState(item.selectedOption);
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         setDisplayOption(item.selectedOption);
