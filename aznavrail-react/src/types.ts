@@ -43,6 +43,41 @@ export interface AzNavRailSettings {
   activeClassifiers?: string[];
   onItemGloballyPositioned?: (id: string, bounds: any) => void;
   helpList?: Record<string, string>;
+  tutorials?: Record<string, AzTutorial>;
+}
+
+export type AzHighlight =
+  | { type: 'Area'; bounds: { x: number; y: number; width: number; height: number } }
+  | { type: 'Item'; id: string }
+  | { type: 'FullScreen' }
+  | { type: 'None' };
+
+export interface AzCard {
+  title: string;
+  text: string;
+  highlight?: AzHighlight;
+  actionText?: string;
+  onAction?: () => void;
+}
+
+export interface AzScene {
+  id: string;
+  content: () => React.ReactNode;
+  cards: AzCard[];
+  onComplete?: () => void;
+}
+
+export interface AzTutorial {
+  scenes: AzScene[];
+}
+
+export interface AzTutorialController {
+  activeTutorialId: string | null;
+  readTutorials: string[];
+  startTutorial: (id: string) => void;
+  endTutorial: () => void;
+  markTutorialRead: (id: string) => void;
+  isTutorialRead: (id: string) => boolean;
 }
 
 export interface HiddenMenuItem {

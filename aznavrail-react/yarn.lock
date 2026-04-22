@@ -9,12 +9,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@HereLiesAz/aznavrail-react@workspace:."
   dependencies:
+    "@testing-library/react-native": 11.5.0
     "@tsconfig/react-native": ^3.0.8
     "@types/jest": ^29.5.5
     "@types/node": ^24.10.1
     "@types/react": ^18.2.21
     "@types/react-native": 0.72.2
-    "@types/react-test-renderer": ^19.1.0
+    "@types/react-test-renderer": 18.0.0
     eslint: ^8.48.0
     eslint-config-prettier: ^9.0.0
     eslint-plugin-prettier: ^5.0.0
@@ -2434,6 +2435,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@testing-library/react-native@npm:11.5.0":
+  version: 11.5.0
+  resolution: "@testing-library/react-native@npm:11.5.0"
+  dependencies:
+    pretty-format: ^29.0.0
+  peerDependencies:
+    jest: ">=28.0.0"
+    react: ">=16.0.0"
+    react-native: ">=0.59"
+    react-test-renderer: ">=16.0.0"
+  peerDependenciesMeta:
+    jest:
+      optional: true
+  checksum: 841c769c2734d7fb7d9a4054fad0582505e49c4c2d99ddcf742ef11f6dd6ee3bcf040400e27dbb55d7fda48b305ae92f40dc8c507e93dffb96d768ff3aba7bad
+  languageName: node
+  linkType: hard
+
 "@tsconfig/react-native@npm:^3.0.8":
   version: 3.0.9
   resolution: "@tsconfig/react-native@npm:3.0.9"
@@ -2568,12 +2586,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-test-renderer@npm:^19.1.0":
-  version: 19.1.0
-  resolution: "@types/react-test-renderer@npm:19.1.0"
+"@types/react-test-renderer@npm:18.0.0":
+  version: 18.0.0
+  resolution: "@types/react-test-renderer@npm:18.0.0"
   dependencies:
     "@types/react": "*"
-  checksum: 2ef3aec0f2fd638902cda606d70c8531d66f8e8944334427986b99dcac9755ee60b700c5c3a19ac354680f9c45669e98077b84f79cac60e950bdb7d38aebffde
+  checksum: 6afc938a1d7618d88ab8793e251f0bd5981bf3f08c1b600f74df3f8800b92589ea534dc6dcb7c8d683893fcc740bf8d7843a42bf2dae59785cfe88f004bd7b0b
   languageName: node
   linkType: hard
 

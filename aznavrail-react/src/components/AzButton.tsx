@@ -112,6 +112,7 @@ export const AzButton: React.FC<AzButtonProps> = ({
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={text}
+      testID="button"
       accessibilityState={{ disabled: !enabled || isLoading }}
     >
       <View style={[StyleSheet.absoluteFill, { backgroundColor: actualFillColor, zIndex: -1, borderRadius: containerStyle.borderRadius }]} pointerEvents="none" />

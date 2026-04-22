@@ -1,0 +1,15 @@
+.az-form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.az-form-entry {
+  /* Styling for individual entries handled by AzTextBox */
+}
+
+.az-form-submit {
+  align-self: flex-end;
+  /* Uses AzButton styles usually, or custom */
+}

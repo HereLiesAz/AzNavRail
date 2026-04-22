@@ -26,6 +26,8 @@ import { DraggableRailItemWrapper } from './components/DraggableRailItemWrapper'
 import { RelocItemHandler } from './util/RelocItemHandler';
 import { AzNestedRailPopup } from './components/AzNestedRailPopup';
 import { HelpOverlay } from './components/HelpOverlay';
+import { AzTutorialProvider, useAzTutorialController } from './tutorial/AzTutorialController';
+import { AzTutorialOverlay } from './components/AzTutorialOverlay';
 
 interface AzNavRailProps extends AzNavRailSettings {
   children: React.ReactNode;
@@ -38,7 +40,7 @@ interface AzNavRailProps extends AzNavRailSettings {
   onInteraction?: (action: string, details?: string) => void;
 }
 
-export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
+const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   const {
       children,
       navController: _navController,
@@ -704,10 +706,52 @@ export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
                     onDismiss={onDismissInfoScreen!}
                     itemBounds={itemBounds}
                     nestedRailVisibleId={nestedRailVisible}
+                    tutorials={config.tutorials}
                 />
             )}
+
+            <TutorialOverlayWrapper
+              tutorials={config.tutorials}
+              itemBounds={itemBounds}
+              onDismiss={() => {
+                if (infoScreen && onDismissInfoScreen) {
+                    // Do we want to dismiss infoscreen when tutorial finishes?
+                    // Actually, HelpOverlay handles onDismiss which closes infoScreen.
+                }
+              }}
+            />
         </View>
     </AzNavRailContext.Provider>
+  );
+};
+
+const TutorialOverlayWrapper: React.FC<{
+  tutorials?: Record<string, import('./types').AzTutorial>;
+  itemBounds: Record<string, any>;
+  onDismiss: () => void;
+}> = ({ tutorials, itemBounds, onDismiss }) => {
+  const tutorialController = useAzTutorialController();
+  const activeId = tutorialController.activeTutorialId;
+
+  if (!activeId || !tutorials || !tutorials[activeId]) {
+    return null;
+  }
+
+  return (
+    <AzTutorialOverlay
+      tutorialId={activeId}
+      tutorial={tutorials[activeId]}
+      onDismiss={() => tutorialController.endTutorial()}
+      itemBoundsCache={itemBounds}
+    />
+  );
+};
+
+export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
+  return (
+    <AzTutorialProvider>
+      <AzNavRailInner {...props} />
+    </AzTutorialProvider>
   );
 };
 
