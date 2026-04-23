@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-import { AzNavItem } from '../types';
+import { AzNavItem, AzTutorial } from '../types';
+import { useAzTutorialController } from '../tutorial/AzTutorialController';
 
 interface HelpOverlayProps {
     items: AzNavItem[];
@@ -8,11 +9,13 @@ interface HelpOverlayProps {
     helpList: Record<string, string>;
     itemBounds: Record<string, { x: number, y: number, width: number, height: number }>;
     nestedRailVisibleId?: string | null;
+    tutorials?: Record<string, AzTutorial>;
 }
 
-export const HelpOverlay: React.FC<HelpOverlayProps> = ({ items, onDismiss, helpList, itemBounds, nestedRailVisibleId = null }) => {
+export const HelpOverlay: React.FC<HelpOverlayProps> = ({ items, onDismiss, helpList, itemBounds, nestedRailVisibleId = null, tutorials = {} }) => {
     const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
     const [cardBounds, setCardBounds] = useState<Record<string, { x: number, y: number, width: number, height: number }>>({});
+    const tutorialController = useAzTutorialController();
 
     const isNestedRailOpen = nestedRailVisibleId !== null;
     const paddingLeft = isNestedRailOpen ? 240 : 120;
@@ -105,12 +108,21 @@ export const HelpOverlay: React.FC<HelpOverlayProps> = ({ items, onDismiss, help
                     const titleText = i.text?.trim() || `Item ${i.id}`;
                     const isExpanded = expandedItemId === i.id;
 
+                    const hasTutorial = !!tutorials[i.id];
+
                     return (
                         <TouchableOpacity
                             key={i.id}
                             style={styles.card}
                             activeOpacity={0.8}
-                            onPress={() => setExpandedItemId(isExpanded ? null : i.id)}
+                            onPress={() => {
+                                if (hasTutorial) {
+                                    tutorialController.startTutorial(i.id);
+                                    onDismiss();
+                                } else {
+                                    setExpandedItemId(isExpanded ? null : i.id);
+                                }
+                            }}
                             onLayout={(e) => {
                                 const layout = e.nativeEvent.layout;
                                 setCardBounds(prev => ({
