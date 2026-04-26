@@ -44,13 +44,15 @@ describe('AzNavRail Full Suite', () => {
     const mockOnRelocate = jest.fn();
 
     let component: renderer.ReactTestRenderer;
-    component = renderer.create(
+    renderer.act(() => {
+      component = renderer.create(
           <AzNavRail initiallyExpanded={false}>
             <AzRailHostItem id="host" text="Host" />
             <AzRailRelocItem id="reloc1" hostId="host" text="Reloc1" onRelocate={mockOnRelocate} />
             <AzRailRelocItem id="reloc2" hostId="host" text="Reloc2" />
           </AzNavRail>
         );
+    });
 
     const root = component.root;
     const buttons = root.findAllByType(AzButton);
