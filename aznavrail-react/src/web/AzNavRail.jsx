@@ -511,12 +511,7 @@ const AzNavRail = ({
                                     return;
                                 }
                                 if (item.items || subItemsMap[item.id]) {
-                                    if (infoScreen) {
-                                        toggleHost(item);
-                                    } else {
-                                        setIsExpanded(true);
-                                        setHostStates(prev => ({ ...prev, [item.id]: true }));
-                                    }
+                                    toggleHost(item);
                                 }
                             }}
                             infoScreen={infoScreen}
