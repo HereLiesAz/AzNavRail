@@ -19,11 +19,13 @@ describe('AzNavRail Full Suite', () => {
 
   it('renders loading overlay at root level when isLoading is true', async () => {
     let component: renderer.ReactTestRenderer;
-    component = renderer.create(
+    renderer.act(() => {
+      component = renderer.create(
         <AzNavRail isLoading={true}>
           <Text>Content</Text>
         </AzNavRail>
       );
+    });
     const root = component.root;
 
     // Find view with zIndex 10000
