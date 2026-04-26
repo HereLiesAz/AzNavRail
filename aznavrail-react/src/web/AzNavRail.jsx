@@ -121,6 +121,12 @@ const AzNavRail = ({
     return map;
   }, [localNavItems]);
 
+  const getEffectiveSubItems = useCallback((item) => {
+    const subItemsFromMap = subItemsMap[item.id] || [];
+    const subItemsFromProp = item.items || [];
+    return subItemsFromMap.length > 0 ? subItemsFromMap : subItemsFromProp;
+  }, [subItemsMap]);
+
   const cyclerTimers = useRef({});
   const dragStartY = useRef(0);
   const longPressTimer = useRef(null);
@@ -285,9 +291,7 @@ const AzNavRail = ({
         ? { ...item, selectedOption: cyclerStates[item.id]?.displayedOption }
         : item;
 
-      const subItemsFromMap = subItemsMap[item.id] || [];
-      const subItemsFromProp = item.items || [];
-      const effectiveSubItems = subItemsFromMap.length > 0 ? subItemsFromMap : subItemsFromProp;
+      const effectiveSubItems = getEffectiveSubItems(item);
 
       const isHost = item.isHost || effectiveSubItems.length > 0;
       const isHostExpanded = hostStates[item.id];
@@ -320,7 +324,7 @@ const AzNavRail = ({
         if (item.isRailItem || item.items) {
             visible.push(item);
             if (hostStates[item.id]) {
-               const mapSubs = subItemsMap[item.id] || [];
+               const mapSubs = getEffectiveSubItems(item);
                mapSubs.forEach(sub => {
                    if (sub.isRailItem) visible.push(sub);
                });
@@ -328,7 +332,7 @@ const AzNavRail = ({
         }
     });
     return visible;
-  }, [navItems, hostStates, subItemsMap]);
+  }, [navItems, hostStates, subItemsMap, getEffectiveSubItems]);
 
   const effectiveRailItems = useMemo(() => {
     return navItems.filter(item => item.isRailItem || item.items || subItemsMap[item.id]);
@@ -583,7 +587,7 @@ const AzNavRail = ({
             railWidth={collapsedRailWidth}
             onDismiss={onDismissInfoScreen}
             nestedRailVisibleId={nestedRailVisibleId}
-            helpList={settings.helpList}
+            helpList={settings?.helpList || {}}
         />
     )}
 

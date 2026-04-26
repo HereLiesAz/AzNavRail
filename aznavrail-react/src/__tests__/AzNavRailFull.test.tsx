@@ -17,15 +17,15 @@ describe('AzNavRail Full Suite', () => {
       jest.clearAllMocks();
   });
 
-  it('renders loading overlay at root level when isLoading is true', async () => {
+  it('renders loading overlay at root level when isLoading is true', () => {
     let component: renderer.ReactTestRenderer;
     renderer.act(() => {
-      component = renderer.create(
+component = renderer.create(
         <AzNavRail isLoading={true}>
           <Text>Content</Text>
         </AzNavRail>
       );
-    });
+});
     const root = component.root;
 
     // Find view with zIndex 10000
@@ -37,22 +37,24 @@ describe('AzNavRail Full Suite', () => {
     expect(loader.length).toBe(1);
 
     // Explicitly unmount to avoid warnings
-    component.unmount();
+    renderer.act(() => {
+      component.unmount();
+    });
   });
 
-  it('handles RelocItemHandler drag and drop reordering', async () => {
+  it('handles RelocItemHandler drag and drop reordering', () => {
     const mockOnRelocate = jest.fn();
 
     let component: renderer.ReactTestRenderer;
     renderer.act(() => {
-      component = renderer.create(
+component = renderer.create(
           <AzNavRail initiallyExpanded={false}>
             <AzRailHostItem id="host" text="Host" />
             <AzRailRelocItem id="reloc1" hostId="host" text="Reloc1" onRelocate={mockOnRelocate} />
             <AzRailRelocItem id="reloc2" hostId="host" text="Reloc2" />
           </AzNavRail>
         );
-    });
+});
 
     const root = component.root;
     const buttons = root.findAllByType(AzButton);
@@ -85,19 +87,21 @@ describe('AzNavRail Full Suite', () => {
     expect(mockOnRelocate).toHaveBeenCalledWith(0, 1, ['reloc2', 'reloc1']);
 
     // Explicitly unmount to avoid warnings
-    component.unmount();
+    renderer.act(() => {
+      component.unmount();
+    });
   });
 
-  it('enforces NONE shape for SubItems regardless of props', async () => {
+  it('enforces NONE shape for SubItems regardless of props', () => {
     let component: renderer.ReactTestRenderer;
     renderer.act(() => {
-      component = renderer.create(
+component = renderer.create(
           <AzNavRail initiallyExpanded={false}>
             <AzRailHostItem id="host" text="Host" />
             <AzRailSubItem id="sub" hostId="host" text="Sub" shape={AzButtonShape.SQUARE} />
           </AzNavRail>
         );
-    });
+});
 
     const root = component.root;
     const buttons = root.findAllByType(AzButton);
@@ -115,6 +119,8 @@ describe('AzNavRail Full Suite', () => {
     expect(subBtn.props.shape).toBe(AzButtonShape.NONE);
 
     // Explicitly unmount to avoid warnings
-    component.unmount();
+    renderer.act(() => {
+      component.unmount();
+    });
   });
 });
