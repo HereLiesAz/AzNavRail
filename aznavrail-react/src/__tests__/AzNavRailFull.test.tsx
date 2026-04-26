@@ -90,12 +90,14 @@ describe('AzNavRail Full Suite', () => {
 
   it('enforces NONE shape for SubItems regardless of props', async () => {
     let component: renderer.ReactTestRenderer;
-    component = renderer.create(
+    renderer.act(() => {
+      component = renderer.create(
           <AzNavRail initiallyExpanded={false}>
             <AzRailHostItem id="host" text="Host" />
             <AzRailSubItem id="sub" hostId="host" text="Sub" shape={AzButtonShape.SQUARE} />
           </AzNavRail>
         );
+    });
 
     const root = component.root;
     const buttons = root.findAllByType(AzButton);
