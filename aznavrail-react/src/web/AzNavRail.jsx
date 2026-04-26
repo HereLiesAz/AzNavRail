@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import './AzNavRail.css';
 import MenuItem from './MenuItem';
 import AzNavRailButton from './AzNavRailButton';
 import HelpOverlay from './HelpOverlay';
 import AzNestedRailPopup from './AzNestedRailPopup';
-import { RelocItemHandler } from '../utils/RelocItemHandler';
+import { RelocItemHandler } from '../util/RelocItemHandler';
 import AzDivider from './AzDivider';
 import AzTextBox from './AzTextBox';
 
@@ -287,9 +287,9 @@ const AzNavRail = ({
 
       const subItemsFromMap = subItemsMap[item.id] || [];
       const subItemsFromProp = item.items || [];
-      const subItems = subItemsFromMap.length > 0 ? subItemsFromMap : subItemsFromProp;
+      const effectiveSubItems = subItemsFromMap.length > 0 ? subItemsFromMap : subItemsFromProp;
 
-      const isHost = item.isHost || subItems.length > 0;
+      const isHost = item.isHost || effectiveSubItems.length > 0;
       const isHostExpanded = hostStates[item.id];
       const isActive = checkIsActive(item);
 
@@ -307,7 +307,7 @@ const AzNavRail = ({
               />
               {isHost && isHostExpanded && (
                   <div className="az-nav-rail-subitems">
-                      {subItems.map(subItem => renderMenuItem(subItem, depth + 1))}
+                      {effectiveSubItems.map(subItem => renderMenuItem(subItem, depth + 1))}
                   </div>
               )}
           </React.Fragment>
@@ -320,8 +320,8 @@ const AzNavRail = ({
         if (item.isRailItem || item.items) {
             visible.push(item);
             if (hostStates[item.id]) {
-               const subItems = subItemsMap[item.id] || [];
-               subItems.forEach(sub => {
+               const mapSubs = subItemsMap[item.id] || [];
+               mapSubs.forEach(sub => {
                    if (sub.isRailItem) visible.push(sub);
                });
             }
@@ -583,7 +583,7 @@ const AzNavRail = ({
             railWidth={collapsedRailWidth}
             onDismiss={onDismissInfoScreen}
             nestedRailVisibleId={nestedRailVisibleId}
-            helpList={helpList}
+            helpList={settings.helpList}
         />
     )}
 
