@@ -37,7 +37,9 @@ component = renderer.create(
     expect(loader.length).toBe(1);
 
     // Explicitly unmount to avoid warnings
-    renderer.act(() => { component.unmount(); });
+    renderer.act(() => {
+      component.unmount();
+    });
   });
 
   it('handles RelocItemHandler drag and drop reordering', () => {
@@ -85,7 +87,9 @@ component = renderer.create(
     expect(mockOnRelocate).toHaveBeenCalledWith(0, 1, ['reloc2', 'reloc1']);
 
     // Explicitly unmount to avoid warnings
-    renderer.act(() => { component.unmount(); });
+    renderer.act(() => {
+      component.unmount();
+    });
   });
 
   it('enforces NONE shape for SubItems regardless of props', () => {
@@ -115,6 +119,8 @@ component = renderer.create(
     expect(subBtn.props.shape).toBe(AzButtonShape.NONE);
 
     // Explicitly unmount to avoid warnings
-    renderer.act(() => { component.unmount(); });
+    renderer.act(() => {
+      component.unmount();
+    });
   });
 });
