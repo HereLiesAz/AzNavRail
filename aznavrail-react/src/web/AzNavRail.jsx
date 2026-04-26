@@ -355,7 +355,7 @@ const AzNavRail = ({
     <>
     <div
       className={`az-nav-rail ${isExpanded ? 'expanded' : 'collapsed'} ${dockingSide === 'RIGHT' ? 'right' : ''}`}
-      style={{ width: isExpanded ? expandedRailWidth : collapsedRailWidth }}
+      style={{ width: isExpanded ? expandedRailWidth : collapsedRailWidth, backgroundColor: translucentBackground || '#f0f0f0' }}
     >
       <div className="header" onClick={onToggle}>
         {displayAppNameInHeader ? (
@@ -511,12 +511,7 @@ const AzNavRail = ({
                                     return;
                                 }
                                 if (item.items || subItemsMap[item.id]) {
-                                    if (infoScreen) {
-                                        toggleHost(item);
-                                    } else {
-                                        setIsExpanded(true);
-                                        setHostStates(prev => ({ ...prev, [item.id]: true }));
-                                    }
+                                    toggleHost(item);
                                 }
                             }}
                             infoScreen={infoScreen}
