@@ -6,6 +6,8 @@ export const AzNavRailContext = React.createContext<{
   register: (item: AzNavItem) => void;
   unregister: (id: string) => void;
   updateSettings: (settings: any) => void;
+  getDividerId: () => string;
+  hasItem: (id: string) => boolean;
 } | null>(null);
 
 const useAzItem = (rawItem: AzNavItem) => {
@@ -52,8 +54,8 @@ const useAzItem = (rawItem: AzNavItem) => {
                    prev.isRelocItem === item.isRelocItem &&
                    prev.nestedRailItems === item.nestedRailItems &&
                    // Reloc props
-                   (prev.hiddenMenu?.length === item.hiddenMenu?.length &&
-                    (prev.hiddenMenu || []).every((hm, i) => hm.id === item.hiddenMenu![i].id && hm.text === item.hiddenMenu![i].text && hm.onClick === item.hiddenMenu![i].onClick));
+                   JSON.stringify(prev.hiddenMenu) === JSON.stringify(item.hiddenMenu) &&
+                   prev.onRelocate === item.onRelocate;
 
     if (!isSame) {
         context.register(item);
@@ -190,9 +192,13 @@ export const AzMenuCycler: React.FC<AzCyclerProps> = (props) => {
 };
 
 export const AzDivider: React.FC = () => {
-    const id = useId();
+    const context = useContext(AzNavRailContext);
+    const id = useRef<string | null>(null);
+    if (!id.current && context) {
+        id.current = context.getDividerId();
+    }
     useAzItem({
-        id: `divider-${id}`,
+        id: id.current || '',
         text: '',
         isRailItem: false,
         isToggle: false,
@@ -359,14 +365,26 @@ export const AzMenuSubCycler: React.FC<AzSubCyclerProps> = (props) => {
 };
 
 export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
-    const hiddenMenuItems = React.useMemo(() => {
-        let items: any[] = [];
-        if (props.hiddenMenu) {
-            if (typeof props.hiddenMenu === 'function') {
-                const scope: HiddenMenuScope = {
-                    listItem: (text, action) => {
-                        if (typeof action === 'string') {
-                            items.push({ id: `${props.id}_hidden_item_${items.length}`, text, route: action });
+    let hiddenMenuItems: any[] = [];
+    if (props.hiddenMenu) {
+        if (typeof props.hiddenMenu === 'function') {
+            const scope: HiddenMenuScope = {
+                listItem: (text, action) => {
+                    if (typeof action === 'string') {
+                        hiddenMenuItems.push({ id: `${props.id}_hidden_item_${hiddenMenuItems.length}`, text, route: action });
+                    } else {
+                        hiddenMenuItems.push({ id: `${props.id}_hidden_item_${hiddenMenuItems.length}`, text, onClick: action });
+                    }
+                },
+                inputItem: (hint: string, arg2: any, arg3?: any) => {
+                    let initialValue = '';
+                    let onValueChange: (value: string) => void;
+
+                    if (typeof arg2 === 'string') {
+                        initialValue = arg2;
+                        if (typeof arg3 !== 'function') {
+                            console.warn("inputItem requires an onValueChange function callback.");
+                            onValueChange = () => {};
                         } else {
                             items.push({ id: `${props.id}_hidden_item_${items.length}`, text, onClick: action });
                         }
@@ -388,15 +406,16 @@ export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
                         }
                         items.push({ id: `${props.id}_hidden_item_${items.length}`, text: '', isInput: true, hint, initialValue, onValueChange });
                     }
-                };
-                props.hiddenMenu(scope);
-            } else {
-                items = props.hiddenMenu.map((item, i) => ({
-                    id: `${props.id}_hidden_item_${i}`,
-                    text: item.text,
-                    onClick: item.onClick
-                }));
-            }
+                    hiddenMenuItems.push({ id: `${props.id}_hidden_input_${hiddenMenuItems.length}`, text: '', isInput: true, hint, initialValue, onValueChange });
+                }
+            };
+            props.hiddenMenu(scope);
+        } else {
+            hiddenMenuItems = props.hiddenMenu.map((item, i) => ({
+                id: `${props.id}_hidden_item_${i}`,
+                text: item.text,
+                onClick: item.onClick
+            }));
         }
         return items;
     }, [props.hiddenMenu, props.id]);
@@ -433,69 +452,58 @@ export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
     );
 };
 
-export const AzSettings: React.FC<any> = (props) => {
+const useShallowCompareSettings = (props: any) => {
     const context = useContext(AzNavRailContext);
-    const propsJson = JSON.stringify(props);
+    const prevProps = useRef<any>(null);
     useEffect(() => {
-        if (context) {
-            context.updateSettings(props);
+        if (!context) return;
+        const prev = prevProps.current;
+        let isSame = true;
+        if (!prev) {
+            isSame = false;
+        } else {
+            const keys1 = Object.keys(props);
+            const keys2 = Object.keys(prev);
+            if (keys1.length !== keys2.length) {
+                isSame = false;
+            } else {
+                for (const key of keys1) {
+                    if (props[key] !== prev[key]) {
+                        isSame = false;
+                        break;
+                    }
+                }
+            }
         }
-    }, [context, propsJson]);
+        if (!isSame) {
+            context.updateSettings(props);
+            prevProps.current = props;
+        }
+    }, [context, props]);
+};
+
+export const AzSettings: React.FC<any> = (props) => {
+    useShallowCompareSettings(props);
     return null;
 };
 
 export const AzTheme: React.FC<any> = (props) => {
-    const context = useContext(AzNavRailContext);
-    const propsJson = JSON.stringify(props);
-    useEffect(() => {
-        if (context) {
-            context.updateSettings(props);
-        }
-    }, [context, propsJson]);
+    useShallowCompareSettings(props);
     return null;
 };
 
 export const AzConfig: React.FC<any> = (props) => {
-    const context = useContext(AzNavRailContext);
-    const propsJson = JSON.stringify(props);
-    useEffect(() => {
-        if (context) {
-            context.updateSettings(props);
-        }
-    }, [context, propsJson]);
+    useShallowCompareSettings(props);
     return null;
 };
 
 export const AzAdvanced: React.FC<any> = (props) => {
-    const context = useContext(AzNavRailContext);
-    const propsJson = JSON.stringify(props);
-    useEffect(() => {
-        if (context) {
-            context.updateSettings(props);
-        }
-    }, [context, propsJson]);
+    useShallowCompareSettings(props);
     return null;
 };
 
 export const AzNestedRail: React.FC<AzNestedRailProps> = (props) => {
-    const parentContext = useContext(AzNavRailContext);
-    const [nestedItems, setNestedItems] = useState<AzNavItem[]>([]);
-
-    const nestedRegister = (item: AzNavItem) => {
-        setNestedItems((prev) => {
-            const idx = prev.findIndex(i => i.id === item.id);
-            if (idx >= 0) {
-                const newItems = [...prev];
-                newItems[idx] = item;
-                return newItems;
-            }
-            return [...prev, item];
-        });
-    };
-
-    const nestedUnregister = (id: string) => {
-        setNestedItems((prev) => prev.filter(i => i.id !== id));
-    };
+    const [nestedSettings, setNestedSettings] = React.useState<any>({});
 
     useAzItem({
         ...props,
@@ -514,19 +522,32 @@ export const AzNestedRail: React.FC<AzNestedRailProps> = (props) => {
         toggleOffText: '',
         isNestedRail: true,
         nestedRailAlignment: props.alignment || AzNestedRailAlignment.VERTICAL,
-        nestedRailItems: nestedItems,
+        nestedRailSettings: nestedSettings,
     });
 
-    const nestedContextValue = {
-        register: nestedRegister,
-        unregister: nestedUnregister,
-        updateSettings: parentContext?.updateSettings || (() => {}),
-    };
-
     return (
-        <AzNavRailContext.Provider value={nestedContextValue}>
-            {props.children}
-        </AzNavRailContext.Provider>
+        <AzNavRailContext.Consumer>
+            {(ctx) => {
+                if (!ctx) return null;
+                const isolatedContext = {
+                    ...ctx,
+                    updateSettings: (newSettings: any) => {
+                        setNestedSettings((prev: any) => {
+                            const merged = { ...prev, ...newSettings };
+                            // Shallow check to avoid infinite loops
+                            const keys = Object.keys(merged);
+                            const changed = keys.some(k => prev[k] !== merged[k]);
+                            return changed ? merged : prev;
+                        });
+                    }
+                };
+                return (
+                    <AzNavRailContext.Provider value={isolatedContext}>
+                        {props.children}
+                    </AzNavRailContext.Provider>
+                );
+            }}
+        </AzNavRailContext.Consumer>
     );
 };
 
@@ -534,12 +555,34 @@ export const AzHelpRailItem: React.FC<AzNavItemProps> = (props) => {
     useAzItem({
         ...props,
         isRailItem: true,
-        isHelpItem: true
+        isToggle: false,
+        isCycler: false,
+        isDivider: false,
+        collapseOnClick: true,
+        isHost: false,
+        isSubItem: false,
+        isExpanded: false,
+        toggleOnText: '',
+        toggleOffText: '',
+        isHelpItem: true,
+        shape: props.shape || AzButtonShape.NONE,
+        disabled: props.disabled || false
     });
     return null;
 };
 
 export const AzHelpSubItem: React.FC<AzSubItemProps> = (props) => {
+    const context = useContext(AzNavRailContext);
+
+    useEffect(() => {
+        if (context && props.hostId) {
+            if (!context.hasItem(props.hostId)) {
+                // To mirror Kotlin's IllegalArgumentException and prevent silent dropping
+                console.error(`AzHelpSubItem error: Host ID '${props.hostId}' not found in registry.`);
+            }
+        }
+    }, [context, props.hostId]);
+
     // Validate hostId contextually via useAzItem or parent scope,
     // Note: hostId validation on the web/rn side is handled by AzNavRail directly linking items.
     // For parity we strictly enforce passing hostId.
@@ -549,8 +592,18 @@ export const AzHelpSubItem: React.FC<AzSubItemProps> = (props) => {
     useAzItem({
         ...props,
         isRailItem: true,
+        isToggle: false,
+        isCycler: false,
+        isDivider: false,
+        collapseOnClick: true,
+        isHost: false,
+        isExpanded: false,
+        toggleOnText: '',
+        toggleOffText: '',
         isHelpItem: true,
-        isSubItem: true
+        isSubItem: true,
+        shape: props.shape || AzButtonShape.NONE,
+        disabled: props.disabled || false
     });
     return null;
 };

@@ -209,6 +209,16 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       setDslOverrides(prev => ({ ...prev, ...newSettings }));
   }, []);
 
+  const dividerCounter = useRef(0);
+  const getDividerId = useCallback(() => {
+      const currentItems = itemsRef.current || [];
+      return `divider_${currentItems.length + dividerCounter.current++}`;
+  }, []);
+
+  const hasItem = useCallback((id: string) => {
+      return (itemsRef.current || []).some(i => i.id === id);
+  }, []);
+
   const register = useCallback((item: AzNavItem) => {
     setItems((prev) => {
       const index = prev.findIndex((i) => i.id === item.id);
@@ -418,15 +428,15 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       }
   };
 
-  const renderRailItem = (item: AzNavItem, _index: number) => {
+  const renderRailItem = (item: AzNavItem, _index: number, overrideConfig: any = config) => {
       const isExpandedHost = hostStates[item.id] || false;
       const subItems = subItemsMap[item.id] || [];
       const isRect = item.shape === AzButtonShape.RECTANGLE;
       const commonProps = {
           key: item.id,
-          color: config.activeColor && (item.isChecked || item.id === currentDestination) ? config.activeColor : item.color,
-          shape: item.shape || config.defaultShape,
-          disabled: item.disabled,
+          color: overrideConfig.activeColor && (item.isChecked || item.id === currentDestination) ? overrideConfig.activeColor : item.color,
+          shape: item.shape || overrideConfig.defaultShape,
+          enabled: !item.disabled,
           style: { marginBottom: isRect ? 2 : AzNavRailDefaults.RailContentVerticalArrangement }
       };
 
@@ -623,7 +633,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   const flexDirection = config.dockingSide === AzDockingSide.RIGHT ? 'row-reverse' : 'row';
 
   return (
-    <AzNavRailContext.Provider value={{ register, unregister, updateSettings }}>
+    <AzNavRailContext.Provider value={{ register, unregister, updateSettings, getDividerId, hasItem }}>
         <View style={{ flexDirection: flexDirection, height: '100%', flex: 1 }}>
             <Animated.View
                 style={[
@@ -676,23 +686,45 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
 
             </Animated.View>
 
-            {items.filter(i => i.isNestedRail).map(item => (
-                <AzNestedRailPopup
-                    key={`nested-${item.id}`}
-                    visible={nestedRailVisible === item.id}
-                    onDismiss={() => setNestedRailVisible(null)}
-                    items={item.nestedRailItems || []}
-                    alignment={item.nestedRailAlignment || AzNestedRailAlignment.VERTICAL}
-                    renderItem={(subItem, idx) => (
-                        <View key={`wrap-${subItem.id}`} onLayout={(e) => handleItemLayout(subItem.id, e)}>
-                            {renderRailItem(subItem, idx)}
-                        </View>
-                    )}
-                    anchorPosition={anchorPosition}
-                    dockingSide={config.dockingSide}
-                    helpList={config.helpList}
-                />
-            ))}
+            {items.filter(i => i.isNestedRail).map(item => {
+                const effectiveConfig = item.nestedRailSettings ? { ...config, ...item.nestedRailSettings } : config;
+                return (
+                    <AzNestedRailPopup
+                        key={`nested-${item.id}`}
+                        visible={nestedRailVisible === item.id}
+                        onDismiss={() => setNestedRailVisible(null)}
+                        items={subItemsMap[item.id] || []}
+                        alignment={item.nestedRailAlignment || AzNestedRailAlignment.VERTICAL}
+                        renderItem={(subItem, idx) => {
+                            const isExpandedHost = hostStates[subItem.id] || false;
+                            const subItems = subItemsMap[subItem.id] || [];
+                            const isRect = subItem.shape === AzButtonShape.RECTANGLE;
+                            const nestedProps = {
+                                key: subItem.id,
+                                color: effectiveConfig.activeColor && (subItem.isChecked || subItem.id === currentDestination) ? effectiveConfig.activeColor : subItem.color,
+                                shape: subItem.shape || effectiveConfig.defaultShape,
+                                enabled: !subItem.disabled,
+                                style: { marginBottom: isRect ? 2 : AzNavRailDefaults.RailContentVerticalArrangement }
+                            };
+
+                            // Re-render subItem with nested settings logic injected via cloning
+                            // (We could refactor renderRailItem to take config, but this works inline for nested popups)
+                            const rendered = renderRailItem(subItem, idx);
+                            // Simple injection is tricky, best to let renderRailItem use the global config as it does,
+                            // but wait, AzNestedRailPopup just renders what we pass.
+                            // If we override the global `renderRailItem`, we need to change it to accept `config`.
+                            return (
+                                <View key={`wrap-${subItem.id}`} onLayout={(e) => handleItemLayout(subItem.id, e)}>
+                                    {renderRailItem(subItem, idx, effectiveConfig)}
+                                </View>
+                            );
+                        }}
+                        anchorPosition={anchorPosition}
+                        dockingSide={effectiveConfig.dockingSide}
+                        helpList={effectiveConfig.helpList}
+                    />
+                );
+            })}
 
             {/* Content with Safe Zones */}
             <View style={{ flex: 1, marginTop: '20%', marginBottom: '10%' }}>

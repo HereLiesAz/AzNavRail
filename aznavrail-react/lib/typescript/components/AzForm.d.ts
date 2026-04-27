@@ -13,6 +13,7 @@ export interface AzFormProps {
 export declare const AzForm: React.FC<AzFormProps>;
 interface AzFormEntryProps extends Omit<AzTextBoxProps, 'onSubmit' | 'submitButtonContent'> {
     name: string;
+    initialValue?: string;
 }
 export declare const AzFormEntry: React.FC<AzFormEntryProps>;
 export {};
