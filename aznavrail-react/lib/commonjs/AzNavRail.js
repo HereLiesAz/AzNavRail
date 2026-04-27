@@ -673,8 +673,8 @@ const AzNavRailInner = props => {
       }] : [],
       zIndex: isFloating ? 1000 : 1,
       height: isFloating ? 'auto' : '100%',
-      borderRightWidth: dockingSide === _types.AzDockingSide.LEFT ? 1 : 0,
-      borderLeftWidth: dockingSide === _types.AzDockingSide.RIGHT ? 1 : 0
+      borderRightWidth: config.dockingSide === _types.AzDockingSide.LEFT ? 1 : 0,
+      borderLeftWidth: config.dockingSide === _types.AzDockingSide.RIGHT ? 1 : 0
     }]
   }, panResponder.panHandlers), /*#__PURE__*/_react.default.createElement(_reactNative.TouchableOpacity, {
     onPress: handleHeaderTap,
