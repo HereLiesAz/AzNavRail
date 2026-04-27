@@ -34,7 +34,7 @@ const AzNavRail = ({
     onDismissInfoScreen,
     dockingSide = 'LEFT',
     noMenu = false,
-    activeClassifiers = new Set(),
+    activeClassifiers = new Set(), // Set of strings
     activeColor,
     translucentBackground,
     packRailButtons = false,
@@ -203,7 +203,8 @@ const AzNavRail = ({
       if (item.route && item.route === currentDestination) return true;
       if (item.classifiers && activeClassifiers.size > 0) {
           // Check intersection
-          return item.classifiers.some(c => activeClassifiers.has(c));
+          const classifiersArray = Array.isArray(item.classifiers) ? item.classifiers : Array.from(item.classifiers);
+          return classifiersArray.some(c => activeClassifiers.has(c));
       }
       if (item.id === currentDestination) return true;
       return false;
@@ -358,13 +359,10 @@ const AzNavRail = ({
       style={{ width: isExpanded ? expandedRailWidth : collapsedRailWidth, backgroundColor: translucentBackground || '#f0f0f0' }}
     >
       <div className="header" onClick={onToggle}>
-        {settings.appIcon ? (
-           <img src={settings.appIcon} alt="App Icon" className={getHeaderIconClass()} />
+        {displayAppNameInHeader ? (
+          <span>{appName}</span>
         ) : (
-           <div className={getHeaderIconClass()} style={{ backgroundColor: 'gray', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>Icon</div>
-        )}
-        {isExpanded && displayAppNameInHeader && (
-          <span style={{ marginLeft: 16, fontWeight: 'bold' }}>{appName}</span>
+          <img src="/app-icon.png" alt="App Icon" className={getHeaderIconClass()} />
         )}
       </div>
 
@@ -594,7 +592,7 @@ const AzNavRail = ({
             key={`nested-${item.id}`}
             visible={nestedRailVisibleId === item.id}
             onDismiss={() => setNestedRailVisibleId(null)}
-            items={item.nestedRailItems || subItemsMap[item.id] || []}
+            items={subItemsMap[item.id] || []}
             alignment={item.nestedRailAlignment || 'VERTICAL'}
             renderItem={(sub, idx) => (
                 <AzNavRailButton

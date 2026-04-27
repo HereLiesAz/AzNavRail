@@ -52,7 +52,6 @@ export const AzTutorialOverlay: React.FC<AzTutorialOverlayProps> = ({
 
   const isFullScreenHighlight = currentCard.highlight?.type === 'FullScreen';
 
-
   const handleAction = () => {
     if (currentCard.onAction) {
       currentCard.onAction();

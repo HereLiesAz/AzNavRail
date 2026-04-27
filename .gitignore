@@ -47,5 +47,4 @@ CueDetat/
 build*.txt
 test*.txt
 *output*.txt
-lib/
 aznavrail-react/lib/
