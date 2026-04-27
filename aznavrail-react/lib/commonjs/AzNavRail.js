@@ -709,7 +709,7 @@ const AzNavRailInner = props => {
       minWidth: 200
     }],
     numberOfLines: 1
-  }, "App Name")), isExpanded && !noMenu ? /*#__PURE__*/_react.default.createElement(_reactNative.ScrollView, {
+  }, "App Name")), isExpanded && !config.noMenu ? /*#__PURE__*/_react.default.createElement(_reactNative.ScrollView, {
     style: styles.menuContent
   }, menuItems.map(item => {
     if (item.isDivider) {
