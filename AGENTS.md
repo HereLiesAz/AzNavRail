@@ -1,5 +1,7 @@
 This document serves as a detailed specification and behavior guide for the AzNavRail component. All changes must be backward-compatible.
 
+**AGENT DIRECTIVE: YOU ARE EXPRESSLY FORBIDDEN from executing `setup_android.sh` or any other environment setup or initialization scripts. The environment is already correctly provisioned and snapshotted. Assume all dependencies, JDKs, and SDKs are installed and functioning.**
+
 - The rail buttons must be a transparent shape with a colored stroke.
 
 - Make sure the app icon is displayed at the top by default. It's the app icon up there by default,
@@ -135,4 +137,4 @@ In landscape mode, the RailItems are still way too small, and should be the same
 
 There's a quirky bug with the generated screen title. When I click an AzRailToggle or an AzRailCycler, it displays the text on the button that was present when clicked. It SHOULD display the text of the option that is active.
 
-As an option, I am changing how the AzNavRail switches from portrait to landscape mode. Instead of maintaining its position on the side of the screen, it maintains its position on the side of the device, and all elements of the rail each rotate in place. This may take some careful consideration for whatever logic is needed in different circumstances, like how RailHostItems are expanded, or the difference between the rail being docked on the right or left in portrait mode. Also--PAY ATTENTION--if the rail is docked to the left in portrait mode, rotating the device clockwise means it will be at the top of the screen. But if I rotate counter-clockwise, it should be at the bottom of the screen. And if I turned the device upside down, the rail should be on the left side. 
+As an option, I am changing how the AzNavRail switches from portrait to landscape mode. Instead of maintaining its position on the side of the screen, it maintains its position on the side of the device, and all elements of the rail each rotate in place. This may take some careful consideration for whatever logic is needed in different circumstances, like how RailHostItems are expanded, or the difference between the rail being docked on the right or left in portrait mode. Also--PAY ATTENTION--if the rail is docked to the left in portrait mode, rotating the device clockwise means it will be at the top of the screen. But if I rotate counter-clockwise, it should be at the bottom of the screen. And if I turned the device upside down, the rail should be on the left side.
