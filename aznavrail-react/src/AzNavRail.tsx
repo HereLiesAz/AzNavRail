@@ -340,8 +340,10 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       const screenHeight = screenHeightRef.current;
 
       let exactContentHeight = headerHeight;
-      Object.values(itemBounds).forEach(bounds => {
-          exactContentHeight += bounds.height;
+      effectiveRailItems.forEach(item => {
+          if (itemBounds[item.id]) {
+              exactContentHeight += itemBounds[item.id].height;
+          }
       });
       // Add padding
       exactContentHeight += 16;
