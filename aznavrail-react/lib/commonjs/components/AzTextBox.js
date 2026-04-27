@@ -25,15 +25,26 @@ const AzTextBox = ({
   showSubmitButton = true,
   containerStyle,
   backgroundColor = 'transparent',
-  backgroundOpacity = 1
+  backgroundOpacity = 1,
+  enabled = true,
+  initialValue = ''
 }) => {
   const isControlled = controlledValue !== undefined;
-  const [internalValue, setInternalValue] = (0, _react.useState)('');
+  const [internalValue, setInternalValue] = (0, _react.useState)(initialValue);
   const [isSecretVisible, setIsSecretVisible] = (0, _react.useState)(false);
   const [suggestions, setSuggestions] = (0, _react.useState)([]);
   const [showSuggestions, setShowSuggestions] = (0, _react.useState)(false);
+  (0, _react.useEffect)(() => {
+    if (!isControlled) {
+      setInternalValue(initialValue);
+    }
+  }, [initialValue, isControlled]);
   const currentValue = isControlled ? controlledValue : internalValue;
+
+  // Mutual exclusivity: A field cannot be multiline and secret.
+  const effectiveMultiline = secret ? false : multiline;
   const handleChange = text => {
+    if (!enabled) return;
     if (!isControlled) {
       setInternalValue(text);
     }
@@ -49,7 +60,10 @@ const AzTextBox = ({
     }
   };
   const handleSubmit = () => {
-    _HistoryManager.historyManager.addEntry(historyContext, currentValue);
+    if (!enabled) return;
+    if (!secret) {
+      _HistoryManager.historyManager.addEntry(historyContext, currentValue);
+    }
     if (onSubmit) onSubmit(currentValue);
     setShowSuggestions(false);
     if (!isControlled) {
@@ -57,6 +71,7 @@ const AzTextBox = ({
     }
   };
   const handleSuggestionClick = suggestion => {
+    if (!enabled) return;
     if (!isControlled) {
       setInternalValue(suggestion);
     }
@@ -65,11 +80,15 @@ const AzTextBox = ({
     }
     setShowSuggestions(false);
   };
-  const toggleSecret = () => setIsSecretVisible(!isSecretVisible);
+  const toggleSecret = () => {
+    if (!enabled) return;
+    setIsSecretVisible(!isSecretVisible);
+  };
   const clearText = () => handleChange('');
   return /*#__PURE__*/_react.default.createElement(_reactNative.View, {
     style: [styles.container, containerStyle, {
-      zIndex: showSuggestions ? 1000 : 1
+      zIndex: showSuggestions ? 1000 : 1,
+      opacity: enabled ? 1 : 0.5
     }]
   }, /*#__PURE__*/_react.default.createElement(_reactNative.View, {
     style: [styles.inputRow, {
@@ -81,18 +100,21 @@ const AzTextBox = ({
   }, /*#__PURE__*/_react.default.createElement(_reactNative.TextInput, {
     value: currentValue,
     onChangeText: handleChange,
-    placeholder: hint,
+    placeholder: currentValue.trim().length > 0 ? '' : hint,
     placeholderTextColor: outlineColor + '80',
     secureTextEntry: secret && !isSecretVisible,
-    multiline: multiline,
+    multiline: effectiveMultiline,
+    editable: enabled,
     style: [styles.input, {
       color: outlineColor,
-      minHeight: multiline ? 40 : 40,
-      height: multiline ? undefined : 40
+      minHeight: effectiveMultiline ? 40 : 40,
+      height: effectiveMultiline ? undefined : 40,
+      textAlignVertical: effectiveMultiline ? 'top' : 'center'
     }]
   }), currentValue.length > 0 && /*#__PURE__*/_react.default.createElement(_reactNative.TouchableOpacity, {
     onPress: secret ? toggleSecret : clearText,
-    style: styles.iconButton
+    style: styles.iconButton,
+    disabled: !enabled
   }, /*#__PURE__*/_react.default.createElement(_reactNative.Text, {
     style: {
       color: outlineColor,
@@ -100,6 +122,7 @@ const AzTextBox = ({
     }
   }, secret ? isSecretVisible ? 'HIDE' : 'SHOW' : 'X')), showSubmitButton && /*#__PURE__*/_react.default.createElement(_reactNative.TouchableOpacity, {
     onPress: handleSubmit,
+    disabled: !enabled,
     style: [styles.submitButton, {
       backgroundColor: backgroundColor,
       borderColor: outlineColor,

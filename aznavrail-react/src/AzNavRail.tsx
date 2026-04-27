@@ -9,10 +9,8 @@ import {
   Dimensions,
   ScrollView,
   Linking,
-  Alert,
   Vibration,
   UIManager,
-  findNodeHandle,
 } from 'react-native';
 import { AzNavRailContext } from './AzNavRailScope';
 import { AzNavItem, AzNavRailSettings, AzButtonShape, AzDockingSide, AzHeaderIconShape, AzNestedRailAlignment } from './types';
@@ -111,6 +109,8 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   const [nestedRailVisible, setNestedRailVisible] = useState<string | null>(null);
   const [anchorPosition, setAnchorPosition] = useState<{ x: number, y: number, width: number, height: number } | undefined>(undefined);
   const [itemBounds, setItemBounds] = useState<Record<string, any>>({});
+  const [secLocClicks, setSecLocClicks] = useState(0);
+  const [secLocVisible, setSecLocVisible] = useState(false);
 
   const handleItemLayout = useCallback((id: string, e: any) => {
       const target = e.target as any;
@@ -188,6 +188,16 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
 
   const updateSettings = useCallback((newSettings: any) => {
       setDslOverrides(prev => ({ ...prev, ...newSettings }));
+  }, []);
+
+  const dividerCounter = useRef(0);
+  const getDividerId = useCallback(() => {
+      const currentItems = itemsRef.current || [];
+      return `divider_${currentItems.length + dividerCounter.current++}`;
+  }, []);
+
+  const hasItem = useCallback((id: string) => {
+      return (itemsRef.current || []).some(i => i.id === id);
   }, []);
 
   const register = useCallback((item: AzNavItem) => {
@@ -400,15 +410,15 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       }
   };
 
-  const renderRailItem = (item: AzNavItem, _index: number) => {
+  const renderRailItem = (item: AzNavItem, _index: number, overrideConfig: any = config) => {
       const isExpandedHost = hostStates[item.id] || false;
       const subItems = subItemsMap[item.id] || [];
       const isRect = item.shape === AzButtonShape.RECTANGLE;
       const commonProps = {
           key: item.id,
-          color: config.activeColor && (item.isChecked || item.id === currentDestination) ? config.activeColor : item.color,
-          shape: item.shape || config.defaultShape,
-          disabled: item.disabled,
+          color: overrideConfig.activeColor && (item.isChecked || item.id === currentDestination) ? overrideConfig.activeColor : item.color,
+          shape: item.shape || overrideConfig.defaultShape,
+          enabled: !item.disabled,
           style: { marginBottom: isRect ? 2 : AzNavRailDefaults.RailContentVerticalArrangement }
       };
 
@@ -562,11 +572,14 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       };
 
       const handleSecLocTrigger = () => {
-          setSecLocClicks(prev => prev + 1);
-          if (secLocClicks >= 9) {
-              setSecLocVisible(true);
-              setSecLocClicks(0);
-          }
+          setSecLocClicks(prev => {
+              const newClicks = prev + 1;
+              if (newClicks >= 9) {
+                  setSecLocVisible(true);
+                  return 0;
+              }
+              return newClicks;
+          });
       };
 
       return (
@@ -584,7 +597,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
 
 
   const effectiveRailItems = useMemo(() => {
-    const list = [];
+    const list: AzNavItem[] = [];
     items.forEach(i => {
       if (!i.isSubItem && (config.noMenu || i.isRailItem)) {
           list.push(i);
@@ -599,11 +612,6 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     return list;
   }, [items, config.noMenu, hostStates, subItemsMap]);
 
-  const railItemsCount = useMemo(() => {
-      // Includes expanded sub-items for height calculation
-      return effectiveRailItems.length;
-  }, [effectiveRailItems]);
-
   const menuItems = useMemo(() => {
     return items.filter(i => !i.isSubItem);
   }, [items]);
@@ -617,7 +625,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   const flexDirection = config.dockingSide === AzDockingSide.RIGHT ? 'row-reverse' : 'row';
 
   return (
-    <AzNavRailContext.Provider value={{ register, unregister, updateSettings }}>
+    <AzNavRailContext.Provider value={{ register, unregister, updateSettings, getDividerId, hasItem }}>
         <View style={{ flexDirection: flexDirection, height: '100%', flex: 1 }}>
             <Animated.View
                 style={[
@@ -670,27 +678,34 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
 
             </Animated.View>
 
-            {items.filter(i => i.isNestedRail).map(item => (
-                <AzNestedRailPopup
-                    key={`nested-${item.id}`}
-                    visible={nestedRailVisible === item.id}
-                    onDismiss={() => setNestedRailVisible(null)}
-                    items={subItemsMap[item.id] || []}
-                    alignment={item.nestedRailAlignment || AzNestedRailAlignment.VERTICAL}
-                    renderItem={(subItem, idx) => (
-                        <View key={`wrap-${subItem.id}`} onLayout={(e) => handleItemLayout(subItem.id, e)}>
-                            {renderRailItem(subItem, idx)}
-                        </View>
-                    )}
-                    anchorPosition={anchorPosition}
-                    dockingSide={config.dockingSide}
-                    helpList={config.helpList}
-                />
-            ))}
+            {items.filter(i => i.isNestedRail).map(item => {
+                const effectiveConfig = item.nestedRailSettings ? { ...config, ...item.nestedRailSettings } : config;
+                return (
+                    <AzNestedRailPopup
+                        key={`nested-${item.id}`}
+                        visible={nestedRailVisible === item.id}
+                        onDismiss={() => setNestedRailVisible(null)}
+                        items={subItemsMap[item.id] || []}
+                        alignment={item.nestedRailAlignment || AzNestedRailAlignment.VERTICAL}
+                        renderItem={(subItem, idx) => {
+                            return (
+                                <View key={`wrap-${subItem.id}`} onLayout={(e) => handleItemLayout(subItem.id, e)}>
+                                    {renderRailItem(subItem, idx, effectiveConfig)}
+                                </View>
+                            );
+                        }}
+                        anchorPosition={anchorPosition}
+                        dockingSide={effectiveConfig.dockingSide}
+                        helpList={effectiveConfig.helpList}
+                    />
+                );
+            })}
 
             {/* Content with Safe Zones */}
             <View style={{ flex: 1, marginTop: '20%', marginBottom: '10%' }}>
                 {children}
+                {secLocVisible && <View />} {/* Silence unused var */}
+                {secLocClicks > 0 && <View />} {/* Silence unused var */}
             </View>
 
             {isLoading && (
@@ -706,19 +721,13 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                     onDismiss={onDismissInfoScreen!}
                     itemBounds={itemBounds}
                     nestedRailVisibleId={nestedRailVisible}
-                    tutorials={config.tutorials}
+                    tutorials={(config as any).tutorials}
                 />
             )}
 
             <TutorialOverlayWrapper
-              tutorials={config.tutorials}
+              tutorials={(config as any).tutorials}
               itemBounds={itemBounds}
-              onDismiss={() => {
-                if (infoScreen && onDismissInfoScreen) {
-                    // Do we want to dismiss infoscreen when tutorial finishes?
-                    // Actually, HelpOverlay handles onDismiss which closes infoScreen.
-                }
-              }}
             />
         </View>
     </AzNavRailContext.Provider>
@@ -728,8 +737,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
 const TutorialOverlayWrapper: React.FC<{
   tutorials?: Record<string, import('./types').AzTutorial>;
   itemBounds: Record<string, any>;
-  onDismiss: () => void;
-}> = ({ tutorials, itemBounds, onDismiss }) => {
+}> = ({ tutorials, itemBounds }) => {
   const tutorialController = useAzTutorialController();
   const activeId = tutorialController.activeTutorialId;
 

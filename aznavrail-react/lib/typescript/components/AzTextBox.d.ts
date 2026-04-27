@@ -5,6 +5,7 @@ export declare const AzTextBoxDefaults: {
 };
 export interface AzTextBoxProps {
     value?: string;
+    initialValue?: string;
     onValueChange?: (text: string) => void;
     hint?: string;
     outlined?: boolean;
@@ -19,6 +20,7 @@ export interface AzTextBoxProps {
     containerStyle?: ViewStyle;
     backgroundColor?: string;
     backgroundOpacity?: number;
+    enabled?: boolean;
 }
 export declare const AzTextBox: React.FC<AzTextBoxProps>;
 //# sourceMappingURL=AzTextBox.d.ts.map

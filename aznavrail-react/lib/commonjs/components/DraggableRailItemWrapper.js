@@ -55,7 +55,7 @@ const DraggableRailItemWrapper = ({
       pan.setOffset({
         x: 0,
         // Constrain horizontal
-        y: pan.y._value
+        y: pan.y.__getValue()
       });
       onDragStart(index);
     },

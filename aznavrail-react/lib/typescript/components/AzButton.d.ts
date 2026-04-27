@@ -1,15 +1,19 @@
 import React from 'react';
 import { ViewStyle } from 'react-native';
 import { AzButtonShape } from '../types';
-interface AzButtonProps {
+export interface AzButtonProps {
     text: string;
     onClick: () => void;
     color?: string;
+    fillColor?: string;
+    textColor?: string;
     shape?: AzButtonShape;
     style?: ViewStyle;
-    disabled?: boolean;
+    enabled?: boolean;
+    isLoading?: boolean;
     testID?: string;
+    hasCustomContent?: boolean;
+    content?: React.ReactNode;
 }
 export declare const AzButton: React.FC<AzButtonProps>;
-export {};
 //# sourceMappingURL=AzButton.d.ts.map

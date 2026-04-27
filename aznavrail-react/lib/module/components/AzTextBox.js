@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { historyManager } from '../util/HistoryManager';
 export const AzTextBoxDefaults = {
@@ -18,15 +18,26 @@ export const AzTextBox = ({
   showSubmitButton = true,
   containerStyle,
   backgroundColor = 'transparent',
-  backgroundOpacity = 1
+  backgroundOpacity = 1,
+  enabled = true,
+  initialValue = ''
 }) => {
   const isControlled = controlledValue !== undefined;
-  const [internalValue, setInternalValue] = useState('');
+  const [internalValue, setInternalValue] = useState(initialValue);
   const [isSecretVisible, setIsSecretVisible] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  useEffect(() => {
+    if (!isControlled) {
+      setInternalValue(initialValue);
+    }
+  }, [initialValue, isControlled]);
   const currentValue = isControlled ? controlledValue : internalValue;
+
+  // Mutual exclusivity: A field cannot be multiline and secret.
+  const effectiveMultiline = secret ? false : multiline;
   const handleChange = text => {
+    if (!enabled) return;
     if (!isControlled) {
       setInternalValue(text);
     }
@@ -42,7 +53,10 @@ export const AzTextBox = ({
     }
   };
   const handleSubmit = () => {
-    historyManager.addEntry(historyContext, currentValue);
+    if (!enabled) return;
+    if (!secret) {
+      historyManager.addEntry(historyContext, currentValue);
+    }
     if (onSubmit) onSubmit(currentValue);
     setShowSuggestions(false);
     if (!isControlled) {
@@ -50,6 +64,7 @@ export const AzTextBox = ({
     }
   };
   const handleSuggestionClick = suggestion => {
+    if (!enabled) return;
     if (!isControlled) {
       setInternalValue(suggestion);
     }
@@ -58,11 +73,15 @@ export const AzTextBox = ({
     }
     setShowSuggestions(false);
   };
-  const toggleSecret = () => setIsSecretVisible(!isSecretVisible);
+  const toggleSecret = () => {
+    if (!enabled) return;
+    setIsSecretVisible(!isSecretVisible);
+  };
   const clearText = () => handleChange('');
   return /*#__PURE__*/React.createElement(View, {
     style: [styles.container, containerStyle, {
-      zIndex: showSuggestions ? 1000 : 1
+      zIndex: showSuggestions ? 1000 : 1,
+      opacity: enabled ? 1 : 0.5
     }]
   }, /*#__PURE__*/React.createElement(View, {
     style: [styles.inputRow, {
@@ -74,18 +93,21 @@ export const AzTextBox = ({
   }, /*#__PURE__*/React.createElement(TextInput, {
     value: currentValue,
     onChangeText: handleChange,
-    placeholder: hint,
+    placeholder: currentValue.trim().length > 0 ? '' : hint,
     placeholderTextColor: outlineColor + '80',
     secureTextEntry: secret && !isSecretVisible,
-    multiline: multiline,
+    multiline: effectiveMultiline,
+    editable: enabled,
     style: [styles.input, {
       color: outlineColor,
-      minHeight: multiline ? 40 : 40,
-      height: multiline ? undefined : 40
+      minHeight: effectiveMultiline ? 40 : 40,
+      height: effectiveMultiline ? undefined : 40,
+      textAlignVertical: effectiveMultiline ? 'top' : 'center'
     }]
   }), currentValue.length > 0 && /*#__PURE__*/React.createElement(TouchableOpacity, {
     onPress: secret ? toggleSecret : clearText,
-    style: styles.iconButton
+    style: styles.iconButton,
+    disabled: !enabled
   }, /*#__PURE__*/React.createElement(Text, {
     style: {
       color: outlineColor,
@@ -93,6 +115,7 @@ export const AzTextBox = ({
     }
   }, secret ? isSecretVisible ? 'HIDE' : 'SHOW' : 'X')), showSubmitButton && /*#__PURE__*/React.createElement(TouchableOpacity, {
     onPress: handleSubmit,
+    disabled: !enabled,
     style: [styles.submitButton, {
       backgroundColor: backgroundColor,
       borderColor: outlineColor,
