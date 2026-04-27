@@ -1,0 +1,159 @@
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+export const HelpOverlay = ({
+  items,
+  onDismiss,
+  helpList,
+  itemBounds,
+  nestedRailVisibleId = null
+}) => {
+  const [expandedItemId, setExpandedItemId] = useState(null);
+  const [cardBounds, setCardBounds] = useState({});
+  const isNestedRailOpen = nestedRailVisibleId !== null;
+  const paddingLeft = isNestedRailOpen ? 240 : 120;
+  const allItems = React.useMemo(() => {
+    const list = [...items];
+    if (nestedRailVisibleId) {
+      const nestedHost = items.find(i => i.id === nestedRailVisibleId);
+      if (nestedHost !== null && nestedHost !== void 0 && nestedHost.nestedRailItems) {
+        list.push(...nestedHost.nestedRailItems);
+      }
+    }
+    return list;
+  }, [items, nestedRailVisibleId]);
+  const [scrollY, setScrollY] = useState(0);
+  const itemsWithInfo = React.useMemo(() => {
+    return allItems.filter(i => {
+      var _i$info, _helpList$i$id;
+      const infoText = (_i$info = i.info) === null || _i$info === void 0 ? void 0 : _i$info.trim();
+      const listText = helpList === null || helpList === void 0 || (_helpList$i$id = helpList[i.id]) === null || _helpList$i$id === void 0 ? void 0 : _helpList$i$id.trim();
+      return infoText || listText;
+    });
+  }, [allItems, helpList]);
+  return /*#__PURE__*/React.createElement(View, {
+    style: styles.overlay
+  }, /*#__PURE__*/React.createElement(View, {
+    style: StyleSheet.absoluteFill,
+    pointerEvents: "none"
+  }, itemsWithInfo.map(item => {
+    const navBounds = itemBounds[item.id];
+    const descBounds = cardBounds[item.id];
+    if (navBounds && descBounds) {
+      const startX = navBounds.x + navBounds.width;
+      const startY = navBounds.y + navBounds.height / 2;
+      const endX = descBounds.x;
+      // Apply scroll offset to description card Y coordinate for lines
+      const endY = descBounds.y + descBounds.height / 2 - scrollY;
+      const elbowX = (startX + endX) / 2;
+      return /*#__PURE__*/React.createElement(React.Fragment, {
+        key: `line-${item.id}`
+      }, /*#__PURE__*/React.createElement(View, {
+        style: {
+          position: 'absolute',
+          left: Math.min(startX, elbowX),
+          top: startY,
+          width: Math.abs(elbowX - startX),
+          height: 2,
+          backgroundColor: 'yellow'
+        }
+      }), /*#__PURE__*/React.createElement(View, {
+        style: {
+          position: 'absolute',
+          left: elbowX,
+          top: Math.min(startY, endY),
+          width: 2,
+          height: Math.abs(endY - startY),
+          backgroundColor: 'yellow'
+        }
+      }), /*#__PURE__*/React.createElement(View, {
+        style: {
+          position: 'absolute',
+          left: Math.min(elbowX, endX),
+          top: endY,
+          width: Math.abs(endX - elbowX),
+          height: 2,
+          backgroundColor: 'yellow'
+        }
+      }));
+    }
+    return null;
+  })), /*#__PURE__*/React.createElement(TouchableOpacity, {
+    style: StyleSheet.absoluteFill,
+    onPress: onDismiss,
+    activeOpacity: 1
+  }), /*#__PURE__*/React.createElement(ScrollView, {
+    style: styles.scrollView,
+    contentContainerStyle: [styles.scrollContent, {
+      paddingLeft
+    }],
+    scrollEventThrottle: 16,
+    onScroll: e => setScrollY(e.nativeEvent.contentOffset.y)
+  }, itemsWithInfo.map(i => {
+    var _i$info2, _helpList$i$id2, _i$text;
+    const infoText = (_i$info2 = i.info) === null || _i$info2 === void 0 ? void 0 : _i$info2.trim();
+    const listText = helpList === null || helpList === void 0 || (_helpList$i$id2 = helpList[i.id]) === null || _helpList$i$id2 === void 0 ? void 0 : _helpList$i$id2.trim();
+    const titleText = ((_i$text = i.text) === null || _i$text === void 0 ? void 0 : _i$text.trim()) || `Item ${i.id}`;
+    const isExpanded = expandedItemId === i.id;
+    return /*#__PURE__*/React.createElement(TouchableOpacity, {
+      key: i.id,
+      style: styles.card,
+      activeOpacity: 0.8,
+      onPress: () => setExpandedItemId(isExpanded ? null : i.id),
+      onLayout: e => {
+        const layout = e.nativeEvent.layout;
+        setCardBounds(prev => ({
+          ...prev,
+          [i.id]: layout
+        }));
+      }
+    }, /*#__PURE__*/React.createElement(Text, {
+      style: styles.cardTitle
+    }, titleText), infoText && /*#__PURE__*/React.createElement(Text, {
+      style: styles.cardText,
+      numberOfLines: isExpanded ? undefined : 1
+    }, infoText), listText && /*#__PURE__*/React.createElement(Text, {
+      style: [styles.cardText, infoText ? {
+        marginTop: 8
+      } : {}],
+      numberOfLines: isExpanded ? undefined : 1
+    }, listText), isExpanded && /*#__PURE__*/React.createElement(Text, {
+      style: styles.tapToCollapse
+    }, "Tap to collapse"));
+  })));
+};
+const styles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    zIndex: 9999
+  },
+  scrollView: {
+    flex: 1
+  },
+  scrollContent: {
+    paddingVertical: 32,
+    paddingRight: 16
+  },
+  card: {
+    backgroundColor: '#333',
+    padding: 16,
+    marginBottom: 16,
+    borderRadius: 8
+  },
+  cardTitle: {
+    color: 'yellow',
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginBottom: 4
+  },
+  cardText: {
+    color: 'white',
+    fontSize: 14
+  },
+  tapToCollapse: {
+    color: 'gray',
+    fontSize: 12,
+    marginTop: 8
+  }
+});
+//# sourceMappingURL=HelpOverlay.js.map

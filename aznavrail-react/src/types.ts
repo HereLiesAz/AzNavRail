@@ -22,6 +22,8 @@ export enum AzNestedRailAlignment {
 }
 
 export interface AzNavRailSettings {
+  appName?: string;
+  appIcon?: any;
   displayAppNameInHeader?: boolean;
   packRailButtons?: boolean;
   expandedRailWidth?: number;
@@ -40,9 +42,44 @@ export interface AzNavRailSettings {
   translucentBackground?: string;
   secLoc?: string;
   usePhysicalDocking?: boolean;
-  activeClassifiers?: string[];
+  activeClassifiers?: Set<string>;
   onItemGloballyPositioned?: (id: string, bounds: any) => void;
   helpList?: Record<string, string>;
+  tutorials?: Record<string, AzTutorial>;
+}
+
+export type AzHighlight =
+  | { type: 'Area'; bounds: { x: number; y: number; width: number; height: number } }
+  | { type: 'Item'; id: string }
+  | { type: 'FullScreen' }
+  | { type: 'None' };
+
+export interface AzCard {
+  title: string;
+  text: string;
+  highlight?: AzHighlight;
+  actionText?: string;
+  onAction?: () => void;
+}
+
+export interface AzScene {
+  id: string;
+  content: () => React.ReactNode;
+  cards: AzCard[];
+  onComplete?: () => void;
+}
+
+export interface AzTutorial {
+  scenes: AzScene[];
+}
+
+export interface AzTutorialController {
+  activeTutorialId: string | null;
+  readTutorials: string[];
+  startTutorial: (id: string) => void;
+  endTutorial: () => void;
+  markTutorialRead: (id: string) => void;
+  isTutorialRead: (id: string) => boolean;
 }
 
 export interface HiddenMenuItem {
@@ -59,7 +96,7 @@ export interface HiddenMenuItem {
 
 export interface AzNavItem {
   id: string;
-  text: string;
+  text?: string;
   menuText?: string;
   route?: string;
   screenTitle?: string;
@@ -97,17 +134,18 @@ export interface AzNavItem {
   // Info/Help
   info?: string;
   // New properties for parity
-  classifiers?: string[];
+  classifiers?: Set<string>;
   content?: any;
   isNestedRail?: boolean;
   isHelpItem?: boolean;
   nestedRailAlignment?: AzNestedRailAlignment;
   nestedRailItems?: AzNavItem[];
+  keepNestedRailOpen?: boolean;
 }
 
 export interface AzNavItemProps {
   id: string;
-  text: string;
+  text?: string;
   menuText?: string;
   route?: string;
   screenTitle?: string;
@@ -120,7 +158,7 @@ export interface AzNavItemProps {
   shape?: AzButtonShape;
   info?: string;
   content?: any;
-  classifiers?: string[];
+  classifiers?: Set<string>;
 }
 
 export interface AzToggleProps extends AzNavItemProps {
@@ -159,14 +197,17 @@ export interface AzRailRelocItemProps extends AzSubItemProps {
     onHiddenMenuDismiss?: () => void;
     nestedRailAlignment?: AzNestedRailAlignment;
     nestedContent?: React.ReactNode;
+    keepNestedRailOpen?: boolean;
 }
 
 export interface AzNestedRailProps extends AzNavItemProps {
     alignment?: AzNestedRailAlignment;
     children: React.ReactNode;
+    keepNestedRailOpen?: boolean;
 }
 
 export interface HiddenMenuScope {
+    parentId: string;
     listItem: (text: string, action: string | (() => void)) => void;
     /**
      * Adds a text input item to the hidden menu.
@@ -187,7 +228,7 @@ export interface AzItemConfig {
   isHost?: boolean;
   isSubItem?: boolean;
   hostId?: string | null;
-  classifiers?: string[];
+  classifiers?: Set<string>;
   onFocus?: () => void;
   content?: any;
   color?: string;

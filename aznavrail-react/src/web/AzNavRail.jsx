@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import './AzNavRail.css';
 import MenuItem from './MenuItem';
 import AzNavRailButton from './AzNavRailButton';
 import HelpOverlay from './HelpOverlay';
 import AzNestedRailPopup from './AzNestedRailPopup';
-import { RelocItemHandler } from '../utils/RelocItemHandler';
+import { RelocItemHandler } from '../util/RelocItemHandler';
 import AzDivider from './AzDivider';
 import AzTextBox from './AzTextBox';
 
@@ -34,7 +34,7 @@ const AzNavRail = ({
     onDismissInfoScreen,
     dockingSide = 'LEFT',
     noMenu = false,
-    activeClassifiers = [], // Array of strings
+    activeClassifiers = new Set(),
     activeColor,
     translucentBackground,
     packRailButtons = false,
@@ -121,6 +121,12 @@ const AzNavRail = ({
     return map;
   }, [localNavItems]);
 
+  const getEffectiveSubItems = useCallback((item) => {
+    const subItemsFromMap = subItemsMap[item.id] || [];
+    const subItemsFromProp = item.items || [];
+    return subItemsFromMap.length > 0 ? subItemsFromMap : subItemsFromProp;
+  }, [subItemsMap]);
+
   const cyclerTimers = useRef({});
   const dragStartY = useRef(0);
   const longPressTimer = useRef(null);
@@ -195,9 +201,9 @@ const AzNavRail = ({
 
   const checkIsActive = (item) => {
       if (item.route && item.route === currentDestination) return true;
-      if (item.classifiers && activeClassifiers.length > 0) {
+      if (item.classifiers && activeClassifiers.size > 0) {
           // Check intersection
-          return item.classifiers.some(c => activeClassifiers.includes(c));
+          return item.classifiers.some(c => activeClassifiers.has(c));
       }
       if (item.id === currentDestination) return true;
       return false;
@@ -285,11 +291,9 @@ const AzNavRail = ({
         ? { ...item, selectedOption: cyclerStates[item.id]?.displayedOption }
         : item;
 
-      const subItemsFromMap = subItemsMap[item.id] || [];
-      const subItemsFromProp = item.items || [];
-      const subItems = subItemsFromMap.length > 0 ? subItemsFromMap : subItemsFromProp;
+      const effectiveSubItems = getEffectiveSubItems(item);
 
-      const isHost = item.isHost || subItems.length > 0;
+      const isHost = item.isHost || effectiveSubItems.length > 0;
       const isHostExpanded = hostStates[item.id];
       const isActive = checkIsActive(item);
 
@@ -307,7 +311,7 @@ const AzNavRail = ({
               />
               {isHost && isHostExpanded && (
                   <div className="az-nav-rail-subitems">
-                      {subItems.map(subItem => renderMenuItem(subItem, depth + 1))}
+                      {effectiveSubItems.map(subItem => renderMenuItem(subItem, depth + 1))}
                   </div>
               )}
           </React.Fragment>
@@ -320,15 +324,15 @@ const AzNavRail = ({
         if (item.isRailItem || item.items) {
             visible.push(item);
             if (hostStates[item.id]) {
-               const subItems = subItemsMap[item.id] || [];
-               subItems.forEach(sub => {
+               const mapSubs = getEffectiveSubItems(item);
+               mapSubs.forEach(sub => {
                    if (sub.isRailItem) visible.push(sub);
                });
             }
         }
     });
     return visible;
-  }, [navItems, hostStates, subItemsMap]);
+  }, [navItems, hostStates, subItemsMap, getEffectiveSubItems]);
 
   const effectiveRailItems = useMemo(() => {
     return navItems.filter(item => item.isRailItem || item.items || subItemsMap[item.id]);
@@ -351,13 +355,16 @@ const AzNavRail = ({
     <>
     <div
       className={`az-nav-rail ${isExpanded ? 'expanded' : 'collapsed'} ${dockingSide === 'RIGHT' ? 'right' : ''}`}
-      style={{ width: isExpanded ? expandedRailWidth : collapsedRailWidth }}
+      style={{ width: isExpanded ? expandedRailWidth : collapsedRailWidth, backgroundColor: translucentBackground || '#f0f0f0' }}
     >
       <div className="header" onClick={onToggle}>
-        {displayAppNameInHeader ? (
-          <span>{appName}</span>
+        {settings.appIcon ? (
+           <img src={settings.appIcon} alt="App Icon" className={getHeaderIconClass()} />
         ) : (
-          <img src="/app-icon.png" alt="App Icon" className={getHeaderIconClass()} />
+           <div className={getHeaderIconClass()} style={{ backgroundColor: 'gray', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>Icon</div>
+        )}
+        {isExpanded && displayAppNameInHeader && (
+          <span style={{ marginLeft: 16, fontWeight: 'bold' }}>{appName}</span>
         )}
       </div>
 
@@ -507,12 +514,7 @@ const AzNavRail = ({
                                     return;
                                 }
                                 if (item.items || subItemsMap[item.id]) {
-                                    if (infoScreen) {
-                                        toggleHost(item);
-                                    } else {
-                                        setIsExpanded(true);
-                                        setHostStates(prev => ({ ...prev, [item.id]: true }));
-                                    }
+                                    toggleHost(item);
                                 }
                             }}
                             infoScreen={infoScreen}
@@ -583,7 +585,7 @@ const AzNavRail = ({
             railWidth={collapsedRailWidth}
             onDismiss={onDismissInfoScreen}
             nestedRailVisibleId={nestedRailVisibleId}
-            helpList={helpList}
+            helpList={settings?.helpList || {}}
         />
     )}
 
@@ -592,7 +594,7 @@ const AzNavRail = ({
             key={`nested-${item.id}`}
             visible={nestedRailVisibleId === item.id}
             onDismiss={() => setNestedRailVisibleId(null)}
-            items={subItemsMap[item.id] || []}
+            items={item.nestedRailItems || subItemsMap[item.id] || []}
             alignment={item.nestedRailAlignment || 'VERTICAL'}
             renderItem={(sub, idx) => (
                 <AzNavRailButton

@@ -1,4 +1,4 @@
-name: Publish to GitHub Packages
+name: Publish React to GitHub Packages
 
 on:
   release:
@@ -21,4 +21,4 @@ jobs:
       - run: cd aznavrail-react && yarn build
       - run: cd aznavrail-react && yarn npm publish --access public
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

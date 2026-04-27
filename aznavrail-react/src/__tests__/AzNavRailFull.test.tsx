@@ -4,8 +4,8 @@ import { Text } from 'react-native';
 import { AzNavRail } from '../AzNavRail';
 import { AzRailHostItem, AzRailSubItem, AzRailRelocItem } from '../AzNavRailScope';
 import { AzButtonShape } from '../types';
-import { AzButton } from '../native/AzButton';
-import { DraggableRailItemWrapper } from '../native/DraggableRailItemWrapper';
+import { AzButton } from '../components/AzButton';
+import { DraggableRailItemWrapper } from '../components/DraggableRailItemWrapper';
 
 describe('AzNavRail Full Suite', () => {
   beforeEach(() => {
@@ -17,15 +17,15 @@ describe('AzNavRail Full Suite', () => {
       jest.clearAllMocks();
   });
 
-  it('renders loading overlay at root level when isLoading is true', async () => {
+  it('renders loading overlay at root level when isLoading is true', () => {
     let component: renderer.ReactTestRenderer;
-    await renderer.act(async () => {
-      component = renderer.create(
+    renderer.act(() => {
+component = renderer.create(
         <AzNavRail isLoading={true}>
           <Text>Content</Text>
         </AzNavRail>
       );
-    });
+});
     const root = component.root;
 
     // Find view with zIndex 10000
@@ -37,31 +37,31 @@ describe('AzNavRail Full Suite', () => {
     expect(loader.length).toBe(1);
 
     // Explicitly unmount to avoid warnings
-    await renderer.act(async () => {
-        component.unmount();
+    renderer.act(() => {
+      component.unmount();
     });
   });
 
-  it('handles RelocItemHandler drag and drop reordering', async () => {
+  it('handles RelocItemHandler drag and drop reordering', () => {
     const mockOnRelocate = jest.fn();
 
     let component: renderer.ReactTestRenderer;
-    await renderer.act(async () => {
-        component = renderer.create(
+    renderer.act(() => {
+component = renderer.create(
           <AzNavRail initiallyExpanded={false}>
             <AzRailHostItem id="host" text="Host" />
             <AzRailRelocItem id="reloc1" hostId="host" text="Reloc1" onRelocate={mockOnRelocate} />
             <AzRailRelocItem id="reloc2" hostId="host" text="Reloc2" />
           </AzNavRail>
         );
-    });
+});
 
     const root = component.root;
     const buttons = root.findAllByType(AzButton);
     const hostBtn = buttons.find((b) => b.props.text === 'Host');
 
     // Expand host
-    await renderer.act(async () => {
+    renderer.act(() => {
         hostBtn.props.onClick();
     });
 
@@ -74,7 +74,7 @@ describe('AzNavRail Full Suite', () => {
     // Find its index in the items array. The wrapper gets index from mapping over `effectiveRailItems`
     const index = firstWrapper.props.index;
 
-    await renderer.act(async () => {
+    renderer.act(() => {
         // Simulate dragging down past the second item (dy = 60)
         firstWrapper.props.onDragMove(60, index);
 
@@ -87,28 +87,28 @@ describe('AzNavRail Full Suite', () => {
     expect(mockOnRelocate).toHaveBeenCalledWith(0, 1, ['reloc2', 'reloc1']);
 
     // Explicitly unmount to avoid warnings
-    await renderer.act(async () => {
-        component.unmount();
+    renderer.act(() => {
+      component.unmount();
     });
   });
 
-  it('enforces NONE shape for SubItems regardless of props', async () => {
+  it('enforces NONE shape for SubItems regardless of props', () => {
     let component: renderer.ReactTestRenderer;
-    await renderer.act(async () => {
-        component = renderer.create(
+    renderer.act(() => {
+component = renderer.create(
           <AzNavRail initiallyExpanded={false}>
             <AzRailHostItem id="host" text="Host" />
             <AzRailSubItem id="sub" hostId="host" text="Sub" shape={AzButtonShape.SQUARE} />
           </AzNavRail>
         );
-    });
+});
 
     const root = component.root;
     const buttons = root.findAllByType(AzButton);
     const hostBtn = buttons.find((b: any) => b.props.text === 'Host');
 
     // Expand host
-    await renderer.act(async () => {
+    renderer.act(() => {
         hostBtn.props.onClick();
     });
 
@@ -119,8 +119,8 @@ describe('AzNavRail Full Suite', () => {
     expect(subBtn.props.shape).toBe(AzButtonShape.NONE);
 
     // Explicitly unmount to avoid warnings
-    await renderer.act(async () => {
-        component.unmount();
+    renderer.act(() => {
+      component.unmount();
     });
   });
 });

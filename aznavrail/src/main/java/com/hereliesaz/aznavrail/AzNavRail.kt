@@ -455,7 +455,7 @@ fun AzNavRail(
                         Column(
                             modifier = Modifier.fillMaxSize().verticalScroll(scrollState)
                         ) {
-                            val hasExplicitHelpItem = scope.navItems.any { it.isHelpItem }
+                            val hasExplicitHelpItem = scope.navItems.any { it.isHelpItem || it.id == AzNavRailDefaults.AUTO_HELP_ID }
                             val displayItems = if (scope.advancedConfig.helpEnabled && !hasExplicitHelpItem) {
                                 scope.navItems + AzNavItem.Help(
                                     id = AzNavRailDefaults.AUTO_HELP_ID,
@@ -471,7 +471,7 @@ fun AzNavRail(
                                         item = item,
                                         navController = effectiveNavController,
                                         isSelected = (item.route != null && item.route == actualCurrentDestination) ||
-                                                item.classifiers.any { it in scope.activeClassifiers },
+                                                item.classifiers.any { scope.activeClassifiers.contains(it) },
                                         onClick = {
                                             if (item.isHelpItem) {
                                                 toggleHelpOverlay(item.id)
@@ -499,7 +499,7 @@ fun AzNavRail(
                                                     item = subItem,
                                                     navController = effectiveNavController,
                                                     isSelected = (subItem.route != null && subItem.route == actualCurrentDestination) ||
-                                                            subItem.classifiers.any { it in scope.activeClassifiers },
+                                                            subItem.classifiers.any { scope.activeClassifiers.contains(it) },
                                                     onClick = {
                                                         if (subItem.isHelpItem) {
                                                             toggleHelpOverlay(subItem.id)
