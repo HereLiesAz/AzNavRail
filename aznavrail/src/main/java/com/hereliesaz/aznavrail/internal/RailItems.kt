@@ -515,7 +515,8 @@ private fun DraggableRailItemWrapper(
         ) {
             if (item.isRelocItem) {
                 RailContent(
-                    item = item,
+                                    defaultShape = scope.defaultShape,
+                                    item = item,
                     navController = null,
                     isSelected = isVisuallyActive,
                     buttonSize = buttonSize,
@@ -531,7 +532,8 @@ private fun DraggableRailItemWrapper(
                 )
             } else {
                 RailContent(
-                    item = item,
+                                    defaultShape = scope.defaultShape,
+                                    item = item,
                     navController = navController,
                     isSelected = isVisuallyActive,
                     buttonSize = buttonSize,
@@ -655,7 +657,8 @@ private fun DraggableRailItemWrapper(
         if (isDragging) {
             Box(modifier = Modifier.offset { IntOffset(0, dragOffset.roundToInt()) }) {
                 RailContent(
-                    item = item,
+                                    defaultShape = scope.defaultShape,
+                                    item = item,
                     navController = navController,
                     isSelected = isSelected,
                     buttonSize = buttonSize,

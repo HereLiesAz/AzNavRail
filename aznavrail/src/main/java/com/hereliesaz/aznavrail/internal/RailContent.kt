@@ -18,6 +18,7 @@ import com.hereliesaz.aznavrail.model.AzNavItem
 
 @Composable
 internal fun RailContent(
+    defaultShape: com.hereliesaz.aznavrail.model.AzButtonShape,
     item: AzNavItem,
     navController: NavController?,
     isSelected: Boolean,
@@ -86,7 +87,7 @@ internal fun RailContent(
             textColor = item.textColor,
             fillColor = item.fillColor,
             size = buttonSize,
-            shape = item.shape,
+            shape = item.shape ?: defaultShape,
             enabled = isEnabled,
             isSelected = isSelected
         )
