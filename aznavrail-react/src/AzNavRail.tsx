@@ -102,7 +102,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       headerIconShape: dslOverrides.headerIconShape ?? headerIconShape,
       translucentBackground: dslOverrides.translucentBackground ?? translucentBackground,
       vibrate: dslOverrides.vibrate ?? vibrate,
-      secLocPort: 10203,
+      secLocPort: dslOverrides.secLocPort ?? (props as any).secLocPort ?? 10203,
       activeClassifiers: dslOverrides.activeClassifiers ?? props.activeClassifiers,
       onItemGloballyPositioned: dslOverrides.onItemGloballyPositioned,
       helpList: dslOverrides.helpList ?? helpList,
