@@ -6,8 +6,8 @@ export const AzNavRailDefaults = {
   RailContentVerticalArrangement: 8,
   SWIPE_THRESHOLD_PX: 50,
   SNAP_BACK_RADIUS_PX: 100,
-  CollapsedRailWidth: 80,
-  ExpandedRailWidth: 250,
+  CollapsedRailWidth: 100,
+  ExpandedRailWidth: 160,
   ButtonWidth: 100,
   NO_TITLE: 'NO_TITLE',
 };

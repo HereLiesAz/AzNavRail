@@ -1,5 +1,6 @@
-import React, { useEffect, useContext, useRef } from 'react';
+import React, { useEffect, useContext, useRef, useId, useState } from 'react';
 import { AzNavItem, AzButtonShape, AzNavItemProps, AzToggleProps, AzCyclerProps, AzHostItemProps, AzSubItemProps, AzSubToggleProps, AzSubCyclerProps, AzRailRelocItemProps, AzNestedRailProps, AzNestedRailAlignment, HiddenMenuScope, AzItemConfig } from './types';
+import { AzNavRailDefaults } from './AzNavRailDefaults';
 
 export const AzNavRailContext = React.createContext<{
   register: (item: AzNavItem) => void;
@@ -9,9 +10,24 @@ export const AzNavRailContext = React.createContext<{
   hasItem: (id: string) => boolean;
 } | null>(null);
 
-const useAzItem = (item: AzNavItem) => {
+const useAzItem = (rawItem: AzNavItem) => {
   const context = useContext(AzNavRailContext);
   const previousItem = useRef<AzNavItem | null>(null);
+
+  if (rawItem.isCycler) {
+      if (rawItem.options && rawItem.selectedOption !== undefined && !rawItem.options.includes(rawItem.selectedOption)) {
+          throw new Error(`Cycler configuration error for item='${rawItem.text}': selectedOption='${rawItem.selectedOption}' is not in options array.`);
+      }
+      if (rawItem.menuOptions && rawItem.options && rawItem.options.length !== rawItem.menuOptions.length) {
+          throw new Error(`Cycler configuration mismatch for item='${rawItem.text}': optionsSize=${rawItem.options.length}, menuOptionsSize=${rawItem.menuOptions.length}`);
+      }
+  }
+
+  const item = {
+      ...rawItem,
+      text: rawItem.text ?? '',
+      screenTitle: rawItem.screenTitle === AzNavRailDefaults.NO_TITLE ? undefined : (rawItem.screenTitle ?? rawItem.text ?? '')
+  };
 
   useEffect(() => {
     if (!context) return;
@@ -36,6 +52,7 @@ const useAzItem = (item: AzNavItem) => {
                    prev.color === item.color &&
                    prev.info === item.info &&
                    prev.isRelocItem === item.isRelocItem &&
+                   prev.nestedRailItems === item.nestedRailItems &&
                    // Reloc props
                    JSON.stringify(prev.hiddenMenu) === JSON.stringify(item.hiddenMenu) &&
                    prev.onRelocate === item.onRelocate;
@@ -369,13 +386,25 @@ export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
                             console.warn("inputItem requires an onValueChange function callback.");
                             onValueChange = () => {};
                         } else {
-                            onValueChange = arg3;
+                            items.push({ id: `${props.id}_hidden_item_${items.length}`, text, onClick: action });
                         }
-                    } else if (typeof arg2 === 'function') {
-                        onValueChange = arg2;
-                    } else {
-                        console.warn("inputItem requires an onValueChange function callback.");
-                        onValueChange = () => {};
+                    },
+                    inputItem: (hint: string, arg2: any, arg3?: any) => {
+                        let initialValue = '';
+                        let onValueChange: (value: string) => void;
+
+                        if (typeof arg2 === 'string') {
+                            initialValue = arg2;
+                            if (typeof arg3 !== 'function') {
+                                throw new Error("inputItem requires an onValueChange function callback.");
+                            }
+                            onValueChange = arg3;
+                        } else if (typeof arg2 === 'function') {
+                            onValueChange = arg2;
+                        } else {
+                            throw new Error("inputItem requires an onValueChange function callback.");
+                        }
+                        items.push({ id: `${props.id}_hidden_item_${items.length}`, text: '', isInput: true, hint, initialValue, onValueChange });
                     }
                     hiddenMenuItems.push({ id: `${props.id}_hidden_input_${hiddenMenuItems.length}`, text: '', isInput: true, hint, initialValue, onValueChange });
                 }
@@ -388,11 +417,12 @@ export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
                 onClick: item.onClick
             }));
         }
-    }
+        return items;
+    }, [props.hiddenMenu, props.id]);
 
     useAzItem({
         ...props,
-        text: props.text || '',
+        text: props.text ?? '',
         isRailItem: true,
         isHost: false,
         isSubItem: true,
@@ -401,7 +431,7 @@ export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
         isCycler: false,
         isDivider: false,
         collapseOnClick: false,
-        shape: props.shape || AzButtonShape.NONE,
+        shape: props.shape,
         disabled: props.disabled || false,
         isExpanded: false,
         toggleOnText: '',
@@ -477,13 +507,13 @@ export const AzNestedRail: React.FC<AzNestedRailProps> = (props) => {
 
     useAzItem({
         ...props,
-        text: props.text || '',
+        text: props.text ?? '',
         isRailItem: true,
         isToggle: false,
         isCycler: false,
         isDivider: false,
         collapseOnClick: false,
-        shape: props.shape || AzButtonShape.CIRCLE,
+        shape: props.shape,
         disabled: props.disabled || false,
         isHost: false,
         isSubItem: false,

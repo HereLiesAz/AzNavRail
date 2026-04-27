@@ -94,7 +94,7 @@ export interface HiddenMenuItem {
 
 export interface AzNavItem {
   id: string;
-  text: string;
+  text?: string;
   menuText?: string;
   route?: string;
   screenTitle?: string;
@@ -143,7 +143,7 @@ export interface AzNavItem {
 
 export interface AzNavItemProps {
   id: string;
-  text: string;
+  text?: string;
   menuText?: string;
   route?: string;
   screenTitle?: string;
