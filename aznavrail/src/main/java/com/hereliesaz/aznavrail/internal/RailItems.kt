@@ -505,7 +505,7 @@ private fun DraggableRailItemWrapper(
         lastTappedId == item.id
     }
 
-    val isClassifierActive = item.classifiers.any { it in scope.activeClassifiers }
+    val isClassifierActive = item.classifiers.any { scope.activeClassifiers.contains(it) }
     val isVisuallyActive = isSelected || isClassifierActive
 
     Box(modifier = Modifier.zIndex(if (isDragging) 1f else 0f)) {

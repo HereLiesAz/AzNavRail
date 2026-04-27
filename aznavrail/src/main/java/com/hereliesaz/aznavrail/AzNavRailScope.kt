@@ -450,7 +450,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
     }
 
     override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, secLoc: String?, secLocPort: Int, helpList: Map<String, Any>, tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial>) {
-        this.advancedConfig = AzAdvancedConfig(
+        this.advancedConfig = this.advancedConfig.copy(
             isLoading = isLoading,
             helpEnabled = helpEnabled,
             onDismissHelp = onDismissHelp,
@@ -460,10 +460,10 @@ class AzNavRailScopeImpl : AzNavRailScope {
             onRailDrag = onRailDrag,
             onOverlayDrag = onOverlayDrag,
             onItemGloballyPositioned = onItemGloballyPositioned,
-            secLoc = secLoc,
+            secLoc = secLoc ?: this.advancedConfig.secLoc,
             secLocPort = secLocPort,
-            helpList = helpList,
-            tutorials = tutorials
+            helpList = if (helpList.isNotEmpty()) helpList else this.advancedConfig.helpList,
+            tutorials = if (tutorials.isNotEmpty()) tutorials else this.advancedConfig.tutorials
         )
     }
 
@@ -509,7 +509,7 @@ class AzNavRailScopeImpl : AzNavRailScope {
         this.usePhysicalDocking = usePhysicalDocking
         this.helpLineColors = helpLineColors
 
-        this.advancedConfig = AzAdvancedConfig(
+        this.advancedConfig = this.advancedConfig.copy(
             isLoading = isLoading,
             enableRailDragging = enableRailDragging || overlayService != null || onOverlayDrag != null,
             onUndock = onUndock,
@@ -518,10 +518,10 @@ class AzNavRailScopeImpl : AzNavRailScope {
             onItemGloballyPositioned = onItemGloballyPositioned,
             helpEnabled = helpEnabled,
             onDismissHelp = onDismissHelp,
-            secLoc = secLoc,
+            secLoc = secLoc ?: this.advancedConfig.secLoc,
             secLocPort = secLocPort,
-            helpList = helpList,
-            tutorials = tutorials
+            helpList = if (helpList.isNotEmpty()) helpList else this.advancedConfig.helpList,
+            tutorials = if (tutorials.isNotEmpty()) tutorials else this.advancedConfig.tutorials
         )
     }
 
@@ -588,7 +588,10 @@ class AzNavRailScopeImpl : AzNavRailScope {
         nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape, translucentBackground = this.translucentBackground)
         nestedScope.nestedContent()
 
-        nestedScope.onClickMap.forEach { (k, v) -> onClickMap[k] = v }
+        nestedScope.onClickMap.forEach { (k, v) ->
+            if (onClickMap.containsKey(k)) throw IllegalStateException("Scope collision: Nested item ID '$k' duplicates an existing parent ID.")
+            onClickMap[k] = v
+        }
         nestedScope.onFocusMap.forEach { (k, v) -> onFocusMap[k] = v }
         nestedScope.hiddenMenuOnClickMap.forEach { (k, v) -> hiddenMenuOnClickMap[k] = v }
         nestedScope.hiddenMenuOnValueChangeMap.forEach { (k, v) -> hiddenMenuOnValueChangeMap[k] = v }
@@ -676,7 +679,10 @@ class AzNavRailScopeImpl : AzNavRailScope {
             nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape, translucentBackground = this.translucentBackground)
             nestedScope.nestedContent()
 
-            nestedScope.onClickMap.forEach { (k, v) -> onClickMap[k] = v }
+            nestedScope.onClickMap.forEach { (k, v) ->
+                if (onClickMap.containsKey(k)) throw IllegalStateException("Scope collision: Nested item ID '$k' duplicates an existing parent ID.")
+                onClickMap[k] = v
+            }
             nestedScope.onFocusMap.forEach { (k, v) -> onFocusMap[k] = v }
             nestedScope.hiddenMenuOnClickMap.forEach { (k, v) -> hiddenMenuOnClickMap[k] = v }
             nestedScope.hiddenMenuOnValueChangeMap.forEach { (k, v) -> hiddenMenuOnValueChangeMap[k] = v }

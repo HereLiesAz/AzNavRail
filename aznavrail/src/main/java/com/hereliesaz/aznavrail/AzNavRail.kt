@@ -471,7 +471,7 @@ fun AzNavRail(
                                         item = item,
                                         navController = effectiveNavController,
                                         isSelected = (item.route != null && item.route == actualCurrentDestination) ||
-                                                item.classifiers.any { it in scope.activeClassifiers },
+                                                item.classifiers.any { scope.activeClassifiers.contains(it) },
                                         onClick = {
                                             if (item.isHelpItem) {
                                                 toggleHelpOverlay(item.id)
@@ -499,7 +499,7 @@ fun AzNavRail(
                                                     item = subItem,
                                                     navController = effectiveNavController,
                                                     isSelected = (subItem.route != null && subItem.route == actualCurrentDestination) ||
-                                                            subItem.classifiers.any { it in scope.activeClassifiers },
+                                                            subItem.classifiers.any { scope.activeClassifiers.contains(it) },
                                                     onClick = {
                                                         if (subItem.isHelpItem) {
                                                             toggleHelpOverlay(subItem.id)

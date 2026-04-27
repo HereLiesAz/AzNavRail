@@ -22,6 +22,8 @@ export enum AzNestedRailAlignment {
 }
 
 export interface AzNavRailSettings {
+  appName?: string;
+  appIcon?: any;
   displayAppNameInHeader?: boolean;
   packRailButtons?: boolean;
   expandedRailWidth?: number;
@@ -40,7 +42,7 @@ export interface AzNavRailSettings {
   translucentBackground?: string;
   secLoc?: string;
   usePhysicalDocking?: boolean;
-  activeClassifiers?: string[];
+  activeClassifiers?: Set<string>;
   onItemGloballyPositioned?: (id: string, bounds: any) => void;
   helpList?: Record<string, string>;
   tutorials?: Record<string, AzTutorial>;
@@ -138,6 +140,7 @@ export interface AzNavItem {
   isHelpItem?: boolean;
   nestedRailAlignment?: AzNestedRailAlignment;
   nestedRailItems?: AzNavItem[];
+  keepNestedRailOpen?: boolean;
 }
 
 export interface AzNavItemProps {
@@ -194,14 +197,17 @@ export interface AzRailRelocItemProps extends AzSubItemProps {
     onHiddenMenuDismiss?: () => void;
     nestedRailAlignment?: AzNestedRailAlignment;
     nestedContent?: React.ReactNode;
+    keepNestedRailOpen?: boolean;
 }
 
 export interface AzNestedRailProps extends AzNavItemProps {
     alignment?: AzNestedRailAlignment;
     children: React.ReactNode;
+    keepNestedRailOpen?: boolean;
 }
 
 export interface HiddenMenuScope {
+    parentId: string;
     listItem: (text: string, action: string | (() => void)) => void;
     /**
      * Adds a text input item to the hidden menu.
