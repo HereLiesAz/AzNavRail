@@ -1,5 +1,6 @@
 import React from 'react';
 import AzNavRail from './AzNavRail';
+import { AzNavHostContext } from '../AzNavRail';
 import './AzNavHost.css';
 
 /**
@@ -42,7 +43,9 @@ const AzNavHost = ({
 
             {/* Layer 2: Rail */}
             <div className={`az-nav-host-rail-wrapper ${dockingSide === 'RIGHT' ? 'right' : 'left'}`}>
-                 <AzNavRail {...railProps} />
+                 <AzNavHostContext.Provider value={true}>
+                     <AzNavRail {...railProps} />
+                 </AzNavHostContext.Provider>
             </div>
         </div>
     );
