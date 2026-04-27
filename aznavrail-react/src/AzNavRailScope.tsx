@@ -1,5 +1,5 @@
-import React, { useEffect, useContext, useRef } from 'react';
-import { AzNavItem, AzButtonShape, AzNavItemProps, AzToggleProps, AzCyclerProps, AzHostItemProps, AzSubItemProps, AzSubToggleProps, AzSubCyclerProps, AzRailRelocItemProps, AzNestedRailProps, AzNestedRailAlignment, HiddenMenuScope, AzItemConfig } from './types';
+import React, { useEffect, useContext, useRef, useMemo } from 'react';
+import { AzNavItem, AzButtonShape, AzNavItemProps, AzToggleProps, AzCyclerProps, AzHostItemProps, AzSubItemProps, AzSubToggleProps, AzSubCyclerProps, AzRailRelocItemProps, AzNestedRailProps, AzNestedRailAlignment, HiddenMenuScope, } from './types';
 
 export const AzNavRailContext = React.createContext<{
   register: (item: AzNavItem) => void;
@@ -7,47 +7,23 @@ export const AzNavRailContext = React.createContext<{
   updateSettings: (settings: any) => void;
 } | null>(null);
 
-const useAzItem = (item: AzNavItem) => {
+const useAzItem = (rawItem: AzNavItem) => {
   const context = useContext(AzNavRailContext);
-  const previousItem = useRef<AzNavItem | null>(null);
+
+  // Create a stable reference based on content
+  const itemDeps = [
+    rawItem.id, rawItem.text, rawItem.disabled, rawItem.isChecked, rawItem.selectedOption,
+    rawItem.menuText, rawItem.menuToggleOnText, rawItem.menuToggleOffText, rawItem.textColor, rawItem.fillColor,
+    rawItem.shape, rawItem.color, rawItem.info, rawItem.isRelocItem, rawItem.isNestedRail, rawItem.keepNestedRailOpen,
+    JSON.stringify(rawItem.options), JSON.stringify(rawItem.menuOptions), JSON.stringify(rawItem.hiddenMenu)
+  ];
+
+  const item = useMemo(() => rawItem, itemDeps);
 
   useEffect(() => {
     if (!context) return;
-
-    // Simple comparison to avoid spamming updates
-    const prev = previousItem.current;
-    const isSame = prev &&
-                   prev.id === item.id &&
-                   prev.text === item.text &&
-                   prev.disabled === item.disabled &&
-                   prev.isChecked === item.isChecked &&
-                   prev.selectedOption === item.selectedOption &&
-                   prev.menuText === item.menuText &&
-                   prev.menuToggleOnText === item.menuToggleOnText &&
-                   prev.menuToggleOffText === item.menuToggleOffText &&
-                   prev.textColor === item.textColor &&
-                   prev.fillColor === item.fillColor &&
-                   // Compare arrays
-                   JSON.stringify(prev.options) === JSON.stringify(item.options) &&
-                   JSON.stringify(prev.menuOptions) === JSON.stringify(item.menuOptions) &&
-                   prev.shape === item.shape &&
-                   prev.color === item.color &&
-                   prev.info === item.info &&
-                   prev.isRelocItem === item.isRelocItem &&
-                   // Reloc props
-                   JSON.stringify(prev.hiddenMenu) === JSON.stringify(item.hiddenMenu);
-
-    if (!isSame) {
-        context.register(item);
-        previousItem.current = item;
-    }
-
-    // Cleanup only on unmount
-    return () => {
-      // We don't unregister on every update, only on unmount
-      // But if ID changes (rare), we should unregister old ID.
-    };
-  }, [context, item]); // dependencies should capture all props
+    context.register(item);
+  }, [context, item]);
 
   useEffect(() => {
       if (context) {
@@ -55,8 +31,6 @@ const useAzItem = (item: AzNavItem) => {
       }
       return undefined;
   }, [context, item.id]);
-
-  return null;
 };
 
 // --- Component Wrappers ---
@@ -493,9 +467,19 @@ export const AzNestedRail: React.FC<AzNestedRailProps> = (props) => {
 export const AzHelpRailItem: React.FC<AzNavItemProps> = (props) => {
     useAzItem({
         ...props,
+        isToggle: false,
+        isCycler: false,
+        isDivider: false,
+        collapseOnClick: true,
+        disabled: false,
+        isHost: false,
+        isExpanded: false,
+        shape: props.shape || AzButtonShape.CIRCLE,
+        toggleOnText: '',
+        toggleOffText: '',
         isRailItem: true,
         isHelpItem: true
-    });
+    } as AzNavItem);
     return null;
 };
 
@@ -508,9 +492,19 @@ export const AzHelpSubItem: React.FC<AzSubItemProps> = (props) => {
     }
     useAzItem({
         ...props,
+        isToggle: false,
+        isCycler: false,
+        isDivider: false,
+        collapseOnClick: true,
+        disabled: false,
+        isHost: false,
+        isExpanded: false,
+        shape: props.shape || AzButtonShape.CIRCLE,
+        toggleOnText: '',
+        toggleOffText: '',
         isRailItem: true,
         isHelpItem: true,
         isSubItem: true
-    });
+    } as AzNavItem);
     return null;
 };

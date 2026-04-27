@@ -39,6 +39,9 @@ export interface AzNavRailSettings {
   headerIconShape?: AzHeaderIconShape;
   translucentBackground?: string;
   secLoc?: string;
+  secLocPort?: number;
+  appRepositoryUrl?: string;
+  helpEnabled?: boolean;
   usePhysicalDocking?: boolean;
   activeClassifiers?: string[];
   onItemGloballyPositioned?: (id: string, bounds: any) => void;
@@ -135,6 +138,7 @@ export interface AzNavItem {
   classifiers?: string[];
   content?: any;
   isNestedRail?: boolean;
+  keepNestedRailOpen?: boolean;
   isHelpItem?: boolean;
   nestedRailAlignment?: AzNestedRailAlignment;
   nestedRailItems?: AzNavItem[];
