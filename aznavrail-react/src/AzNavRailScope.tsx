@@ -60,7 +60,7 @@ const useAzItem = (item: AzNavItem) => {
                    prev.info === dataItem.info &&
                    prev.isRelocItem === dataItem.isRelocItem &&
                    // Reloc props
-                   JSON.stringify(prev.hiddenMenu, (k, v) => (typeof v === 'function' ? 'fn' : v)) === JSON.stringify(dataItem.hiddenMenu, (k, v) => (typeof v === 'function' ? 'fn' : v));
+                   JSON.stringify(prev.hiddenMenu) === JSON.stringify(dataItem.hiddenMenu);
 
     if (!isSame) {
         context.register(dataItem);
