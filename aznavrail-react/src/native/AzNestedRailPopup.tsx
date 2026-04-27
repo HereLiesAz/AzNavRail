@@ -22,7 +22,7 @@ export const AzNestedRailPopup: React.FC<AzNestedRailPopupProps> = ({
     renderItem,
     anchorPosition,
     dockingSide = 'LEFT',
-    helpList = {}
+
 }) => {
     if (!visible) return null;
 

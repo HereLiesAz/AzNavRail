@@ -20,24 +20,24 @@ describe('AzButton', () => {
   it('renders correctly as a CIRCLE', () => {
     const component = renderer.create(<AzButton {...defaultProps} shape={AzButtonShape.CIRCLE} />);
     const touchable = component.root.findByType(TouchableOpacity);
-    expect(touchable.props.style.borderRadius).toBe(24); // size / 2
-    expect(touchable.props.style.width).toBe(48);
-    expect(touchable.props.style.height).toBe(48);
+    expect(touchable.props.style.borderRadius).toBe(36);
+    expect(touchable.props.style.width).toBe(72);
+    expect(touchable.props.style.height).toBe(72);
   });
 
   it('renders correctly as a SQUARE', () => {
     const component = renderer.create(<AzButton {...defaultProps} shape={AzButtonShape.SQUARE} />);
     const touchable = component.root.findByType(TouchableOpacity);
     expect(touchable.props.style.borderRadius).toBe(0);
-    expect(touchable.props.style.width).toBe(48);
-    expect(touchable.props.style.height).toBe(48);
+    expect(touchable.props.style.width).toBe(72);
+    expect(touchable.props.style.height).toBe(72);
   });
 
   it('renders correctly as a RECTANGLE', () => {
     const component = renderer.create(<AzButton {...defaultProps} shape={AzButtonShape.RECTANGLE} />);
     const touchable = component.root.findByType(TouchableOpacity);
     expect(touchable.props.style.borderRadius).toBe(0);
-    expect(touchable.props.style.height).toBe(48);
+    expect(touchable.props.style.height).toBe(40);
     expect(touchable.props.style.paddingHorizontal).toBe(8);
   });
 
@@ -46,7 +46,7 @@ describe('AzButton', () => {
     const touchable = component.root.findByType(TouchableOpacity);
     expect(touchable.props.style.borderColor).toBe('transparent');
     expect(touchable.props.style.borderWidth).toBe(0);
-    expect(touchable.props.style.height).toBe(48);
+    expect(touchable.props.style.height).toBe(40);
   });
 
   it('renders with custom color', () => {

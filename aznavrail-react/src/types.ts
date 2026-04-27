@@ -44,6 +44,7 @@ export interface AzNavRailSettings {
   onItemGloballyPositioned?: (id: string, bounds: any) => void;
   helpList?: Record<string, string>;
   tutorials?: Record<string, AzTutorial>;
+  appRepositoryUrl?: string;
 }
 
 export type AzHighlight =
@@ -138,6 +139,7 @@ export interface AzNavItem {
   isHelpItem?: boolean;
   nestedRailAlignment?: AzNestedRailAlignment;
   nestedRailItems?: AzNavItem[];
+  keepNestedRailOpen?: boolean;
 }
 
 export interface AzNavItemProps {
@@ -189,16 +191,18 @@ export interface AzSubCyclerProps extends AzCyclerProps {
 
 export interface AzRailRelocItemProps extends AzSubItemProps {
     onRelocate?: (fromIndex: number, toIndex: number, newOrder: string[]) => void;
-    hiddenMenu?: { text: string; onClick: () => void }[] | ((scope: HiddenMenuScope) => void);
+    hiddenMenu?: (scope: HiddenMenuScope) => void;
     forceHiddenMenuOpen?: boolean;
     onHiddenMenuDismiss?: () => void;
     nestedRailAlignment?: AzNestedRailAlignment;
     nestedContent?: React.ReactNode;
+    keepNestedRailOpen?: boolean;
 }
 
 export interface AzNestedRailProps extends AzNavItemProps {
     alignment?: AzNestedRailAlignment;
     children: React.ReactNode;
+    keepNestedRailOpen?: boolean;
 }
 
 export interface HiddenMenuScope {
