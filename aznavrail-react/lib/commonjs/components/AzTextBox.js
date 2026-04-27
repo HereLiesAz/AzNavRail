@@ -100,7 +100,7 @@ const AzTextBox = ({
   }, /*#__PURE__*/_react.default.createElement(_reactNative.TextInput, {
     value: currentValue,
     onChangeText: handleChange,
-    placeholder: currentValue.trim().length > 0 ? '' : hint,
+    placeholder: hint,
     placeholderTextColor: outlineColor + '80',
     secureTextEntry: secret && !isSecretVisible,
     multiline: effectiveMultiline,
