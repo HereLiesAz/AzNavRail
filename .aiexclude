@@ -1,0 +1,28 @@
+# The Temptations (Executable Scripts)
+setup_android.sh
+run_benchmark.sh
+patch_web_azhelp.py
+patch_web_footer.py
+
+# The Distractions (Build Outputs & Caches)
+**/build/
+**/.gradle/
+**/node_modules/
+**/dist/
+**/.idea/
+**/.vscode/
+**/.expo/
+**/.next/
+**/lib/commonjs/
+**/lib/module/
+**/lib/typescript/
+
+# The Aftermath (Logs, Diffs, & Lockfiles)
+benchmark_out.txt
+patch_file2.diff
+yarn.lock
+package-lock.json
+
+# Irrelevant Git Noise
+.github/
+.gitignore

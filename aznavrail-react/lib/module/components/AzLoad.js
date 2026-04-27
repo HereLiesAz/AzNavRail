@@ -1,10 +1,13 @@
 import React from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-export const AzLoad = () => /*#__PURE__*/React.createElement(View, {
+export const AzLoad = ({
+  size = "large",
+  color = "#6200ee"
+}) => /*#__PURE__*/React.createElement(View, {
   style: styles.container
 }, /*#__PURE__*/React.createElement(ActivityIndicator, {
-  size: "large",
-  color: "#6200ee"
+  size: size,
+  color: color
 }));
 const styles = StyleSheet.create({
   container: {

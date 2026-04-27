@@ -6,6 +6,7 @@ interface AzCyclerProps {
     selectedOption: string;
     onCycle: (option: string) => void;
     color?: string;
+    fillColor?: string;
     shape?: AzButtonShape;
     style?: ViewStyle;
     disabled?: boolean;

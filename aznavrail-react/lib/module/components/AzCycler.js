@@ -5,6 +5,7 @@ export const AzCycler = ({
   selectedOption,
   onCycle,
   color,
+  fillColor,
   shape,
   style,
   disabled,
@@ -56,9 +57,10 @@ export const AzCycler = ({
     text: displayOption,
     onClick: handlePress,
     color: color,
+    fillColor: fillColor,
     shape: shape,
     style: style,
-    disabled: disabled,
+    enabled: !disabled,
     testID: testID
   });
 };

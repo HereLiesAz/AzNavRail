@@ -20,21 +20,34 @@ const AzForm = ({
   style
 }) => {
   const [formData, setFormData] = (0, _react.useState)({});
-  const updateField = (name, value) => {
+  const updateField = (0, _react.useCallback)((name, value) => {
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-  };
+  }, []);
+  const registerField = (0, _react.useCallback)((name, initialValue) => {
+    setFormData(prev => {
+      if (prev[name] === undefined) {
+        return {
+          ...prev,
+          [name]: initialValue
+        };
+      }
+      return prev;
+    });
+  }, []);
   const handleSubmit = () => {
     onSubmit(formData);
   };
   return /*#__PURE__*/_react.default.createElement(AzFormContext.Provider, {
     value: {
       updateField,
+      registerField,
       formName,
       outlineColor,
-      outlined
+      outlined,
+      formData
     }
   }, /*#__PURE__*/_react.default.createElement(_reactNative.View, {
     style: [styles.container, style]
@@ -55,6 +68,7 @@ const AzForm = ({
 exports.AzForm = AzForm;
 const AzFormEntry = ({
   name,
+  initialValue = '',
   ...props
 }) => {
   const context = (0, _react.useContext)(AzFormContext);
@@ -63,20 +77,27 @@ const AzFormEntry = ({
   }
   const {
     updateField,
+    registerField,
     formName,
     outlineColor,
-    outlined
+    outlined,
+    formData
   } = context;
+  (0, _react.useEffect)(() => {
+    registerField(name, initialValue);
+  }, [name, initialValue, registerField]);
   const handleChange = text => {
     updateField(name, text);
     if (props.onValueChange) props.onValueChange(text);
   };
+  const value = formData[name] !== undefined ? formData[name] : initialValue;
   return /*#__PURE__*/_react.default.createElement(_reactNative.View, {
     style: {
       flexDirection: 'row',
       marginBottom: 8
     }
   }, /*#__PURE__*/_react.default.createElement(_AzTextBox.AzTextBox, _extends({}, props, {
+    value: value,
     onValueChange: handleChange,
     historyContext: formName // Use formName as history context
     ,

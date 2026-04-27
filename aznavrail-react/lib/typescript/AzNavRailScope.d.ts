@@ -1,8 +1,11 @@
 import React from 'react';
-import { AzNavItem, AzNavItemProps, AzToggleProps, AzCyclerProps, AzHostItemProps, AzSubItemProps, AzSubToggleProps, AzSubCyclerProps } from './types';
+import { AzNavItem, AzNavItemProps, AzToggleProps, AzCyclerProps, AzHostItemProps, AzSubItemProps, AzSubToggleProps, AzSubCyclerProps, AzRailRelocItemProps, AzNestedRailProps } from './types';
 export declare const AzNavRailContext: React.Context<{
     register: (item: AzNavItem) => void;
     unregister: (id: string) => void;
+    updateSettings: (settings: any) => void;
+    getDividerId: () => string;
+    hasItem: (id: string) => boolean;
 } | null>;
 export declare const AzRailItem: React.FC<AzNavItemProps>;
 export declare const AzMenuItem: React.FC<AzNavItemProps>;
@@ -19,4 +22,12 @@ export declare const AzRailSubToggle: React.FC<AzSubToggleProps>;
 export declare const AzMenuSubToggle: React.FC<AzSubToggleProps>;
 export declare const AzRailSubCycler: React.FC<AzSubCyclerProps>;
 export declare const AzMenuSubCycler: React.FC<AzSubCyclerProps>;
+export declare const AzRailRelocItem: React.FC<AzRailRelocItemProps>;
+export declare const AzSettings: React.FC<any>;
+export declare const AzTheme: React.FC<any>;
+export declare const AzConfig: React.FC<any>;
+export declare const AzAdvanced: React.FC<any>;
+export declare const AzNestedRail: React.FC<AzNestedRailProps>;
+export declare const AzHelpRailItem: React.FC<AzNavItemProps>;
+export declare const AzHelpSubItem: React.FC<AzSubItemProps>;
 //# sourceMappingURL=AzNavRailScope.d.ts.map
