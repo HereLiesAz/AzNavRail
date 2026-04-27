@@ -432,7 +432,7 @@ const AzNavRailInner = props => {
       key: item.id,
       color: config.activeColor && (item.isChecked || item.id === currentDestination) ? config.activeColor : item.color,
       shape: item.shape || config.defaultShape,
-      disabled: item.disabled,
+      enabled: !item.disabled,
       style: {
         marginBottom: isRect ? 2 : _AzNavRailDefaults.AzNavRailDefaults.RailContentVerticalArrangement
       }
