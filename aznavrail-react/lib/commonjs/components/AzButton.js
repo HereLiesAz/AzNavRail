@@ -88,10 +88,9 @@ const AzButton = ({
     onPress: onClick,
     disabled: !enabled || isLoading,
     style: containerStyle,
-    testID: testID,
+    testID: testID || "button",
     accessibilityRole: "button",
     accessibilityLabel: text,
-    testID: "button",
     accessibilityState: {
       disabled: !enabled || isLoading
     }
