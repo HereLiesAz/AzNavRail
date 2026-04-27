@@ -7,6 +7,7 @@ interface AzToggleProps {
     toggleOnText: string;
     toggleOffText: string;
     color?: string;
+    fillColor?: string;
     shape?: AzButtonShape;
     style?: ViewStyle;
     disabled?: boolean;

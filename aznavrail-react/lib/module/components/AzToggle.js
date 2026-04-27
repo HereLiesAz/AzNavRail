@@ -6,6 +6,7 @@ export const AzToggle = ({
   toggleOnText,
   toggleOffText,
   color,
+  fillColor,
   shape,
   style,
   disabled,
@@ -15,9 +16,10 @@ export const AzToggle = ({
     text: isChecked ? toggleOnText : toggleOffText,
     onClick: onToggle,
     color: color,
+    fillColor: fillColor,
     shape: shape,
     style: style,
-    disabled: disabled,
+    enabled: !disabled,
     testID: testID
   });
 };

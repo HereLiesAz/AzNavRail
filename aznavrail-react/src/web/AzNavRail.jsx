@@ -34,7 +34,7 @@ const AzNavRail = ({
     onDismissInfoScreen,
     dockingSide = 'LEFT',
     noMenu = false,
-    activeClassifiers = [], // Array of strings
+    activeClassifiers = new Set(), // Set of strings
     activeColor,
     translucentBackground,
     packRailButtons = false,
@@ -201,9 +201,10 @@ const AzNavRail = ({
 
   const checkIsActive = (item) => {
       if (item.route && item.route === currentDestination) return true;
-      if (item.classifiers && activeClassifiers.length > 0) {
+      if (item.classifiers && activeClassifiers.size > 0) {
           // Check intersection
-          return item.classifiers.some(c => activeClassifiers.includes(c));
+          const classifiersArray = Array.isArray(item.classifiers) ? item.classifiers : Array.from(item.classifiers);
+          return classifiersArray.some(c => activeClassifiers.has(c));
       }
       if (item.id === currentDestination) return true;
       return false;
