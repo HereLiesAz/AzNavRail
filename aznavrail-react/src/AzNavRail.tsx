@@ -13,6 +13,7 @@ import {
   Vibration,
   UIManager,
   findNodeHandle,
+  Image,
 } from 'react-native';
 import { AzNavRailContext } from './AzNavRailScope';
 import { AzNavItem, AzNavRailSettings, AzButtonShape, AzDockingSide, AzHeaderIconShape, AzNestedRailAlignment } from './types';
@@ -84,6 +85,8 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   const [dslOverrides, setDslOverrides] = useState<Partial<AzNavRailSettings>>({});
 
   const config = {
+      appName: dslOverrides.appName ?? props.appName ?? 'App Name',
+      appIcon: dslOverrides.appIcon ?? props.appIcon,
       displayAppNameInHeader: dslOverrides.displayAppNameInHeader ?? displayAppNameInHeader,
       packRailButtons: dslOverrides.packRailButtons ?? props.packRailButtons,
       expandedRailWidth: dslOverrides.expandedRailWidth ?? expandedRailWidth,
@@ -99,8 +102,11 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       headerIconShape: dslOverrides.headerIconShape ?? headerIconShape,
       translucentBackground: dslOverrides.translucentBackground ?? translucentBackground,
       vibrate: dslOverrides.vibrate ?? vibrate,
+      secLocPort: dslOverrides.secLocPort ?? (props as any).secLocPort ?? 10203,
+      activeClassifiers: dslOverrides.activeClassifiers ?? props.activeClassifiers,
       onItemGloballyPositioned: dslOverrides.onItemGloballyPositioned,
       helpList: dslOverrides.helpList ?? helpList,
+      tutorials: dslOverrides.tutorials ?? props.tutorials,
   };
 
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded && !config.noMenu);
@@ -111,6 +117,8 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   const [nestedRailVisible, setNestedRailVisible] = useState<string | null>(null);
   const [anchorPosition, setAnchorPosition] = useState<{ x: number, y: number, width: number, height: number } | undefined>(undefined);
   const [itemBounds, setItemBounds] = useState<Record<string, any>>({});
+  const [secLocClicks, setSecLocClicks] = useState(0);
+  const [secLocVisible, setSecLocVisible] = useState(false);
 
   const handleItemLayout = useCallback((id: string, e: any) => {
       const target = e.target as any;
@@ -205,6 +213,24 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     };
   }, []);
 
+  const callbacksRef = useRef<Record<string, any>>({});
+
+  const registerCallback = useCallback((id: string, type: string, fn: Function, extraId?: string) => {
+      if (!callbacksRef.current[id]) callbacksRef.current[id] = {};
+      if (extraId) {
+          if (!callbacksRef.current[id][type]) callbacksRef.current[id][type] = {};
+          callbacksRef.current[id][type][extraId] = fn;
+      } else {
+          callbacksRef.current[id][type] = fn;
+      }
+  }, []);
+
+  const dividerCounter = useRef(0);
+  const generateDividerId = useCallback(() => {
+      dividerCounter.current += 1;
+      return `divider-${dividerCounter.current}`;
+  }, []);
+
   const updateSettings = useCallback((newSettings: any) => {
       setDslOverrides(prev => ({ ...prev, ...newSettings }));
   }, []);
@@ -220,7 +246,16 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   }, []);
 
   const register = useCallback((item: AzNavItem) => {
+    if (item.isSubItem && !item.hostId) {
+        throw new Error(`SubItem ${item.id} must declare a hostId.`);
+    }
     setItems((prev) => {
+      if (item.isSubItem && !prev.find(i => i.id === item.hostId)) {
+          // Log a warning or throw depending on how strict you want to be
+          // throwing here might break if children render before parent in some tree structure,
+          // but React usually mounts bottom-up. However, Context is safe.
+          throw new Error(`Host ID ${item.hostId} not found for SubItem ${item.id}.`);
+      }
       const index = prev.findIndex((i) => i.id === item.id);
       if (index >= 0) {
         const old = prev[index];
@@ -253,14 +288,17 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   }, []);
 
   useEffect(() => {
+    const isVerticalNestedOpen = items.some(i => i.id === nestedRailVisible && i.nestedRailAlignment === AzNestedRailAlignment.VERTICAL);
+    const targetWidth = isExpanded ? config.expandedRailWidth : (isVerticalNestedOpen ? 60 : config.collapsedRailWidth);
+
     Animated.timing(railWidthAnim, {
-      toValue: isExpanded ? config.expandedRailWidth : config.collapsedRailWidth,
+      toValue: targetWidth,
       duration: 300,
       useNativeDriver: false,
     }).start();
 
     if (onExpandedChange) onExpandedChange(isExpanded);
-  }, [isExpanded, config.expandedRailWidth, config.collapsedRailWidth, onExpandedChange]);
+  }, [isExpanded, config.expandedRailWidth, config.collapsedRailWidth, onExpandedChange, nestedRailVisible, items]);
 
   useEffect(() => {
       items.forEach(item => {
@@ -317,8 +355,9 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
            setItems(newItems);
            const newCluster = RelocItemHandler.getCluster(newItems, draggedItem.hostId!);
            const newOrder = newCluster.map(i => i.id);
-           if (draggedItem.onRelocate) {
-               draggedItem.onRelocate(draggedClusterIndex, targetClusterIndex, newOrder);
+           const onRelocate = callbacksRef.current[draggedItem.id]?.onRelocate;
+           if (onRelocate) {
+               onRelocate(draggedClusterIndex, targetClusterIndex, newOrder);
            }
        }
        delete (panValue as any).targetIndex;
@@ -328,8 +367,17 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
 
   const adjustFloatingRailWithinBounds = (currentX: number, currentY: number) => {
       const screenHeight = screenHeightRef.current;
-      const contentHeight = headerHeight + (effectiveRailItemsRef.current.length * 56) + 16;
-      const bottomY = currentY + contentHeight;
+
+      let exactContentHeight = headerHeight;
+      effectiveRailItems.forEach(item => {
+          if (itemBounds[item.id]) {
+              exactContentHeight += itemBounds[item.id].height;
+          }
+      });
+      // Add padding
+      exactContentHeight += 16;
+
+      const bottomY = currentY + exactContentHeight;
       const limitY = screenHeight * 0.9;
       if (bottomY > limitY) {
           const shift = bottomY - limitY;
@@ -432,11 +480,13 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       const isExpandedHost = hostStates[item.id] || false;
       const subItems = subItemsMap[item.id] || [];
       const isRect = item.shape === AzButtonShape.RECTANGLE;
+      const isClassifierActive = item.classifiers && config.activeClassifiers && config.activeClassifiers.size > 0 && item.classifiers.some(c => config.activeClassifiers!.has(c));
+      const isActive = item.isChecked || item.id === currentDestination || isClassifierActive;
       const commonProps = {
           key: item.id,
-          color: overrideConfig.activeColor && (item.isChecked || item.id === currentDestination) ? overrideConfig.activeColor : item.color,
-          shape: item.shape || overrideConfig.defaultShape,
-          enabled: !item.disabled,
+          color: config.activeColor && isActive ? config.activeColor : item.color,
+          shape: item.shape || config.defaultShape,
+          disabled: item.disabled,
           style: { marginBottom: isRect ? 2 : AzNavRailDefaults.RailContentVerticalArrangement }
       };
 
@@ -486,7 +536,8 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                   selectedOption={item.selectedOption || ''}
                   onFocus={item.onFocus}
                   onCycle={() => {
-                      if (item.onClick) item.onClick();
+                      const onClick = callbacksRef.current[item.id]?.onClick;
+                      if (onClick) onClick();
                       logInteraction('Cycler cycled', item.text);
                   }}
               />
@@ -502,7 +553,8 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                   toggleOffText={item.toggleOffText}
                   onFocus={item.onFocus}
                   onToggle={() => {
-                      if (item.onClick) item.onClick();
+                      const onClick = callbacksRef.current[item.id]?.onClick;
+                      if (onClick) onClick();
                       logInteraction('Toggle toggled', item.text);
                   }}
               />
@@ -533,7 +585,8 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                             setAnchorPosition({ x: 0, y: _index * 60 + headerHeight, width: config.collapsedRailWidth, height: 48 });
                         }
                     }
-                    if (item.onClick) item.onClick();
+                    const onClick = callbacksRef.current[item.id]?.onClick;
+                    if (onClick) onClick();
                     if (item.collapseOnClick && !config.noMenu) setIsExpanded(false);
                 }}
             />
@@ -557,7 +610,8 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                   onToggleHost={() => setHostStates(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
                   onItemClick={() => {
                       logInteraction('Menu item clicked', item.text);
-                      if (item.onClick) item.onClick();
+                      const onClick = callbacksRef.current[item.id]?.onClick;
+                      if (onClick) onClick();
                       if (item.collapseOnClick) setIsExpanded(false);
                   }}
                   renderSubItems={() => (
@@ -598,6 +652,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
           if (secLocClicks >= 9) {
               setSecLocVisible(true);
               setSecLocClicks(0);
+              Linking.openURL(`http://localhost:${config.secLocPort}`).catch(e => console.error("Could not open SecLoc", e));
           }
       };
 
@@ -614,6 +669,22 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       );
   };
 
+
+  const effectiveRailItems = useMemo(() => {
+    const list: AzNavItem[] = [];
+    items.forEach(i => {
+      if (!i.isSubItem && (config.noMenu || i.isRailItem)) {
+          list.push(i);
+          if (hostStates[i.id] && !i.isNestedRail) {
+              const subItems = subItemsMap[i.id] || [];
+              subItems.forEach(sub => {
+                  if (sub.isRailItem) list.push(sub);
+              });
+          }
+      }
+    });
+    return list;
+  }, [items, config.noMenu, hostStates, subItemsMap]);
 
   const railItemsCount = useMemo(() => {
       // Includes expanded sub-items for height calculation
@@ -633,7 +704,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   const flexDirection = config.dockingSide === AzDockingSide.RIGHT ? 'row-reverse' : 'row';
 
   return (
-    <AzNavRailContext.Provider value={{ register, unregister, updateSettings, getDividerId, hasItem }}>
+    <AzNavRailContext.Provider value={{ register, unregister, updateSettings, registerCallback, generateDividerId }}>
         <View style={{ flexDirection: flexDirection, height: '100%', flex: 1 }}>
             <Animated.View
                 style={[
@@ -660,11 +731,15 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                 accessibilityLabel={isFloating ? "Undocked Rail" : (isExpanded ? "Collapse Menu" : "Expand Menu")}
                 accessibilityHint="Double tap to toggle, long press to drag"
             >
-                 <View style={{ width: AzNavRailDefaults.HeaderIconSize, height: AzNavRailDefaults.HeaderIconSize, backgroundColor: 'gray', borderRadius: getHeaderBorderRadius(), alignItems: 'center', justifyContent: 'center' }}>
-                     <Text style={{ color: 'white' }}>Icon</Text>
-                 </View>
+                 {config.appIcon ? (
+                     <Image source={config.appIcon} style={{ width: AzNavRailDefaults.HeaderIconSize, height: AzNavRailDefaults.HeaderIconSize, borderRadius: getHeaderBorderRadius() }} />
+                 ) : (
+                     <View style={{ width: AzNavRailDefaults.HeaderIconSize, height: AzNavRailDefaults.HeaderIconSize, backgroundColor: 'gray', borderRadius: getHeaderBorderRadius(), alignItems: 'center', justifyContent: 'center' }}>
+                         <Text style={{ color: 'white' }}>Icon</Text>
+                     </View>
+                 )}
                  {(!isFloating && isExpanded && config.displayAppNameInHeader) && (
-                     <Text style={[styles.appName, { marginLeft: config.dockingSide === AzDockingSide.RIGHT ? 0 : 16, marginRight: config.dockingSide === AzDockingSide.RIGHT ? 16 : 0, flexShrink: 0, minWidth: 200 }]} numberOfLines={1}>App Name</Text>
+                     <Text style={[styles.appName, { marginLeft: config.dockingSide === AzDockingSide.RIGHT ? 0 : 16, marginRight: config.dockingSide === AzDockingSide.RIGHT ? 16 : 0, flexShrink: 0, minWidth: 200 }]} numberOfLines={1}>{config.appName}</Text>
                  )}
             </TouchableOpacity>
 
@@ -686,45 +761,23 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
 
             </Animated.View>
 
-            {items.filter(i => i.isNestedRail).map(item => {
-                const effectiveConfig = item.nestedRailSettings ? { ...config, ...item.nestedRailSettings } : config;
-                return (
-                    <AzNestedRailPopup
-                        key={`nested-${item.id}`}
-                        visible={nestedRailVisible === item.id}
-                        onDismiss={() => setNestedRailVisible(null)}
-                        items={subItemsMap[item.id] || []}
-                        alignment={item.nestedRailAlignment || AzNestedRailAlignment.VERTICAL}
-                        renderItem={(subItem, idx) => {
-                            const isExpandedHost = hostStates[subItem.id] || false;
-                            const subItems = subItemsMap[subItem.id] || [];
-                            const isRect = subItem.shape === AzButtonShape.RECTANGLE;
-                            const nestedProps = {
-                                key: subItem.id,
-                                color: effectiveConfig.activeColor && (subItem.isChecked || subItem.id === currentDestination) ? effectiveConfig.activeColor : subItem.color,
-                                shape: subItem.shape || effectiveConfig.defaultShape,
-                                enabled: !subItem.disabled,
-                                style: { marginBottom: isRect ? 2 : AzNavRailDefaults.RailContentVerticalArrangement }
-                            };
-
-                            // Re-render subItem with nested settings logic injected via cloning
-                            // (We could refactor renderRailItem to take config, but this works inline for nested popups)
-                            const rendered = renderRailItem(subItem, idx);
-                            // Simple injection is tricky, best to let renderRailItem use the global config as it does,
-                            // but wait, AzNestedRailPopup just renders what we pass.
-                            // If we override the global `renderRailItem`, we need to change it to accept `config`.
-                            return (
-                                <View key={`wrap-${subItem.id}`} onLayout={(e) => handleItemLayout(subItem.id, e)}>
-                                    {renderRailItem(subItem, idx, effectiveConfig)}
-                                </View>
-                            );
-                        }}
-                        anchorPosition={anchorPosition}
-                        dockingSide={effectiveConfig.dockingSide}
-                        helpList={effectiveConfig.helpList}
-                    />
-                );
-            })}
+            {items.filter(i => i.isNestedRail).map(item => (
+                <AzNestedRailPopup
+                    key={`nested-${item.id}`}
+                    visible={nestedRailVisible === item.id}
+                    onDismiss={() => setNestedRailVisible(null)}
+                    items={item.nestedRailItems || subItemsMap[item.id] || []}
+                    alignment={item.nestedRailAlignment || AzNestedRailAlignment.VERTICAL}
+                    renderItem={(subItem, idx) => (
+                        <View key={`wrap-${subItem.id}`} onLayout={(e) => handleItemLayout(subItem.id, e)}>
+                            {renderRailItem(subItem, idx)}
+                        </View>
+                    )}
+                    anchorPosition={anchorPosition}
+                    dockingSide={config.dockingSide}
+                    helpList={config.helpList}
+                />
+            ))}
 
             {/* Content with Safe Zones */}
             <View style={{ flex: 1, marginTop: '20%', marginBottom: '10%' }}>

@@ -450,7 +450,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     }
 
     override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, secLoc: String?, secLocPort: Int, helpList: Map<String, Any>, tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial>) {
-        this.advancedConfig = AzAdvancedConfig(
+        this.advancedConfig = this.advancedConfig.copy(
             isLoading = isLoading,
             helpEnabled = helpEnabled,
             onDismissHelp = onDismissHelp,
@@ -460,10 +460,10 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
             onRailDrag = onRailDrag,
             onOverlayDrag = onOverlayDrag,
             onItemGloballyPositioned = onItemGloballyPositioned,
-            secLoc = secLoc,
+            secLoc = secLoc ?: this.advancedConfig.secLoc,
             secLocPort = secLocPort,
-            helpList = helpList,
-            tutorials = tutorials
+            helpList = if (helpList.isNotEmpty()) helpList else this.advancedConfig.helpList,
+            tutorials = if (tutorials.isNotEmpty()) tutorials else this.advancedConfig.tutorials
         )
     }
 
@@ -509,19 +509,19 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         this.usePhysicalDocking = usePhysicalDocking
         this.helpLineColors = helpLineColors
 
-        this.advancedConfig = AzAdvancedConfig(
-            isLoading = isLoading || this.advancedConfig.isLoading,
-            enableRailDragging = enableRailDragging || overlayService != null || onOverlayDrag != null || this.advancedConfig.enableRailDragging,
-            onUndock = onUndock ?: this.advancedConfig.onUndock,
-            overlayService = overlayService ?: this.advancedConfig.overlayService,
-            onOverlayDrag = onOverlayDrag ?: this.advancedConfig.onOverlayDrag,
-            onItemGloballyPositioned = onItemGloballyPositioned ?: this.advancedConfig.onItemGloballyPositioned,
-            helpEnabled = helpEnabled || this.advancedConfig.helpEnabled,
-            onDismissHelp = onDismissHelp ?: this.advancedConfig.onDismissHelp,
+        this.advancedConfig = this.advancedConfig.copy(
+            isLoading = isLoading,
+            enableRailDragging = enableRailDragging || overlayService != null || onOverlayDrag != null,
+            onUndock = onUndock,
+            overlayService = overlayService,
+            onOverlayDrag = onOverlayDrag,
+            onItemGloballyPositioned = onItemGloballyPositioned,
+            helpEnabled = helpEnabled,
+            onDismissHelp = onDismissHelp,
             secLoc = secLoc ?: this.advancedConfig.secLoc,
-            secLocPort = if (secLocPort == 10203) this.advancedConfig.secLocPort else secLocPort,
-            helpList = if (helpList.isEmpty()) this.advancedConfig.helpList else helpList,
-            tutorials = if (tutorials.isEmpty()) this.advancedConfig.tutorials else tutorials
+            secLocPort = secLocPort,
+            helpList = if (helpList.isNotEmpty()) helpList else this.advancedConfig.helpList,
+            tutorials = if (tutorials.isNotEmpty()) tutorials else this.advancedConfig.tutorials
         )
     }
 
@@ -588,7 +588,10 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape, translucentBackground = this.translucentBackground)
         nestedScope.nestedContent()
 
-        nestedScope.onClickMap.forEach { (k, v) -> onClickMap[k] = v }
+        nestedScope.onClickMap.forEach { (k, v) ->
+            if (onClickMap.containsKey(k)) throw IllegalStateException("Scope collision: Nested item ID '$k' duplicates an existing parent ID.")
+            onClickMap[k] = v
+        }
         nestedScope.onFocusMap.forEach { (k, v) -> onFocusMap[k] = v }
         nestedScope.hiddenMenuOnClickMap.forEach { (k, v) -> hiddenMenuOnClickMap[k] = v }
         nestedScope.hiddenMenuOnValueChangeMap.forEach { (k, v) -> hiddenMenuOnValueChangeMap[k] = v }
@@ -676,7 +679,10 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
             nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape, translucentBackground = this.translucentBackground)
             nestedScope.nestedContent()
 
-            nestedScope.onClickMap.forEach { (k, v) -> onClickMap[k] = v }
+            nestedScope.onClickMap.forEach { (k, v) ->
+                if (onClickMap.containsKey(k)) throw IllegalStateException("Scope collision: Nested item ID '$k' duplicates an existing parent ID.")
+                onClickMap[k] = v
+            }
             nestedScope.onFocusMap.forEach { (k, v) -> onFocusMap[k] = v }
             nestedScope.hiddenMenuOnClickMap.forEach { (k, v) -> hiddenMenuOnClickMap[k] = v }
             nestedScope.hiddenMenuOnValueChangeMap.forEach { (k, v) -> hiddenMenuOnValueChangeMap[k] = v }

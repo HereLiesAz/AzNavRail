@@ -1,4 +1,4 @@
-import React, { useEffect, useContext, useRef, useId, useState } from 'react';
+import React, { useEffect, useContext, useRef, useState, useMemo } from 'react';
 import { AzNavItem, AzButtonShape, AzNavItemProps, AzToggleProps, AzCyclerProps, AzHostItemProps, AzSubItemProps, AzSubToggleProps, AzSubCyclerProps, AzRailRelocItemProps, AzNestedRailProps, AzNestedRailAlignment, HiddenMenuScope, AzItemConfig } from './types';
 import { AzNavRailDefaults } from './AzNavRailDefaults';
 
@@ -6,8 +6,8 @@ export const AzNavRailContext = React.createContext<{
   register: (item: AzNavItem) => void;
   unregister: (id: string) => void;
   updateSettings: (settings: any) => void;
-  getDividerId: () => string;
-  hasItem: (id: string) => boolean;
+  registerCallback: (id: string, type: 'onClick' | 'onRelocate' | 'onHiddenMenuClick' | 'onHiddenMenuValueChange', fn: Function, extraId?: string) => void;
+  generateDividerId: () => string;
 } | null>(null);
 
 const useAzItem = (rawItem: AzNavItem) => {
@@ -32,34 +32,55 @@ const useAzItem = (rawItem: AzNavItem) => {
   useEffect(() => {
     if (!context) return;
 
+    if (item.onClick) context.registerCallback(item.id, 'onClick', item.onClick);
+    if (item.onRelocate) context.registerCallback(item.id, 'onRelocate', item.onRelocate);
+
+    if (item.hiddenMenu) {
+        item.hiddenMenu.forEach(hItem => {
+            if (hItem.onClick) context.registerCallback(item.id, 'onHiddenMenuClick', hItem.onClick, hItem.id);
+            if (hItem.onValueChange) context.registerCallback(item.id, 'onHiddenMenuValueChange', hItem.onValueChange, hItem.id);
+        });
+    }
+
+    // Strip functions before state registration
+    const dataItem = { ...item };
+    delete dataItem.onClick;
+    delete dataItem.onRelocate;
+    if (dataItem.hiddenMenu) {
+        dataItem.hiddenMenu = dataItem.hiddenMenu.map(h => {
+            const hCopy = { ...h };
+            delete hCopy.onClick;
+            delete hCopy.onValueChange;
+            return hCopy;
+        });
+    }
+
     // Simple comparison to avoid spamming updates
     const prev = previousItem.current;
     const isSame = prev &&
-                   prev.id === item.id &&
-                   prev.text === item.text &&
-                   prev.disabled === item.disabled &&
-                   prev.isChecked === item.isChecked &&
-                   prev.selectedOption === item.selectedOption &&
-                   prev.menuText === item.menuText &&
-                   prev.menuToggleOnText === item.menuToggleOnText &&
-                   prev.menuToggleOffText === item.menuToggleOffText &&
-                   prev.textColor === item.textColor &&
-                   prev.fillColor === item.fillColor &&
+                   prev.id === dataItem.id &&
+                   prev.text === dataItem.text &&
+                   prev.disabled === dataItem.disabled &&
+                   prev.isChecked === dataItem.isChecked &&
+                   prev.selectedOption === dataItem.selectedOption &&
+                   prev.menuText === dataItem.menuText &&
+                   prev.menuToggleOnText === dataItem.menuToggleOnText &&
+                   prev.menuToggleOffText === dataItem.menuToggleOffText &&
+                   prev.textColor === dataItem.textColor &&
+                   prev.fillColor === dataItem.fillColor &&
                    // Compare arrays
-                   JSON.stringify(prev.options) === JSON.stringify(item.options) &&
-                   JSON.stringify(prev.menuOptions) === JSON.stringify(item.menuOptions) &&
-                   prev.shape === item.shape &&
-                   prev.color === item.color &&
-                   prev.info === item.info &&
-                   prev.isRelocItem === item.isRelocItem &&
-                   prev.nestedRailItems === item.nestedRailItems &&
+                   JSON.stringify(prev.options) === JSON.stringify(dataItem.options) &&
+                   JSON.stringify(prev.menuOptions) === JSON.stringify(dataItem.menuOptions) &&
+                   prev.shape === dataItem.shape &&
+                   prev.color === dataItem.color &&
+                   prev.info === dataItem.info &&
+                   prev.isRelocItem === dataItem.isRelocItem &&
                    // Reloc props
-                   JSON.stringify(prev.hiddenMenu) === JSON.stringify(item.hiddenMenu) &&
-                   prev.onRelocate === item.onRelocate;
+                   JSON.stringify(prev.hiddenMenu) === JSON.stringify(dataItem.hiddenMenu);
 
     if (!isSame) {
-        context.register(item);
-        previousItem.current = item;
+        context.register(dataItem);
+        previousItem.current = dataItem;
     }
 
     // Cleanup only on unmount
@@ -67,7 +88,35 @@ const useAzItem = (rawItem: AzNavItem) => {
       // We don't unregister on every update, only on unmount
       // But if ID changes (rare), we should unregister old ID.
     };
-  }, [context, item]); // dependencies should capture all props
+  }, [
+    context,
+    item.id,
+    item.text,
+    item.disabled,
+    item.isChecked,
+    item.selectedOption,
+    item.menuText,
+    item.menuToggleOnText,
+    item.menuToggleOffText,
+    item.textColor,
+    item.fillColor,
+    item.options,
+    item.menuOptions,
+    item.shape,
+    item.color,
+    item.info,
+    item.isRelocItem,
+    item.hiddenMenu,
+    item.onClick,
+    item.onRelocate,
+    item.isExpanded,
+    item.nestedRailAlignment,
+    item.nestedRailItems,
+    item.isNestedRail,
+    item.isHost,
+    item.hostId,
+    item.isSubItem
+  ]);
 
   useEffect(() => {
       if (context) {
@@ -89,8 +138,8 @@ export const AzRailItem: React.FC<AzNavItemProps> = (props) => {
     isCycler: false,
     isDivider: false,
     collapseOnClick: true,
-    shape: props.shape || AzButtonShape.CIRCLE,
-    disabled: props.disabled || false,
+    shape: props.shape ?? AzButtonShape.CIRCLE,
+    disabled: props.disabled ?? false,
     isHost: false,
     isSubItem: false,
     isExpanded: false,
@@ -108,8 +157,8 @@ export const AzMenuItem: React.FC<AzNavItemProps> = (props) => {
     isCycler: false,
     isDivider: false,
     collapseOnClick: true,
-    shape: props.shape || AzButtonShape.CIRCLE,
-    disabled: props.disabled || false,
+    shape: props.shape ?? AzButtonShape.CIRCLE,
+    disabled: props.disabled ?? false,
     isHost: false,
     isSubItem: false,
     isExpanded: false,
@@ -127,8 +176,8 @@ export const AzRailToggle: React.FC<AzToggleProps> = (props) => {
     isCycler: false,
     isDivider: false,
     collapseOnClick: true,
-    shape: props.shape || AzButtonShape.CIRCLE,
-    disabled: props.disabled || false,
+    shape: props.shape ?? AzButtonShape.CIRCLE,
+    disabled: props.disabled ?? false,
     isHost: false,
     isSubItem: false,
     isExpanded: false,
@@ -144,8 +193,8 @@ export const AzMenuToggle: React.FC<AzToggleProps> = (props) => {
     isCycler: false,
     isDivider: false,
     collapseOnClick: true,
-    shape: props.shape || AzButtonShape.CIRCLE,
-    disabled: props.disabled || false,
+    shape: props.shape ?? AzButtonShape.CIRCLE,
+    disabled: props.disabled ?? false,
     isHost: false,
     isSubItem: false,
     isExpanded: false,
@@ -161,8 +210,8 @@ export const AzRailCycler: React.FC<AzCyclerProps> = (props) => {
     isCycler: true,
     isDivider: false,
     collapseOnClick: true,
-    shape: props.shape || AzButtonShape.CIRCLE,
-    disabled: props.disabled || false,
+    shape: props.shape ?? AzButtonShape.CIRCLE,
+    disabled: props.disabled ?? false,
     isHost: false,
     isSubItem: false,
     isExpanded: false,
@@ -180,8 +229,8 @@ export const AzMenuCycler: React.FC<AzCyclerProps> = (props) => {
     isCycler: true,
     isDivider: false,
     collapseOnClick: true,
-    shape: props.shape || AzButtonShape.CIRCLE,
-    disabled: props.disabled || false,
+    shape: props.shape ?? AzButtonShape.CIRCLE,
+    disabled: props.disabled ?? false,
     isHost: false,
     isSubItem: false,
     isExpanded: false,
@@ -193,10 +242,7 @@ export const AzMenuCycler: React.FC<AzCyclerProps> = (props) => {
 
 export const AzDivider: React.FC = () => {
     const context = useContext(AzNavRailContext);
-    const id = useRef<string | null>(null);
-    if (!id.current && context) {
-        id.current = context.getDividerId();
-    }
+    const id = useRef(context?.generateDividerId() ?? `divider-${Math.random()}`).current;
     useAzItem({
         id: id.current || '',
         text: '',
@@ -226,8 +272,8 @@ export const AzRailHostItem: React.FC<AzHostItemProps> = (props) => {
         isCycler: false,
         isDivider: false,
         collapseOnClick: false, // Hosts expand/collapse, don't close rail
-        shape: props.shape || AzButtonShape.CIRCLE,
-        disabled: props.disabled || false,
+        shape: props.shape ?? AzButtonShape.CIRCLE,
+        disabled: props.disabled ?? false,
         isExpanded: false, // Initial state, managed by parent usually
         toggleOnText: '',
         toggleOffText: '',
@@ -245,8 +291,8 @@ export const AzMenuHostItem: React.FC<AzHostItemProps> = (props) => {
         isCycler: false,
         isDivider: false,
         collapseOnClick: false,
-        shape: props.shape || AzButtonShape.CIRCLE,
-        disabled: props.disabled || false,
+        shape: props.shape ?? AzButtonShape.CIRCLE,
+        disabled: props.disabled ?? false,
         isExpanded: false,
         toggleOnText: '',
         toggleOffText: '',
@@ -265,7 +311,7 @@ export const AzRailSubItem: React.FC<AzSubItemProps> = (props) => {
         isDivider: false,
         collapseOnClick: true,
         shape: AzButtonShape.NONE,
-        disabled: props.disabled || false,
+        disabled: props.disabled ?? false,
         isExpanded: false,
         toggleOnText: '',
         toggleOffText: '',
@@ -284,7 +330,7 @@ export const AzMenuSubItem: React.FC<AzSubItemProps> = (props) => {
         isDivider: false,
         collapseOnClick: true,
         shape: AzButtonShape.NONE,
-        disabled: props.disabled || false,
+        disabled: props.disabled ?? false,
         isExpanded: false,
         toggleOnText: '',
         toggleOffText: '',
@@ -303,7 +349,7 @@ export const AzRailSubToggle: React.FC<AzSubToggleProps> = (props) => {
         isDivider: false,
         collapseOnClick: true,
         shape: AzButtonShape.NONE,
-        disabled: props.disabled || false,
+        disabled: props.disabled ?? false,
         isExpanded: false,
     });
     return null;
@@ -320,7 +366,7 @@ export const AzMenuSubToggle: React.FC<AzSubToggleProps> = (props) => {
         isDivider: false,
         collapseOnClick: true,
         shape: AzButtonShape.NONE,
-        disabled: props.disabled || false,
+        disabled: props.disabled ?? false,
         isExpanded: false,
     });
     return null;
@@ -337,7 +383,7 @@ export const AzRailSubCycler: React.FC<AzSubCyclerProps> = (props) => {
         isDivider: false,
         collapseOnClick: true,
         shape: AzButtonShape.NONE,
-        disabled: props.disabled || false,
+        disabled: props.disabled ?? false,
         isExpanded: false,
         toggleOnText: '',
         toggleOffText: '',
@@ -356,7 +402,7 @@ export const AzMenuSubCycler: React.FC<AzSubCyclerProps> = (props) => {
         isDivider: false,
         collapseOnClick: true,
         shape: AzButtonShape.NONE,
-        disabled: props.disabled || false,
+        disabled: props.disabled ?? false,
         isExpanded: false,
         toggleOnText: '',
         toggleOffText: '',
@@ -364,16 +410,17 @@ export const AzMenuSubCycler: React.FC<AzSubCyclerProps> = (props) => {
     return null;
 };
 
-export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
+export const AzRailRelocItem: React.FC<AzRailRelocItemProps & { keepNestedRailOpen?: boolean }> = (props) => {
     let hiddenMenuItems: any[] = [];
     if (props.hiddenMenu) {
         if (typeof props.hiddenMenu === 'function') {
             const scope: HiddenMenuScope = {
+                parentId: props.id,
                 listItem: (text, action) => {
                     if (typeof action === 'string') {
-                        hiddenMenuItems.push({ id: `${props.id}_hidden_item_${hiddenMenuItems.length}`, text, route: action });
+                        hiddenMenuItems.push({ id: `${props.id}_hidden_${hiddenMenuItems.length}`, text, route: action });
                     } else {
-                        hiddenMenuItems.push({ id: `${props.id}_hidden_item_${hiddenMenuItems.length}`, text, onClick: action });
+                        hiddenMenuItems.push({ id: `${props.id}_hidden_${hiddenMenuItems.length}`, text, onClick: action });
                     }
                 },
                 inputItem: (hint: string, arg2: any, arg3?: any) => {
@@ -406,19 +453,43 @@ export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
                         }
                         items.push({ id: `${props.id}_hidden_item_${items.length}`, text: '', isInput: true, hint, initialValue, onValueChange });
                     }
-                    hiddenMenuItems.push({ id: `${props.id}_hidden_input_${hiddenMenuItems.length}`, text: '', isInput: true, hint, initialValue, onValueChange });
+                    hiddenMenuItems.push({ id: `${props.id}_input_${hiddenMenuItems.length}`, text: '', isInput: true, hint, initialValue, onValueChange });
                 }
             };
             props.hiddenMenu(scope);
         } else {
             hiddenMenuItems = props.hiddenMenu.map((item, i) => ({
-                id: `${props.id}_hidden_item_${i}`,
+                id: `${props.id}_hidden_${i}`,
                 text: item.text,
                 onClick: item.onClick
             }));
         }
         return items;
     }, [props.hiddenMenu, props.id]);
+
+    const parentContext = useContext(AzNavRailContext);
+    const [nestedItems, setNestedItems] = useState<AzNavItem[]>([]);
+
+    const localContext = useMemo(() => {
+        if (!parentContext) return null;
+        return {
+            ...parentContext,
+            register: (item: AzNavItem) => {
+                setNestedItems(prev => {
+                    const idx = prev.findIndex(i => i.id === item.id);
+                    if (idx >= 0) {
+                        const newItems = [...prev];
+                        newItems[idx] = item;
+                        return newItems;
+                    }
+                    return [...prev, item];
+                });
+            },
+            unregister: (id: string) => {
+                setNestedItems(prev => prev.filter(i => i.id !== id));
+            }
+        };
+    }, [parentContext]);
 
     useAzItem({
         ...props,
@@ -431,24 +502,24 @@ export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
         isCycler: false,
         isDivider: false,
         collapseOnClick: false,
-        shape: props.shape,
-        disabled: props.disabled || false,
+        shape: props.shape ?? AzButtonShape.NONE,
+        disabled: props.disabled ?? false,
         isExpanded: false,
         toggleOnText: '',
         toggleOffText: '',
         hiddenMenu: hiddenMenuItems,
         forceHiddenMenuOpen: props.forceHiddenMenuOpen,
         onHiddenMenuDismiss: props.onHiddenMenuDismiss,
-        nestedRailAlignment: props.nestedRailAlignment || AzNestedRailAlignment.VERTICAL,
-    });
+        nestedRailAlignment: props.nestedRailAlignment ?? AzNestedRailAlignment.VERTICAL,
+        isNestedRail: !!props.nestedContent,
+        nestedRailItems: props.nestedContent ? nestedItems : undefined,
+        keepNestedRailOpen: props.keepNestedRailOpen ?? false
+    } as any);
+
     return (
-        <AzNavRailContext.Consumer>
-            {(ctx) => (
-                <AzNavRailContext.Provider value={ctx}>
-                    {props.nestedContent}
-                </AzNavRailContext.Provider>
-            )}
-        </AzNavRailContext.Consumer>
+        <AzNavRailContext.Provider value={localContext}>
+            {props.nestedContent}
+        </AzNavRailContext.Provider>
     );
 };
 
@@ -502,8 +573,30 @@ export const AzAdvanced: React.FC<any> = (props) => {
     return null;
 };
 
-export const AzNestedRail: React.FC<AzNestedRailProps> = (props) => {
-    const [nestedSettings, setNestedSettings] = React.useState<any>({});
+export const AzNestedRail: React.FC<AzNestedRailProps & { keepNestedRailOpen?: boolean }> = (props) => {
+    const parentContext = useContext(AzNavRailContext);
+    const [nestedItems, setNestedItems] = useState<AzNavItem[]>([]);
+
+    const localContext = useMemo(() => {
+        if (!parentContext) return null;
+        return {
+            ...parentContext,
+            register: (item: AzNavItem) => {
+                setNestedItems(prev => {
+                    const idx = prev.findIndex(i => i.id === item.id);
+                    if (idx >= 0) {
+                        const newItems = [...prev];
+                        newItems[idx] = item;
+                        return newItems;
+                    }
+                    return [...prev, item];
+                });
+            },
+            unregister: (id: string) => {
+                setNestedItems(prev => prev.filter(i => i.id !== id));
+            }
+        };
+    }, [parentContext]);
 
     useAzItem({
         ...props,
@@ -513,41 +606,23 @@ export const AzNestedRail: React.FC<AzNestedRailProps> = (props) => {
         isCycler: false,
         isDivider: false,
         collapseOnClick: false,
-        shape: props.shape,
-        disabled: props.disabled || false,
+        shape: props.shape ?? AzButtonShape.CIRCLE,
+        disabled: props.disabled ?? false,
         isHost: false,
         isSubItem: false,
         isExpanded: false,
         toggleOnText: '',
         toggleOffText: '',
         isNestedRail: true,
-        nestedRailAlignment: props.alignment || AzNestedRailAlignment.VERTICAL,
-        nestedRailSettings: nestedSettings,
-    });
+        nestedRailAlignment: props.alignment ?? AzNestedRailAlignment.VERTICAL,
+        nestedRailItems: nestedItems,
+        keepNestedRailOpen: props.keepNestedRailOpen ?? false
+    } as any);
 
     return (
-        <AzNavRailContext.Consumer>
-            {(ctx) => {
-                if (!ctx) return null;
-                const isolatedContext = {
-                    ...ctx,
-                    updateSettings: (newSettings: any) => {
-                        setNestedSettings((prev: any) => {
-                            const merged = { ...prev, ...newSettings };
-                            // Shallow check to avoid infinite loops
-                            const keys = Object.keys(merged);
-                            const changed = keys.some(k => prev[k] !== merged[k]);
-                            return changed ? merged : prev;
-                        });
-                    }
-                };
-                return (
-                    <AzNavRailContext.Provider value={isolatedContext}>
-                        {props.children}
-                    </AzNavRailContext.Provider>
-                );
-            }}
-        </AzNavRailContext.Consumer>
+        <AzNavRailContext.Provider value={localContext}>
+            {props.children}
+        </AzNavRailContext.Provider>
     );
 };
 
@@ -559,14 +634,14 @@ export const AzHelpRailItem: React.FC<AzNavItemProps> = (props) => {
         isCycler: false,
         isDivider: false,
         collapseOnClick: true,
+        shape: props.shape ?? AzButtonShape.CIRCLE,
+        disabled: props.disabled ?? false,
         isHost: false,
         isSubItem: false,
         isExpanded: false,
         toggleOnText: '',
         toggleOffText: '',
-        isHelpItem: true,
-        shape: props.shape || AzButtonShape.NONE,
-        disabled: props.disabled || false
+        isHelpItem: true
     });
     return null;
 };
@@ -596,6 +671,8 @@ export const AzHelpSubItem: React.FC<AzSubItemProps> = (props) => {
         isCycler: false,
         isDivider: false,
         collapseOnClick: true,
+        shape: props.shape ?? AzButtonShape.NONE,
+        disabled: props.disabled ?? false,
         isHost: false,
         isExpanded: false,
         toggleOnText: '',
