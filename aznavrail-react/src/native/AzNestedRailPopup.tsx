@@ -11,7 +11,6 @@ interface AzNestedRailPopupProps {
     renderItem: (item: AzNavItem, index: number) => React.ReactNode;
     anchorPosition?: { x: number, y: number, width: number, height: number };
     dockingSide: 'LEFT' | 'RIGHT';
-    helpList?: Record<string, string>;
 }
 
 export const AzNestedRailPopup: React.FC<AzNestedRailPopupProps> = ({
@@ -21,8 +20,7 @@ export const AzNestedRailPopup: React.FC<AzNestedRailPopupProps> = ({
     alignment,
     renderItem,
     anchorPosition,
-    dockingSide = 'LEFT',
-    helpList = {}
+    dockingSide = 'LEFT'
 }) => {
     if (!visible) return null;
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { AzNavItem, AzTutorial } from '../types';
 import { useAzTutorialController } from '../tutorial/AzTutorialController';
 

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
-import { AzTutorial, AzHighlight } from '../types';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { AzTutorial } from '../types';
 import { useAzTutorialController } from '../tutorial/AzTutorialController';
 
 interface AzTutorialOverlayProps {
@@ -51,8 +51,6 @@ export const AzTutorialOverlay: React.FC<AzTutorialOverlayProps> = ({
   }, [currentCard.highlight, itemBoundsCache]);
 
   const isFullScreenHighlight = currentCard.highlight?.type === 'FullScreen';
-
-  const window = Dimensions.get('window');
 
   const handleAction = () => {
     if (currentCard.onAction) {

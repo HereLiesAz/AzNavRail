@@ -40,7 +40,7 @@ export interface AzNavRailSettings {
   translucentBackground?: string;
   secLoc?: string;
   usePhysicalDocking?: boolean;
-  activeClassifiers?: string[];
+  activeClassifiers?: Set<string>;
   onItemGloballyPositioned?: (id: string, bounds: any) => void;
   helpList?: Record<string, string>;
   tutorials?: Record<string, AzTutorial>;
@@ -132,12 +132,13 @@ export interface AzNavItem {
   // Info/Help
   info?: string;
   // New properties for parity
-  classifiers?: string[];
+  classifiers?: Set<string>;
   content?: any;
   isNestedRail?: boolean;
   isHelpItem?: boolean;
   nestedRailAlignment?: AzNestedRailAlignment;
   nestedRailItems?: AzNavItem[];
+  nestedRailSettings?: any;
 }
 
 export interface AzNavItemProps {
@@ -155,7 +156,7 @@ export interface AzNavItemProps {
   shape?: AzButtonShape;
   info?: string;
   content?: any;
-  classifiers?: string[];
+  classifiers?: Set<string>;
 }
 
 export interface AzToggleProps extends AzNavItemProps {
@@ -222,7 +223,7 @@ export interface AzItemConfig {
   isHost?: boolean;
   isSubItem?: boolean;
   hostId?: string | null;
-  classifiers?: string[];
+  classifiers?: Set<string>;
   onFocus?: () => void;
   content?: any;
   color?: string;
