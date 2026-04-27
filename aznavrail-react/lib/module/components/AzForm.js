@@ -1,5 +1,5 @@
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
-import React, { useState, createContext, useContext } from 'react';
+import React, { useState, createContext, useContext, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { AzTextBox } from './AzTextBox';
 const AzFormContext = /*#__PURE__*/createContext(undefined);
@@ -13,21 +13,34 @@ export const AzForm = ({
   style
 }) => {
   const [formData, setFormData] = useState({});
-  const updateField = (name, value) => {
+  const updateField = useCallback((name, value) => {
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-  };
+  }, []);
+  const registerField = useCallback((name, initialValue) => {
+    setFormData(prev => {
+      if (prev[name] === undefined) {
+        return {
+          ...prev,
+          [name]: initialValue
+        };
+      }
+      return prev;
+    });
+  }, []);
   const handleSubmit = () => {
     onSubmit(formData);
   };
   return /*#__PURE__*/React.createElement(AzFormContext.Provider, {
     value: {
       updateField,
+      registerField,
       formName,
       outlineColor,
-      outlined
+      outlined,
+      formData
     }
   }, /*#__PURE__*/React.createElement(View, {
     style: [styles.container, style]
@@ -47,6 +60,7 @@ export const AzForm = ({
 };
 export const AzFormEntry = ({
   name,
+  initialValue = '',
   ...props
 }) => {
   const context = useContext(AzFormContext);
@@ -55,20 +69,27 @@ export const AzFormEntry = ({
   }
   const {
     updateField,
+    registerField,
     formName,
     outlineColor,
-    outlined
+    outlined,
+    formData
   } = context;
+  useEffect(() => {
+    registerField(name, initialValue);
+  }, [name, initialValue, registerField]);
   const handleChange = text => {
     updateField(name, text);
     if (props.onValueChange) props.onValueChange(text);
   };
+  const value = formData[name] !== undefined ? formData[name] : initialValue;
   return /*#__PURE__*/React.createElement(View, {
     style: {
       flexDirection: 'row',
       marginBottom: 8
     }
   }, /*#__PURE__*/React.createElement(AzTextBox, _extends({}, props, {
+    value: value,
     onValueChange: handleChange,
     historyContext: formName // Use formName as history context
     ,

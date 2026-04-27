@@ -30,32 +30,58 @@ export const RailMenuItem = ({
       onItemClick();
     }
   };
-  const displayText = item.text || (item.isChecked ? item.toggleOnText : item.toggleOffText) || displayOption || '';
+  let displayText = item.menuText ?? item.text;
+  if (item.isToggle) {
+    displayText = item.isChecked ? item.menuToggleOnText ?? item.toggleOnText : item.menuToggleOffText ?? item.toggleOffText;
+  } else if (item.isCycler) {
+    if (item.options && displayOption) {
+      const idx = item.options.indexOf(displayOption);
+      if (idx !== -1 && item.menuOptions && idx >= 0 && idx < item.menuOptions.length) {
+        displayText = item.menuOptions[idx];
+      } else {
+        if (item.menuOptions) {
+          console.warn(`Cycler configuration mismatch for item='${item.text}': selectedOption='${displayOption}', index=${idx}, optionsSize=${item.options.length}, menuOptionsSize=${item.menuOptions.length}`);
+        }
+        displayText = displayOption;
+      }
+    } else {
+      displayText = displayOption || '';
+    }
+  }
+  const accessibilityState = {};
+  if (item.isToggle) accessibilityState.checked = item.isChecked;
+  if (item.isHost || item.isNestedRail) accessibilityState.expanded = isExpandedHost;
   return /*#__PURE__*/React.createElement(View, null, /*#__PURE__*/React.createElement(TouchableOpacity, {
     onPress: handlePress,
     style: [styles.menuItem, {
-      paddingLeft: 16 + depth * 16
+      paddingLeft: 16 + depth * 16,
+      backgroundColor: !item.isHost ? `${item.fillColor ?? item.color ?? '#000000'}1F` : 'transparent'
     }],
-    accessibilityRole: "menuitem",
+    accessibilityRole: item.isToggle ? "switch" : "menuitem",
     accessibilityLabel: displayText,
-    accessibilityState: {
-      expanded: item.isHost ? isExpandedHost : undefined
-    }
+    accessibilityState: accessibilityState
   }, /*#__PURE__*/React.createElement(Text, {
     style: [styles.menuItemText, {
-      fontWeight: item.isHost ? 'bold' : 'normal'
+      fontWeight: item.isHost ? 'bold' : 'normal',
+      color: item.textColor ?? item.color ?? '#000000'
     }]
-  }, displayText), item.isHost && /*#__PURE__*/React.createElement(Text, null, isExpandedHost ? '▲' : '▼')), item.isHost && isExpandedHost && renderSubItems());
+  }, displayText), item.isHost && /*#__PURE__*/React.createElement(Text, {
+    style: {
+      marginLeft: 8
+    }
+  }, isExpandedHost ? '▲' : '▼')), item.isHost && isExpandedHost && renderSubItems());
 };
 const styles = StyleSheet.create({
   menuItem: {
     padding: 16,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center'
   },
   menuItemText: {
-    fontSize: 16
+    fontSize: 16,
+    textAlign: 'center',
+    flex: 1
   }
 });
 //# sourceMappingURL=RailMenuItem.js.map

@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import './AzNavRail.css';
 import MenuItem from './MenuItem';
 import AzNavRailButton from './AzNavRailButton';
 import HelpOverlay from './HelpOverlay';
 import AzNestedRailPopup from './AzNestedRailPopup';
-import { RelocItemHandler } from '../utils/RelocItemHandler';
+import { RelocItemHandler } from '../util/RelocItemHandler';
 import AzDivider from './AzDivider';
 import AzTextBox from './AzTextBox';
 
@@ -34,8 +34,8 @@ const AzNavRail = ({
     onDismissInfoScreen,
     dockingSide = 'LEFT',
     noMenu = false,
-    activeClassifiers = [],
-    // Array of strings
+    activeClassifiers = new Set(),
+    // Set of strings
     activeColor,
     translucentBackground,
     packRailButtons = false,
@@ -114,6 +114,11 @@ const AzNavRail = ({
     localNavItems.forEach(processItem);
     return map;
   }, [localNavItems]);
+  const getEffectiveSubItems = useCallback(item => {
+    const subItemsFromMap = subItemsMap[item.id] || [];
+    const subItemsFromProp = item.items || [];
+    return subItemsFromMap.length > 0 ? subItemsFromMap : subItemsFromProp;
+  }, [subItemsMap]);
   const cyclerTimers = useRef({});
   const dragStartY = useRef(0);
   const longPressTimer = useRef(null);
@@ -194,9 +199,10 @@ const AzNavRail = ({
   };
   const checkIsActive = item => {
     if (item.route && item.route === currentDestination) return true;
-    if (item.classifiers && activeClassifiers.length > 0) {
+    if (item.classifiers && activeClassifiers.size > 0) {
       // Check intersection
-      return item.classifiers.some(c => activeClassifiers.includes(c));
+      const classifiersArray = Array.isArray(item.classifiers) ? item.classifiers : Array.from(item.classifiers);
+      return classifiersArray.some(c => activeClassifiers.has(c));
     }
     if (item.id === currentDestination) return true;
     return false;
@@ -275,10 +281,8 @@ const AzNavRail = ({
       ...item,
       selectedOption: (_cyclerStates$item$id2 = cyclerStates[item.id]) === null || _cyclerStates$item$id2 === void 0 ? void 0 : _cyclerStates$item$id2.displayedOption
     } : item;
-    const subItemsFromMap = subItemsMap[item.id] || [];
-    const subItemsFromProp = item.items || [];
-    const subItems = subItemsFromMap.length > 0 ? subItemsFromMap : subItemsFromProp;
-    const isHost = item.isHost || subItems.length > 0;
+    const effectiveSubItems = getEffectiveSubItems(item);
+    const isHost = item.isHost || effectiveSubItems.length > 0;
     const isHostExpanded = hostStates[item.id];
     const isActive = checkIsActive(item);
     return /*#__PURE__*/React.createElement(React.Fragment, {
@@ -294,7 +298,7 @@ const AzNavRail = ({
       infoScreen: infoScreen
     }), isHost && isHostExpanded && /*#__PURE__*/React.createElement("div", {
       className: "az-nav-rail-subitems"
-    }, subItems.map(subItem => renderMenuItem(subItem, depth + 1))));
+    }, effectiveSubItems.map(subItem => renderMenuItem(subItem, depth + 1))));
   };
   const visibleItems = useMemo(() => {
     const visible = [];
@@ -302,15 +306,15 @@ const AzNavRail = ({
       if (item.isRailItem || item.items) {
         visible.push(item);
         if (hostStates[item.id]) {
-          const subItems = subItemsMap[item.id] || [];
-          subItems.forEach(sub => {
+          const mapSubs = getEffectiveSubItems(item);
+          mapSubs.forEach(sub => {
             if (sub.isRailItem) visible.push(sub);
           });
         }
       }
     });
     return visible;
-  }, [navItems, hostStates, subItemsMap]);
+  }, [navItems, hostStates, subItemsMap, getEffectiveSubItems]);
   const effectiveRailItems = useMemo(() => {
     return navItems.filter(item => item.isRailItem || item.items || subItemsMap[item.id]);
   }, [navItems, subItemsMap]);
@@ -331,7 +335,8 @@ const AzNavRail = ({
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: `az-nav-rail ${isExpanded ? 'expanded' : 'collapsed'} ${dockingSide === 'RIGHT' ? 'right' : ''}`,
     style: {
-      width: isExpanded ? expandedRailWidth : collapsedRailWidth
+      width: isExpanded ? expandedRailWidth : collapsedRailWidth,
+      backgroundColor: translucentBackground || '#f0f0f0'
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "header",
@@ -521,15 +526,7 @@ const AzNavRail = ({
           return;
         }
         if (item.items || subItemsMap[item.id]) {
-          if (infoScreen) {
-            toggleHost(item);
-          } else {
-            setIsExpanded(true);
-            setHostStates(prev => ({
-              ...prev,
-              [item.id]: true
-            }));
-          }
+          toggleHost(item);
         }
       },
       infoScreen: infoScreen,
@@ -614,7 +611,7 @@ const AzNavRail = ({
     railWidth: collapsedRailWidth,
     onDismiss: onDismissInfoScreen,
     nestedRailVisibleId: nestedRailVisibleId,
-    helpList: helpList
+    helpList: (settings === null || settings === void 0 ? void 0 : settings.helpList) || {}
   }), effectiveRailItems.filter(i => i.isNestedRail).map(item => /*#__PURE__*/React.createElement(AzNestedRailPopup, {
     key: `nested-${item.id}`,
     visible: nestedRailVisibleId === item.id,

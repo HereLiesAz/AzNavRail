@@ -168,7 +168,26 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   const wasVisibleOnDragStartRef = useRef(false);
   const itemsRef = useRef(items);
 
+  const effectiveRailItems = useMemo(() => {
+    const list = [];
+    items.forEach(i => {
+      if (!i.isSubItem && (config.noMenu || i.isRailItem)) {
+          list.push(i);
+          if (hostStates[i.id] && !i.isNestedRail) {
+              const subItems = subItemsMap[i.id] || [];
+              subItems.forEach(sub => {
+                  if (sub.isRailItem) list.push(sub);
+              });
+          }
+      }
+    });
+    return list;
+  }, [items, config.noMenu, hostStates, subItemsMap]);
+
+  const effectiveRailItemsRef = useRef(effectiveRailItems);
+
   useEffect(() => { isFloatingRef.current = isFloating; }, [isFloating]);
+  useEffect(() => { effectiveRailItemsRef.current = effectiveRailItems; }, [effectiveRailItems]);
   useEffect(() => { enableRailDraggingRef.current = enableRailDragging; }, [enableRailDragging]);
   useEffect(() => { showFloatingButtonsRef.current = showFloatingButtons; }, [showFloatingButtons]);
   useEffect(() => { itemsRef.current = items; }, [items]);
@@ -214,6 +233,16 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
 
   const updateSettings = useCallback((newSettings: any) => {
       setDslOverrides(prev => ({ ...prev, ...newSettings }));
+  }, []);
+
+  const dividerCounter = useRef(0);
+  const getDividerId = useCallback(() => {
+      const currentItems = itemsRef.current || [];
+      return `divider_${currentItems.length + dividerCounter.current++}`;
+  }, []);
+
+  const hasItem = useCallback((id: string) => {
+      return (itemsRef.current || []).some(i => i.id === id);
   }, []);
 
   const register = useCallback((item: AzNavItem) => {
@@ -441,7 +470,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       }
   };
 
-  const renderRailItem = (item: AzNavItem, _index: number) => {
+  const renderRailItem = (item: AzNavItem, _index: number, overrideConfig: any = config) => {
       const isExpandedHost = hostStates[item.id] || false;
       const subItems = subItemsMap[item.id] || [];
       const isRect = item.shape === AzButtonShape.RECTANGLE;
@@ -481,6 +510,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                      text={item.text}
                      content={item.content}
                      hasCustomContent={!!item.content}
+                     onFocus={item.onFocus}
                      onClick={() => {
                          setHostStates(prev => ({...prev, [item.id]: !prev[item.id]}));
                          logInteraction('Host toggled', item.text);
@@ -498,6 +528,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                   fillColor={item.fillColor}
                   options={item.options || []}
                   selectedOption={item.selectedOption || ''}
+                  onFocus={item.onFocus}
                   onCycle={() => {
                       const onClick = callbacksRef.current[item.id]?.onClick;
                       if (onClick) onClick();
@@ -514,6 +545,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                   isChecked={item.isChecked || false}
                   toggleOnText={item.toggleOnText}
                   toggleOffText={item.toggleOffText}
+                  onFocus={item.onFocus}
                   onToggle={() => {
                       const onClick = callbacksRef.current[item.id]?.onClick;
                       if (onClick) onClick();
@@ -534,6 +566,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                 text={item.text}
                 content={item.content}
                 hasCustomContent={!!item.content}
+                onFocus={item.onFocus}
                 onClick={() => {
                     logInteraction('Item clicked', item.text);
                     if (item.isNestedRail) {

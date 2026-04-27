@@ -6,5 +6,7 @@ export * from './components/AzCycler';
 export * from './components/AzTextBox';
 export * from './components/AzForm';
 export * from './components/AzLoad';
+export * from './components/AzRoller';
 export * from './types';
+export { AzHelpRailItem, AzHelpSubItem } from './AzNavRailScope';
 //# sourceMappingURL=index.js.map
