@@ -69,7 +69,7 @@ data class AzNavItem(
     val selectedOption: String? = null,
     val isDivider: Boolean = false,
     val collapseOnClick: Boolean = true,
-    val shape: AzButtonShape = AzButtonShape.CIRCLE,
+    val shape: AzButtonShape? = null,
     val disabled: Boolean = false,
     val disabledOptions: List<String>? = null,
     val isHost: Boolean = false,
@@ -102,7 +102,7 @@ data class AzNavItem(
             color: Color? = null,
             textColor: Color? = null,
             fillColor: Color? = null,
-            shape: AzButtonShape = AzButtonShape.CIRCLE
+            shape: AzButtonShape? = null
         ): AzNavItem = AzNavItem(
             id = id,
             text = text,
