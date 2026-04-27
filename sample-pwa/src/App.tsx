@@ -24,6 +24,7 @@ import {
   AzRailSubCycler,
   AzRailRelocItem,
   AzNestedRail,
+  AzNavHost,
 } from '@HereLiesAz/aznavrail-react';
 
 function App() {
@@ -61,45 +62,27 @@ function App() {
   };
 
   return (
-    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'row', overflow: 'hidden' }}>
-      <AzNavRail
-        currentDestination={location.pathname.replace('/', '') || 'home'}
-        packRailButtons={packRailButtons}
-        dockingSide={isDockingRight ? AzDockingSide.RIGHT : AzDockingSide.LEFT}
-        noMenu={noMenu}
-        usePhysicalDocking={usePhysicalDocking}
-        defaultShape={AzButtonShape.RECTANGLE}
-        activeColor={themeColor}
-        isLoading={isLoading}
-        enableRailDragging={true}
-        infoScreen={showHelp}
-        onDismissInfoScreen={() => setShowHelp(false)}
-        helpList={{
-          "home": "This is a test helpList text!",
-          "nested-1": "Nested helpList entries work too!"
-        }}
-        onInteraction={(action, details) => console.log(`[SampleApp] ${action}${details ? ' ' + details : ''}`)}
-      >
-        <AzConfig
-          packRailButtons={packRailButtons}
-          dockingSide={isDockingRight ? AzDockingSide.RIGHT : AzDockingSide.LEFT}
-          noMenu={noMenu}
-          usePhysicalDocking={usePhysicalDocking}
-        />
-        <AzTheme
-          defaultShape={AzButtonShape.RECTANGLE}
-          activeColor={themeColor}
-        />
-        <AzAdvanced
-          isLoading={isLoading}
-          enableRailDragging={true}
-          infoScreen={showHelp}
-          onDismissInfoScreen={() => setShowHelp(false)}
-          helpList={{
-              "home": "This is a test helpList text!",
-              "nested-1": "Nested helpList entries work too!"
-          }}
-          tutorials={{
+    <AzNavHost
+      railProps={{
+        currentDestination: location.pathname.replace('/', '') || 'home',
+        settings: {
+          packRailButtons: packRailButtons,
+          dockingSide: isDockingRight ? AzDockingSide.RIGHT : AzDockingSide.LEFT,
+          noMenu: noMenu,
+          usePhysicalDocking: usePhysicalDocking,
+          defaultShape: AzButtonShape.RECTANGLE,
+          activeColor: themeColor,
+          isLoading: isLoading,
+          enableRailDragging: true,
+          infoScreen: showHelp,
+          appName: 'AzNavRail',
+          headerIconShape: 'CIRCLE',
+          onDismissInfoScreen: () => setShowHelp(false),
+          helpList: {
+            "home": "This is a test helpList text!",
+            "nested-1": "Nested helpList entries work too!"
+          },
+          tutorials: {
             "home": {
               scenes: [
                 {
@@ -125,9 +108,11 @@ function App() {
                 }
               ]
             }
-          }}
-        />
-
+          }
+        },
+        onInteraction: (action: any, details: any) => console.log(`[SampleApp] ${action}${details ? ' ' + details : ''}`)
+      }}
+    >
         <AzMenuItem id="home" text="Home" route="home" info="Navigate to the Home screen" onClick={() => console.log('Home menu item clicked')} />
         <AzMenuItem id="multi-line" text={"This is a\nmulti-line item"} route="multi-line" info="Shows how multi-line text is handled" onClick={() => console.log('Multi-line menu item clicked')} />
 
@@ -379,8 +364,7 @@ function App() {
              {renderRoutes()}
           </Routes>
         </div>
-      </AzNavRail>
-    </div>
+    </AzNavHost>
   );
 }
 
