@@ -472,7 +472,7 @@ const AzNavRailInner = props => {
           }));
           logInteraction('Host toggled', item.text);
         }
-      })), isExpandedHost && subItems.map((sub, _i) => renderRailItem(sub, items.indexOf(sub))));
+      })), isExpandedHost && subItems.map((sub, _i) => renderRailItem(sub, items.indexOf(sub), overrideConfig)));
     }
     if (item.isCycler) {
       return /*#__PURE__*/_react.default.createElement(_AzCycler.AzCycler, _extends({}, commonProps, {
