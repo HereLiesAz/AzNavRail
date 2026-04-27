@@ -76,7 +76,7 @@ const useAzItem = (rawItem: AzNavItem) => {
                    prev.info === dataItem.info &&
                    prev.isRelocItem === dataItem.isRelocItem &&
                    // Reloc props
-                   JSON.stringify(prev.hiddenMenu) === JSON.stringify(dataItem.hiddenMenu);
+                   JSON.stringify(prev.hiddenMenu, (k, v) => (typeof v === 'function' ? 'fn' : v)) === JSON.stringify(dataItem.hiddenMenu, (k, v) => (typeof v === 'function' ? 'fn' : v));
 
     if (!isSame) {
         context.register(dataItem);
@@ -466,6 +466,30 @@ export const AzRailRelocItem: React.FC<AzRailRelocItemProps & { keepNestedRailOp
         }
         return items;
     }, [props.hiddenMenu, props.id]);
+
+    const parentContext = useContext(AzNavRailContext);
+    const [nestedItems, setNestedItems] = useState<AzNavItem[]>([]);
+
+    const localContext = useMemo(() => {
+        if (!parentContext) return null;
+        return {
+            ...parentContext,
+            register: (item: AzNavItem) => {
+                setNestedItems(prev => {
+                    const idx = prev.findIndex(i => i.id === item.id);
+                    if (idx >= 0) {
+                        const newItems = [...prev];
+                        newItems[idx] = item;
+                        return newItems;
+                    }
+                    return [...prev, item];
+                });
+            },
+            unregister: (id: string) => {
+                setNestedItems(prev => prev.filter(i => i.id !== id));
+            }
+        };
+    }, [parentContext]);
 
     const parentContext = useContext(AzNavRailContext);
     const [nestedItems, setNestedItems] = useState<AzNavItem[]>([]);

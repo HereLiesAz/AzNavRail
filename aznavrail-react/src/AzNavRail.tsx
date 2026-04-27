@@ -102,7 +102,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       headerIconShape: dslOverrides.headerIconShape ?? headerIconShape,
       translucentBackground: dslOverrides.translucentBackground ?? translucentBackground,
       vibrate: dslOverrides.vibrate ?? vibrate,
-      secLocPort: dslOverrides.secLocPort ?? (props as any).secLocPort ?? 10203,
+      secLocPort: 10203,
       activeClassifiers: dslOverrides.activeClassifiers ?? props.activeClassifiers,
       onItemGloballyPositioned: dslOverrides.onItemGloballyPositioned,
       helpList: dslOverrides.helpList ?? helpList,
@@ -250,12 +250,8 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
         throw new Error(`SubItem ${item.id} must declare a hostId.`);
     }
     setItems((prev) => {
-      if (item.isSubItem && !prev.find(i => i.id === item.hostId)) {
-          // Log a warning or throw depending on how strict you want to be
-          // throwing here might break if children render before parent in some tree structure,
-          // but React usually mounts bottom-up. However, Context is safe.
-          throw new Error(`Host ID ${item.hostId} not found for SubItem ${item.id}.`);
-      }
+      // Sub-items are linked to hosts via subItemsMap during render.
+      // Strict ordering check is removed to prevent mount-order crashes.
       const index = prev.findIndex((i) => i.id === item.id);
       if (index >= 0) {
         const old = prev[index];
@@ -369,10 +365,8 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       const screenHeight = screenHeightRef.current;
 
       let exactContentHeight = headerHeight;
-      effectiveRailItems.forEach(item => {
-          if (itemBounds[item.id]) {
-              exactContentHeight += itemBounds[item.id].height;
-          }
+      Object.values(itemBounds).forEach(bounds => {
+          exactContentHeight += bounds.height;
       });
       // Add padding
       exactContentHeight += 16;
