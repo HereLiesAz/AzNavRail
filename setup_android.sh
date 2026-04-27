@@ -3,9 +3,13 @@
 set -euo pipefail
 
 # --- 1. Install Java Development Kit (JDK) ---
-echo "➡️ Installing OpenJDK 17..."
-sudo apt-get update
-sudo apt-get install -y openjdk-17-jdk
+if dpkg -s openjdk-17-jdk >/dev/null 2>&1; then
+    echo "➡️ OpenJDK 17 is already installed, skipping..."
+else
+    echo "➡️ Installing OpenJDK 17..."
+    sudo apt-get update
+    sudo apt-get install -y openjdk-17-jdk
+fi
 
 # --- 2. Install Android Command Line Tools ---
 echo "➡️ Setting up Android SDK..."
@@ -16,16 +20,20 @@ TOOLS_VERSION="11076708"
 TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-${TOOLS_VERSION}_latest.zip"
 TOOLS_ZIP="/tmp/android-tools.zip"
 
-# Download and place the tools in their final destination
-mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
-wget -q "$TOOLS_URL" -O "$TOOLS_ZIP"
+if [ -f "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" ]; then
+    echo "➡️ Android Command Line Tools are already installed, skipping download..."
+else
+    # Download and place the tools in their final destination
+    mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
+    wget -q "$TOOLS_URL" -O "$TOOLS_ZIP"
 
-# Unzip and restructure the directory
-# The zip file contains a single 'cmdline-tools' folder. We unzip it and rename it to 'latest'.
-rm -rf "$ANDROID_SDK_ROOT/cmdline-tools/latest"
-unzip -oq "$TOOLS_ZIP" -d "$ANDROID_SDK_ROOT/cmdline-tools"
-mv "$ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools" "$ANDROID_SDK_ROOT/cmdline-tools/latest"
-rm "$TOOLS_ZIP"
+    # Unzip and restructure the directory
+    # The zip file contains a single 'cmdline-tools' folder. We unzip it and rename it to 'latest'.
+    rm -rf "$ANDROID_SDK_ROOT/cmdline-tools/latest"
+    unzip -oq "$TOOLS_ZIP" -d "$ANDROID_SDK_ROOT/cmdline-tools"
+    mv "$ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools" "$ANDROID_SDK_ROOT/cmdline-tools/latest"
+    rm "$TOOLS_ZIP"
+fi
 
 # --- 3. Set Environment Variables Permanently ---
 echo "➡️ Configuring environment variables..."
