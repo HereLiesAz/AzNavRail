@@ -25,8 +25,8 @@ const AzNavRail = ({
 }) => {
   const {
     displayAppNameInHeader = false,
-    expandedRailWidth = '260px',
-    collapsedRailWidth = '80px',
+    expandedRailWidth = '160px',
+    collapsedRailWidth = '100px',
     showFooter = true,
     isLoading = false,
     appName = 'App',
@@ -359,10 +359,10 @@ const AzNavRail = ({
       style={{ width: isExpanded ? expandedRailWidth : collapsedRailWidth, backgroundColor: translucentBackground || '#f0f0f0' }}
     >
       <div className="header" onClick={onToggle}>
-        {displayAppNameInHeader ? (
-          <span>{appName}</span>
-        ) : (
+        {(!isExpanded || !displayAppNameInHeader) ? (
           <img src="/app-icon.png" alt="App Icon" className={getHeaderIconClass()} />
+        ) : (
+          <span style={{ fontSize: '24px', fontWeight: 'bold', width: '1000px', whiteSpace: 'nowrap' }}>{appName}</span>
         )}
       </div>
 

@@ -13,7 +13,7 @@ import {
   UIManager,
 } from 'react-native';
 import { AzNavRailContext } from './AzNavRailScope';
-import { AzNavItem, AzNavRailSettings, AzButtonShape, AzDockingSide, AzHeaderIconShape, AzNestedRailAlignment } from './types';
+import { AzNavItem, AzNavRailSettings, AzButtonShape, AzDockingSide, AzHeaderIconShape, AzNestedRailAlignment, AzOrientation, AzVisualSide } from './types';
 import { AzNavRailDefaults } from './AzNavRailDefaults';
 import { AzButton } from './components/AzButton';
 import { AzToggle } from './components/AzToggle';
@@ -22,6 +22,7 @@ import { RailMenuItem } from './components/RailMenuItem';
 import { AzLoad } from './components/AzLoad';
 import { DraggableRailItemWrapper } from './components/DraggableRailItemWrapper';
 import { RelocItemHandler } from './util/RelocItemHandler';
+import { AzRailLayoutHelper } from './util/AzRailLayoutHelper';
 import { AzNestedRailPopup } from './components/AzNestedRailPopup';
 import { HelpOverlay } from './components/HelpOverlay';
 import { AzTutorialProvider, useAzTutorialController } from './tutorial/AzTutorialController';
@@ -59,6 +60,8 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       headerIconShape = AzHeaderIconShape.CIRCLE,
       translucentBackground,
       vibrate = false,
+      usePhysicalDocking = false,
+      appName = 'App',
       onExpandedChange,
       onInteraction,
   } = props;
@@ -96,6 +99,8 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       headerIconShape: dslOverrides.headerIconShape ?? headerIconShape,
       translucentBackground: dslOverrides.translucentBackground ?? translucentBackground,
       vibrate: dslOverrides.vibrate ?? vibrate,
+      usePhysicalDocking: dslOverrides.usePhysicalDocking ?? usePhysicalDocking,
+      appName: dslOverrides.appName ?? appName,
       onItemGloballyPositioned: dslOverrides.onItemGloballyPositioned,
       helpList: dslOverrides.helpList ?? props.helpList ?? {},
       helpEnabled: dslOverrides.helpEnabled ?? props.helpEnabled ?? false,
@@ -112,6 +117,26 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   const [anchorPosition, setAnchorPosition] = useState<{ x: number, y: number, width: number, height: number } | undefined>(undefined);
   const [itemBounds, setItemBounds] = useState<Record<string, any>>({});
   const [secLocClicks, setSecLocClicks] = useState(0);
+  const [rotation, setRotation] = useState(0); // 0, 90, 180, 270
+
+  useEffect(() => {
+    // In a real app we might use a library for rotation, but we can infer from dimensions roughly for 0/90.
+    // However, for parity we need actual rotation. We'll use Dimensions for basic landscape check.
+    const updateRotation = () => {
+        const { width, height } = Dimensions.get('window');
+        if (width > height) setRotation(90);
+        else setRotation(0);
+    };
+    updateRotation();
+    const sub = Dimensions.addEventListener('change', updateRotation);
+    return () => sub.remove();
+  }, []);
+
+  const layoutConfig = useMemo(() => {
+    return AzRailLayoutHelper.calculateLayout(config.dockingSide, rotation, config.usePhysicalDocking);
+  }, [config.dockingSide, rotation, config.usePhysicalDocking]);
+
+  const { visualSide, orientation, reverseLayout } = layoutConfig;
 
 
   const handleItemLayout = useCallback((id: string, e: any) => {
@@ -374,6 +399,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
              if (distance < AzNavRailDefaults.SNAP_BACK_RADIUS_PX) {
                  setIsFloating(false);
                  pan.setValue({ x: 0, y: 0 });
+                 if (vibrate) Vibration.vibrate(50);
                  logInteraction('Snap back', 'Docked');
              } else if (wasVisibleOnDragStartRef.current) {
                  setShowFloatingButtons(true);
@@ -625,7 +651,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     return 24;
   };
 
-  const flexDirection = config.dockingSide === AzDockingSide.RIGHT ? 'row-reverse' : 'row';
+  const flexDirection = visualSide === AzVisualSide.RIGHT ? 'row-reverse' : (visualSide === AzVisualSide.BOTTOM ? 'column-reverse' : (visualSide === AzVisualSide.TOP ? 'column' : 'row'));
 
   return (
     <AzNavRailContext.Provider value={{ register, unregister, updateSettings }}>
@@ -634,13 +660,16 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                 style={[
                     styles.railContainer,
                 {
-                    width: railWidthAnim,
+                    width: orientation === AzOrientation.VERTICAL ? railWidthAnim : '100%',
+                    height: orientation === AzOrientation.HORIZONTAL ? railWidthAnim : (isFloating ? 'auto' : '100%'),
                     position: isFloating ? 'absolute' : 'relative',
                     transform: isFloating ? [{ translateX: pan.x }, { translateY: pan.y }] : [],
                     zIndex: isFloating ? 1000 : 1,
-                    height: isFloating ? 'auto' : '100%',
-                    borderRightWidth: dockingSide === AzDockingSide.LEFT ? 1 : 0,
-                    borderLeftWidth: dockingSide === AzDockingSide.RIGHT ? 1 : 0,
+                    flexDirection: orientation === AzOrientation.VERTICAL ? 'column' : 'row',
+                    borderRightWidth: visualSide === AzVisualSide.LEFT ? 1 : 0,
+                    borderLeftWidth: visualSide === AzVisualSide.RIGHT ? 1 : 0,
+                    borderBottomWidth: visualSide === AzVisualSide.TOP ? 1 : 0,
+                    borderTopWidth: visualSide === AzVisualSide.BOTTOM ? 1 : 0,
                 }
             ]}
             {...panResponder.panHandlers}
@@ -649,23 +678,24 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                 onPress={handleHeaderTap}
                 onLongPress={handleHeaderLongPress}
                 delayLongPress={500}
-                style={[styles.header, { flexDirection: config.dockingSide === AzDockingSide.RIGHT ? 'row-reverse' : 'row' }]}
+                style={[styles.header, { flexDirection: (config.dockingSide === AzDockingSide.RIGHT && orientation === AzOrientation.VERTICAL) ? 'row-reverse' : 'row' }]}
                 onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
                 accessibilityRole="button"
                 accessibilityLabel={isFloating ? "Undocked Rail" : (isExpanded ? "Collapse Menu" : "Expand Menu")}
                 accessibilityHint="Double tap to toggle, long press to drag"
             >
-                 <View style={{ width: AzNavRailDefaults.HeaderIconSize, height: AzNavRailDefaults.HeaderIconSize, backgroundColor: 'gray', borderRadius: getHeaderBorderRadius(), alignItems: 'center', justifyContent: 'center' }}>
-                     {/* Dynamic Icon placeholder matching Android's attempt */}
-                 </View>
-                 {(!isFloating && isExpanded && config.displayAppNameInHeader) && (
+                 {(!isFloating && isExpanded && config.displayAppNameInHeader) ? (
                      <View style={{ width: 1000, marginLeft: config.dockingSide === AzDockingSide.RIGHT ? 0 : 16, marginRight: config.dockingSide === AzDockingSide.RIGHT ? 16 : 0 }}>
-                         <Text style={[styles.appName, { flexShrink: 0 }]}>App Name</Text>
+                         <Text style={[styles.appName, { flexShrink: 0, fontSize: 24, fontWeight: 'bold' }]}>{config.appName}</Text>
                      </View>
+                 ) : (
+                    <View style={{ width: AzNavRailDefaults.HeaderIconSize, height: AzNavRailDefaults.HeaderIconSize, backgroundColor: 'gray', borderRadius: getHeaderBorderRadius(), alignItems: 'center', justifyContent: 'center' }}>
+                         {/* Dynamic Icon placeholder matching Android's attempt */}
+                    </View>
                  )}
             </TouchableOpacity>
 
-            {isExpanded && !noMenu ? (
+            {isExpanded && !config.noMenu ? (
                 <ScrollView style={styles.menuContent}>
                     {menuItems.map(item => {
                          if (item.isDivider) {
@@ -677,12 +707,12 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                 </ScrollView>
             ) : (
                 railContentHeight > screenHeightRef.current * 0.65 ? (
-                    <ScrollView contentContainerStyle={styles.railContent} onLayout={(e) => setRailContentHeight(e.nativeEvent.layout.height)}>
-                         {(isFloating && !showFloatingButtons) ? null : effectiveRailItems.map((item, index) => renderRailItem(item, index))}
+                    <ScrollView contentContainerStyle={[styles.railContent, { flexDirection: orientation === AzOrientation.VERTICAL ? 'column' : 'row' }]} onLayout={(e) => setRailContentHeight(e.nativeEvent.layout.height)}>
+                         {(isFloating && !showFloatingButtons) ? null : (reverseLayout ? [...effectiveRailItems].reverse() : effectiveRailItems).map((item, index) => renderRailItem(item, index))}
                     </ScrollView>
                 ) : (
-                    <View style={styles.railContent} onLayout={(e) => setRailContentHeight(e.nativeEvent.layout.height)}>
-                         {(isFloating && !showFloatingButtons) ? null : effectiveRailItems.map((item, index) => renderRailItem(item, index))}
+                    <View style={[styles.railContent, { flexDirection: orientation === AzOrientation.VERTICAL ? 'column' : 'row' }]} onLayout={(e) => setRailContentHeight(e.nativeEvent.layout.height)}>
+                         {(isFloating && !showFloatingButtons) ? null : (reverseLayout ? [...effectiveRailItems].reverse() : effectiveRailItems).map((item, index) => renderRailItem(item, index))}
                     </View>
                 )
             )}

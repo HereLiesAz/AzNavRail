@@ -1,23 +1,23 @@
 [versions]
 aznavrail = "main-SNAPSHOT"
 # Android & Jetpack
-composeBom = "2026.02.00"
-coreKtx = "1.17.0"
+composeBom = "2026.04.01"
+coreKtx = "1.18.0"
 material3 = "1.4.0"
 coil = "2.7.0"
-navigationCompose = "2.9.7"
+navigationCompose = "2.9.8"
 
 # Plugins
-kotlin = "2.3.10"
-androidLibrary = "9.0.1"
-activityCompose = "1.12.4"
+kotlin = "2.3.21"
+androidLibrary = "9.2.0"
+activityCompose = "1.13.0"
 junit = "4.13.2"
 androidx-test-ext-junit = "1.3.0"
 espresso-core = "3.7.0"
-ui = "1.10.3"
+ui = "1.11.0"
 robolectric = "4.16.1"
-ksp = "2.3.5"
-kotlinpoet = "2.2.0"
+ksp = "2.3.6"
+kotlinpoet = "2.3.0"
 
 [libraries]
 aznavrail = { group = "com.github.HereLiesAz", name = "AzNavRail", version.ref = "aznavrail" }

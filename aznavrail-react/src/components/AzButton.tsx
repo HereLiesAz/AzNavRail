@@ -56,8 +56,13 @@ export const AzButton: React.FC<AzButtonProps> = ({
 
   const actualFillColor = fillColor || defaultFillColor;
 
-  if (hasCustomContent) {
+  const isCustomContent = hasCustomContent || !!customContentNode;
+
+  if (isCustomContent) {
     containerStyle.width = BUTTON_SIZE;
+    containerStyle.height = isRectangle || isNone ? 40 : BUTTON_SIZE;
+    if (isCircle) containerStyle.borderRadius = BUTTON_SIZE / 2;
+    else containerStyle.borderRadius = 0;
   } else {
     if (isCircle) {
       containerStyle.width = BUTTON_SIZE;
@@ -70,7 +75,6 @@ export const AzButton: React.FC<AzButtonProps> = ({
     } else if (isRectangle) {
       containerStyle.width = BUTTON_SIZE;
       containerStyle.height = 40;
-      containerStyle.paddingHorizontal = 8;
       containerStyle.borderRadius = 0;
     } else if (isNone) {
        // Invisible rectangle
@@ -92,16 +96,20 @@ export const AzButton: React.FC<AzButtonProps> = ({
       <AzLoad />
     </View>
   ) : customContentNode ? (
-    customContentNode
+    <View style={{ width: '100%', height: '100%', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
+      {customContentNode}
+    </View>
   ) : (
-    <Text
-      style={textStyle}
-      adjustsFontSizeToFit={!hasNewline}
-      numberOfLines={hasNewline ? undefined : 1}
-      minimumFontScale={0.1}
-    >
-      {text}
-    </Text>
+    <View style={{ padding: 8, width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+      <Text
+        style={textStyle}
+        adjustsFontSizeToFit={!hasNewline}
+        numberOfLines={hasNewline ? undefined : 1}
+        minimumFontScale={0.1}
+      >
+        {text}
+      </Text>
+    </View>
   );
 
   return (

@@ -21,6 +21,18 @@ export enum AzNestedRailAlignment {
   HORIZONTAL = 'HORIZONTAL',
 }
 
+export enum AzOrientation {
+  VERTICAL = 'VERTICAL',
+  HORIZONTAL = 'HORIZONTAL',
+}
+
+export enum AzVisualSide {
+  LEFT = 'LEFT',
+  RIGHT = 'RIGHT',
+  TOP = 'TOP',
+  BOTTOM = 'BOTTOM',
+}
+
 export interface AzNavRailSettings {
   displayAppNameInHeader?: boolean;
   packRailButtons?: boolean;

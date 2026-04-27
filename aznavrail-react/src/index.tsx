@@ -1,5 +1,6 @@
 export * from './AzNavRail';
 export * from './AzNavRailScope';
+export { default as AzNavHost } from './web/AzNavHost';
 export * from './components/AzButton';
 export * from './components/AzToggle';
 export * from './components/AzCycler';
