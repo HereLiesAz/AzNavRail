@@ -105,14 +105,14 @@ export const AzButton: React.FC<AzButtonProps> = ({
   );
 
   return (
-    <TouchableOpacity
+    <TouchableOpacity testID={testID || "button"}
       onPress={onClick}
       disabled={!enabled || isLoading}
       style={containerStyle}
-      testID={testID}
+
       accessibilityRole="button"
       accessibilityLabel={text}
-      testID="button"
+
       accessibilityState={{ disabled: !enabled || isLoading }}
     >
       <View style={[StyleSheet.absoluteFill, { backgroundColor: actualFillColor, zIndex: -1, borderRadius: containerStyle.borderRadius }]} pointerEvents="none" />

@@ -3,7 +3,7 @@
   "compilerOptions": {
     "outDir": "lib/typescript",
     "declaration": true,
-    "emitDeclarationOnly": true,
+
     "noEmit": false
   },
   "exclude": [
