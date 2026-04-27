@@ -160,7 +160,26 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   const wasVisibleOnDragStartRef = useRef(false);
   const itemsRef = useRef(items);
 
+  const effectiveRailItems = useMemo(() => {
+    const list = [];
+    items.forEach(i => {
+      if (!i.isSubItem && (config.noMenu || i.isRailItem)) {
+          list.push(i);
+          if (hostStates[i.id] && !i.isNestedRail) {
+              const subItems = subItemsMap[i.id] || [];
+              subItems.forEach(sub => {
+                  if (sub.isRailItem) list.push(sub);
+              });
+          }
+      }
+    });
+    return list;
+  }, [items, config.noMenu, hostStates, subItemsMap]);
+
+  const effectiveRailItemsRef = useRef(effectiveRailItems);
+
   useEffect(() => { isFloatingRef.current = isFloating; }, [isFloating]);
+  useEffect(() => { effectiveRailItemsRef.current = effectiveRailItems; }, [effectiveRailItems]);
   useEffect(() => { enableRailDraggingRef.current = enableRailDragging; }, [enableRailDragging]);
   useEffect(() => { showFloatingButtonsRef.current = showFloatingButtons; }, [showFloatingButtons]);
   useEffect(() => { itemsRef.current = items; }, [items]);
@@ -299,8 +318,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
 
   const adjustFloatingRailWithinBounds = (currentX: number, currentY: number) => {
       const screenHeight = screenHeightRef.current;
-      const railItemsCountForDrag = itemsRef.current.filter(i => i.isRailItem && !i.isSubItem).length;
-      const contentHeight = headerHeight + (railItemsCountForDrag * 56) + 16;
+      const contentHeight = headerHeight + (effectiveRailItemsRef.current.length * 56) + 16;
       const bottomY = currentY + contentHeight;
       const limitY = screenHeight * 0.9;
       if (bottomY > limitY) {
@@ -438,6 +456,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                      text={item.text}
                      content={item.content}
                      hasCustomContent={!!item.content}
+                     onFocus={item.onFocus}
                      onClick={() => {
                          setHostStates(prev => ({...prev, [item.id]: !prev[item.id]}));
                          logInteraction('Host toggled', item.text);
@@ -455,6 +474,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                   fillColor={item.fillColor}
                   options={item.options || []}
                   selectedOption={item.selectedOption || ''}
+                  onFocus={item.onFocus}
                   onCycle={() => {
                       if (item.onClick) item.onClick();
                       logInteraction('Cycler cycled', item.text);
@@ -470,6 +490,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                   isChecked={item.isChecked || false}
                   toggleOnText={item.toggleOnText}
                   toggleOffText={item.toggleOffText}
+                  onFocus={item.onFocus}
                   onToggle={() => {
                       if (item.onClick) item.onClick();
                       logInteraction('Toggle toggled', item.text);
@@ -489,6 +510,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                 text={item.text}
                 content={item.content}
                 hasCustomContent={!!item.content}
+                onFocus={item.onFocus}
                 onClick={() => {
                     logInteraction('Item clicked', item.text);
                     if (item.isNestedRail) {
@@ -583,22 +605,6 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   };
 
 
-  const effectiveRailItems = useMemo(() => {
-    const list = [];
-    items.forEach(i => {
-      if (!i.isSubItem && (config.noMenu || i.isRailItem)) {
-          list.push(i);
-          if (hostStates[i.id] && !i.isNestedRail) {
-              const subItems = subItemsMap[i.id] || [];
-              subItems.forEach(sub => {
-                  if (sub.isRailItem) list.push(sub);
-              });
-          }
-      }
-    });
-    return list;
-  }, [items, config.noMenu, hostStates, subItemsMap]);
-
   const railItemsCount = useMemo(() => {
       // Includes expanded sub-items for height calculation
       return effectiveRailItems.length;
@@ -675,7 +681,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                     key={`nested-${item.id}`}
                     visible={nestedRailVisible === item.id}
                     onDismiss={() => setNestedRailVisible(null)}
-                    items={subItemsMap[item.id] || []}
+                    items={item.nestedRailItems || []}
                     alignment={item.nestedRailAlignment || AzNestedRailAlignment.VERTICAL}
                     renderItem={(subItem, idx) => (
                         <View key={`wrap-${subItem.id}`} onLayout={(e) => handleItemLayout(subItem.id, e)}>

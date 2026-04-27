@@ -1,5 +1,6 @@
-import React, { useEffect, useContext, useRef } from 'react';
+import React, { useEffect, useContext, useRef, useId, useState } from 'react';
 import { AzNavItem, AzButtonShape, AzNavItemProps, AzToggleProps, AzCyclerProps, AzHostItemProps, AzSubItemProps, AzSubToggleProps, AzSubCyclerProps, AzRailRelocItemProps, AzNestedRailProps, AzNestedRailAlignment, HiddenMenuScope, AzItemConfig } from './types';
+import { AzNavRailDefaults } from './AzNavRailDefaults';
 
 export const AzNavRailContext = React.createContext<{
   register: (item: AzNavItem) => void;
@@ -7,9 +8,24 @@ export const AzNavRailContext = React.createContext<{
   updateSettings: (settings: any) => void;
 } | null>(null);
 
-const useAzItem = (item: AzNavItem) => {
+const useAzItem = (rawItem: AzNavItem) => {
   const context = useContext(AzNavRailContext);
   const previousItem = useRef<AzNavItem | null>(null);
+
+  if (rawItem.isCycler) {
+      if (rawItem.options && rawItem.selectedOption !== undefined && !rawItem.options.includes(rawItem.selectedOption)) {
+          throw new Error(`Cycler configuration error for item='${rawItem.text}': selectedOption='${rawItem.selectedOption}' is not in options array.`);
+      }
+      if (rawItem.menuOptions && rawItem.options && rawItem.options.length !== rawItem.menuOptions.length) {
+          throw new Error(`Cycler configuration mismatch for item='${rawItem.text}': optionsSize=${rawItem.options.length}, menuOptionsSize=${rawItem.menuOptions.length}`);
+      }
+  }
+
+  const item = {
+      ...rawItem,
+      text: rawItem.text ?? '',
+      screenTitle: rawItem.screenTitle === AzNavRailDefaults.NO_TITLE ? undefined : (rawItem.screenTitle ?? rawItem.text ?? '')
+  };
 
   useEffect(() => {
     if (!context) return;
@@ -34,8 +50,10 @@ const useAzItem = (item: AzNavItem) => {
                    prev.color === item.color &&
                    prev.info === item.info &&
                    prev.isRelocItem === item.isRelocItem &&
+                   prev.nestedRailItems === item.nestedRailItems &&
                    // Reloc props
-                   JSON.stringify(prev.hiddenMenu) === JSON.stringify(item.hiddenMenu);
+                   (prev.hiddenMenu?.length === item.hiddenMenu?.length &&
+                    (prev.hiddenMenu || []).every((hm, i) => hm.id === item.hiddenMenu![i].id && hm.text === item.hiddenMenu![i].text && hm.onClick === item.hiddenMenu![i].onClick));
 
     if (!isSame) {
         context.register(item);
@@ -172,10 +190,9 @@ export const AzMenuCycler: React.FC<AzCyclerProps> = (props) => {
 };
 
 export const AzDivider: React.FC = () => {
-    // ID needed?
-    const id = useRef(`divider-${Math.random()}`).current;
+    const id = useId();
     useAzItem({
-        id,
+        id: `divider-${id}`,
         text: '',
         isRailItem: false,
         isToggle: false,
@@ -342,51 +359,51 @@ export const AzMenuSubCycler: React.FC<AzSubCyclerProps> = (props) => {
 };
 
 export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
-    let hiddenMenuItems: any[] = [];
-    if (props.hiddenMenu) {
-        if (typeof props.hiddenMenu === 'function') {
-            const scope: HiddenMenuScope = {
-                listItem: (text, action) => {
-                    if (typeof action === 'string') {
-                        hiddenMenuItems.push({ id: `hidden_${hiddenMenuItems.length}`, text, route: action });
-                    } else {
-                        hiddenMenuItems.push({ id: `hidden_${hiddenMenuItems.length}`, text, onClick: action });
-                    }
-                },
-                inputItem: (hint: string, arg2: any, arg3?: any) => {
-                    let initialValue = '';
-                    let onValueChange: (value: string) => void;
-
-                    if (typeof arg2 === 'string') {
-                        initialValue = arg2;
-                        if (typeof arg3 !== 'function') {
-                            console.warn("inputItem requires an onValueChange function callback.");
-                            onValueChange = () => {};
+    const hiddenMenuItems = React.useMemo(() => {
+        let items: any[] = [];
+        if (props.hiddenMenu) {
+            if (typeof props.hiddenMenu === 'function') {
+                const scope: HiddenMenuScope = {
+                    listItem: (text, action) => {
+                        if (typeof action === 'string') {
+                            items.push({ id: `${props.id}_hidden_item_${items.length}`, text, route: action });
                         } else {
-                            onValueChange = arg3;
+                            items.push({ id: `${props.id}_hidden_item_${items.length}`, text, onClick: action });
                         }
-                    } else if (typeof arg2 === 'function') {
-                        onValueChange = arg2;
-                    } else {
-                        console.warn("inputItem requires an onValueChange function callback.");
-                        onValueChange = () => {};
+                    },
+                    inputItem: (hint: string, arg2: any, arg3?: any) => {
+                        let initialValue = '';
+                        let onValueChange: (value: string) => void;
+
+                        if (typeof arg2 === 'string') {
+                            initialValue = arg2;
+                            if (typeof arg3 !== 'function') {
+                                throw new Error("inputItem requires an onValueChange function callback.");
+                            }
+                            onValueChange = arg3;
+                        } else if (typeof arg2 === 'function') {
+                            onValueChange = arg2;
+                        } else {
+                            throw new Error("inputItem requires an onValueChange function callback.");
+                        }
+                        items.push({ id: `${props.id}_hidden_item_${items.length}`, text: '', isInput: true, hint, initialValue, onValueChange });
                     }
-                    hiddenMenuItems.push({ id: `input_${hiddenMenuItems.length}`, text: '', isInput: true, hint, initialValue, onValueChange });
-                }
-            };
-            props.hiddenMenu(scope);
-        } else {
-            hiddenMenuItems = props.hiddenMenu.map((item, i) => ({
-                id: `hidden_${i}`,
-                text: item.text,
-                onClick: item.onClick
-            }));
+                };
+                props.hiddenMenu(scope);
+            } else {
+                items = props.hiddenMenu.map((item, i) => ({
+                    id: `${props.id}_hidden_item_${i}`,
+                    text: item.text,
+                    onClick: item.onClick
+                }));
+            }
         }
-    }
+        return items;
+    }, [props.hiddenMenu, props.id]);
 
     useAzItem({
         ...props,
-        text: props.text || '',
+        text: props.text ?? '',
         isRailItem: true,
         isHost: false,
         isSubItem: true,
@@ -395,7 +412,7 @@ export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
         isCycler: false,
         isDivider: false,
         collapseOnClick: false,
-        shape: props.shape || AzButtonShape.NONE,
+        shape: props.shape,
         disabled: props.disabled || false,
         isExpanded: false,
         toggleOnText: '',
@@ -461,15 +478,34 @@ export const AzAdvanced: React.FC<any> = (props) => {
 };
 
 export const AzNestedRail: React.FC<AzNestedRailProps> = (props) => {
+    const parentContext = useContext(AzNavRailContext);
+    const [nestedItems, setNestedItems] = useState<AzNavItem[]>([]);
+
+    const nestedRegister = (item: AzNavItem) => {
+        setNestedItems((prev) => {
+            const idx = prev.findIndex(i => i.id === item.id);
+            if (idx >= 0) {
+                const newItems = [...prev];
+                newItems[idx] = item;
+                return newItems;
+            }
+            return [...prev, item];
+        });
+    };
+
+    const nestedUnregister = (id: string) => {
+        setNestedItems((prev) => prev.filter(i => i.id !== id));
+    };
+
     useAzItem({
         ...props,
-        text: props.text || '',
+        text: props.text ?? '',
         isRailItem: true,
         isToggle: false,
         isCycler: false,
         isDivider: false,
         collapseOnClick: false,
-        shape: props.shape || AzButtonShape.CIRCLE,
+        shape: props.shape,
         disabled: props.disabled || false,
         isHost: false,
         isSubItem: false,
@@ -478,15 +514,19 @@ export const AzNestedRail: React.FC<AzNestedRailProps> = (props) => {
         toggleOffText: '',
         isNestedRail: true,
         nestedRailAlignment: props.alignment || AzNestedRailAlignment.VERTICAL,
+        nestedRailItems: nestedItems,
     });
+
+    const nestedContextValue = {
+        register: nestedRegister,
+        unregister: nestedUnregister,
+        updateSettings: parentContext?.updateSettings || (() => {}),
+    };
+
     return (
-        <AzNavRailContext.Consumer>
-            {(ctx) => (
-                <AzNavRailContext.Provider value={ctx}>
-                    {props.children}
-                </AzNavRailContext.Provider>
-            )}
-        </AzNavRailContext.Consumer>
+        <AzNavRailContext.Provider value={nestedContextValue}>
+            {props.children}
+        </AzNavRailContext.Provider>
     );
 };
 
