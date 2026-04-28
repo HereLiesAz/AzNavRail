@@ -1,6 +1,19 @@
-import React, { useState, createContext, useContext, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
+import React, { useState, createContext, useContext, useEffect, useCallback, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ViewStyle, TextInput } from 'react-native';
 import { AzTextBox, AzTextBoxProps } from './AzTextBox';
+
+export interface AzFormEntryData {
+  name: string;
+  hint: string;
+  multiline?: boolean;
+  secret?: boolean;
+  leadingIcon?: React.ReactNode;
+  isError?: boolean;
+  enabled?: boolean;
+  initialValue?: string;
+  keyboardType?: any;
+  returnKeyType?: any;
+}
 
 interface AzFormContextType {
   updateField: (name: string, value: string) => void;
@@ -19,8 +32,12 @@ export interface AzFormProps {
   outlineColor?: string;
   outlined?: boolean;
   submitButtonContent?: React.ReactNode;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   style?: ViewStyle;
+  
+  // Android parity props
+  entries?: AzFormEntryData[];
+  trailingIcon?: React.ReactNode;
 }
 
 export const AzForm: React.FC<AzFormProps> = ({
@@ -31,8 +48,18 @@ export const AzForm: React.FC<AzFormProps> = ({
   submitButtonContent,
   children,
   style,
+  entries,
+  trailingIcon,
 }) => {
-  const [formData, setFormData] = useState<Record<string, string>>({});
+  const [formData, setFormData] = useState<Record<string, string>>(() => {
+     const initial: Record<string, string> = {};
+     if (entries) {
+         entries.forEach(e => {
+             initial[e.name] = e.initialValue || '';
+         });
+     }
+     return initial;
+  });
 
   const updateField = useCallback((name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -51,6 +78,66 @@ export const AzForm: React.FC<AzFormProps> = ({
     onSubmit(formData);
   };
 
+  // Modern Android-parity rendering
+  if (entries && entries.length > 0) {
+      return (
+        <View style={[styles.container, style]}>
+            {entries.map((entry, index) => {
+                const isLast = index === entries.length - 1;
+                const returnKeyType = entry.returnKeyType || (isLast ? 'send' : 'next');
+                const val = formData[entry.name] !== undefined ? formData[entry.name] : (entry.initialValue || '');
+                
+                const textBox = (
+                    <AzTextBox
+                        value={val}
+                        onValueChange={(t) => updateField(entry.name, t)}
+                        historyContext={formName}
+                        hint={entry.hint}
+                        outlined={outlined}
+                        outlineColor={outlineColor}
+                        multiline={entry.multiline}
+                        secret={entry.secret}
+                        leadingIcon={entry.leadingIcon}
+                        trailingIcon={trailingIcon}
+                        isError={entry.isError}
+                        enabled={entry.enabled}
+                        keyboardType={entry.keyboardType}
+                        returnKeyType={returnKeyType}
+                        showSubmitButton={false}
+                        containerStyle={isLast ? { flex: 1, marginBottom: 0 } : undefined}
+                        onSubmitEditing={isLast ? handleSubmit : undefined}
+                    />
+                );
+
+                if (isLast) {
+                    return (
+                        <View key={entry.name} style={styles.lastRow}>
+                            {textBox}
+                            <View style={{ width: 8 }} />
+                            <TouchableOpacity
+                                onPress={handleSubmit}
+                                style={[
+                                    styles.paritySubmitButton,
+                                    {
+                                        backgroundColor: 'transparent',
+                                        borderColor: outlineColor,
+                                        borderWidth: outlined ? 0 : 1,
+                                    }
+                                ]}
+                            >
+                                {submitButtonContent || <Text style={{ color: outlineColor, fontSize: 12, fontWeight: 'bold' }}>GO</Text>}
+                            </TouchableOpacity>
+                        </View>
+                    );
+                }
+
+                return <View key={entry.name}>{textBox}</View>;
+            })}
+        </View>
+      );
+  }
+
+  // Legacy rendering
   return (
     <AzFormContext.Provider value={{ updateField, registerField, formName, outlineColor, outlined, formData }}>
       <View style={[styles.container, style]}>
@@ -123,4 +210,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 8,
   },
+  lastRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  paritySubmitButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 40,
+  }
 });

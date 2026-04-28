@@ -1,5 +1,5 @@
 import React, { useEffect, useContext, useRef } from 'react';
-import { AzNavItem, AzButtonShape, AzNavItemProps, AzToggleProps, AzCyclerProps, AzHostItemProps, AzSubItemProps, AzSubToggleProps, AzSubCyclerProps, AzRailRelocItemProps, AzNestedRailProps, AzNestedRailAlignment, HiddenMenuScope, AzItemConfig } from './types';
+import { AzNavItem, AzButtonShape, AzNavItemProps, AzToggleProps, AzCyclerProps, AzHostItemProps, AzSubItemProps, AzSubToggleProps, AzSubCyclerProps, AzRailRelocItemProps, AzNestedRailProps, AzNestedRailAlignment, HiddenMenuScope } from './types';
 
 export const AzNavRailContext = React.createContext<{
   register: (item: AzNavItem) => void;
@@ -174,7 +174,7 @@ export const AzMenuCycler: React.FC<AzCyclerProps> = (props) => {
   return null;
 };
 
-export const AzDivider: React.FC = () => {
+export const AzRailDivider: React.FC = () => {
     const context = useContext(AzNavRailContext);
     const id = useRef<string | null>(null);
     if (!id.current && context) {
@@ -545,11 +545,9 @@ export const AzHelpSubItem: React.FC<AzSubItemProps> = (props) => {
     const context = useContext(AzNavRailContext);
 
     useEffect(() => {
-        if (context && props.hostId) {
-            if (!context.hasItem(props.hostId)) {
-                // To mirror Kotlin's IllegalArgumentException and prevent silent dropping
-                console.error(`AzHelpSubItem error: Host ID '${props.hostId}' not found in registry.`);
-            }
+        if (context && props.hostId && !context.hasItem(props.hostId)) {
+            // To mirror Kotlin's IllegalArgumentException and prevent silent dropping
+            console.error(`AzHelpSubItem error: Host ID '${props.hostId}' not found in registry.`);
         }
     }, [context, props.hostId]);
 
