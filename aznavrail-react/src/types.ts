@@ -67,12 +67,22 @@ export type AzHighlight =
   | { type: 'FullScreen' }
   | { type: 'None' };
 
+export type AzAdvanceCondition =
+  | { type: 'Button' }
+  | { type: 'TapTarget' }
+  | { type: 'TapAnywhere' }
+  | { type: 'Event'; name: string };
+
 export interface AzCard {
   title: string;
   text: string;
   highlight?: AzHighlight;
+  advanceCondition?: AzAdvanceCondition;
   actionText?: string;
   onAction?: () => void;
+  branches?: Record<string, string>;
+  mediaContent?: () => React.ReactNode;
+  checklistItems?: string[];
 }
 
 export interface AzScene {
@@ -80,19 +90,27 @@ export interface AzScene {
   content: () => React.ReactNode;
   cards: AzCard[];
   onComplete?: () => void;
+  branchVar?: string;
+  branches?: Record<string, string>;
 }
 
 export interface AzTutorial {
   scenes: AzScene[];
+  onComplete?: () => void;
+  onSkip?: () => void;
 }
 
 export interface AzTutorialController {
   activeTutorialId: string | null;
   readTutorials: string[];
-  startTutorial: (id: string) => void;
+  currentVariables: Record<string, any>;
+  pendingEvent: string | null;
+  startTutorial: (id: string, variables?: Record<string, any>) => void;
   endTutorial: () => void;
   markTutorialRead: (id: string) => void;
   isTutorialRead: (id: string) => boolean;
+  fireEvent: (name: string) => void;
+  consumeEvent: () => void;
 }
 
 export interface HiddenMenuItem {
