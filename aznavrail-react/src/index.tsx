@@ -1,3 +1,4 @@
+/** Public entry point — re-exports the entire AzNavRail React Native library surface. */
 export * from './AzNavRail';
 export * from './AzNavRailScope';
 export * from './AzNavHost';

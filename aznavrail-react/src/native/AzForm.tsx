@@ -13,16 +13,25 @@ interface AzFormContextType {
 
 const AzFormContext = createContext<AzFormContextType | undefined>(undefined);
 
+/** Props for the `AzForm` form container. */
 export interface AzFormProps {
+  /** Unique form name used as the history context key for each `AzFormEntry` field. */
   formName: string;
+  /** Called with the collected field values when the submit button is pressed. */
   onSubmit: (data: Record<string, string>) => void;
+  /** Accent color applied to input borders and the submit button. */
   outlineColor?: string;
+  /** When true, input fields are rendered with an outline border. */
   outlined?: boolean;
+  /** Custom content rendered inside the submit button; defaults to a "Submit" label. */
   submitButtonContent?: React.ReactNode;
+  /** `AzFormEntry` children that declare each field in the form. */
   children: React.ReactNode;
+  /** Additional style applied to the form container. */
   style?: ViewStyle;
 }
 
+/** Native implementation: Form container that collects `AzFormEntry` field values and calls `onSubmit`. */
 export const AzForm: React.FC<AzFormProps> = ({
   formName,
   onSubmit,
@@ -73,11 +82,15 @@ export const AzForm: React.FC<AzFormProps> = ({
   );
 };
 
+/** Props for an individual field inside an `AzForm`. */
 interface AzFormEntryProps extends Omit<AzTextBoxProps, 'onSubmit' | 'submitButtonContent'> {
+  /** Field name key used to store this field's value in the form data map. */
   name: string;
+  /** Initial text pre-filled in the field. */
   initialValue?: string;
 }
 
+/** A single text-input field that registers itself with the enclosing `AzForm`. */
 export const AzFormEntry: React.FC<AzFormEntryProps> = ({ name, initialValue = '', ...props }) => {
   const context = useContext(AzFormContext);
   if (!context) {

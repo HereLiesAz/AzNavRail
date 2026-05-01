@@ -4,12 +4,17 @@ import { AzNavRail, AzNavHostContext } from '../AzNavRail';
 import { AzNavRailDefaults } from '../AzNavRailDefaults';
 import { AzDockingSide, AzNavItem } from '../types';
 
+/** Props for the native `AzNavHost` layout component. */
 interface AzNavHostProps {
+  /** All props forwarded directly to the embedded `AzNavRail`. */
   railProps: any;
+  /** Optional background content rendered behind the rail and screen content. */
   background?: React.ReactNode;
+  /** Screen content rendered in the content area beside the rail. */
   children: React.ReactNode;
 }
 
+/** Native implementation: Full-screen host layout that layers a background, content area, and the `AzNavRail`. */
 const AzNavHost: React.FC<AzNavHostProps> = ({ railProps, background, children }) => {
   const settings = railProps.settings || {};
   const dockingSide = settings.dockingSide || AzDockingSide.LEFT;

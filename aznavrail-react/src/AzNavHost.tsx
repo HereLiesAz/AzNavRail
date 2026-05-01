@@ -4,7 +4,7 @@ import { AzNavRail } from './AzNavRail';
 import { AzDockingSide, AzNavRailSettings } from './types';
 import { AzNavRailDefaults } from './AzNavRailDefaults';
 
-// Types for alignment mimicking Compose Alignment
+/** Alignment positions for `AzOnscreen` overlays, mirroring Jetpack Compose `Alignment` values. */
 export enum AzAlignment {
   TopStart = 'TopStart',
   TopCenter = 'TopCenter',
@@ -17,12 +17,14 @@ export enum AzAlignment {
   BottomEnd = 'BottomEnd',
 }
 
+/** Internal registration record for a background layer declared via `<AzBackground>`. */
 interface AzBackgroundItem {
   id: string;
   weight: number;
   content: React.ReactNode;
 }
 
+/** Internal registration record for an overlay declared via `<AzOnscreen>`. */
 interface AzOnscreenItem {
   id: string;
   alignment: AzAlignment;
@@ -38,12 +40,19 @@ interface AzHostContextType {
   dockingSide: AzDockingSide;
 }
 
+/** Internal React context shared between `AzHostActivityLayout` and its `AzBackground`/`AzOnscreen` children. */
 export const AzHostContext = createContext<AzHostContextType | null>(null);
 
+/** Returns the `AzHostContextType` from the nearest `AzHostActivityLayout` ancestor, or `null` if outside one. */
 export const useAzHostContext = () => useContext(AzHostContext);
 
 // --- Component Wrappers for the Host Scope ---
 
+/**
+ * Registers a background layer inside `AzHostActivityLayout`.
+ * @param props.weight - Z-order weight; lower values render behind higher values.
+ * @param props.children - Content rendered as an absolute fill layer behind the rail and screen content.
+ */
 export const AzBackground: React.FC<{ weight?: number; children: React.ReactNode }> = ({ weight = 0, children }) => {
   const context = useAzHostContext();
   const id = useMemo(() => Math.random().toString(36).substr(2, 9), []);
@@ -58,6 +67,11 @@ export const AzBackground: React.FC<{ weight?: number; children: React.ReactNode
   return null;
 };
 
+/**
+ * Registers an absolutely-positioned overlay inside `AzHostActivityLayout`, respecting safe zones.
+ * @param props.alignment - Where the overlay is anchored relative to the content area.
+ * @param props.children - Content rendered as an overlay at the specified alignment.
+ */
 export const AzOnscreen: React.FC<{ alignment?: AzAlignment; children: React.ReactNode }> = ({ alignment = AzAlignment.TopStart, children }) => {
   const context = useAzHostContext();
   const id = useMemo(() => Math.random().toString(36).substr(2, 9), []);
@@ -74,12 +88,19 @@ export const AzOnscreen: React.FC<{ alignment?: AzAlignment; children: React.Rea
 
 // --- Layout component ---
 
+/** Props for `AzHostActivityLayout` — the full-screen host container that positions the rail and content. */
 export interface AzHostActivityLayoutProps extends AzNavRailSettings {
+  /** Navigation controller reference forwarded to the embedded `AzNavRail`. */
   navController?: any;
+  /** Active route string used to highlight the matching item and display the screen title. */
   currentDestination?: string;
+  /** When true, applies landscape-aware layout adjustments to the rail. */
   isLandscape?: boolean;
+  /** When true, the embedded rail starts in its expanded (menu) state. */
   initiallyExpanded?: boolean;
+  /** When true, disables the swipe gesture that expands the rail. */
   disableSwipeToOpen?: boolean;
+  /** Screen content and any `AzBackground`/`AzOnscreen` declarations. */
   children: React.ReactNode;
 }
 
@@ -110,6 +131,10 @@ const getAlignmentStyle = (alignment: AzAlignment, dockingSide: AzDockingSide) =
   return style;
 };
 
+/**
+ * Full-screen layout container that composes `AzNavRail` with layered background and onscreen overlay slots.
+ * Mirrors the Jetpack Compose `AzNavHost` + `AzHostActivityLayout` API.
+ */
 export const AzHostActivityLayout: React.FC<AzHostActivityLayoutProps> = (props) => {
   const {
     navController,
@@ -237,6 +262,7 @@ export const AzHostActivityLayout: React.FC<AzHostActivityLayoutProps> = (props)
 
 // Generic NavHost wrapper (React Native doesn't have an exact Compose equivalent natively,
 // but we provide the component for parity).
+/** Generic nav-host wrapper provided for API parity with the Compose library; renders children in an absolute fill view. */
 export const AzNavHost: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   return <View style={StyleSheet.absoluteFillObject}>{children}</View>;
 };

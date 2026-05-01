@@ -9,30 +9,51 @@ import {
 } from 'react-native';
 import { historyManager } from '../util/HistoryManager';
 
+/** Global defaults for `AzTextBox` instances. */
 export const AzTextBoxDefaults = {
+    /** Sets the maximum number of history suggestions stored per context. */
     setSuggestionLimit: (limit: number) => historyManager.setLimit(limit),
 };
 
+/** Props for the `AzTextBox` text-input component. */
 export interface AzTextBoxProps {
+  /** Controlled value; when provided the component is fully controlled. */
   value?: string;
+  /** Initial value for uncontrolled mode. */
   initialValue?: string;
+  /** Called on every keystroke with the current text. */
   onValueChange?: (text: string) => void;
+  /** Placeholder text shown when the field is empty. */
   hint?: string;
+  /** When true, an outline border is drawn around the input. */
   outlined?: boolean;
+  /** When true, the input grows vertically to accommodate multiple lines. Mutually exclusive with `secret`. */
   multiline?: boolean;
+  /** When true, text is hidden and a SHOW/HIDE toggle is displayed. Mutually exclusive with `multiline`. */
   secret?: boolean;
+  /** Accent color applied to borders, placeholder, and submit button. */
   outlineColor?: string;
+  /** Key used to store and retrieve typed-history suggestions; defaults to `'global'`. */
   historyContext?: string;
+  /** Custom content rendered inside the submit button. */
   submitButtonContent?: React.ReactNode;
+  /** Called with the current value when the submit button is pressed; also saves to history. */
   onSubmit?: (text: string) => void;
+  /** When false, the submit button is hidden. */
   showSubmitButton?: boolean;
+  /** Deprecated — use `containerStyle` instead. */
   style?: ViewStyle;
+  /** Additional style applied to the outer container. */
   containerStyle?: ViewStyle;
+  /** Background color of the input row. */
   backgroundColor?: string;
+  /** Opacity of the input row background. */
   backgroundOpacity?: number;
+  /** When false, all interactions are blocked and the control is dimmed. */
   enabled?: boolean;
 }
 
+/** Native implementation: Text input with optional outline, secret mode, history suggestions, and a submit button. */
 export const AzTextBox: React.FC<AzTextBoxProps> = ({
   value: controlledValue,
   onValueChange,

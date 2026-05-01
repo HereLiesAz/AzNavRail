@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 
+/** Native implementation: Elevated card spinner shown while the rail or screen is in a loading state. */
 export const AzLoad: React.FC = () => (
     <View style={styles.container}>
         <ActivityIndicator size="large" color="#6200ee" />

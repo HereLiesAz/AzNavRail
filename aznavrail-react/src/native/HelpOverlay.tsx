@@ -2,14 +2,21 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { AzNavItem } from '../types';
 
+/** Props for the native `HelpOverlay` component (without tutorial support). */
 interface HelpOverlayProps {
+    /** All registered nav items; items with `info` or a `helpList` entry are shown. */
     items: AzNavItem[];
+    /** Called when the user taps the background to close the overlay. */
     onDismiss: () => void;
+    /** Map of item id → supplemental help text. */
     helpList: Record<string, string>;
+    /** Recorded on-screen bounds for each item used to draw connector lines. */
     itemBounds: Record<string, { x: number, y: number, width: number, height: number }>;
+    /** Id of the currently open nested-rail, used to include its sub-items in the overlay. */
     nestedRailVisibleId?: string | null;
 }
 
+/** Native implementation: Full-screen dark overlay that shows connector-line cards for each documented nav item. */
 export const HelpOverlay: React.FC<HelpOverlayProps> = ({ items, onDismiss, helpList, itemBounds, nestedRailVisibleId = null }) => {
     const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
     const [cardBounds, setCardBounds] = useState<Record<string, { x: number, y: number, width: number, height: number }>>({});

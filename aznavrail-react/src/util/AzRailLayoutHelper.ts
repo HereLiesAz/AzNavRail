@@ -1,13 +1,25 @@
 import { AzDockingSide, AzOrientation, AzVisualSide } from '../types';
 
+/** Resolved layout parameters produced by `AzRailLayoutHelper.calculateLayout`. */
 export interface RailLayoutConfig {
+  /** The physical screen edge where the rail appears after rotation is applied. */
   visualSide: AzVisualSide;
+  /** Whether items in the rail flow vertically or horizontally after rotation. */
   orientation: AzOrientation;
+  /** Alignment corner used when placing the rail in landscape/rotated layouts. */
   alignment: 'TopStart' | 'TopEnd' | 'BottomStart' | 'BottomEnd';
+  /** When true, items within the rail should be rendered in reverse order. */
   reverseLayout: boolean;
 }
 
+/** Utility class that maps a `dockingSide` + device rotation to resolved visual-layout parameters. */
 export class AzRailLayoutHelper {
+  /**
+   * Calculates the visual layout of the rail given device rotation and docking preferences.
+   * @param dockingSide - The logical docking side chosen by the user.
+   * @param rotation - Current device rotation in degrees (0, 90, 180, or 270).
+   * @param usePhysicalDocking - When true, the rail follows the physical edge across rotations.
+   */
   static calculateLayout(
     dockingSide: AzDockingSide,
     rotation: number, // 0, 90, 180, 270

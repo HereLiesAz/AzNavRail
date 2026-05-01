@@ -9,19 +9,31 @@ import {
   TextInput,
 } from 'react-native';
 
+/** Props for the `AzRoller` searchable dropdown / slot-machine picker. */
 export interface AzRollerProps {
+  /** List of option strings displayed in the dropdown. */
   options: string[];
+  /** The currently selected option (controlled). */
   selectedOption?: string;
+  /** Called when the user selects an option. */
   onOptionSelected: (option: string) => void;
+  /** Placeholder text shown when no option is selected. */
   hint?: string;
+  /** When false, the control is rendered at 50% opacity and non-interactive. */
   enabled?: boolean;
+  /** Border and text accent color. */
   outlineColor?: string;
+  /** Background color of the header row. */
   backgroundColor?: string;
+  /** Opacity of the header row background. */
   backgroundOpacity?: number;
+  /** Additional container style. */
   style?: ViewStyle;
+  /** When true, the border and text are rendered in red to indicate a validation error. */
   isError?: boolean;
 }
 
+/** Native implementation: Searchable dropdown with a slot-machine scroll fallback when not typing. */
 export const AzRoller: React.FC<AzRollerProps> = ({
   options,
   selectedOption,

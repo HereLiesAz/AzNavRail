@@ -13,18 +13,29 @@ import { AzNavItem } from '../types';
 import { AzButton } from './AzButton';
 import { AzTextBox } from './AzTextBox';
 
+/** Props for the draggable wrapper used around reloc (reorderable) rail items. */
 interface DraggableRailItemWrapperProps {
+  /** The nav item to render and make draggable. */
   item: AzNavItem;
+  /** Global index of this item in the rail items array. */
   index: number;
+  /** Total number of items in the rail (used for boundary clamping). */
   totalItems: number;
+  /** Called when the user starts dragging this item. */
   onDragStart: (index: number) => void;
+  /** Called when the user releases the drag. */
   onDragEnd: (index: number) => void;
+  /** Called on each drag movement tick with the vertical displacement and current index. */
   onDragMove: (dy: number, index: number) => void;
+  /** Animated value controlling the Y displacement of this item while another item is being dragged. */
   offsetY: Animated.Value;
+  /** Additional style applied to the container. */
   style?: any;
+  /** Background color for the floating hidden-menu modal. */
   translucentBackground?: string;
 }
 
+/** Native implementation: Wraps a rail item to add vertical-drag reordering and a long-press hidden-menu. */
 export const DraggableRailItemWrapper: React.FC<DraggableRailItemWrapperProps> = ({
   item,
   index,

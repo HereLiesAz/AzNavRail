@@ -1,6 +1,7 @@
 import React, { useEffect, useContext, useRef } from 'react';
 import { AzNavItem, AzButtonShape, AzNavItemProps, AzToggleProps, AzCyclerProps, AzHostItemProps, AzSubItemProps, AzSubToggleProps, AzSubCyclerProps, AzRailRelocItemProps, AzNestedRailProps, AzNestedRailAlignment, HiddenMenuScope } from './types';
 
+/** Internal React context that connects DSL item declarations to the parent `AzNavRail` registry. */
 export const AzNavRailContext = React.createContext<{
   register: (item: AzNavItem) => void;
   unregister: (id: string) => void;
@@ -64,6 +65,7 @@ const useAzItem = (item: AzNavItem) => {
 
 // --- Component Wrappers ---
 
+/** Declares a standard button item that appears in the collapsed rail (icon) view. */
 export const AzRailItem: React.FC<AzNavItemProps> = (props) => {
   useAzItem({
     ...props,
@@ -83,6 +85,7 @@ export const AzRailItem: React.FC<AzNavItemProps> = (props) => {
   return null;
 };
 
+/** Declares a standard button item that appears only in the expanded menu, not the collapsed rail. */
 export const AzMenuItem: React.FC<AzNavItemProps> = (props) => {
   useAzItem({
     ...props,
@@ -102,6 +105,7 @@ export const AzMenuItem: React.FC<AzNavItemProps> = (props) => {
   return null;
 };
 
+/** Declares a two-state toggle button visible in the collapsed rail. */
 export const AzRailToggle: React.FC<AzToggleProps> = (props) => {
   useAzItem({
     ...props,
@@ -119,6 +123,7 @@ export const AzRailToggle: React.FC<AzToggleProps> = (props) => {
   return null;
 };
 
+/** Declares a two-state toggle button visible only in the expanded menu. */
 export const AzMenuToggle: React.FC<AzToggleProps> = (props) => {
   useAzItem({
     ...props,
@@ -136,6 +141,7 @@ export const AzMenuToggle: React.FC<AzToggleProps> = (props) => {
   return null;
 };
 
+/** Declares a cycler button in the collapsed rail that advances through a list of options on each tap. */
 export const AzRailCycler: React.FC<AzCyclerProps> = (props) => {
   useAzItem({
     ...props,
@@ -155,6 +161,7 @@ export const AzRailCycler: React.FC<AzCyclerProps> = (props) => {
   return null;
 };
 
+/** Declares a cycler button visible only in the expanded menu. */
 export const AzMenuCycler: React.FC<AzCyclerProps> = (props) => {
   useAzItem({
     ...props,
@@ -174,6 +181,7 @@ export const AzMenuCycler: React.FC<AzCyclerProps> = (props) => {
   return null;
 };
 
+/** Inserts a horizontal divider line between items in the rail and menu. */
 export const AzRailDivider: React.FC = () => {
     const context = useContext(AzNavRailContext);
     const id = useRef<string | null>(null);
@@ -199,6 +207,7 @@ export const AzRailDivider: React.FC = () => {
     return null;
 };
 
+/** Declares a collapsible group-header item in the collapsed rail; tapping it expands or collapses its sub-items. */
 export const AzRailHostItem: React.FC<AzHostItemProps> = (props) => {
     useAzItem({
         ...props,
@@ -218,6 +227,7 @@ export const AzRailHostItem: React.FC<AzHostItemProps> = (props) => {
     return null;
 };
 
+/** Declares a collapsible group-header item visible only in the expanded menu. */
 export const AzMenuHostItem: React.FC<AzHostItemProps> = (props) => {
     useAzItem({
         ...props,
@@ -237,6 +247,7 @@ export const AzMenuHostItem: React.FC<AzHostItemProps> = (props) => {
     return null;
 };
 
+/** Declares a standard button sub-item nested under a rail host item. */
 export const AzRailSubItem: React.FC<AzSubItemProps> = (props) => {
     useAzItem({
         ...props,
@@ -256,6 +267,7 @@ export const AzRailSubItem: React.FC<AzSubItemProps> = (props) => {
     return null;
 };
 
+/** Declares a standard button sub-item visible only in the expanded menu under a host. */
 export const AzMenuSubItem: React.FC<AzSubItemProps> = (props) => {
     useAzItem({
         ...props,
@@ -275,6 +287,7 @@ export const AzMenuSubItem: React.FC<AzSubItemProps> = (props) => {
     return null;
 };
 
+/** Declares a toggle sub-item nested under a rail host item. */
 export const AzRailSubToggle: React.FC<AzSubToggleProps> = (props) => {
     useAzItem({
         ...props,
@@ -292,6 +305,7 @@ export const AzRailSubToggle: React.FC<AzSubToggleProps> = (props) => {
     return null;
 };
 
+/** Declares a toggle sub-item visible only in the expanded menu under a host. */
 export const AzMenuSubToggle: React.FC<AzSubToggleProps> = (props) => {
     useAzItem({
         ...props,
@@ -309,6 +323,7 @@ export const AzMenuSubToggle: React.FC<AzSubToggleProps> = (props) => {
     return null;
 };
 
+/** Declares a cycler sub-item nested under a rail host item. */
 export const AzRailSubCycler: React.FC<AzSubCyclerProps> = (props) => {
     useAzItem({
         ...props,
@@ -328,6 +343,7 @@ export const AzRailSubCycler: React.FC<AzSubCyclerProps> = (props) => {
     return null;
 };
 
+/** Declares a cycler sub-item visible only in the expanded menu under a host. */
 export const AzMenuSubCycler: React.FC<AzSubCyclerProps> = (props) => {
     useAzItem({
         ...props,
@@ -347,6 +363,7 @@ export const AzMenuSubCycler: React.FC<AzSubCyclerProps> = (props) => {
     return null;
 };
 
+/** Declares a drag-reorderable sub-item in the rail; supports a long-press hidden menu and nested content. */
 export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
     let hiddenMenuItems: any[] = [];
     if (props.hiddenMenu) {
@@ -452,26 +469,31 @@ const useShallowCompareSettings = (props: any) => {
     }, [context, props]);
 };
 
+/** DSL component for overriding `AzNavRailSettings` values from within the child tree. */
 export const AzSettings: React.FC<any> = (props) => {
     useShallowCompareSettings(props);
     return null;
 };
 
+/** Alias for `AzSettings` — overrides theme-related rail settings from within the child tree. */
 export const AzTheme: React.FC<any> = (props) => {
     useShallowCompareSettings(props);
     return null;
 };
 
+/** Alias for `AzSettings` — overrides arbitrary rail config values from within the child tree. */
 export const AzConfig: React.FC<any> = (props) => {
     useShallowCompareSettings(props);
     return null;
 };
 
+/** Alias for `AzSettings` — overrides advanced rail settings from within the child tree. */
 export const AzAdvanced: React.FC<any> = (props) => {
     useShallowCompareSettings(props);
     return null;
 };
 
+/** Declares a rail item that opens a secondary popup rail when tapped; child DSL items populate the popup. */
 export const AzNestedRail: React.FC<AzNestedRailProps> = (props) => {
     const [nestedSettings, setNestedSettings] = React.useState<any>({});
 
@@ -521,6 +543,7 @@ export const AzNestedRail: React.FC<AzNestedRailProps> = (props) => {
     );
 };
 
+/** Declares a help-only rail item — appears in the info overlay but not in the interactive rail. */
 export const AzHelpRailItem: React.FC<AzNavItemProps> = (props) => {
     useAzItem({
         ...props,
@@ -541,6 +564,7 @@ export const AzHelpRailItem: React.FC<AzNavItemProps> = (props) => {
     return null;
 };
 
+/** Declares a help-only sub-item nested under a host; appears in the info overlay only and requires a valid `hostId`. */
 export const AzHelpSubItem: React.FC<AzSubItemProps> = (props) => {
     const context = useContext(AzNavRailContext);
 

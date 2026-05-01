@@ -3,19 +3,31 @@ import { AzButton } from './AzButton';
 import { AzButtonShape } from '../types';
 import { ViewStyle } from 'react-native';
 
+/** Props for the native `AzCycler` button that steps through a list of options. */
 interface AzCyclerProps {
+  /** Ordered list of option labels to cycle through. */
   options: string[];
+  /** The currently selected option label (controlled). */
   selectedOption: string;
+  /** Called with the newly committed option after a debounce delay following the last tap. */
   onCycle: (option: string) => void;
+  /** Border and text color. */
   color?: string;
+  /** Background fill color. */
   fillColor?: string;
+  /** Button shape. */
   shape?: AzButtonShape;
+  /** Additional container style. */
   style?: ViewStyle;
+  /** When true, all taps are ignored. */
   disabled?: boolean;
+  /** Options that are skipped when cycling forward. */
   disabledOptions?: string[];
+  /** Test identifier. */
   testID?: string;
 }
 
+/** Native implementation: Button that cycles through options on each tap and commits after a 1 s debounce. */
 export const AzCycler: React.FC<AzCyclerProps> = ({
   options,
   selectedOption,

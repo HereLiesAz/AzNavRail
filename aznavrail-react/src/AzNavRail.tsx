@@ -27,14 +27,23 @@ import { HelpOverlay } from './components/HelpOverlay';
 import { AzTutorialProvider, useAzTutorialController } from './tutorial/AzTutorialController';
 import { AzTutorialOverlay } from './components/AzTutorialOverlay';
 
+/** Props for the `AzNavRail` component, extending all `AzNavRailSettings` options. */
 interface AzNavRailProps extends AzNavRailSettings {
+  /** DSL item declarations (`AzRailItem`, `AzMenuToggle`, etc.) and screen content rendered beside the rail. */
   children: React.ReactNode;
+  /** Navigation controller reference (passed through to the host context). */
   navController?: any;
+  /** Active route string used to highlight the matching rail item. */
   currentDestination?: string;
+  /** When true, applies landscape-aware layout adjustments. */
   isLandscape?: boolean;
+  /** When true, the rail starts in expanded (menu) state. */
   initiallyExpanded?: boolean;
+  /** Disables the swipe gesture that expands the rail when the user swipes from the edge. */
   disableSwipeToOpen?: boolean;
+  /** Called whenever the rail transitions between collapsed and expanded states. */
   onExpandedChange?: (expanded: boolean) => void;
+  /** Optional hook for logging or analytics; if omitted, interactions are logged to the console in dev mode. */
   onInteraction?: (action: string, details?: string) => void;
 }
 
@@ -755,6 +764,11 @@ const TutorialOverlayWrapper: React.FC<{
   );
 };
 
+/**
+ * Main navigation rail component for React Native.
+ * Renders a collapsible side rail with icon buttons, an expandable menu, and optional tutorial/help overlay support.
+ * Declare items as JSX children using the `AzNavRailScope` DSL helpers.
+ */
 export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
   return (
     <AzTutorialProvider>

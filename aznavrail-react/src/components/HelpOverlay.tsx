@@ -3,15 +3,23 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { AzNavItem, AzTutorial } from '../types';
 import { useAzTutorialController } from '../tutorial/AzTutorialController';
 
+/** Props for the shared `HelpOverlay` component that includes tutorial launch support. */
 interface HelpOverlayProps {
+    /** All registered nav items; items with `info` or a `helpList` entry are shown. */
     items: AzNavItem[];
+    /** Called when the user taps the background to close the overlay. */
     onDismiss: () => void;
+    /** Map of item id → supplemental help text. */
     helpList: Record<string, string>;
+    /** Recorded on-screen bounds for each item used to draw connector lines. */
     itemBounds: Record<string, { x: number, y: number, width: number, height: number }>;
+    /** Id of the currently open nested-rail; its sub-items are included in the overlay. */
     nestedRailVisibleId?: string | null;
+    /** Map of tutorial id → `AzTutorial`; when a tutorial matches an item id, a "Start Tutorial" button is shown. */
     tutorials?: Record<string, AzTutorial>;
 }
 
+/** Shared full-screen dark overlay that shows connector-line help cards and offers "Start Tutorial" when tutorials are available. */
 export const HelpOverlay: React.FC<HelpOverlayProps> = ({ items, onDismiss, helpList, itemBounds, nestedRailVisibleId = null, tutorials = {} }) => {
     const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
     const [cardBounds, setCardBounds] = useState<Record<string, { x: number, y: number, width: number, height: number }>>({});

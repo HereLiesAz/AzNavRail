@@ -1,6 +1,8 @@
 import { AzNavItem } from '../types';
 
+/** Static utility methods for managing drag-reorder operations on reloc-item clusters. */
 export class RelocItemHandler {
+    /** Returns the contiguous run of `isRelocItem` sub-items that belong to `hostId`. */
     static getCluster(items: AzNavItem[], hostId: string): AzNavItem[] {
         const cluster: AzNavItem[] = [];
         let inCluster = false;
@@ -22,12 +24,14 @@ export class RelocItemHandler {
         return cluster;
     }
 
+    /** Computes the drop target cluster-index from a vertical drag displacement `dy`. */
     static calculateTargetIndex(dy: number, currentIndex: number, clusterSize: number, itemHeight: number): number {
         const slotsMoved = Math.round(dy / itemHeight);
         const target = currentIndex + slotsMoved;
         return Math.max(0, Math.min(target, clusterSize - 1));
     }
 
+    /** Returns a new items array with the specified item moved to `targetClusterIndex` within its host cluster. */
     static reorderItems(items: AzNavItem[], itemId: string, hostId: string, targetClusterIndex: number): AzNavItem[] {
         // Find cluster start and length directly
         let clusterStartGlobalIndex = -1;

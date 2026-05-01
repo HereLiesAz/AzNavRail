@@ -3,16 +3,25 @@ import { View, StyleSheet, ScrollView, Modal, TouchableWithoutFeedback, Dimensio
 import { AzNavItem, AzNestedRailAlignment } from '../types';
 import { AzNavRailDefaults } from '../AzNavRailDefaults';
 
+/** Props for the shared `AzNestedRailPopup` modal panel used in both native and web contexts. */
 interface AzNestedRailPopupProps {
+    /** Whether the popup is currently visible. */
     visible: boolean;
+    /** Called when the user taps outside the popup to dismiss it. */
     onDismiss: () => void;
+    /** Sub-items to render inside the popup. */
     items: AzNavItem[];
+    /** Whether items are stacked vertically or laid out horizontally. */
     alignment: AzNestedRailAlignment;
+    /** Renders a single sub-item inside the popup. */
     renderItem: (item: AzNavItem, index: number) => React.ReactNode;
+    /** Screen-space bounds of the host item used to position the popup. */
     anchorPosition?: { x: number, y: number, width: number, height: number };
+    /** Which side the parent rail is docked to, used to position the popup correctly. */
     dockingSide: 'LEFT' | 'RIGHT';
 }
 
+/** Shared Modal panel that floats next to a nested-rail host item and displays its sub-items. */
 export const AzNestedRailPopup: React.FC<AzNestedRailPopupProps> = ({
     visible,
     onDismiss,
