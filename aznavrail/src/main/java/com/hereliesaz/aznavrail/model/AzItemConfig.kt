@@ -3,10 +3,26 @@ package com.hereliesaz.aznavrail.model
 import androidx.compose.ui.graphics.Color
 
 /**
- * Internal configuration object used to group common parameters
- * passed from the DSL methods to the internal helper functions
- * ([addItem], [addToggle], [addCycler]) in order to avoid excessively
- * long parameter lists.
+ * Transient parameter bundle passed from DSL builder methods to the private `addItem`,
+ * `addToggle`, and `addCycler` helpers inside [com.hereliesaz.aznavrail.AzNavRailScopeImpl].
+ *
+ * Not part of the public API; callers interact through [com.hereliesaz.aznavrail.AzNavRailScope].
+ *
+ * @param route Navigation route associated with the item.
+ * @param screenTitle Title displayed on the screen when this item is active.
+ * @param info Help description shown in the Help overlay.
+ * @param isRailItem Whether the item appears on the collapsed rail (vs. menu-only).
+ * @param disabled Whether the item is non-interactive.
+ * @param isHost Whether the item is a parent that can expand sub-items inline.
+ * @param isSubItem Whether the item is a child of a host item.
+ * @param hostId ID of the parent host item; required when [isSubItem] is true.
+ * @param classifiers Strings used for programmatic active-state highlighting.
+ * @param onFocus Callback invoked when the item receives focus (focus map wiring).
+ * @param content Custom visual content for the button (Color, resource Int, image model, or [AzComposableContent]).
+ * @param color Border/icon color override.
+ * @param textColor Text color override.
+ * @param fillColor Translucent fill color override.
+ * @param shape Button shape override; falls back to the scope's [com.hereliesaz.aznavrail.AzNavRailScopeImpl.defaultShape].
  */
 data class AzItemConfig(
     val route: String? = null,

@@ -89,6 +89,12 @@ abstract class AzNavRailWindowService : Service(), LifecycleOwner, SavedStateReg
     @Composable
     abstract fun OverlayContent()
 
+    /**
+     * The [WindowManager.LayoutParams] used when adding the overlay view.
+     *
+     * Override to customise gravity, initial position, flags, or pixel format.
+     * The default is `WRAP_CONTENT` with `FLAG_NOT_FOCUSABLE` anchored to the top-start corner.
+     */
     protected open val windowParams: WindowManager.LayoutParams by lazy {
         WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,

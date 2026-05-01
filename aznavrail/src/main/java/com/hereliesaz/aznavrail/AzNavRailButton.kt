@@ -46,6 +46,32 @@ import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzComposableContent
 import com.hereliesaz.aznavrail.util.text.AutoSizeText
 
+/**
+ * The internal button primitive for every item rendered in the navigation rail or nested rail.
+ *
+ * Handles shape enforcement, color transitions on press/selection, custom content rendering
+ * (Color, Image, resource ID, or [AzComposableContent]), and the loading state. All rail buttons
+ * share the strict [AzNavRailDefaults.ButtonWidth] — only height varies by shape.
+ *
+ * @param onClick Click handler, or null to make the button non-interactive.
+ * @param text Text displayed when [itemContent] is null.
+ * @param modifier Applied to the button container.
+ * @param size Button size in dp; typically [AzNavRailDefaults.ButtonWidth].
+ * @param color Base border/icon color (unselected state).
+ * @param activeColor Color used when the button is pressed or selected.
+ * @param textColor Overrides computed text/icon color.
+ * @param fillColor Overrides the translucent fill color for the button background.
+ * @param colors Unused Material [ButtonColors] slot (reserved for future compatibility).
+ * @param shape Determines the geometric shape of the button.
+ * @param enabled Whether the button can be interacted with.
+ * @param isSelected Whether the button is in the selected/active state.
+ * @param isLoading When true, the button content is hidden and [AzLoad] is shown in its place.
+ * @param contentPadding Padding applied around text content (ignored when [itemContent] is set).
+ * @param itemContent Arbitrary content to render inside the button instead of [text]. Accepts
+ *   [Color], [AzComposableContent], [Int] (resource ID), [String], or any image model.
+ * @param onLongClick Long-press handler.
+ * @param onGloballyPositioned Reports the window-space bounds of the button after layout.
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun AzNavRailButton(

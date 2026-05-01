@@ -63,6 +63,28 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalViewConfiguration
 
+/**
+ * Renders the full ordered set of rail buttons in the collapsed rail, including nested-rail popups
+ * and hidden-menu popups for relocatable items.
+ *
+ * Each item is wrapped in [DraggableRailItemWrapper] which attaches the long-press-drag gesture for
+ * relocatable items, manages the visual drag shadow, and handles the snap-back animation on drop.
+ * Sub-items belonging to host items are rendered inline when their host is expanded.
+ *
+ * @param items All items in the scope (including sub-items and cyclers).
+ * @param scope The active [AzNavRailScopeImpl] providing callbacks and state.
+ * @param navController Used for route-based navigation on item click.
+ * @param currentDestination The active route; used to determine selection state.
+ * @param buttonSize Uniform button size (shrunk when a vertical nested rail is open).
+ * @param onRailCyclerClick Invoked when a cycler item is tapped in the rail.
+ * @param onItemSelected Invoked after any item is selected (e.g., to collapse the menu).
+ * @param hostStates Mutable map tracking which host items are expanded.
+ * @param packRailButtons If true, no vertical spacing is added between items.
+ * @param visualDockingSide Used to position nested-rail popups on the correct side.
+ * @param onClickOverride Optional override that replaces the default click handling (used for tutorial mode).
+ * @param onItemGloballyPositioned Reports bounds to the scope's cache for help/tutorial overlays.
+ * @param helpEnabled When true, non-host/non-help items are visually dimmed and non-interactive.
+ */
 @Composable
 internal fun RailItems(
     items: List<AzNavItem>,

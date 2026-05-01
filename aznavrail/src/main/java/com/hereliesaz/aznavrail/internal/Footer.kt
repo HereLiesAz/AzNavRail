@@ -23,6 +23,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hereliesaz.aznavrail.AzNavRailScopeImpl
 
+/**
+ * Renders the pinned footer strip shown at the bottom of the expanded menu.
+ *
+ * Contains About, Feedback, and the @HereLiesAz attribution link. The Undock action is shown
+ * only when rail-dragging or a custom [com.hereliesaz.aznavrail.model.AzAdvancedConfig.onUndock]
+ * is configured. Long-pressing @HereLiesAz invokes [onSecretClick] to open the developer debug menu.
+ *
+ * @param appName The app name embedded in the feedback email subject.
+ * @param onToggle Callback to collapse the rail (bound to the Close action, currently unused in footer).
+ * @param onUndock Callback to detach the rail into FAB mode.
+ * @param onSecretClick Callback that opens the Secret Screens dialog; null when [com.hereliesaz.aznavrail.model.AzAdvancedConfig.secLoc] is unset.
+ * @param scope The active rail scope used to read dragging/undock flags and the repository URL.
+ * @param footerColor Tint color applied to all footer text items.
+ */
 @Composable
 internal fun Footer(
     appName: String,

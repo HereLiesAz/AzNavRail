@@ -348,6 +348,7 @@ interface HiddenMenuScope {
     fun inputItem(hint: String, initialValue: String, onValueChange: (String) -> Unit)
 }
 
+/** Internal implementation of [HiddenMenuScope] that wires items into the parent scope's callback maps. */
 internal class HiddenMenuScopeImpl(
     private val parentId: String,
     private val targetOnClickMap: MutableMap<String, () -> Unit>,
@@ -380,17 +381,35 @@ internal class HiddenMenuScopeImpl(
     }
 }
 
+/**
+ * Concrete implementation of [AzNavRailScope] that accumulates item state for the rail.
+ *
+ * Instances are created and owned by [AzNavRail] or [AzHostActivityLayout]. The [reset] method
+ * must be called before re-applying the DSL lambda on each recomposition.
+ *
+ * @param globalIdSet Shared set used for cross-scope duplicate-ID detection (e.g., nested rails).
+ */
 class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSetOf()) : AzNavRailScope {
+    /** Live list of all [AzNavItem] entries configured via the DSL. */
     val navItems = mutableStateListOf<AzNavItem>()
+    /** Maps item IDs to their click callbacks. */
     val onClickMap = mutableMapOf<String, () -> Unit>()
+    /** Maps item IDs to their focus callbacks. */
     val onFocusMap = mutableMapOf<String, () -> Unit>()
+    /** Maps hidden-menu item IDs to click callbacks, keyed by generated sub-IDs. */
     val hiddenMenuOnClickMap = mutableMapOf<String, () -> Unit>()
+    /** Maps hidden-menu input item IDs to value-change callbacks. */
     val hiddenMenuOnValueChangeMap = mutableMapOf<String, (String) -> Unit>()
+    /** Maps relocatable item IDs to reorder callbacks. */
     val onRelocateMap = mutableMapOf<String, (Int, Int, List<String>) -> Unit>()
+    /** Cache of window-space bounds for each item, populated as items are laid out. */
     val itemBoundsCache = mutableStateMapOf<String, Rect>()
+    /** Active [NavController], set externally by [AzHostActivityLayout]. */
     var navController: NavController? = null
+    /** The ID of the nested rail currently open as a popup, or null if none. */
     var nestedRailOpenId: String? by mutableStateOf(null)
 
+    /** Clears all accumulated state so the DSL lambda can be reapplied cleanly. */
     fun reset() {
         navItems.clear()
         onClickMap.clear()
@@ -403,27 +422,43 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     }
 
     // Config
+    /** Width of the rail panel when expanded (menu visible). */
     var expandedWidth: Dp = 160.dp
+    /** Width of the collapsed rail (icon-only strip). */
     var collapsedWidth: Dp = 100.dp
+    /** Whether the footer (About, Feedback, @HereLiesAz) is shown when the menu is expanded. */
     var showFooter: Boolean = true
+    /** URL opened when the user taps "About" in the footer. */
     var appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail"
+    /** Logical docking side used to calculate the visual side and slide-in direction. */
     var dockingSide: AzDockingSide = AzDockingSide.LEFT
+    /** If true, buttons are packed with no spacing between them. */
     var packButtons: Boolean = false
+    /** If true, the side menu drawer is disabled; the rail operates icon-only. */
     var noMenu: Boolean = false
+    /** If true, haptic feedback is triggered on header tap and drag events. */
     var vibrate: Boolean = false
+    /** If true, the header area shows the app name instead of the app icon. */
     var displayAppName: Boolean = false
+    /** Set of classifier strings; items whose classifiers overlap are shown as active. */
     var activeClassifiers: Set<String> = emptySet()
+    /** If true, the docking side tracks the physical device edge, adapting to rotation. */
     var usePhysicalDocking: Boolean = false
 
     // Theme
+    /** Color applied to selected/active items and connecting lines. [Color.Unspecified] falls back to [MaterialTheme.colorScheme.primary]. */
     var activeColor: Color = Color.Unspecified
+    /** Default button shape; individual items can override this. */
     var defaultShape: AzButtonShape = AzButtonShape.CIRCLE // Restored: default is circle
+    /** Shape applied to the app icon in the rail header. */
     var headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE // Default per legacy, overridden in UI
+    /** Background color for popup overlays (nested rails, hidden menus). [Color.Unspecified] uses the surface color. */
     var translucentBackground: Color = Color.Unspecified
+    /** Colors used for the connecting lines drawn in the Help overlay. Falls back to a built-in rainbow palette. */
     var helpLineColors: List<Color> = emptyList()
 
     // Advanced
-    // Advanced
+    /** Aggregated advanced configuration populated by [azAdvanced] and [azSettings] calls. */
     var advancedConfig: AzAdvancedConfig = AzAdvancedConfig()
 
 

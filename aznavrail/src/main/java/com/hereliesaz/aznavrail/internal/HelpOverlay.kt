@@ -28,6 +28,23 @@ import com.hereliesaz.aznavrail.model.AzNavItem
 
 import androidx.compose.foundation.BorderStroke
 
+/**
+ * Full-screen overlay that draws connecting lines from rail items to their help cards.
+ *
+ * Only items that have non-blank [AzNavItem.info], a matching entry in [helpList], or an
+ * associated tutorial are shown. Tapping a card expands it; tapping the background dismisses
+ * the overlay. If a nested rail is open, its items are merged into the help list and the
+ * start-padding is widened to avoid covering the popup.
+ *
+ * @param items All items configured in the current rail scope.
+ * @param helpLineColors Custom line colors cycling through per-item; defaults to rainbow palette.
+ * @param onDismiss Invoked when the user taps the background or a tutorial card's close.
+ * @param itemBoundsCache Window-space bounds of each item, used to draw connecting lines.
+ * @param helpList Map of item ID → help text (String or string resource Int).
+ * @param nestedRailOpenId ID of the currently open nested rail, or null.
+ * @param tutorials Map of item ID → tutorial definition; enables "Start Tutorial" links in cards.
+ * @param onTutorialLaunch Invoked with the item ID when the user taps "Start Tutorial".
+ */
 @Composable
 internal fun HelpOverlay(
     items: List<AzNavItem>,

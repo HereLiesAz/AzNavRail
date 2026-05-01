@@ -29,6 +29,25 @@ import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 
+/**
+ * Renders a secondary popup rail anchored beside a parent [AzNavItem].
+ *
+ * The layout is determined by [alignment]: VERTICAL stacks items in a scrollable column;
+ * HORIZONTAL lays them out in a scrollable row. Both modes cap size at 80 % of the screen
+ * to force scrolling on overflow. Position is handled externally by
+ * [DockedCenteredPopupPositionProvider] / [DockedHorizontalPopupPositionProvider].
+ *
+ * @param parentItem The host item that opened this nested rail.
+ * @param items The sub-items to render inside the popup.
+ * @param currentDestination The active navigation route; used to highlight matching items.
+ * @param activeColor The rail-level active color applied to selected buttons.
+ * @param activeClassifiers Classifier strings used for programmatic active-state.
+ * @param onItemSelected Invoked with the tapped sub-item.
+ * @param alignment Whether to render items vertically or horizontally.
+ * @param isRightDocked Whether the rail is docked to the right (affects padding side).
+ * @param helpList Forwarded from the scope for potential help-overlay integration.
+ * @param onItemGloballyPositioned Reports window-space bounds of each sub-item after layout.
+ */
 @Composable
 internal fun NestedRail(
     parentItem: AzNavItem,

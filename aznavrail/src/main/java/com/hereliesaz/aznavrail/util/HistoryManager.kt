@@ -10,6 +10,16 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
+/**
+ * Manages per-context autocomplete history for [com.hereliesaz.aznavrail.AzTextBox].
+ *
+ * History is persisted to private files named `az_text_box_history_<context>.txt`. Each context
+ * is an independent namespace so different text boxes do not share suggestions. The history is
+ * bounded by [maxSizeBytes] (derived from the suggestion limit) to prevent unbounded disk use.
+ *
+ * Must be initialised via [init] before [addEntry] or [getSuggestions] are called. Calling [init]
+ * again only updates the suggestion limit rather than re-loading history.
+ */
 object HistoryManager {
 
     private const val HISTORY_FILE_PREFIX = "az_text_box_history_"
@@ -23,6 +33,14 @@ object HistoryManager {
     internal var coroutineScope = CoroutineScope(Dispatchers.IO)
     private val fileMutex = Mutex()
 
+    /**
+     * Initialises the manager with the application context and suggestion limit.
+     *
+     * Safe to call multiple times — after the first call only [updateSettings] is invoked.
+     *
+     * @param context Application context (the application context is extracted internally).
+     * @param suggestionLimit Maximum suggestions to show, clamped to 0–5.
+     */
     fun init(context: Context, suggestionLimit: Int = 5) {
         if (isInitialized) {
             updateSettings(suggestionLimit) // Allow updating settings on re-init
@@ -33,6 +51,11 @@ object HistoryManager {
         isInitialized = true
     }
 
+    /**
+     * Updates the suggestion limit and rewrites persisted history files to respect the new size cap.
+     *
+     * @param suggestionLimit Maximum number of suggestions, clamped to 0–5.
+     */
     fun updateSettings(suggestionLimit: Int) {
         val newLimit = suggestionLimit.coerceIn(0, 5)
         maxSuggestions = newLimit
@@ -98,6 +121,15 @@ object HistoryManager {
         }
     }
 
+    /**
+     * Records a submitted value at the front of the history for [historyContext].
+     *
+     * No-ops if the manager is not initialised, [text] is blank, or the suggestion limit is 0.
+     * Duplicate entries are moved to the front rather than duplicated.
+     *
+     * @param text The value to record.
+     * @param historyContext Namespace key; falls back to "default" when null.
+     */
     fun addEntry(text: String, historyContext: String?) {
         val safeContext = historyContext ?: DEFAULT_HISTORY_CONTEXT
         if (!isInitialized || text.isBlank() || maxSizeBytes == 0) return
@@ -112,6 +144,16 @@ object HistoryManager {
         }
     }
 
+    /**
+     * Returns a ranked list of autocomplete suggestions from history that match [query].
+     *
+     * Prefix matches are returned before substring matches. Results are capped to the configured
+     * suggestion limit. History is lazy-loaded from disk on first access per context.
+     *
+     * @param query The current input text to match against.
+     * @param historyContext Namespace key; falls back to "default" when null.
+     * @return Ordered list of matching suggestions (empty if not initialised or limit is 0).
+     */
     suspend fun getSuggestions(query: String, historyContext: String?): List<String> {
         val safeContext = historyContext ?: DEFAULT_HISTORY_CONTEXT
         if (!isInitialized || maxSuggestions == 0) {

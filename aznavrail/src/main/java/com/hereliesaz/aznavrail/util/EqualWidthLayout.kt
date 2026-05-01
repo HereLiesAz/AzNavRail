@@ -7,6 +7,16 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 
+/**
+ * A custom layout that forces all children to share the width of the widest child.
+ *
+ * Useful for aligning a column of buttons or labels so they appear uniform even when
+ * their intrinsic widths differ. Children are stacked vertically with [verticalSpacing] between them.
+ *
+ * @param modifier Applied to the layout container.
+ * @param verticalSpacing Gap between adjacent children.
+ * @param content The child composables.
+ */
 @Composable
 fun EqualWidthLayout(
     modifier: Modifier = Modifier,

@@ -423,6 +423,13 @@ private fun SecLocHistoryDialog(
     }
 }
 
+/**
+ * Scrollable list of [SecLocEntry] items. Tapping an entry opens the coordinates in a maps app.
+ *
+ * @param history Entries to display (most recent first).
+ * @param dateFormatter Formatter applied to [SecLocEntry.timestamp].
+ * @param modifier Applied to the outer [androidx.compose.foundation.lazy.LazyColumn].
+ */
 @Composable
 internal fun HistoryList(
     history: List<SecLocEntry>,
@@ -472,6 +479,14 @@ internal fun HistoryList(
     }
 }
 
+/**
+ * A single recorded location data point from the SecLoc system.
+ *
+ * @param timestamp Unix timestamp in milliseconds.
+ * @param lat Latitude in decimal degrees.
+ * @param lng Longitude in decimal degrees.
+ * @param provider Location provider name (e.g., "gps", "network").
+ */
 data class SecLocEntry(
     val timestamp: Long,
     val lat: Double,
@@ -479,9 +494,11 @@ data class SecLocEntry(
     val provider: String
 )
 
+/** Manages reading and writing the on-device SecLoc location log file. */
 internal object SecLocLogManager {
     private const val FILE_NAME = "secloc_history.log"
 
+    /** Appends [entry] as a pipe-delimited line to the log file. */
     suspend fun appendLog(context: Context, entry: SecLocEntry) = withContext(Dispatchers.IO) {
         try {
             val file = File(context.filesDir, FILE_NAME)
@@ -492,6 +509,7 @@ internal object SecLocLogManager {
         }
     }
 
+    /** Reads all entries from the log file, returning them in reverse chronological order. */
     suspend fun readLog(context: Context): List<SecLocEntry> = withContext(Dispatchers.IO) {
         val list = mutableListOf<SecLocEntry>()
         try {
@@ -517,15 +535,24 @@ internal object SecLocLogManager {
         list.reversed()
     }
 
+    /** Returns the [File] handle for the log file (used by the server to stream content). */
     fun getLogFile(context: Context): File {
         return File(context.filesDir, FILE_NAME)
     }
 }
 
+/**
+ * Network utilities for the SecLoc source/viewer sync system.
+ *
+ * The source device starts a TCP server on [startServer]; the viewer connects via [fetchLogs].
+ * Authentication is performed by comparing the raw secret string sent by the client against
+ * the configured [com.hereliesaz.aznavrail.model.AzAdvancedConfig.secLoc] key.
+ */
 internal object SecLocNetworkUtils {
     private var serverSocket: ServerSocket? = null
     private var isRunning = false
 
+    /** Returns the device's non-loopback IPv4 address, or null if unavailable. */
     fun getLocalIpAddress(): String? {
         try {
             val interfaces = NetworkInterface.getNetworkInterfaces()
@@ -545,6 +572,10 @@ internal object SecLocNetworkUtils {
         return null
     }
 
+    /**
+     * Starts a blocking TCP server on [port] that streams the log file to authenticated clients.
+     * A 3-second penalty delay is applied on authentication failure to deter brute-force attempts.
+     */
     suspend fun startServer(context: Context, secret: String, port: Int) = withContext(Dispatchers.IO) {
         if (isRunning) return@withContext
         try {
@@ -587,6 +618,7 @@ internal object SecLocNetworkUtils {
         }
     }
 
+    /** Stops the running server and closes its socket. Safe to call if the server was never started. */
     fun stopServer() {
         isRunning = false
         try {
@@ -597,6 +629,12 @@ internal object SecLocNetworkUtils {
         serverSocket = null
     }
 
+    /**
+     * Connects to the source device at [ip]:[port], authenticates with [secret], and downloads
+     * the log entries, returning them in reverse chronological order.
+     *
+     * @throws Exception if the connection fails or authentication is rejected.
+     */
     suspend fun fetchLogs(ip: String, secret: String, port: Int): List<SecLocEntry> = withContext(Dispatchers.IO) {
         val list = mutableListOf<SecLocEntry>()
         var socket: Socket? = null

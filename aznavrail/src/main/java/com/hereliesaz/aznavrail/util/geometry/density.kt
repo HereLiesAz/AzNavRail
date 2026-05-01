@@ -16,9 +16,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
 import kotlin.math.roundToInt
 
-// Those function are designed to be used in lambdas
+// Unit-conversion extension functions for use in non-composable lambdas (e.g., DrawScope, Layout).
+// Composable overloads below delegate to LocalDensity.
 
 // DP
+/** Converts [dp] to [TextUnit] (sp), returning [TextUnit.Unspecified] for unspecified input. */
 fun Density.dpToSp(dp: Dp) = if (dp.isSpecified) dp.toSp() else TextUnit.Unspecified
 fun Density.dpToFloatPx(dp: Dp) = if (dp.isSpecified) dp.toPx() else Float.NaN
 fun Density.dpToIntPx(dp: Dp) = if (dp.isSpecified) dp.toPx().toInt() else 0

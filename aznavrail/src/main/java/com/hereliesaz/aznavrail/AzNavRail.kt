@@ -96,7 +96,9 @@ import kotlin.math.roundToInt
 @Retention(AnnotationRetention.BINARY)
 annotation class AzStrictLayout
 
+/** Singleton holding library-level constants. */
 object AzNavRail {
+    /** Intent extra key used to pass a target route when launching an activity via the rail. */
     const val EXTRA_ROUTE = "com.hereliesaz.aznavrail.extra.ROUTE"
 }
 

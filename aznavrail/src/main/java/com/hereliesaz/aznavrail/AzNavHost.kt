@@ -56,8 +56,13 @@ import com.hereliesaz.aznavrail.tutorial.LocalAzTutorialController
 import com.hereliesaz.aznavrail.tutorial.rememberAzTutorialController
 import com.hereliesaz.aznavrail.model.AzDockingSide
 
+/** CompositionLocal that signals whether [AzNavRail] is correctly nested inside [AzHostActivityLayout]. */
 val LocalAzNavHostPresent = compositionLocalOf { false }
+
+/** CompositionLocal providing the computed safe-zone insets for the current layout. */
 val LocalAzSafeZones = compositionLocalOf { AzSafeZones() }
+
+/** CompositionLocal giving composables access to the active [AzNavHostScope] from [AzHostActivityLayout]. */
 val LocalAzNavHostScope = staticCompositionLocalOf<AzNavHostScope?> { null }
 
 /**
@@ -90,9 +95,13 @@ interface AzNavHostScope : AzNavRailScope {
     fun onscreen(alignment: Alignment = Alignment.TopStart, content: @Composable () -> Unit)
 }
 
+/** Holds a sorted-background layer registered via [AzNavHostScope.background]. */
 data class AzBackgroundItem(val weight: Int, val content: @Composable () -> Unit)
+
+/** Holds an onscreen content item registered via [AzNavHostScope.onscreen]. */
 data class AzOnscreenItem(val alignment: Alignment, val content: @Composable () -> Unit)
 
+/** Concrete implementation of [AzNavHostScope] used internally by [AzHostActivityLayout]. */
 class AzNavHostScopeImpl(
     private val railScope: AzNavRailScopeImpl = AzNavRailScopeImpl()
 ) : AzNavHostScope, AzNavRailScope by railScope {
@@ -305,6 +314,21 @@ fun AzHostActivityLayout(
     }
 }
 
+/**
+ * Renders the main content area of the screen, applying safe-zone and rail-offset padding
+ * and placing each [AzOnscreenItem] at its requested alignment.
+ *
+ * Horizontal alignment is mirrored automatically when [dockingSide] is [AzDockingSide.RIGHT].
+ *
+ * @param safeTop Top inset computed from the 20 % / system-bar rule.
+ * @param safeBottom Bottom inset computed from the 10 % / system-bar rule.
+ * @param startPadding Padding added at the start edge (left) when the rail is docked there.
+ * @param endPadding Padding added at the end edge (right) when the rail is docked there.
+ * @param topPadding Padding added at the top when the rail is docked horizontally.
+ * @param bottomPadding Padding added at the bottom when the rail is docked horizontally.
+ * @param items The onscreen content items to render.
+ * @param dockingSide Used to mirror [BiasAlignment] for right-docked layouts.
+ */
 @Composable
 fun AzHostFragmentLayout(
     safeTop: Dp,
