@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { AzTutorialController } from '../types';
 
