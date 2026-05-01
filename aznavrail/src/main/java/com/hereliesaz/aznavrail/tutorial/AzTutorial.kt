@@ -3,83 +3,103 @@ package com.hereliesaz.aznavrail.tutorial
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Rect
 
-/**
- * Defines a highlight method for a tutorial scene or card.
- */
+sealed class AzAdvanceCondition {
+    object Button : AzAdvanceCondition()
+    object TapTarget : AzAdvanceCondition()
+    object TapAnywhere : AzAdvanceCondition()
+    data class Event(val name: String) : AzAdvanceCondition()
+}
+
 sealed class AzHighlight {
-    /** Highlights a specific area defined by the given [Rect] bounds. */
     data class Area(val bounds: Rect) : AzHighlight()
-    /** Highlights an item based on its ID. The system must find the item's globally positioned bounds. */
     data class Item(val id: String) : AzHighlight()
-    /** Highlights the entire screen or provides a general highlight without a specific bounds. */
     object FullScreen : AzHighlight()
-    /** No highlight. */
     object None : AzHighlight()
 }
 
-/**
- * Represents a textual or interactive card shown during a scene.
- */
 data class AzCard(
     val title: String,
     val text: String,
     val highlight: AzHighlight = AzHighlight.None,
+    val advanceCondition: AzAdvanceCondition = AzAdvanceCondition.Button,
     val actionText: String = "Next",
-    val onAction: (() -> Unit)? = null
+    val onAction: (() -> Unit)? = null,
+    val branches: Map<String, String> = emptyMap(),
+    val mediaContent: (@Composable () -> Unit)? = null,
+    val checklistItems: List<String>? = null,
 )
 
-/**
- * A scene is a scripted screen, taken directly from the app.
- * It may have different conditions for completing its loop than the app has for its scene.
- *
- * @param id Unique identifier for the scene.
- * @param content The composable content of the scene. This should display a copy of a screen
- *                with defined initial conditions.
- * @param cards The series of cards to display during this scene.
- * @param onComplete Callback invoked when the scene completes all its cards or is manually finished.
- */
 data class AzScene(
     val id: String,
     val content: @Composable () -> Unit,
     val cards: List<AzCard>,
-    val onComplete: (() -> Unit)? = null
+    val onComplete: (() -> Unit)? = null,
+    val branchVar: String? = null,
+    val branches: Map<String, String> = emptyMap(),
 )
 
-/**
- * A complete tutorial comprising multiple scenes.
- */
 data class AzTutorial(
-    val scenes: List<AzScene>
+    val scenes: List<AzScene>,
+    val onComplete: (() -> Unit)? = null,
+    val onSkip: (() -> Unit)? = null,
 )
 
-/**
- * Custom scripting language / DSL to build tutorials.
- */
 class AzTutorialBuilder {
     private val scenes = mutableListOf<AzScene>()
+    private var onComplete: (() -> Unit)? = null
+    private var onSkip: (() -> Unit)? = null
 
-    fun scene(id: String, onComplete: (() -> Unit)? = null, content: @Composable () -> Unit, block: AzSceneBuilder.() -> Unit) {
+    fun onComplete(action: () -> Unit) { onComplete = action }
+    fun onSkip(action: () -> Unit) { onSkip = action }
+
+    fun scene(
+        id: String,
+        onComplete: (() -> Unit)? = null,
+        content: @Composable () -> Unit,
+        block: AzSceneBuilder.() -> Unit,
+    ) {
         val builder = AzSceneBuilder()
         builder.block()
-        scenes.add(AzScene(id, content, builder.build(), onComplete))
+        scenes.add(AzScene(
+            id = id,
+            content = content,
+            cards = builder.buildCards(),
+            onComplete = onComplete,
+            branchVar = builder.branchVar,
+            branches = builder.branches,
+        ))
     }
 
-    fun build(): AzTutorial = AzTutorial(scenes)
+    fun build(): AzTutorial = AzTutorial(scenes, onComplete, onSkip)
 }
 
 class AzSceneBuilder {
     private val cards = mutableListOf<AzCard>()
+    internal var branchVar: String? = null
+    internal var branches: Map<String, String> = emptyMap()
 
-    fun card(title: String, text: String, highlight: AzHighlight = AzHighlight.None, actionText: String = "Next", onAction: (() -> Unit)? = null) {
-        cards.add(AzCard(title, text, highlight, actionText, onAction))
+    fun branch(varName: String, branches: Map<String, String>) {
+        this.branchVar = varName
+        this.branches = branches
     }
 
-    fun build(): List<AzCard> = cards
+    fun card(
+        title: String,
+        text: String,
+        highlight: AzHighlight = AzHighlight.None,
+        advanceCondition: AzAdvanceCondition = AzAdvanceCondition.Button,
+        actionText: String = "Next",
+        onAction: (() -> Unit)? = null,
+        branches: Map<String, String> = emptyMap(),
+        mediaContent: (@Composable () -> Unit)? = null,
+        checklistItems: List<String>? = null,
+    ) {
+        cards.add(AzCard(title, text, highlight, advanceCondition, actionText, onAction, branches, mediaContent, checklistItems))
+    }
+
+    fun buildCards(): List<AzCard> = cards
 }
 
-/**
- * DSL entry point to build an AzTutorial.
- */
 fun azTutorial(block: AzTutorialBuilder.() -> Unit): AzTutorial {
     val builder = AzTutorialBuilder()
     builder.block()
