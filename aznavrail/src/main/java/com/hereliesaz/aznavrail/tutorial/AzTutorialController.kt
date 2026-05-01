@@ -1,72 +1,89 @@
 package com.hereliesaz.aznavrail.tutorial
 
+import android.content.Context
+import android.content.SharedPreferences
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalContext
 
-/**
- * Controller for managing tutorial states, allowing external systems to initiate,
- * end, and track read status for tutorials.
- */
+private const val PREFS_NAME = "az_tutorial_prefs"
+private const val PREF_KEY = "az_navrail_read_tutorials"
+
+/** Controls tutorial lifecycle: start/end, event signaling, and read-state persistence. */
 class AzTutorialController(
     initialActiveTutorialId: String? = null,
-    initialReadTutorials: List<String> = emptyList()
+    initialReadTutorials: List<String> = emptyList(),
+    private val prefs: SharedPreferences? = null,
 ) {
     private val _activeTutorialId = mutableStateOf<String?>(initialActiveTutorialId)
-
-    /** The ID of the currently active tutorial. Null if no tutorial is active. */
+    /** The ID of the currently active tutorial, or null if none. */
     val activeTutorialId: State<String?> get() = _activeTutorialId
 
-    private val _readTutorials = mutableStateListOf<String>().apply {
-        addAll(initialReadTutorials)
-    }
-
-    /** A list of tutorial IDs that have been marked as read. */
+    private val _readTutorials = mutableStateListOf<String>().apply { addAll(initialReadTutorials) }
+    /** Tutorial IDs that have been marked as read. */
     val readTutorials: List<String> get() = _readTutorials
 
-    /**
-     * Starts a tutorial with the given [id].
-     */
-    fun startTutorial(id: String) {
+    private val _currentVariables = mutableStateOf<Map<String, Any>>(emptyMap())
+    /** Variables provided when the current tutorial was started; used for variable-based branching. */
+    val currentVariables: Map<String, Any> get() = _currentVariables.value
+
+    private val _pendingEvent = mutableStateOf<String?>(null)
+    /** The last event name fired via [fireEvent], not yet consumed by the overlay. */
+    val pendingEvent: State<String?> get() = _pendingEvent
+
+    /** Starts a tutorial, optionally passing [variables] for variable-based scene branching. */
+    fun startTutorial(id: String, variables: Map<String, Any> = emptyMap()) {
+        _currentVariables.value = variables
         _activeTutorialId.value = id
     }
 
-    /**
-     * Ends the currently active tutorial.
-     */
+    /** Ends the active tutorial and clears all transient state. */
     fun endTutorial() {
         _activeTutorialId.value = null
+        _currentVariables.value = emptyMap()
+        _pendingEvent.value = null
     }
 
-    /**
-     * Marks a tutorial as read.
-     */
+    /** Signals that a named event occurred; the overlay advances if the current card awaits this event. */
+    fun fireEvent(name: String) {
+        _pendingEvent.value = name
+    }
+
+    /** Called by the overlay when it processes a pending event; clears [pendingEvent]. */
+    fun consumeEvent() {
+        _pendingEvent.value = null
+    }
+
+    /** Marks [id] as read and persists the set to SharedPreferences if available. */
     fun markTutorialRead(id: String) {
         if (!_readTutorials.contains(id)) {
             _readTutorials.add(id)
+            prefs?.edit()?.putStringSet(PREF_KEY, _readTutorials.toSet())?.apply()
         }
     }
 
-    /**
-     * Checks if a tutorial has been marked as read.
-     */
-    fun isTutorialRead(id: String): Boolean {
-        return _readTutorials.contains(id)
-    }
+    /** Returns true if tutorial [id] has been marked as read. */
+    fun isTutorialRead(id: String): Boolean = _readTutorials.contains(id)
 
     companion object {
-        val Saver: Saver<AzTutorialController, List<Any?>> = Saver(
+        /**
+         * Returns a [Saver] that captures [context] so SharedPreferences can be re-opened
+         * when restoring from a config change or process death.
+         */
+        fun Saver(context: Context): Saver<AzTutorialController, List<Any?>> = Saver(
             save = { listOf(it.activeTutorialId.value, ArrayList(it._readTutorials)) },
             restore = { list ->
                 @Suppress("UNCHECKED_CAST")
+                val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                 AzTutorialController(
                     initialActiveTutorialId = list[0] as String?,
-                    initialReadTutorials = list[1] as ArrayList<String>
+                    initialReadTutorials = list[1] as ArrayList<String>,
+                    prefs = prefs,
                 )
             }
         )
@@ -74,18 +91,20 @@ class AzTutorialController(
 }
 
 /**
- * CompositionLocal to provide the [AzTutorialController] to the tree.
- *
- * A controller is expected to be provided by a parent composable; the default
- * fails fast to surface missing providers during development.
+ * CompositionLocal providing the [AzTutorialController] to the composition tree.
+ * Fails fast if not provided to surface missing providers during development.
  */
 val LocalAzTutorialController = compositionLocalOf<AzTutorialController> {
     error("AzTutorialController not provided")
 }
 
+/** Remembers an [AzTutorialController] across recompositions and config changes, backed by SharedPreferences. */
 @Composable
 fun rememberAzTutorialController(): AzTutorialController {
-    return rememberSaveable(saver = AzTutorialController.Saver) {
-        AzTutorialController()
+    val context = LocalContext.current
+    return rememberSaveable(saver = AzTutorialController.Saver(context)) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val savedIds = prefs.getStringSet(PREF_KEY, emptySet())?.toList() ?: emptyList()
+        AzTutorialController(initialReadTutorials = savedIds, prefs = prefs)
     }
 }
