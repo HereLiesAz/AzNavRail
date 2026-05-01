@@ -50,6 +50,7 @@ Add JitPack to your `settings.gradle.kts`:
 - **`AzForm`**: Group multiple text boxes into a single form with a shared submit button.
 - **`AzRoller`**: A dropdown menu that works like a roller or slot machine, cycling through options infinitely.
 - **Info Screen**: Interactive help mode for onboarding with visual guides and coordinate display.
+- **Tutorial Framework**: Scripted multi-scene tutorials with spotlights, 4 advance conditions (Button, TapTarget, TapAnywhere, Event), variable-driven branching, TapTarget branching, checklist cards, media cards, and cross-platform read-state persistence.
 - **Left/Right Docking**: Position the rail on the left or right side of the screen.
 - **No Menu Mode**: Treat all items as rail items, removing the side drawer.
 - **AzHostActivityLayout**: A layout container that enforces strict safe zones and automatic alignment rules.
@@ -534,54 +535,158 @@ limitations under the License.
 
 ## Tutorial Framework
 
-AzNavRail features a powerful tutorial framework allowing you to script interactive scenes, dim the screen, and highlight specific items via an easy-to-use DSL. Tutorials are passed in `azAdvanced` or `azSettings`. When a tutorial is associated with an item ID, tapping that item's Help card will launch the tutorial sequence.
+AzNavRail ships a full interactive tutorial framework. Tutorials are scripted as sequences of scenes and cards, rendered over a dimmed overlay with optional item spotlights. The framework supports four advance conditions, variable-driven branching, event-driven advances, checklist cards, media cards, and cross-platform persistence of read state.
+
+### Features
+
+- **4 advance conditions:** Next button (default), TapTarget (tap the highlighted item), TapAnywhere, Event (app calls `fireEvent(name)`).
+- **Variable branching:** Pass a variables map to `startTutorial`; scenes can act as invisible redirect nodes that route based on variable values.
+- **TapTarget branching:** A single card can route to different scenes depending on which highlighted item the user taps.
+- **Checklist cards:** Next is disabled until every item is checked.
+- **Media cards:** Inline media rendered between title and text (max height 120dp/120px).
+- **Persistence:** Read tutorials are stored per-platform (`SharedPreferences` on Android, `AsyncStorage` on React Native, `localStorage` on Web). Key: `az_navrail_read_tutorials`.
+- **Help/info overlay integration:** Collapsed cards show a "Tutorial available" hint. Expanding a card shows a "Start Tutorial" button — tapping it calls `startTutorial` and dismisses the overlay.
+
+### Android (Kotlin DSL)
 
 ```kotlin
 import com.hereliesaz.aznavrail.tutorial.AzHighlight
+import com.hereliesaz.aznavrail.tutorial.AzAdvanceCondition
 import com.hereliesaz.aznavrail.tutorial.azTutorial
 
-azAdvanced(
-    helpEnabled = true,
-    tutorials = mapOf(
-        "my-item-id" to azTutorial {
-            // A scene displays custom composable content underneath the tutorial overlay
-            scene(
-                id = "scene1",
-                content = {
-                    Box(Modifier.fillMaxSize().background(Color.DarkGray)) {
-                        Text("Scripted App Screen", color = Color.White)
-                    }
-                }
-            ) {
-                // Cards display textual instructions with next/skip actions
-                card(
-                    title = "Welcome",
-                    text = "Welcome to the tutorial.",
-                    highlight = AzHighlight.FullScreen
-                )
-                card(
-                    title = "Highlighting",
-                    text = "Notice the highlighted item.",
-                    highlight = AzHighlight.Item("my-item-id"),
-                    actionText = "Finish"
-                )
-            }
-        }
-    )
-)
+val tutorial = azTutorial {
+    onComplete { /* fired when last scene finishes */ }
+    onSkip { /* fired when Skip Tutorial tapped */ }
+
+    // Variable branch gate (invisible redirect node)
+    scene(id = "gate", content = { /* empty backdrop */ }) {
+        branch(varName = "userLevel", mapOf(
+            "advanced" to "scene-advanced",
+            "basic"    to "scene-basic"
+        ))
+    }
+
+    scene(id = "scene-advanced", content = { ScreenA() }) {
+        // TapTarget with per-item branching
+        card(
+            title = "Pick a path",
+            text = "Tap the item you want to learn about.",
+            highlight = AzHighlight.Item("nav-menu"),
+            advanceCondition = AzAdvanceCondition.TapTarget,
+            branches = mapOf(
+                "settings-btn" to "scene-settings",
+                "profile-btn"  to "scene-profile"
+            )
+        )
+
+        // Event-driven advance
+        card(
+            title = "Open the menu",
+            text = "Swipe right or tap the rail header.",
+            highlight = AzHighlight.Item("rail-header"),
+            advanceCondition = AzAdvanceCondition.Event("menu_opened")
+        )
+
+        // Checklist card
+        card(
+            title = "Before you continue",
+            text = "Confirm the following:",
+            checklistItems = listOf("I read the docs", "I set up my account")
+        )
+
+        // Media card
+        card(
+            title = "The Rail",
+            text = "Sits on the left or right edge.",
+            mediaContent = { Image(painterResource(R.drawable.rail), null) }
+        )
+    }
+}
+
+// Wire up the controller
+val controller = rememberAzTutorialController()
+CompositionLocalProvider(LocalAzTutorialController provides controller) {
+    // ...
+    if (controller.activeTutorialId.value == "tut-1") {
+        AzTutorialOverlay(
+            tutorialId = "tut-1",
+            tutorial = tutorial,
+            onDismiss = { controller.endTutorial() },
+            itemBoundsCache = boundsMap, // collected via onItemGloballyPositioned
+        )
+    }
+}
+
+// Start with variables
+controller.startTutorial("tut-1", variables = mapOf("userLevel" to "advanced"))
+
+// Fire an event from app code
+controller.fireEvent("menu_opened")
 ```
 
+### React Native / Web (TypeScript)
 
-**React Implementation:**
-```tsx
-import { AzNavRailSettings } from '@HereLiesAz/aznavrail-react';
+```typescript
+import { AzTutorial } from '@HereLiesAz/aznavrail-react'; // or aznavrail-web
 
-const settings: AzNavRailSettings = {
-    infoScreen: true,
-    helpList: {
-        "my-item-id": "This item has extended help information."
-    },
-    onDismissInfoScreen: () => { /* Handle dismissal */ }
+const tutorial: AzTutorial = {
+    onComplete: () => {},
+    onSkip: () => {},
+    scenes: [
+        {
+            id: 'gate',
+            content: () => null,
+            cards: [],
+            branchVar: 'userLevel',
+            branches: { advanced: 'scene-advanced', basic: 'scene-basic' },
+        },
+        {
+            id: 'scene-advanced',
+            content: () => <ScreenA />,
+            cards: [
+                {
+                    title: 'Pick a path',
+                    text: 'Tap the item you want to learn about.',
+                    highlight: { type: 'Item', id: 'nav-menu' },
+                    advanceCondition: { type: 'TapTarget' },
+                    branches: { 'settings-btn': 'scene-settings', 'profile-btn': 'scene-profile' },
+                },
+                {
+                    title: 'Open the menu',
+                    text: 'Swipe right or tap the rail header.',
+                    highlight: { type: 'Item', id: 'rail-header' },
+                    advanceCondition: { type: 'Event', name: 'menu_opened' },
+                },
+                {
+                    title: 'Before you continue',
+                    text: 'Confirm the following:',
+                    checklistItems: ['I read the docs', 'I set up my account'],
+                },
+            ],
+        },
+    ],
 };
-// Pass settings to AzNavRail
+
+// React Native
+import { AzTutorialProvider, useAzTutorialController } from '@HereLiesAz/aznavrail-react';
+
+<AzTutorialProvider>
+    <App />
+</AzTutorialProvider>
+
+const controller = useAzTutorialController();
+controller.startTutorial('tut-1', { userLevel: 'advanced' });
+controller.fireEvent('menu_opened');
+
+// Web
+import { AzWebTutorialProvider, useAzWebTutorialController } from '@HereLiesAz/aznavrail-web';
+
+<AzWebTutorialProvider>
+    <App />
+</AzWebTutorialProvider>
+
+const ctrl = useAzWebTutorialController();
+ctrl.startTutorial('tut-1', { userLevel: 'advanced' });
 ```
+
+See [`docs/TUTORIAL_FRAMEWORK_REFERENCE.md`](docs/TUTORIAL_FRAMEWORK_PROPOSAL.md) for the complete API reference and [`docs/AZNAVRAIL_COMPLETE_GUIDE.md`](docs/AZNAVRAIL_COMPLETE_GUIDE.md) for end-to-end usage examples.

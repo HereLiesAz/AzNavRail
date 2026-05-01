@@ -71,3 +71,71 @@ Info cards in the Help Overlay are now scrollable and support tap-to-expand. To 
 ## Phase 5: Submit to the Synthetic Tongue
 
 The `AzNavRailScope` has been stripped of its human conveniences. If you are dynamically creating items that the annotations cannot reach, you must use the explicit, monolithic function signatures. Look at `DSL.md` for the exact parameters.
+
+---
+
+## Migrating to the Expanded Tutorial Framework
+
+The tutorial framework now ships with four advance conditions, two branching mechanisms, checklist cards, media cards, cross-platform persistence, and a Web port.
+
+### Existing cards remain valid
+
+All new fields on `AzCard` — `advanceCondition`, `branches`, `mediaContent`, `checklistItems` — have safe defaults and are optional. Existing `card(title, text, highlight, actionText, onAction)` call sites continue to compile and behave identically. No changes are required unless you want to use the new features.
+
+### One breaking change: `AzTutorialController.Saver`
+
+Previously `AzTutorialController.Saver` could be referenced as a plain `val`. It is now a function that requires a `Context` argument:
+
+**Old:**
+~~~kotlin
+rememberSaveable(saver = AzTutorialController.Saver) { AzTutorialController() }
+~~~
+
+**New:**
+~~~kotlin
+rememberSaveable(saver = AzTutorialController.Saver(context)) { AzTutorialController(context) }
+~~~
+
+**Who is affected:** Only callers who explicitly used `AzTutorialController.Saver` in their own `rememberSaveable` calls. The standard entrypoint `rememberAzTutorialController()` handles this internally and is unaffected.
+
+### `startTutorial` now accepts variables
+
+The signature of `startTutorial` gains an optional second parameter:
+
+~~~kotlin
+// Old (still valid — variables defaults to emptyMap())
+controller.startTutorial("tut-1")
+
+// New — pass variables to drive scene-level branching
+controller.startTutorial("tut-1", variables = mapOf("userLevel" to "advanced"))
+~~~
+
+TypeScript:
+~~~typescript
+// Old (still valid)
+controller.startTutorial('tut-1');
+
+// New
+controller.startTutorial('tut-1', { userLevel: 'advanced' });
+~~~
+
+### Help/Info Overlay behavior change
+
+The old behavior — any tap on a collapsed help card immediately started the tutorial — is removed. The new flow is:
+
+1. **Collapsed card:** Shows a "Tutorial available" hint when a tutorial exists for that item. No action on tap.
+2. **Expanded card:** Shows a "Start Tutorial" button. Tapping it calls `startTutorial` and dismisses the overlay.
+
+If your app relied on the old tap-to-launch behavior you will need to update any UI that expected tapping a collapsed card to start the tutorial.
+
+### New Web provider (distinct from React Native)
+
+The Web port introduces `AzWebTutorialProvider` and `useAzWebTutorialController` — separate exports from the React Native `AzTutorialProvider` / `useAzTutorialController`. Do not import the RN provider in a web build or vice versa.
+
+~~~typescript
+// React Native
+import { AzTutorialProvider, useAzTutorialController } from '@HereLiesAz/aznavrail-react';
+
+// Web
+import { AzWebTutorialProvider, useAzWebTutorialController } from '@HereLiesAz/aznavrail-web';
+~~~
