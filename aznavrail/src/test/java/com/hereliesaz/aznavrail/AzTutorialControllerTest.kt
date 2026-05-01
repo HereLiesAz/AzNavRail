@@ -2,6 +2,7 @@ package com.hereliesaz.aznavrail
 
 import com.hereliesaz.aznavrail.tutorial.AzTutorialController
 import org.junit.Assert.*
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -13,6 +14,15 @@ import android.content.Context
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class AzTutorialControllerTest {
+
+    @Before
+    fun clearPrefs() {
+        ApplicationProvider.getApplicationContext<Application>()
+            .getSharedPreferences("az_tutorial_prefs", Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .apply()
+    }
 
     @Test
     fun `startTutorial with variables stores id and variables`() {
@@ -61,7 +71,6 @@ class AzTutorialControllerTest {
     fun `markTutorialRead writes to SharedPreferences`() {
         val prefs = ApplicationProvider.getApplicationContext<Application>()
             .getSharedPreferences("az_tutorial_prefs", Context.MODE_PRIVATE)
-        prefs.edit().clear().apply()
         val controller = AzTutorialController(prefs = prefs)
         controller.markTutorialRead("tutorial-1")
         val saved = prefs.getStringSet("az_navrail_read_tutorials", emptySet())

@@ -74,15 +74,15 @@ class AzTutorialController(
         /**
          * Returns a [Saver] that captures [context] so SharedPreferences can be re-opened
          * when restoring from a config change or process death.
+         * Pass an Application Context to avoid retaining an Activity.
          */
         fun Saver(context: Context): Saver<AzTutorialController, List<Any?>> = Saver(
             save = { listOf(it.activeTutorialId.value, ArrayList(it._readTutorials)) },
             restore = { list ->
-                @Suppress("UNCHECKED_CAST")
                 val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                 AzTutorialController(
                     initialActiveTutorialId = list[0] as String?,
-                    initialReadTutorials = list[1] as ArrayList<String>,
+                    initialReadTutorials = (list[1] as List<*>).filterIsInstance<String>(),
                     prefs = prefs,
                 )
             }
@@ -101,7 +101,7 @@ val LocalAzTutorialController = compositionLocalOf<AzTutorialController> {
 /** Remembers an [AzTutorialController] across recompositions and config changes, backed by SharedPreferences. */
 @Composable
 fun rememberAzTutorialController(): AzTutorialController {
-    val context = LocalContext.current
+    val context = LocalContext.current.applicationContext
     return rememberSaveable(saver = AzTutorialController.Saver(context)) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val savedIds = prefs.getStringSet(PREF_KEY, emptySet())?.toList() ?: emptyList()
