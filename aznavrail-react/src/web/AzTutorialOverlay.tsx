@@ -3,13 +3,35 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AzTutorial } from '../types';
 import { useAzWebTutorialController } from './AzTutorialController';
 
+/** Props for {@link AzWebTutorialOverlay}. */
 interface AzWebTutorialOverlayProps {
+  /** Unique identifier of the tutorial being played; used to mark it as read on completion. */
   tutorialId: string;
+  /** The tutorial definition containing scenes, cards, and branching logic. */
   tutorial: AzTutorial;
+  /** Called when the tutorial ends (completed or skipped) so the host can unmount the overlay. */
   onDismiss: () => void;
+  /**
+   * Pre-measured layout rectangles for nav items keyed by item ID; used instead of a live
+   * `getBoundingClientRect` query when the host already has these values cached.
+   */
   itemBoundsCache?: Record<string, { x: number; y: number; width: number; height: number }>;
 }
 
+/**
+ * Full-screen tutorial overlay that walks the user through an {@link AzTutorial} scene by scene,
+ * dimming the background with a CSS `box-shadow` punch-out around the highlighted item and
+ * positioning a floating card above or below the highlight based on its vertical position on screen.
+ *
+ * Supports four advance conditions — `Button`, `TapTarget`, `TapAnywhere`, and `Event` — as well
+ * as tap-target branching (`card.branches`), variable branching (`scene.branchVar`/`scene.branches`),
+ * checklist cards with a gated Next button, and optional media cards.
+ *
+ * @param props.tutorialId - Identifier used to mark the tutorial read in persistent storage.
+ * @param props.tutorial - The tutorial definition to render.
+ * @param props.onDismiss - Callback invoked when the overlay should be removed.
+ * @param props.itemBoundsCache - Optional pre-measured bounds for nav items to avoid live DOM queries.
+ */
 export const AzWebTutorialOverlay: React.FC<AzWebTutorialOverlayProps> = ({
   tutorialId, tutorial, onDismiss, itemBoundsCache = {},
 }) => {

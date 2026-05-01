@@ -4,16 +4,57 @@ import { AzNavItem, AzTutorial } from '../types';
 import { useAzWebTutorialController } from './AzTutorialController';
 import './HelpOverlay.css';
 
+/** Props for {@link HelpOverlay}. */
 interface HelpOverlayProps {
+  /** The top-level nav items whose help cards will be rendered. */
   items: AzNavItem[];
+  /** Width of the navigation rail, used to offset the card panel so it clears the rail. */
   railWidth: string | number;
+  /** Called when the overlay should be dismissed. */
   onDismiss: () => void;
+  /**
+   * Pre-measured layout rectangles for nav items keyed by item ID; used as the source for
+   * elbow-arrow connector endpoints instead of live `getBoundingClientRect` queries.
+   */
   itemBounds?: Record<string, { x: number; y: number; width: number; height: number }>;
+  /**
+   * Additional help text keyed by item ID that supplements or replaces each item's `info` field;
+   * items without an entry here and without an `info` value are omitted from the overlay.
+   */
   helpList?: Record<string, string>;
+  /**
+   * ID of the nav item whose nested rail is currently open; when set, that item's
+   * `nestedRailItems` are appended to the rendered card list.
+   */
   nestedRailVisibleId?: string | null;
+  /**
+   * Map of tutorial definitions keyed by the item ID they are associated with; presence of a key
+   * causes a "Tutorial available" hint on the collapsed card and a "Start Tutorial" button on the
+   * expanded card.
+   */
   tutorials?: Record<string, AzTutorial>;
 }
 
+/**
+ * Help/info overlay that renders a scrollable panel of cards — one per nav item that has help
+ * text — and draws elbow-arrow connectors via a full-screen `<canvas>` element pointing from each
+ * card back to its corresponding nav item.
+ *
+ * When a tutorial is registered for an item (via `tutorials`), the collapsed card shows a
+ * "Tutorial available" hint and the expanded card shows a "Start Tutorial" button that calls
+ * `tutorialController.startTutorial(item.id)` and dismisses the overlay.
+ *
+ * Uses {@link useAzWebTutorialController} internally, falling back to the no-op controller if no
+ * `AzWebTutorialProvider` wraps the tree.
+ *
+ * @param props.items - Nav items to render help cards for.
+ * @param props.railWidth - Width of the rail, used to position the card panel.
+ * @param props.onDismiss - Called when the close button is pressed or a tutorial is started.
+ * @param props.itemBounds - Optional pre-measured bounds used as arrow connector endpoints.
+ * @param props.helpList - Supplemental help text keyed by item ID.
+ * @param props.nestedRailVisibleId - Item ID whose nested rail items should also appear in the list.
+ * @param props.tutorials - Tutorial definitions keyed by item ID that enable the tutorial hint/button.
+ */
 const HelpOverlay: React.FC<HelpOverlayProps> = ({
   items,
   railWidth,

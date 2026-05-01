@@ -20,10 +20,18 @@ function saveToStorage(ids: string[]): void {
 
 const AzWebTutorialContext = createContext<AzTutorialController | null>(null);
 
+/** Props for {@link AzWebTutorialProvider}. */
 interface AzWebTutorialProviderProps {
+  /** The React subtree that gains access to the tutorial controller context. */
   children: React.ReactNode;
 }
 
+/**
+ * React Context provider that manages web tutorial state and persists read tutorial IDs
+ * to `localStorage` under the key `az_navrail_read_tutorials`.
+ *
+ * @param props.children - The subtree that will have access to the tutorial controller.
+ */
 export const AzWebTutorialProvider: React.FC<AzWebTutorialProviderProps> = ({ children }) => {
   const [activeTutorialId, setActiveTutorialId] = useState<string | null>(null);
   const [readTutorials, setReadTutorials] = useState<string[]>(() => loadFromStorage());
@@ -90,6 +98,11 @@ const NOOP_CONTROLLER: AzTutorialController = {
   consumeEvent: () => {},
 };
 
+/**
+ * Returns the nearest {@link AzWebTutorialProvider}'s controller, or a no-op controller
+ * when called outside a provider so that components like `HelpOverlay` work without
+ * requiring every consumer app to wrap its tree in the provider.
+ */
 export const useAzWebTutorialController = (): AzTutorialController => {
   const ctx = useContext(AzWebTutorialContext);
   return ctx ?? NOOP_CONTROLLER;
