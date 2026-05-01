@@ -115,14 +115,7 @@ export const HelpOverlay: React.FC<HelpOverlayProps> = ({ items, onDismiss, help
                             key={i.id}
                             style={styles.card}
                             activeOpacity={0.8}
-                            onPress={() => {
-                                if (hasTutorial) {
-                                    tutorialController.startTutorial(i.id);
-                                    onDismiss();
-                                } else {
-                                    setExpandedItemId(isExpanded ? null : i.id);
-                                }
-                            }}
+                            onPress={() => setExpandedItemId(isExpanded ? null : i.id)}
                             onLayout={(e) => {
                                 const layout = e.nativeEvent.layout;
                                 setCardBounds(prev => ({
@@ -148,7 +141,21 @@ export const HelpOverlay: React.FC<HelpOverlayProps> = ({ items, onDismiss, help
                                     {listText}
                                 </Text>
                             )}
-                            {isExpanded && (
+                            {hasTutorial && !isExpanded && (
+                                <Text style={styles.tutorialHint}>Tutorial available</Text>
+                            )}
+                            {hasTutorial && isExpanded && (
+                                <TouchableOpacity
+                                    style={styles.startTutorialButton}
+                                    onPress={() => {
+                                        tutorialController.startTutorial(i.id);
+                                        onDismiss();
+                                    }}
+                                >
+                                    <Text style={styles.startTutorialText}>Start Tutorial</Text>
+                                </TouchableOpacity>
+                            )}
+                            {isExpanded && !hasTutorial && (
                                 <Text style={styles.tapToCollapse}>Tap to collapse</Text>
                             )}
                         </TouchableOpacity>
@@ -192,5 +199,24 @@ const styles = StyleSheet.create({
         color: 'gray',
         fontSize: 12,
         marginTop: 8,
-    }
+    },
+    tutorialHint: {
+        color: '#aaa',
+        fontSize: 11,
+        marginTop: 6,
+        fontStyle: 'italic',
+    },
+    startTutorialButton: {
+        marginTop: 12,
+        backgroundColor: '#6200EE',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 16,
+        alignSelf: 'flex-start',
+    },
+    startTutorialText: {
+        color: '#fff',
+        fontSize: 13,
+        fontWeight: '600',
+    },
 });
