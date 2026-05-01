@@ -74,8 +74,23 @@ export const AzWebTutorialProvider: React.FC<AzWebTutorialProviderProps> = ({ ch
   );
 };
 
+// No-op fallback used when the hook is called outside an AzWebTutorialProvider —
+// lets components like HelpOverlay render without forcing all consumers to wrap
+// their app in the provider just to get the help UI.
+const NOOP_CONTROLLER: AzTutorialController = {
+  activeTutorialId: null,
+  readTutorials: [],
+  currentVariables: {},
+  pendingEvent: null,
+  startTutorial: () => {},
+  endTutorial: () => {},
+  markTutorialRead: () => {},
+  isTutorialRead: () => false,
+  fireEvent: () => {},
+  consumeEvent: () => {},
+};
+
 export const useAzWebTutorialController = (): AzTutorialController => {
   const ctx = useContext(AzWebTutorialContext);
-  if (!ctx) throw new Error('useAzWebTutorialController must be used within AzWebTutorialProvider');
-  return ctx;
+  return ctx ?? NOOP_CONTROLLER;
 };
