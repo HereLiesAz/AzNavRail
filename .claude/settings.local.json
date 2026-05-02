@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /run/media/az/0722-7C65/AzNavRail log --oneline -10)",
+      "Bash(git -C /run/media/az/0722-7C65/AzNavRail add docs/superpowers/specs/2026-04-30-tutorial-framework-expansion-design.md)",
+      "Bash(git -C /run/media/az/0722-7C65/AzNavRail commit -m ' *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:d[k] for k in ['scripts','jest','devDependencies'] if k in d}, indent=2\\)\\)\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git *)",
+      "Bash(./gradlew :aznavrail:test --tests \"com.hereliesaz.aznavrail.AzTutorialDataModelTest\")",
+      "Bash(bash gradlew *)",
+      "Bash(killall tail *)",
+      "Bash(./gradlew :aznavrail:compileDebugKotlin)",
+      "Bash(./gradlew :aznavrail:test --tests \"com.hereliesaz.aznavrail.AzTutorialControllerTest\")",
+      "Bash(bash /run/media/az/0722-7C65/AzNavRail/gradlew -p /run/media/az/0722-7C65/AzNavRail :aznavrail:testDebugUnitTest --tests \"com.hereliesaz.aznavrail.AzTutorialControllerTest\")",
+      "Bash(bash /run/media/az/0722-7C65/AzNavRail/gradlew -p /run/media/az/0722-7C65/AzNavRail :aznavrail:test --tests \"com.hereliesaz.aznavrail.AzTutorialControllerTest\")",
+      "Bash(bash /run/media/az/0722-7C65/AzNavRail/gradlew -p /run/media/az/0722-7C65/AzNavRail :aznavrail:tasks --all)",
+      "Bash(bash /run/media/az/0722-7C65/AzNavRail/gradlew -p /run/media/az/0722-7C65/AzNavRail :aznavrail:testDebugUnitTest)",
+      "Bash(bash /run/media/az/0722-7C65/AzNavRail/gradlew -p /run/media/az/0722-7C65/AzNavRail :aznavrail:compileDebugKotlin)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(npm install *)",
+      "Bash(npm root *)",
+      "Read(//usr/lib/**)",
+      "Bash(/tmp/npm-ts/bin/tsc --noEmit)",
+      "Bash(/tmp/npm-ts/bin/tsc --noEmit -p /run/media/az/0722-7C65/AzNavRail/aznavrail-react/tsconfig.json)",
+      "Bash(npx jest *)",
+      "Bash(./node_modules/.bin/tsc --noEmit)"
+    ]
+  }
+}
