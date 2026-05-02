@@ -1,6 +1,7 @@
 package com.hereliesaz.aznavrail
 
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.navigation.compose.rememberNavController
 import org.junit.Assert.assertEquals
@@ -44,5 +45,32 @@ class AzNavHostTest {
         // AzHostActivityLayout correctly sorts the backgrounds by their weight property
         // before composing them, so weight 1 -> 5 -> 10 should be composed in that order.
         assertEquals(listOf("bg1", "bg5", "bg10"), compositionOrder)
+    }
+
+    @Test
+    fun testRecompositionWithChangingContentDoesNotDuplicateIds() {
+        // Regression: AzNavRailScopeImpl.reset() must clear globalIdSet so that
+        // recomposing AzHostActivityLayout with a state-gated content lambda
+        // doesn't see leftover IDs from the previous pass and throw
+        // IllegalArgumentException("Duplicate ID detected: ...").
+        val showConditional = mutableStateOf(true)
+
+        composeTestRule.setContent {
+            val navController = rememberNavController()
+            AzHostActivityLayout(
+                navController = navController,
+                currentDestination = "home"
+            ) {
+                if (showConditional.value) {
+                    azRailHostItem(id = "conditional.host", text = "C", route = "c")
+                }
+                azRailHostItem(id = "stable.host", text = "S", route = "s")
+            }
+        }
+
+        composeTestRule.runOnIdle { showConditional.value = false }
+        composeTestRule.waitForIdle()
+        composeTestRule.runOnIdle { showConditional.value = true }
+        composeTestRule.waitForIdle()
     }
 }

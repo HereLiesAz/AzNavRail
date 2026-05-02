@@ -418,7 +418,9 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         hiddenMenuOnValueChangeMap.clear()
         onRelocateMap.clear()
         itemBoundsCache.clear()
-
+        // Without this, IDs registered on pass N stay in the set on pass N+1 and
+        // the next recomposition crashes the moment any ID re-registers.
+        globalIdSet.clear()
     }
 
     // Config
