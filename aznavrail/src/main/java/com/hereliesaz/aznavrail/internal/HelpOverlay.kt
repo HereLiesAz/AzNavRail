@@ -33,7 +33,7 @@ import androidx.compose.foundation.BorderStroke
  *
  * Only items that have non-blank [AzNavItem.info], a matching entry in [helpList], or an
  * associated tutorial are shown. Tapping a card expands it; tapping the background dismisses
- * the overlay. If a nested rail is open, its items are merged into the help list and the
+ * the overlay. If a nested rail is open, the help list shows only the nested items and the
  * start-padding is widened to avoid covering the popup.
  *
  * @param items All items configured in the current rail scope.
@@ -57,14 +57,13 @@ internal fun HelpOverlay(
     onTutorialLaunch: ((String) -> Unit)? = null
 ) {
     val itemsWithInfo = remember(items, helpList, nestedRailOpenId, tutorials) {
-        val baseSequence = items.asSequence()
-        val nestedSequence = if (nestedRailOpenId != null) {
-            items.find { it.id == nestedRailOpenId }?.nestedRailItems?.asSequence() ?: emptySequence()
+        val source = if (nestedRailOpenId != null) {
+            items.find { it.id == nestedRailOpenId }?.nestedRailItems.orEmpty()
         } else {
-            emptySequence()
+            items
         }
 
-        (baseSequence + nestedSequence).filter { item ->
+        source.asSequence().filter { item ->
             val listTextRaw = helpList[item.id]
             val hasValidListText = when (listTextRaw) {
                 is String -> listTextRaw.isNotBlank()

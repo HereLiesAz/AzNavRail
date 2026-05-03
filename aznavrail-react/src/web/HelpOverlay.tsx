@@ -23,8 +23,9 @@ interface HelpOverlayProps {
    */
   helpList?: Record<string, string>;
   /**
-   * ID of the nav item whose nested rail is currently open; when set, that item's
-   * `nestedRailItems` are appended to the rendered card list.
+   * ID of the nav item whose nested rail is currently open; when set, only that item's
+   * `nestedRailItems` are shown in the overlay (the base rail's items are hidden behind
+   * the nested popup, so listing their help cards would be noise).
    */
   nestedRailVisibleId?: string | null;
   /**
@@ -52,7 +53,7 @@ interface HelpOverlayProps {
  * @param props.onDismiss - Called when the close button is pressed or a tutorial is started.
  * @param props.itemBounds - Optional pre-measured bounds used as arrow connector endpoints.
  * @param props.helpList - Supplemental help text keyed by item ID.
- * @param props.nestedRailVisibleId - Item ID whose nested rail items should also appear in the list.
+ * @param props.nestedRailVisibleId - Item ID whose nested rail is open; when set, only that nested rail's items are shown in the overlay.
  * @param props.tutorials - Tutorial definitions keyed by item ID that enable the tutorial hint/button.
  */
 const HelpOverlay: React.FC<HelpOverlayProps> = ({
@@ -70,12 +71,11 @@ const HelpOverlay: React.FC<HelpOverlayProps> = ({
   const tutorialController = useAzWebTutorialController();
 
   const allItems = React.useMemo(() => {
-    const list = [...items];
     if (nestedRailVisibleId) {
       const host = items.find((i) => i.id === nestedRailVisibleId);
-      if (host?.nestedRailItems) list.push(...host.nestedRailItems);
+      return host?.nestedRailItems ?? [];
     }
-    return list;
+    return items;
   }, [items, nestedRailVisibleId]);
 
   const drawArrows = useCallback(() => {

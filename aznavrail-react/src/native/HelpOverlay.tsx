@@ -25,14 +25,11 @@ export const HelpOverlay: React.FC<HelpOverlayProps> = ({ items, onDismiss, help
     const paddingLeft = isNestedRailOpen ? 240 : 120;
 
     const allItems = React.useMemo(() => {
-        const list = [...items];
         if (nestedRailVisibleId) {
             const nestedHost = items.find(i => i.id === nestedRailVisibleId);
-            if (nestedHost?.nestedRailItems) {
-                list.push(...nestedHost.nestedRailItems);
-            }
+            return nestedHost?.nestedRailItems ?? [];
         }
-        return list;
+        return items;
     }, [items, nestedRailVisibleId]);
 
     const [scrollY, setScrollY] = useState(0);
