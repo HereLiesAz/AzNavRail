@@ -89,6 +89,14 @@ The `aznavrail` directory contains the core `aznavrail` Android library module.
 | `src/main/java/com/hereliesaz/aznavrail/internal/AzRailLayoutHelper.kt` | Helper logic for calculating rail layout and physical vs view side mappings. |
 | `src/main/java/com/hereliesaz/aznavrail/internal/RelocItemHandler.kt` | Handles drag, drop, bounds, and cluster bounding for Reorderable items. |
 | `src/main/java/com/hereliesaz/aznavrail/internal/SecretScreens.kt` | Location logger utility unlocked via PIN check on the footer. |
+| `src/main/java/com/hereliesaz/aznavrail/bottomsheet/` | Public bottom-sheet API: `AzBottomSheet`, `AzSheetController`, `AzBottomSheetWindowHost`. Ported from LogKitty. |
+| `src/main/java/com/hereliesaz/aznavrail/internal/AzBottomSheetShell.kt` | Shared shell composable for both bottom-sheet flavors. |
+| `src/main/java/com/hereliesaz/aznavrail/internal/AzSheetGestures.kt` | Accumulated-delta vertical drag and horizontal swipe modifiers. |
+| `src/main/java/com/hereliesaz/aznavrail/internal/AzSheetMetrics.kt` | Resolves `AzSheetDetent` to a Dp height. |
+| `src/main/java/com/hereliesaz/aznavrail/internal/AzNavBarDecorWindow.kt` | `TYPE_ACCESSIBILITY_OVERLAY` helper that tints the system nav bar. |
+| `src/main/java/com/hereliesaz/aznavrail/internal/AzBottomSheetItem.kt` | Internal registration record produced by the `azBottomSheet` DSL. |
+| `src/main/java/com/hereliesaz/aznavrail/model/AzSheetDetent.kt` | Detent enum (HIDDEN, PEEK, HALF, FULL). |
+| `src/main/java/com/hereliesaz/aznavrail/model/AzSheetConfig.kt` | Static bottom-sheet configuration. |
 
 #### aznavrail-react Directory
 

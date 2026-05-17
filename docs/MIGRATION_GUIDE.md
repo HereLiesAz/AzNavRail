@@ -139,3 +139,97 @@ import { AzTutorialProvider, useAzTutorialController } from '@HereLiesAz/aznavra
 // Web
 import { AzWebTutorialProvider, useAzWebTutorialController } from '@HereLiesAz/aznavrail-web';
 ~~~
+
+---
+
+## Replacing a custom bottom sheet with `AzBottomSheetWindowHost`
+
+AzNavRail's bottom-sheet shell is a verbatim port of LogKitty's: four detents (`HIDDEN` / `PEEK` / `HALF` / `FULL`), accumulated-delta vertical drag, scrim-tap to step down, optional horizontal-swipe callbacks, `TYPE_APPLICATION_OVERLAY` for the sheet window, and a separate `TYPE_ACCESSIBILITY_OVERLAY` for the nav-bar color sync. Migrating a custom sheet preserves the exact look frame-for-frame.
+
+### Before (custom shell inside a Service)
+
+```kotlin
+class LogKittyOverlayService : LifecycleService(), ViewModelStoreOwner, SavedStateRegistryOwner {
+    private val controller = SheetController()
+    private lateinit var composeView: ComposeView
+    private lateinit var sheetParams: WindowManager.LayoutParams
+
+    override fun onCreate() {
+        super.onCreate()
+        composeView = ComposeView(this).apply {
+            setContent { LogKittyTheme { LogBottomSheet(controller, viewModel, /* … */) } }
+        }
+        sheetParams = WindowManager.LayoutParams(
+            MATCH_PARENT, sheetHeight, TYPE_APPLICATION_OVERLAY,
+            FLAG_LAYOUT_NO_LIMITS or FLAG_LAYOUT_IN_SCREEN or FLAG_NOT_TOUCH_MODAL or FLAG_NOT_FOCUSABLE,
+            PixelFormat.TRANSLUCENT,
+        ).apply { gravity = Gravity.BOTTOM }
+        windowManager.addView(composeView, sheetParams)
+        setupNavBarDecoration(viewModel, navBarHeightPx)
+
+        serviceScope.launch {
+            controller.detentFlow.collect { detent ->
+                sheetParams.height = heightForDetent(detent, /* … */)
+                windowManager.updateViewLayout(composeView, sheetParams)
+            }
+        }
+    }
+}
+```
+
+### After (AzNavRail shell)
+
+```kotlin
+class LogKittyOverlayService : LifecycleService(), ViewModelStoreOwner, SavedStateRegistryOwner {
+    private val controller = AzSheetController(initial = AzSheetDetent.HIDDEN)
+    private lateinit var sheetHost: AzBottomSheetWindowHost
+
+    override fun onCreate() {
+        super.onCreate()
+        sheetHost = AzBottomSheetWindowHost(
+            context = this,
+            controller = controller,
+            config = AzSheetConfig(
+                backgroundColor = Color(viewModel.backgroundColor.value),
+                backgroundAlpha = viewModel.overlayOpacity.value,
+                peekDp = with(resources.displayMetrics) { (peekHeightPx / density).dp },
+                halfFraction = 0.5f,
+                fullFraction = 0.9f,
+            ),
+            lifecycleOwner = this,
+            viewModelStoreOwner = this,
+            savedStateRegistryOwner = this,
+            navBarHeightPx = resources.getDimensionPixelSize(
+                resources.getIdentifier("navigation_bar_height", "dimen", "android")
+            ),
+        ) { LogKittyTabs(viewModel, onSave = { /* … */ }, onSettings = { /* … */ }) }
+        sheetHost.attach()
+    }
+
+    fun onAccessibilityServiceBound() {
+        sheetHost.attachNavBarDecor()
+    }
+
+    override fun onDestroy() {
+        sheetHost.detach()
+        super.onDestroy()
+    }
+}
+```
+
+### Files LogKitty can delete after migration
+
+- `ui/LogBottomSheet.kt`
+- `ui/SheetController.kt`
+- `services/SheetGestures.kt` (or wherever the accumulated-delta drag lived)
+- The inline `setupNavBarDecoration(...)` block in `services/LogKittyOverlayService.kt`
+- The `controller.detentFlow.collect { ... }` window-resize bridge
+
+LogKitty keeps its Service, theme, ViewModel, and accessibility service, and the log-rendering composable it now passes as the `content` lambda.
+
+### Behavior parity checklist
+
+- Drag accumulator threshold: tune via `AzSheetConfig.dragThresholdDp` if your test gestures behave differently.
+- WindowManager flag set: the defaults in `AzBottomSheetWindowHost` copy LogKitty's flag set exactly. If you previously set extra flags, file an issue describing them — we may add a config hook.
+- Animation: the system-overlay flavor hard-jumps detent heights (no `animateDpAsState`) to match LogKitty's existing look. The in-tree flavor animates by default.
+- Back press: `config.collapseOnBack = true` (default) wires a `setOnKeyListener` for `KEYCODE_BACK` that steps down only while the window is focusable (HALF/FULL).

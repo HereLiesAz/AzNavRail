@@ -18,8 +18,10 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,6 +49,9 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.hereliesaz.aznavrail.bottomsheet.AzBottomSheet
+import com.hereliesaz.aznavrail.bottomsheet.AzSheetController
+import com.hereliesaz.aznavrail.internal.AzBottomSheetItem
 import com.hereliesaz.aznavrail.internal.AzLayoutConfig
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.internal.AzRailLayoutHelper
@@ -55,6 +60,8 @@ import com.hereliesaz.aznavrail.internal.AzVisualSide
 import com.hereliesaz.aznavrail.tutorial.LocalAzTutorialController
 import com.hereliesaz.aznavrail.tutorial.rememberAzTutorialController
 import com.hereliesaz.aznavrail.model.AzDockingSide
+import com.hereliesaz.aznavrail.model.AzSheetConfig
+import androidx.compose.foundation.layout.BoxScope
 
 /** CompositionLocal that signals whether [AzNavRail] is correctly nested inside [AzHostActivityLayout]. */
 val LocalAzNavHostPresent = compositionLocalOf { false }
@@ -93,6 +100,31 @@ interface AzNavHostScope : AzNavRailScope {
      * @param content The composable content.
      */
     fun onscreen(alignment: Alignment = Alignment.TopStart, content: @Composable () -> Unit)
+
+    /**
+     * Registers a bottom sheet that draws above the rail, the menu, and the onscreen area, while
+     * staying inside [WindowInsets.navigationBars] so the system navigation bar remains visible.
+     *
+     * The sheet is rendered as the top z-layer in [AzHostActivityLayout] and is *not* a background
+     * (see [background]). Multiple calls register multiple sheets, stacked in the order they were
+     * declared.
+     *
+     * Use [com.hereliesaz.aznavrail.bottomsheet.rememberAzSheetController] to create [controller]
+     * outside the DSL block so its detent state survives recomposition.
+     *
+     * @param controller State holder driving the sheet's [com.hereliesaz.aznavrail.model.AzSheetDetent].
+     * @param config Static configuration (heights, colors, drag threshold, animation).
+     * @param onSwipeLeft Optional horizontal-swipe-left callback (gated by [AzSheetConfig.horizontalSwipeEnabled]).
+     * @param onSwipeRight Optional horizontal-swipe-right callback (gated by [AzSheetConfig.horizontalSwipeEnabled]).
+     * @param content Caller-provided sheet content.
+     */
+    fun azBottomSheet(
+        controller: AzSheetController,
+        config: AzSheetConfig = AzSheetConfig(),
+        onSwipeLeft: (() -> Unit)? = null,
+        onSwipeRight: (() -> Unit)? = null,
+        content: @Composable BoxScope.() -> Unit,
+    )
 }
 
 /** Holds a sorted-background layer registered via [AzNavHostScope.background]. */
@@ -111,6 +143,7 @@ class AzNavHostScopeImpl(
 
     val backgrounds = mutableStateListOf<AzBackgroundItem>()
     val onscreenItems = mutableStateListOf<AzOnscreenItem>()
+    internal val bottomSheets = mutableStateListOf<AzBottomSheetItem>()
 
     fun setController(controller: NavHostController) {
         _navController = controller
@@ -125,12 +158,23 @@ class AzNavHostScopeImpl(
         onscreenItems.add(AzOnscreenItem(alignment, content))
     }
 
+    override fun azBottomSheet(
+        controller: AzSheetController,
+        config: AzSheetConfig,
+        onSwipeLeft: (() -> Unit)?,
+        onSwipeRight: (() -> Unit)?,
+        content: @Composable BoxScope.() -> Unit,
+    ) {
+        bottomSheets.add(AzBottomSheetItem(controller, config, onSwipeLeft, onSwipeRight, content))
+    }
+
     fun getRailScopeImpl() = railScope
 
     fun resetHost() {
         railScope.reset()
         backgrounds.clear()
         onscreenItems.clear()
+        bottomSheets.clear()
     }
 }
 
@@ -309,6 +353,21 @@ fun AzHostActivityLayout(
                 railAlignment = railAlignment,
                 reverseLayout = reverseLayout,
                 content = {}
+            )
+        }
+
+        // Bottom sheets registered via azBottomSheet { ... } draw above the rail/menu/onscreen
+        // content but inside the system navigation-bar inset so the OS nav bar stays visible.
+        scope.bottomSheets.forEach { item ->
+            AzBottomSheet(
+                controller = item.controller,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.navigationBars),
+                config = item.config,
+                onSwipeLeft = item.onSwipeLeft,
+                onSwipeRight = item.onSwipeRight,
+                content = item.content,
             )
         }
     }

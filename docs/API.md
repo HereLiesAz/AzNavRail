@@ -342,3 +342,75 @@ if (controller.activeTutorialId.value == "tut-1") {
 | Android | `SharedPreferences` | `az_tutorial_prefs` | `az_navrail_read_tutorials` |
 | React Native | `AsyncStorage` (or in-memory fallback) | N/A | `az_navrail_read_tutorials` |
 | Web | `localStorage` | N/A | `az_navrail_read_tutorials` |
+
+---
+
+## Bottom Sheet
+
+The bottom-sheet shell is ported from [LogKitty](https://github.com/HereLiesAz/LogKitty) so AzNavRail consumers get the same four-detent, accumulated-delta-drag sheet, and LogKitty itself can replace its hand-rolled version with `AzBottomSheetWindowHost` with no visual change.
+
+### Composables
+
+| Composable | Description |
+| :--- | :--- |
+| `AzBottomSheet(controller, modifier, config, onSwipeLeft?, onSwipeRight?) { content }` | In-tree sheet. Anchored at the bottom of its parent. Apply `Modifier.windowInsetsPadding(WindowInsets.navigationBars)` to sit behind the system nav bar. |
+| `AzBottomSheetInsetAware(controller, config, onSwipeLeft?, onSwipeRight?) { content }` | Same as `AzBottomSheet` but the modifier already applies `fillMaxSize() + windowInsetsPadding(navigationBars)`. |
+
+### DSL
+
+| DSL | Scope | Description |
+| :--- | :--- | :--- |
+| `azBottomSheet(controller, config, onSwipeLeft?, onSwipeRight?) { content }` | `AzNavHostScope` | Registers a sheet rendered above rail/menu/onscreen in `AzHostActivityLayout`. |
+
+### State
+
+| Class | Description |
+| :--- | :--- |
+| `enum AzSheetDetent { HIDDEN, PEEK, HALF, FULL }` | Discrete heights. |
+| `AzSheetController(initial)` | State holder with dual `mutableState` + `StateFlow` channels. |
+| `rememberAzSheetController(initial)` | Composable factory backed by `rememberSaveable`. |
+
+`AzSheetController` properties / methods:
+
+| Member | Type | Notes |
+| :--- | :--- | :--- |
+| `detent` | `AzSheetDetent` (mutable) | Setter also pushes to `detentFlow`. |
+| `isEnabled` | `Boolean` (mutable) | `false` forces `HIDDEN` and blocks step calls. |
+| `detentFlow` | `StateFlow<AzSheetDetent>` | Read-only. |
+| `enabledFlow` | `StateFlow<Boolean>` | Read-only. |
+| `stepUp()` / `stepDown()` | – | One detent per call; clamps at the ends. |
+| `snapTo(target)` | – | Direct jump; blocked when disabled and target ≠ HIDDEN. |
+
+### Configuration
+
+`AzSheetConfig(...)` — all fields optional, sensible defaults match the LogKitty look.
+
+| Field | Type | Default | Purpose |
+| :--- | :--- | :--- | :--- |
+| `backgroundColor` | `Color` | `Color.Unspecified` (→ `MaterialTheme.colorScheme.surface`) | Sheet fill. |
+| `backgroundAlpha` | `Float` | `0.92f` | Alpha applied to fill. |
+| `scrimColor` | `Color` | `Color.Black` | Dim layer above sheet in HALF/FULL. |
+| `scrimAlpha` | `Float` | `0.32f` | Scrim alpha. |
+| `hiddenStripDp` | `Dp` | `14.dp` | Swipe-target height in HIDDEN. |
+| `peekDp` | `Dp` | `56.dp` | Height in PEEK. |
+| `halfFraction` | `Float` | `0.5f` | Fraction of parent height in HALF. |
+| `fullFraction` | `Float` | `0.9f` | Fraction of parent height in FULL. |
+| `dragThresholdDp` | `Dp` | `24.dp` | Cumulative drag needed per detent step. |
+| `collapseOnBack` | `Boolean` | `true` | Back press steps down. |
+| `horizontalSwipeEnabled` | `Boolean` | `false` | Enables `onSwipeLeft` / `onSwipeRight`. |
+| `animateInTree` | `Boolean` | `true` | In-tree shell animates between heights; system-overlay always hard-jumps. |
+| `cornerRadiusDp` | `Dp` | `16.dp` | Top-corner radius. |
+| `handleVisible` | `Boolean` | `true` | Centered drag-handle pill. |
+
+### System-overlay flavor
+
+`class AzBottomSheetWindowHost(context, controller, config, lifecycleOwner, viewModelStoreOwner, savedStateRegistryOwner, navBarHeightPx, content)`
+
+| Method | Description |
+| :--- | :--- |
+| `attach()` | Adds the sheet's `TYPE_APPLICATION_OVERLAY` window. Idempotent. |
+| `attachNavBarDecor()` | Adds the secondary `TYPE_ACCESSIBILITY_OVERLAY` that tints the system nav bar. Call after your accessibility service binds. No-op when `navBarHeightPx <= 0`. |
+| `detach()` | Removes both windows. |
+| `updateConfig(config)` | Replaces the live config. |
+
+Consumer manifest: declares `SYSTEM_ALERT_WINDOW` (and `BIND_ACCESSIBILITY_SERVICE` for the nav-bar decoration). The library itself ships no permissions or services.

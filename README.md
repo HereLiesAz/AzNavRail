@@ -690,3 +690,28 @@ ctrl.startTutorial('tut-1', { userLevel: 'advanced' });
 ```
 
 See [`docs/TUTORIAL_FRAMEWORK_REFERENCE.md`](docs/TUTORIAL_FRAMEWORK_PROPOSAL.md) for the complete API reference and [`docs/AZNAVRAIL_COMPLETE_GUIDE.md`](docs/AZNAVRAIL_COMPLETE_GUIDE.md) for end-to-end usage examples.
+
+## Bottom Sheets
+
+AzNavRail ships a four-detent bottom-sheet shell ported from [LogKitty](https://github.com/HereLiesAz/LogKitty). One DSL line registers it inside `AzHostActivityLayout`; the sheet draws above the rail, the menu, and the `onscreen` area, while staying inside `WindowInsets.navigationBars` so the system navigation bar remains visible. It is *not* a `background()`.
+
+```kotlin
+val sheetController = rememberAzSheetController()
+
+AzHostActivityLayout(navController = nav, currentDestination = currentRoute) {
+    azConfig(dockingSide = AzDockingSide.LEFT)
+    azMenuItem(id = "home", text = "Home", route = "home", onClick = { /* … */ })
+    onscreen { AzNavHost(startDestination = "home") { /* … */ } }
+
+    azBottomSheet(controller = sheetController) {
+        Column(Modifier.fillMaxSize().padding(16.dp)) {
+            Text("Hello sheet")
+            Button(onClick = { sheetController.stepUp() }) { Text("Expand") }
+        }
+    }
+}
+```
+
+Detents — `HIDDEN`, `PEEK`, `HALF`, `FULL` — and the accumulated-delta drag gesture mirror LogKitty exactly. For Service-hosted overlays (LogKitty's use case), use the `AzBottomSheetWindowHost` flavor; both flavors share state, theming, and gesture handling so the visual is identical.
+
+See [`docs/DSL.md`](docs/DSL.md), [`docs/API.md`](docs/API.md), and [`docs/AZNAVRAIL_COMPLETE_GUIDE.md`](docs/AZNAVRAIL_COMPLETE_GUIDE.md) for the full reference, and [`docs/MIGRATION_GUIDE.md`](docs/MIGRATION_GUIDE.md) for the LogKitty migration recipe.

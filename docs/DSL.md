@@ -260,3 +260,86 @@ const tutorial: AzTutorial = {
 controller.startTutorial('tut-1', { plan: 'pro' });
 controller.fireEvent('menu_opened');
 ~~~
+
+---
+
+## Bottom Sheet
+
+The `azBottomSheet` DSL registers a four-detent bottom sheet that draws above the rail, the menu, and the `onscreen` area while staying inside `WindowInsets.navigationBars` so the system navigation bar remains visible. It is **not** a `background()` — it sits at the top z-layer of `AzHostActivityLayout`.
+
+The shell was ported from [LogKitty](https://github.com/HereLiesAz/LogKitty); its detents, drag accumulator, and controller API are preserved verbatim so LogKitty can swap its custom sheet for `AzBottomSheetWindowHost` with no observable behavior change.
+
+### Detents
+- `AzSheetDetent.HIDDEN` — thin (configurable, default 14dp) swipe strip; lets touches pass through to underlying content.
+- `AzSheetDetent.PEEK` — single-line ticker (configurable, default 56dp).
+- `AzSheetDetent.HALF` — ~50% of the available height (configurable via `halfFraction`).
+- `AzSheetDetent.FULL` — ~90% of the available height (configurable via `fullFraction`).
+
+### In-tree usage
+
+~~~kotlin
+val sheetController = rememberAzSheetController()
+
+AzHostActivityLayout(navController = nav, currentDestination = currentRoute) {
+    azConfig(dockingSide = AzDockingSide.LEFT)
+    azMenuItem(id = "home", text = "Home", route = "home", onClick = { /* … */ })
+    onscreen(alignment = Alignment.Center) {
+        AzNavHost(startDestination = "home") { /* … */ }
+    }
+
+    // One DSL line. Draws above rail/menu/onscreen, behind the system nav bar.
+    azBottomSheet(
+        controller = sheetController,
+        config = AzSheetConfig(peekDp = 48.dp, halfFraction = 0.5f, fullFraction = 0.9f),
+    ) {
+        // Any composable content; the shell provides chrome (drag handle, scrim, gestures).
+        Column(Modifier.fillMaxSize().padding(16.dp)) {
+            Text("Sheet body")
+            Button(onClick = { sheetController.stepUp() }) { Text("Expand") }
+            Button(onClick = { sheetController.stepDown() }) { Text("Collapse") }
+        }
+    }
+}
+~~~
+
+### Controller
+
+`AzSheetController` exposes:
+
+- `var detent: AzSheetDetent` — read/write current state.
+- `var isEnabled: Boolean` — disabling forces `HIDDEN` and blocks `stepUp`/`stepDown`.
+- `val detentFlow: StateFlow<AzSheetDetent>` — observed by the system-overlay flavor.
+- `val enabledFlow: StateFlow<Boolean>`.
+- `stepUp()` / `stepDown()` — one detent at a time, clamped at the ends.
+- `snapTo(target: AzSheetDetent)` — jump directly.
+
+Use `rememberAzSheetController(initial)` inside Compose so detent state survives recomposition and configuration changes.
+
+### Gestures
+- **Vertical drag** on the sheet card or hidden strip accumulates per-frame delta and fires exactly one detent step per gesture when the threshold (`config.dragThresholdDp`, default 24dp) is crossed.
+- **Scrim tap** in `HALF` / `FULL` calls `stepDown()`.
+- **Back press** when `config.collapseOnBack = true` calls `stepDown()` while the sheet is non-HIDDEN.
+- **Horizontal swipe** is opt-in via `config.horizontalSwipeEnabled = true` and the `onSwipeLeft` / `onSwipeRight` callbacks (used by LogKitty for tab navigation).
+
+### System-overlay flavor
+
+For Services that float a sheet over the active foreground app (LogKitty's use case), use `AzBottomSheetWindowHost`:
+
+~~~kotlin
+val sheetController = AzSheetController(initial = AzSheetDetent.HIDDEN)
+val host = AzBottomSheetWindowHost(
+    context = this,
+    controller = sheetController,
+    config = AzSheetConfig(backgroundColor = userBg, backgroundAlpha = userAlpha),
+    lifecycleOwner = this,
+    viewModelStoreOwner = this,
+    savedStateRegistryOwner = this,
+    navBarHeightPx = navBarPx,
+) { /* same content slot as AzBottomSheet */ }
+
+host.attach()
+host.attachNavBarDecor()   // call from your accessibility service's onServiceConnected
+// onDestroy: host.detach()
+~~~
+
+The library ships no `Service`; consumers declare the `SYSTEM_ALERT_WINDOW` (and, for the nav-bar decoration, `BIND_ACCESSIBILITY_SERVICE`) permissions in their own manifest.
