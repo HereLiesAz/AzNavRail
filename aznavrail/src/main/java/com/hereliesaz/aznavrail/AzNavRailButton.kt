@@ -32,6 +32,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -91,7 +92,8 @@ internal fun AzNavRailButton(
     contentPadding: PaddingValues = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
     itemContent: Any? = null,
     onLongClick: (() -> Unit)? = null,
-    onGloballyPositioned: ((Rect) -> Unit)? = null
+    onGloballyPositioned: ((Rect) -> Unit)? = null,
+    rotationDegrees: Float = 0f
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -103,18 +105,28 @@ internal fun AzNavRailButton(
         AzButtonShape.NONE -> RectangleShape
     }
 
-    // STRICT WIDTH COMPLIANCE for all shapes
+    val isRotated = rotationDegrees != 0f && (rotationDegrees % 180 != 0f)
+
+    // STRICT WIDTH COMPLIANCE for all shapes. Swapped in landscape to maintain "physical" size.
     val buttonModifier = when (shape) {
         AzButtonShape.CIRCLE, AzButtonShape.SQUARE -> modifier
             .size(size)
             .aspectRatio(1f)
-        AzButtonShape.RECTANGLE, AzButtonShape.NONE -> modifier
-            .width(size) // Fixed identical width
-            .height(40.dp) // Decreased fixed height variant
+        AzButtonShape.RECTANGLE, AzButtonShape.NONE -> {
+            if (isRotated) {
+                modifier.width(40.dp).height(size)
+            } else {
+                modifier.width(size).height(40.dp)
+            }
+        }
     }
 
-    // Clip to shape explicitly to ensure custom content doesn't draw outside bounds
-    val clippedModifier = buttonModifier.clip(buttonShape)
+    // Apply rotation back to keep text upright "in place"
+    val finalModifier = buttonModifier.graphicsLayer {
+        rotationZ = -rotationDegrees
+    }
+
+    val clippedModifier = finalModifier.clip(buttonShape)
 
     val disabledColor = color.copy(alpha = 0.38f)
     val targetColor = if (isPressed || isSelected) activeColor else color

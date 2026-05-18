@@ -84,6 +84,7 @@ import androidx.compose.ui.platform.LocalViewConfiguration
  * @param onClickOverride Optional override that replaces the default click handling (used for tutorial mode).
  * @param onItemGloballyPositioned Reports bounds to the scope's cache for help/tutorial overlays.
  * @param helpEnabled When true, non-host/non-help items are visually dimmed and non-interactive.
+ * @param rotationDegrees Rotation to apply to buttons "in place".
  */
 @Composable
 internal fun RailItems(
@@ -99,7 +100,8 @@ internal fun RailItems(
     visualDockingSide: AzDockingSide,
     onClickOverride: ((AzNavItem) -> Unit)? = null,
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
-    helpEnabled: Boolean = false
+    helpEnabled: Boolean = false,
+    rotationDegrees: Float = 0f
 ) {
     val density = LocalDensity.current
     val topLevelItems = items.filter { !it.isSubItem }
@@ -211,7 +213,8 @@ internal fun RailItems(
                             snappingOffset = snappingOffsets[item.id]?.value,
                             visualDockingSide = visualDockingSide,
                             nestedRailOpenId = scope.nestedRailOpenId,
-                            onNestedRailToggle = { scope.nestedRailOpenId = it }
+                            onNestedRailToggle = { scope.nestedRailOpenId = it },
+                            rotationDegrees = rotationDegrees
                         )
 
                         AnimatedVisibility(visible = item.isHost && (hostStates[item.id] ?: false)) {
@@ -285,7 +288,8 @@ internal fun RailItems(
                                             snappingOffset = snappingOffsets[subItem.id]?.value,
                                             visualDockingSide = visualDockingSide,
                                             nestedRailOpenId = scope.nestedRailOpenId,
-                                            onNestedRailToggle = { scope.nestedRailOpenId = it }
+                                            onNestedRailToggle = { scope.nestedRailOpenId = it },
+                                            rotationDegrees = rotationDegrees
                                         )
                                     }
                                 }
@@ -333,7 +337,8 @@ private fun DraggableRailItemWrapper(
     snappingOffset: Float?,
     visualDockingSide: AzDockingSide,
     nestedRailOpenId: String?,
-    onNestedRailToggle: (String?) -> Unit
+    onNestedRailToggle: (String?) -> Unit,
+    rotationDegrees: Float = 0f
 ) {
     val isDragging = draggedItemId == item.id
     var visualOffsetY by remember { mutableStateOf(0.dp) }
@@ -550,7 +555,8 @@ private fun DraggableRailItemWrapper(
                     onBoundsCalculated = { id, bounds -> scope.itemBoundsCache[id] = bounds },
                     helpEnabled = helpEnabled,
                     dragModifier = dragModifier,
-                    activeColor = scope.activeColor
+                    activeColor = scope.activeColor,
+                    rotationDegrees = rotationDegrees
                 )
             } else {
                 RailContent(
@@ -589,7 +595,8 @@ private fun DraggableRailItemWrapper(
                             onBoundsCalculated = { id, bounds -> scope.itemBoundsCache[id] = bounds },
                     helpEnabled = helpEnabled,
                     dragModifier = dragModifier,
-                    activeColor = scope.activeColor
+                    activeColor = scope.activeColor,
+                    rotationDegrees = rotationDegrees
                 )
             }
         }
@@ -619,7 +626,8 @@ private fun DraggableRailItemWrapper(
                         alignment = item.nestedRailAlignment,
                         isRightDocked = isRightDocked,
                         helpList = scope.advancedConfig.helpList,
-                        onItemGloballyPositioned = { id, bounds -> scope.itemBoundsCache[id] = bounds }
+                        onItemGloballyPositioned = { id, bounds -> scope.itemBoundsCache[id] = bounds },
+                        rotationDegrees = rotationDegrees
                     )
                 }
             } else {
@@ -646,7 +654,8 @@ private fun DraggableRailItemWrapper(
                         alignment = item.nestedRailAlignment ?: AzNestedRailAlignment.HORIZONTAL,
                         isRightDocked = isRightDocked,
                         helpList = scope.advancedConfig.helpList,
-                        onItemGloballyPositioned = { id, bounds -> scope.itemBoundsCache[id] = bounds }
+                        onItemGloballyPositioned = { id, bounds -> scope.itemBoundsCache[id] = bounds },
+                        rotationDegrees = rotationDegrees
                     )
                 }
             }
@@ -688,7 +697,8 @@ private fun DraggableRailItemWrapper(
                     onRailCyclerClick = {},
                     onItemClick = {},
                     helpEnabled = helpEnabled,
-                    activeColor = scope.activeColor
+                    activeColor = scope.activeColor,
+                    rotationDegrees = rotationDegrees
                 )
             }
         }
@@ -707,7 +717,7 @@ private fun HiddenMenuPopup(
 ) {
     val configuration = LocalConfiguration.current
     // Constrain popup size to exactly 50% width limit
-    val halfWidth = (configuration.screenWidthDp / 2).dp
+    val halfWidth = (configuration.screenWidthDp / 4).dp
 
     Popup(
         alignment = androidx.compose.ui.Alignment.TopStart,

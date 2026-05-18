@@ -404,6 +404,8 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     val onRelocateMap = mutableMapOf<String, (Int, Int, List<String>) -> Unit>()
     /** Cache of window-space bounds for each item, populated as items are laid out. */
     val itemBoundsCache = mutableStateMapOf<String, Rect>()
+    /** Transient selected options for cyclers during the debounce window. */
+    val transientCyclerOptions = mutableStateMapOf<String, String>()
     /** Active [NavController], set externally by [AzHostActivityLayout]. */
     var navController: NavController? = null
     /** The ID of the nested rail currently open as a popup, or null if none. */

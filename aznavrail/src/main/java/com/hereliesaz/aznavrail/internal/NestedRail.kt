@@ -15,6 +15,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,6 +49,7 @@ import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
  * @param isRightDocked Whether the rail is docked to the right (affects padding side).
  * @param helpList Forwarded from the scope for potential help-overlay integration.
  * @param onItemGloballyPositioned Reports window-space bounds of each sub-item after layout.
+ * @param rotationDegrees Rotation to apply to buttons "in place".
  */
 @Composable
 internal fun NestedRail(
@@ -59,21 +62,21 @@ internal fun NestedRail(
     alignment: AzNestedRailAlignment,
     isRightDocked: Boolean,
     helpList: Map<String, Any> = emptyMap(),
-    onItemGloballyPositioned: ((String, androidx.compose.ui.geometry.Rect) -> Unit)? = null
+    onItemGloballyPositioned: ((String, androidx.compose.ui.geometry.Rect) -> Unit)? = null,
+    rotationDegrees: Float = 0f
 ) {
     val configuration = LocalConfiguration.current
     val maxH = (configuration.screenHeightDp * 0.8f).dp
     val maxW = (configuration.screenWidthDp * 0.8f).dp
+    val hostStates = remember { mutableStateMapOf<String, Boolean>() }
 
     val surfaceShape = RoundedCornerShape(16.dp)
     val modifier = Modifier
         .then(if (isRightDocked) Modifier.padding(end = 16.dp) else Modifier.padding(start = 16.dp))
         .clip(surfaceShape)
-        // .background(MaterialTheme.colorScheme.surfaceVariant) // Removed background per request
         .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), surfaceShape)
         .padding(8.dp)
 
-    // Restricted to 80% screen to enforce scrolling constraints
     if (alignment == AzNestedRailAlignment.VERTICAL) {
         val scrollState = rememberScrollState()
         Column(
@@ -81,24 +84,8 @@ internal fun NestedRail(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            items.forEach { item ->
-                androidx.compose.foundation.layout.Box(modifier = Modifier.onGloballyPositioned { coords ->
-                    onItemGloballyPositioned?.invoke(item.id, coords.boundsInWindow())
-                }) {
-                    AzNavRailButton(
-                        onClick = { onItemSelected(item) },
-                        text = item.text,
-                        color = item.color ?: MaterialTheme.colorScheme.onSurface,
-                        activeColor = activeColor,
-                        textColor = item.textColor,
-                        fillColor = item.fillColor,
-                        shape = AzButtonShape.CIRCLE,
-                        size = AzNavRailDefaults.ButtonWidth,
-                        enabled = !item.disabled,
-                        isSelected = (item.route != null && currentDestination == item.route) || item.classifiers.any { activeClassifiers.contains(it) },
-                        itemContent = item.content
-                    )
-                }
+            items.filter { !it.isSubItem }.forEach { item ->
+                NestedItemWrapper(item, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, items, true)
             }
         }
     } else {
@@ -108,23 +95,69 @@ internal fun NestedRail(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            items.forEach { item ->
-                androidx.compose.foundation.layout.Box(modifier = Modifier.onGloballyPositioned { coords ->
-                    onItemGloballyPositioned?.invoke(item.id, coords.boundsInWindow())
-                }) {
-                    AzNavRailButton(
-                        onClick = { onItemSelected(item) },
-                        text = item.text,
-                        color = item.color ?: MaterialTheme.colorScheme.onSurface,
-                        activeColor = activeColor,
-                        textColor = item.textColor,
-                        fillColor = item.fillColor,
-                        shape = AzButtonShape.CIRCLE,
-                        size = AzNavRailDefaults.ButtonWidth,
-                        enabled = !item.disabled,
-                        isSelected = (item.route != null && currentDestination == item.route) || item.classifiers.any { activeClassifiers.contains(it) },
-                        itemContent = item.content
-                    )
+            items.filter { !it.isSubItem }.forEach { item ->
+                NestedItemWrapper(item, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, items, false)
+            }
+        }
+    }
+}
+
+@Composable
+private fun NestedItemWrapper(
+    item: AzNavItem,
+    currentDestination: String?,
+    activeColor: Color,
+    activeClassifiers: Set<String>,
+    onItemSelected: (AzNavItem) -> Unit,
+    rotationDegrees: Float,
+    onItemGloballyPositioned: ((String, androidx.compose.ui.geometry.Rect) -> Unit)?,
+    hostStates: MutableMap<String, Boolean>,
+    allItems: List<AzNavItem>,
+    isVerticalRail: Boolean
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        androidx.compose.foundation.layout.Box(modifier = Modifier.onGloballyPositioned { coords ->
+            onItemGloballyPositioned?.invoke(item.id, coords.boundsInWindow())
+        }) {
+            AzNavRailButton(
+                onClick = {
+                    if (item.isHost) {
+                        hostStates[item.id] = !(hostStates[item.id] ?: false)
+                    } else {
+                        onItemSelected(item)
+                    }
+                },
+                text = item.text,
+                color = item.color ?: MaterialTheme.colorScheme.onSurface,
+                activeColor = activeColor,
+                textColor = item.textColor,
+                fillColor = item.fillColor,
+                shape = item.shape ?: AzButtonShape.CIRCLE,
+                size = AzNavRailDefaults.ButtonWidth,
+                enabled = !item.disabled,
+                isSelected = (item.route != null && currentDestination == item.route) || item.classifiers.any { activeClassifiers.contains(it) },
+                itemContent = item.content,
+                rotationDegrees = rotationDegrees
+            )
+        }
+
+        if (item.isHost && hostStates[item.id] == true) {
+            val subItems = allItems.filter { it.hostId == item.id && it.isSubItem }
+            if (isVerticalRail) {
+                // Vertical rail: sub-items continue the column
+                subItems.forEach { subItem ->
+                    NestedItemWrapper(subItem, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, allItems, isVerticalRail)
+                }
+            } else {
+                // Horizontal rail: sub-items expand downward vertically
+                Column(
+                    modifier = Modifier.padding(top = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    subItems.forEach { subItem ->
+                        NestedItemWrapper(subItem, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, allItems, isVerticalRail)
+                    }
                 }
             }
         }

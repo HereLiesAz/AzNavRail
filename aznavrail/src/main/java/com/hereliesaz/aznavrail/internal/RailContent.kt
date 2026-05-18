@@ -52,7 +52,8 @@ internal fun RailContent(
     onBoundsCalculated: ((String, Rect) -> Unit)? = null,
     helpEnabled: Boolean = false,
     dragModifier: Modifier = Modifier,
-    activeColor: androidx.compose.ui.graphics.Color? = null
+    activeColor: androidx.compose.ui.graphics.Color? = null,
+    rotationDegrees: Float = 0f
 ) {
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
@@ -110,7 +111,8 @@ internal fun RailContent(
             size = buttonSize,
             shape = item.shape ?: defaultShape,
             enabled = isEnabled,
-            isSelected = isSelected
+            isSelected = isSelected,
+            rotationDegrees = rotationDegrees
         )
     }
 }

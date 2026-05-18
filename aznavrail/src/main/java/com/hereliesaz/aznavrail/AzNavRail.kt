@@ -3,6 +3,7 @@ package com.hereliesaz.aznavrail
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -56,6 +57,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
@@ -225,10 +227,30 @@ fun AzNavRail(
     var showFloatingButtons by remember { mutableStateOf(false) }
     var railContentHeight by remember { mutableStateOf(0f) }
     var showHelpOverlay by remember { mutableStateOf(false) }
+    var wasFloatingOpenBeforeDrag by remember { mutableStateOf(false) }
     val tutorialController = LocalAzTutorialController.current
     val activeTutorialId by tutorialController.activeTutorialId
     val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
     val onSecretClick = SecretScreens(secLoc = scope.advancedConfig.secLoc, secLocPort = scope.advancedConfig.secLocPort)
+
+    LaunchedEffect(showFloatingButtons, railContentHeight) {
+        if (isFloating) {
+            val minY = screenHeightPx * 0.1f
+            val maxY = maxOf(minY, (screenHeightPx * 0.9f) - railContentHeight)
+            if (offsetY > maxY) {
+                offsetY = maxY
+                Log.d("AzNavRail", "FAB mode: Adjusted position to stay within 10-90% safe zone.")
+            }
+        }
+    }
+
+    val rotation = LocalView.current.display?.rotation ?: android.view.Surface.ROTATION_0
+    val rotationDegrees = when (rotation) {
+        android.view.Surface.ROTATION_90 -> 90f
+        android.view.Surface.ROTATION_180 -> 180f
+        android.view.Surface.ROTATION_270 -> 270f
+        else -> 0f
+    }
 
     val isVerticalNestedRailOpen by remember {
         derivedStateOf {
@@ -274,7 +296,10 @@ fun AzNavRail(
 
     LaunchedEffect(scope.navItems) {
         scope.navItems.forEach { item ->
-            if (item.isCycler) cyclerStates.putIfAbsent(item.id, CyclerTransientState(item.selectedOption ?: ""))
+            if (item.isCycler) {
+                cyclerStates.putIfAbsent(item.id, CyclerTransientState(item.selectedOption ?: ""))
+                scope.transientCyclerOptions.putIfAbsent(item.id, item.selectedOption ?: "")
+            }
         }
     }
 
@@ -335,17 +360,32 @@ fun AzNavRail(
     val surfaceElevation = if (isExpanded && !isFloating) 2.dp else 0.dp
 
     Box(
-        modifier = modifier,
+        modifier = modifier
+            .pointerInput(isExpanded) {
+                if (isExpanded) {
+                    detectTapGestures(onTap = {
+                        isExpanded = false
+                    })
+                }
+            },
         contentAlignment = if (isFloating) Alignment.TopStart else railAlignment
     ) {
-        Surface(
+        val swipeWidthIncrease = if (isExpanded) 40.dp else 0.dp
+        val snapBackRadius = with(density) { 36.dp.toPx() } // Half of 72dp ButtonWidth
+        
+        Box(
             modifier = Modifier
                 .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
                 .then(safeZoneModifier)
-                .then(sizeModifier)
-                .onGloballyPositioned { if (isFloating) railContentHeight = it.size.height.toFloat() }
+                .width(railWidth + swipeWidthIncrease)
                 .pointerInput(isFloating, disableSwipeToOpen, visualDockingSide) {
                     detectDragGestures(
+                        onDragStart = {
+                            if (isFloating) {
+                                wasFloatingOpenBeforeDrag = showFloatingButtons
+                                showFloatingButtons = false
+                            }
+                        },
                         onDrag = { change, dragAmount ->
                             change.consume()
                             if (isFloating) {
@@ -359,61 +399,107 @@ fun AzNavRail(
                                 val maxX = (configuration.screenWidthDp * density.density) - railWidth.toPx()
                                 offsetX = offsetX.coerceIn(minX, maxX)
                             } else {
-                                if (scope.advancedConfig.enableRailDragging && kotlin.math.abs(dragAmount.y) > 20 && kotlin.math.abs(dragAmount.y) > kotlin.math.abs(dragAmount.x)) {
+                                val absX = kotlin.math.abs(dragAmount.x)
+                                val absY = kotlin.math.abs(dragAmount.y)
+                                
+                                if (scope.advancedConfig.enableRailDragging && absY > 20 && absY > absX) {
                                     isFloating = true
                                     isExpanded = false
                                     offsetX = 0f
                                     offsetY = screenHeightPx * 0.1f
+                                    
+                                    if (dragAmount.y < 0) {
+                                        showFloatingButtons = false
+                                        wasFloatingOpenBeforeDrag = false
+                                        Log.d("AzNavRail", "Vertical swipe UP: FAB mode activated, items folded.")
+                                    } else {
+                                        showFloatingButtons = false
+                                        wasFloatingOpenBeforeDrag = false
+                                        Log.d("AzNavRail", "Vertical swipe DOWN: FAB mode activated, dragging initiated.")
+                                    }
+                                    
                                     if (scope.vibrate) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 } else if (!disableSwipeToOpen && !scope.noMenu) {
                                     if (visualDockingSide == AzDockingSide.LEFT) {
-                                        if (dragAmount.x > 20 && !isExpanded) isExpanded = true
-                                        else if (dragAmount.x < -20 && isExpanded) isExpanded = false
+                                        if (dragAmount.x > 20 && !isExpanded) {
+                                            isExpanded = true
+                                            Log.d("AzNavRail", "Horizontal swipe RIGHT: Menu expanded.")
+                                        }
+                                        else if (dragAmount.x < -20 && isExpanded) {
+                                            isExpanded = false
+                                            Log.d("AzNavRail", "Horizontal swipe LEFT: Menu collapsed.")
+                                        }
                                     } else {
-                                        if (dragAmount.x < -20 && !isExpanded) isExpanded = true
-                                        else if (dragAmount.x > 20 && isExpanded) isExpanded = false
+                                        if (dragAmount.x < -20 && !isExpanded) {
+                                            isExpanded = true
+                                            Log.d("AzNavRail", "Horizontal swipe LEFT: Menu expanded.")
+                                        }
+                                        else if (dragAmount.x > 20 && isExpanded) {
+                                            isExpanded = false
+                                            Log.d("AzNavRail", "Horizontal swipe RIGHT: Menu collapsed.")
+                                        }
                                     }
                                 }
                             }
                         },
                         onDragEnd = {
-                            if (isFloating && (offsetX*offsetX + offsetY*offsetY < AzNavRailDefaults.SNAP_BACK_RADIUS_PX*AzNavRailDefaults.SNAP_BACK_RADIUS_PX)) {
-                                isFloating = false
-                                offsetX = 0f
-                                offsetY = 0f
+                            if (isFloating) {
+                                if (wasFloatingOpenBeforeDrag) {
+                                    showFloatingButtons = true
+                                    Log.d("AzNavRail", "FAB drag end: items unfolded.")
+                                }
+                                
+                                if (offsetX*offsetX + offsetY*offsetY < snapBackRadius*snapBackRadius) {
+                                    isFloating = false
+                                    offsetX = 0f
+                                    offsetY = 0f
+                                    Log.d("AzNavRail", "FAB docked via snapping.")
+                                }
                             }
                         }
                     )
                 }
-                .then(if (isFloating) Modifier.shadow(8.dp, RectangleShape) else Modifier),
-            color = surfaceColor,
-            tonalElevation = surfaceElevation
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // Header handles Unconstrained App Name -> App Icon transformation logic
-                Row(
-                    modifier = Modifier
-                        .padding(AzNavRailDefaults.HeaderPadding)
-                        .height(AzNavRailDefaults.HeaderHeightDp)
-                        .fillMaxWidth() // Center alignment requires full width
-                        .pointerInput(Unit) {
-                            detectTapGestures(
-                                onTap = { toggleExpanded() },
-                                onLongPress = {
-                                    if (scope.advancedConfig.enableRailDragging) {
-                                        isFloating = !isFloating
-                                        if (isFloating) {
-                                            isExpanded = false
-                                            offsetY = screenHeightPx * 0.1f
-                                        } else {
-                                            offsetX = 0f
-                                            offsetY = 0f
+            Surface(
+                modifier = sizeModifier
+                    .onGloballyPositioned { if (isFloating) railContentHeight = it.size.height.toFloat() }
+                    .pointerInput(Unit) {
+                        detectTapGestures { /* Consume */ }
+                    }
+                    .then(if (isFloating) Modifier.shadow(8.dp, RectangleShape) else Modifier),
+                color = surfaceColor,
+                tonalElevation = surfaceElevation
+            ) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    // Header handles Unconstrained App Name -> App Icon transformation logic
+                    Row(
+                        modifier = Modifier
+                            .padding(AzNavRailDefaults.HeaderPadding)
+                            .height(AzNavRailDefaults.HeaderHeightDp)
+                            .fillMaxWidth() // Center alignment requires full width
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onTap = { 
+                                        Log.d("AzNavRail", "Header Tapped: toggling expansion.")
+                                        toggleExpanded() 
+                                    },
+                                    onLongPress = {
+                                        if (scope.advancedConfig.enableRailDragging) {
+                                            isFloating = !isFloating
+                                            if (isFloating) {
+                                                isExpanded = false
+                                                offsetY = screenHeightPx * 0.1f
+                                                Log.d("AzNavRail", "Header Long Pressed: FAB mode activated.")
+                                            } else {
+                                                offsetX = 0f
+                                                offsetY = 0f
+                                                Log.d("AzNavRail", "Header Long Pressed: FAB mode deactivated (redocked).")
+                                            }
+                                            if (scope.vibrate) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                         }
-                                        if (scope.vibrate) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     }
-                                }
-                            )
-                        },
+                                )
+                            },
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center // Center content horizontally
                 ) {
@@ -572,6 +658,7 @@ fun AzNavRail(
                                             val currentIndex = enabledOptions.indexOf(state.displayedOption)
                                             val nextOption = enabledOptions[(currentIndex + 1) % enabledOptions.size]
 
+                                            scope.transientCyclerOptions[item.id] = nextOption
                                             cyclerStates[item.id] = state.copy(
                                                 displayedOption = nextOption,
                                                 job = coroutineScope.launch {
@@ -593,7 +680,8 @@ fun AzNavRail(
                                 packRailButtons = isFloating || scope.packButtons, // Forced pack in FAB mode
                                 visualDockingSide = visualDockingSide,
                                 onItemGloballyPositioned = scope.advancedConfig.onItemGloballyPositioned,
-                                helpEnabled = showHelpOverlay
+                                helpEnabled = showHelpOverlay,
+                                rotationDegrees = rotationDegrees
                             )
                         }
                     }
@@ -621,6 +709,7 @@ fun AzNavRail(
             }
         }
     }
+}
 
     if (showHelpOverlay) {
         HelpOverlay(
