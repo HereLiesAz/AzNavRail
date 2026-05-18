@@ -1,6 +1,6 @@
 {
   "name": "@HereLiesAz/aznavrail-react",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A contemptably stubborn navigation rail for React Native",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",

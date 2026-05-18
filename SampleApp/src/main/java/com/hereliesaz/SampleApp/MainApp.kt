@@ -2,115 +2,209 @@ package com.hereliesaz.SampleApp
 
 import android.util.Log
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.hereliesaz.aznavrail.*
+import androidx.navigation.compose.rememberNavController
+import com.hereliesaz.SampleApp.screens.BottomSheetDemoScreen
+import com.hereliesaz.SampleApp.screens.CustomizationDemoScreen
+import com.hereliesaz.SampleApp.screens.CustomizationState
+import com.hereliesaz.SampleApp.screens.FabOverlayDemoScreen
+import com.hereliesaz.SampleApp.screens.FabOverlayState
+import com.hereliesaz.SampleApp.screens.FormShowcaseScreen
+import com.hereliesaz.SampleApp.screens.HelpSystemDemoScreen
+import com.hereliesaz.SampleApp.screens.HelpSystemState
+import com.hereliesaz.SampleApp.screens.HiddenMenuDemoScreen
+import com.hereliesaz.SampleApp.screens.HiddenMenuDemoState
+import com.hereliesaz.SampleApp.screens.LegacyRailDemoScreen
+import com.hereliesaz.SampleApp.screens.SampleTutorials
+import com.hereliesaz.SampleApp.screens.ShowcaseHomeScreen
+import com.hereliesaz.SampleApp.screens.StandaloneWidgetsScreen
+import com.hereliesaz.SampleApp.screens.TutorialDemoScreen
+import com.hereliesaz.aznavrail.AzHostActivityLayout
+import com.hereliesaz.aznavrail.AzNavHost
+import com.hereliesaz.aznavrail.AzTextBoxDefaults
 import com.hereliesaz.aznavrail.model.AzButtonShape
+import com.hereliesaz.aznavrail.model.AzComposableContent
 import com.hereliesaz.aznavrail.model.AzDockingSide
+import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
-import com.hereliesaz.aznavrail.tutorial.AzHighlight
-import com.hereliesaz.aznavrail.tutorial.azTutorial
+
+private const val TAG = "SampleApp"
 
 @Composable
 fun MainApp() {
-    val TAG = "SampleApp"
     val navController = rememberNavController()
-    val currentDestination by navController.currentBackStackEntryAsState()
+    val currentDestinationEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = currentDestinationEntry?.destination?.route
+
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.screenWidthDp > configuration.screenHeightDp
+
+    LaunchedEffect(Unit) {
+        Log.d(TAG, "Initializing SampleApp: setting suggestion limit to 3")
+        AzTextBoxDefaults.setSuggestionLimit(3)
+    }
+
+    // Legacy rail/menu state preserved so the inline rail keeps working.
     var isOnline by remember { mutableStateOf(true) }
     var isDarkMode by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var packRailButtons by remember { mutableStateOf(false) }
+    var isDockingRight by remember { mutableStateOf(false) }
+    var noMenu by remember { mutableStateOf(false) }
+    var usePhysicalDocking by remember { mutableStateOf(false) }
+
     val railCycleOptions = remember { listOf("A", "B", "C", "D") }
     var railSelectedOption by remember { mutableStateOf(railCycleOptions.first()) }
     val menuCycleOptions = remember { listOf("X", "Y", "Z") }
     var menuSelectedOption by remember { mutableStateOf(menuCycleOptions.first()) }
 
-    val configuration = LocalConfiguration.current
-    val isLandscape = configuration.screenWidthDp > configuration.screenHeightDp
-
-    // Set the global suggestion limit for all AzTextBox instances
-    LaunchedEffect(Unit) {
-        Log.d(TAG, "Initializing SampleApp: Setting suggestion limit to 3")
-        AzTextBoxDefaults.setSuggestionLimit(3)
+    // Customization screen state — drives azConfig + azTheme.
+    var customization by remember {
+        mutableStateOf(
+            CustomizationState(
+                headerIconShape = AzHeaderIconShape.CIRCLE,
+                defaultShape = AzButtonShape.RECTANGLE,
+                translucentBackground = Color.Unspecified,
+                expandedWidth = 160.dp,
+                collapsedWidth = 100.dp,
+                displayAppName = false,
+                showFooter = true,
+                appRepositoryUrl = "https://github.com/HereLiesAz/AzNavRail",
+                helpLineColors = emptyList(),
+                vibrate = false,
+            )
+        )
     }
 
-    var isDockingRight by remember { mutableStateOf(false) }
-    var noMenu by remember { mutableStateOf(false) }
-    var showHelp by remember { mutableStateOf(false) }
-    var usePhysicalDocking by remember { mutableStateOf(false) }
+    // Help system state — drives azAdvanced(helpEnabled, helpList) and azConfig(activeClassifiers).
+    var helpSystem by remember { mutableStateOf(HelpSystemState(helpEnabled = false, activeClassifiers = emptySet())) }
+
+    // FAB / overlay screen state.
+    var fabState by remember {
+        mutableStateOf(FabOverlayState(railDragEnabled = true, railLog = "(no drag yet)", overlayDragLog = "(no drag yet)", undockedCount = 0))
+    }
+
+    // Hidden menu screen state.
+    val relocOrder = remember { mutableStateListOf("reloc-1", "reloc-2", "reloc-nested-parent") }
+    var hiddenLastAction by remember { mutableStateOf("(none)") }
+    var hiddenRelocateLog by remember { mutableStateOf("(no reorder yet)") }
+    val hiddenInputs = remember { mutableStateMapOf("nickname" to "", "tag" to "foo") }
 
     val themeColor = MaterialTheme.colorScheme.primary
 
-    // Use AzHostActivityLayout as the top-level container
     AzHostActivityLayout(
         navController = navController,
         modifier = Modifier.fillMaxSize(),
-        currentDestination = currentDestination?.destination?.route,
+        currentDestination = currentDestination,
         isLandscape = isLandscape,
-        initiallyExpanded = false
+        initiallyExpanded = false,
     ) {
         azConfig(
             packButtons = packRailButtons,
             dockingSide = if (isDockingRight) AzDockingSide.RIGHT else AzDockingSide.LEFT,
             noMenu = noMenu,
-            usePhysicalDocking = usePhysicalDocking
+            usePhysicalDocking = usePhysicalDocking,
+            vibrate = customization.vibrate,
+            displayAppName = customization.displayAppName,
+            activeClassifiers = helpSystem.activeClassifiers,
+            expandedWidth = customization.expandedWidth,
+            collapsedWidth = customization.collapsedWidth,
+            showFooter = customization.showFooter,
+            appRepositoryUrl = customization.appRepositoryUrl,
         )
 
         azTheme(
-            defaultShape = AzButtonShape.RECTANGLE,
-            activeColor = themeColor
+            defaultShape = customization.defaultShape,
+            activeColor = themeColor,
+            headerIconShape = customization.headerIconShape,
+            translucentBackground = customization.translucentBackground,
+            helpLineColors = customization.helpLineColors,
         )
 
         azAdvanced(
             isLoading = isLoading,
-            enableRailDragging = true, // Keeps FAB mode enabled (in-app floating)
-            helpEnabled = showHelp,
-            onDismissHelp = { 
+            enableRailDragging = fabState.railDragEnabled,
+            helpEnabled = helpSystem.helpEnabled,
+            onDismissHelp = {
                 Log.d(TAG, "Help dismissed")
-                showHelp = false 
+                helpSystem = helpSystem.copy(helpEnabled = false)
             },
+            onRailDrag = { x, y ->
+                fabState = fabState.copy(railLog = "rail dx=${"%.1f".format(x)} dy=${"%.1f".format(y)}")
+            },
+            onOverlayDrag = { x, y ->
+                fabState = fabState.copy(overlayDragLog = "overlay dx=${"%.1f".format(x)} dy=${"%.1f".format(y)}")
+            },
+            onUndock = {
+                fabState = fabState.copy(undockedCount = fabState.undockedCount + 1)
+                Log.d(TAG, "Rail undocked")
+            },
+            tutorials = SampleTutorials,
             helpList = mapOf(
-                "home" to "This is a test helpList text!",
-                "nested-1" to "Nested helpList entries work too!"
-            )
+                "showcase-home" to "Index of every demo screen.",
+                "bottom-sheet" to "AzBottomSheet + AzBottomSheetInsetAware demo.",
+                "tutorial" to "Interactive tutorial DSL demo — covers every AzAdvanceCondition.",
+                "fab-overlay" to "FAB-mode drag callbacks + SampleOverlayService.",
+                "customization" to "Live theme/config controls.",
+                "help-system" to "Demonstrates this very overlay.",
+                "forms" to "AzForm + AzTextBox showcase.",
+                "hidden-menus" to "Reloc items with rich HiddenMenuScope.",
+                "standalone-widgets" to "AzLoad, AzDivider, button/toggle/cycler/roller variants.",
+                "legacy" to "The original demo playground.",
+                "color-item" to "Demonstrates dynamic content with Color and Custom Text/Colors",
+                "icon-item" to "Demonstrates dynamic content with Resource ID",
+                "rail-cycler" to "Rail cycler with one disabled option (C).",
+                "nested-1" to "Nested rail item — bounds reporting works inside popups.",
+            ),
         )
 
-        // RAIL ITEMS
-        azMenuItem(id = "home", text = "Home", route = "home", info = "Navigate to the Home screen", onClick = { Log.d(TAG, "Home menu item clicked") })
-        azMenuItem(id = "multi-line", text = "This is a\nmulti-line item", route = "multi-line", info = "Shows how multi-line text is handled", onClick = { Log.d(TAG, "Multi-line menu item clicked") })
+        // ---------- Showcase navigation menu items ----------
+        azMenuItem(id = "showcase-home", text = "Showcase Home", route = "showcase-home", screenTitle = "Showcase", info = "Index of every demo screen in this sample.")
+        azMenuItem(id = "bottom-sheet", text = "Bottom Sheets", route = "bottom-sheet", screenTitle = "Bottom Sheets", info = "AzBottomSheet detents, drag, scrim, swipe.")
+        azMenuItem(id = "tutorial", text = "Tutorials", route = "tutorial", screenTitle = "Tutorials", info = "AzTutorial DSL — every advance condition + highlight.", classifiers = setOf("advanced"))
+        azMenuItem(id = "fab-overlay", text = "FAB / Overlay", route = "fab-overlay", screenTitle = "FAB & Overlay", info = "Rail drag callbacks + system overlay service.", classifiers = setOf("advanced", "danger"))
+        azMenuItem(id = "customization", text = "Customization", route = "customization", screenTitle = "Theming", info = "Live theme/config controls.")
+        azMenuItem(id = "help-system", text = "Help System", route = "help-system", screenTitle = "Help System", info = "screenTitle, info, classifiers, helpList.", classifiers = setOf("focus"))
+        azMenuItem(id = "forms", text = "Forms", route = "forms", screenTitle = "Forms", info = "AzForm + AzTextBox parameter showcase.")
+        azMenuItem(id = "hidden-menus", text = "Hidden Menus", route = "hidden-menus", screenTitle = "Hidden Menus", info = "Reloc items with HiddenMenuScope.")
+        azMenuItem(id = "standalone-widgets", text = "Standalone Widgets", route = "standalone-widgets", screenTitle = "Standalone Widgets", info = "AzLoad / AzDivider / AzRoller / EqualWidthLayout / AutoSizeText.")
+        azMenuItem(id = "legacy", text = "Legacy Demo", route = "legacy", screenTitle = "Rail Configuration Demo", info = "Original SampleApp playground.")
 
+        azDivider()
+
+        // ---------- Existing rail-config items (preserved) ----------
         azRailToggle(
             id = "pack-rail",
             isChecked = packRailButtons,
             toggleOnText = "Packed",
             toggleOffText = "Unpacked",
-            route = "pack-rail",
-            info = "Toggle to pack items together or space them out",
-            onClick = {
-                packRailButtons = !packRailButtons
-                Log.d(TAG, "Pack rail toggled to: $packRailButtons")
-            }
+            info = "Toggle to pack items together or space them out.",
+            onClick = { packRailButtons = !packRailButtons },
         )
 
-        // Demonstrating Dynamic Content (Color) and Custom Texts/Colors
         azRailItem(
             id = "color-item",
             text = "Color",
@@ -119,16 +213,15 @@ fun MainApp() {
             fillColor = Color.Blue,
             content = Color.Red,
             info = "Demonstrates dynamic content with Color and Custom Text/Colors",
-            onClick = { Log.d(TAG, "Color item clicked") }
+            onClick = { Log.d(TAG, "Color item clicked") },
         )
 
-        // Demonstrating Dynamic Content (Icon as Resource)
         azRailItem(
             id = "icon-item",
             text = "Icon",
             content = android.R.drawable.ic_menu_agenda,
             info = "Demonstrates dynamic content with Resource ID",
-            onClick = { Log.d(TAG, "Icon item clicked") }
+            onClick = { Log.d(TAG, "Icon item clicked") },
         )
 
         azRailItem(
@@ -136,7 +229,7 @@ fun MainApp() {
             text = "No Shape",
             shape = AzButtonShape.NONE,
             info = "Item with shape NONE",
-            onClick = { Log.d(TAG, "No Shape item clicked") }
+            onClick = { Log.d(TAG, "No Shape item clicked") },
         )
 
         azRailItem(
@@ -144,7 +237,7 @@ fun MainApp() {
             text = "Profile",
             disabled = true,
             route = "profile",
-            info = "User profile settings (Disabled)"
+            info = "User profile settings (Disabled)",
         )
 
         azDivider()
@@ -154,11 +247,7 @@ fun MainApp() {
             isChecked = isOnline,
             toggleOnText = "Online",
             toggleOffText = "Offline",
-            route = "online",
-            onClick = {
-                isOnline = !isOnline
-                Log.d(TAG, "Online toggled to: $isOnline")
-            }
+            onClick = { isOnline = !isOnline },
         )
 
         azMenuToggle(
@@ -166,11 +255,7 @@ fun MainApp() {
             isChecked = isDarkMode,
             toggleOnText = "Dark Mode",
             toggleOffText = "Light Mode",
-            route = "dark-mode",
-            onClick = {
-                isDarkMode = !isDarkMode
-                Log.d(TAG, "Dark mode toggled to: $isDarkMode")
-            }
+            onClick = { isDarkMode = !isDarkMode },
         )
 
         azMenuToggle(
@@ -178,11 +263,7 @@ fun MainApp() {
             isChecked = isDockingRight,
             toggleOnText = "Dock: Right",
             toggleOffText = "Dock: Left",
-            route = "docking-side",
-            onClick = {
-                isDockingRight = !isDockingRight
-                Log.d(TAG, "Docking side toggled to: ${if (isDockingRight) "Right" else "Left"}")
-            }
+            onClick = { isDockingRight = !isDockingRight },
         )
 
         azMenuToggle(
@@ -190,11 +271,7 @@ fun MainApp() {
             isChecked = noMenu,
             toggleOnText = "No Menu: On",
             toggleOffText = "No Menu: Off",
-            route = "no-menu",
-            onClick = {
-                noMenu = !noMenu
-                Log.d(TAG, "No Menu toggled to: $noMenu")
-            }
+            onClick = { noMenu = !noMenu },
         )
 
         azMenuToggle(
@@ -202,17 +279,10 @@ fun MainApp() {
             isChecked = usePhysicalDocking,
             toggleOnText = "Physical Dock: On",
             toggleOffText = "Physical Dock: Off",
-            route = "physical-docking",
-            onClick = {
-                usePhysicalDocking = !usePhysicalDocking
-                Log.d(TAG, "Physical Docking toggled to: $usePhysicalDocking")
-            }
+            onClick = { usePhysicalDocking = !usePhysicalDocking },
         )
 
-        azHelpRailItem(
-            id = "toggle-help",
-            text = "Help"
-        )
+        azHelpRailItem(id = "toggle-help", text = "Help")
 
         azDivider()
 
@@ -221,43 +291,35 @@ fun MainApp() {
             options = railCycleOptions,
             selectedOption = railSelectedOption,
             disabledOptions = listOf("C"),
-            route = "rail-cycler",
             onClick = {
-                val currentIndex = railCycleOptions.indexOf(railSelectedOption)
-                val nextIndex = (currentIndex + 1) % railCycleOptions.size
+                val nextIndex = (railCycleOptions.indexOf(railSelectedOption) + 1) % railCycleOptions.size
                 railSelectedOption = railCycleOptions[nextIndex]
-                Log.d(TAG, "Rail cycler clicked, new option: $railSelectedOption")
-            }
+            },
         )
 
         azMenuCycler(
             id = "menu-cycler",
             options = menuCycleOptions,
             selectedOption = menuSelectedOption,
-            route = "menu-cycler",
             onClick = {
-                val currentIndex = menuCycleOptions.indexOf(menuSelectedOption)
-                val nextIndex = (currentIndex + 1) % menuCycleOptions.size
+                val nextIndex = (menuCycleOptions.indexOf(menuSelectedOption) + 1) % menuCycleOptions.size
                 menuSelectedOption = menuCycleOptions[nextIndex]
-                Log.d(TAG, "Menu cycler clicked, new option: $menuSelectedOption")
-            }
+            },
         )
 
-
-        azRailItem(id = "loading", text = "Load", route = "loading", onClick = {
-            isLoading = !isLoading
-            Log.d(TAG, "Loading toggled to: $isLoading")
-        })
+        azRailItem(id = "loading", text = "Load", onClick = { isLoading = !isLoading })
 
         azDivider()
 
-        azMenuHostItem(id = "menu-host", text = "Menu Host", route = "menu-host", onClick = { Log.d(TAG, "Menu host item clicked") })
-        azMenuSubItem(id = "menu-sub-1", hostId = "menu-host", text = "Menu Sub 1", route = "menu-sub-1", onClick = { Log.d(TAG, "Menu sub item 1 clicked") })
-        azMenuSubItem(id = "menu-sub-2", hostId = "menu-host", text = "Menu Sub 2", route = "menu-sub-2", onClick = { Log.d(TAG, "Menu sub item 2 clicked") })
+        // Host + sub items
+        azMenuHostItem(id = "menu-host", text = "Menu Host", route = "menu-host")
+        azMenuSubItem(id = "menu-sub-1", hostId = "menu-host", text = "Menu Sub 1", route = "menu-sub-1")
+        azMenuSubItem(id = "menu-sub-2", hostId = "menu-host", text = "Menu Sub 2", route = "menu-sub-2")
+        azHelpSubItem(id = "menu-host-help", hostId = "menu-host", text = "Help")
 
-        azRailHostItem(id = "rail-host", text = "Rail Host", route = "rail-host", onClick = { Log.d(TAG, "Rail host item clicked") })
-        azRailSubItem(id = "rail-sub-1", hostId = "rail-host", text = "Rail Sub 1", route = "rail-sub-1", onClick = { Log.d(TAG, "Rail sub item 1 clicked") })
-        azMenuSubItem(id = "rail-sub-2", hostId = "rail-host", text = "Menu Sub 2", route = "rail-sub-2", onClick = { Log.d(TAG, "Menu sub item 2 (from rail host) clicked") })
+        azRailHostItem(id = "rail-host", text = "Rail Host", route = "rail-host")
+        azRailSubItem(id = "rail-sub-1", hostId = "rail-host", text = "Rail Sub 1", route = "rail-sub-1")
+        azMenuSubItem(id = "rail-sub-2", hostId = "rail-host", text = "Menu Sub 2", route = "rail-sub-2")
 
         azMenuSubToggle(
             id = "sub-toggle",
@@ -265,11 +327,7 @@ fun MainApp() {
             isChecked = isDarkMode,
             toggleOnText = "Sub Toggle On",
             toggleOffText = "Sub Toggle Off",
-            route = "sub-toggle",
-            onClick = {
-                isDarkMode = !isDarkMode
-                Log.d(TAG, "Sub toggle clicked, dark mode is now: $isDarkMode")
-            }
+            onClick = { isDarkMode = !isDarkMode },
         )
 
         azRailSubCycler(
@@ -277,275 +335,168 @@ fun MainApp() {
             hostId = "rail-host",
             options = menuCycleOptions,
             selectedOption = menuSelectedOption,
-            route = "sub-cycler",
             onClick = {
-                val currentIndex = menuCycleOptions.indexOf(menuSelectedOption)
-                val nextIndex = (currentIndex + 1) % menuCycleOptions.size
+                val nextIndex = (menuCycleOptions.indexOf(menuSelectedOption) + 1) % menuCycleOptions.size
                 menuSelectedOption = menuCycleOptions[nextIndex]
-                Log.d(TAG, "Sub cycler clicked, new option: $menuSelectedOption")
-            }
+            },
         )
 
-        // Reorderable Item Demo - Minimum 2 required!
+        // ---------- Hidden menu demo cluster ----------
         azRailRelocItem(
             id = "reloc-1",
             hostId = "rail-host",
-            text = "Reloc Item 1",
+            text = "Reloc 1",
+            info = "Hidden menu with three plain listItem callbacks.",
             onRelocate = { from, to, newOrder ->
-                Log.d(TAG, "Relocated item 1 from $from to $to. New order: $newOrder")
-            }
+                hiddenRelocateLog = "$from → $to → $newOrder"
+                relocOrder.clear(); relocOrder.addAll(newOrder)
+            },
         ) {
-            listItem(text = "Action 1", onClick = { Log.d(TAG, "Reloc 1 action clicked") })
+            listItem(text = "Rename") { hiddenLastAction = "reloc-1 → Rename" }
+            listItem(text = "Pin") { hiddenLastAction = "reloc-1 → Pin" }
+            listItem(text = "Open standalone widgets", route = "standalone-widgets")
         }
 
-        // Explicitly demonstrating AzRailRelocItem as an AzNestedRail parent
+        azRailRelocItem(
+            id = "reloc-2",
+            hostId = "rail-host",
+            text = "Reloc 2",
+            info = "Hidden menu mixes listItem + inputItem fields.",
+            onRelocate = { from, to, newOrder ->
+                hiddenRelocateLog = "$from → $to → $newOrder"
+                relocOrder.clear(); relocOrder.addAll(newOrder)
+            },
+        ) {
+            inputItem(hint = "Nickname") { hiddenInputs["nickname"] = it }
+            inputItem(hint = "Tag", initialValue = hiddenInputs["tag"] ?: "foo") { hiddenInputs["tag"] = it }
+            listItem(text = "Reset") { hiddenLastAction = "reloc-2 → Reset" }
+        }
+
         azRailRelocItem(
             id = "reloc-nested-parent",
             hostId = "rail-host",
             text = "Reloc + Nested",
             onRelocate = { from, to, newOrder ->
-                Log.d(TAG, "Relocated item 2 from $from to $to. New order: $newOrder")
+                hiddenRelocateLog = "$from → $to → $newOrder"
+                relocOrder.clear(); relocOrder.addAll(newOrder)
             },
-            nestedRailAlignment = AzNestedRailAlignment.HORIZONTAL, // Customize popup direction
+            nestedRailAlignment = AzNestedRailAlignment.HORIZONTAL,
             nestedContent = {
-                // This block defines the Nested Rail popup content
                 azRailItem("nested-tool-1", "Tool 1", onClick = { Log.d(TAG, "Tool 1 clicked") })
                 azRailItem("nested-tool-2", "Tool 2", onClick = { Log.d(TAG, "Tool 2 clicked") })
-            }
+            },
         ) {
-            // Hidden Menu is still available (fallback context actions)
-            listItem(text = "Remove", onClick = { Log.d(TAG, "Reloc Nested action clicked") })
+            listItem(text = "Remove") { hiddenLastAction = "reloc-nested-parent → Remove" }
         }
 
-        // Nested Rails do not get a route assigned to avoid navigation crashes when clicked to open!
+        // Nested rails (without routes to avoid nav crashes on tap)
         azNestedRail(
             id = "nested-rail",
             text = "Vertical Nested",
-            alignment = AzNestedRailAlignment.VERTICAL
+            alignment = AzNestedRailAlignment.VERTICAL,
         ) {
-            azRailItem(id = "nested-1", text = "Nested Item 1", route = "nested-1", info = "This is a nested item. Tap the card to expand it and read the full help text, demonstrating that nested items report bounds correctly!")
+            azRailItem(id = "nested-1", text = "Nested Item 1", route = "nested-1", info = "Nested item bounds report correctly for help.")
             azRailItem(id = "nested-2", text = "Nested Item 2", route = "nested-2")
-
-            // Example of using custom @Composable content in a nested item
             azRailItem(
                 id = "nested-custom",
                 text = "Size Slider",
-                content = com.hereliesaz.aznavrail.model.AzComposableContent { isEnabled ->
+                content = AzComposableContent { isEnabled ->
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .pointerInput(isEnabled) {
                                 if (isEnabled) {
-                                    detectVerticalDragGestures { change, _ ->
-                                        change.consume()
-                                    }
+                                    detectVerticalDragGestures { change, _ -> change.consume() }
                                 }
                             },
-                        contentAlignment = Alignment.Center
+                        contentAlignment = Alignment.Center,
                     ) {
                         Box(
                             modifier = Modifier
                                 .width(300.dp)
                                 .height(50.dp)
                                 .background(Color.Red),
-                            contentAlignment = Alignment.Center
+                            contentAlignment = Alignment.Center,
                         ) {
-                            Text("Wide Content (Should Clip)", color = if (isEnabled) Color.White else Color.Gray)
+                            Text(
+                                "Wide Content (Should Clip)",
+                                color = if (isEnabled) Color.White else Color.Gray,
+                            )
                         }
                     }
-                }
+                },
             )
         }
 
         azNestedRail(
             id = "nested-horizontal",
             text = "Horizontal Nested",
-            alignment = AzNestedRailAlignment.HORIZONTAL
+            alignment = AzNestedRailAlignment.HORIZONTAL,
         ) {
             azRailItem(id = "nested-h-1", text = "H-Item 1", route = "nested-h-1")
             azRailItem(id = "nested-h-2", text = "H-Item 2", route = "nested-h-2")
             azRailItem(id = "nested-h-3", text = "H-Item 3", route = "nested-h-3")
         }
 
-
-        // BACKGROUNDS
+        // ---------- Backgrounds ----------
         background(weight = 0) {
             Box(Modifier.fillMaxSize().background(Color(0xFFEEEEEE)))
         }
-
         background(weight = 10) {
             Box(Modifier.fillMaxSize().padding(50.dp).background(Color.Blue.copy(alpha = 0.1f))) {
                 Text("Background Layer (Weight 10)", color = Color.Blue)
             }
         }
 
-        // ONSCREEN COMPONENTS: Properly wrapped inside the onscreen DSL block!
+        // ---------- Onscreen + NavHost ----------
         onscreen(alignment = Alignment.TopStart) {
             Text("Aligned TopStart (Flips)", modifier = Modifier.padding(16.dp))
         }
-
         onscreen(alignment = Alignment.TopEnd) {
             Text("Aligned TopEnd (Flips)", modifier = Modifier.padding(16.dp))
         }
-
         onscreen(alignment = Alignment.Center) {
-            AzNavHost(startDestination = "home", navController = navController) {
-                composable("home") {
-                    Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
-                        // Uncontrolled AzTextBox with history context
-                        AzTextBox(
-                            modifier = Modifier.padding(bottom = 16.dp),
-                            hint = "Uncontrolled (History: Search)",
-                            historyContext = "search_history",
-                            onSubmit = { text ->
-                                Log.d(TAG, "Submitted text from uncontrolled AzTextBox: $text")
-                            },
-                            submitButtonContent = {
-                                Text("Go")
-                            }
-                        )
-
-                        // Controlled AzTextBox with a different history context
-                        var controlledText by remember { mutableStateOf("") }
-                        AzTextBox(
-                            modifier = Modifier.padding(bottom = 16.dp),
-                            value = controlledText,
-                            onValueChange = { controlledText = it },
-                            hint = "Controlled (History: Usernames)",
-                            historyContext = "username_history",
-                            onSubmit = { text ->
-                                Log.d(TAG, "Submitted text from controlled AzTextBox: $text")
-                            },
-                            submitButtonContent = {
-                                Text("Go")
-                            }
-                        )
-
-                        // AzTextBox with inverted outline
-                        AzTextBox(
-                            modifier = Modifier.padding(bottom = 16.dp),
-                            hint = "Uncontrolled (No Outline)",
-                            outlined = false,
-                            onSubmit = { text ->
-                                Log.d(TAG, "Submitted text from no-outline AzTextBox: $text")
-                            },
-                            submitButtonContent = {
-                                Text("Go")
-                            }
-                        )
-
-                        // Disabled AzTextBox
-                        AzTextBox(
-                            modifier = Modifier.padding(bottom = 16.dp),
-                            hint = "Disabled",
-                            enabled = false,
-                            onSubmit = { Log.d(TAG, "Submitted disabled") }
-                        )
-
-                        AzForm(
-                            formName = "loginForm",
-                            modifier = Modifier.padding(bottom = 16.dp),
-                            onSubmit = { formData ->
-                                Log.d(TAG, "Form submitted: $formData")
-                            },
-                            submitButtonContent = {
-                                Text("Login")
-                            }
-                        ) {
-                            entry(entryName = "username", hint = "Username")
-                            entry(entryName = "password", hint = "Password", secret = true)
-                            entry(entryName = "bio", hint = "Biography", multiline = true)
-                        }
-
-                        AzForm(
-                            formName = "registrationForm",
-                            outlined = false,
-                            onSubmit = { formData ->
-                                Log.d(TAG, "Registration Form submitted: $formData")
-                            },
-                            submitButtonContent = {
-                                Text("Register")
-                            }
-                        ) {
-                            entry(entryName = "email", hint = "Email", enabled = false)
-                            entry(entryName = "confirm_password", hint = "Confirm Password", secret = true)
-                        }
-
-                        Row {
-                            var buttonLoading by remember { mutableStateOf(false) }
-                            AzButton(
-                                onClick = {
-                                    Log.d(TAG, "Standalone AzButton clicked")
-                                    buttonLoading = !buttonLoading
-                                },
-                                text = "Button",
-                                shape = AzButtonShape.SQUARE,
-                                isLoading = buttonLoading,
-                                contentPadding = PaddingValues(16.dp)
-                            )
-
-                            AzButton(
-                                onClick = { Log.d(TAG, "Disabled clicked") },
-                                text = "Disabled",
-                                enabled = false
-                            )
-
-                            var isToggled by remember { mutableStateOf(false) }
-                            AzToggle(
-                                isChecked = isToggled,
-                                onToggle = { 
-                                    isToggled = !isToggled 
-                                    Log.d(TAG, "Standalone AzToggle toggled to: $isToggled")
-                                },
-                                toggleOnText = "On",
-                                toggleOffText = "Off",
-                                shape = AzButtonShape.RECTANGLE
-                            )
-                            val cyclerOptions = remember { listOf("1", "2", "3") }
-                            var selectedCyclerOption by remember { mutableStateOf(cyclerOptions.first()) }
-                            AzCycler(
-                                options = cyclerOptions,
-                                selectedOption = selectedCyclerOption,
-                                onCycle = {
-                                    val currentIndex = cyclerOptions.indexOf(selectedCyclerOption)
-                                    val nextIndex = (currentIndex + 1) % cyclerOptions.size
-                                    selectedCyclerOption = cyclerOptions[nextIndex]
-                                    Log.d(TAG, "Standalone AzCycler cycled to: $selectedCyclerOption")
-                                },
-                                shape = AzButtonShape.CIRCLE
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        AzRoller(
-                            options = listOf("Cherry", "Bell", "Bar", "Seven", "Diamond"),
-                            selectedOption = "Cherry",
-                            onOptionSelected = { Log.d(TAG, "Roller selected: $it") },
-                            hint = "Roller Select",
-                            enabled = true
-                        )
-                    }
+            AzNavHost(startDestination = "showcase-home", navController = navController) {
+                composable("showcase-home") {
+                    ShowcaseHomeScreen(onNavigate = { route -> navController.navigate(route) })
                 }
-                composable("multi-line") { ScreenContent("Multi-line Screen") }
+                composable("bottom-sheet") { BottomSheetDemoScreen() }
+                composable("tutorial") { TutorialDemoScreen() }
+                composable("fab-overlay") {
+                    FabOverlayDemoScreen(
+                        state = fabState,
+                        onToggleRailDrag = { fabState = fabState.copy(railDragEnabled = it) },
+                    )
+                }
+                composable("customization") {
+                    CustomizationDemoScreen(state = customization, onChange = { customization = it })
+                }
+                composable("help-system") {
+                    HelpSystemDemoScreen(state = helpSystem, onChange = { helpSystem = it })
+                }
+                composable("forms") { FormShowcaseScreen() }
+                composable("hidden-menus") {
+                    HiddenMenuDemoScreen(
+                        state = HiddenMenuDemoState(
+                            relocOrder = relocOrder.toList(),
+                            nicknameValue = hiddenInputs["nickname"].orEmpty(),
+                            tagValue = hiddenInputs["tag"].orEmpty(),
+                            lastAction = hiddenLastAction,
+                            relocateLog = hiddenRelocateLog,
+                        ),
+                    )
+                }
+                composable("standalone-widgets") { StandaloneWidgetsScreen() }
+                composable("legacy") { LegacyRailDemoScreen() }
+
+                // Preserved legacy routes so old menu/rail items still navigate.
                 composable("menu-host") { ScreenContent("Menu Host Screen") }
                 composable("menu-sub-1") { ScreenContent("Menu Sub 1 Screen") }
                 composable("menu-sub-2") { ScreenContent("Menu Sub 2 Screen") }
                 composable("rail-host") { ScreenContent("Rail Host Screen") }
                 composable("rail-sub-1") { ScreenContent("Rail Sub 1 Screen") }
                 composable("rail-sub-2") { ScreenContent("Rail Sub 2 Screen") }
-                composable("sub-toggle") { ScreenContent("Sub Toggle Screen") }
-                composable("sub-cycler") { ScreenContent("Sub Cycler Screen") }
-                composable("pack-rail") { ScreenContent("Pack Rail Screen") }
                 composable("profile") { ScreenContent("Profile Screen") }
-                composable("online") { ScreenContent("Online Screen") }
-                composable("dark-mode") { ScreenContent("Dark Mode Screen") }
-                composable("rail-cycler") { ScreenContent("Rail Cycler Screen") }
-                composable("menu-cycler") { ScreenContent("Menu Cycler Screen") }
-                composable("loading") { ScreenContent("Loading Screen") }
-                composable("physical-docking") { ScreenContent("Physical Docking Screen") }
-                composable("docking-side") { ScreenContent("Docking Side Screen") }
-                composable("no-menu") { ScreenContent("No Menu Screen") }
                 composable("nested-1") { ScreenContent("Nested Item 1 Screen") }
                 composable("nested-2") { ScreenContent("Nested Item 2 Screen") }
                 composable("nested-h-1") { ScreenContent("H-Item 1 Screen") }
@@ -558,7 +509,6 @@ fun MainApp() {
 
 @Composable
 fun ScreenContent(text: String) {
-    Log.d("SampleApp", "ScreenContent rendered with text: $text")
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(text)
     }

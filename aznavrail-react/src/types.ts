@@ -453,6 +453,56 @@ export interface HiddenMenuScope {
   inputItem(hint: string, initialValue: string, onValueChange: (value: string) => void): void;
 }
 
+/**
+ * Discrete heights an `<AzBottomSheet>` can settle at, mirroring the four-detent
+ * model ported from the Android library's `LogKitty`-style sheet.
+ */
+export enum AzSheetDetent {
+  /** A thin, near-invisible strip that swallows a drag-up gesture but lets touches pass otherwise. */
+  HIDDEN = 'HIDDEN',
+  /** A short ticker-height strip showing a single line of content. */
+  PEEK = 'PEEK',
+  /** Roughly half the parent height (tuned via `halfFraction`). */
+  HALF = 'HALF',
+  /** Nearly full parent height (tuned via `fullFraction`). */
+  FULL = 'FULL',
+}
+
+/**
+ * Static configuration for an `<AzBottomSheet>`. All values have defaults matching the
+ * Android `AzSheetConfig`; override individually to tune for your context.
+ */
+export interface AzSheetConfig {
+  /** Sheet background colour. Defaults to the platform surface colour. */
+  backgroundColor?: string;
+  /** Alpha blended over `backgroundColor`. Defaults to `0.92`. */
+  backgroundAlpha?: number;
+  /** Colour of the dim layer painted under the sheet at HALF/FULL detents. Defaults to black. */
+  scrimColor?: string;
+  /** Alpha of the scrim at HALF/FULL detents. Defaults to `0.32`. */
+  scrimAlpha?: number;
+  /** Touch-target height of the invisible drag strip at HIDDEN detent, in dp. Defaults to `14`. */
+  hiddenStripDp?: number;
+  /** Height of the PEEK detent, in dp. Defaults to `56`. */
+  peekDp?: number;
+  /** Fraction of total height for HALF detent. Defaults to `0.5`. */
+  halfFraction?: number;
+  /** Fraction of total height for FULL detent. Defaults to `0.9`. */
+  fullFraction?: number;
+  /** Cumulative vertical drag distance needed to advance one detent, in dp. Defaults to `24`. */
+  dragThresholdDp?: number;
+  /** When true, the system back gesture steps the sheet down rather than dismissing the screen. Defaults to `true`. */
+  collapseOnBack?: boolean;
+  /** When true, horizontal swipes on the header fire `onSwipeLeft`/`onSwipeRight`. Defaults to `false`. */
+  horizontalSwipeEnabled?: boolean;
+  /** When true, detent transitions animate. Defaults to `true`. */
+  animateInTree?: boolean;
+  /** Top-corner radius of the sheet card, in dp. Defaults to `16`. */
+  cornerRadiusDp?: number;
+  /** When true, draws a centred pill drag-handle at the top of the sheet. Defaults to `true`. */
+  handleVisible?: boolean;
+}
+
 /** Partial configuration used by the DSL builder helpers to construct an `AzNavItem`. */
 export interface AzItemConfig {
   /** Navigation route string. */
