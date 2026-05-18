@@ -1,5 +1,4 @@
-// FILE: ./SampleApp/src/main/java/com/example/sampleapp/MainActivity.kt
-package com.example.sampleapp
+package com.hereliesaz.SampleApp
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity

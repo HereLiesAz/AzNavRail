@@ -1,5 +1,4 @@
-// FILE: ./SampleApp/src/main/java/com/example/sampleapp/MainApp.kt
-package com.example.sampleapp
+package com.hereliesaz.SampleApp
 
 import android.util.Log
 import androidx.compose.foundation.background
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
@@ -50,6 +48,7 @@ fun MainApp() {
 
     // Set the global suggestion limit for all AzTextBox instances
     LaunchedEffect(Unit) {
+        Log.d(TAG, "Initializing SampleApp: Setting suggestion limit to 3")
         AzTextBoxDefaults.setSuggestionLimit(3)
     }
 
@@ -84,7 +83,10 @@ fun MainApp() {
             isLoading = isLoading,
             enableRailDragging = true, // Keeps FAB mode enabled (in-app floating)
             helpEnabled = showHelp,
-            onDismissHelp = { showHelp = false },
+            onDismissHelp = { 
+                Log.d(TAG, "Help dismissed")
+                showHelp = false 
+            },
             helpList = mapOf(
                 "home" to "This is a test helpList text!",
                 "nested-1" to "Nested helpList entries work too!"
@@ -491,7 +493,10 @@ fun MainApp() {
                             var isToggled by remember { mutableStateOf(false) }
                             AzToggle(
                                 isChecked = isToggled,
-                                onToggle = { isToggled = !isToggled },
+                                onToggle = { 
+                                    isToggled = !isToggled 
+                                    Log.d(TAG, "Standalone AzToggle toggled to: $isToggled")
+                                },
                                 toggleOnText = "On",
                                 toggleOffText = "Off",
                                 shape = AzButtonShape.RECTANGLE
@@ -505,6 +510,7 @@ fun MainApp() {
                                     val currentIndex = cyclerOptions.indexOf(selectedCyclerOption)
                                     val nextIndex = (currentIndex + 1) % cyclerOptions.size
                                     selectedCyclerOption = cyclerOptions[nextIndex]
+                                    Log.d(TAG, "Standalone AzCycler cycled to: $selectedCyclerOption")
                                 },
                                 shape = AzButtonShape.CIRCLE
                             )
@@ -552,6 +558,7 @@ fun MainApp() {
 
 @Composable
 fun ScreenContent(text: String) {
+    Log.d("SampleApp", "ScreenContent rendered with text: $text")
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(text)
     }

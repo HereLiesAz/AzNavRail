@@ -26,7 +26,12 @@
       "Bash(/tmp/npm-ts/bin/tsc --noEmit)",
       "Bash(/tmp/npm-ts/bin/tsc --noEmit -p /run/media/az/0722-7C65/AzNavRail/aznavrail-react/tsconfig.json)",
       "Bash(npx jest *)",
-      "Bash(./node_modules/.bin/tsc --noEmit)"
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Skill(superpowers:brainstorming)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(curl *)"
     ]
   }
 }
