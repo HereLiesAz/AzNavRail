@@ -34,6 +34,7 @@ import CustomizationDemo, {
   DEMO_CLASSIFIERS,
 } from './screens/CustomizationDemo'
 import FormDemo from './screens/FormDemo'
+import HelpSystemDemo from './screens/HelpSystemDemo'
 import LegacyPlayground from './screens/LegacyPlayground'
 
 function App() {
@@ -51,6 +52,7 @@ function App() {
   const [isDockingRight, setIsDockingRight] = useState(false)
   const [noMenu, setNoMenu] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
+  const [dismissCount, setDismissCount] = useState(0)
   const [usePhysicalDocking, setUsePhysicalDocking] = useState(false)
 
   // Customization (lives at host scope so the rail re-renders live)
@@ -88,7 +90,10 @@ function App() {
       appRepositoryUrl={customization.appRepositoryUrl}
       vibrate={customization.vibrate}
       activeClassifiers={customization.activeClassifiers}
-      onDismissInfoScreen={() => setShowHelp(false)}
+      onDismissInfoScreen={() => {
+        setShowHelp(false)
+        setDismissCount((n) => n + 1)
+      }}
       helpList={{
         home: 'Showcase home — links to each demo screen.',
         'bottom-sheet': 'AzBottomSheet + AzSheetController demo.',
@@ -106,6 +111,7 @@ function App() {
       <AzMenuItem id="standalone" text="Standalone Widgets" route="standalone" info="AzButton/Toggle/Cycler at every shape, AzLoad, AzRoller." onClick={() => navigate('/standalone')} />
       <AzMenuItem id="customization" text="Customization" route="customization" info="Live theme controls." onClick={() => navigate('/customization')} />
       <AzMenuItem id="forms" text="Forms" route="forms" info="AzForm + AzTextBox showcase." onClick={() => navigate('/forms')} />
+      <AzMenuItem id="help-system" text="Help System" route="help-system" info="screenTitle, info, classifiers, helpList." classifiers={new Set(['focus'])} onClick={() => navigate('/help-system')} />
       <AzMenuItem id="legacy" text="Rail Playground" route="legacy" info="The original rail demos." onClick={() => navigate('/legacy')} />
 
       <AzDivider />
