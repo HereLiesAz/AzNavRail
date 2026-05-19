@@ -16,3 +16,9 @@ export * from './components/AzFloatingRail';
 export * from './components/useAzSheetController';
 export * from './types';
 export { AzHelpRailItem, AzHelpSubItem } from './AzNavRailScope';
+export {
+  AzTutorialContext,
+  AzTutorialProvider,
+  useAzTutorialController,
+} from './tutorial/AzTutorialController';
+export type { AzTutorialController } from './tutorial/AzTutorialController';

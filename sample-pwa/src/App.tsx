@@ -35,6 +35,7 @@ import CustomizationDemo, {
 } from './screens/CustomizationDemo'
 import FormDemo from './screens/FormDemo'
 import HelpSystemDemo from './screens/HelpSystemDemo'
+import TutorialDemo from './screens/TutorialDemo'
 import LegacyPlayground from './screens/LegacyPlayground'
 
 function App() {
@@ -112,6 +113,7 @@ function App() {
       <AzMenuItem id="customization" text="Customization" route="customization" info="Live theme controls." onClick={() => navigate('/customization')} />
       <AzMenuItem id="forms" text="Forms" route="forms" info="AzForm + AzTextBox showcase." onClick={() => navigate('/forms')} />
       <AzMenuItem id="help-system" text="Help System" route="help-system" info="screenTitle, info, classifiers, helpList." classifiers={new Set(['focus'])} onClick={() => navigate('/help-system')} />
+      <AzMenuItem id="tutorial" text="Tutorials" route="tutorial" info="AzTutorial DSL — every advance condition + highlight." classifiers={new Set(['advanced'])} onClick={() => navigate('/tutorial')} />
       <AzMenuItem id="legacy" text="Rail Playground" route="legacy" info="The original rail demos." onClick={() => navigate('/legacy')} />
 
       <AzDivider />
@@ -342,6 +344,7 @@ function App() {
                 />
               }
             />
+            <Route path="/tutorial" element={<TutorialDemo />} />
             <Route path="/legacy" element={<LegacyPlayground />} />
             <Route path="*" element={<LegacyPlayground />} />
           </Routes>

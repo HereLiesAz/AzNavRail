@@ -35,7 +35,16 @@
       "Bash(rsync -a --exclude node_modules --exclude lib --exclude .git /run/media/az/0722-7C65/AzNavRail/aznavrail-react/ /tmp/aznavrail-react-final/)",
       "Read(//tmp/**)",
       "Bash(node node_modules/jest/bin/jest.js src/__tests__/AzBottomSheet.test.tsx src/__tests__/AzTutorialController.test.tsx src/__tests__/HistoryManager.test.ts src/__tests__/AzNavRailSettings.test.tsx src/__tests__/HelpOverlaySmoke.test.tsx)",
-      "Bash(node node_modules/jest/bin/jest.js)"
+      "Bash(node node_modules/jest/bin/jest.js)",
+      "Bash(rsync -a --exclude node_modules --exclude dist --exclude .git /run/media/az/0722-7C65/AzNavRail/sample-pwa/ /tmp/sample-pwa-final/)",
+      "Bash(sed -i 's|file:../aznavrail-react|file:/tmp/aznavrail-react-final|' package.json)",
+      "Bash(grep -E \"^\\(aznavrail_tsx\\\\.txt|backup\\\\.ps1|Benchmark\\\\.kt|benchmark_out\\\\.txt|parse_issues\\\\.py|patch_.*|run_benchmark\\\\.sh|plan\\\\.md\\)$\")",
+      "Bash(cp /run/media/az/0722-7C65/AzNavRail/sample-pwa/vite.config.ts ./vite.config.ts)",
+      "Bash(VITE_BASE=/AzNavRail/ npm run build)",
+      "Bash(node node_modules/.bin/bob build)",
+      "Bash(node node_modules/typescript/bin/tsc -p tsconfig.build.json --emitDeclarationOnly --noEmitOnError false --skipLibCheck)",
+      "Bash(node node_modules/jest/bin/jest.js --testPathPattern=\"\\(AzBottomSheet|AzTutorialController|HistoryManager|AzNavRailSettings|HelpOverlaySmoke\\)\")",
+      "Bash(grep -E \"\\\\.\\(ps1|sh\\)$|yarn\\\\.lock\")"
     ]
   }
 }
