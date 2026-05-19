@@ -79,6 +79,22 @@ internal fun HelpOverlay(
     val cardBoundsCache = remember { mutableStateMapOf<String, Rect>() }
     var expandedItemId by remember { mutableStateOf<String?>(null) }
 
+    // Overlay viewport in window coordinates, set from onGloballyPositioned on the root Box.
+    // Used to filter out rail items that have been scrolled out of the visible area: their help
+    // card and connecting line should be suppressed entirely. Help cards that are themselves
+    // scrolled offscreen keep updating their bounds via the card's own onGloballyPositioned, so
+    // the line endpoint follows the card's logical position even when the card is offscreen.
+    var overlayBounds by remember { mutableStateOf(Rect.Zero) }
+
+    fun isRailItemOnscreen(item: AzNavItem): Boolean {
+        val rb = itemBoundsCache[item.id] ?: return false
+        if (rb.width <= 0f || rb.height <= 0f) return false
+        if (overlayBounds == Rect.Zero) return true
+        return rb.overlaps(overlayBounds)
+    }
+
+    val visibleItemsWithInfo = itemsWithInfo.filter(::isRailItemOnscreen)
+
     // Calculate dynamic padding to avoid overlapping nested rails
     val isNestedRailOpen = nestedRailOpenId != null
     val dynamicStartPadding = if (isNestedRailOpen) 240.dp else 120.dp
@@ -88,17 +104,22 @@ internal fun HelpOverlay(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .onGloballyPositioned { overlayBounds = it.boundsInWindow() }
             .background(Color.Black.copy(alpha = 0.7f))
             .clickable(onClick = onDismiss) // Background tap to dismiss
             .drawBehind {
                 val strokeWidth = 4.dp
 
-                itemsWithInfo.forEachIndexed { index, item ->
+                visibleItemsWithInfo.forEachIndexed { index, item ->
                     val drawColor = colorPalette[index % colorPalette.size]
                     val itemBounds = itemBoundsCache[item.id]
                     val cardBounds = cardBoundsCache[item.id]
 
                     if (itemBounds != null && cardBounds != null) {
+                        // Endpoints are in window coordinates. Even when the card is scrolled
+                        // outside the viewport its bounds keep updating via onGloballyPositioned,
+                        // so the connector line continues to follow the card's logical position;
+                        // Compose clips the portion of the line outside the overlay box.
                         val start = Offset(itemBounds.right, itemBounds.center.y)
                         val end = Offset(cardBounds.left, cardBounds.center.y)
 
@@ -121,7 +142,7 @@ internal fun HelpOverlay(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Spacer(modifier = Modifier.height(16.dp)) // Equivalent to top contentPadding
-            itemsWithInfo.forEachIndexed { index, item ->
+            visibleItemsWithInfo.forEachIndexed { index, item ->
                 val isExpanded = expandedItemId == item.id
                 val hasTutorial = tutorials.containsKey(item.id)
                 val cardColor = colorPalette[index % colorPalette.size]
