@@ -4,10 +4,13 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,11 +48,14 @@ import com.hereliesaz.SampleApp.screens.TutorialDemoScreen
 import com.hereliesaz.aznavrail.AzHostActivityLayout
 import com.hereliesaz.aznavrail.AzNavHost
 import com.hereliesaz.aznavrail.AzTextBoxDefaults
+import com.hereliesaz.aznavrail.bottomsheet.rememberAzSheetController
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzComposableContent
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
+import com.hereliesaz.aznavrail.model.AzSheetConfig
+import com.hereliesaz.aznavrail.model.AzSheetDetent
 
 private const val TAG = "SampleApp"
 
@@ -100,12 +106,22 @@ fun MainApp() {
     }
 
     // Help system state — drives azAdvanced(helpEnabled, helpList) and azConfig(activeClassifiers).
-    var helpSystem by remember { mutableStateOf(HelpSystemState(helpEnabled = false, activeClassifiers = emptySet())) }
+    var helpSystem by remember { mutableStateOf(HelpSystemState(autoInjectHelpEnabled = false, activeClassifiers = emptySet(), dismissCount = 0)) }
 
     // FAB / overlay screen state.
     var fabState by remember {
         mutableStateOf(FabOverlayState(railDragEnabled = true, railLog = "(no drag yet)", overlayDragLog = "(no drag yet)", undockedCount = 0))
     }
+
+    // Bottom-sheet demo: controller + live AzSheetConfig owned at host scope so the
+    // DSL-registered azBottomSheet draws above the rail/menu and respects nav-bar insets.
+    val sheetController = rememberAzSheetController(initial = AzSheetDetent.PEEK)
+    var horizontalSwipeEnabled by remember { mutableStateOf(true) }
+    var collapseOnBack by remember { mutableStateOf(true) }
+    var handleVisible by remember { mutableStateOf(true) }
+    var animateInTree by remember { mutableStateOf(true) }
+    var sheetSwipeLog by remember { mutableStateOf("(no swipes yet)") }
+    var sheetSwipeCount by remember { mutableStateOf(0) }
 
     // Hidden menu screen state.
     val relocOrder = remember { mutableStateListOf("reloc-1", "reloc-2", "reloc-nested-parent") }
@@ -147,11 +163,12 @@ fun MainApp() {
         azAdvanced(
             isLoading = isLoading,
             enableRailDragging = fabState.railDragEnabled,
-            helpEnabled = helpSystem.helpEnabled,
+            helpEnabled = helpSystem.autoInjectHelpEnabled,
             onDismissHelp = {
                 Log.d(TAG, "Help dismissed")
-                helpSystem = helpSystem.copy(helpEnabled = false)
+                helpSystem = helpSystem.copy(dismissCount = helpSystem.dismissCount + 1)
             },
+            overlayService = SampleOverlayService::class.java,
             onRailDrag = { x, y ->
                 fabState = fabState.copy(railLog = "rail dx=${"%.1f".format(x)} dy=${"%.1f".format(y)}")
             },
@@ -438,6 +455,31 @@ fun MainApp() {
             azRailItem(id = "nested-h-3", text = "H-Item 3", route = "nested-h-3")
         }
 
+        // ---------- Host-registered bottom sheet (azBottomSheet DSL) ----------
+        // Only register when on the bottom-sheet route. The DSL form draws above the rail/menu
+        // and respects the system navigation-bar inset, unlike a sheet placed inside screen content.
+        if (currentDestination == "bottom-sheet") {
+            azBottomSheet(
+                controller = sheetController,
+                config = AzSheetConfig(
+                    horizontalSwipeEnabled = horizontalSwipeEnabled,
+                    collapseOnBack = collapseOnBack,
+                    handleVisible = handleVisible,
+                    animateInTree = animateInTree,
+                ),
+                onSwipeLeft = {
+                    sheetSwipeCount++
+                    sheetSwipeLog = "left @ ${System.currentTimeMillis() % 100000}"
+                },
+                onSwipeRight = {
+                    sheetSwipeCount++
+                    sheetSwipeLog = "right @ ${System.currentTimeMillis() % 100000}"
+                },
+            ) {
+                BottomSheetBody(sheetController.detent)
+            }
+        }
+
         // ---------- Backgrounds ----------
         background(weight = 0) {
             Box(Modifier.fillMaxSize().background(Color(0xFFEEEEEE)))
@@ -460,7 +502,21 @@ fun MainApp() {
                 composable("showcase-home") {
                     ShowcaseHomeScreen(onNavigate = { route -> navController.navigate(route) })
                 }
-                composable("bottom-sheet") { BottomSheetDemoScreen() }
+                composable("bottom-sheet") {
+                    BottomSheetDemoScreen(
+                        controller = sheetController,
+                        horizontalSwipeEnabled = horizontalSwipeEnabled,
+                        onHorizontalSwipeChange = { horizontalSwipeEnabled = it },
+                        collapseOnBack = collapseOnBack,
+                        onCollapseOnBackChange = { collapseOnBack = it },
+                        handleVisible = handleVisible,
+                        onHandleVisibleChange = { handleVisible = it },
+                        animateInTree = animateInTree,
+                        onAnimateInTreeChange = { animateInTree = it },
+                        swipeCount = sheetSwipeCount,
+                        swipeLog = sheetSwipeLog,
+                    )
+                }
                 composable("tutorial") { TutorialDemoScreen() }
                 composable("fab-overlay") {
                     FabOverlayDemoScreen(
@@ -511,5 +567,23 @@ fun MainApp() {
 fun ScreenContent(text: String) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(text)
+    }
+}
+
+@Composable
+private fun BottomSheetBody(detent: AzSheetDetent) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+    ) {
+        Text("Sheet contents", style = MaterialTheme.typography.titleMedium)
+        Text("Current detent: $detent", style = MaterialTheme.typography.bodyMedium)
+        Text("Drag the handle up/down to step through detents. Each gesture advances exactly one step.")
+        Text("Toggle horizontal swipe in the panel to fire onSwipeLeft / onSwipeRight on header drag.")
+        repeat(30) { i ->
+            Text("Line ${i + 1} — body scrolls independently when sheet is at HALF or FULL.")
+        }
     }
 }

@@ -100,6 +100,17 @@ internal fun AzBottomSheetShell(
             Modifier
         }
 
+        // At HIDDEN, tap on the strip reveals PEEK. This makes the affordance work for users
+        // whose first instinct is to tap rather than drag.
+        val hiddenTapMod = if (controller.detent == AzSheetDetent.HIDDEN) {
+            Modifier.clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) { controller.stepUp() }
+        } else {
+            Modifier
+        }
+
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -109,13 +120,18 @@ internal fun AzBottomSheetShell(
                 .background(sheetColor)
                 .azSheetVerticalDrag(controller, density, config.dragThresholdDp)
                 .then(swipeMod)
+                .then(hiddenTapMod)
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                if (config.handleVisible && controller.detent != AzSheetDetent.HIDDEN) {
+                if (config.handleVisible) {
+                    // Always render the handle when configured visible — including at HIDDEN —
+                    // so the swipe-up affordance is discoverable. The handle dims at HIDDEN to
+                    // match the "near-invisible strip" intent without becoming untouchable.
+                    val isHidden = controller.detent == AzSheetDetent.HIDDEN
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(20.dp)
+                            .height(if (isHidden) 14.dp else 20.dp)
                             .wrapContentHeight(Alignment.CenterVertically),
                         contentAlignment = Alignment.Center,
                     ) {
@@ -124,7 +140,11 @@ internal fun AzBottomSheetShell(
                                 .width(36.dp)
                                 .height(4.dp)
                                 .clip(RoundedCornerShape(2.dp))
-                                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.32f))
+                                .background(
+                                    MaterialTheme.colorScheme.onSurface.copy(
+                                        alpha = if (isHidden) 0.20f else 0.32f
+                                    )
+                                )
                         )
                     }
                 }
