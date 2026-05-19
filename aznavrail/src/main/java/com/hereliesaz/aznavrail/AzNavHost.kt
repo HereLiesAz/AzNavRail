@@ -143,7 +143,7 @@ class AzNavHostScopeImpl(
     private val railScope: AzNavRailScopeImpl = AzNavRailScopeImpl()
 ) : AzNavHostScope, AzNavRailScope by railScope {
     private var _navController: NavHostController? = null
-    override val navController: NavHostController get() = _navController ?: error("NavController not initialized.")
+    override val navController: NavHostController get() = _navController ?: error("AzNavHostScope.navController was read before the host's NavController was attached. This getter is only safe inside composables that run AFTER `AzHostActivityLayout` has built its `NavHost` (eg. inside `onscreen { ... }`, `background { ... }`, or button `onClick` lambdas). Fix: do not access `navController` from inside the `azRailContent { ... }` declaration block itself, nor from `init`/eager code -- defer the call into a composable body or an `onClick`; or, if you are writing a custom host, call `setController(yourNavController)` on this scope before reading `navController`.")
     override val dockingSide: AzDockingSide get() = railScope.dockingSide
 
     val backgrounds = mutableStateListOf<AzBackgroundItem>()

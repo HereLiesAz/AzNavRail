@@ -265,12 +265,12 @@ controller.fireEvent('menu_opened');
 
 ## Bottom Sheet
 
-The `azBottomSheet` DSL registers a four-detent bottom sheet that draws above the rail, the menu, and the `onscreen` area while staying inside `WindowInsets.navigationBars` so the system navigation bar remains visible. It is **not** a `background()` — it sits at the top z-layer of `AzHostActivityLayout`.
+The `azBottomSheet` DSL registers a four-detent bottom sheet that draws above the rail, the menu, and the `onscreen` area, spans the full screen width, and extends all the way to the bottom of the screen — so the HIDDEN-detent strip is reachable from the system-navigation-bar edge for a swipe-up reveal. It is **not** a `background()`; it sits at the top z-layer of `AzHostActivityLayout` (via `Modifier.zIndex(2f)`). If your sheet body needs to clear the system nav bar visually, pad inside your `content` lambda or use `AzBottomSheetInsetAware` directly outside the DSL.
 
 The shell was ported from [LogKitty](https://github.com/HereLiesAz/LogKitty); its detents, drag accumulator, and controller API are preserved verbatim so LogKitty can swap its custom sheet for `AzBottomSheetWindowHost` with no observable behavior change.
 
 ### Detents
-- `AzSheetDetent.HIDDEN` — thin (configurable, default 14dp) swipe strip; lets touches pass through to underlying content.
+- `AzSheetDetent.HIDDEN` — thin swipe strip (configurable, default **28dp**). Stays visible with a dimmed drag-handle pill and accepts a **tap** that steps up to PEEK in addition to the swipe-up gesture, so the affordance is discoverable.
 - `AzSheetDetent.PEEK` — single-line ticker (configurable, default 56dp).
 - `AzSheetDetent.HALF` — ~50% of the available height (configurable via `halfFraction`).
 - `AzSheetDetent.FULL` — ~90% of the available height (configurable via `fullFraction`).

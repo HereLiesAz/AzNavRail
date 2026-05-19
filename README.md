@@ -693,10 +693,10 @@ See [`docs/TUTORIAL_FRAMEWORK_REFERENCE.md`](docs/TUTORIAL_FRAMEWORK_PROPOSAL.md
 
 ## Bottom Sheets
 
-AzNavRail ships a four-detent bottom-sheet shell ported from [LogKitty](https://github.com/HereLiesAz/LogKitty). One DSL line registers it inside `AzHostActivityLayout`; the sheet draws above the rail, the menu, and the `onscreen` area, while staying inside `WindowInsets.navigationBars` so the system navigation bar remains visible. It is *not* a `background()`.
+AzNavRail ships a four-detent bottom-sheet shell ported from [LogKitty](https://github.com/HereLiesAz/LogKitty). One DSL line registers it inside `AzHostActivityLayout`; the sheet draws above the rail, above the menu, and above the `onscreen` area, spans the full screen width edge-to-edge, and **extends all the way to the bottom of the screen** so the HIDDEN-detent touch strip is reachable from the system-navigation-bar edge — a swipe-up from the gesture/nav-bar area reveals it. It is *not* a `background()`.
 
 ```kotlin
-val sheetController = rememberAzSheetController()
+val sheetController = rememberAzSheetController(initial = AzSheetDetent.PEEK)
 
 AzHostActivityLayout(navController = nav, currentDestination = currentRoute) {
     azConfig(dockingSide = AzDockingSide.LEFT)
@@ -712,6 +712,21 @@ AzHostActivityLayout(navController = nav, currentDestination = currentRoute) {
 }
 ```
 
-Detents — `HIDDEN`, `PEEK`, `HALF`, `FULL` — and the accumulated-delta drag gesture mirror LogKitty exactly. For Service-hosted overlays (LogKitty's use case), use the `AzBottomSheetWindowHost` flavor; both flavors share state, theming, and gesture handling so the visual is identical.
+Detents — `HIDDEN`, `PEEK`, `HALF`, `FULL` — and the accumulated-delta drag gesture mirror LogKitty exactly. At HIDDEN, the strip stays visible with a dimmed drag-handle (28dp tall by default) and **tapping the strip steps up to PEEK** in addition to the swipe-up gesture. If your sheet body needs to clear the system nav bar visually, pad inside your `content` lambda or use `AzBottomSheetInsetAware` directly outside the DSL. For Service-hosted overlays (LogKitty's use case), use the `AzBottomSheetWindowHost` flavor; both flavors share state, theming, and gesture handling so the visual is identical.
 
 See [`docs/DSL.md`](docs/DSL.md), [`docs/API.md`](docs/API.md), and [`docs/AZNAVRAIL_COMPLETE_GUIDE.md`](docs/AZNAVRAIL_COMPLETE_GUIDE.md) for the full reference, and [`docs/MIGRATION_GUIDE.md`](docs/MIGRATION_GUIDE.md) for the LogKitty migration recipe.
+
+## Reorderable Items — persistence
+
+`azRailRelocItem` items remember the order the user dragged them into for the lifetime of the host activity. The library stores per-host orderings in `AzNavRailScopeImpl.savedRelocOrders` and re-applies them after every recomposition (the DSL block is re-evaluated on each composition, so without this layer the original declaration order would always win). The `onRelocate(from, to, newOrder)` callback still fires on drop so you can persist the order externally (DataStore, room, etc.) and seed your DSL with the same arrangement on next launch.
+
+## Help Overlay — scoping & rendering
+
+The interactive help overlay is **scoped to where it was triggered from**: tap `azHelpRailItem` in the main rail → cards for main-rail items; tap `azHelpRailItem`/`azHelpSubItem` inside an `azNestedRail` block → cards only for that nested rail's children. Cards whose rail item is currently off-screen (scrolled out of the rail's own scroll area, in a collapsed menu, or in a closed nested popup) are suppressed entirely — line, card, and all. The library tracks bounds via per-item `DisposableEffect` so the cache reflects "what's currently on screen", not "what was ever on screen". Connector lines update in real-time as the user scrolls either the rail or the cards Column.
+
+## Sample app & PWA
+
+The repo ships two showcase apps:
+
+- **`SampleApp/`** — Android `MainActivity` that demonstrates every public capability: rail/menu items at every shape, both nested rail alignments, reloc items with `keepNestedRailOpen`, live theming, help overlay, tutorials, FAB-mode rail drag with `AzNavRailSimpleOverlayService`, bottom sheets, forms. See `SampleApp/COVERAGE.md` for the symbol-by-symbol audit.
+- **`sample-pwa/`** — Vite + React + react-native-web showcase deployed to GitHub Pages at **<https://HereLiesAz.github.io/AzNavRail/>** via `.github/workflows/jekyll-gh-pages.yml`. Demonstrates the React port's bottom sheet, shape options, both nested alignments, and the help overlay.

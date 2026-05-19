@@ -594,6 +594,7 @@ fun AzNavRail(
                                             scope.itemBoundsCache[id] = bounds
                                             scope.advancedConfig.onItemGloballyPositioned?.invoke(id, bounds)
                                         },
+                                        onBoundsCleared = { id -> scope.itemBoundsCache.remove(id) },
                                         helpEnabled = showHelpOverlay,
                                         activeColor = scope.activeColor
                                     )
@@ -621,6 +622,7 @@ fun AzNavRail(
                                                         scope.itemBoundsCache[id] = bounds
                                                         scope.advancedConfig.onItemGloballyPositioned?.invoke(id, bounds)
                                                     },
+                                                    onBoundsCleared = { id -> scope.itemBoundsCache.remove(id) },
                                                     helpEnabled = showHelpOverlay,
                                                     activeColor = scope.activeColor
                                                 )

@@ -65,7 +65,16 @@ const useAzItem = (item: AzNavItem) => {
 
 // --- Component Wrappers ---
 
-/** Declares a standard button item that appears in the collapsed rail (icon) view. */
+/**
+ * Declares a standard button item that appears in the collapsed rail (icon) view.
+ *
+ * @example
+ * ```tsx
+ * <AzNavRail>
+ *   <AzRailItem id="home" text="Home" onClick={() => nav.push('/home')} />
+ * </AzNavRail>
+ * ```
+ */
 export const AzRailItem: React.FC<AzNavItemProps> = (props) => {
   useAzItem({
     ...props,
@@ -85,7 +94,16 @@ export const AzRailItem: React.FC<AzNavItemProps> = (props) => {
   return null;
 };
 
-/** Declares a standard button item that appears only in the expanded menu, not the collapsed rail. */
+/**
+ * Declares a standard button item that appears only in the expanded menu, not the collapsed rail.
+ *
+ * @example
+ * ```tsx
+ * <AzNavRail>
+ *   <AzMenuItem id="settings" text="Settings" onClick={openSettings} />
+ * </AzNavRail>
+ * ```
+ */
 export const AzMenuItem: React.FC<AzNavItemProps> = (props) => {
   useAzItem({
     ...props,
@@ -105,7 +123,21 @@ export const AzMenuItem: React.FC<AzNavItemProps> = (props) => {
   return null;
 };
 
-/** Declares a two-state toggle button visible in the collapsed rail. */
+/**
+ * Declares a two-state toggle button visible in the collapsed rail.
+ *
+ * @example
+ * ```tsx
+ * <AzRailToggle
+ *   id="dark"
+ *   text="Theme"
+ *   isChecked={isDark}
+ *   toggleOnText="Dark"
+ *   toggleOffText="Light"
+ *   onClick={() => setIsDark(v => !v)}
+ * />
+ * ```
+ */
 export const AzRailToggle: React.FC<AzToggleProps> = (props) => {
   useAzItem({
     ...props,
@@ -123,7 +155,21 @@ export const AzRailToggle: React.FC<AzToggleProps> = (props) => {
   return null;
 };
 
-/** Declares a two-state toggle button visible only in the expanded menu. */
+/**
+ * Declares a two-state toggle button visible only in the expanded menu.
+ *
+ * @example
+ * ```tsx
+ * <AzMenuToggle
+ *   id="notif"
+ *   text="Notifications"
+ *   isChecked={notifOn}
+ *   toggleOnText="On"
+ *   toggleOffText="Off"
+ *   onClick={toggleNotif}
+ * />
+ * ```
+ */
 export const AzMenuToggle: React.FC<AzToggleProps> = (props) => {
   useAzItem({
     ...props,
@@ -141,7 +187,20 @@ export const AzMenuToggle: React.FC<AzToggleProps> = (props) => {
   return null;
 };
 
-/** Declares a cycler button in the collapsed rail that advances through a list of options on each tap. */
+/**
+ * Declares a cycler button in the collapsed rail that advances through a list of options on each tap.
+ *
+ * @example
+ * ```tsx
+ * <AzRailCycler
+ *   id="qty"
+ *   text="Quantity"
+ *   options={['1', '2', '5', '10']}
+ *   selectedOption={qty}
+ *   onClick={() => setQty(nextOption(qty))}
+ * />
+ * ```
+ */
 export const AzRailCycler: React.FC<AzCyclerProps> = (props) => {
   useAzItem({
     ...props,
@@ -161,7 +220,20 @@ export const AzRailCycler: React.FC<AzCyclerProps> = (props) => {
   return null;
 };
 
-/** Declares a cycler button visible only in the expanded menu. */
+/**
+ * Declares a cycler button visible only in the expanded menu.
+ *
+ * @example
+ * ```tsx
+ * <AzMenuCycler
+ *   id="speed"
+ *   text="Speed"
+ *   options={['Slow', 'Normal', 'Fast']}
+ *   selectedOption={speed}
+ *   onClick={cycleSpeed}
+ * />
+ * ```
+ */
 export const AzMenuCycler: React.FC<AzCyclerProps> = (props) => {
   useAzItem({
     ...props,
@@ -181,7 +253,18 @@ export const AzMenuCycler: React.FC<AzCyclerProps> = (props) => {
   return null;
 };
 
-/** Inserts a horizontal divider line between items in the rail and menu. */
+/**
+ * Inserts a horizontal divider line between items in the rail and menu.
+ *
+ * @example
+ * ```tsx
+ * <AzNavRail>
+ *   <AzRailItem id="a" text="A" />
+ *   <AzRailDivider />
+ *   <AzRailItem id="b" text="B" />
+ * </AzNavRail>
+ * ```
+ */
 export const AzRailDivider: React.FC = () => {
     const context = useContext(AzNavRailContext);
     const id = useRef<string | null>(null);
@@ -207,7 +290,16 @@ export const AzRailDivider: React.FC = () => {
     return null;
 };
 
-/** Declares a collapsible group-header item in the collapsed rail; tapping it expands or collapses its sub-items. */
+/**
+ * Declares a collapsible group-header item in the collapsed rail; tapping it expands or collapses its sub-items.
+ *
+ * @example
+ * ```tsx
+ * <AzRailHostItem id="tools" text="Tools" />
+ * <AzRailSubItem id="tool-a" text="Tool A" hostId="tools" onClick={openA} />
+ * <AzRailSubItem id="tool-b" text="Tool B" hostId="tools" onClick={openB} />
+ * ```
+ */
 export const AzRailHostItem: React.FC<AzHostItemProps> = (props) => {
     useAzItem({
         ...props,
@@ -227,7 +319,15 @@ export const AzRailHostItem: React.FC<AzHostItemProps> = (props) => {
     return null;
 };
 
-/** Declares a collapsible group-header item visible only in the expanded menu. */
+/**
+ * Declares a collapsible group-header item visible only in the expanded menu.
+ *
+ * @example
+ * ```tsx
+ * <AzMenuHostItem id="more" text="More options" />
+ * <AzMenuSubItem id="opt1" text="Option 1" hostId="more" />
+ * ```
+ */
 export const AzMenuHostItem: React.FC<AzHostItemProps> = (props) => {
     useAzItem({
         ...props,
@@ -247,7 +347,15 @@ export const AzMenuHostItem: React.FC<AzHostItemProps> = (props) => {
     return null;
 };
 
-/** Declares a standard button sub-item nested under a rail host item. */
+/**
+ * Declares a standard button sub-item nested under a rail host item.
+ *
+ * @example
+ * ```tsx
+ * <AzRailHostItem id="tools" text="Tools" />
+ * <AzRailSubItem id="hammer" text="Hammer" hostId="tools" onClick={useHammer} />
+ * ```
+ */
 export const AzRailSubItem: React.FC<AzSubItemProps> = (props) => {
     useAzItem({
         ...props,
@@ -267,7 +375,15 @@ export const AzRailSubItem: React.FC<AzSubItemProps> = (props) => {
     return null;
 };
 
-/** Declares a standard button sub-item visible only in the expanded menu under a host. */
+/**
+ * Declares a standard button sub-item visible only in the expanded menu under a host.
+ *
+ * @example
+ * ```tsx
+ * <AzMenuHostItem id="more" text="More" />
+ * <AzMenuSubItem id="about" text="About" hostId="more" onClick={openAbout} />
+ * ```
+ */
 export const AzMenuSubItem: React.FC<AzSubItemProps> = (props) => {
     useAzItem({
         ...props,
@@ -287,7 +403,23 @@ export const AzMenuSubItem: React.FC<AzSubItemProps> = (props) => {
     return null;
 };
 
-/** Declares a toggle sub-item nested under a rail host item. */
+/**
+ * Declares a toggle sub-item nested under a rail host item.
+ *
+ * @example
+ * ```tsx
+ * <AzRailHostItem id="adv" text="Advanced" />
+ * <AzRailSubToggle
+ *   id="debug"
+ *   text="Debug"
+ *   hostId="adv"
+ *   isChecked={debug}
+ *   toggleOnText="On"
+ *   toggleOffText="Off"
+ *   onClick={() => setDebug(v => !v)}
+ * />
+ * ```
+ */
 export const AzRailSubToggle: React.FC<AzSubToggleProps> = (props) => {
     useAzItem({
         ...props,
@@ -305,7 +437,23 @@ export const AzRailSubToggle: React.FC<AzSubToggleProps> = (props) => {
     return null;
 };
 
-/** Declares a toggle sub-item visible only in the expanded menu under a host. */
+/**
+ * Declares a toggle sub-item visible only in the expanded menu under a host.
+ *
+ * @example
+ * ```tsx
+ * <AzMenuHostItem id="prefs" text="Preferences" />
+ * <AzMenuSubToggle
+ *   id="sync"
+ *   text="Sync"
+ *   hostId="prefs"
+ *   isChecked={sync}
+ *   toggleOnText="Enabled"
+ *   toggleOffText="Disabled"
+ *   onClick={toggleSync}
+ * />
+ * ```
+ */
 export const AzMenuSubToggle: React.FC<AzSubToggleProps> = (props) => {
     useAzItem({
         ...props,
@@ -323,7 +471,22 @@ export const AzMenuSubToggle: React.FC<AzSubToggleProps> = (props) => {
     return null;
 };
 
-/** Declares a cycler sub-item nested under a rail host item. */
+/**
+ * Declares a cycler sub-item nested under a rail host item.
+ *
+ * @example
+ * ```tsx
+ * <AzRailHostItem id="grp" text="Group" />
+ * <AzRailSubCycler
+ *   id="zoom"
+ *   text="Zoom"
+ *   hostId="grp"
+ *   options={['50%', '100%', '200%']}
+ *   selectedOption={zoom}
+ *   onClick={cycleZoom}
+ * />
+ * ```
+ */
 export const AzRailSubCycler: React.FC<AzSubCyclerProps> = (props) => {
     useAzItem({
         ...props,
@@ -343,7 +506,22 @@ export const AzRailSubCycler: React.FC<AzSubCyclerProps> = (props) => {
     return null;
 };
 
-/** Declares a cycler sub-item visible only in the expanded menu under a host. */
+/**
+ * Declares a cycler sub-item visible only in the expanded menu under a host.
+ *
+ * @example
+ * ```tsx
+ * <AzMenuHostItem id="display" text="Display" />
+ * <AzMenuSubCycler
+ *   id="theme"
+ *   text="Theme"
+ *   hostId="display"
+ *   options={['Light', 'Dark', 'Auto']}
+ *   selectedOption={theme}
+ *   onClick={cycleTheme}
+ * />
+ * ```
+ */
 export const AzMenuSubCycler: React.FC<AzSubCyclerProps> = (props) => {
     useAzItem({
         ...props,
@@ -363,7 +541,24 @@ export const AzMenuSubCycler: React.FC<AzSubCyclerProps> = (props) => {
     return null;
 };
 
-/** Declares a drag-reorderable sub-item in the rail; supports a long-press hidden menu and nested content. */
+/**
+ * Declares a drag-reorderable sub-item in the rail; supports a long-press hidden menu and nested content.
+ *
+ * @example
+ * ```tsx
+ * <AzRailHostItem id="tabs" text="Tabs" />
+ * <AzRailRelocItem
+ *   id="tab-1"
+ *   text="Tab 1"
+ *   hostId="tabs"
+ *   onRelocate={(from, to, order) => persistOrder(order)}
+ *   hiddenMenu={[
+ *     { text: 'Rename', onClick: rename },
+ *     { text: 'Delete', onClick: del },
+ *   ]}
+ * />
+ * ```
+ */
 export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
     let hiddenMenuItems: any[] = [];
     if (props.hiddenMenu) {
@@ -493,7 +688,17 @@ export const AzAdvanced: React.FC<any> = (props) => {
     return null;
 };
 
-/** Declares a rail item that opens a secondary popup rail when tapped; child DSL items populate the popup. */
+/**
+ * Declares a rail item that opens a secondary popup rail when tapped; child DSL items populate the popup.
+ *
+ * @example
+ * ```tsx
+ * <AzNestedRail id="filters" text="Filters" alignment={AzNestedRailAlignment.HORIZONTAL}>
+ *   <AzRailItem id="filter-a" text="A" onClick={() => apply('A')} />
+ *   <AzRailItem id="filter-b" text="B" onClick={() => apply('B')} />
+ * </AzNestedRail>
+ * ```
+ */
 export const AzNestedRail: React.FC<AzNestedRailProps> = (props) => {
     const [nestedSettings, setNestedSettings] = React.useState<any>({});
 
@@ -543,7 +748,18 @@ export const AzNestedRail: React.FC<AzNestedRailProps> = (props) => {
     );
 };
 
-/** Declares a help-only rail item — appears in the info overlay but not in the interactive rail. */
+/**
+ * Declares a help-only rail item — appears in the info overlay but not in the interactive rail.
+ *
+ * @example
+ * ```tsx
+ * <AzHelpRailItem
+ *   id="swipe-hint"
+ *   text="Swipe to undock"
+ *   info="Swipe the rail right to convert it into a floating widget."
+ * />
+ * ```
+ */
 export const AzHelpRailItem: React.FC<AzNavItemProps> = (props) => {
     useAzItem({
         ...props,
@@ -564,7 +780,20 @@ export const AzHelpRailItem: React.FC<AzNavItemProps> = (props) => {
     return null;
 };
 
-/** Declares a help-only sub-item nested under a host; appears in the info overlay only and requires a valid `hostId`. */
+/**
+ * Declares a help-only sub-item nested under a host; appears in the info overlay only and requires a valid `hostId`.
+ *
+ * @example
+ * ```tsx
+ * <AzRailHostItem id="settings" text="Settings" />
+ * <AzHelpSubItem
+ *   id="theme-help"
+ *   text="Theme picker"
+ *   hostId="settings"
+ *   info="Choose between Light, Dark, and Auto modes."
+ * />
+ * ```
+ */
 export const AzHelpSubItem: React.FC<AzSubItemProps> = (props) => {
     const context = useContext(AzNavRailContext);
 

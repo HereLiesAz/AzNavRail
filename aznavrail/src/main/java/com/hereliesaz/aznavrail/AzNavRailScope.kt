@@ -25,6 +25,29 @@ import java.util.Collections.emptySet
  *
  * This interface provides methods to define navigation items, menus, settings, and advanced behaviors.
  * It is used within the content lambda of [AzNavRail] and [AzHostActivityLayout].
+ *
+ * The methods come in two flavors:
+ * - `azRail*` — add an item that is visible on the collapsed rail strip.
+ * - `azMenu*` — add an item that is only visible inside the expanded drawer menu.
+ *
+ * Items must each declare a unique [String] `id`; duplicates throw at DSL build time.
+ *
+ * Typical usage from inside [AzHostActivityLayout]:
+ * ```
+ * AzHostActivityLayout(navController = navController) {
+ *     azSettings(displayAppNameInHeader = true)
+ *     azRailItem(id = "home", text = "Home", route = "home")
+ *     azRailToggle(
+ *         id = "dark",
+ *         isChecked = darkTheme,
+ *         toggleOnText = "Dark",
+ *         toggleOffText = "Light",
+ *         onClick = { darkTheme = !darkTheme },
+ *     )
+ *     azDivider()
+ *     azMenuItem(id = "settings", text = "Settings", route = "settings")
+ * }
+ * ```
  */
 interface AzNavRailScope {
     // Legacy/DSL split methods
@@ -617,7 +640,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     private fun checkId(id: String) {
         if (!globalIdSet.add(id)) {
             throw IllegalArgumentException(
-                "Duplicate ID detected: '$id'. All items in AzNavRail must have a unique ID to ensure state consistency."
+                "Duplicate AzNavRail item ID '$id'. Every `azRailItem` / `azMenuItem` / `azHelpRailItem` / `azNestedRail` / `azRailRelocItem` / toggle / cycler (including those declared inside a nested rail via `nestedContent { ... }`) must have a globally unique `id`, because the rail uses `id` as the key into its `onClickMap`, `onFocusMap`, and `onRelocateMap`. Fix: rename this declaration's `id` to something unique (eg. '$id-2', or '${id}_nested'); or, if this is an accidental copy-paste, remove the duplicate `id = \"$id\"` declaration."
             )
         }
     }
@@ -646,7 +669,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     override fun azHelpSubItem(id: String, hostId: String, text: String, content: Any?, color: Color?, shape: AzButtonShape?, menuText: String?, textColor: Color?, fillColor: Color?) {
         checkId(id)
         if (navItems.none { it.id == hostId }) {
-            throw IllegalArgumentException("Host item with ID '$hostId' must be added before adding its sub-items.")
+            throw IllegalArgumentException("`azHelpSubItem(id = \"$id\", hostId = \"$hostId\", ...)` references a host that has not been declared yet. Sub-items attach to a previously-registered host so the rail can resolve `hostId` -> host item when rendering. Fix: declare a parent `azMenuHostItem` / `azRailHostItem` / `azHelpRailItem` (or any item) with `id = \"$hostId\"` BEFORE this `azHelpSubItem` call in the `azRailContent { ... }` block; or change the `hostId` argument here to match an id that already exists.")
         }
         navItems.add(
             AzNavItem(
@@ -678,7 +701,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         nestedScope.nestedContent()
 
         nestedScope.onClickMap.forEach { (k, v) ->
-            if (onClickMap.containsKey(k)) throw IllegalStateException("Scope collision: Nested item ID '$k' duplicates an existing parent ID.")
+            if (onClickMap.containsKey(k)) throw IllegalStateException("Scope collision while merging `azNestedRail(id = \"$id\")`: a nested child declared `id = \"$k\"`, but the parent rail already has an item with the same id, so its `onClick` handler would be overwritten. Fix: rename the nested child's `id` to be unique across the whole rail (eg. \"${k}_in_$id\"); or remove the colliding parent declaration. Every id registered inside `nestedContent { ... }` shares the same global id namespace as the parent rail.")
             onClickMap[k] = v
         }
         nestedScope.onFocusMap.forEach { (k, v) -> onFocusMap[k] = v }
@@ -769,7 +792,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
             nestedScope.nestedContent()
 
             nestedScope.onClickMap.forEach { (k, v) ->
-                if (onClickMap.containsKey(k)) throw IllegalStateException("Scope collision: Nested item ID '$k' duplicates an existing parent ID.")
+                if (onClickMap.containsKey(k)) throw IllegalStateException("Scope collision while merging the `nestedContent` of `azRailRelocItem(id = \"$id\")`: a nested child declared `id = \"$k\"`, but the parent rail already has an item with that id, so its `onClick` would be silently overwritten. Fix: rename the nested child's `id` so it is unique across the whole rail (eg. \"${k}_in_$id\"); or drop the duplicate parent declaration. Ids inside `azRailRelocItem(...) { nestedContent = { ... } }` share the parent rail's id namespace.")
                 onClickMap[k] = v
             }
             nestedScope.onFocusMap.forEach { (k, v) -> onFocusMap[k] = v }
@@ -794,10 +817,10 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     private fun addCycler(id: String, options: List<String>, menuOptions: List<String>? = null, selectedOption: String, disabledOptions: List<String>? = null, config: AzItemConfig, onClick: () -> Unit) {
         checkId(id)
         require(menuOptions == null || options.size == menuOptions.size) {
-            "Error adding cycler '$id': 'menuOptions' must have the same size as 'options' if provided."
+            "Cycler '$id' has a `menuOptions` list of size ${menuOptions?.size} but its `options` list is of size ${options.size}. When you supply `menuOptions`, it acts as the menu-side label for each entry in `options`, so the two lists must be index-aligned (size N <-> size N). Fix: make `menuOptions` exactly ${options.size} entries long to match `options = $options`; or omit the `menuOptions` argument to reuse `options` as the menu labels."
         }
         require(options.contains(selectedOption)) {
-            "Error adding item '$id': selectedOption '$selectedOption' must be present in the options list: $options"
+            "Cycler '$id' was given `selectedOption = \"$selectedOption\"`, but that value is not one of the entries in `options = $options`. The cycler advances by indexing into `options`, so the initial selection must be a member of it. Fix: change `selectedOption` to one of $options; or add \"$selectedOption\" to the `options` list."
         }
         val finalScreenTitle = if (config.screenTitle == AzNavRailDefaults.NO_TITLE) null else config.screenTitle ?: selectedOption
         onClickMap[id] = onClick
@@ -815,7 +838,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     private fun addToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, menuToggleOnText: String? = null, menuToggleOffText: String? = null, config: AzItemConfig, onClick: () -> Unit) {
         checkId(id)
         require(toggleOnText.isNotBlank() && toggleOffText.isNotBlank()) {
-            "Error adding item '$id': toggle text options cannot be blank."
+            "Toggle '$id' has a blank `toggleOnText` (\"$toggleOnText\") and/or `toggleOffText` (\"$toggleOffText\"). These strings ARE the button label depending on `isChecked` -- an empty value would render an invisible button with no affordance. Fix: pass non-blank strings for both `toggleOnText` and `toggleOffText` (eg. `toggleOnText = \"On\", toggleOffText = \"Off\"`); for menu-only override labels use `menuToggleOnText` / `menuToggleOffText` instead of blanking these."
         }
         val text = if (isChecked) toggleOnText else toggleOffText
         val finalScreenTitle = if (config.screenTitle == AzNavRailDefaults.NO_TITLE) null else config.screenTitle ?: text
@@ -834,7 +857,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     private fun addItem(id: String, text: String, menuText: String? = null, config: AzItemConfig, onClick: () -> Unit) {
         checkId(id)
         require(text.isNotBlank()) {
-           "Error adding item '$id': 'text' parameter cannot be blank."
+           "Item '$id' was declared with a blank `text` argument. `text` is the rail-button label (and, when `menuText` is null, also the menu label and `screenTitle` fallback) -- a blank value would render an unreadable, unclickable button. Fix: pass a non-blank `text` (eg. `text = \"Settings\"`); if you only want the menu label different, leave `text` non-blank and override with `menuText = \"...\"`; if you intended a divider, use `azDivider()` instead."
         }
         val finalScreenTitle = if (config.screenTitle == AzNavRailDefaults.NO_TITLE) null else config.screenTitle ?: text
         onClickMap[id] = onClick

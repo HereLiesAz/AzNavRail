@@ -95,7 +95,7 @@ class AzTutorialController(
  * Fails fast if not provided to surface missing providers during development.
  */
 val LocalAzTutorialController = compositionLocalOf<AzTutorialController> {
-    error("AzTutorialController not provided")
+    error("`LocalAzTutorialController.current` was read but no `AzTutorialController` has been provided in the current composition. This CompositionLocal is wired automatically by `AzHostActivityLayout` / `AzActivity`, so reading it from outside that tree (eg. from a preview, a unit test, or a custom root that bypasses `AzActivity`) leaves it unset. Fix: host your composable inside `AzActivity` / `AzHostActivityLayout`; or wrap the call site with `CompositionLocalProvider(LocalAzTutorialController provides rememberAzTutorialController()) { ... }` to supply one explicitly.")
 }
 
 /** Remembers an [AzTutorialController] across recompositions and config changes, backed by SharedPreferences. */

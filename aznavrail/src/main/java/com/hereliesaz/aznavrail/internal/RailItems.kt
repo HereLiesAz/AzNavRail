@@ -601,6 +601,7 @@ private fun DraggableRailItemWrapper(
                     onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
                     onItemGloballyPositioned = onItemGloballyPositioned,
                             onBoundsCalculated = { id, bounds -> scope.itemBoundsCache[id] = bounds },
+                            onBoundsCleared = { id -> scope.itemBoundsCache.remove(id) },
                     helpEnabled = helpEnabled,
                     dragModifier = dragModifier,
                     activeColor = scope.activeColor,

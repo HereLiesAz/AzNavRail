@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import android.util.Log
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -54,11 +55,20 @@ internal fun MenuItem(
     onItemClick: () -> Unit = {},
     onHostClick: () -> Unit = {},
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
+    onBoundsCleared: ((String) -> Unit)? = null,
     helpEnabled: Boolean = false,
     activeColor: androidx.compose.ui.graphics.Color? = null
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+
+    // Evict cached bounds when this menu entry leaves composition. The menu re-mounts every time
+    // the rail expands, so without this, items keep their last position from the previous open
+    // and the help overlay draws cards/lines to those phantom locations when invoked from the
+    // collapsed rail.
+    DisposableEffect(item.id) {
+        onDispose { onBoundsCleared?.invoke(item.id) }
+    }
 
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.menuToggleOnText ?: item.toggleOnText else item.menuToggleOffText ?: item.toggleOffText

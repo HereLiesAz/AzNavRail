@@ -353,8 +353,9 @@ The bottom-sheet shell is ported from [LogKitty](https://github.com/HereLiesAz/L
 
 | Composable | Description |
 | :--- | :--- |
-| `AzBottomSheet(controller, modifier, config, onSwipeLeft?, onSwipeRight?) { content }` | In-tree sheet. Anchored at the bottom of its parent. Apply `Modifier.windowInsetsPadding(WindowInsets.navigationBars)` to sit behind the system nav bar. |
+| `AzBottomSheet(controller, modifier, config, onSwipeLeft?, onSwipeRight?) { content }` | In-tree sheet. Anchored at the bottom of its parent and spans full width. The HIDDEN strip stays visible (dimmed handle) and accepts a **tap** that steps up to PEEK in addition to swipe-up. Apply `Modifier.windowInsetsPadding(WindowInsets.navigationBars)` yourself if your body content needs to clear the system nav bar. |
 | `AzBottomSheetInsetAware(controller, config, onSwipeLeft?, onSwipeRight?) { content }` | Same as `AzBottomSheet` but the modifier already applies `fillMaxSize() + windowInsetsPadding(navigationBars)`. |
+| DSL form via `AzNavHostScope.azBottomSheet` | Registered above rail/menu/onscreen with `zIndex(2f)`, full-width, edge-to-edge (no `windowInsetsPadding` applied by the DSL). |
 
 ### DSL
 
@@ -391,7 +392,7 @@ The bottom-sheet shell is ported from [LogKitty](https://github.com/HereLiesAz/L
 | `backgroundAlpha` | `Float` | `0.92f` | Alpha applied to fill. |
 | `scrimColor` | `Color` | `Color.Black` | Dim layer above sheet in HALF/FULL. |
 | `scrimAlpha` | `Float` | `0.32f` | Scrim alpha. |
-| `hiddenStripDp` | `Dp` | `14.dp` | Swipe-target height in HIDDEN. |
+| `hiddenStripDp` | `Dp` | `28.dp` | Swipe-target height in HIDDEN. Bumped from 14dp so it's reliably touchable on gesture-nav devices; the handle stays visible at this detent (dimmed). |
 | `peekDp` | `Dp` | `56.dp` | Height in PEEK. |
 | `halfFraction` | `Float` | `0.5f` | Fraction of parent height in HALF. |
 | `fullFraction` | `Float` | `0.9f` | Fraction of parent height in FULL. |

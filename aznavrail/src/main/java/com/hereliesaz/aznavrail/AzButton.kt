@@ -25,18 +25,34 @@ import kotlinx.coroutines.launch
 /**
  * A standalone button component that matches the aesthetic of the AzNavRail.
  *
- * It automatically handles text resizing to fit the container and supports various shapes.
+ * It automatically handles text resizing to fit the container and supports various shapes,
+ * including circular and rectangular variants. Internally delegates to the same primitive
+ * ([AzNavRailButton]) used by every rail/menu button so visual parity is guaranteed.
+ *
+ * Example:
+ * ```
+ * AzButton(
+ *     onClick = { viewModel.save() },
+ *     text = "Save",
+ *     shape = AzButtonShape.RECTANGLE,
+ * )
+ * ```
  *
  * @param onClick Callback invoked when the button is clicked.
- * @param text The text to display.
+ * @param text The text to display when [itemContent] is null.
  * @param modifier The modifier to apply to the button.
- * @param color The background color of the button.
- * @param activeColor The color used when the button is in an active state (if applicable).
- * @param colors Optional [ButtonColors] to override default colors.
- * @param shape The shape of the button (Circle, Square, Rectangle, None).
- * @param enabled Whether the button is enabled.
- * @param isLoading If true, replaces text with a loading spinner.
- * @param contentPadding Custom padding for the button content.
+ * @param color The border/icon color in the unselected state.
+ * @param activeColor The color used when the button is pressed.
+ * @param textColor Overrides the computed text color. Falls back to [color] when null.
+ * @param fillColor Overrides the translucent background fill. Falls back to a computed
+ *   light/dark inversion of [color] when null.
+ * @param colors Optional [ButtonColors] slot reserved for Material compatibility (currently unused).
+ * @param shape The geometric shape of the button (Circle, Square, Rectangle, None).
+ * @param enabled Whether the button is enabled and interactive.
+ * @param isLoading If true, hides the text and overlays an [AzLoad] spinner.
+ * @param contentPadding Custom padding for the button content. Defaults to 8dp on every side.
+ * @param itemContent Optional custom composable to render in place of [text]. Wrapped into an
+ *   [AzComposableContent] internally so the renderer can apply alpha/scale uniformly.
  */
 @Composable
 fun AzButton(
@@ -77,20 +93,35 @@ fun AzButton(
 }
 
 /**
- * A standalone toggle button.
+ * A standalone toggle button that switches between two text states.
  *
- * This button switches between two text states based on `isChecked`.
+ * The toggle's visual text and the callback are driven by [isChecked]. The component is
+ * intentionally stateless — store the boolean in your own state holder and feed it back here.
+ *
+ * Example:
+ * ```
+ * var dark by remember { mutableStateOf(false) }
+ * AzToggle(
+ *     isChecked = dark,
+ *     onToggle = { dark = it },
+ *     toggleOnText = "Dark",
+ *     toggleOffText = "Light",
+ * )
+ * ```
  *
  * @param isChecked The current state of the toggle.
- * @param onToggle Callback invoked when the toggle is clicked, providing the new state.
- * @param toggleOnText Text to display when checked.
- * @param toggleOffText Text to display when unchecked.
- * @param modifier The modifier to apply.
- * @param color The background color.
- * @param activeColor The active color.
- * @param colors Optional color overrides.
- * @param shape The shape of the button.
- * @param enabled Whether the toggle is enabled.
+ * @param onToggle Callback invoked with the inverted state when the button is tapped.
+ * @param toggleOnText Text shown when [isChecked] is true.
+ * @param toggleOffText Text shown when [isChecked] is false.
+ * @param modifier The modifier to apply to the button container.
+ * @param color The base border/icon color in the unselected state.
+ * @param activeColor The color used when the toggle is pressed.
+ * @param textColor Overrides the computed text color. Falls back to [color] when null.
+ * @param fillColor Overrides the translucent background fill.
+ * @param colors Reserved Material [ButtonColors] slot (currently unused).
+ * @param shape The geometric shape of the button.
+ * @param enabled Whether the toggle is interactive.
+ * @param itemContent Optional custom composable to render instead of the toggle text.
  */
 @Composable
 fun AzToggle(
@@ -129,21 +160,35 @@ fun AzToggle(
 }
 
 /**
- * A standalone cycler button.
+ * A standalone cycler button that rotates through a list of string options.
  *
- * This button cycles through a list of options. It implements a safety delay: clicking cycles
- * the visual display immediately, but the `onCycle` callback is only triggered after a short
- * delay (1000ms) of inactivity to prevent accidental selection during rapid cycling.
+ * The cycler implements a 1000ms commit delay: each tap advances the displayed option
+ * immediately, but [onCycle] only fires after the user has stopped tapping for one second.
+ * This lets a user quickly skip past several options without firing intermediate selection
+ * callbacks (useful when the underlying state mutation is expensive).
  *
- * @param options The list of options to cycle through.
- * @param selectedOption The currently selected option.
- * @param onCycle Callback invoked when an option is settled upon.
+ * Example:
+ * ```
+ * var quality by remember { mutableStateOf("Auto") }
+ * AzCycler(
+ *     options = listOf("Auto", "Low", "Medium", "High"),
+ *     selectedOption = quality,
+ *     onCycle = { quality = it },
+ * )
+ * ```
+ *
+ * @param options The list of options to cycle through. Must be non-empty.
+ * @param selectedOption The currently committed option from the consumer's state.
+ * @param onCycle Callback invoked with the settled option after the 1000ms quiet period.
  * @param modifier The modifier to apply.
- * @param color The background color.
- * @param activeColor The active color.
- * @param colors Optional color overrides.
- * @param shape The shape of the button.
- * @param enabled Whether the cycler is enabled.
+ * @param color The base border/icon color.
+ * @param activeColor The color used when the cycler is pressed.
+ * @param textColor Overrides the computed text color.
+ * @param fillColor Overrides the translucent background fill.
+ * @param colors Reserved Material [ButtonColors] slot (currently unused).
+ * @param shape The geometric shape of the button.
+ * @param enabled Whether the cycler is interactive.
+ * @param itemContent Optional custom composable to render instead of the option text.
  */
 @Composable
 fun AzCycler(

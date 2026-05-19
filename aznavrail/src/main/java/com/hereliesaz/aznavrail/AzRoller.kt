@@ -36,10 +36,25 @@ import androidx.compose.ui.window.PopupProperties
  * - When typing, the dropdown automatically expands to show filtered results.
  * - Supports custom values (users can type and submit a value not in the list).
  *
- * @param options The list of options to display in the dropdown.
- * @param selectedOption The currently selected option.
- * @param onOptionSelected Callback invoked when an option is selected.
- * @param hint The hint text to display when the input is empty.
+ * Pressing the keyboard "Done" key selects the top filtered option (or commits the typed value
+ * verbatim when there are no matches). Selecting from the list or pressing the keyboard always
+ * dismisses the popup and re-syncs `filterText` with [selectedOption].
+ *
+ * Example:
+ * ```
+ * var country by remember { mutableStateOf<String?>(null) }
+ * AzRoller(
+ *     options = listOf("USA", "Canada", "Mexico"),
+ *     selectedOption = country,
+ *     onOptionSelected = { country = it },
+ *     hint = "Country",
+ * )
+ * ```
+ *
+ * @param options The list of options shown in the dropdown.
+ * @param selectedOption The currently selected option; drives the filter text when collapsed.
+ * @param onOptionSelected Callback fired when the user picks (or types) an option.
+ * @param hint The hint text displayed when the input is empty.
  * @param enabled Whether the component is interactive.
  * @param isError Whether the component is in an error state.
  */

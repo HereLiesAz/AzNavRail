@@ -151,7 +151,10 @@ fun AzTextBox(
     onSubmit: (String) -> Unit
 ) {
     require(!multiline || !secret) {
-        "AzTextBox cannot be both multiline and secret."
+        "AzTextBox cannot be both `multiline = true` and `secret = true` at the same time — " +
+            "a masked password field by definition fits on a single line and would render the " +
+            "expansion behaviour incoherent. Pick one: set `multiline = false` for a password " +
+            "field, or set `secret = false` for a multi-line free-text field."
     }
 
     var internalText by remember { mutableStateOf("") }
