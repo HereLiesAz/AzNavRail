@@ -98,7 +98,7 @@ class AzSheetController internal constructor(initial: AzSheetDetent) {
         operator fun invoke(initial: AzSheetDetent = AzSheetDetent.HIDDEN): AzSheetController =
             AzSheetController(initial)
 
-        internal val Saver: Saver<AzSheetController, *> = Saver(
+        internal val Saver: Saver<AzSheetController, String> = Saver(
             save = { it.detent.name },
             restore = { AzSheetController(AzSheetDetent.valueOf(it)) },
         )
