@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -26,6 +27,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.geometry.Rect
 import com.hereliesaz.aznavrail.AzNavRailButton
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzNavItem
@@ -115,9 +118,26 @@ private fun NestedItemWrapper(
     allItems: List<AzNavItem>,
     isVerticalRail: Boolean
 ) {
+    // Evict cached bounds when this nested item leaves composition (popup closes). Without
+    // this the help overlay would later draw cards/lines for the now-invisible nested rail.
+    DisposableEffect(item.id) {
+        onDispose { onItemGloballyPositioned?.invoke(item.id, Rect.Zero) }
+    }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         androidx.compose.foundation.layout.Box(modifier = Modifier.onGloballyPositioned { coords ->
-            onItemGloballyPositioned?.invoke(item.id, coords.boundsInWindow())
+            // positionInWindow + size so the bounds stay logical (unclipped) when the popup
+            // is scrolled. See the matching comment in RailContent.kt.
+            val pos = coords.positionInWindow()
+            val size = coords.size
+            onItemGloballyPositioned?.invoke(
+                item.id,
+                Rect(
+                    left = pos.x,
+                    top = pos.y,
+                    right = pos.x + size.width,
+                    bottom = pos.y + size.height,
+                ),
+            )
         }) {
             AzNavRailButton(
                 onClick = {

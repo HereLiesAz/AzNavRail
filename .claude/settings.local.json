@@ -44,7 +44,17 @@
       "Bash(node node_modules/.bin/bob build)",
       "Bash(node node_modules/typescript/bin/tsc -p tsconfig.build.json --emitDeclarationOnly --noEmitOnError false --skipLibCheck)",
       "Bash(node node_modules/jest/bin/jest.js --testPathPattern=\"\\(AzBottomSheet|AzTutorialController|HistoryManager|AzNavRailSettings|HelpOverlaySmoke\\)\")",
-      "Bash(grep -E \"\\\\.\\(ps1|sh\\)$|yarn\\\\.lock\")"
+      "Bash(grep -E \"\\\\.\\(ps1|sh\\)$|yarn\\\\.lock\")",
+      "Bash(grep -E \"test[0-9]+\\\\.js$\")",
+      "Bash(pkill -9 -f \"jest\")",
+      "Bash(timeout 180 node node_modules/jest/bin/jest.js --runInBand --forceExit --testPathPattern=\"\\(AzBottomSheet|AzTutorialController|HistoryManager|AzNavRailSettings|HelpOverlaySmoke\\)\")",
+      "Bash(echo \"exit=$?\")",
+      "Bash(timeout 60 node node_modules/jest/bin/jest.js --runInBand --forceExit src/__tests__/AzBottomSheet.test.tsx)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(timeout 90 node node_modules/jest/bin/jest.js --runInBand --forceExit src/__tests__/AzTutorialController.test.tsx)",
+      "Bash(timeout 90 node node_modules/jest/bin/jest.js --runInBand --forceExit src/__tests__/HistoryManager.test.ts)",
+      "Bash(awk -F'\"' '{split\\($0,a,\"tests=\\\\\"\"\\); split\\(a[2],b,\"\\\\\"\"\\); split\\($0,c,\"failures=\\\\\"\"\\); split\\(c[2],d,\"\\\\\"\"\\); split\\($0,e,\"errors=\\\\\"\"\\); split\\(e[2],f,\"\\\\\"\"\\); t+=b[1]; fl+=d[1]; er+=f[1]} END {print \"tests=\"t\" failures=\"fl\" errors=\"er}')",
+      "Bash(timeout 60 node node_modules/jest/bin/jest.js --runInBand --forceExit src/__tests__/AzNavRailSettings.test.tsx)"
     ]
   }
 }

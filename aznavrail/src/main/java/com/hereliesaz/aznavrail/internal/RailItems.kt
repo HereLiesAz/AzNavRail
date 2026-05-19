@@ -635,7 +635,13 @@ private fun DraggableRailItemWrapper(
                         alignment = item.nestedRailAlignment,
                         isRightDocked = isRightDocked,
                         helpList = scope.advancedConfig.helpList,
-                        onItemGloballyPositioned = { id, bounds -> scope.itemBoundsCache[id] = bounds },
+                        onItemGloballyPositioned = { id, bounds ->
+                            // Rect.Zero is the sentinel emitted by NestedItemWrapper's onDispose —
+                            // remove the cached entry so the help overlay won't draw a card or line
+                            // for a now-invisible nested item.
+                            if (bounds == Rect.Zero) scope.itemBoundsCache.remove(id)
+                            else scope.itemBoundsCache[id] = bounds
+                        },
                         rotationDegrees = rotationDegrees
                     )
                 }
@@ -663,7 +669,13 @@ private fun DraggableRailItemWrapper(
                         alignment = item.nestedRailAlignment ?: AzNestedRailAlignment.HORIZONTAL,
                         isRightDocked = isRightDocked,
                         helpList = scope.advancedConfig.helpList,
-                        onItemGloballyPositioned = { id, bounds -> scope.itemBoundsCache[id] = bounds },
+                        onItemGloballyPositioned = { id, bounds ->
+                            // Rect.Zero is the sentinel emitted by NestedItemWrapper's onDispose —
+                            // remove the cached entry so the help overlay won't draw a card or line
+                            // for a now-invisible nested item.
+                            if (bounds == Rect.Zero) scope.itemBoundsCache.remove(id)
+                            else scope.itemBoundsCache[id] = bounds
+                        },
                         rotationDegrees = rotationDegrees
                     )
                 }

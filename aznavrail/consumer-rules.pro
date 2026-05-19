@@ -1,4 +1,6 @@
-# Add consumer proguard rules here.
-# By default, the flags in this file are applied to the consumer's build.
-# You can learn more about consumer ProGuard rules at
-# https://developer.android.com/studio/build/shrink-code#consumer-rules
+# Prevent R8 from stripping or unboxing models and enums
+-keep class com.hereliesaz.aznavrail.model.** { *; }
+-keepclassmembers enum com.hereliesaz.aznavrail.model.** { *; }
+
+# Keep annotations to prevent shrinking issues
+-keep @interface com.hereliesaz.aznavrail.annotation.** { *; }

@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -104,7 +105,22 @@ internal fun RailContent(
         modifier = Modifier
             .padding(4.dp)
             .onGloballyPositioned { coordinates ->
-                val bounds = coordinates.boundsInWindow()
+                // Use positionInWindow() + size so the reported bounds reflect the item's
+                // logical position — even when the rail's verticalScroll clips it offscreen.
+                // boundsInWindow() would collapse to Rect.Zero outside the viewport, which would
+                // (a) yank every off-screen line's endpoint to the top-left, and (b) defeat the
+                // help-overlay viewport filter's ability to distinguish 'never measured' from
+                // 'measured then scrolled off'. The filter's `Rect.overlaps(overlayBounds)` still
+                // correctly rejects items whose unclipped bounds sit entirely above/below the
+                // overlay viewport.
+                val pos = coordinates.positionInWindow()
+                val size = coordinates.size
+                val bounds = Rect(
+                    left = pos.x,
+                    top = pos.y,
+                    right = pos.x + size.width,
+                    bottom = pos.y + size.height,
+                )
                 onBoundsCalculated?.invoke(item.id, bounds)
                 onItemGloballyPositioned?.invoke(item.id, bounds)
             }

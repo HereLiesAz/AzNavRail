@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -161,7 +162,19 @@ internal fun HelpOverlay(
                     modifier = Modifier
                         .fillMaxWidth()
                         .onGloballyPositioned { coords ->
-                            cardBoundsCache[item.id] = coords.boundsInWindow()
+                            // Use positionInWindow() + size so the logical bounds are reported
+                            // even when the card is clipped by the overlay's verticalScroll —
+                            // boundsInWindow() collapses to Rect.Zero outside the viewport,
+                            // which would otherwise yank every off-screen line's endpoint to
+                            // the top-left of the screen (the screenshot-200026 bug).
+                            val pos = coords.positionInWindow()
+                            val size = coords.size
+                            cardBoundsCache[item.id] = Rect(
+                                left = pos.x,
+                                top = pos.y,
+                                right = pos.x + size.width,
+                                bottom = pos.y + size.height,
+                            )
                         }
                         .clickable {
                             expandedItemId = if (isExpanded) null else item.id

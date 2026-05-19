@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { AzSheetDetent } from '../types';
 
 /**
@@ -40,6 +40,10 @@ const order: AzSheetDetent[] = [
  * Remembers an `AzSheetController` across renders. The detent state is regular React
  * state, so reading `controller.detent` in a render is enough to drive re-renders.
  *
+ * `isEnabled` is tracked through both React state (so reads in render subscribe) AND a
+ * ref (so the gates in `stepUp` / `stepDown` / `snapTo` always see the freshest value
+ * even when called in the same React batch as `setEnabled(false)`).
+ *
  * @param initial - Detent the sheet starts in. Defaults to `HIDDEN`.
  * @returns A stable controller object suitable for passing to `<AzBottomSheet>`.
  *
@@ -61,35 +65,37 @@ export function useAzSheetController(
 ): AzSheetController {
   const [detent, setDetent] = useState<AzSheetDetent>(initial);
   const [isEnabled, setEnabledState] = useState<boolean>(true);
+  // Ref mirrors isEnabled so the gate guards (stepUp/stepDown/snapTo) read the latest value
+  // even when they run in the same batched event as `setEnabled(false)` — without this the
+  // closure captures the stale `true` and a stepUp called right after disabling would advance.
+  const isEnabledRef = useRef<boolean>(true);
 
   const setEnabled = useCallback((enabled: boolean) => {
+    isEnabledRef.current = enabled;
     setEnabledState(enabled);
     if (!enabled) setDetent(AzSheetDetent.HIDDEN);
   }, []);
 
   const stepUp = useCallback(() => {
+    if (!isEnabledRef.current) return;
     setDetent((d) => {
-      if (!isEnabled) return d;
       const idx = order.indexOf(d);
       return order[Math.min(idx + 1, order.length - 1)];
     });
-  }, [isEnabled]);
+  }, []);
 
   const stepDown = useCallback(() => {
     setDetent((d) => {
-      if (!isEnabled && d !== AzSheetDetent.HIDDEN) return AzSheetDetent.HIDDEN;
+      if (!isEnabledRef.current && d !== AzSheetDetent.HIDDEN) return AzSheetDetent.HIDDEN;
       const idx = order.indexOf(d);
       return order[Math.max(idx - 1, 0)];
     });
-  }, [isEnabled]);
+  }, []);
 
-  const snapTo = useCallback(
-    (target: AzSheetDetent) => {
-      if (target !== AzSheetDetent.HIDDEN && !isEnabled) return;
-      setDetent(target);
-    },
-    [isEnabled],
-  );
+  const snapTo = useCallback((target: AzSheetDetent) => {
+    if (target !== AzSheetDetent.HIDDEN && !isEnabledRef.current) return;
+    setDetent(target);
+  }, []);
 
   return useMemo<AzSheetController>(
     () => ({ detent, isEnabled, setDetent, setEnabled, stepUp, stepDown, snapTo }),

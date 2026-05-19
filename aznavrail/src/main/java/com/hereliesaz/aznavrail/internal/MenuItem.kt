@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.model.AzNavItem
@@ -167,7 +168,19 @@ internal fun MenuItem(
     Box(
         modifier = Modifier
             .onGloballyPositioned { coordinates ->
-                onItemGloballyPositioned?.invoke(item.id, coordinates.boundsInWindow())
+                // positionInWindow + size so the bounds stay logical (unclipped) when the menu
+                // is scrolled or partly off-screen. See the matching comment in RailContent.kt.
+                val pos = coordinates.positionInWindow()
+                val size = coordinates.size
+                onItemGloballyPositioned?.invoke(
+                    item.id,
+                    Rect(
+                        left = pos.x,
+                        top = pos.y,
+                        right = pos.x + size.width,
+                        bottom = pos.y + size.height,
+                    ),
+                )
             }
             .background(backgroundColor)
     ) {
