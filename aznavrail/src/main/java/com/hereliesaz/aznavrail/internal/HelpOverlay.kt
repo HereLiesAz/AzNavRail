@@ -41,7 +41,9 @@ import androidx.compose.foundation.BorderStroke
  * @param onDismiss Invoked when the user taps the background or a tutorial card's close.
  * @param itemBoundsCache Window-space bounds of each item, used to draw connecting lines.
  * @param helpList Map of item ID → help text (String or string resource Int).
- * @param nestedRailOpenId ID of the currently open nested rail, or null.
+ * @param nestedRailOpenId Scope filter: when non-null, only cards for that nested rail's child items
+ *   are shown (overlay triggered from inside a nested rail). When null, the overlay shows main-rail
+ *   items (overlay triggered from the main rail).
  * @param tutorials Map of item ID → tutorial definition; enables "Start Tutorial" links in cards.
  * @param onTutorialLaunch Invoked with the item ID when the user taps "Start Tutorial".
  */

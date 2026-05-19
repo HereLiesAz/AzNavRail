@@ -231,6 +231,9 @@ fun AzNavRail(
     var showFloatingButtons by remember { mutableStateOf(false) }
     var railContentHeight by remember { mutableStateOf(0f) }
     var showHelpOverlay by remember { mutableStateOf(false) }
+    // When the help item that triggered the overlay lives inside a nested rail, this holds the
+    // parent item's id so the overlay shows only that nested rail's cards. Null = main rail scope.
+    var helpScopeId by remember { mutableStateOf<String?>(null) }
     var wasFloatingOpenBeforeDrag by remember { mutableStateOf(false) }
     val tutorialController = LocalAzTutorialController.current
     val activeTutorialId by tutorialController.activeTutorialId
@@ -287,11 +290,22 @@ fun AzNavRail(
             if (itemId != null && scope.advancedConfig.tutorials.containsKey(itemId)) {
                 tutorialController.startTutorial(itemId)
                 showHelpOverlay = false // ensure help overlay is closed
+                helpScopeId = null
             } else {
                 if (showHelpOverlay) {
                     showHelpOverlay = false
+                    helpScopeId = null
                     scope.advancedConfig.onDismissHelp?.invoke()
                 } else {
+                    // Locate the tapped help item's parent nested rail (if any) so the overlay
+                    // can scope its cards to that rail. A help item under a `azNestedRail { ... }`
+                    // block lives in some parent's `nestedRailItems`; a main-rail help item lives
+                    // directly in scope.navItems and resolves to scope=null.
+                    helpScopeId = itemId?.let { id ->
+                        scope.navItems.firstOrNull { parent ->
+                            parent.isNestedRail && parent.nestedRailItems?.any { it.id == id } == true
+                        }?.id
+                    }
                     showHelpOverlay = true
                 }
             }
@@ -716,13 +730,15 @@ fun AzNavRail(
 }
 
     if (showHelpOverlay) {
+        // helpScopeId controls the overlay's item scope: null = main rail, non-null = the parent
+        // nested-rail id whose children are the only items the overlay should describe.
         HelpOverlay(
             items = scope.navItems,
             helpLineColors = scope.helpLineColors,
             onDismiss = { toggleHelpOverlay(null) },
             itemBoundsCache = scope.itemBoundsCache,
             helpList = scope.advancedConfig.helpList,
-            nestedRailOpenId = scope.nestedRailOpenId,
+            nestedRailOpenId = helpScopeId,
             tutorials = scope.advancedConfig.tutorials,
             onTutorialLaunch = { toggleHelpOverlay(it) }
         )

@@ -102,8 +102,12 @@ interface AzNavHostScope : AzNavRailScope {
     fun onscreen(alignment: Alignment = Alignment.TopStart, content: @Composable () -> Unit)
 
     /**
-     * Registers a bottom sheet that draws above the rail, the menu, and the onscreen area, while
-     * staying inside [WindowInsets.navigationBars] so the system navigation bar remains visible.
+     * Registers a bottom sheet that draws above the rail, the menu, and the onscreen area, and
+     * extends all the way to the bottom of the screen so the HIDDEN-detent strip is reachable
+     * from the system-navigation-bar edge — i.e., a swipe-up from the gesture/nav-bar area
+     * lands on the strip and reveals the sheet. If your sheet body needs to clear the system nav
+     * bar visually, pad inside [content] or use [com.hereliesaz.aznavrail.bottomsheet.AzBottomSheetInsetAware]
+     * directly outside the DSL.
      *
      * The sheet is rendered as the top z-layer in [AzHostActivityLayout] and is *not* a background
      * (see [background]). Multiple calls register multiple sheets, stacked in the order they were
@@ -359,13 +363,15 @@ fun AzHostActivityLayout(
         }
 
         // Bottom sheets registered via azBottomSheet { ... } draw above the rail/menu/onscreen
-        // content but inside the system navigation-bar inset so the OS nav bar stays visible.
+        // content. We deliberately do NOT apply WindowInsets.navigationBars padding here:
+        // the HIDDEN-detent strip needs to reach all the way to the bottom of the screen so the
+        // user can swipe up from the system navigation-bar edge to reveal the sheet. Callers who
+        // need their body content to clear the system nav bar can either pad inside their
+        // content lambda or use `AzBottomSheetInsetAware` directly outside the DSL.
         scope.bottomSheets.forEach { item ->
             AzBottomSheet(
                 controller = item.controller,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .windowInsetsPadding(WindowInsets.navigationBars),
+                modifier = Modifier.fillMaxSize(),
                 config = item.config,
                 onSwipeLeft = item.onSwipeLeft,
                 onSwipeRight = item.onSwipeRight,

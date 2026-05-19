@@ -456,8 +456,11 @@ fun MainApp() {
             text = "Vertical Nested",
             alignment = AzNestedRailAlignment.VERTICAL,
         ) {
-            azRailItem(id = "nested-1", text = "Nested Item 1", route = "nested-1", info = "Nested item bounds report correctly for help.")
-            azRailItem(id = "nested-2", text = "Nested Item 2", route = "nested-2")
+            azRailItem(id = "nested-1", text = "Nested Item 1", route = "nested-1", info = "Nested item bounds report correctly for help — and tapping the nested Help item scopes the overlay to just these items.")
+            azRailItem(id = "nested-2", text = "Nested Item 2", route = "nested-2", info = "A second nested item with its own help text.")
+            // Help item INSIDE the nested rail — when tapped, the overlay should show only the
+            // nested rail's items (Nested Item 1, Nested Item 2, Size Slider), not the main rail.
+            azHelpRailItem(id = "nested-help", text = "Help")
             azRailItem(
                 id = "nested-custom",
                 text = "Size Slider",
@@ -494,9 +497,10 @@ fun MainApp() {
             text = "Horizontal Nested",
             alignment = AzNestedRailAlignment.HORIZONTAL,
         ) {
-            azRailItem(id = "nested-h-1", text = "H-Item 1", route = "nested-h-1")
-            azRailItem(id = "nested-h-2", text = "H-Item 2", route = "nested-h-2")
-            azRailItem(id = "nested-h-3", text = "H-Item 3", route = "nested-h-3")
+            azRailItem(id = "nested-h-1", text = "H-Item 1", route = "nested-h-1", info = "First horizontal nested item.")
+            azRailItem(id = "nested-h-2", text = "H-Item 2", route = "nested-h-2", info = "Second horizontal nested item.")
+            azRailItem(id = "nested-h-3", text = "H-Item 3", route = "nested-h-3", info = "Third horizontal nested item.")
+            azHelpRailItem(id = "nested-h-help", text = "?")
         }
 
         // ---------- Host-registered bottom sheet (azBottomSheet DSL) ----------
