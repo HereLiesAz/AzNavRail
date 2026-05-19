@@ -43,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
+import androidx.compose.ui.zIndex
 import androidx.core.view.WindowCompat
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
@@ -362,16 +363,23 @@ fun AzHostActivityLayout(
             )
         }
 
-        // Bottom sheets registered via azBottomSheet { ... } draw above the rail/menu/onscreen
-        // content. We deliberately do NOT apply WindowInsets.navigationBars padding here:
-        // the HIDDEN-detent strip needs to reach all the way to the bottom of the screen so the
-        // user can swipe up from the system navigation-bar edge to reveal the sheet. Callers who
-        // need their body content to clear the system nav bar can either pad inside their
-        // content lambda or use `AzBottomSheetInsetAware` directly outside the DSL.
+        // Bottom sheets registered via azBottomSheet { ... } draw above EVERYTHING — including
+        // the rail, the menu, and the onscreen content — and span the full screen width.
+        //
+        // - No `windowInsetsPadding(WindowInsets.navigationBars)` so the HIDDEN strip reaches the
+        //   bottom edge and a swipe-up from the system-nav-bar area reveals the sheet.
+        // - No rail-offset padding (those `startPadding` / `endPadding` values above feed
+        //   `AzHostFragmentLayout` only). The sheet card uses `fillMaxWidth()` against this
+        //   fullscreen modifier, so it spans edge-to-edge and is not constrained like an onscreen
+        //   composable.
+        // - Explicit `zIndex` guarantees the sheet visually stacks above the rail's Surface even
+        //   if Compose's tonal-elevation shading would otherwise win.
         scope.bottomSheets.forEach { item ->
             AzBottomSheet(
                 controller = item.controller,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(2f),
                 config = item.config,
                 onSwipeLeft = item.onSwipeLeft,
                 onSwipeRight = item.onSwipeRight,
