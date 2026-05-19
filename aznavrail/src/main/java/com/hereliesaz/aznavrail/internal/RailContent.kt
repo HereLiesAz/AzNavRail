@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
@@ -50,6 +51,7 @@ internal fun RailContent(
     onHostClick: () -> Unit = {},
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
     onBoundsCalculated: ((String, Rect) -> Unit)? = null,
+    onBoundsCleared: ((String) -> Unit)? = null,
     helpEnabled: Boolean = false,
     dragModifier: Modifier = Modifier,
     activeColor: androidx.compose.ui.graphics.Color? = null,
@@ -87,6 +89,14 @@ internal fun RailContent(
                 onItemClick()
             }
         }
+    }
+
+    // Evict cached bounds when this item leaves composition. Without this, items that the user
+    // can no longer see (menu collapsed, nested-rail popup closed, scrolled off) keep their last
+    // reported window-space bounds, and the help overlay happily draws cards and connector lines
+    // pointing at those phantom positions.
+    DisposableEffect(item.id) {
+        onDispose { onBoundsCleared?.invoke(item.id) }
     }
 
     // Small margin applied uniformly on all sides to all items.
