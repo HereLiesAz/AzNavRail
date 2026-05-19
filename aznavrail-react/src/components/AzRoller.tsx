@@ -9,19 +9,34 @@ import {
   TextInput,
 } from 'react-native';
 
+/** Props for the `AzRoller` slot-machine / combobox picker. */
 export interface AzRollerProps {
+  /** Available option labels. */
   options: string[];
+  /** Currently selected option (controlled). */
   selectedOption?: string;
+  /** Called when the user taps an option in the open list. */
   onOptionSelected: (option: string) => void;
+  /** Placeholder shown when no option is selected. */
   hint?: string;
+  /** When false, the roller renders at 50% opacity and ignores interaction. */
   enabled?: boolean;
+  /** Outline / text accent color. */
   outlineColor?: string;
+  /** Background color of the input row. */
   backgroundColor?: string;
+  /** Opacity of the input row background, 0–1. */
   backgroundOpacity?: number;
+  /** Style merged into the outer container. */
   style?: ViewStyle;
+  /** When true, the outline is forced to red. */
   isError?: boolean;
 }
 
+/**
+ * Filterable dropdown / slot-machine picker. Tapping the arrow toggles between
+ * type-to-filter mode and the infinite-scroll slot-machine list.
+ */
 export const AzRoller: React.FC<AzRollerProps> = ({
   options,
   selectedOption,

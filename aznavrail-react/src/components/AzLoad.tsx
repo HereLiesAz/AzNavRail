@@ -1,11 +1,15 @@
 import React from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 
-interface AzLoadProps {
+/** Props for the `AzLoad` activity indicator. */
+export interface AzLoadProps {
+    /** Spinner diameter — accepts the platform `ActivityIndicator` size values or a numeric pixel size. */
     size?: number | 'small' | 'large';
+    /** Spinner stroke color. Defaults to the library primary color. */
     color?: string;
 }
 
+/** Card-style activity indicator overlay used by the rail when `isLoading` is set. */
 export const AzLoad: React.FC<AzLoadProps> = ({ size = "large", color = "#6200ee" }) => (
     <View style={styles.container}>
         <ActivityIndicator size={size} color={color} />

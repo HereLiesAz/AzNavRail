@@ -52,8 +52,19 @@ All items now support the following **Reactive Binding Fields**. Provide the nam
 
 #### `Advanced` (Class Level)
 * `isLoadingProperty`: Binds the global loading spinner to a `Boolean` property.
-* `helpEnabled`: If true, binds to a property of the same name to show/hide the help overlay.
+* `helpEnabled`: When `true`, auto-injects a Help item into the menu drawer if no explicit `azHelpRailItem` / `azHelpSubItem` is registered. The overlay itself is toggled exclusively by tapping a help item (there is no public API to open it externally).
 * `helpList`: An optional mapping of `RailItem` IDs to help texts to be shown in the help overlay alongside `info`.
+
+### Help overlay scoping & rendering
+
+* **Scope follows the trigger.** Tapping `azHelpRailItem` in the main rail shows cards for the main-rail items. Tapping `azHelpRailItem`/`azHelpSubItem` inside an `azNestedRail` block shows cards only for that nested rail's children. Internally the library tracks `helpScopeId = parent.id` (or `null` for main rail) at toggle time.
+* **Offscreen items are suppressed.** Cards (and their connector lines) are filtered out when the item's last-known bounds don't overlap the overlay viewport — so a card never renders for a rail item that's currently scrolled off, in a collapsed menu, or in a closed nested popup.
+* **Cards/lines update during scroll.** `itemBoundsCache` is a `SnapshotStateMap` populated by every rail item's `onGloballyPositioned`; the overlay's filter and `drawBehind` subscribe to it, so scrolling the rail re-runs the filter and the lines follow item positions in real time.
+* **Bounds eviction.** Each rail/menu item attaches a `DisposableEffect` that removes its entry from `itemBoundsCache` on dispose. Without this, items that had bounds cached when the menu was expanded would keep stale positions after the menu collapsed, and the overlay would draw cards pointing at phantom locations.
+
+### Reorderable items — persistence
+
+`azRailRelocItem` reorders survive recomposition. The library writes the new per-host sibling order into `AzNavRailScopeImpl.savedRelocOrders` on drag-end, and re-applies it after every DSL re-evaluation via `applyRelocReorders()`. Without this layer the DSL block — which is re-applied on every recomposition — would always reinstate the original declaration order, snapping a freshly-dropped item back to where the user moved it from. The `onRelocate(from, to, newOrder)` callback still fires on drop so you can mirror the order into your own persistent store and seed the DSL with it on next launch.
 
 #### `App` (Class Level)
 * `dock`: `String` ("LEFT" or "RIGHT").
@@ -361,7 +372,7 @@ The bottom-sheet shell is ported from [LogKitty](https://github.com/HereLiesAz/L
 
 | DSL | Scope | Description |
 | :--- | :--- | :--- |
-| `azBottomSheet(controller, config, onSwipeLeft?, onSwipeRight?) { content }` | `AzNavHostScope` | Registers a sheet rendered above rail/menu/onscreen in `AzHostActivityLayout`. |
+| `azBottomSheet(controller, config, onSwipeLeft?, onSwipeRight?) { content }` | `AzNavHostScope` | Registers a sheet rendered above rail/menu/onscreen in `AzHostActivityLayout` with `zIndex(2f)`, spans full screen width, extends to the bottom edge (no inset padding) so the HIDDEN strip is reachable from the system-nav-bar area. |
 
 ### State
 

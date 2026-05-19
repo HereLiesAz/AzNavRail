@@ -13,12 +13,19 @@ import { AzSheetDetent } from '../types';
  * sheet collapses to `HIDDEN`, mirroring LogKitty's launcher-pass-through behaviour.
  */
 export interface AzSheetController {
+  /** Current detent. Reading this in a render subscribes the component to detent changes. */
   detent: AzSheetDetent;
+  /** When false, `stepUp`/`stepDown`/`snapTo` (except to HIDDEN) are no-ops. */
   isEnabled: boolean;
+  /** Imperatively sets the detent. Prefer `snapTo` to honour the `isEnabled` gate. */
   setDetent: (d: AzSheetDetent) => void;
+  /** Enables or disables the controller. Disabling collapses the sheet to HIDDEN. */
   setEnabled: (e: boolean) => void;
+  /** Moves one detent further up the ladder (HIDDEN → PEEK → HALF → FULL). */
   stepUp: () => void;
+  /** Moves one detent further down the ladder (FULL → HALF → PEEK → HIDDEN). */
   stepDown: () => void;
+  /** Jumps to the given detent. No-op when `isEnabled` is false unless the target is HIDDEN. */
   snapTo: (target: AzSheetDetent) => void;
 }
 
@@ -32,6 +39,22 @@ const order: AzSheetDetent[] = [
 /**
  * Remembers an `AzSheetController` across renders. The detent state is regular React
  * state, so reading `controller.detent` in a render is enough to drive re-renders.
+ *
+ * @param initial - Detent the sheet starts in. Defaults to `HIDDEN`.
+ * @returns A stable controller object suitable for passing to `<AzBottomSheet>`.
+ *
+ * @example
+ * ```tsx
+ * function MyScreen() {
+ *   const sheet = useAzSheetController(AzSheetDetent.PEEK);
+ *   return (
+ *     <>
+ *       <Button title="Open" onPress={() => sheet.snapTo(AzSheetDetent.HALF)} />
+ *       <AzBottomSheet controller={sheet}>...</AzBottomSheet>
+ *     </>
+ *   );
+ * }
+ * ```
  */
 export function useAzSheetController(
   initial: AzSheetDetent = AzSheetDetent.HIDDEN,

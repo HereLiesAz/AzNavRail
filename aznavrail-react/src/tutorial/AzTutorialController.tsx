@@ -9,14 +9,25 @@ try {
 
 const STORAGE_KEY = 'az_navrail_read_tutorials';
 
+/** React context that exposes the singleton `AzTutorialController` to descendants of `AzTutorialProvider`. */
 export const AzTutorialContext = createContext<AzTutorialController | null>(null);
 
+/** Props for `AzTutorialProvider`. */
 interface AzTutorialProviderProps {
+  /** Tree that will be able to read the tutorial controller via `useAzTutorialController`. */
   children: React.ReactNode;
+  /** Optional tutorial id to be considered active at mount (useful for testing). */
   initialActiveTutorialId?: string | null;
+  /** Optional list of tutorial ids to seed as already-read. */
   initialReadTutorials?: string[];
 }
 
+/**
+ * Wraps the app (or a subtree) in a tutorial controller. The controller persists
+ * the read-tutorial list in AsyncStorage when the optional dependency is installed.
+ * `AzNavRail` mounts a provider automatically; only wrap manually when you need
+ * a tutorial controller outside the rail tree.
+ */
 export const AzTutorialProvider: React.FC<AzTutorialProviderProps> = ({
   children,
   initialActiveTutorialId = null,
@@ -95,6 +106,14 @@ export const AzTutorialProvider: React.FC<AzTutorialProviderProps> = ({
   );
 };
 
+/**
+ * Reads the active `AzTutorialController` from context.
+ *
+ * @throws When called outside an `AzTutorialProvider` (or outside an `AzNavRail`).
+ * @returns The controller exposing `startTutorial`, `endTutorial`, `markTutorialRead`,
+ *   `isTutorialRead`, `fireEvent`, `consumeEvent`, and the read-only state fields
+ *   `activeTutorialId`, `readTutorials`, `currentVariables`, and `pendingEvent`.
+ */
 export const useAzTutorialController = (): AzTutorialController => {
   const context = useContext(AzTutorialContext);
   if (!context) {

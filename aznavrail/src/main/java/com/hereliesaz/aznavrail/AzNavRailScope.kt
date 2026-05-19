@@ -246,12 +246,31 @@ interface AzNavRailScope {
     fun azMenuCycler(id: String, options: List<String>, selectedOption: String, route: String? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuOptions: List<String>? = null, textColor: Color? = null, fillColor: Color? = null, onClick: (() -> Unit)? = null)
 
     /**
-     * Adds a cycler item to the rail.
+     * Adds a cycler item to the always-visible rail.
+     *
+     * Each tap advances [selectedOption] within [options]; the click callback fires after the
+     * cycler debounce window so consumers see one commit per "stop", not one per tap.
+     *
+     * @param id Unique identifier.
+     * @param options Full option list shown on the rail.
+     * @param selectedOption Current selection; must be a member of [options].
+     * @param route Optional navigation route triggered when the cycler is committed.
+     * @param color Border/icon color override.
+     * @param shape Button-shape override.
+     * @param disabled If true, the cycler is non-interactive.
+     * @param disabledOptions Members of [options] that should be skipped during cycling.
+     * @param screenTitle Title shown when this item is active.
+     * @param info Help text for this item.
+     * @param classifiers Strings for programmatic highlighting via [azConfig] activeClassifiers.
+     * @param menuOptions Alternate option labels used when the same item renders in the menu.
+     * @param textColor Text color override.
+     * @param fillColor Translucent fill color override.
+     * @param onClick Callback fired on commit.
      */
     fun azRailCycler(id: String, options: List<String>, selectedOption: String, route: String? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuOptions: List<String>? = null, textColor: Color? = null, fillColor: Color? = null, onClick: (() -> Unit)? = null)
 
     /**
-     * Adds a visual divider line to the menu.
+     * Adds a visual divider line to the menu list. Has no effect on the collapsed rail.
      */
     fun azDivider()
 
@@ -272,7 +291,10 @@ interface AzNavRailScope {
     fun azMenuHostItem(id: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, onClick: (() -> Unit)? = null)
 
     /**
-     * Adds a Host Item to the rail.
+     * Adds a Host Item to the rail. Sub-items targeting [id] via their `hostId` parameter expand
+     * inline beneath this host when it is tapped (rail flavor).
+     *
+     * Parameters mirror [azMenuHostItem]; see that method's docs for details.
      */
     fun azRailHostItem(id: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, onClick: (() -> Unit)? = null)
 
@@ -284,27 +306,47 @@ interface AzNavRailScope {
     fun azMenuSubItem(id: String, hostId: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, onClick: (() -> Unit)? = null)
 
     /**
-     * Adds a Sub Item to a Host Item in the rail.
+     * Adds a Sub Item to a Host Item in the rail. Parameters mirror [azMenuSubItem]; on the rail
+     * the sub-item only renders while its host is expanded.
+     *
+     * @param onFocus Called when the sub-item gains focus.
      */
     fun azRailSubItem(id: String, hostId: String, text: String = "", route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null)
 
     /**
-     * Adds a Sub Toggle to a Host Item in the menu.
+     * Adds a Sub Toggle to a Host Item in the menu. The toggle only renders when its host is
+     * expanded.
+     *
+     * @param id Unique identifier.
+     * @param hostId The ID of the parent Host Item.
+     * @param isChecked Current state.
+     * @param toggleOnText Label shown when checked.
+     * @param toggleOffText Label shown when unchecked.
+     * @param onClick Fired on toggle.
      */
     fun azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuToggleOnText: String? = null, menuToggleOffText: String? = null, textColor: Color? = null, fillColor: Color? = null, onClick: (() -> Unit)? = null)
 
     /**
-     * Adds a Sub Toggle to a Host Item in the rail.
+     * Adds a Sub Toggle to a Host Item in the rail. Parameters mirror [azMenuSubToggle]; only
+     * visible while the parent host is expanded on the rail.
      */
     fun azRailSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuToggleOnText: String? = null, menuToggleOffText: String? = null, textColor: Color? = null, fillColor: Color? = null, onClick: (() -> Unit)? = null)
 
     /**
      * Adds a Sub Cycler to a Host Item in the menu.
+     *
+     * @param id Unique identifier.
+     * @param hostId The ID of the parent Host Item.
+     * @param options Full option list.
+     * @param selectedOption Current selection; must be in [options].
+     * @param disabledOptions Options that should be skipped during cycling.
+     * @param onClick Fired on commit.
      */
     fun azMenuSubCycler(id: String, hostId: String, options: List<String>, selectedOption: String, route: String? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuOptions: List<String>? = null, textColor: Color? = null, fillColor: Color? = null, onClick: (() -> Unit)? = null)
 
     /**
-     * Adds a Sub Cycler to a Host Item in the rail.
+     * Adds a Sub Cycler to a Host Item in the rail. Parameters mirror [azMenuSubCycler]; the
+     * cycler only renders while the parent host is expanded on the rail.
      */
     fun azRailSubCycler(id: String, hostId: String, options: List<String>, selectedOption: String, route: String? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuOptions: List<String>? = null, textColor: Color? = null, fillColor: Color? = null, onClick: (() -> Unit)? = null)
 
