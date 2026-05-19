@@ -191,6 +191,13 @@ internal fun RailItems(
                                         }
                                         RelocItemHandler.updateOrder(scope.navItems, draggedItemId!!, currentDropTargetIndex!!)
                                         val currentOrder = scope.navItems.map { it.id }
+                                        // Persist the per-host reloc order so the new arrangement survives recomposition.
+                                        val draggedHostId = scope.navItems.firstOrNull { it.id == draggedItemId }?.hostId
+                                        if (draggedHostId != null) {
+                                            scope.savedRelocOrders[draggedHostId] = scope.navItems
+                                                .filter { it.isRelocItem && it.hostId == draggedHostId }
+                                                .map { it.id }
+                                        }
                                         scope.onRelocateMap[draggedItemId!!]?.invoke(currentIdx, currentDropTargetIndex!!, currentOrder)
                                     }
                                 }

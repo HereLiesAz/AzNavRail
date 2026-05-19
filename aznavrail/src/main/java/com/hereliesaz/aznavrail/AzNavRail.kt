@@ -203,8 +203,12 @@ fun AzNavRail(
     val coroutineScope = rememberCoroutineScope()
 
     val scope = providedScope ?: remember { AzNavRailScopeImpl() }
-    if (providedScope == null) scope.reset()
-    scope.apply(content)
+    if (providedScope == null) {
+        scope.reset()
+        scope.apply(content)
+        scope.applyRelocReorders()
+    }
+    // When providedScope is non-null, AzHostActivityLayout already applied the DSL + reorders.
 
     val packageManager = context.packageManager
     val packageName = context.packageName

@@ -239,6 +239,8 @@ fun AzHostActivityLayout(
     scope.resetHost()
     scope.setController(navController)
     scope.apply(content)
+    // Re-apply persisted reloc-item reorders so drag-and-drop sticks across recomposition.
+    scope.getRailScopeImpl().applyRelocReorders()
 
     val railScope = scope.getRailScopeImpl()
     val dockingSide = railScope.dockingSide

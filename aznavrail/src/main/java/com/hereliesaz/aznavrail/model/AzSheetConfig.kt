@@ -39,7 +39,7 @@ data class AzSheetConfig(
     val backgroundAlpha: Float = 0.92f,
     val scrimColor: Color = Color.Black,
     val scrimAlpha: Float = 0.32f,
-    val hiddenStripDp: Dp = 14.dp,
+    val hiddenStripDp: Dp = 28.dp,
     val peekDp: Dp = 56.dp,
     val halfFraction: Float = 0.5f,
     val fullFraction: Float = 0.9f,
