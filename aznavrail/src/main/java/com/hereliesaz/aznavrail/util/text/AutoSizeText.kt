@@ -406,14 +406,30 @@ private fun <T> IntProgression.findElectedValue(
     transform((high * step).fastCoerceAtLeast(first * step))
 }
 
+/**
+ * Validity tri-state for the `suggestedFontSizes` list passed to [AutoSizeText].
+ *
+ * Mark a list as [VALID] only when it is non-empty, contains only sp values, and is already sorted
+ * ascending — this skips the runtime normalization pass and is the cheaper code path.
+ */
 enum class SuggestedFontSizesStatus {
-    VALID, INVALID, UNKNOWN;
+    /** Caller guarantees the list is non-empty, all-sp, and sorted ascending; no runtime check. */
+    VALID,
+    /** Caller asserts the list is malformed; AutoSizeText falls back to the candidate-size search. */
+    INVALID,
+    /** Caller does not know — AutoSizeText runs [validSuggestedFontSizes] to normalize. */
+    UNKNOWN;
 
     companion object {
+        /** Returns [VALID] when the receiver is non-empty, all-sp, and sorted ascending; otherwise [INVALID]. */
         val List<TextUnit>.suggestedFontSizesStatus: SuggestedFontSizesStatus
             get() = if (isNotEmpty() && fastAll { it.isSp } && sortedBy { it.value } == this) VALID
             else INVALID
 
+        /**
+         * Returns a sanitized copy of the receiver — filtered to sp values and sorted ascending —
+         * or `null` if the receiver is empty or contains no sp values.
+         */
         val List<TextUnit>.validSuggestedFontSizes: List<TextUnit>?
             get() = takeIf { it.isNotEmpty() } // Optimization: empty check first to immediately return null
                 ?.fastFilter { it.isSp }?.takeIf { it.isNotEmpty() }?.sortedBy { it.value }

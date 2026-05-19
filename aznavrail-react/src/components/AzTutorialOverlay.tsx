@@ -5,15 +5,25 @@ import {
 import { AzTutorial } from '../types';
 import { useAzTutorialController } from '../tutorial/AzTutorialController';
 
+/** Props for `AzTutorialOverlay`, the runtime renderer for an active tutorial. */
 interface AzTutorialOverlayProps {
+  /** Id of the tutorial being played. */
   tutorialId: string;
+  /** The tutorial definition (scenes and cards). */
   tutorial: AzTutorial;
+  /** Called when the user skips or finishes the tutorial. */
   onDismiss: () => void;
+  /** Map of item id → recorded screen bounds, used to position spotlight cutouts. */
   itemBoundsCache: Record<string, { x: number; y: number; width: number; height: number }>;
 }
 
 const TAG = 'AzTutorialOverlay';
 
+/**
+ * Full-screen tutorial player. Renders the current scene's content, a dimmed
+ * overlay with optional spotlight cutout, an instructional card, and handles
+ * advance conditions (Button/TapAnywhere/TapTarget/Event) and scene branching.
+ */
 export const AzTutorialOverlay: React.FC<AzTutorialOverlayProps> = ({
   tutorialId, tutorial, onDismiss, itemBoundsCache,
 }) => {

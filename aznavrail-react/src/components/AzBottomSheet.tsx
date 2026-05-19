@@ -76,6 +76,21 @@ function detentHeight(detent: AzSheetDetent, parentHeight: number, cfg: typeof D
  * Works on both React Native and react-native-web — `Animated` and `PanResponder` are
  * imported from `react-native` and the web shim provides them via `react-native-web`,
  * so no platform fork is required.
+ *
+ * @example
+ * ```tsx
+ * function MyScreen() {
+ *   const sheet = useAzSheetController(AzSheetDetent.PEEK);
+ *   return (
+ *     <View style={{ flex: 1 }}>
+ *       <MyContent />
+ *       <AzBottomSheet controller={sheet} config={{ peekDp: 64 }}>
+ *         <SheetContent onClose={() => sheet.snapTo(AzSheetDetent.HIDDEN)} />
+ *       </AzBottomSheet>
+ *     </View>
+ *   );
+ * }
+ * ```
  */
 export function AzBottomSheet(props: AzBottomSheetProps): React.ReactElement {
   const { controller, onSwipeLeft, onSwipeRight, children, style } = props;

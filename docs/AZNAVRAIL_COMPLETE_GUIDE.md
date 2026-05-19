@@ -754,7 +754,7 @@ The fractions and the absolute heights are tunable via `AzSheetConfig`.
 
 ### 10.2 In-tree usage
 
-Inside `AzHostActivityLayout` use the `azBottomSheet` DSL. The sheet draws above the rail, the menu, and the `onscreen` content area, and sits inside `WindowInsets.navigationBars` so the system navigation bar stays visible. It is *not* a background.
+Inside `AzHostActivityLayout` use the `azBottomSheet` DSL. The sheet draws above the rail, the menu, and the `onscreen` content area with `zIndex(2f)`, spans the full screen width edge-to-edge, and extends all the way to the bottom of the screen (no automatic `windowInsetsPadding`) so the HIDDEN-detent strip — 28dp tall by default, with a dimmed drag-handle — is reachable from the system-navigation-bar area. A tap on the strip steps up to PEEK alongside the swipe-up gesture. It is *not* a background. If your sheet body needs to clear the system nav bar visually, pad inside your `content` lambda or use `AzBottomSheetInsetAware` directly outside the DSL.
 
 ```kotlin
 val sheetController = rememberAzSheetController(initial = AzSheetDetent.PEEK)

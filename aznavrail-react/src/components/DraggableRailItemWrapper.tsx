@@ -13,18 +13,32 @@ import { AzNavItem } from '../types';
 import { AzButton } from './AzButton';
 import { AzTextBox } from './AzTextBox';
 
+/** Internal props for `DraggableRailItemWrapper`. */
 interface DraggableRailItemWrapperProps {
+  /** The reloc nav item being rendered. */
   item: AzNavItem;
+  /** Global index of this item within the parent rail's items array. */
   index: number;
+  /** Total number of items in the rail (used to clamp drag bounds). */
   totalItems: number;
+  /** Called when a drag gesture starts on this item. */
   onDragStart: (index: number) => void;
+  /** Called when the drag gesture ends and the drop should be committed. */
   onDragEnd: (index: number) => void;
+  /** Called during the drag with the cumulative vertical delta. */
   onDragMove: (dy: number, index: number) => void;
+  /** Externally-driven displacement applied while sibling items are being shuffled. */
   offsetY: Animated.Value;
+  /** Style merged into the wrapper container. */
   style?: any;
+  /** Optional background color applied to the long-press hidden menu. */
   translucentBackground?: string;
 }
 
+/**
+ * Renders a single reloc item that can be dragged vertically and long-pressed to reveal a hidden menu.
+ * Used internally by `AzNavRail` to host `AzRailRelocItem` declarations.
+ */
 export const DraggableRailItemWrapper: React.FC<DraggableRailItemWrapperProps> = ({
   item,
   index,

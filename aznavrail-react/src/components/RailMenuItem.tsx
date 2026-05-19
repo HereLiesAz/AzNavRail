@@ -2,15 +2,26 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { AzNavItem } from '../types';
 
+/** Internal props for `RailMenuItem` — one row inside the expanded-menu scroll view. */
 interface RailMenuItemProps {
+    /** Resolved nav item to render. */
     item: AzNavItem;
+    /** Nesting depth used to indent sub-items. */
     depth: number;
+    /** When `item.isHost` is true, whether the host is currently expanded. */
     isExpandedHost: boolean;
+    /** Called to toggle the host item's expanded state. */
     onToggleHost: () => void;
+    /** Called when a non-host item is tapped. */
     onItemClick: () => void;
+    /** Renders the host's sub-items beneath it when expanded. */
     renderSubItems: () => React.ReactNode;
 }
 
+/**
+ * Internal renderer for a single row in the expanded menu, handling toggle, cycler, and host item modes.
+ * Used by `AzNavRail` when the menu is open.
+ */
 export const RailMenuItem: React.FC<RailMenuItemProps> = ({
     item,
     depth,

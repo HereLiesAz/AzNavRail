@@ -7,6 +7,16 @@ import { AzBottomSheet, AzBottomSheetProps } from './AzBottomSheet';
  * so the body sits inside the system navigation-bar inset. On web, applies a CSS
  * `env(safe-area-inset-bottom)` padding (no true system overlay exists on web — see
  * `KNOWN_GAPS.md`).
+ *
+ * @example
+ * ```tsx
+ * const sheet = useAzSheetController();
+ * return (
+ *   <AzBottomSheetInsetAware controller={sheet}>
+ *     <MyForm />
+ *   </AzBottomSheetInsetAware>
+ * );
+ * ```
  */
 export function AzBottomSheetInsetAware(props: AzBottomSheetProps): React.ReactElement {
   if (Platform.OS === 'web') {

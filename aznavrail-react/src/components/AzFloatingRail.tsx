@@ -10,6 +10,28 @@ import {
 } from 'react-native';
 
 /**
+ * Props for `AzFloatingRail`, the documented analog to the Android `AzNavRailWindowService`.
+ */
+export interface AzFloatingRailProps {
+  /** When false, the floating rail is unmounted. */
+  visible: boolean;
+  /** Sheet contents — typically a rail or a draggable widget. */
+  children: React.ReactNode;
+  /** Fires while the rail is being dragged. Mirrors Android `onRailDrag` / `onOverlayDrag`. */
+  onDrag?: (dx: number, dy: number) => void;
+  /** Fires when the user finishes dragging and releases the rail. */
+  onDragEnd?: () => void;
+  /** Fires when the modal is dismissed (native back press). Mirrors Android `onUndock`. */
+  onDismiss?: () => void;
+  /** Initial X position of the floating rail, in screen coordinates. */
+  initialX?: number;
+  /** Initial Y position of the floating rail, in screen coordinates. */
+  initialY?: number;
+  /** Optional style override for the rail container. */
+  style?: ViewStyle;
+}
+
+/**
  * Documented analog to the Android `AzNavRailWindowService`.
  *
  * Web/React Native have no true system overlay window (the closest the platform exposes is a
@@ -23,25 +45,22 @@ import {
  *
  * See `KNOWN_GAPS.md` for the parity caveats. True SYSTEM_ALERT_WINDOW behaviour is not
  * reachable from JavaScript on either platform.
+ *
+ * @example
+ * ```tsx
+ * const [floating, setFloating] = useState(false);
+ * return (
+ *   <AzFloatingRail
+ *     visible={floating}
+ *     initialX={24}
+ *     initialY={120}
+ *     onDismiss={() => setFloating(false)}
+ *   >
+ *     <MyMiniRail />
+ *   </AzFloatingRail>
+ * );
+ * ```
  */
-export interface AzFloatingRailProps {
-  /** When false, the floating rail is unmounted. */
-  visible: boolean;
-  /** Sheet contents — typically a rail or a draggable widget. */
-  children: React.ReactNode;
-  /** Fires while the rail is being dragged. Mirrors Android `onRailDrag` / `onOverlayDrag`. */
-  onDrag?: (dx: number, dy: number) => void;
-  /** Fires when the user finishes dragging and releases the rail. */
-  onDragEnd?: () => void;
-  /** Fires when the modal is dismissed (native back press). Mirrors Android `onUndock`. */
-  onDismiss?: () => void;
-  /** Initial position of the floating rail, in screen coordinates. */
-  initialX?: number;
-  initialY?: number;
-  /** Optional style override for the rail container. */
-  style?: ViewStyle;
-}
-
 export function AzFloatingRail(props: AzFloatingRailProps): React.ReactElement | null {
   const { visible, children, onDrag, onDragEnd, onDismiss, initialX = 16, initialY = 80, style } = props;
   const offsetRef = useRef({ x: initialX, y: initialY });

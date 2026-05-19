@@ -768,6 +768,28 @@ const TutorialOverlayWrapper: React.FC<{
  * Main navigation rail component for React Native.
  * Renders a collapsible side rail with icon buttons, an expandable menu, and optional tutorial/help overlay support.
  * Declare items as JSX children using the `AzNavRailScope` DSL helpers.
+ *
+ * @example
+ * ```tsx
+ * <AzNavRail
+ *   dockingSide={AzDockingSide.LEFT}
+ *   activeColor="#6200ee"
+ *   enableRailDragging
+ * >
+ *   <AzRailItem id="home" text="Home" onClick={() => nav.push('/home')} />
+ *   <AzRailToggle
+ *     id="dark"
+ *     text="Theme"
+ *     isChecked={dark}
+ *     toggleOnText="Dark"
+ *     toggleOffText="Light"
+ *     onClick={() => setDark(v => !v)}
+ *   />
+ *   <AzRailDivider />
+ *   <AzMenuItem id="about" text="About" onClick={openAbout} />
+ *   <MyScreen />
+ * </AzNavRail>
+ * ```
  */
 export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
   return (
