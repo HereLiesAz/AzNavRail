@@ -1,7 +1,8 @@
 import React from 'react';
 import renderer from 'react-test-renderer';
 import { Text } from 'react-native';
-import { AzNavRail, AzNavHostContext } from '../AzNavRail';
+import { AzNavRail } from '../AzNavRail';
+// `AzNavHostContext` was removed in the React-port refactor; tests now mount AzNavRail directly.
 import { AzRailHostItem, AzRailSubItem, AzRailRelocItem } from '../AzNavRailScope';
 import { AzButtonShape } from '../types';
 import { AzButton } from '../components/AzButton';
@@ -21,11 +22,9 @@ describe('AzNavRail Full Suite', () => {
     let component: renderer.ReactTestRenderer = {} as any;
     renderer.act(() => {
 component = renderer.create(
-        <AzNavHostContext.Provider value={true}>
 <AzNavRail isLoading={true}>
           <Text>Content</Text>
         </AzNavRail>
-</AzNavHostContext.Provider>
       );
 });
     const root = component.root;
@@ -50,13 +49,11 @@ component = renderer.create(
     let component: renderer.ReactTestRenderer = {} as any;
     renderer.act(() => {
 component = renderer.create(
-          <AzNavHostContext.Provider value={true}>
-<AzNavRail initiallyExpanded={false}>
+  <AzNavRail initiallyExpanded={false}>
             <AzRailHostItem id="host" text="Host" />
             <AzRailRelocItem id="reloc1" hostId="host" text="Reloc1" onRelocate={mockOnRelocate} />
             <AzRailRelocItem id="reloc2" hostId="host" text="Reloc2" />
           </AzNavRail>
-</AzNavHostContext.Provider>
         );
 });
 
@@ -100,12 +97,10 @@ component = renderer.create(
     let component: renderer.ReactTestRenderer = {} as any;
     renderer.act(() => {
 component = renderer.create(
-          <AzNavHostContext.Provider value={true}>
-<AzNavRail initiallyExpanded={false}>
+  <AzNavRail initiallyExpanded={false}>
             <AzRailHostItem id="host" text="Host" />
             <AzRailSubItem id="sub" hostId="host" text="Sub" shape={AzButtonShape.SQUARE} />
           </AzNavRail>
-</AzNavHostContext.Provider>
         );
 });
 

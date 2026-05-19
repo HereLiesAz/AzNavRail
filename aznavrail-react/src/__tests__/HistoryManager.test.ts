@@ -115,7 +115,11 @@ describe('HistoryManager', () => {
       expect(historyManager.getSuggestions('ctxA', '')).toEqual([]);
       expect(historyManager.getSuggestions('ctxA', 'a')).toEqual(['Apple', 'Alpha']);
       expect(historyManager.getSuggestions('ctxB', 'b')).toEqual(['Beta']);
-      expect(historyManager.getSuggestions('ctxB', 'a')).toEqual([]);
+      // ctxA-only entries ("Apple", "Alpha") must not leak into ctxB. Use substrings unique
+      // to those entries — note: query 'a' would match 'Beta' (case-insensitive substring),
+      // so it isn't a useful cross-context test.
+      expect(historyManager.getSuggestions('ctxB', 'pple')).toEqual([]);
+      expect(historyManager.getSuggestions('ctxB', 'lph')).toEqual([]);
     });
 
     it('contexts are case-sensitive ("MyCtx" and "myctx" are different keys)', () => {

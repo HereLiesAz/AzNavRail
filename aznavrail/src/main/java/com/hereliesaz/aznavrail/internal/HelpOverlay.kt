@@ -16,6 +16,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
@@ -87,6 +88,10 @@ internal fun HelpOverlay(
     // bounds for (or haven't measured yet) defaults to visible — the previous "fail closed" logic
     // hid every card on first show because itemBoundsCache hadn't been read yet.
     var overlayBounds by remember { mutableStateOf(Rect.Zero) }
+    // Window-space bounds of the scrollable cards Column. Used to clip the connector-line
+    // drawing so a line truncates at the same edge as its associated card when the card is
+    // scrolled out of the cards viewport.
+    var cardsViewportBounds by remember { mutableStateOf(Rect.Zero) }
 
     fun isRailItemOnscreen(item: AzNavItem): Boolean {
         val rb = itemBoundsCache[item.id] ?: return true        // no bounds yet → assume onscreen
@@ -113,26 +118,44 @@ internal fun HelpOverlay(
             .drawBehind {
                 val strokeWidth = 4.dp
 
-                visibleItemsWithInfo.forEachIndexed { index, item ->
-                    val drawColor = colorPalette[index % colorPalette.size]
-                    val itemBounds = itemBoundsCache[item.id]
-                    val cardBounds = cardBoundsCache[item.id]
+                // Build the clip rectangle from the cards viewport bounds (window space). Lines
+                // are drawn in window space, so clipping them at the cards viewport edge makes
+                // each line truncate at exactly the same place its card disappears under the
+                // top/bottom of the scrollable Column. Falls back to "no clip" until the Column
+                // has been measured (cardsViewportBounds = Rect.Zero).
+                val viewport = cardsViewportBounds
+                val clipped = viewport != Rect.Zero && viewport.width > 0f && viewport.height > 0f
 
-                    if (itemBounds != null && cardBounds != null) {
-                        // Endpoints are in window coordinates. Even when the card is scrolled
-                        // outside the viewport its bounds keep updating via onGloballyPositioned,
-                        // so the connector line continues to follow the card's logical position;
-                        // Compose clips the portion of the line outside the overlay box.
-                        val start = Offset(itemBounds.right, itemBounds.center.y)
-                        val end = Offset(cardBounds.left, cardBounds.center.y)
+                val drawLines: androidx.compose.ui.graphics.drawscope.DrawScope.() -> Unit = {
+                    visibleItemsWithInfo.forEachIndexed { index, item ->
+                        val drawColor = colorPalette[index % colorPalette.size]
+                        val itemBounds = itemBoundsCache[item.id]
+                        val cardBounds = cardBoundsCache[item.id]
 
-                        drawLine(
-                            color = drawColor,
-                            start = start,
-                            end = end,
-                            strokeWidth = strokeWidth.toPx()
-                        )
+                        if (itemBounds != null && cardBounds != null) {
+                            val start = Offset(itemBounds.right, itemBounds.center.y)
+                            val end = Offset(cardBounds.left, cardBounds.center.y)
+                            drawLine(
+                                color = drawColor,
+                                start = start,
+                                end = end,
+                                strokeWidth = strokeWidth.toPx()
+                            )
+                        }
                     }
+                }
+
+                if (clipped) {
+                    clipRect(
+                        left = viewport.left,
+                        top = viewport.top,
+                        right = viewport.right,
+                        bottom = viewport.bottom,
+                    ) {
+                        drawLines()
+                    }
+                } else {
+                    drawLines()
                 }
             }
     ) {
@@ -141,6 +164,11 @@ internal fun HelpOverlay(
                 .fillMaxSize()
                 .padding(start = dynamicStartPadding, end = 16.dp) // Leave space for rail + nested rail
                 .padding(top = safeZones.top, bottom = safeZones.bottom)
+                .onGloballyPositioned { coords ->
+                    // Capture the post-padding window-space rect of the scrollable cards Column
+                    // so the connector lines in the outer drawBehind can clip against it.
+                    cardsViewportBounds = coords.boundsInWindow()
+                }
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {

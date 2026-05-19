@@ -54,7 +54,15 @@
       "Bash(timeout 90 node node_modules/jest/bin/jest.js --runInBand --forceExit src/__tests__/AzTutorialController.test.tsx)",
       "Bash(timeout 90 node node_modules/jest/bin/jest.js --runInBand --forceExit src/__tests__/HistoryManager.test.ts)",
       "Bash(awk -F'\"' '{split\\($0,a,\"tests=\\\\\"\"\\); split\\(a[2],b,\"\\\\\"\"\\); split\\($0,c,\"failures=\\\\\"\"\\); split\\(c[2],d,\"\\\\\"\"\\); split\\($0,e,\"errors=\\\\\"\"\\); split\\(e[2],f,\"\\\\\"\"\\); t+=b[1]; fl+=d[1]; er+=f[1]} END {print \"tests=\"t\" failures=\"fl\" errors=\"er}')",
-      "Bash(timeout 60 node node_modules/jest/bin/jest.js --runInBand --forceExit src/__tests__/AzNavRailSettings.test.tsx)"
+      "Bash(timeout 60 node node_modules/jest/bin/jest.js --runInBand --forceExit src/__tests__/AzNavRailSettings.test.tsx)",
+      "Bash(cp /run/media/az/0722-7C65/AzNavRail/aznavrail-react/src/AzNavRailScope.tsx /tmp/aznavrail-react-final/src/AzNavRailScope.tsx)",
+      "Bash(cp /run/media/az/0722-7C65/AzNavRail/aznavrail-react/src/__tests__/AzNavRailSettings.test.tsx /tmp/aznavrail-react-final/src/__tests__/AzNavRailSettings.test.tsx)",
+      "Bash(timeout 60 node node_modules/jest/bin/jest.js --runInBand --forceExit src/__tests__/HistoryManager.test.ts src/__tests__/HelpOverlaySmoke.test.tsx)",
+      "Bash(cp /run/media/az/0722-7C65/AzNavRail/aznavrail-react/src/__tests__/HistoryManager.test.ts /tmp/aznavrail-react-final/src/__tests__/HistoryManager.test.ts)",
+      "Bash(timeout 120 node node_modules/jest/bin/jest.js --runInBand --forceExit)",
+      "Bash(cp /run/media/az/0722-7C65/AzNavRail/aznavrail-react/src/__tests__/AzNavRail.test.tsx /tmp/aznavrail-react-final/src/__tests__/AzNavRail.test.tsx)",
+      "Bash(cp /run/media/az/0722-7C65/AzNavRail/aznavrail-react/src/__tests__/AzNavRailFull.test.tsx /tmp/aznavrail-react-final/src/__tests__/AzNavRailFull.test.tsx)",
+      "Bash(rm -f /tmp/aznavrail-react-final/src/__tests__/__snapshots__/AzNavRail.test.tsx.snap)"
     ]
   }
 }

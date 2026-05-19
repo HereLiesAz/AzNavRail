@@ -12,6 +12,9 @@ import { AzButtonShape, AzDockingSide, AzHeaderIconShape } from '../types';
  * destructuring/config block in AzNavRail.tsx — names must match the AzNavRailSettings
  * interface exactly.
  */
+// Note: AzNavRailScope.tsx's unregister cleanup is now deferred via `queueMicrotask` so the
+// test-renderer commit doesn't loop. If you see "Maximum update depth exceeded" here again,
+// check that the deferral in `useAzItem`'s second `useEffect` is still in place.
 describe('AzNavRail rendering with AzNavRailSettings flags', () => {
   beforeEach(() => {
     jest.useFakeTimers();

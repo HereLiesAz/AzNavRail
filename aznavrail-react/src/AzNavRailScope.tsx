@@ -54,10 +54,25 @@ const useAzItem = (item: AzNavItem) => {
   }, [context, item]); // dependencies should capture all props
 
   useEffect(() => {
-      if (context) {
-          return () => context.unregister(item.id);
-      }
-      return undefined;
+      if (!context) return undefined;
+      // Defer the unregister to a microtask so it doesn't re-enter React's commit phase
+      // while the parent `AzNavRail` is itself unmounting. The synchronous form caused a
+      // "Maximum update depth exceeded" inside react-test-renderer because `unregister`'s
+      // `setItems(prev => prev.filter(...))` was scheduled while the host fiber was still
+      // processing passive-effect cleanups for the same tree.
+      //
+      // We snapshot `context` and `item.id` so the deferred callback isn't affected by a
+      // later effect re-run with a different id.
+      const ctx = context;
+      const id = item.id;
+      return () => {
+        if (typeof queueMicrotask === 'function') {
+          queueMicrotask(() => ctx.unregister(id));
+        } else {
+          // queueMicrotask is missing in very old environments; fall back to a 0ms timeout.
+          setTimeout(() => ctx.unregister(id), 0);
+        }
+      };
   }, [context, item.id]);
 
   return null;
