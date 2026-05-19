@@ -123,6 +123,14 @@ fun MainApp() {
     var sheetSwipeLog by remember { mutableStateOf("(no swipes yet)") }
     var sheetSwipeCount by remember { mutableStateOf(0) }
 
+    // Bring the sheet up to PEEK whenever the user lands on the bottom-sheet screen so it's
+    // immediately obvious. On other routes the user's last-set detent (often HIDDEN) is honoured.
+    LaunchedEffect(currentDestination) {
+        if (currentDestination == "bottom-sheet" && sheetController.detent == AzSheetDetent.HIDDEN) {
+            sheetController.snapTo(AzSheetDetent.PEEK)
+        }
+    }
+
     // Hidden menu screen state.
     val relocOrder = remember { mutableStateListOf("reloc-1", "reloc-2", "reloc-nested-h", "reloc-nested-v") }
     var hiddenLastAction by remember { mutableStateOf("(none)") }
@@ -504,28 +512,28 @@ fun MainApp() {
         }
 
         // ---------- Host-registered bottom sheet (azBottomSheet DSL) ----------
-        // Only register when on the bottom-sheet route. The DSL form draws above the rail/menu
-        // and respects the system navigation-bar inset, unlike a sheet placed inside screen content.
-        if (currentDestination == "bottom-sheet") {
-            azBottomSheet(
-                controller = sheetController,
-                config = AzSheetConfig(
-                    horizontalSwipeEnabled = horizontalSwipeEnabled,
-                    collapseOnBack = collapseOnBack,
-                    handleVisible = handleVisible,
-                    animateInTree = animateInTree,
-                ),
-                onSwipeLeft = {
-                    sheetSwipeCount++
-                    sheetSwipeLog = "left @ ${System.currentTimeMillis() % 100000}"
-                },
-                onSwipeRight = {
-                    sheetSwipeCount++
-                    sheetSwipeLog = "right @ ${System.currentTimeMillis() % 100000}"
-                },
-            ) {
-                BottomSheetBody(sheetController.detent)
-            }
+        // Registered unconditionally so the HIDDEN strip is always present at the bottom of the
+        // screen — that's the affordance for revealing the sheet. The default initial detent is
+        // PEEK so first launch makes the sheet obviously visible. A LaunchedEffect below
+        // re-snaps to PEEK whenever the user navigates to the bottom-sheet screen.
+        azBottomSheet(
+            controller = sheetController,
+            config = AzSheetConfig(
+                horizontalSwipeEnabled = horizontalSwipeEnabled,
+                collapseOnBack = collapseOnBack,
+                handleVisible = handleVisible,
+                animateInTree = animateInTree,
+            ),
+            onSwipeLeft = {
+                sheetSwipeCount++
+                sheetSwipeLog = "left @ ${System.currentTimeMillis() % 100000}"
+            },
+            onSwipeRight = {
+                sheetSwipeCount++
+                sheetSwipeLog = "right @ ${System.currentTimeMillis() % 100000}"
+            },
+        ) {
+            BottomSheetBody(sheetController.detent)
         }
 
         // ---------- Backgrounds ----------
