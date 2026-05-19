@@ -330,6 +330,18 @@ function App() {
             <Route path="/standalone" element={<StandaloneWidgets />} />
             <Route path="/customization" element={<CustomizationDemo state={customization} onChange={setCustomization} />} />
             <Route path="/forms" element={<FormDemo />} />
+            <Route
+              path="/help-system"
+              element={
+                <HelpSystemDemo
+                  showHelp={showHelp}
+                  onToggleHelp={() => setShowHelp((v) => !v)}
+                  activeClassifiers={customization.activeClassifiers}
+                  onClassifiersChange={(next) => setCustomization({ ...customization, activeClassifiers: next })}
+                  dismissCount={dismissCount}
+                />
+              }
+            />
             <Route path="/legacy" element={<LegacyPlayground />} />
             <Route path="*" element={<LegacyPlayground />} />
           </Routes>
