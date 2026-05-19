@@ -40,7 +40,11 @@ data class AzSheetConfig(
     val scrimColor: Color = Color.Black,
     val scrimAlpha: Float = 0.32f,
     val hiddenStripDp: Dp = 28.dp,
-    val peekDp: Dp = 56.dp,
+    // PEEK sits visibly above HIDDEN — the 56dp default was just slightly taller than the 28dp
+    // HIDDEN strip and the two looked nearly identical at runtime. 120dp gives ~92dp of body
+    // content area below the drag handle, so PEEK is unambiguously a step up from HIDDEN
+    // without overlapping HALF (`halfFraction = 0.5`).
+    val peekDp: Dp = 120.dp,
     val halfFraction: Float = 0.5f,
     val fullFraction: Float = 0.9f,
     val dragThresholdDp: Dp = 24.dp,

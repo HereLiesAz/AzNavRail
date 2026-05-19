@@ -113,7 +113,7 @@ internal fun HelpOverlay(
         modifier = Modifier
             .fillMaxSize()
             .onGloballyPositioned { overlayBounds = it.boundsInWindow() }
-            .background(Color.Black.copy(alpha = 0.7f))
+            // No dark scrim — the overlay shows cards and connector lines over the live UI.
             .clickable(onClick = onDismiss) // Background tap to dismiss
             .drawBehind {
                 val strokeWidth = 4.dp
@@ -146,10 +146,15 @@ internal fun HelpOverlay(
                 }
 
                 if (clipped) {
+                    // Clip on the VERTICAL axis only — top/bottom of the cards viewport — so a
+                    // line truncates at the same edge its card disappears under, but is still
+                    // free to cross horizontally from the rail item (left of the viewport) into
+                    // the card (inside the viewport). Clipping on left/right would cut every
+                    // line off before it ever reached the card.
                     clipRect(
-                        left = viewport.left,
+                        left = 0f,
                         top = viewport.top,
-                        right = viewport.right,
+                        right = size.width,
                         bottom = viewport.bottom,
                     ) {
                         drawLines()

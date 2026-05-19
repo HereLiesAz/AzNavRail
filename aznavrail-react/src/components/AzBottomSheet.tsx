@@ -40,7 +40,9 @@ const DEFAULTS: Required<Omit<AzSheetConfig, 'backgroundColor'>> & { backgroundC
   scrimAlpha: 0.32,
   // 28dp keeps the HIDDEN strip touchable; below ~24dp the swipe-up target is too small to land.
   hiddenStripDp: 28,
-  peekDp: 56,
+  // PEEK is a visible step above HIDDEN — 120dp leaves ~92dp of body content above the handle,
+  // so the user clearly sees content appear without HALF being reached.
+  peekDp: 120,
   halfFraction: 0.5,
   fullFraction: 0.9,
   dragThresholdDp: 24,
