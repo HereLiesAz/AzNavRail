@@ -9,6 +9,7 @@ import {
   PanResponderInstance,
   Platform,
   PixelRatio,
+  Pressable,
   StyleSheet,
   View,
   ViewStyle,
@@ -37,7 +38,8 @@ const DEFAULTS: Required<Omit<AzSheetConfig, 'backgroundColor'>> & { backgroundC
   backgroundAlpha: 0.92,
   scrimColor: '#000000',
   scrimAlpha: 0.32,
-  hiddenStripDp: 14,
+  // 28dp keeps the HIDDEN strip touchable; below ~24dp the swipe-up target is too small to land.
+  hiddenStripDp: 28,
   peekDp: 56,
   halfFraction: 0.5,
   fullFraction: 0.9,
@@ -159,16 +161,17 @@ export function AzBottomSheet(props: AzBottomSheetProps): React.ReactElement {
 
   const scrimVisible = controller.detent === AzSheetDetent.HALF || controller.detent === AzSheetDetent.FULL;
   const backgroundColor = cfg.backgroundColor ?? '#FFFFFF';
+  const isHidden = controller.detent === AzSheetDetent.HIDDEN;
 
   return (
     <View style={StyleSheet.absoluteFill} onLayout={onParentLayout} pointerEvents="box-none">
       {scrimVisible ? (
-        <View
+        <Pressable
           style={[
             StyleSheet.absoluteFill,
             { backgroundColor: cfg.scrimColor, opacity: cfg.scrimAlpha },
           ]}
-          pointerEvents="auto"
+          onPress={() => controller.stepDown()}
         />
       ) : null}
       <Animated.View
@@ -185,9 +188,21 @@ export function AzBottomSheet(props: AzBottomSheetProps): React.ReactElement {
         ]}
         {...panResponder.panHandlers}
       >
+        {/* At HIDDEN, a tap on the strip reveals PEEK — drag is unreliable on a 28dp target. */}
+        {isHidden ? (
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => controller.stepUp()}
+            accessibilityRole="button"
+            accessibilityLabel="Reveal bottom sheet"
+          />
+        ) : null}
         {cfg.handleVisible ? (
-          <View style={styles.handleContainer} pointerEvents="none">
-            <View style={styles.handle} />
+          <View
+            style={[styles.handleContainer, isHidden ? styles.handleContainerHidden : null]}
+            pointerEvents="none"
+          >
+            <View style={[styles.handle, isHidden ? styles.handleDim : null]} />
           </View>
         ) : null}
         <View style={styles.body}>{children}</View>
@@ -208,11 +223,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 6,
   },
+  handleContainerHidden: {
+    paddingVertical: 2,
+  },
   handle: {
     width: 36,
     height: 4,
     borderRadius: 2,
     backgroundColor: '#888888',
+  },
+  handleDim: {
+    opacity: 0.55,
   },
   body: {
     flex: 1,

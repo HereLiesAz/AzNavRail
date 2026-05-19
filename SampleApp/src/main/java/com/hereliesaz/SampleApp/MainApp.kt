@@ -124,7 +124,7 @@ fun MainApp() {
     var sheetSwipeCount by remember { mutableStateOf(0) }
 
     // Hidden menu screen state.
-    val relocOrder = remember { mutableStateListOf("reloc-1", "reloc-2", "reloc-nested-parent") }
+    val relocOrder = remember { mutableStateListOf("reloc-1", "reloc-2", "reloc-nested-h", "reloc-nested-v") }
     var hiddenLastAction by remember { mutableStateOf("(none)") }
     var hiddenRelocateLog by remember { mutableStateOf("(no reorder yet)") }
     val hiddenInputs = remember { mutableStateMapOf("nickname" to "", "tag" to "foo") }
@@ -241,11 +241,33 @@ fun MainApp() {
             onClick = { Log.d(TAG, "Icon item clicked") },
         )
 
+        // ---------- AzButtonShape showcase: one rail item per shape value ----------
+        azRailItem(
+            id = "shape-circle",
+            text = "Circle",
+            shape = AzButtonShape.CIRCLE,
+            info = "azRailItem(shape = AzButtonShape.CIRCLE)",
+            onClick = { Log.d(TAG, "Circle shape clicked") },
+        )
+        azRailItem(
+            id = "shape-square",
+            text = "Square",
+            shape = AzButtonShape.SQUARE,
+            info = "azRailItem(shape = AzButtonShape.SQUARE)",
+            onClick = { Log.d(TAG, "Square shape clicked") },
+        )
+        azRailItem(
+            id = "shape-rectangle",
+            text = "Rectangle",
+            shape = AzButtonShape.RECTANGLE,
+            info = "azRailItem(shape = AzButtonShape.RECTANGLE)",
+            onClick = { Log.d(TAG, "Rectangle shape clicked") },
+        )
         azRailItem(
             id = "none-shape",
             text = "No Shape",
             shape = AzButtonShape.NONE,
-            info = "Item with shape NONE",
+            info = "azRailItem(shape = AzButtonShape.NONE) — text only, no border or fill",
             onClick = { Log.d(TAG, "No Shape item clicked") },
         )
 
@@ -390,20 +412,42 @@ fun MainApp() {
         }
 
         azRailRelocItem(
-            id = "reloc-nested-parent",
+            id = "reloc-nested-h",
             hostId = "rail-host",
-            text = "Reloc + Nested",
+            text = "Reloc + Horizontal Nested",
+            info = "Reloc item with a HORIZONTAL nested popup.",
             onRelocate = { from, to, newOrder ->
                 hiddenRelocateLog = "$from → $to → $newOrder"
                 relocOrder.clear(); relocOrder.addAll(newOrder)
             },
             nestedRailAlignment = AzNestedRailAlignment.HORIZONTAL,
             nestedContent = {
-                azRailItem("nested-tool-1", "Tool 1", onClick = { Log.d(TAG, "Tool 1 clicked") })
-                azRailItem("nested-tool-2", "Tool 2", onClick = { Log.d(TAG, "Tool 2 clicked") })
+                azRailItem("nested-tool-h-1", "Tool 1", onClick = { Log.d(TAG, "H Tool 1 clicked") })
+                azRailItem("nested-tool-h-2", "Tool 2", onClick = { Log.d(TAG, "H Tool 2 clicked") })
+                azRailItem("nested-tool-h-3", "Tool 3", onClick = { Log.d(TAG, "H Tool 3 clicked") })
             },
         ) {
-            listItem(text = "Remove") { hiddenLastAction = "reloc-nested-parent → Remove" }
+            listItem(text = "Remove") { hiddenLastAction = "reloc-nested-h → Remove" }
+        }
+
+        azRailRelocItem(
+            id = "reloc-nested-v",
+            hostId = "rail-host",
+            text = "Reloc + Vertical Nested",
+            info = "Reloc item with a VERTICAL nested popup (keepNestedRailOpen = true so it stays open).",
+            keepNestedRailOpen = true,
+            onRelocate = { from, to, newOrder ->
+                hiddenRelocateLog = "$from → $to → $newOrder"
+                relocOrder.clear(); relocOrder.addAll(newOrder)
+            },
+            nestedRailAlignment = AzNestedRailAlignment.VERTICAL,
+            nestedContent = {
+                azRailItem("nested-tool-v-1", "Tool A", onClick = { Log.d(TAG, "V Tool A clicked") })
+                azRailItem("nested-tool-v-2", "Tool B", onClick = { Log.d(TAG, "V Tool B clicked") })
+                azRailItem("nested-tool-v-3", "Tool C", onClick = { Log.d(TAG, "V Tool C clicked") })
+            },
+        ) {
+            listItem(text = "Remove") { hiddenLastAction = "reloc-nested-v → Remove" }
         }
 
         // Nested rails (without routes to avoid nav crashes on tap)

@@ -402,6 +402,13 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     val hiddenMenuOnValueChangeMap = mutableMapOf<String, (String) -> Unit>()
     /** Maps relocatable item IDs to reorder callbacks. */
     val onRelocateMap = mutableMapOf<String, (Int, Int, List<String>) -> Unit>()
+    /**
+     * Persisted reloc-item ordering keyed by `hostId`. Survives [reset] so drag-and-drop
+     * reorders stick across recomposition (the DSL is re-applied on every recomposition and
+     * would otherwise restore the original declaration order). Updated from `RailItems` on
+     * drag end and re-applied via [applyRelocReorders] after the DSL block runs.
+     */
+    val savedRelocOrders: androidx.compose.runtime.snapshots.SnapshotStateMap<String, List<String>> = mutableStateMapOf()
     /** Cache of window-space bounds for each item, populated as items are laid out. */
     val itemBoundsCache = mutableStateMapOf<String, Rect>()
     /** Transient selected options for cyclers during the debounce window. */
@@ -423,6 +430,49 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         // Without this, IDs registered on pass N stay in the set on pass N+1 and
         // the next recomposition crashes the moment any ID re-registers.
         globalIdSet.clear()
+        // Note: savedRelocOrders is intentionally NOT cleared. Drag-and-drop reorders
+        // must persist across recomposition so users can drop items into a new order
+        // and have them stay there.
+    }
+
+    /**
+     * Re-applies persisted reloc orderings (from [savedRelocOrders]) on top of [navItems].
+     *
+     * After the DSL re-runs and re-populates [navItems] in declaration order, this method
+     * walks each `hostId → orderedIds` entry and rewrites the corresponding cluster of reloc
+     * items in-place. Items missing from the saved order are ignored; clusters whose IDs no
+     * longer match the saved set are skipped to avoid corrupting state.
+     *
+     * Called by `AzHostActivityLayout` (and `AzNavRail` when there is no host) after
+     * applying the DSL lambda.
+     */
+    fun applyRelocReorders() {
+        if (savedRelocOrders.isEmpty()) return
+        val staleHosts = mutableListOf<String>()
+        savedRelocOrders.forEach { (hostId, savedOrder) ->
+            // Index every reloc item belonging to this host along with its position in navItems.
+            val indexed = navItems.mapIndexedNotNull { idx, item ->
+                if (item.isRelocItem && item.hostId == hostId) idx to item else null
+            }
+            if (indexed.isEmpty()) {
+                staleHosts.add(hostId)
+                return@forEach
+            }
+            val currentIds = indexed.map { it.second.id }.toSet()
+            // If saved set and current set diverge, drop the saved order rather than risk swapping
+            // unrelated items. The next reorder will rebuild it.
+            if (currentIds != savedOrder.toSet()) {
+                staleHosts.add(hostId)
+                return@forEach
+            }
+            val byId = indexed.associate { it.second.id to it.second }
+            val positions = indexed.map { it.first }
+            // Write items back in saved order at the same positions they currently occupy.
+            positions.forEachIndexed { i, pos ->
+                navItems[pos] = byId.getValue(savedOrder[i])
+            }
+        }
+        staleHosts.forEach { savedRelocOrders.remove(it) }
     }
 
     // Config
