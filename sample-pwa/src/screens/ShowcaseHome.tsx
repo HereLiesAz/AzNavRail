@@ -1,0 +1,48 @@
+import { useNavigate } from 'react-router-dom'
+
+const entries: { route: string; title: string; blurb: string }[] = [
+  { route: '/legacy', title: 'Rail Playground', blurb: 'Toggles, cyclers, nested rails, reloc items, host items.' },
+  { route: '/bottom-sheet', title: 'Bottom Sheets', blurb: 'AzBottomSheet + AzSheetController with all four detents.' },
+  { route: '/standalone', title: 'Standalone Widgets', blurb: 'AzButton/Toggle/Cycler at every shape, AzLoad, AzDivider, AzRoller.' },
+  { route: '/customization', title: 'Theming Customization', blurb: 'Live header shape, default shape, rail widths, footer, classifiers.' },
+  { route: '/forms', title: 'Forms & Text Inputs', blurb: 'AzForm + AzTextBox showcase.' },
+]
+
+export default function ShowcaseHome() {
+  const navigate = useNavigate()
+  return (
+    <div style={page}>
+      <h1 style={{ margin: 0 }}>AzNavRail React Showcase</h1>
+      <p style={{ marginTop: 8, opacity: 0.8 }}>
+        Each card jumps to a demo that exercises a different slice of the React port. The rail items on the
+        left of the screen drive global state (dock side, dark mode, packing, classifiers, etc.).
+      </p>
+      <div style={{ display: 'grid', gap: 12, marginTop: 16 }}>
+        {entries.map((e) => (
+          <button key={e.route} onClick={() => navigate(e.route)} style={card}>
+            <div style={{ fontWeight: 600 }}>{e.title}</div>
+            <div style={{ opacity: 0.75, fontSize: 13 }}>{e.blurb}</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+const page: React.CSSProperties = {
+  padding: 24,
+  maxWidth: 720,
+  margin: '0 auto',
+  color: 'inherit',
+}
+
+const card: React.CSSProperties = {
+  textAlign: 'left',
+  background: 'rgba(255,255,255,0.06)',
+  border: '1px solid rgba(255,255,255,0.12)',
+  borderRadius: 12,
+  padding: 16,
+  cursor: 'pointer',
+  color: 'inherit',
+  font: 'inherit',
+}
