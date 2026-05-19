@@ -1,13 +1,13 @@
-import { useState } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { useState } from 'react'
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import {
-  AzNavRail,
+  AzHostActivityLayout,
+  AzOnscreen,
+  AzAlignment,
   AzButtonShape,
   AzDockingSide,
+  AzHeaderIconShape,
   AzNestedRailAlignment,
-  AzConfig,
-  AzTheme,
-  AzAdvanced,
   AzRailItem,
   AzMenuItem,
   AzRailToggle,
@@ -24,354 +24,315 @@ import {
   AzRailSubCycler,
   AzRailRelocItem,
   AzNestedRail,
-  AzNavHost,
-} from '@HereLiesAz/aznavrail-react';
+} from '@HereLiesAz/aznavrail-react'
+
+import ShowcaseHome from './screens/ShowcaseHome'
+import BottomSheetDemo from './screens/BottomSheetDemo'
+import StandaloneWidgets from './screens/StandaloneWidgets'
+import CustomizationDemo, {
+  type CustomizationState,
+  DEMO_CLASSIFIERS,
+} from './screens/CustomizationDemo'
+import FormDemo from './screens/FormDemo'
+import LegacyPlayground from './screens/LegacyPlayground'
 
 function App() {
-  const location = useLocation();
+  const location = useLocation()
+  const navigate = useNavigate()
+  const currentRoute = location.pathname.replace(/^\//, '') || 'home'
 
-  const [isOnline, setIsOnline] = useState(true);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [packRailButtons, setPackRailButtons] = useState(false);
-  const [railSelectedOption, setRailSelectedOption] = useState("A");
-  const [menuSelectedOption, setMenuSelectedOption] = useState("X");
-  const [isDockingRight, setIsDockingRight] = useState(false);
-  const [noMenu, setNoMenu] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
-  const [usePhysicalDocking, setUsePhysicalDocking] = useState(false);
+  // Legacy rail toggles
+  const [isOnline, setIsOnline] = useState(true)
+  const [isDarkMode, setIsDarkMode] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [packRailButtons, setPackRailButtons] = useState(false)
+  const [railSelectedOption, setRailSelectedOption] = useState('A')
+  const [menuSelectedOption, setMenuSelectedOption] = useState('X')
+  const [isDockingRight, setIsDockingRight] = useState(false)
+  const [noMenu, setNoMenu] = useState(false)
+  const [showHelp, setShowHelp] = useState(false)
+  const [usePhysicalDocking, setUsePhysicalDocking] = useState(false)
 
-  const themeColor = '#6200EE'; // primary color fallback
+  // Customization (lives at host scope so the rail re-renders live)
+  const [customization, setCustomization] = useState<CustomizationState>({
+    headerIconShape: AzHeaderIconShape.CIRCLE,
+    defaultShape: AzButtonShape.RECTANGLE,
+    expandedRailWidth: 280,
+    collapsedRailWidth: 136,
+    displayAppNameInHeader: false,
+    showFooter: true,
+    appRepositoryUrl: 'https://github.com/HereLiesAz/AzNavRail',
+    vibrate: false,
+    activeClassifiers: new Set<string>(),
+  })
 
-  const renderRoutes = () => {
-    const routes = [
-      'multi-line', 'menu-host', 'menu-sub-1', 'menu-sub-2', 'rail-host',
-      'rail-sub-1', 'rail-sub-2', 'sub-toggle', 'sub-cycler', 'pack-rail',
-      'profile', 'online', 'dark-mode', 'rail-cycler', 'menu-cycler',
-      'loading', 'physical-docking', 'docking-side', 'no-menu', 'nested-1',
-      'nested-2', 'nested-h-1', 'nested-h-2', 'nested-h-3'
-    ];
-
-    return routes.map((route) => (
-      <Route
-        key={route}
-        path={`/${route}`}
-        element={<ScreenContent text={`${route.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} Screen`} />}
-      />
-    ));
-  };
+  const themeColor = '#6200EE'
 
   return (
-    <AzNavHost
-      railProps={{
-        currentDestination: location.pathname.replace('/', '') || 'home',
-        settings: {
-          packRailButtons: packRailButtons,
-          dockingSide: isDockingRight ? AzDockingSide.RIGHT : AzDockingSide.LEFT,
-          noMenu: noMenu,
-          usePhysicalDocking: usePhysicalDocking,
-          defaultShape: AzButtonShape.RECTANGLE,
-          activeColor: themeColor,
-          isLoading: isLoading,
-          enableRailDragging: true,
-          infoScreen: showHelp,
-          appName: 'AzNavRail',
-          headerIconShape: 'CIRCLE',
-          onDismissInfoScreen: () => setShowHelp(false),
-          helpList: {
-            "home": "This is a test helpList text!",
-            "nested-1": "Nested helpList entries work too!"
-          },
-          tutorials: {
-            "home": {
-              scenes: [
-                {
-                  id: "scene1",
-                  content: () => (
-                    <div style={{ width: '100%', height: '100%', backgroundColor: '#222', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <p style={{ color: 'white', fontSize: 24 }}>Scripted App Screen</p>
-                    </div>
-                  ),
-                  cards: [
-                    {
-                      title: "Welcome",
-                      text: "Welcome to the tutorial.",
-                      highlight: { type: "FullScreen" }
-                    },
-                    {
-                      title: "Highlighting",
-                      text: "Notice the highlighted item.",
-                      highlight: { type: "Item", id: "home" },
-                      actionText: "Finish"
-                    }
-                  ]
-                }
-              ]
-            }
-          }
-        },
-        onInteraction: (action: any, details: any) => console.log(`[SampleApp] ${action}${details ? ' ' + details : ''}`)
+    <AzHostActivityLayout
+      currentDestination={currentRoute}
+      packRailButtons={packRailButtons}
+      dockingSide={isDockingRight ? AzDockingSide.RIGHT : AzDockingSide.LEFT}
+      noMenu={noMenu}
+      usePhysicalDocking={usePhysicalDocking}
+      defaultShape={customization.defaultShape}
+      activeColor={themeColor}
+      isLoading={isLoading}
+      enableRailDragging
+      infoScreen={showHelp}
+      headerIconShape={customization.headerIconShape}
+      expandedRailWidth={customization.expandedRailWidth}
+      collapsedRailWidth={customization.collapsedRailWidth}
+      displayAppNameInHeader={customization.displayAppNameInHeader}
+      showFooter={customization.showFooter}
+      appRepositoryUrl={customization.appRepositoryUrl}
+      vibrate={customization.vibrate}
+      activeClassifiers={customization.activeClassifiers}
+      onDismissInfoScreen={() => setShowHelp(false)}
+      helpList={{
+        home: 'Showcase home — links to each demo screen.',
+        'bottom-sheet': 'AzBottomSheet + AzSheetController demo.',
+        standalone: 'Standalone widgets at every shape variant.',
+        customization: 'Live theme controls.',
+        forms: 'AzForm + AzTextBox showcase.',
+        'color-item': 'Dynamic content (Color) + custom text/fill.',
+        'rail-cycler': 'Cycler with one disabled option (C).',
+        'nested-1': 'Nested item — bounds reporting works inside popups.',
       }}
     >
-        <AzMenuItem id="home" text="Home" route="home" info="Navigate to the Home screen" onClick={() => console.log('Home menu item clicked')} />
-        <AzMenuItem id="multi-line" text={"This is a\nmulti-line item"} route="multi-line" info="Shows how multi-line text is handled" onClick={() => console.log('Multi-line menu item clicked')} />
+      {/* ---------- Showcase navigation ---------- */}
+      <AzMenuItem id="home" text="Showcase Home" route="home" info="Index of every demo screen." onClick={() => navigate('/')} />
+      <AzMenuItem id="bottom-sheet" text="Bottom Sheets" route="bottom-sheet" info="AzBottomSheet detents, drag, scrim, swipe." onClick={() => navigate('/bottom-sheet')} />
+      <AzMenuItem id="standalone" text="Standalone Widgets" route="standalone" info="AzButton/Toggle/Cycler at every shape, AzLoad, AzRoller." onClick={() => navigate('/standalone')} />
+      <AzMenuItem id="customization" text="Customization" route="customization" info="Live theme controls." onClick={() => navigate('/customization')} />
+      <AzMenuItem id="forms" text="Forms" route="forms" info="AzForm + AzTextBox showcase." onClick={() => navigate('/forms')} />
+      <AzMenuItem id="legacy" text="Rail Playground" route="legacy" info="The original rail demos." onClick={() => navigate('/legacy')} />
 
-        <AzRailToggle
-          id="pack-rail"
-          text="Pack Rail"
-          isChecked={packRailButtons}
-          toggleOnText="Packed"
-          toggleOffText="Unpacked"
-          route="pack-rail"
-          info="Toggle to pack items together or space them out"
-          onClick={() => {
-            setPackRailButtons(!packRailButtons);
-            console.log('Pack rail toggled to:', !packRailButtons);
-          }}
-        />
+      <AzDivider />
 
-        <AzRailItem
-          id="color-item"
-          text="Color"
-          menuText="Custom Menu Text"
-          textColor="#FFFFFF"
-          fillColor="#0000FF"
-          content={<div style={{ backgroundColor: '#FF0000', width: '100%', height: '100%' }} />}
-          info="Demonstrates dynamic content with Color and Custom Text/Colors"
-          onClick={() => console.log('Color item clicked')}
-        />
+      {/* ---------- Rail-config toggles (legacy demos) ---------- */}
+      <AzRailToggle
+        id="pack-rail"
+        text="Pack Rail"
+        isChecked={packRailButtons}
+        toggleOnText="Packed"
+        toggleOffText="Unpacked"
+        info="Toggle to pack items together or space them out."
+        onClick={() => setPackRailButtons((v) => !v)}
+      />
 
-        <AzRailItem
-          id="none-shape"
-          text="No Shape"
-          shape={AzButtonShape.NONE}
-          info="Item with shape NONE"
-          onClick={() => console.log('No Shape item clicked')}
-        />
+      {/* AzButtonShape showcase — one rail item per value */}
+      <AzRailItem id="shape-circle" text="Circle" shape={AzButtonShape.CIRCLE} info="AzButtonShape.CIRCLE" onClick={() => console.log('circle')} />
+      <AzRailItem id="shape-square" text="Square" shape={AzButtonShape.SQUARE} info="AzButtonShape.SQUARE" onClick={() => console.log('square')} />
+      <AzRailItem id="shape-rectangle" text="Rectangle" shape={AzButtonShape.RECTANGLE} info="AzButtonShape.RECTANGLE" onClick={() => console.log('rectangle')} />
+      <AzRailItem id="shape-none" text="No Shape" shape={AzButtonShape.NONE} info="AzButtonShape.NONE — text only" onClick={() => console.log('none')} />
 
-        <AzRailItem
-          id="profile"
-          text="Profile"
-          disabled={true}
-          route="profile"
-          info="User profile settings (Disabled)"
-        />
+      <AzRailItem
+        id="color-item"
+        text="Color"
+        menuText="Custom Menu Text"
+        textColor="#FFFFFF"
+        fillColor="#0000FF"
+        info="Dynamic content with custom text/fill colours."
+        onClick={() => console.log('color item')}
+      />
 
-        <AzDivider />
+      <AzRailItem
+        id="profile"
+        text="Profile"
+        disabled
+        route="profile"
+        info="User profile (disabled state demo)."
+      />
 
-        <AzRailToggle
-          id="online"
-          text="Online"
-          isChecked={isOnline}
-          toggleOnText="Online"
-          toggleOffText="Offline"
-          route="online"
-          onClick={() => {
-            setIsOnline(!isOnline);
-            console.log('Online toggled to:', !isOnline);
-          }}
-        />
+      <AzDivider />
 
-        <AzMenuToggle
-          id="dark-mode"
-          text="Dark Mode"
-          isChecked={isDarkMode}
-          toggleOnText="Dark Mode"
-          toggleOffText="Light Mode"
-          route="dark-mode"
-          onClick={() => {
-            setIsDarkMode(!isDarkMode);
-            console.log('Dark mode toggled to:', !isDarkMode);
-          }}
-        />
+      <AzRailToggle
+        id="online"
+        text="Online"
+        isChecked={isOnline}
+        toggleOnText="Online"
+        toggleOffText="Offline"
+        onClick={() => setIsOnline((v) => !v)}
+      />
 
-        <AzMenuToggle
-          id="docking-side"
-          text="Docking"
-          isChecked={isDockingRight}
-          toggleOnText="Dock: Right"
-          toggleOffText="Dock: Left"
-          route="docking-side"
-          onClick={() => {
-            setIsDockingRight(!isDockingRight);
-            console.log('Docking side toggled to:', !isDockingRight ? 'Right' : 'Left');
-          }}
-        />
+      <AzMenuToggle
+        id="dark-mode"
+        text="Dark Mode"
+        isChecked={isDarkMode}
+        toggleOnText="Dark Mode"
+        toggleOffText="Light Mode"
+        onClick={() => setIsDarkMode((v) => !v)}
+      />
 
-        <AzMenuToggle
-          id="no-menu"
-          text="No Menu"
-          isChecked={noMenu}
-          toggleOnText="No Menu: On"
-          toggleOffText="No Menu: Off"
-          route="no-menu"
-          onClick={() => {
-            setNoMenu(!noMenu);
-            console.log('No Menu toggled to:', !noMenu);
-          }}
-        />
+      <AzMenuToggle
+        id="docking-side"
+        text="Docking"
+        isChecked={isDockingRight}
+        toggleOnText="Dock: Right"
+        toggleOffText="Dock: Left"
+        onClick={() => setIsDockingRight((v) => !v)}
+      />
 
-        <AzMenuToggle
-          id="physical-docking"
-          text="Physical Dock"
-          isChecked={usePhysicalDocking}
-          toggleOnText="Physical Dock: On"
-          toggleOffText="Physical Dock: Off"
-          route="physical-docking"
-          onClick={() => {
-            setUsePhysicalDocking(!usePhysicalDocking);
-            console.log('Physical Docking toggled to:', !usePhysicalDocking);
-          }}
-        />
+      <AzMenuToggle
+        id="no-menu"
+        text="No Menu"
+        isChecked={noMenu}
+        toggleOnText="No Menu: On"
+        toggleOffText="No Menu: Off"
+        onClick={() => setNoMenu((v) => !v)}
+      />
 
-        <AzHelpRailItem id="toggle-help" text="Help" onClick={() => setShowHelp(!showHelp)} />
+      <AzMenuToggle
+        id="physical-docking"
+        text="Physical Dock"
+        isChecked={usePhysicalDocking}
+        toggleOnText="Physical Dock: On"
+        toggleOffText="Physical Dock: Off"
+        onClick={() => setUsePhysicalDocking((v) => !v)}
+      />
 
-        <AzDivider />
+      <AzHelpRailItem id="toggle-help" text="Help" onClick={() => setShowHelp((v) => !v)} />
 
-        <AzRailCycler
-          id="rail-cycler"
-          text="Rail Cycler"
-          options={["A", "B", "C", "D"]}
-          selectedOption={railSelectedOption}
-          disabledOptions={["C"]}
-          route="rail-cycler"
-          onClick={() => {
-            const opts = ["A", "B", "C", "D"];
-            const next = opts[(opts.indexOf(railSelectedOption) + 1) % opts.length];
-            setRailSelectedOption(next);
-            console.log('Rail cycler clicked, new option:', next);
-          }}
-        />
+      <AzDivider />
 
-        <AzMenuCycler
-          id="menu-cycler"
-          text="Menu Cycler"
-          options={["X", "Y", "Z"]}
-          selectedOption={menuSelectedOption}
-          route="menu-cycler"
-          onClick={() => {
-            const opts = ["X", "Y", "Z"];
-            const next = opts[(opts.indexOf(menuSelectedOption) + 1) % opts.length];
-            setMenuSelectedOption(next);
-            console.log('Menu cycler clicked, new option:', next);
-          }}
-        />
+      <AzRailCycler
+        id="rail-cycler"
+        text="Rail Cycler"
+        options={['A', 'B', 'C', 'D']}
+        selectedOption={railSelectedOption}
+        disabledOptions={['C']}
+        onClick={() => {
+          const opts = ['A', 'B', 'C', 'D']
+          const idx = opts.indexOf(railSelectedOption)
+          setRailSelectedOption(opts[(idx + 1) % opts.length])
+        }}
+      />
 
-        <AzRailItem id="loading" text="Load" route="loading" onClick={() => {
-            setIsLoading(!isLoading);
-            console.log('Loading toggled to:', !isLoading);
-        }} />
+      <AzMenuCycler
+        id="menu-cycler"
+        text="Menu Cycler"
+        options={['X', 'Y', 'Z']}
+        selectedOption={menuSelectedOption}
+        onClick={() => {
+          const opts = ['X', 'Y', 'Z']
+          const idx = opts.indexOf(menuSelectedOption)
+          setMenuSelectedOption(opts[(idx + 1) % opts.length])
+        }}
+      />
 
-        <AzDivider />
+      <AzRailItem id="loading" text="Load" onClick={() => setIsLoading((v) => !v)} />
 
-        <AzMenuHostItem id="menu-host" text="Menu Host" route="menu-host" onClick={() => console.log('Menu host item clicked')} />
-        <AzMenuSubItem id="menu-sub-1" hostId="menu-host" text="Menu Sub 1" route="menu-sub-1" onClick={() => console.log('Menu sub item 1 clicked')} />
-        <AzMenuSubItem id="menu-sub-2" hostId="menu-host" text="Menu Sub 2" route="menu-sub-2" onClick={() => console.log('Menu sub item 2 clicked')} />
+      <AzDivider />
 
-        <AzRailHostItem id="rail-host" text="Rail Host" route="rail-host" onClick={() => console.log('Rail host item clicked')} />
-        <AzRailSubItem id="rail-sub-1" hostId="rail-host" text="Rail Sub 1" route="rail-sub-1" onClick={() => console.log('Rail sub item 1 clicked')} />
-        <AzMenuSubItem id="rail-sub-2" hostId="rail-host" text="Menu Sub 2" route="rail-sub-2" onClick={() => console.log('Menu sub item 2 (from rail host) clicked')} />
+      {/* ---------- Host + sub items ---------- */}
+      <AzMenuHostItem id="menu-host" text="Menu Host" onClick={() => console.log('menu host')} />
+      <AzMenuSubItem id="menu-sub-1" hostId="menu-host" text="Menu Sub 1" onClick={() => console.log('menu sub 1')} />
+      <AzMenuSubItem id="menu-sub-2" hostId="menu-host" text="Menu Sub 2" onClick={() => console.log('menu sub 2')} />
 
-        <AzMenuSubToggle
-          id="sub-toggle"
-          hostId="menu-host"
-          text="Sub Toggle"
-          isChecked={isDarkMode}
-          toggleOnText="Sub Toggle On"
-          toggleOffText="Sub Toggle Off"
-          route="sub-toggle"
-          onClick={() => {
-            setIsDarkMode(!isDarkMode);
-            console.log('Sub toggle clicked, dark mode is now:', !isDarkMode);
-          }}
-        />
+      <AzRailHostItem id="rail-host" text="Rail Host" onClick={() => console.log('rail host')} />
+      <AzRailSubItem id="rail-sub-1" hostId="rail-host" text="Rail Sub 1" onClick={() => console.log('rail sub 1')} />
 
-        <AzRailSubCycler
-          id="sub-cycler"
-          text="Sub Cycler"
-          hostId="rail-host"
-          options={["X", "Y", "Z"]}
-          selectedOption={menuSelectedOption}
-          route="sub-cycler"
-          onClick={() => {
-            const opts = ["X", "Y", "Z"];
-            const next = opts[(opts.indexOf(menuSelectedOption) + 1) % opts.length];
-            setMenuSelectedOption(next);
-            console.log('Sub cycler clicked, new option:', next);
-          }}
-        />
+      <AzMenuSubToggle
+        id="sub-toggle"
+        hostId="menu-host"
+        text="Sub Toggle"
+        isChecked={isDarkMode}
+        toggleOnText="Sub Toggle On"
+        toggleOffText="Sub Toggle Off"
+        onClick={() => setIsDarkMode((v) => !v)}
+      />
 
-        <AzRailRelocItem
-          id="reloc-1"
-          hostId="rail-host"
-          text="Reloc Item 1"
-          onRelocate={(from, to, newOrder) => console.log(`Relocated item 1 from ${from} to ${to}. New order: ${newOrder}`)}
-          hiddenMenu={(scope) => {
-            scope.listItem("Action 1", () => console.log('Reloc 1 action clicked'));
-          }}
-        />
+      <AzRailSubCycler
+        id="sub-cycler"
+        text="Sub Cycler"
+        hostId="rail-host"
+        options={['X', 'Y', 'Z']}
+        selectedOption={menuSelectedOption}
+        onClick={() => {
+          const opts = ['X', 'Y', 'Z']
+          const idx = opts.indexOf(menuSelectedOption)
+          setMenuSelectedOption(opts[(idx + 1) % opts.length])
+        }}
+      />
 
-        <AzRailRelocItem
-          id="reloc-nested-parent"
-          hostId="rail-host"
-          text="Reloc + Nested"
-          onRelocate={(from, to, newOrder) => console.log(`Relocated item 2 from ${from} to ${to}. New order: ${newOrder}`)}
-          nestedRailAlignment={AzNestedRailAlignment.HORIZONTAL}
-          hiddenMenu={(scope) => {
-             scope.listItem("Remove", () => console.log('Reloc Nested action clicked'));
-          }}
-          nestedContent={
-            <>
-              <AzRailItem id="nested-tool-1" text="Tool 1" onClick={() => console.log('Tool 1 clicked')} />
-              <AzRailItem id="nested-tool-2" text="Tool 2" onClick={() => console.log('Tool 2 clicked')} />
-            </>
-          }
-        />
+      {/* ---------- Reloc items ---------- */}
+      <AzRailRelocItem
+        id="reloc-1"
+        hostId="rail-host"
+        text="Reloc 1"
+        onRelocate={(from, to, newOrder) => console.log(`reloc-1: ${from}→${to}`, newOrder)}
+        hiddenMenu={(scope) => {
+          scope.listItem('Rename', () => console.log('rename'))
+          scope.listItem('Pin', () => console.log('pin'))
+        }}
+      />
 
-        <AzNestedRail
-          id="nested-rail"
-          text="Vertical Nested"
-          alignment={AzNestedRailAlignment.VERTICAL}
-        >
-          <AzRailItem id="nested-1" text="Nested Item 1" route="nested-1" info="This is a nested item. Tap the card to expand it and read the full help text, demonstrating that nested items report bounds correctly!" />
-          <AzRailItem id="nested-2" text="Nested Item 2" route="nested-2" />
-          <AzRailItem
-             id="nested-custom"
-             text="Size Slider"
-             content={
-               <div style={{ backgroundColor: 'red', width: 300, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-                 Wide Content (Should Clip)
-               </div>
-             }
-          />
-        </AzNestedRail>
+      <AzRailRelocItem
+        id="reloc-nested-h"
+        hostId="rail-host"
+        text="Reloc + Horizontal Nested"
+        onRelocate={(from, to, newOrder) => console.log(`reloc-nested-h: ${from}→${to}`, newOrder)}
+        nestedRailAlignment={AzNestedRailAlignment.HORIZONTAL}
+        hiddenMenu={(scope) => {
+          scope.listItem('Remove', () => console.log('remove'))
+        }}
+        nestedContent={
+          <>
+            <AzRailItem id="nested-tool-h-1" text="Tool 1" onClick={() => console.log('h-tool-1')} />
+            <AzRailItem id="nested-tool-h-2" text="Tool 2" onClick={() => console.log('h-tool-2')} />
+          </>
+        }
+      />
 
-        <AzNestedRail
-          id="nested-horizontal"
-          text="Horizontal Nested"
-          alignment={AzNestedRailAlignment.HORIZONTAL}
-        >
-          <AzRailItem id="nested-h-1" text="H-Item 1" route="nested-h-1" />
-          <AzRailItem id="nested-h-2" text="H-Item 2" route="nested-h-2" />
-          <AzRailItem id="nested-h-3" text="H-Item 3" route="nested-h-3" />
-        </AzNestedRail>
+      <AzRailRelocItem
+        id="reloc-nested-v"
+        hostId="rail-host"
+        text="Reloc + Vertical Nested"
+        onRelocate={(from, to, newOrder) => console.log(`reloc-nested-v: ${from}→${to}`, newOrder)}
+        nestedRailAlignment={AzNestedRailAlignment.VERTICAL}
+        hiddenMenu={(scope) => {
+          scope.listItem('Remove', () => console.log('remove'))
+        }}
+        nestedContent={
+          <>
+            <AzRailItem id="nested-tool-v-1" text="Tool A" onClick={() => console.log('v-tool-a')} />
+            <AzRailItem id="nested-tool-v-2" text="Tool B" onClick={() => console.log('v-tool-b')} />
+          </>
+        }
+      />
 
-        {/* Onscreen content will go here */}
-        <div style={{ flex: 1, padding: 20, overflowY: 'auto' }}>
+      <AzNestedRail id="nested-rail" text="Vertical Nested" alignment={AzNestedRailAlignment.VERTICAL}>
+        <AzRailItem id="nested-1" text="Nested 1" route="nested-1" info="A nested rail item." />
+        <AzRailItem id="nested-2" text="Nested 2" route="nested-2" info="Another nested rail item." />
+        <AzHelpRailItem id="nested-help" text="?" onClick={() => setShowHelp((v) => !v)} />
+      </AzNestedRail>
+
+      <AzNestedRail id="nested-horizontal" text="Horizontal Nested" alignment={AzNestedRailAlignment.HORIZONTAL}>
+        <AzRailItem id="nested-h-1" text="H1" route="nested-h-1" info="First horizontal nested item." />
+        <AzRailItem id="nested-h-2" text="H2" route="nested-h-2" info="Second horizontal nested item." />
+        <AzRailItem id="nested-h-3" text="H3" route="nested-h-3" info="Third horizontal nested item." />
+      </AzNestedRail>
+
+      {/* ---------- Route-driven onscreen content ---------- */}
+      <AzOnscreen alignment={AzAlignment.Center}>
+        <div style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
           <Routes>
-             <Route path="/" element={<ScreenContent text="Home Screen" />} />
-             <Route path="/home" element={<ScreenContent text="Home Screen" />} />
-             {renderRoutes()}
+            <Route path="/" element={<ShowcaseHome />} />
+            <Route path="/home" element={<ShowcaseHome />} />
+            <Route path="/bottom-sheet" element={<BottomSheetDemo />} />
+            <Route path="/standalone" element={<StandaloneWidgets />} />
+            <Route path="/customization" element={<CustomizationDemo state={customization} onChange={setCustomization} />} />
+            <Route path="/forms" element={<FormDemo />} />
+            <Route path="/legacy" element={<LegacyPlayground />} />
+            <Route path="*" element={<LegacyPlayground />} />
           </Routes>
         </div>
-    </AzNavHost>
-  );
+      </AzOnscreen>
+    </AzHostActivityLayout>
+  )
 }
 
-const ScreenContent = ({ text }: { text: string }) => (
-  <div style={{ display: 'flex', flex: 1, height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-    <p>{text}</p>
-  </div>
-);
-
-export default App;
+// Re-export for downstream tooling if needed.
+export { DEMO_CLASSIFIERS }
+export default App

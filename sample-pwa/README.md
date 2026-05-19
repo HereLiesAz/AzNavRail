@@ -1,73 +1,51 @@
-# React + TypeScript + Vite
+# sample-pwa
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Vite + React + TypeScript showcase for the `@HereLiesAz/aznavrail-react` library. Deployed to
+GitHub Pages at **https://HereLiesAz.github.io/AzNavRail/** by
+`.github/workflows/jekyll-gh-pages.yml` (legacy filename retained for git history — it now builds
+this Vite PWA, not Jekyll).
 
-Currently, two official plugins are available:
+## Demos
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Showcase Home** — index of every screen.
+- **Bottom Sheets** — `AzBottomSheet` + `AzSheetController` with all four detents
+  (HIDDEN / PEEK / HALF / FULL), live `AzSheetConfig` toggles, `onSwipeLeft`/`onSwipeRight`,
+  and the `AzBottomSheetInsetAware` variant.
+- **Standalone Widgets** — `AzButton`, `AzToggle`, `AzCycler` at every `AzButtonShape`,
+  plus `AzRoller`, `AzDivider`, `AzLoad`.
+- **Customization** — live header icon shape, default shape, rail widths, footer, repo URL,
+  haptics, and `activeClassifiers` chips.
+- **Forms** — `AzForm` + `AzTextBox` showcase.
+- **Rail Playground** — toggles, cyclers, host items, reloc items with hidden menus, and both
+  vertical/horizontal nested rails (each with its own Help item that scopes the help overlay).
 
-## React Compiler
+## Local development
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cd sample-pwa
+npm install --legacy-peer-deps
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The `file:../aznavrail-react` dependency means changes inside `aznavrail-react/src/` are picked up
+on save. Run `npm install` again if you change `aznavrail-react/package.json`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+To preview the production bundle locally (at the root, not `/AzNavRail/`):
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+VITE_BASE=/ npm run build && npm run preview
 ```
+
+CI sets `VITE_BASE=/AzNavRail/` automatically so the GitHub Pages deployment resolves assets under
+the repo subpath.
+
+## Deployment
+
+Pushes to `main`/`master` that touch `sample-pwa/`, `aznavrail-react/`, or the workflow file
+trigger a Pages deployment. The workflow:
+
+1. Installs `aznavrail-react/` deps and runs its build (best-effort — the source is consumed
+   directly via the `file:` dependency, so build failure does not block the PWA build).
+2. Installs `sample-pwa/` deps.
+3. Runs `npm run build` with `VITE_BASE=/AzNavRail/`.
+4. Uploads `sample-pwa/dist` as the Pages artifact and deploys it.

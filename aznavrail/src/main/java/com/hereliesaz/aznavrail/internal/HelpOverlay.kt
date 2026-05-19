@@ -82,16 +82,16 @@ internal fun HelpOverlay(
     var expandedItemId by remember { mutableStateOf<String?>(null) }
 
     // Overlay viewport in window coordinates, set from onGloballyPositioned on the root Box.
-    // Used to filter out rail items that have been scrolled out of the visible area: their help
-    // card and connecting line should be suppressed entirely. Help cards that are themselves
-    // scrolled offscreen keep updating their bounds via the card's own onGloballyPositioned, so
-    // the line endpoint follows the card's logical position even when the card is offscreen.
+    // Used to suppress cards whose rail item is **provably** offscreen. Anything we don't have
+    // bounds for (or haven't measured yet) defaults to visible — the previous "fail closed" logic
+    // hid every card on first show because itemBoundsCache hadn't been read yet.
     var overlayBounds by remember { mutableStateOf(Rect.Zero) }
 
     fun isRailItemOnscreen(item: AzNavItem): Boolean {
-        val rb = itemBoundsCache[item.id] ?: return false
-        if (rb.width <= 0f || rb.height <= 0f) return false
-        if (overlayBounds == Rect.Zero) return true
+        val rb = itemBoundsCache[item.id] ?: return true        // no bounds yet → assume onscreen
+        if (rb.width <= 0f || rb.height <= 0f) return true       // zero-area cache entry → assume onscreen
+        if (overlayBounds == Rect.Zero) return true              // overlay not yet measured → assume onscreen
+        if (overlayBounds.width <= 0f || overlayBounds.height <= 0f) return true
         return rb.overlaps(overlayBounds)
     }
 
