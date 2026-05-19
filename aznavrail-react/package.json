@@ -157,6 +157,14 @@
     ]
   },
   "overrides": {
-    "fast-xml-parser": "^5.3.6"
+    "fast-xml-parser": "^5.3.6",
+    "fast-xml-builder": "^5.3.6",
+    "ip": "^2.0.1",
+    "flatted": "^3.3.3",
+    "picomatch": "^4.0.3",
+    "@babel/plugin-transform-modules-systemjs": "^7.27.4",
+    "@babel/runtime": "^7.27.4",
+    "@babel/core": "^7.27.4",
+    "@babel/traverse": "^7.27.4"
   }
 }
