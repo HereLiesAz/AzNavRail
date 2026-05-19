@@ -34,7 +34,8 @@
       "Bash(curl *)",
       "Bash(rsync -a --exclude node_modules --exclude lib --exclude .git /run/media/az/0722-7C65/AzNavRail/aznavrail-react/ /tmp/aznavrail-react-final/)",
       "Read(//tmp/**)",
-      "Bash(node node_modules/jest/bin/jest.js src/__tests__/AzBottomSheet.test.tsx src/__tests__/AzTutorialController.test.tsx src/__tests__/HistoryManager.test.ts src/__tests__/AzNavRailSettings.test.tsx src/__tests__/HelpOverlaySmoke.test.tsx)"
+      "Bash(node node_modules/jest/bin/jest.js src/__tests__/AzBottomSheet.test.tsx src/__tests__/AzTutorialController.test.tsx src/__tests__/HistoryManager.test.ts src/__tests__/AzNavRailSettings.test.tsx src/__tests__/HelpOverlaySmoke.test.tsx)",
+      "Bash(node node_modules/jest/bin/jest.js)"
     ]
   }
 }
