@@ -62,7 +62,9 @@
       "Bash(timeout 120 node node_modules/jest/bin/jest.js --runInBand --forceExit)",
       "Bash(cp /run/media/az/0722-7C65/AzNavRail/aznavrail-react/src/__tests__/AzNavRail.test.tsx /tmp/aznavrail-react-final/src/__tests__/AzNavRail.test.tsx)",
       "Bash(cp /run/media/az/0722-7C65/AzNavRail/aznavrail-react/src/__tests__/AzNavRailFull.test.tsx /tmp/aznavrail-react-final/src/__tests__/AzNavRailFull.test.tsx)",
-      "Bash(rm -f /tmp/aznavrail-react-final/src/__tests__/__snapshots__/AzNavRail.test.tsx.snap)"
+      "Bash(rm -f /tmp/aznavrail-react-final/src/__tests__/__snapshots__/AzNavRail.test.tsx.snap)",
+      "Bash(cp /run/media/az/0722-7C65/AzNavRail/aznavrail-react/package.json /tmp/aznavrail-react-final/package.json)",
+      "Bash(rm -f package-lock.json)"
     ]
   }
 }
