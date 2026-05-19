@@ -587,9 +587,10 @@ private fun DraggableRailItemWrapper(
                             if (onClickOverride != null) {
                                 onClickOverride(item)
                             } else {
-                                if (item.isHelpItem) {
-                                    onItemSelected(item)
-                                } else {
+                                // Help items are toggled exclusively via onItemClick → onItemSelected
+                                // below — invoking it here too would fire the toggle twice per tap and
+                                // cancel itself out, leaving the help overlay invisible.
+                                if (!item.isHelpItem) {
                                     scope.onClickMap[item.id]?.invoke()
                                 }
                             }
