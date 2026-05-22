@@ -64,7 +64,10 @@
       "Bash(cp /run/media/az/0722-7C65/AzNavRail/aznavrail-react/src/__tests__/AzNavRailFull.test.tsx /tmp/aznavrail-react-final/src/__tests__/AzNavRailFull.test.tsx)",
       "Bash(rm -f /tmp/aznavrail-react-final/src/__tests__/__snapshots__/AzNavRail.test.tsx.snap)",
       "Bash(cp /run/media/az/0722-7C65/AzNavRail/aznavrail-react/package.json /tmp/aznavrail-react-final/package.json)",
-      "Bash(rm -f package-lock.json)"
+      "Bash(rm -f package-lock.json)",
+      "Bash(awk 'NR>=725 && NR<=760 {printf \"%d:[%s]\\\\n\", NR, $0}' /run/media/az/0722-7C65/AzNavRail/aznavrail/src/main/java/com/hereliesaz/aznavrail/AzNavRail.kt)",
+      "Bash(sh gradlew :aznavrail:compileDebugKotlin)",
+      "Bash(sh gradlew :aznavrail:testDebugUnitTest)"
     ]
   }
 }

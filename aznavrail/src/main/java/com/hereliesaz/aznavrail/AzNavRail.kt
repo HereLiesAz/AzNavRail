@@ -42,7 +42,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -223,8 +222,7 @@ fun AzNavRail(
         try { packageManager.getApplicationIcon(packageName) } catch (e: Exception) { null }
     }
 
-    var isExpandedInternal by rememberSaveable(initiallyExpanded) { mutableStateOf(initiallyExpanded) }
-    var isExpanded by remember { mutableStateOf(if (scope.noMenu) false else isExpandedInternal) }
+    var isExpanded by remember { mutableStateOf(if (scope.noMenu) false else initiallyExpanded) }
     var isFloating by remember { mutableStateOf(false) }
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
@@ -378,19 +376,37 @@ fun AzNavRail(
     val surfaceElevation = if (isExpanded && !isFloating) 2.dp else 0.dp
 
     Box(
-        modifier = modifier
-            .pointerInput(isExpanded) {
-                if (isExpanded) {
-                    detectTapGestures(onTap = {
-                        isExpanded = false
-                    })
-                }
-            },
+        modifier = modifier,
         contentAlignment = if (isFloating) Alignment.TopStart else railAlignment
     ) {
         val swipeWidthIncrease = if (isExpanded) 40.dp else 0.dp
         val snapBackRadius = with(density) { 36.dp.toPx() } // Half of 72dp ButtonWidth
-        
+
+        // Scrim covering only the space outside the expanded rail, so taps on the rail's column
+        // (including its safe-zone padding) fall through to the rail itself while taps elsewhere
+        // collapse the menu without stealing presses from host content when the rail is closed.
+        if (isExpanded && !isFloating) {
+            val scrimPadding = when {
+                orientation == AzOrientation.Vertical && visualDockingSide == AzDockingSide.LEFT ->
+                    Modifier.padding(start = railWidth)
+                orientation == AzOrientation.Vertical && visualDockingSide == AzDockingSide.RIGHT ->
+                    Modifier.padding(end = railWidth)
+                railAlignment == Alignment.BottomStart ||
+                        railAlignment == Alignment.BottomCenter ||
+                        railAlignment == Alignment.BottomEnd ->
+                    Modifier.padding(bottom = railWidth)
+                else -> Modifier.padding(top = railWidth)
+            }
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .then(scrimPadding)
+                    .pointerInput(Unit) {
+                        detectTapGestures(onTap = { isExpanded = false })
+                    }
+            )
+        }
+
         Box(
             modifier = Modifier
                 .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
