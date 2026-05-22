@@ -375,8 +375,16 @@ fun AzNavRail(
     val surfaceColor = Color.Transparent
     val surfaceElevation = if (isExpanded && !isFloating) 2.dp else 0.dp
 
+    val tapOutsideToCollapse = if (isExpanded) {
+        Modifier.pointerInput(Unit) {
+            detectTapGestures(onTap = { isExpanded = false })
+        }
+    } else Modifier
+
     Box(
-        modifier = modifier,
+
+        modifier = modifier.then(tapOutsideToCollapse),
+
         contentAlignment = if (isFloating) Alignment.TopStart else railAlignment
     ) {
         val swipeWidthIncrease = if (isExpanded) 40.dp else 0.dp
