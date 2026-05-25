@@ -10,7 +10,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -59,7 +61,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalViewConfiguration
 
@@ -736,9 +737,9 @@ private fun HiddenMenuPopup(
     backgroundOpacity: Float,
     anchorWidth: Int
 ) {
-    val configuration = LocalConfiguration.current
-    // Constrain popup size to exactly 50% width limit
-    val halfWidth = (configuration.screenWidthDp / 4).dp
+    // The hidden menu sizes itself to its content: input boxes are given an
+    // explicit width so the text fields (not the popup) dictate the menu width.
+    val menuItemWidth = 250.dp
 
     Popup(
         alignment = androidx.compose.ui.Alignment.TopStart,
@@ -751,7 +752,7 @@ private fun HiddenMenuPopup(
 
         Column(
             modifier = Modifier
-                .width(halfWidth)
+                .width(IntrinsicSize.Max)
                 .background(effectiveBg.copy(alpha = backgroundOpacity))
                 .border(1.dp, MaterialTheme.colorScheme.primary)
                 .padding(8.dp)
@@ -760,7 +761,7 @@ private fun HiddenMenuPopup(
                 if (menuItem.isInput) {
                     var text by remember { mutableStateOf(menuItem.initialValue) }
                     com.hereliesaz.aznavrail.AzTextBox(
-                        modifier = Modifier.padding(8.dp),
+                        modifier = Modifier.padding(8.dp).width(menuItemWidth),
                         hint = menuItem.hint ?: "",
                         value = text,
                         onValueChange = { text = it },
@@ -779,6 +780,7 @@ private fun HiddenMenuPopup(
                     Text(
                         text = menuItem.text,
                         modifier = Modifier
+                            .fillMaxWidth()
                             .clickable { onItemClick(menuItem) }
                             .padding(vertical = 8.dp, horizontal = 12.dp),
                         style = MaterialTheme.typography.bodyMedium,

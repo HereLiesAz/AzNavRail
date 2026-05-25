@@ -134,6 +134,7 @@ export const DraggableRailItemWrapper: React.FC<DraggableRailItemWrapperProps> =
                                return (
                                    <View key={i} style={styles.hiddenMenuItem}>
                                        <AzTextBox
+                                           containerStyle={styles.hiddenMenuInput}
                                            initialValue={menuItem.initialValue}
                                            hint={menuItem.hint}
                                            onValueChange={menuItem.onValueChange}
@@ -232,5 +233,10 @@ const styles = StyleSheet.create({
   hiddenMenuItemText: {
       fontSize: 16,
       color: 'black',
+  },
+  // Explicit width for input items so the text boxes (not the popup) drive the
+  // hidden menu's width. Mirrors the Kotlin library's menuItemWidth = 250.dp.
+  hiddenMenuInput: {
+      width: 250,
   }
 });
