@@ -36,8 +36,8 @@ import com.hereliesaz.aznavrail.model.AzSheetDetent
  * Shared visual shell used by both the in-tree `AzBottomSheet` composable and the
  * system-overlay `AzBottomSheetWindowHost`. Renders:
  *
- *  1. A transparent scrim above the sheet (catching taps to [AzSheetController.stepDown]) when
- *     the detent is HALF or FULL.
+ *  1. A dim scrim above the sheet (catching taps to [AzSheetController.stepDown]) when the detent
+ *     is HALF or FULL, or a transparent tap overlay (no dim) at PEEK that also steps down.
  *  2. A rounded-top card sized via [heightForDetent], anchored at the bottom of the available space.
  *  3. A drag-handle pill (when [AzSheetConfig.handleVisible]) plus the always-present hidden swipe
  *     strip; both attach the accumulated-delta vertical-drag modifier.
@@ -78,15 +78,26 @@ internal fun AzBottomSheetShell(
     }
     val sheetColor = resolvedBackground.copy(alpha = config.backgroundAlpha)
 
-    val showScrim = controller.detent == AzSheetDetent.HALF || controller.detent == AzSheetDetent.FULL
+    val showVisualScrim = controller.detent == AzSheetDetent.HALF || controller.detent == AzSheetDetent.FULL
+    val showTapOverlay = controller.detent == AzSheetDetent.PEEK
 
     Box(modifier = modifier.fillMaxSize()) {
-        if (showScrim) {
-            // Transparent dim layer; tap steps the sheet down one detent (mirrors LogKitty).
+        if (showVisualScrim) {
+            // Dim layer at HALF/FULL; tap steps the sheet down one detent.
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(config.scrimColor.copy(alpha = config.scrimAlpha))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                    ) { controller.stepDown() }
+            )
+        } else if (showTapOverlay) {
+            // Transparent tap catcher at PEEK; no dim, just catches taps to step down.
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,

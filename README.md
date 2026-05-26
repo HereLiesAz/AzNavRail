@@ -712,7 +712,7 @@ AzHostActivityLayout(navController = nav, currentDestination = currentRoute) {
 }
 ```
 
-Detents — `HIDDEN`, `PEEK`, `HALF`, `FULL` — and the accumulated-delta drag gesture mirror LogKitty exactly. At HIDDEN, the strip stays visible with a dimmed drag-handle (28dp tall by default) and **tapping the strip steps up to PEEK** in addition to the swipe-up gesture. If your sheet body needs to clear the system nav bar visually, pad inside your `content` lambda or use `AzBottomSheetInsetAware` directly outside the DSL. For Service-hosted overlays (LogKitty's use case), use the `AzBottomSheetWindowHost` flavor; both flavors share state, theming, and gesture handling so the visual is identical.
+Detents — `HIDDEN`, `PEEK`, `HALF`, `FULL` — and the accumulated-delta drag gesture mirror LogKitty exactly. Swiping down snaps the sheet directly to `HIDDEN` for quick dismissal. At `HIDDEN`, the strip stays visible with a dimmed drag-handle (28dp) and **tapping the strip steps up to PEEK**. At `PEEK`, a transparent tap overlay catches taps to step down to `HIDDEN`. At `HALF`/`FULL`, a dim scrim covers the background and tapping it steps down one detent. If your sheet body needs to clear the system nav bar visually, pad inside your `content` lambda or use `AzBottomSheetInsetAware` directly outside the DSL. For Service-hosted overlays (LogKitty's use case), use the `AzBottomSheetWindowHost` flavor; both flavors share state, theming, and gesture handling so the visual is identical.
 
 See [`docs/DSL.md`](docs/DSL.md), [`docs/API.md`](docs/API.md), and [`docs/AZNAVRAIL_COMPLETE_GUIDE.md`](docs/AZNAVRAIL_COMPLETE_GUIDE.md) for the full reference, and [`docs/MIGRATION_GUIDE.md`](docs/MIGRATION_GUIDE.md) for the LogKitty migration recipe.
 

@@ -53,9 +53,13 @@ fun azAdvanced(
     onRailDrag: ((Float, Float) -> Unit)? = null,
     onOverlayDrag: ((Float, Float) -> Unit)? = null,
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
-    helpList: Map<String, Any> = emptyMap()
+    helpList: Map<String, Any> = emptyMap(),
+    tutorials: Map<String, AzTutorial> = emptyMap(),
+    onInteraction: ((String, AzNavItem) -> Unit)? = null
 )
 ~~~
+
+`onInteraction` is called whenever any rail item is interacted with — click, toggle, cycler advance, nested rail open, or reloc drag. It receives the item's `id` and the `AzNavItem` itself, enabling analytics integration and UI feedback without per-item callbacks.
 
 ## Hidden Menu Builders (for `azRailRelocItem`)
 * `listItem(text, route)`
@@ -316,8 +320,10 @@ AzHostActivityLayout(navController = nav, currentDestination = currentRoute) {
 Use `rememberAzSheetController(initial)` inside Compose so detent state survives recomposition and configuration changes.
 
 ### Gestures
-- **Vertical drag** on the sheet card or hidden strip accumulates per-frame delta and fires exactly one detent step per gesture when the threshold (`config.dragThresholdDp`, default 24dp) is crossed.
-- **Scrim tap** in `HALF` / `FULL` calls `stepDown()`.
+- **Vertical drag up** on the sheet card or hidden strip accumulates per-frame delta and fires exactly one `stepUp()` per gesture when the threshold (`config.dragThresholdDp`, default 24dp) is crossed.
+- **Vertical drag down** (swipe-down) calls `snapTo(HIDDEN)`, dismissing the sheet entirely in one gesture rather than stepping down one detent at a time.
+- **Scrim tap** in `HALF` / `FULL` calls `stepDown()` (dim overlay visible).
+- **Transparent tap overlay** at `PEEK` — a non-dimmed, full-screen tap catcher that calls `stepDown()`, transitioning to HIDDEN. Makes the dismiss affordance discoverable for users who tap rather than swipe.
 - **Back press** when `config.collapseOnBack = true` calls `stepDown()` while the sheet is non-HIDDEN.
 - **Horizontal swipe** is opt-in via `config.horizontalSwipeEnabled = true` and the `onSwipeLeft` / `onSwipeRight` callbacks (used by LogKitty for tab navigation).
 

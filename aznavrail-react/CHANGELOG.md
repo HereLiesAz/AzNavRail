@@ -19,6 +19,11 @@
 - `KNOWN_GAPS.md` documenting platform-shaped gaps (`SYSTEM_ALERT_WINDOW`, `AzActivity`,
   the secret-screen TCP sync, the inset-aware variant on web).
 
+### Changed
+- `onInteraction` callback now passes `AzNavItem` as 3rd argument for item-level analytics.
+- Bottom sheet swipe-down snaps directly to `HIDDEN` instead of stepping one detent.
+- Bottom sheet adds transparent tap overlay at `PEEK` detent for tap-to-dismiss.
+
 ### Notes
 Catches the React port up with Android commit `da9e1be feat(aznavrail): port LogKitty
 bottom-sheet shell as first-class library feature`.

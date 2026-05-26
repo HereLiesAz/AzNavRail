@@ -43,8 +43,8 @@ interface AzNavRailProps extends AzNavRailSettings {
   disableSwipeToOpen?: boolean;
   /** Called whenever the rail transitions between collapsed and expanded states. */
   onExpandedChange?: (expanded: boolean) => void;
-  /** Optional hook for logging or analytics; if omitted, interactions are logged to the console in dev mode. */
-  onInteraction?: (action: string, details?: string) => void;
+  /** Called whenever any rail item is interacted with. Receives the action name, an optional detail string, and the interacted item (if applicable). */
+  onInteraction?: (action: string, details?: string, item?: AzNavItem) => void;
 }
 
 const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
@@ -73,9 +73,9 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       helpList = {},
   } = props;
   const logInteraction = useCallback(
-    (action: string, details?: string) => {
+    (action: string, details?: string, item?: AzNavItem) => {
       if (onInteraction) {
-        onInteraction(action, details);
+        onInteraction(action, details, item);
         return;
       }
 
@@ -263,7 +263,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   // Reloc Item Logic
   const handleRelocDragStart = (draggedItemIndex: number) => {
       if (vibrate) Vibration.vibrate(50);
-      logInteraction('Reloc drag started', items[draggedItemIndex].text);
+      logInteraction('Reloc drag started', items[draggedItemIndex].text, items[draggedItemIndex]);
   };
 
   const handleRelocDragEnd = (_draggedItemIndex: number) => {
@@ -459,7 +459,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                      hasCustomContent={!!item.content}
                      onClick={() => {
                          setHostStates(prev => ({...prev, [item.id]: !prev[item.id]}));
-                         logInteraction('Host toggled', item.text);
+                         logInteraction('Host toggled', item.text, item);
                      }}
                  />
                  {isExpandedHost && subItems.map((sub, _i) => renderRailItem(sub, items.indexOf(sub)))}
@@ -476,7 +476,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                   selectedOption={item.selectedOption || ''}
                   onCycle={() => {
                       if (item.onClick) item.onClick();
-                      logInteraction('Cycler cycled', item.text);
+                      logInteraction('Cycler cycled', item.text, item);
                   }}
               />
           );
@@ -491,7 +491,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                   toggleOffText={item.toggleOffText}
                   onToggle={() => {
                       if (item.onClick) item.onClick();
-                      logInteraction('Toggle toggled', item.text);
+                      logInteraction('Toggle toggled', item.text, item);
                   }}
               />
           );
@@ -509,7 +509,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                 content={item.content}
                 hasCustomContent={!!item.content}
                 onClick={() => {
-                    logInteraction('Item clicked', item.text);
+                    logInteraction('Item clicked', item.text, item);
                     if (item.isNestedRail) {
                         setNestedRailVisible(item.id);
                         // Use actual bounds if available
@@ -543,7 +543,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                   isExpandedHost={isExpandedHost}
                   onToggleHost={() => setHostStates(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
                   onItemClick={() => {
-                      logInteraction('Menu item clicked', item.text);
+                      logInteraction('Menu item clicked', item.text, item);
                       if (item.onClick) item.onClick();
                       if (item.collapseOnClick) setIsExpanded(false);
                   }}

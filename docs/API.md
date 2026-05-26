@@ -54,6 +54,7 @@ All items now support the following **Reactive Binding Fields**. Provide the nam
 * `isLoadingProperty`: Binds the global loading spinner to a `Boolean` property.
 * `helpEnabled`: When `true`, auto-injects a Help item into the menu drawer if no explicit `azHelpRailItem` / `azHelpSubItem` is registered. The overlay itself is toggled exclusively by tapping a help item (there is no public API to open it externally).
 * `helpList`: An optional mapping of `RailItem` IDs to help texts to be shown in the help overlay alongside `info`.
+* `onInteraction`: Optional callback `((String, AzNavItem) -> Unit)?` invoked whenever any rail item is interacted with (click, toggle, cycler advance, nested rail open, reloc drag). Receives the item's ID and the `AzNavItem` itself.
 
 ### Help overlay scoping & rendering
 
@@ -390,8 +391,8 @@ The bottom-sheet shell is ported from [LogKitty](https://github.com/HereLiesAz/L
 | `isEnabled` | `Boolean` (mutable) | `false` forces `HIDDEN` and blocks step calls. |
 | `detentFlow` | `StateFlow<AzSheetDetent>` | Read-only. |
 | `enabledFlow` | `StateFlow<Boolean>` | Read-only. |
-| `stepUp()` / `stepDown()` | – | One detent per call; clamps at the ends. |
-| `snapTo(target)` | – | Direct jump; blocked when disabled and target ≠ HIDDEN. |
+| `stepUp()` / `stepDown()` | – | One detent per call; clamps at the ends. Swipe-down gesture uses `snapTo(HIDDEN)` instead. |
+| `snapTo(target)` | – | Direct jump; blocked when disabled and target ≠ HIDDEN. Used by swipe-down to dismiss entirely. |
 
 ### Configuration
 
@@ -401,13 +402,13 @@ The bottom-sheet shell is ported from [LogKitty](https://github.com/HereLiesAz/L
 | :--- | :--- | :--- | :--- |
 | `backgroundColor` | `Color` | `Color.Unspecified` (→ `MaterialTheme.colorScheme.surface`) | Sheet fill. |
 | `backgroundAlpha` | `Float` | `0.92f` | Alpha applied to fill. |
-| `scrimColor` | `Color` | `Color.Black` | Dim layer above sheet in HALF/FULL. |
+| `scrimColor` | `Color` | `Color.Black` | Dim layer above sheet in HALF/FULL. At PEEK, a transparent (no-dim) tap overlay catches taps instead. |
 | `scrimAlpha` | `Float` | `0.32f` | Scrim alpha. |
 | `hiddenStripDp` | `Dp` | `28.dp` | Swipe-target height in HIDDEN. Bumped from 14dp so it's reliably touchable on gesture-nav devices; the handle stays visible at this detent (dimmed). |
 | `peekDp` | `Dp` | `56.dp` | Height in PEEK. |
 | `halfFraction` | `Float` | `0.5f` | Fraction of parent height in HALF. |
 | `fullFraction` | `Float` | `0.9f` | Fraction of parent height in FULL. |
-| `dragThresholdDp` | `Dp` | `24.dp` | Cumulative drag needed per detent step. |
+| `dragThresholdDp` | `Dp` | `24.dp` | Cumulative drag needed per step. Swipe up steps one detent; swipe down snaps to HIDDEN. |
 | `collapseOnBack` | `Boolean` | `true` | Back press steps down. |
 | `horizontalSwipeEnabled` | `Boolean` | `false` | Enables `onSwipeLeft` / `onSwipeRight`. |
 | `animateInTree` | `Boolean` | `true` | In-tree shell animates between heights; system-overlay always hard-jumps. |

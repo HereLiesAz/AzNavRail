@@ -497,6 +497,7 @@ private fun DraggableRailItemWrapper(
                     if (isLongPress) {
                         if (dragStarted) {
                             onDragEnd()
+                            scope.advancedConfig.onInteraction?.invoke(item.id, item)
                         }
                     } else if (!hasMoved && gestureCompletedSuccessfully) {
                         val isRouteSelected = item.route != null && item.route == currentDestination
@@ -522,6 +523,7 @@ private fun DraggableRailItemWrapper(
                                 }
                             }
                         }
+                        scope.advancedConfig.onInteraction?.invoke(item.id, item)
                     }
                 }
             }
@@ -596,6 +598,7 @@ private fun DraggableRailItemWrapper(
                                 }
                             }
                         }
+                        scope.advancedConfig.onInteraction?.invoke(item.id, item)
                     },
                     onRailCyclerClick = onRailCyclerClick,
                     onItemClick = { onItemSelected(item) },
@@ -629,6 +632,7 @@ private fun DraggableRailItemWrapper(
                             scope.onClickMap[subItem.id]?.invoke()
                             subItem.route?.let { navController?.navigate(it) }
                             onItemSelected(subItem)
+                            scope.advancedConfig.onInteraction?.invoke(subItem.id, subItem)
                             if (!item.keepNestedRailOpen) {
                                 onNestedRailToggle(null)
                             }
@@ -663,6 +667,7 @@ private fun DraggableRailItemWrapper(
                             scope.onClickMap[subItem.id]?.invoke()
                             subItem.route?.let { navController?.navigate(it) }
                             onItemSelected(subItem)
+                            scope.advancedConfig.onInteraction?.invoke(subItem.id, subItem)
                             if (!item.keepNestedRailOpen) {
                                 onNestedRailToggle(null)
                             }

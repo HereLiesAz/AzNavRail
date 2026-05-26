@@ -23,6 +23,48 @@ AzHostActivityLayout(
 }
 ```
 
+
+**React (React Native / react-native-web) Equivalent:**
+While Android uses `AzHostActivityLayout` and a DSL to manage positioning and Safe Zones automatically, React projects explicitly construct their layout and pass properties and arrays of objects. The React version enforces the same visual rules via standard flex layouts.
+
+```tsx
+import { AzNavRail, AzNavItem, AzNavRailSettings } from '@HereLiesAz/aznavrail-react';
+import { View } from 'react-native';
+
+const settings: AzNavRailSettings = {
+    dockingSide: AzDockingSide.LEFT,
+    packRailButtons: false,
+    usePhysicalDocking: false,
+    defaultShape: AzButtonShape.RECTANGLE,
+    activeColor: '#6200EE',
+    translucentBackground: 'rgba(0,0,0,0.5)',
+    enableRailDragging: true,
+    isLoading: false,
+    helpList: { "home": "Home screen" },
+    infoScreen: false,
+    onDismissInfoScreen: () => {},
+};
+
+const items: AzNavItem[] = [
+    // Define items array here
+];
+
+export default function AppLayout() {
+    return (
+        <View style={{ flex: 1, flexDirection: 'row' }}>
+            <AzNavRail
+                appName="My App"
+                items={items}
+                expanded={false}
+                settings={settings}
+                onToggleExpand={() => {}}
+            />
+            {/* Background and Onscreen Content */}
+        </View>
+    );
+}
+```
+
 ---
 
 ## 2. Rail Configuration (DSL)
@@ -41,6 +83,7 @@ azConfig(
 )
 ```
 
+
 ### B. Theming (`azTheme`)
 Controls visual style defaults.
 
@@ -48,9 +91,21 @@ Controls visual style defaults.
 azTheme(
     defaultShape = AzButtonShape.RECTANGLE, // Default shape for all items
     activeColor = MaterialTheme.colorScheme.primary, // Color for active state
-    helpLineColors = listOf(Color.Red, Color.Green, Color.Blue) // Colors for Help card lines
+    translucentBackground = Color.Black.copy(alpha = 0.5f) // Set the background color for menus/overlays!
 )
 ```
+
+**React Implementation:**
+```tsx
+const settings: AzNavRailSettings = {
+    defaultShape: AzButtonShape.RECTANGLE,
+    activeColor: '#6200EE',
+    translucentBackground: 'rgba(0,0,0,0.5)',
+};
+// Pass this object to the settings prop on AzNavRail
+```
+
+
 
 ### C. Advanced Features (`azAdvanced`)
 Enables complex behaviors like drag-and-drop and help overlays.
@@ -60,24 +115,35 @@ azAdvanced(
     isLoading = isLoading,               // Boolean: Show global loading overlay
     enableRailDragging = true,           // Boolean: Enable FAB Mode (detach rail)
     helpEnabled = showHelp,              // Boolean: Show Help Overlay
-    helpList = mapOf("home" to "Home screen") // Map<String, Any>: Extra help texts
-    onDismissHelp = { showHelp = false }
+    helpList = mapOf("home" to "Home screen"), // Map<String, Any>: Extra help texts
+    onDismissHelp = { showHelp = false },
+    onInteraction = { itemId, item ->    // Called on every item interaction
+        Log.d("Rail", "Interacted: $itemId (${item.text})")
+    }
 )
 ```
 
+`onInteraction` fires whenever any rail item is interacted with — click, toggle, cycler advance, nested rail open, or reloc drag. It receives the item's `id` and the full `AzNavItem`, enabling analytics integration without per-item callbacks.
+
+**React Implementation:**
+```tsx
+const settings: AzNavRailSettings = {
+    isLoading: isLoading,
+    enableRailDragging: true,
+    infoScreen: showHelp,
+    helpList: { "home": "Home screen" },
+    onDismissInfoScreen: () => setShowHelp(false),
+};
+// Pass this object to the settings prop on AzNavRail
+// onInteraction is passed as a prop on AzNavRail:
+// <AzNavRail onInteraction={(action, details, item) => console.log(action, item)} ...>
+```
+
+
+> **Note on Help Overlay:**
+> The `HelpOverlay` displays a short, truncated entry for each item to conserve space. Tapping a help card expands it to reveal the full description and any extra text provided in `helpList`. Furthermore, `helpList` can be supplied dynamically to `AzNestedRail` components for distinct, localized help data.
+
 ---
-
-
-### D. Item Customization (Colors & Text)
-Most navigation items (`azRailItem`, `azMenuItem`, toggles, cyclers, etc.) support overriding their display text and colors when shown in the menu versus the rail:
-- `menuText`: Optional alternate text to display when the item is expanded in the side menu (overrides `text`).
-- `menuToggleOnText`, `menuToggleOffText`: Optional alternate text for toggles when in the menu.
-- `menuOptions`: Optional alternate list of strings for cyclers when in the menu.
-- `textColor`: Custom color for the text itself.
-- `fillColor`: Custom color for the button's translucent background surface. By default, the `fillColor` is Black (with 25% opacity), unless the item's main color is Black, in which case it is White (with 25% opacity) to ensure proper contrast.
-
-### E. Menu Font Size & Theming
-The expanded menu text font size (and the footer items text size) is strictly controlled by your app's `MaterialTheme.typography.titleLarge`. To adjust the text size inside the side menu drawer, simply customize the `titleLarge` attribute in your app's typography theme!
 
 ## 3. Navigation Items (DSL)
 
@@ -117,6 +183,11 @@ azRailItem(id = "icon-item", text = "Icon", content = android.R.drawable.ic_menu
 // Rail item with specific shape override
 azRailItem(id = "none-shape", text = "No Shape", shape = AzButtonShape.NONE)
 
+// Rail item with Custom Composable Content Size
+azRailItem(id = "wide-composable", text = "Wide", content = AzComposableContent {
+    Box(Modifier.width(120.dp).background(Color.Blue))
+}) // Will not clip to rail width!
+
 // Disabled item
 azRailItem(id = "profile", text = "Profile", disabled = true, route = "profile")
 
@@ -146,6 +217,17 @@ azRailItem(
         }
     }
 )
+```
+
+**React Implementation:**
+```tsx
+// Tutorials are mapped through helpList in React
+const settings: AzNavRailSettings = {
+    infoScreen: true,
+    helpList: {
+        "item-1": "Help text for item 1"
+    }
+};
 ```
 
 ### Toggles
@@ -232,6 +314,8 @@ azRailRelocItem(
     id = "reloc-1",
     hostId = "rail-host", // Cluster ID
     text = "Reloc Item 1",
+    forceHiddenMenuOpen = false, // Programmatic control for hidden context menu
+    onHiddenMenuDismiss = { /* Menu was closed! */ },
     onRelocate = { from, to, newOrder -> /* handle reorder */ }
 ) {
     // Hidden Context Menu (Tap to open)
@@ -364,7 +448,7 @@ AzForm(
     formName = "loginForm",
     onSubmit = { formData -> /* Map<String, String> */ }
 ) {
-    entry(entryName = "username", hint = "Username")
+    entry(entryName = "username", hint = "Username", initialValue = "AzRailFan") // Pre-filled!
     entry(entryName = "password", hint = "Password", secret = true) // Password mask
     entry(entryName = "bio", hint = "Biography", multiline = true)  // Multi-line
 }
@@ -391,61 +475,408 @@ AzCycler(options = listOf("1", "2"), selectedOption = "1", onCycle = {})
 ```
 
 
-## Tutorial Framework
+### D. Item Customization (Colors & Text)
+Most navigation items (`azRailItem`, `azMenuItem`, toggles, cyclers, etc.) support overriding their display text and colors when shown in the menu versus the rail:
+- `menuText`: Optional alternate text to display when the item is expanded in the side menu (overrides `text`).
+- `menuToggleOnText`, `menuToggleOffText`: Optional alternate text for toggles when in the menu.
+- `menuOptions`: Optional alternate list of strings for cyclers when in the menu.
+- `textColor`: Custom color for the text itself.
+- `fillColor`: Custom color for the button's translucent background surface. By default, the `fillColor` is Black (with 25% opacity), unless the item's main color is Black, in which case it is White (with 25% opacity) to ensure proper contrast.
 
-AzNavRail features a powerful tutorial framework allowing you to script interactive scenes, dim the screen, and highlight specific items via an easy-to-use DSL. Tutorials are passed in `azAdvanced` or `azSettings`. When a tutorial is associated with an item ID, tapping that item's Help card will launch the tutorial sequence.
+### E. Menu Font Size & Theming
+The expanded menu text font size (and the footer items text size) is strictly controlled by your app's `MaterialTheme.typography.titleLarge`. To adjust the text size inside the side menu drawer, simply customize the `titleLarge` attribute in your app's typography theme!
+
+
+## 9. Tutorial Framework
+
+The tutorial framework scripts interactive, multi-scene walkthroughs over a dimmed overlay. Each tutorial has one or more scenes; each scene has one or more cards. Cards can spotlight rail items, require user actions before advancing, show inline media, and present interactive checklists. Scenes can branch based on runtime variables or based on which highlighted item the user taps.
+
+### 9.1 Concepts
+
+**Scene** — a "scripted screen state." You provide a `content` composable/component that renders behind the overlay. The overlay dims everything outside the spotlight and shows the current card.
+
+**Card** — a single instructional step. It has a title, body text, an optional spotlight (`AzHighlight`), and an advance condition (`AzAdvanceCondition`).
+
+**Advance conditions:**
+- `Button` (default) — a "Next" button is shown.
+- `TapTarget` — user must tap the spotlighted item.
+- `TapAnywhere` — user taps anywhere to advance.
+- `Event(name)` — advances when the app calls `controller.fireEvent(name)`.
+
+**Highlights:**
+- `AzHighlight.None` — no spotlight.
+- `AzHighlight.FullScreen` — full-screen highlight.
+- `AzHighlight.Item(id)` — spotlights a named rail item (uses measured bounds).
+- `AzHighlight.Area(rect)` — spotlights an arbitrary rect.
+
+Card auto-positioning: defaults to bottom. Flips to top when highlight center Y > 60% of screen height. `TapTarget` degrades to `TapAnywhere` if the highlight is not `AzHighlight.Item`.
+
+### 9.2 Help/Info Overlay Integration
+
+- **Collapsed card:** Shows a "Tutorial available" hint when a tutorial exists for that item.
+- **Expanded card:** Shows a "Start Tutorial" button. Tapping it calls `tutorialController.startTutorial(id)` and dismisses the help overlay.
+- The old behavior (any tap immediately starts the tutorial) is removed.
+
+### 9.3 Android — Full Example
 
 ```kotlin
-import com.hereliesaz.aznavrail.tutorial.AzHighlight
-import com.hereliesaz.aznavrail.tutorial.azTutorial
+import com.hereliesaz.aznavrail.tutorial.*
 
+// 1. Define the tutorial
+val myTutorial = azTutorial {
+    onComplete { /* fired when last scene finishes */ }
+    onSkip { /* fired when Skip Tutorial tapped */ }
+
+    // Invisible redirect node: routes based on a variable
+    scene(id = "gate", content = { /* empty backdrop */ }) {
+        branch(varName = "userLevel", mapOf(
+            "advanced" to "scene-advanced",
+            "basic"    to "scene-basic"
+        ))
+    }
+
+    scene(id = "scene-advanced", content = { AdvancedScreen() }) {
+
+        // TapTarget with per-item branching
+        card(
+            title = "Pick a path",
+            text = "Tap the item you want to learn about.",
+            highlight = AzHighlight.Item("nav-menu"),
+            advanceCondition = AzAdvanceCondition.TapTarget,
+            branches = mapOf(
+                "settings-btn" to "scene-settings",
+                "profile-btn"  to "scene-profile"
+            )
+        )
+
+        // Event-driven advance
+        card(
+            title = "Open the menu",
+            text = "Swipe right or tap the rail header.",
+            highlight = AzHighlight.Item("rail-header"),
+            advanceCondition = AzAdvanceCondition.Event("menu_opened")
+        )
+
+        // Checklist card — Next disabled until all items checked
+        card(
+            title = "Before you continue",
+            text = "Confirm the following:",
+            checklistItems = listOf("I read the docs", "I set up my account")
+        )
+
+        // Media card — rendered between title and text
+        card(
+            title = "The Rail",
+            text = "Sits on the left or right edge.",
+            mediaContent = { Image(painterResource(R.drawable.rail), contentDescription = null) }
+        )
+    }
+
+    scene(id = "scene-basic", content = { BasicScreen() }) {
+        card(
+            title = "Basic path",
+            text = "Here is the simplified view.",
+            highlight = AzHighlight.FullScreen,
+            advanceCondition = AzAdvanceCondition.TapAnywhere
+        )
+    }
+}
+
+// 2. Register and wire
 azAdvanced(
     helpEnabled = true,
-    tutorials = mapOf(
-        "my-item-id" to azTutorial {
-            // A scene displays custom composable content underneath the tutorial overlay
-            scene(
-                id = "scene1",
-                content = {
-                    Box(Modifier.fillMaxSize().background(Color.DarkGray)) {
-                        Text("Scripted App Screen", color = Color.White)
-                    }
-                }
-            ) {
-                // Cards display textual instructions with next/skip actions
-                card(
-                    title = "Welcome",
-                    text = "Welcome to the tutorial.",
-                    highlight = AzHighlight.FullScreen
-                )
-                card(
-                    title = "Highlighting",
-                    text = "Notice the highlighted item.",
-                    highlight = AzHighlight.Item("my-item-id"),
-                    actionText = "Finish"
-                )
-            }
-        }
-    )
+    onItemGloballyPositioned = { id, rect -> boundsMap[id] = rect },
+    tutorials = mapOf("tut-1" to myTutorial)
 )
+
+// 3. Mount the controller and overlay
+val controller = rememberAzTutorialController()
+CompositionLocalProvider(LocalAzTutorialController provides controller) {
+    // ... your content ...
+    if (controller.activeTutorialId.value == "tut-1") {
+        AzTutorialOverlay(
+            tutorialId = "tut-1",
+            tutorial = myTutorial,
+            onDismiss = { controller.endTutorial() },
+            itemBoundsCache = boundsMap
+        )
+    }
+}
+
+// 4. Start with variables (drives the gate scene branch)
+controller.startTutorial("tut-1", variables = mapOf("userLevel" to "advanced"))
+
+// 5. Fire an event from your app logic
+controller.fireEvent("menu_opened")
+
+// 6. Check read status
+val hasRead = controller.isTutorialRead("tut-1")
 ```
 
-### Programmatic Control (AzTutorialController)
+Persistence: `SharedPreferences` file `az_tutorial_prefs`, key `az_navrail_read_tutorials`. State is read on `rememberAzTutorialController()` and written on each `markTutorialRead()`.
 
-You can programmatically initiate, end, and check the completion status of tutorials using the `AzTutorialController`, accessible via a `CompositionLocal` anywhere within the `AzNavHost` hierarchy.
+### 9.4 React Native — Full Example
+
+```tsx
+import {
+    AzTutorialProvider,
+    useAzTutorialController,
+    AzTutorial,
+} from '@HereLiesAz/aznavrail-react';
+
+// 1. Define the tutorial
+const myTutorial: AzTutorial = {
+    onComplete: () => console.log('done'),
+    onSkip: () => console.log('skipped'),
+    scenes: [
+        {
+            id: 'gate',
+            content: () => null,
+            cards: [],
+            branchVar: 'userLevel',
+            branches: { advanced: 'scene-advanced', basic: 'scene-basic' },
+        },
+        {
+            id: 'scene-advanced',
+            content: () => <AdvancedScreen />,
+            cards: [
+                {
+                    title: 'Pick a path',
+                    text: 'Tap the item you want to learn about.',
+                    highlight: { type: 'Item', id: 'nav-menu' },
+                    advanceCondition: { type: 'TapTarget' },
+                    branches: {
+                        'settings-btn': 'scene-settings',
+                        'profile-btn': 'scene-profile',
+                    },
+                },
+                {
+                    title: 'Open the menu',
+                    text: 'Swipe right or tap the rail header.',
+                    highlight: { type: 'Item', id: 'rail-header' },
+                    advanceCondition: { type: 'Event', name: 'menu_opened' },
+                },
+                {
+                    title: 'Before you continue',
+                    text: 'Confirm the following:',
+                    checklistItems: ['I read the docs', 'I set up my account'],
+                },
+                {
+                    title: 'The Rail',
+                    text: 'Sits on the left or right edge.',
+                    mediaContent: () => <Image source={require('./rail.png')} style={{ height: 120 }} />,
+                },
+            ],
+        },
+    ],
+};
+
+// 2. Wrap your app root
+function Root() {
+    return (
+        <AzTutorialProvider tutorials={{ 'tut-1': myTutorial }}>
+            <App />
+        </AzTutorialProvider>
+    );
+}
+
+// 3. Start and fire events from anywhere in the tree
+function TutorialLauncher() {
+    const controller = useAzTutorialController();
+    return (
+        <Button
+            title="Start Tutorial"
+            onPress={() => controller.startTutorial('tut-1', { userLevel: 'advanced' })}
+        />
+    );
+}
+
+// Fire an event from app logic
+controller.fireEvent('menu_opened');
+```
+
+Persistence: `@react-native-async-storage/async-storage` (optional peer dependency). Falls back to in-memory if not installed. Key: `az_navrail_read_tutorials`.
+
+### 9.5 Web — Full Example
+
+The web library is a TypeScript port of Android. New files: `web/AzTutorialController.tsx`, `web/AzTutorialOverlay.tsx`, `web/HelpOverlay.tsx`.
+
+```tsx
+import {
+    AzWebTutorialProvider,
+    useAzWebTutorialController,
+    AzTutorial,
+} from '@HereLiesAz/aznavrail-web';
+
+// Tutorial definition is identical in shape to the React Native example above.
+
+function Root() {
+    return (
+        <AzWebTutorialProvider tutorials={{ 'tut-1': myTutorial }}>
+            <App />
+        </AzWebTutorialProvider>
+    );
+}
+
+function TutorialLauncher() {
+    const ctrl = useAzWebTutorialController();
+    return (
+        <button onClick={() => ctrl.startTutorial('tut-1', { userLevel: 'advanced' })}>
+            Start Tutorial
+        </button>
+    );
+}
+```
+
+Spotlight implementation: `box-shadow: 0 0 0 9999px rgba(0,0,0,0.7)` applied to the highlighted element — the CSS equivalent of Android's `BlendMode.Clear` punch-out.
+
+Persistence: `localStorage`. Key: `az_navrail_read_tutorials`.
+
+### 9.6 Variable Branching
+
+Pass a `variables` map to `startTutorial`. Scenes with `branchVar` set evaluate their `branches` map on entry and redirect to the matching scene ID. A scene used only for branching can have an empty `cards` list and a transparent `content`.
 
 ```kotlin
-import com.hereliesaz.aznavrail.tutorial.LocalAzTutorialController
+// Android
+controller.startTutorial("tut-1", variables = mapOf("userLevel" to "advanced"))
+```
 
-@Composable
-fun MyScreen() {
-    val tutorialController = LocalAzTutorialController.current
+```typescript
+// React Native / Web
+controller.startTutorial('tut-1', { userLevel: 'advanced' });
+```
 
-    // Check if the tutorial was completed
-    val hasReadTutorial = tutorialController.isTutorialRead("my-item-id")
+Circular branch detection: if a branch chain loops back to an already-visited scene, a warning is logged and the tutorial advances to the next scene by index. If no next scene exists, the tutorial ends.
 
-    Button(onClick = { tutorialController.startTutorial("my-item-id") }) {
-        Text("Replay Tutorial")
+### 9.7 Event-Driven Advance
+
+Use `AzAdvanceCondition.Event("event_name")` (Kotlin) or `{ type: 'Event', name: 'event_name' }` (TS) on a card. When your app logic fires that event, the overlay automatically advances.
+
+```kotlin
+// Fire from anywhere — e.g., in a real menu open handler
+controller.fireEvent("menu_opened")
+```
+
+The overlay observes `pendingEvent` and calls `consumeEvent()` internally on match. You do not need to call `consumeEvent()` yourself.
+
+### 9.8 Checklist Cards
+
+Provide `checklistItems` on a card. The Next button is disabled until every item is checked. Compatible with any advance condition (the checklist gates the advance even for `TapAnywhere`).
+
+### 9.9 Media Cards
+
+Provide `mediaContent` (a composable/component) on a card. It is rendered between the title and the body text, clipped to a max height of 120dp/120px with 8dp/8px corner rounding. Useful for images, animated GIFs, or short video previews.
+
+---
+
+## 10. Bottom Sheets
+
+AzNavRail ships a four-detent bottom-sheet shell ported from [LogKitty](https://github.com/HereLiesAz/LogKitty). It is offered in two flavors that share state, theming, and gesture handling, so consumers get identical visual behavior whether the sheet lives inside a normal Activity or floats over the screen from a foreground Service.
+
+### 10.1 The Detent Model
+
+| Detent | Default height | Purpose |
+| :--- | :--- | :--- |
+| `HIDDEN` | 14dp swipe strip | Sheet is collapsed; the strip is a touch-target for a drag-up gesture but otherwise lets the underlying UI receive touches. |
+| `PEEK` | 56dp ticker | Single-line preview of the sheet content. |
+| `HALF` | 50% of parent | Half-screen view with a dim scrim above. |
+| `FULL` | 90% of parent | Near-full-screen view with the same scrim. |
+
+The fractions and the absolute heights are tunable via `AzSheetConfig`.
+
+### 10.2 In-tree usage
+
+Inside `AzHostActivityLayout` use the `azBottomSheet` DSL. The sheet draws above the rail, the menu, and the `onscreen` content area with `zIndex(2f)`, spans the full screen width edge-to-edge, and extends all the way to the bottom of the screen (no automatic `windowInsetsPadding`) so the HIDDEN-detent strip — 28dp tall by default, with a dimmed drag-handle — is reachable from the system-navigation-bar area. A tap on the strip steps up to PEEK alongside the swipe-up gesture. It is *not* a background. If your sheet body needs to clear the system nav bar visually, pad inside your `content` lambda or use `AzBottomSheetInsetAware` directly outside the DSL.
+
+```kotlin
+val sheetController = rememberAzSheetController(initial = AzSheetDetent.PEEK)
+
+AzHostActivityLayout(navController = nav, currentDestination = currentRoute) {
+    azConfig(dockingSide = AzDockingSide.LEFT)
+    azMenuItem(id = "home", text = "Home", route = "home", onClick = { /* … */ })
+    onscreen { AzNavHost(startDestination = "home") { /* … */ } }
+
+    azBottomSheet(controller = sheetController) {
+        Column(Modifier.fillMaxSize().padding(16.dp)) {
+            Text("Hello sheet")
+            Button(onClick = { sheetController.stepUp() }) { Text("Expand") }
+        }
     }
 }
 ```
+
+### 10.3 Controller and state
+
+`AzSheetController` carries two channels: a Compose `mutableStateOf`-backed `var` for in-tree consumers, and a `StateFlow` for the system-overlay flavor's window-resize coroutine. Mutate `detent` and `isEnabled` from the main thread; both channels stay in sync.
+
+```kotlin
+sheetController.stepUp()                          // HIDDEN → PEEK → HALF → FULL
+sheetController.stepDown()                        // reverse
+sheetController.snapTo(AzSheetDetent.FULL)         // direct jump
+sheetController.isEnabled = false                  // forces HIDDEN, blocks step calls
+```
+
+When `isEnabled` is set to `false`: the sheet immediately collapses to `HIDDEN`, `stepUp()` becomes a no-op, `stepDown()` forces `HIDDEN`, and `snapTo()` only allows `HIDDEN` as a target. Setting `isEnabled = true` re-enables all operations.
+
+### 10.4 Gestures
+
+- **Swipe up** on the sheet card or hidden strip accumulates per-frame delta and calls `stepUp()` exactly once when `config.dragThresholdDp` is crossed.
+- **Swipe down** calls `snapTo(HIDDEN)`, dismissing the sheet entirely in one gesture rather than stepping down one detent at a time.
+- **Scrim tap** in `HALF` / `FULL` calls `stepDown()` (dim overlay visible).
+- **Transparent tap overlay** at `PEEK` — a non-dimmed, full-screen tap catcher that calls `stepDown()`, transitioning to HIDDEN. Makes the dismiss gesture discoverable for users who tap rather than swipe.
+- System **back press** calls `stepDown()` while the sheet is non-HIDDEN when `config.collapseOnBack = true`.
+- **Horizontal swipe** is opt-in via `config.horizontalSwipeEnabled` and the `onSwipeLeft` / `onSwipeRight` callbacks — LogKitty uses these for tab navigation.
+
+### 10.5 Theming
+
+`AzSheetConfig.backgroundColor` defaults to `MaterialTheme.colorScheme.surface` blended with `backgroundAlpha`. Override both for custom looks; LogKitty wires its user-configurable color + opacity directly through.
+
+### 10.6 System-overlay flavor
+
+For Services that float a sheet over the active foreground app, use `AzBottomSheetWindowHost`. The library ships no `Service` and no permissions; the consumer's Service supplies the lifecycle/savedState owners and declares `SYSTEM_ALERT_WINDOW` itself.
+
+```kotlin
+class MyOverlayService : LifecycleService(), ViewModelStoreOwner, SavedStateRegistryOwner {
+    private lateinit var sheetHost: AzBottomSheetWindowHost
+    private val controller = AzSheetController(initial = AzSheetDetent.HIDDEN)
+
+    override fun onCreate() {
+        super.onCreate()
+        sheetHost = AzBottomSheetWindowHost(
+            context = this,
+            controller = controller,
+            config = AzSheetConfig(
+                backgroundColor = userBg,
+                backgroundAlpha = userAlpha,
+            ),
+            lifecycleOwner = this,
+            viewModelStoreOwner = this,
+            savedStateRegistryOwner = this,
+            navBarHeightPx = resources.getDimensionPixelSize(
+                resources.getIdentifier("navigation_bar_height", "dimen", "android")
+            ),
+        ) { MyContent(controller) }
+        sheetHost.attach()
+    }
+
+    override fun onDestroy() {
+        sheetHost.detach()
+        super.onDestroy()
+    }
+}
+```
+
+Call `sheetHost.attachNavBarDecor()` from an accessibility service's `onServiceConnected` to add the secondary `TYPE_ACCESSIBILITY_OVERLAY` window that tints the system nav bar to match the sheet color.
+
+The in-tree flavor animates between detent heights with `animateDpAsState`; the system-overlay flavor hard-jumps via `WindowManager.updateViewLayout`, matching LogKitty's existing look frame-for-frame.
+
+### 10.7 LogKitty migration
+
+LogKitty currently maintains its own `SheetController`, `LogBottomSheet`, and nav-bar-decoration code inside `LogKittyOverlayService`. To replace them with AzNavRail's shell:
+
+1. Add the `aznavrail` dependency.
+2. Replace `SheetController` and `LogBottomSheet` with `AzSheetController` and `AzBottomSheetWindowHost` (see snippet above).
+3. Pass LogKitty's existing tabs / log-list composable as the `content` slot.
+4. Delete `LogBottomSheet.kt`, `SheetController.kt`, and the inline nav-bar decoration block.
+
+Visual behavior — detent heights, drag feel, scrim, animation timing, and nav-bar color sync — is preserved frame-for-frame because `AzBottomSheetWindowHost` ports the same `WindowManager` flag set, the same accumulated-delta gesture, and the same nav-bar decoration window verbatim.

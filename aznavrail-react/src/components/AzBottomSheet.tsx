@@ -161,7 +161,7 @@ export function AzBottomSheet(props: AzBottomSheetProps): React.ReactElement {
           }
           const thresholdPx = cfg.dragThresholdDp * PixelRatio.get();
           if (gesture.dy <= -thresholdPx) controller.stepUp();
-          else if (gesture.dy >= thresholdPx) controller.stepDown();
+          else if (gesture.dy >= thresholdPx) controller.snapTo(AzSheetDetent.HIDDEN);
           dragAccumulatorRef.current = 0;
         },
       }),
@@ -177,6 +177,7 @@ export function AzBottomSheet(props: AzBottomSheetProps): React.ReactElement {
   };
 
   const scrimVisible = controller.detent === AzSheetDetent.HALF || controller.detent === AzSheetDetent.FULL;
+  const tapOverlayVisible = controller.detent === AzSheetDetent.PEEK;
   const backgroundColor = cfg.backgroundColor ?? '#FFFFFF';
   const isHidden = controller.detent === AzSheetDetent.HIDDEN;
 
@@ -188,6 +189,11 @@ export function AzBottomSheet(props: AzBottomSheetProps): React.ReactElement {
             StyleSheet.absoluteFill,
             { backgroundColor: cfg.scrimColor, opacity: cfg.scrimAlpha },
           ]}
+          onPress={() => controller.stepDown()}
+        />
+      ) : tapOverlayVisible ? (
+        <Pressable
+          style={StyleSheet.absoluteFill}
           onPress={() => controller.stepDown()}
         />
       ) : null}

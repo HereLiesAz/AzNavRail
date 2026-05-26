@@ -87,6 +87,16 @@ See [`KNOWN_GAPS.md`](./KNOWN_GAPS.md) for capabilities that exist on Android bu
 be expressed in React / React Native (system overlay services, `AzActivity` base class,
 `secLoc` TCP server).
 
+## Interaction callback
+
+The `onInteraction` callback fires whenever a user interacts with any rail item.
+
+| Android | React |
+| --- | --- |
+| `azAdvanced(onInteraction = { id, item -> ... })` | `<AzNavRail onInteraction={(action, details, item) => ...}>` |
+
+The Android callback receives `(itemId: String, item: AzNavItem)`. The React callback receives `(action: string, details?: string, item?: AzNavItem)` — the third parameter was added for parity and may be `undefined` for non-item actions (header tap, drag start, etc.).
+
 ## What's new in 0.2.0
 
 - `AzBottomSheet`, `AzBottomSheetInsetAware`, `useAzSheetController`, `AzSheetDetent`,
@@ -94,3 +104,6 @@ be expressed in React / React Native (system overlay services, `AzActivity` base
   commit `da9e1be feat(aznavrail): port LogKitty bottom-sheet shell as first-class library feature`.
 - `AzFloatingRail` — documented stand-in for the Android system-overlay services.
 - `KNOWN_GAPS.md` documenting the platform-shaped gaps.
+- `onInteraction` callback now passes `AzNavItem` as 3rd argument for item-level analytics.
+- Bottom sheet swipe-down snaps directly to HIDDEN for quick dismissal.
+- Bottom sheet adds transparent tap overlay at PEEK for improved discoverability.

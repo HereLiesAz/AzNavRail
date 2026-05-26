@@ -72,6 +72,26 @@ Info cards in the Help Overlay are now scrollable and support tap-to-expand. To 
 
 The `AzNavRailScope` has been stripped of its human conveniences. If you are dynamically creating items that the annotations cannot reach, you must use the explicit, monolithic function signatures. Look at `DSL.md` for the exact parameters.
 
+### New: Interactive Callback
+
+`azAdvanced()` and `azSettings()` now accept an optional `onInteraction` parameter:
+
+```kotlin
+azAdvanced(
+    onInteraction = { itemId, navItem ->
+        Log.d("Rail", "User interacted with $itemId: ${navItem.text}")
+    }
+)
+```
+
+This fires whenever a user interacts with any rail item (tap, toggle, cycler advance, nested rail open, reloc drag), enabling analytics integration without per-item callbacks.
+
+### Bottom Sheet Behavior Changes
+
+- **Swipe-down** now calls `snapTo(HIDDEN)`, dismissing the sheet entirely instead of stepping one detent.
+- **PEEK detent** now has a transparent tap overlay that calls `stepDown()` — tapping above the sheet at PEEK dismisses it to HIDDEN.
+- Scrim tap at HALF/FULL, back press, and swipe-up behavior are unchanged.
+
 ---
 
 ## Migrating to the Expanded Tutorial Framework

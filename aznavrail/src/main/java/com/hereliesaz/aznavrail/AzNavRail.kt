@@ -608,10 +608,17 @@ fun AzNavRail(
                                             } else {
                                                 scope.onClickMap[item.id]?.invoke()
                                             }
+                                            scope.advancedConfig.onInteraction?.invoke(item.id, item)
                                             if (item.collapseOnClick) isExpanded = false
                                         },
-                                        onCyclerClick = { scope.onClickMap[item.id]?.invoke() },
-                                        onToggle = { if (item.collapseOnClick) isExpanded = false },
+                                        onCyclerClick = {
+                                            scope.onClickMap[item.id]?.invoke()
+                                            scope.advancedConfig.onInteraction?.invoke(item.id, item)
+                                        },
+                                        onToggle = {
+                                            scope.advancedConfig.onInteraction?.invoke(item.id, item)
+                                            if (item.collapseOnClick) isExpanded = false
+                                        },
                                         onItemClick = { if (item.collapseOnClick) isExpanded = false },
                                         onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
                                         onItemGloballyPositioned = { id, bounds ->
@@ -637,10 +644,17 @@ fun AzNavRail(
                                                         } else {
                                                             scope.onClickMap[subItem.id]?.invoke()
                                                         }
+                                                        scope.advancedConfig.onInteraction?.invoke(subItem.id, subItem)
                                                         if (subItem.collapseOnClick) isExpanded = false
                                                     },
-                                                    onCyclerClick = { scope.onClickMap[subItem.id]?.invoke() },
-                                                    onToggle = { if (subItem.collapseOnClick) isExpanded = false },
+                                                    onCyclerClick = {
+                                                        scope.onClickMap[subItem.id]?.invoke()
+                                                        scope.advancedConfig.onInteraction?.invoke(subItem.id, subItem)
+                                                    },
+                                                    onToggle = {
+                                                        scope.advancedConfig.onInteraction?.invoke(subItem.id, subItem)
+                                                        if (subItem.collapseOnClick) isExpanded = false
+                                                    },
                                                     onItemClick = { if (subItem.collapseOnClick) isExpanded = false },
                                                     onItemGloballyPositioned = { id, bounds ->
                                                         scope.itemBoundsCache[id] = bounds
@@ -712,6 +726,7 @@ fun AzNavRail(
                                                 }
                                             )
                                         }
+                                        scope.advancedConfig.onInteraction?.invoke(item.id, item)
                                     }
                                 },
                                 onItemSelected = { item ->
