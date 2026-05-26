@@ -70,7 +70,8 @@
       "Bash(sh gradlew :aznavrail:testDebugUnitTest)",
       "Bash(Select-String -Pattern \"pointerInput\\\\\\(isExpanded\\\\\\)\" -Context 8,3)",
       "Bash(python3 *)",
-      "Bash(echo \"GRADLE_EXIT=$?\")"
+      "Bash(echo \"GRADLE_EXIT=$?\")",
+      "Bash(./gradlew assembleDebug:*)"
     ]
   }
 }
