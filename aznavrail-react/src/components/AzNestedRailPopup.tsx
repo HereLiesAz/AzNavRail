@@ -19,6 +19,8 @@ interface AzNestedRailPopupProps {
     anchorPosition?: { x: number, y: number, width: number, height: number };
     /** Which side the parent rail is docked to, used to position the popup correctly. */
     dockingSide: 'LEFT' | 'RIGHT';
+    /** Per-item help text map forwarded to the help overlay for items inside the popup. */
+    helpList?: Record<string, string>;
 }
 
 /** Shared Modal panel that floats next to a nested-rail host item and displays its sub-items. */

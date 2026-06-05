@@ -1,5 +1,5 @@
-import React, { useState, createContext, useContext, useEffect, useCallback, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ViewStyle, TextInput } from 'react-native';
+import React, { useState, createContext, useContext, useEffect, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
 import { AzTextBox, AzTextBoxProps } from './AzTextBox';
 
 /** Declarative description of a single field in an `AzForm` when using the `entries` API. */

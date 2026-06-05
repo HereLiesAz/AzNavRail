@@ -368,6 +368,17 @@ fun MainApp() {
         azRailSubItem(id = "rail-sub-1", hostId = "rail-host", text = "Rail Sub 1", route = "rail-sub-1")
         azMenuSubItem(id = "rail-sub-2", hostId = "rail-host", text = "Menu Sub 2", route = "rail-sub-2")
 
+        // Nested host: a sub-item that is itself a host with its own sub-items. Sub-hosts can
+        // nest to any depth; children attach by `hostId`, so "rail-subhost"'s children are
+        // distinct from its sibling sub-items under "rail-host".
+        azRailSubHostItem(id = "rail-subhost", hostId = "rail-host", text = "Rail Sub Host", route = "rail-subhost")
+        azRailSubItem(id = "rail-subhost-1", hostId = "rail-subhost", text = "Nested A", route = "rail-subhost-1")
+        azRailSubItem(id = "rail-subhost-2", hostId = "rail-subhost", text = "Nested B", route = "rail-subhost-2")
+
+        azMenuSubHostItem(id = "menu-subhost", hostId = "menu-host", text = "Menu Sub Host", route = "menu-subhost")
+        azMenuSubItem(id = "menu-subhost-1", hostId = "menu-subhost", text = "Nested 1", route = "menu-subhost-1")
+        azMenuSubItem(id = "menu-subhost-2", hostId = "menu-subhost", text = "Nested 2", route = "menu-subhost-2")
+
         azMenuSubToggle(
             id = "sub-toggle",
             hostId = "menu-host",
@@ -608,6 +619,12 @@ fun MainApp() {
                 composable("rail-host") { ScreenContent("Rail Host Screen") }
                 composable("rail-sub-1") { ScreenContent("Rail Sub 1 Screen") }
                 composable("rail-sub-2") { ScreenContent("Rail Sub 2 Screen") }
+                composable("rail-subhost") { ScreenContent("Rail Sub Host Screen") }
+                composable("rail-subhost-1") { ScreenContent("Nested A Screen") }
+                composable("rail-subhost-2") { ScreenContent("Nested B Screen") }
+                composable("menu-subhost") { ScreenContent("Menu Sub Host Screen") }
+                composable("menu-subhost-1") { ScreenContent("Nested 1 Screen") }
+                composable("menu-subhost-2") { ScreenContent("Nested 2 Screen") }
                 composable("profile") { ScreenContent("Profile Screen") }
                 composable("nested-1") { ScreenContent("Nested Item 1 Screen") }
                 composable("nested-2") { ScreenContent("Nested Item 2 Screen") }

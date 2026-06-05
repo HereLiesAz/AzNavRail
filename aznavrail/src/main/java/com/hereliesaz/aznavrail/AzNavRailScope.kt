@@ -315,6 +315,24 @@ interface AzNavRailScope {
     fun azRailSubItem(id: String, hostId: String, text: String = "", route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null)
 
     /**
+     * Adds a Sub Item that is itself a Host Item in the menu. It is a child of [hostId] (so it only
+     * appears when that parent host is expanded) and, like any host, expands to reveal its own
+     * sub-items (which target this item's [id] via their `hostId`). Hosts can nest to any depth.
+     *
+     * @param hostId The ID of the parent Host Item this sub-host belongs to.
+     */
+    fun azMenuSubHostItem(id: String, hostId: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, onClick: (() -> Unit)? = null)
+
+    /**
+     * Adds a Sub Item that is itself a Host Item to the rail. It is a child of [hostId] (so it only
+     * renders while that parent host is expanded) and, like any host, expands inline to reveal its
+     * own sub-items. Parameters mirror [azMenuSubHostItem]. Hosts can nest to any depth.
+     *
+     * @param hostId The ID of the parent Host Item this sub-host belongs to.
+     */
+    fun azRailSubHostItem(id: String, hostId: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, onClick: (() -> Unit)? = null)
+
+    /**
      * Adds a Sub Toggle to a Host Item in the menu. The toggle only renders when its host is
      * expanded.
      *
@@ -802,6 +820,29 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
 
     override fun azRailSubItem(id: String, hostId: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, onFocus: (() -> Unit)?, onClick: (() -> Unit)?) {
         addItem(id = id, text = text, menuText = menuText, config = AzItemConfig(classifiers = classifiers, route = route, screenTitle = screenTitle, info = info, isRailItem = true, disabled = disabled, isSubItem = true, hostId = hostId, onFocus = onFocus, content = content, color = color, textColor = textColor, fillColor = fillColor, shape = shape), onClick = onClick ?: {})
+    }
+
+    override fun azMenuSubHostItem(id: String, hostId: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, onClick: (() -> Unit)?) {
+        checkSubHost(id, hostId, "azMenuSubHostItem")
+        addItem(id = id, text = text, menuText = menuText, config = AzItemConfig(classifiers = classifiers, route = route, screenTitle = screenTitle, info = info, isRailItem = false, disabled = disabled, isHost = true, isSubItem = true, hostId = hostId, content = content, color = color, textColor = textColor, fillColor = fillColor, shape = shape), onClick = onClick ?: {})
+    }
+
+    override fun azRailSubHostItem(id: String, hostId: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, onClick: (() -> Unit)?) {
+        checkSubHost(id, hostId, "azRailSubHostItem")
+        addItem(id = id, text = text, menuText = menuText, config = AzItemConfig(classifiers = classifiers, route = route, screenTitle = screenTitle, info = info, isRailItem = true, disabled = disabled, isHost = true, isSubItem = true, hostId = hostId, content = content, color = color, textColor = textColor, fillColor = fillColor, shape = shape), onClick = onClick ?: {})
+    }
+
+    /**
+     * Validates a sub-host declaration: the parent [hostId] must already be registered, and a
+     * sub-host may not reference itself (which would expand into an infinite loop).
+     */
+    private fun checkSubHost(id: String, hostId: String, builder: String) {
+        if (hostId == id) {
+            throw IllegalArgumentException("`$builder(id = \"$id\", hostId = \"$hostId\", ...)` references itself as its own host. A sub-host must attach to a different parent host. Fix: pass a `hostId` that matches a previously-declared host item other than \"$id\".")
+        }
+        if (navItems.none { it.id == hostId }) {
+            throw IllegalArgumentException("`$builder(id = \"$id\", hostId = \"$hostId\", ...)` references a host that has not been declared yet. Sub-items attach to a previously-registered host so the rail can resolve `hostId` -> host item when rendering. Fix: declare a parent host (eg. `azRailHostItem` / `azMenuHostItem` / another `azRailSubHostItem`) with `id = \"$hostId\"` BEFORE this call in the `azRailContent { ... }` block; or change the `hostId` argument here to match an id that already exists.")
+        }
     }
 
     override fun azMenuSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuToggleOnText: String?, menuToggleOffText: String?, textColor: Color?, fillColor: Color?, onClick: (() -> Unit)?) {

@@ -419,7 +419,12 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       }
   };
 
-  const renderRailItem = (item: AzNavItem, _index: number, overrideConfig: any = config) => {
+  const renderRailItem = (item: AzNavItem, _index: number, overrideConfig: any = config, ancestors: Set<string> = new Set()): React.ReactNode => {
+      // Cycle guard: unlike the Kotlin DSL (which requires a host be declared before its sub-items,
+      // forming a DAG), the React DSL has no ordering guarantee, so a cyclic `hostId` chain
+      // (A -> B -> A, or a self-reference) is possible. Bail before recursing into an ancestor to
+      // avoid "Maximum call stack size exceeded".
+      if (ancestors.has(item.id)) return null;
       const isExpandedHost = hostStates[item.id] || false;
       const subItems = subItemsMap[item.id] || [];
       const isRect = item.shape === AzButtonShape.RECTANGLE;
@@ -462,7 +467,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                          logInteraction('Host toggled', item.text, item);
                      }}
                  />
-                 {isExpandedHost && subItems.map((sub, _i) => renderRailItem(sub, items.indexOf(sub)))}
+                 {isExpandedHost && subItems.filter(sub => sub.isRailItem).map((sub) => renderRailItem(sub, items.indexOf(sub), overrideConfig, new Set(ancestors).add(item.id)))}
              </View>
            );
       }
@@ -528,7 +533,10 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       );
   };
 
-  const renderMenuItem = (item: AzNavItem, depth = 0): React.ReactNode => {
+  const renderMenuItem = (item: AzNavItem, depth = 0, ancestors: Set<string> = new Set()): React.ReactNode => {
+      // Cycle guard (see renderRailItem): stop before recursing into an ancestor so a cyclic or
+      // self-referential `hostId` chain can't overflow the stack.
+      if (ancestors.has(item.id)) return null;
       const isExpandedHost = hostStates[item.id] || false;
       const subItems = subItemsMap[item.id] || [];
 
@@ -549,7 +557,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                   }}
                   renderSubItems={() => (
                       <>
-                      {subItems.map(subItem => renderMenuItem(subItem, depth + 1))}
+                      {subItems.map(subItem => renderMenuItem(subItem, depth + 1, new Set(ancestors).add(item.id)))}
                       </>
                   )}
               />
@@ -606,20 +614,11 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
 
 
   const effectiveRailItems = useMemo(() => {
-    const list: AzNavItem[] = [];
-    items.forEach(i => {
-      if (!i.isSubItem && (config.noMenu || i.isRailItem)) {
-          list.push(i);
-          if (hostStates[i.id] && !i.isNestedRail) {
-              const subItems = subItemsMap[i.id] || [];
-              subItems.forEach(sub => {
-                  if (sub.isRailItem) list.push(sub);
-              });
-          }
-      }
-    });
-    return list;
-  }, [items, config.noMenu, hostStates, subItemsMap]);
+    // Only the top-level items are listed here; `renderRailItem`'s host branch renders each
+    // expanded host's sub-items inline and recurses for sub-hosts, so hosts nest to any depth
+    // without this list having to be flattened (which would otherwise double-render sub-items).
+    return items.filter(i => !i.isSubItem && (config.noMenu || i.isRailItem));
+  }, [items, config.noMenu]);
 
   const menuItems = useMemo(() => {
     return items.filter(i => !i.isSubItem);
