@@ -419,6 +419,73 @@ export const AzMenuSubItem: React.FC<AzSubItemProps> = (props) => {
 };
 
 /**
+ * Declares a sub-item that is itself a host (in the rail). It is a child of `hostId` — so it only
+ * appears while that parent host is expanded — and, like any host, expands to reveal its own
+ * sub-items (which target this item's `id` via their `hostId`). Hosts can nest to any depth.
+ *
+ * @example
+ * ```tsx
+ * <AzRailHostItem id="tools" text="Tools" />
+ * <AzRailSubHostItem id="brushes" text="Brushes" hostId="tools" />
+ * <AzRailSubItem id="pencil" text="Pencil" hostId="brushes" onClick={usePencil} />
+ * ```
+ */
+export const AzRailSubHostItem: React.FC<AzSubItemProps> = (props) => {
+    if (props.hostId === props.id) {
+        console.error(`AzRailSubHostItem error: id '${props.id}' references itself as its own hostId.`);
+    }
+    useAzItem({
+        ...props,
+        isRailItem: true,
+        isHost: true,
+        isSubItem: true,
+        isToggle: false,
+        isCycler: false,
+        isDivider: false,
+        collapseOnClick: false, // Hosts expand/collapse, don't close the rail
+        shape: props.shape || AzButtonShape.CIRCLE,
+        disabled: props.disabled || false,
+        isExpanded: false,
+        toggleOnText: '',
+        toggleOffText: '',
+    });
+    return null;
+};
+
+/**
+ * Declares a sub-item that is itself a host (in the expanded menu). Behaves like `AzMenuSubItem` but
+ * also expands to reveal its own sub-items. Hosts can nest to any depth.
+ *
+ * @example
+ * ```tsx
+ * <AzMenuHostItem id="more" text="More" />
+ * <AzMenuSubHostItem id="advanced" text="Advanced" hostId="more" />
+ * <AzMenuSubItem id="flags" text="Feature flags" hostId="advanced" />
+ * ```
+ */
+export const AzMenuSubHostItem: React.FC<AzSubItemProps> = (props) => {
+    if (props.hostId === props.id) {
+        console.error(`AzMenuSubHostItem error: id '${props.id}' references itself as its own hostId.`);
+    }
+    useAzItem({
+        ...props,
+        isRailItem: false,
+        isHost: true,
+        isSubItem: true,
+        isToggle: false,
+        isCycler: false,
+        isDivider: false,
+        collapseOnClick: false,
+        shape: props.shape || AzButtonShape.CIRCLE,
+        disabled: props.disabled || false,
+        isExpanded: false,
+        toggleOnText: '',
+        toggleOffText: '',
+    });
+    return null;
+};
+
+/**
  * Declares a toggle sub-item nested under a rail host item.
  *
  * @example

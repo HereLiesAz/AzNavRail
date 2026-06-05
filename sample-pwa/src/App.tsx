@@ -20,6 +20,8 @@ import {
   AzMenuSubItem,
   AzRailHostItem,
   AzRailSubItem,
+  AzRailSubHostItem,
+  AzMenuSubHostItem,
   AzMenuSubToggle,
   AzRailSubCycler,
   AzRailRelocItem,
@@ -240,6 +242,16 @@ function App() {
 
       <AzRailHostItem id="rail-host" text="Rail Host" onClick={() => console.log('rail host')} />
       <AzRailSubItem id="rail-sub-1" hostId="rail-host" text="Rail Sub 1" onClick={() => console.log('rail sub 1')} />
+
+      {/* Nested host: a sub-item that is itself a host with its own sub-items. Children attach by
+          `hostId`, so the sub-host's children are distinct from its sibling sub-items. */}
+      <AzRailSubHostItem id="rail-subhost" hostId="rail-host" text="Rail Sub Host" onClick={() => console.log('rail sub host')} />
+      <AzRailSubItem id="rail-subhost-1" hostId="rail-subhost" text="Nested A" onClick={() => console.log('nested A')} />
+      <AzRailSubItem id="rail-subhost-2" hostId="rail-subhost" text="Nested B" onClick={() => console.log('nested B')} />
+
+      <AzMenuSubHostItem id="menu-subhost" hostId="menu-host" text="Menu Sub Host" onClick={() => console.log('menu sub host')} />
+      <AzMenuSubItem id="menu-subhost-1" hostId="menu-subhost" text="Nested 1" onClick={() => console.log('nested 1')} />
+      <AzMenuSubItem id="menu-subhost-2" hostId="menu-subhost" text="Nested 2" onClick={() => console.log('nested 2')} />
 
       <AzMenuSubToggle
         id="sub-toggle"

@@ -462,7 +462,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                          logInteraction('Host toggled', item.text, item);
                      }}
                  />
-                 {isExpandedHost && subItems.map((sub, _i) => renderRailItem(sub, items.indexOf(sub)))}
+                 {isExpandedHost && subItems.filter(sub => sub.isRailItem).map((sub) => renderRailItem(sub, items.indexOf(sub)))}
              </View>
            );
       }
@@ -606,20 +606,11 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
 
 
   const effectiveRailItems = useMemo(() => {
-    const list: AzNavItem[] = [];
-    items.forEach(i => {
-      if (!i.isSubItem && (config.noMenu || i.isRailItem)) {
-          list.push(i);
-          if (hostStates[i.id] && !i.isNestedRail) {
-              const subItems = subItemsMap[i.id] || [];
-              subItems.forEach(sub => {
-                  if (sub.isRailItem) list.push(sub);
-              });
-          }
-      }
-    });
-    return list;
-  }, [items, config.noMenu, hostStates, subItemsMap]);
+    // Only the top-level items are listed here; `renderRailItem`'s host branch renders each
+    // expanded host's sub-items inline and recurses for sub-hosts, so hosts nest to any depth
+    // without this list having to be flattened (which would otherwise double-render sub-items).
+    return items.filter(i => !i.isSubItem && (config.noMenu || i.isRailItem));
+  }, [items, config.noMenu]);
 
   const menuItems = useMemo(() => {
     return items.filter(i => !i.isSubItem);

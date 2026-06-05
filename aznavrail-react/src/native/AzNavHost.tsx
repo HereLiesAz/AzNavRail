@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Dimensions, Platform, StatusBar } from 'react-native';
-import { AzNavRail, AzNavHostContext } from '../AzNavRail';
+import React from 'react';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { AzNavRail } from '../AzNavRail';
 import { AzNavRailDefaults } from '../AzNavRailDefaults';
 import { AzDockingSide, AzNavItem } from '../types';
 
@@ -20,7 +20,7 @@ const AzNavHost: React.FC<AzNavHostProps> = ({ railProps, background, children }
   const dockingSide = settings.dockingSide || AzDockingSide.LEFT;
   const collapsedWidth = settings.collapsedRailWidth || AzNavRailDefaults.CollapsedRailWidth;
 
-  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+  const { height: screenHeight } = Dimensions.get('window');
 
   // Safe zones: top 10%, bottom 10%
   const safeTop = screenHeight * 0.1;
@@ -78,9 +78,7 @@ const AzNavHost: React.FC<AzNavHostProps> = ({ railProps, background, children }
 
       {/* Layer 2: Rail */}
       <View style={[styles.railWrapper, dockingSide === AzDockingSide.RIGHT ? { right: 0 } : { left: 0 }]}>
-        <AzNavHostContext.Provider value={true}>
-          <AzNavRail {...railProps} />
-        </AzNavHostContext.Provider>
+        <AzNavRail {...railProps} />
       </View>
     </View>
   );

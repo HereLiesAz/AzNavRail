@@ -15,10 +15,16 @@ export * from './components/AzBottomSheetInsetAware';
 export * from './components/AzFloatingRail';
 export * from './components/useAzSheetController';
 export * from './types';
+// `AzToggleProps` / `AzCyclerProps` are declared both as the DSL prop types in `./types` and as the
+// component prop types in the component files above, so the two `export *` statements collide.
+// Explicitly re-export the canonical DSL versions from `./types` to resolve the ambiguity
+// (an explicit re-export takes precedence over `export *`).
+export type { AzToggleProps, AzCyclerProps } from './types';
 export { AzHelpRailItem, AzHelpSubItem } from './AzNavRailScope';
 export {
   AzTutorialContext,
   AzTutorialProvider,
   useAzTutorialController,
 } from './tutorial/AzTutorialController';
-export type { AzTutorialController } from './tutorial/AzTutorialController';
+// `AzTutorialController` is a type declared in `./types`, not in the controller module.
+export type { AzTutorialController } from './types';

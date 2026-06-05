@@ -62,6 +62,7 @@ export const AzBackground: React.FC<{ weight?: number; children: React.ReactNode
       context.registerBackground({ id, weight, content: children });
       return () => context.unregisterBackground(id);
     }
+    return undefined;
   }, [context, id, weight, children]);
 
   return null;
@@ -81,6 +82,7 @@ export const AzOnscreen: React.FC<{ alignment?: AzAlignment; children: React.Rea
       context.registerOnscreen({ id, alignment, content: children });
       return () => context.unregisterOnscreen(id);
     }
+    return undefined;
   }, [context, id, alignment, children]);
 
   return null;
@@ -147,7 +149,8 @@ export const AzHostActivityLayout: React.FC<AzHostActivityLayoutProps> = (props)
   const [backgrounds, setBackgrounds] = useState<AzBackgroundItem[]>([]);
   const [onscreenItems, setOnscreenItems] = useState<AzOnscreenItem[]>([]);
   const [screenHeight, setScreenHeight] = useState(Dimensions.get('window').height);
-  const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
+  // Only the setter is used (width is tracked for the resize listener); skip the unread value.
+  const [, setScreenWidth] = useState(Dimensions.get('window').width);
 
   useEffect(() => {
     const sub = Dimensions.addEventListener('change', ({ window }) => {

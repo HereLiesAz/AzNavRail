@@ -62,6 +62,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -597,76 +598,17 @@ fun AzNavRail(
 
                             displayItems.forEach { item ->
                                 if (!item.isSubItem) {
-                                    MenuItem(
+                                    MenuItemNode(
                                         item = item,
+                                        allItems = displayItems,
                                         navController = effectiveNavController,
-                                        isSelected = (item.route != null && item.route == actualCurrentDestination) ||
-                                                item.classifiers.any { scope.activeClassifiers.contains(it) },
-                                        onClick = {
-                                            if (item.isHelpItem) {
-                                                toggleHelpOverlay(item.id)
-                                            } else {
-                                                scope.onClickMap[item.id]?.invoke()
-                                            }
-                                            scope.advancedConfig.onInteraction?.invoke(item.id, item)
-                                            if (item.collapseOnClick) isExpanded = false
-                                        },
-                                        onCyclerClick = {
-                                            scope.onClickMap[item.id]?.invoke()
-                                            scope.advancedConfig.onInteraction?.invoke(item.id, item)
-                                        },
-                                        onToggle = {
-                                            scope.advancedConfig.onInteraction?.invoke(item.id, item)
-                                            if (item.collapseOnClick) isExpanded = false
-                                        },
-                                        onItemClick = { if (item.collapseOnClick) isExpanded = false },
-                                        onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
-                                        onItemGloballyPositioned = { id, bounds ->
-                                            scope.itemBoundsCache[id] = bounds
-                                            scope.advancedConfig.onItemGloballyPositioned?.invoke(id, bounds)
-                                        },
-                                        onBoundsCleared = { id -> scope.itemBoundsCache.remove(id) },
-                                        helpEnabled = showHelpOverlay,
-                                        activeColor = scope.activeColor
+                                        currentDestination = actualCurrentDestination,
+                                        scope = scope,
+                                        hostStates = hostStates,
+                                        showHelpOverlay = showHelpOverlay,
+                                        onToggleHelp = { toggleHelpOverlay(it) },
+                                        onCollapseMenu = { isExpanded = false }
                                     )
-
-                                    if (hostStates[item.id] == true) {
-                                        displayItems.forEach { subItem ->
-                                            if (subItem.isSubItem && subItem.hostId == item.id) {
-                                                MenuItem(
-                                                    item = subItem,
-                                                    navController = effectiveNavController,
-                                                    isSelected = (subItem.route != null && subItem.route == actualCurrentDestination) ||
-                                                            subItem.classifiers.any { scope.activeClassifiers.contains(it) },
-                                                    onClick = {
-                                                        if (subItem.isHelpItem) {
-                                                            toggleHelpOverlay(subItem.id)
-                                                        } else {
-                                                            scope.onClickMap[subItem.id]?.invoke()
-                                                        }
-                                                        scope.advancedConfig.onInteraction?.invoke(subItem.id, subItem)
-                                                        if (subItem.collapseOnClick) isExpanded = false
-                                                    },
-                                                    onCyclerClick = {
-                                                        scope.onClickMap[subItem.id]?.invoke()
-                                                        scope.advancedConfig.onInteraction?.invoke(subItem.id, subItem)
-                                                    },
-                                                    onToggle = {
-                                                        scope.advancedConfig.onInteraction?.invoke(subItem.id, subItem)
-                                                        if (subItem.collapseOnClick) isExpanded = false
-                                                    },
-                                                    onItemClick = { if (subItem.collapseOnClick) isExpanded = false },
-                                                    onItemGloballyPositioned = { id, bounds ->
-                                                        scope.itemBoundsCache[id] = bounds
-                                                        scope.advancedConfig.onItemGloballyPositioned?.invoke(id, bounds)
-                                                    },
-                                                    onBoundsCleared = { id -> scope.itemBoundsCache.remove(id) },
-                                                    helpEnabled = showHelpOverlay,
-                                                    activeColor = scope.activeColor
-                                                )
-                                            }
-                                        }
-                                    }
                                 }
                             }
                         }
@@ -678,10 +620,22 @@ fun AzNavRail(
                             if (!item.isRailItem) false
                             else if (!item.isSubItem) true
                             else {
-                                val host = scope.navItems.find { it.id == item.hostId }
-                                val isHostExpanded = hostStates[item.hostId] == true
-                                val isHostNestedRail = host?.isNestedRail == true
-                                isHostExpanded && !isHostNestedRail
+                                // A nested sub-item is visible only when EVERY ancestor host in its
+                                // hostId chain is expanded (and none is a nested-rail popup). Walk up
+                                // the chain and bail on the first collapsed/nested-rail ancestor so
+                                // deep host nesting reports the correct height.
+                                var visible = true
+                                var hostId: String? = item.hostId
+                                val seen = HashSet<String>()
+                                while (hostId != null && seen.add(hostId)) {
+                                    val host = scope.navItems.find { it.id == hostId }
+                                    if (hostStates[hostId] != true || host?.isNestedRail == true) {
+                                        visible = false
+                                        break
+                                    }
+                                    hostId = host?.hostId
+                                }
+                                visible
                             }
                         }
 
@@ -793,6 +747,77 @@ fun AzNavRail(
                 onDismiss = { tutorialController.endTutorial() },
                 itemBoundsCache = scope.itemBoundsCache
             )
+        }
+    }
+}
+
+/**
+ * Renders a single menu entry plus, when it is an expanded host, its sub-items beneath it.
+ *
+ * A sub-item may itself be a host (declared via `azMenuSubHostItem`), so this composable recurses
+ * for each child, letting hosts nest to any depth in the expanded menu. Opening a sub-host reveals
+ * its children while sibling sub-items remain visible (accordion behavior at every level).
+ */
+@Composable
+private fun MenuItemNode(
+    item: AzNavItem,
+    allItems: List<AzNavItem>,
+    navController: NavController?,
+    currentDestination: String?,
+    scope: AzNavRailScopeImpl,
+    hostStates: MutableMap<String, Boolean>,
+    showHelpOverlay: Boolean,
+    onToggleHelp: (String?) -> Unit,
+    onCollapseMenu: () -> Unit
+) {
+    MenuItem(
+        item = item,
+        navController = navController,
+        isSelected = (item.route != null && item.route == currentDestination) ||
+                item.classifiers.any { scope.activeClassifiers.contains(it) },
+        onClick = {
+            if (item.isHelpItem) {
+                onToggleHelp(item.id)
+            } else {
+                scope.onClickMap[item.id]?.invoke()
+            }
+            scope.advancedConfig.onInteraction?.invoke(item.id, item)
+            if (item.collapseOnClick) onCollapseMenu()
+        },
+        onCyclerClick = {
+            scope.onClickMap[item.id]?.invoke()
+            scope.advancedConfig.onInteraction?.invoke(item.id, item)
+        },
+        onToggle = {
+            scope.advancedConfig.onInteraction?.invoke(item.id, item)
+            if (item.collapseOnClick) onCollapseMenu()
+        },
+        onItemClick = { if (item.collapseOnClick) onCollapseMenu() },
+        onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
+        onItemGloballyPositioned = { id, bounds ->
+            scope.itemBoundsCache[id] = bounds
+            scope.advancedConfig.onItemGloballyPositioned?.invoke(id, bounds)
+        },
+        onBoundsCleared = { id -> scope.itemBoundsCache.remove(id) },
+        helpEnabled = showHelpOverlay,
+        activeColor = scope.activeColor
+    )
+
+    if (item.isHost && hostStates[item.id] == true) {
+        allItems.forEach { child ->
+            if (child.isSubItem && child.hostId == item.id) {
+                MenuItemNode(
+                    item = child,
+                    allItems = allItems,
+                    navController = navController,
+                    currentDestination = currentDestination,
+                    scope = scope,
+                    hostStates = hostStates,
+                    showHelpOverlay = showHelpOverlay,
+                    onToggleHelp = onToggleHelp,
+                    onCollapseMenu = onCollapseMenu
+                )
+            }
         }
     }
 }
