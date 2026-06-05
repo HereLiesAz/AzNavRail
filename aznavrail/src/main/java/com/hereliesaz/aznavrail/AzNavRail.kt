@@ -629,11 +629,14 @@ fun AzNavRail(
                                 val seen = HashSet<String>()
                                 while (hostId != null && seen.add(hostId)) {
                                     val host = scope.navItems.find { it.id == hostId }
-                                    if (hostStates[hostId] != true || host?.isNestedRail == true) {
+                                    // A dangling hostId (no matching host), a collapsed ancestor, or a
+                                    // nested-rail ancestor all make this sub-item non-visible. The
+                                    // explicit null check also lets Kotlin smart-cast `host` below.
+                                    if (host == null || hostStates[hostId] != true || host.isNestedRail) {
                                         visible = false
                                         break
                                     }
-                                    hostId = host?.hostId
+                                    hostId = host.hostId
                                 }
                                 visible
                             }
