@@ -20,7 +20,7 @@ should be added before shipping.
 | `azTheme` (`activeColor`, `defaultShape`, `headerIconShape`, `translucentBackground`, `helpLineColors`) | `MainApp.kt`, driven by `CustomizationDemoScreen` |
 | `azAdvanced` (`isLoading`, `helpEnabled`, `onDismissHelp`, `enableRailDragging`, `onRailDrag`, `onOverlayDrag`, `onUndock`, `helpList`, `tutorials`) | `MainApp.kt`, driven by `FabOverlayDemoScreen`, `HelpSystemDemoScreen`, `TutorialDemoScreen` |
 | `azMenuItem` | `MainApp.kt` (10× showcase menu items) |
-| `azRailItem` (Color/ResourceId/AzComposableContent variants, shape, disabled, classifiers, info) | `MainApp.kt` rail items |
+| `azRailItem` (Color/ResourceId/ImageVector/AzComposableContent content variants, shape, disabled, classifiers, info) | `MainApp.kt` rail items (`color-item`, `icon-item`, `vector-item`) |
 | `azRailToggle` / `azMenuToggle` | `MainApp.kt` (pack-rail, online, dark-mode, docking-side, no-menu, physical-docking) |
 | `azRailCycler` / `azMenuCycler` (`disabledOptions`) | `MainApp.kt` (rail-cycler with disabled "C", menu-cycler) |
 | `azRailHostItem` / `azMenuHostItem` | `MainApp.kt` |

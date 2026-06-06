@@ -30,9 +30,12 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -69,7 +72,11 @@ import com.hereliesaz.aznavrail.util.text.AutoSizeText
  * @param isLoading When true, the button content is hidden and [AzLoad] is shown in its place.
  * @param contentPadding Padding applied around text content (ignored when [itemContent] is set).
  * @param itemContent Arbitrary content to render inside the button instead of [text]. Accepts
- *   [Color], [AzComposableContent], [Int] (resource ID), [String], or any image model.
+ *   [Color], [AzComposableContent], [Int] (resource ID), [String], an
+ *   [androidx.compose.ui.graphics.vector.ImageVector] or
+ *   [androidx.compose.ui.graphics.painter.Painter] (vector graphics), or any image model
+ *   loadable by Coil (Bitmap, URL, File, Uri, …). All non-text graphics fill the button
+ *   shape (Crop) and are clipped to it.
  * @param onLongClick Long-press handler.
  * @param onGloballyPositioned Reports the window-space bounds of the button after layout.
  */
@@ -220,6 +227,23 @@ private fun ItemContentRenderer(itemContent: Any, color: Color, enabled: Boolean
             }
         }
         is String -> TextContent(itemContent, color)
+        // Vector graphics. Coil cannot render an ImageVector/Painter (it throws
+        // "Unsupported type: ImageVector"), so these must be drawn with foundation Image
+        // before the Coil fallback. Tinted with the button color so monochrome icons
+        // (e.g. Icons.Default.*) adopt the rail's color, and cropped to fill the shape.
+        is ImageVector -> Image(
+            imageVector = itemContent,
+            contentDescription = null,
+            colorFilter = ColorFilter.tint(color),
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize().alpha(if (enabled) 1f else 0.5f)
+        )
+        is Painter -> Image(
+            painter = itemContent,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize().alpha(if (enabled) 1f else 0.5f)
+        )
         else -> {
             Image(
                 painter = rememberAsyncImagePainter(model = itemContent),

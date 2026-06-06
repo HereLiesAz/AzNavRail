@@ -12,7 +12,7 @@ This document serves as a detailed specification and behavior guide for the AzNa
   text MUST MUST MUST fit inside the shape, no wrapping allowed without the developer explicitly
   deciding to do so with a newline character.
 
-- **Content Filling**: If a Rail Item's content is a `Color`, an Image Resource ID (`Int`), or an Image URL/Model (`Any`), it MUST fill the button shape completely (Fill/Crop) with 0 padding. Text and Numbers retain default padding.
+- **Content Filling**: If a Rail Item's content is a `Color`, an Image Resource ID (`Int`), a Compose `ImageVector` or `Painter` (vector graphics), or an Image URL/Model (`Any`), it MUST fill the button shape completely (Fill/Crop) with 0 padding, clipping as needed. `ImageVector` content is tinted with the item color. Text and Numbers retain default padding.
 
 - To be clear, if the developer has a multi-word string for a rail item, they DO need the ability to
   put the words on separate lines.

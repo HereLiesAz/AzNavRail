@@ -3,6 +3,8 @@ package com.hereliesaz.SampleApp
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -247,6 +249,14 @@ fun MainApp() {
             content = android.R.drawable.ic_menu_agenda,
             info = "Demonstrates dynamic content with Resource ID",
             onClick = { Log.d(TAG, "Icon item clicked") },
+        )
+
+        azRailItem(
+            id = "vector-item",
+            text = "Vector",
+            content = Icons.Default.Delete,
+            info = "Demonstrates dynamic content with a Compose ImageVector (fills + clips the shape)",
+            onClick = { Log.d(TAG, "Vector item clicked") },
         )
 
         // ---------- AzButtonShape showcase: one rail item per shape value ----------

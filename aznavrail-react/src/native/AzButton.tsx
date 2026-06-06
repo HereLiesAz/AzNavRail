@@ -1,7 +1,8 @@
 import React from 'react';
-import { TouchableOpacity, Text, ViewStyle, TextStyle, View, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, ViewStyle, TextStyle, View, StyleSheet, ImageSourcePropType } from 'react-native';
 import { AzButtonShape } from '../types';
 import { AzLoad } from './AzLoad';
+import { renderFillContent } from '../components/fillContent';
 
 /** Props for the native `AzButton` primitive used internally by the rail. */
 export interface AzButtonProps {
@@ -25,8 +26,12 @@ export interface AzButtonProps {
   testID?: string;
   /** When true, `content` is rendered instead of the text label and size is computed differently. */
   hasCustomContent?: boolean;
-  /** Custom React content rendered inside the button when `hasCustomContent` is true. */
-  content?: React.ReactNode;
+  /**
+   * Custom content rendered inside the button when `hasCustomContent` is true. May be a React
+   * node (including an `<Image>` or a `react-native-svg` `<Svg>`) or an image source
+   * (`require()` id / `{ uri }`). Graphics fill the shape (cover) and are clipped to it.
+   */
+  content?: React.ReactNode | ImageSourcePropType;
 }
 
 /** Native implementation: Touchable button with configurable shape, fill, and optional custom content. */
@@ -68,7 +73,10 @@ export const AzButton: React.FC<AzButtonProps> = ({
   const actualFillColor = fillColor || defaultFillColor;
 
   if (hasCustomContent) {
-    containerStyle.minWidth = size;
+    // Custom graphics fill a fixed, shape-clipped box (same dimensions as the text variant).
+    containerStyle.width = size;
+    containerStyle.height = size;
+    containerStyle.borderRadius = isCircle ? size / 2 : 0;
   } else {
     if (isCircle) {
       containerStyle.width = size;
@@ -102,7 +110,7 @@ export const AzButton: React.FC<AzButtonProps> = ({
       <AzLoad />
     </View>
   ) : customContentNode ? (
-    customContentNode
+    renderFillContent(customContentNode)
   ) : (
     <Text
       style={textStyle}

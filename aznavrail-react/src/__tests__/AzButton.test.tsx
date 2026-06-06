@@ -1,4 +1,5 @@
 import React from 'react';
+import { Image, View } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { AzButton } from '../components/AzButton';
 import { AzButtonShape } from '../types';
@@ -123,5 +124,44 @@ describe('AzButton', () => {
 
     expect(textNode.props.numberOfLines).toBe(1);
     expect(textNode.props.adjustsFontSizeToFit).toBe(true);
+  });
+
+  describe('custom content fills the shape', () => {
+    it('renders an image source as a filling cover Image', () => {
+      const { UNSAFE_getByType, queryByText } = render(
+        <AzButton {...defaultProps} hasCustomContent content={{ uri: 'https://example.com/x.png' }} />
+      );
+      const image = UNSAFE_getByType(Image);
+      expect(image.props.resizeMode).toBe('cover');
+      expect(image.props.style.width).toBe('100%');
+      expect(image.props.style.height).toBe('100%');
+      // Text label is replaced by the graphic.
+      expect(queryByText('Test Button')).toBeNull();
+    });
+
+    it('clones an <Image> element to fill and cover', () => {
+      const { UNSAFE_getByType } = render(
+        <AzButton {...defaultProps} hasCustomContent content={<Image source={{ uri: 'https://example.com/y.png' }} />} />
+      );
+      const image = UNSAFE_getByType(Image);
+      expect(image.props.resizeMode).toBe('cover');
+      // Merged style array carries the fill sizing.
+      const flat = Array.isArray(image.props.style) ? Object.assign({}, ...image.props.style.filter(Boolean)) : image.props.style;
+      expect(flat.width).toBe('100%');
+      expect(flat.height).toBe('100%');
+    });
+
+    it('stretches a generic vector element (e.g. an <Svg>) to fill', () => {
+      // A stand-in for a react-native-svg <Svg> element: any element gets fill sizing merged.
+      const { getByTestId } = render(
+        <AzButton {...defaultProps} hasCustomContent content={<View testID="svg" />} />
+      );
+      const node = getByTestId('svg');
+      // The cloned element receives the fill style (as the first entry of the merged array).
+      const styles = ([] as any[]).concat(node.props.style).filter(Boolean);
+      const merged = Object.assign({}, ...styles);
+      expect(merged.width).toBe('100%');
+      expect(merged.height).toBe('100%');
+    });
   });
 });

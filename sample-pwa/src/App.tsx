@@ -148,6 +148,18 @@ function App() {
       />
 
       <AzRailItem
+        id="vector-item"
+        text="Vector"
+        content={{
+          // An inline SVG (vector graphic) — fills and is clipped to the item's shape.
+          uri:
+            "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%236200ee' d='M3 6h18v2H3zm2 3h14l-1 12H6zM9 4h6v2H9z'/></svg>",
+        }}
+        info="Dynamic content with a vector graphic (SVG) that fills the shape."
+        onClick={() => console.log('vector item')}
+      />
+
+      <AzRailItem
         id="profile"
         text="Profile"
         disabled
