@@ -84,6 +84,8 @@ The following functions are used to define the rail structure.
 * `azRailHostItem(id, text, route, content, color, shape, disabled, screenTitle, info, onClick)`
 * `azMenuSubItem(id, hostId, text, route, content, color, shape, disabled, screenTitle, info, onClick)`
 * `azRailSubItem(id, hostId, text, route, content, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick)`
+* `azMenuSubHostItem(id, hostId, text, route, content, color, shape, disabled, screenTitle, info, classifiers, menuText, textColor, fillColor, onClick)` — a sub-item that is itself a host; nests to any depth.
+* `azRailSubHostItem(id, hostId, text, route, content, color, shape, disabled, screenTitle, info, classifiers, menuText, textColor, fillColor, onClick)` — a sub-item that is itself a host; nests to any depth.
 * `azMenuSubToggle(id, hostId, isChecked, toggleOnText, toggleOffText, route, color, shape, disabled, screenTitle, info, onClick)`
 * `azRailSubToggle(id, hostId, isChecked, toggleOnText, toggleOffText, route, color, shape, disabled, screenTitle, info, onClick)`
 * `azMenuSubCycler(id, hostId, options, selectedOption, route, color, shape, disabled, disabledOptions, screenTitle, info, onClick)`

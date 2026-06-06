@@ -43,6 +43,11 @@ are easy to navigate.
   item is expanded. They can also be placed in the rail or the menu. A rail Sub item must be the
   child of a rail host, but menu sub items may be the child of a rail host or menu host.
 
+- **Sub-Hosts (`azRailSubHostItem` / `azMenuSubHostItem`)**: A sub-item that is itself a host.
+  Hosts nest to **any depth**: opening a sub-host reveals its children inline while sibling
+  sub-items stay visible (accordion behavior at every level). Children attach to their host by
+  `hostId` reference, not by position.
+
 - **Nested Rails (`azNestedRail`)**: This is a distinct feature from Host Items. A Nested Rail opens a separate **popup overlay** adjacent to the parent item instead of expanding inline. It supports `VERTICAL` (column) and `HORIZONTAL` (row) alignment.
 
 - **Orientation Handling**: The rail supports two modes:

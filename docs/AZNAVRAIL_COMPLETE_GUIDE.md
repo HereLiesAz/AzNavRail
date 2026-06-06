@@ -302,6 +302,28 @@ azHelpSubItem(id = "help-sub-item", hostId = "rail-host", text = "Help Sub")
 azRailSubCycler(id = "sub-cycler", hostId = "rail-host", options = listOf("A", "B"), selectedOption = "A")
 ```
 
+### Nested hosts (sub-items that are also hosts)
+
+A sub-item can itself be a host with its own sub-items via `azRailSubHostItem` /
+`azMenuSubHostItem`. Hosts nest to **any depth**: opening a sub-host reveals its children
+inline while its sibling sub-items stay visible (accordion behavior at every level).
+
+Children are matched to their host by `hostId` (a reference, not by position), so a sub-host's
+children are unambiguous even when they sit among other sub-items.
+
+```kotlin
+azRailHostItem(id = "rail-host", text = "Rail Host")
+azRailSubItem(id = "rail-sub-1", hostId = "rail-host", text = "Rail Sub 1")
+
+// "rail-subhost" is a child of "rail-host" AND a host for its own children.
+azRailSubHostItem(id = "rail-subhost", hostId = "rail-host", text = "Rail Sub Host")
+azRailSubItem(id = "nested-a", hostId = "rail-subhost", text = "Nested A")
+azRailSubItem(id = "nested-b", hostId = "rail-subhost", text = "Nested B")
+```
+
+> The parent host referenced by `hostId` must be declared **before** the sub-host, and a
+> sub-host may not reference itself.
+
 ---
 
 ## 5. Drag & Drop (Relocatable Items)

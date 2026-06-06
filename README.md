@@ -368,6 +368,7 @@ import { AzRoller } from '@HereLiesAz/aznavrail-react';
 
 -   **Host Items**: These are top-level items that can contain sub-items. They can be placed in the rail or the menu.
 -   **Sub-Items**: These are nested items that are only visible when their host item is expanded. They can also be placed in the rail or the menu.
+-   **Sub-Hosts**: A sub-item can itself be a host (`azRailSubHostItem` / `azMenuSubHostItem`), so hosts nest to **any depth**. Opening a sub-host reveals its children inline while sibling sub-items stay visible. Children attach to their host by `hostId` reference, not by position.
 -   **Exclusive Expansion**: Only one host item can be expanded at a time. Expanding a host item automatically collapses any other open host items.
 
 
