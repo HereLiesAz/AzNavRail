@@ -97,8 +97,9 @@ Items are added sequentially. The order in the DSL determines the order in the r
     or any image model Coil can load (`Bitmap`, URL, `File`, `Uri`, …). All non-text graphics
     **fill the item's shape** (scaled to cover, clipped to the shape) without changing the
     item's dimensions. `ImageVector` content is tinted with the item's color, so monochrome
-    Material icons adopt the rail's color. This applies to main-rail, nested-rail, and
-    standalone (`AzButton`) buttons alike.
+    Material icons adopt the rail's color. This applies to both main-rail and nested-rail items
+    (the DSL `content` field). The standalone `AzButton`/`AzToggle`/`AzCycler` instead take a
+    composable `itemContent` lambda, which is also clipped to the button shape.
 
 ```kotlin
 // Menu-only item
