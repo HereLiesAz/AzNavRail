@@ -40,6 +40,7 @@ jest.mock('react-native', () => {
         vibrate: jest.fn(),
     },
     View: ({children, ...props}) => React.createElement('View', props, children),
+    Image: ({children, ...props}) => React.createElement('Image', props, children),
     Text: ({children, ...props}) => React.createElement('Text', props, children),
     TouchableOpacity: ({children, onPress, ...props}) => React.createElement('TouchableOpacity', {onPress, ...props}, children),
     Pressable: ({children, onPress, ...props}) => React.createElement('Pressable', {onPress, ...props}, children),

@@ -1,7 +1,8 @@
 import React from 'react';
-import { TouchableOpacity, Text, ViewStyle, TextStyle, View, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, ViewStyle, TextStyle, View, StyleSheet, ImageSourcePropType } from 'react-native';
 import { AzButtonShape } from '../types';
 import { AzLoad } from './AzLoad';
+import { renderFillContent } from './fillContent';
 
 /** Props for the shared `AzButton` component used by the main rail and components subdir. */
 export interface AzButtonProps {
@@ -27,8 +28,12 @@ export interface AzButtonProps {
   testID?: string;
   /** When true, `content` is rendered instead of the text label. */
   hasCustomContent?: boolean;
-  /** Custom React content rendered inside the button when `hasCustomContent` is true. */
-  content?: React.ReactNode;
+  /**
+   * Custom content rendered inside the button when `hasCustomContent` is true. May be a React
+   * node (including an `<Image>` or a `react-native-svg` `<Svg>`) or an image source
+   * (`require()` id / `{ uri }`). Graphics fill the shape (cover) and are clipped to it.
+   */
+  content?: React.ReactNode | ImageSourcePropType;
 }
 
 // Default size for circle/square
@@ -110,9 +115,7 @@ export const AzButton: React.FC<AzButtonProps> = ({
       <AzLoad />
     </View>
   ) : customContentNode ? (
-    <View style={{ width: '100%', height: '100%', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
-      {customContentNode}
-    </View>
+    renderFillContent(customContentNode)
   ) : (
     <View style={{ padding: 8, width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
       <Text

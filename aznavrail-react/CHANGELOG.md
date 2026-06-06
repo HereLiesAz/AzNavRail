@@ -3,6 +3,11 @@
 ## 0.2.0
 
 ### Added
+- Rail-item `content` now accepts an **image source** (`require()` id or `{ uri }`) in addition
+  to a React node, and any graphic content (image source, `<Image>`, or a `react-native-svg`
+  `<Svg>`) **fills the item's shape** — scaled to cover and clipped — without changing the
+  item's dimensions. `<Image>` elements are coerced to `resizeMode="cover"`; other elements
+  are stretched to 100% × 100%. (Mirrors the Android `ImageVector`/`Painter` fill behavior.)
 - `AzBottomSheet` — cross-platform port of the Android `AzBottomSheet`, including the
   four-detent (HIDDEN/PEEK/HALF/FULL) state machine, drag handle, scrim, optional
   horizontal-swipe callbacks, and animated detent transitions. Built on the React Native

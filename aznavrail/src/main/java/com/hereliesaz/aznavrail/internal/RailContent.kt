@@ -138,6 +138,7 @@ internal fun RailContent(
             shape = item.shape ?: defaultShape,
             enabled = isEnabled,
             isSelected = isSelected,
+            itemContent = item.content,
             rotationDegrees = rotationDegrees
         )
     }
