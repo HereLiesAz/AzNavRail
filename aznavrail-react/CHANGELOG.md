@@ -18,6 +18,11 @@
 - `MIGRATION_FROM_ANDROID.md` mapping the Compose DSL surface to the React JSX surface.
 - `KNOWN_GAPS.md` documenting platform-shaped gaps (`SYSTEM_ALERT_WINDOW`, `AzActivity`,
   the secret-screen TCP sync, the inset-aware variant on web).
+- `AzRailSubHostItem` / `AzMenuSubHostItem` — a sub-item that is itself a host. Hosts now
+  nest to any depth: opening a sub-host reveals its children inline while sibling sub-items
+  stay visible. Children attach to their host by `hostId` reference. Rail rendering is a
+  single recursive path with cycle detection so a self-referential or cyclic `hostId`
+  cannot loop.
 
 ### Changed
 - `onInteraction` callback now passes `AzNavItem` as 3rd argument for item-level analytics.

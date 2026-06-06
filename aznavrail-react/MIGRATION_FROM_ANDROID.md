@@ -13,6 +13,7 @@ the React/JSX surface exposed by `@HereLiesAz/aznavrail-react`.
 | `azRailCycler(...)` / `azMenuCycler(...)` | `<AzRailCycler ... />` / `<AzMenuCycler ... />` |
 | `azRailHostItem(...)` / `azMenuHostItem(...)` | `<AzRailHostItem ... />` / `<AzMenuHostItem ... />` |
 | `azRailSubItem(...)` / `azMenuSubItem(...)` | `<AzRailSubItem ... />` / `<AzMenuSubItem ... />` |
+| `azRailSubHostItem(...)` / `azMenuSubHostItem(...)` | `<AzRailSubHostItem ... />` / `<AzMenuSubHostItem ... />` |
 | `azNestedRail(id, text, alignment) { ... }` | `<AzNestedRail id text alignment>... </AzNestedRail>` |
 | `azRailRelocItem(id, hostId, ...) { hiddenMenu }` | `<AzRailRelocItem id hostId hiddenMenu={...}>` |
 | `azDivider()` | `<AzDivider />` |

@@ -25,6 +25,7 @@ should be added before shipping.
 | `azRailCycler` / `azMenuCycler` (`disabledOptions`) | `MainApp.kt` (rail-cycler with disabled "C", menu-cycler) |
 | `azRailHostItem` / `azMenuHostItem` | `MainApp.kt` |
 | `azRailSubItem` / `azMenuSubItem` | `MainApp.kt` |
+| `azRailSubHostItem` / `azMenuSubHostItem` (nested host under a host) | `MainApp.kt` (`rail-subhost`, `menu-subhost`) |
 | `azRailSubToggle` / `azMenuSubToggle` | `MainApp.kt` (sub-toggle under menu-host) |
 | `azRailSubCycler` / `azMenuSubCycler` | `MainApp.kt` (sub-cycler under rail-host) |
 | `azHelpRailItem` | `MainApp.kt` (toggle-help) |
