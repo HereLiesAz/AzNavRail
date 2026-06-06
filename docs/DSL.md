@@ -71,6 +71,11 @@ fun azAdvanced(
 
 The following functions are used to define the rail structure.
 
+> **`content`** accepts a `String`, a `Color`, a drawable/vector resource id (`Int`), a Compose
+> `ImageVector` or `Painter`, or any image model Coil can load (`Bitmap`, URL, `File`, `Uri`).
+> Non-text graphics fill the item's shape (cover) and are clipped to it; `ImageVector` content is
+> tinted with the item color.
+
 * `azMenuItem(id, text, route, content, color, shape, disabled, screenTitle, info, onClick)`
 * `azHelpRailItem(id, text, content, color, shape)`
 * `azRailItem(id, text, route, content, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick)`
