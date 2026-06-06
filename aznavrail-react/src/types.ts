@@ -318,7 +318,11 @@ export interface AzNavItem {
   // New properties for parity
   /** Classifier tags used to filter or highlight this item when `activeClassifiers` is set. */
   classifiers?: Set<string>;
-  /** Custom React content rendered inside the button instead of text. */
+  /**
+   * Custom content rendered inside the button instead of text. A React node (e.g. an `<Image>`
+   * or a `react-native-svg` `<Svg>`) or an image source (`require()` id / `{ uri }`). Graphics
+   * fill the item's shape (cover) and are clipped to it; dimensions are unchanged.
+   */
   content?: any;
   /** True when this item opens a nested-rail popup when tapped. */
   isNestedRail?: boolean;
@@ -362,7 +366,11 @@ export interface AzNavItemProps {
   shape?: AzButtonShape;
   /** Help text shown for this item in the info overlay. */
   info?: string;
-  /** Custom React content rendered inside the button instead of the text label. */
+  /**
+   * Custom content rendered inside the button instead of the text label. A React node (e.g. an
+   * `<Image>` or a `react-native-svg` `<Svg>`) or an image source (`require()` id / `{ uri }`).
+   * Graphics fill the item's shape (cover) and are clipped to it; dimensions are unchanged.
+   */
   content?: any;
   /** Classifier tags used for filtering or highlighting with `activeClassifiers`. */
   classifiers?: Set<string>;
@@ -525,7 +533,11 @@ export interface AzItemConfig {
   classifiers?: Set<string>;
   /** Called when the item gains focus. */
   onFocus?: () => void;
-  /** Custom React content rendered inside the button. */
+  /**
+   * Custom content rendered inside the button. A React node (e.g. an `<Image>` or a
+   * `react-native-svg` `<Svg>`) or an image source (`require()` id / `{ uri }`). Graphics fill
+   * the item's shape (cover) and are clipped to it; dimensions are unchanged.
+   */
   content?: any;
   /** Border and icon tint color. */
   color?: string;

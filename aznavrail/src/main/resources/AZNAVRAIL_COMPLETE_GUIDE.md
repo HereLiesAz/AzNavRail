@@ -153,7 +153,14 @@ Items are added sequentially. The order in the DSL determines the order in the r
 *   **Menu Item:** Only appears in the expanded drawer.
 *   **Help Rail Item:** Dedicated trigger for the Help overlay.
 *   **Rail Item:** Appears in the rail (and drawer).
-*   **Content Types:** Supports Text, resource IDs (Icons), and `Color`.
+*   **Content Types:** The `content` field accepts Text, a `Color`, a drawable/vector
+    resource id (`Int`), a Compose `ImageVector` (e.g. `Icons.Default.Home`) or `Painter`,
+    or any image model Coil can load (`Bitmap`, URL, `File`, `Uri`, …). All non-text graphics
+    **fill the item's shape** (scaled to cover, clipped to the shape) without changing the
+    item's dimensions. `ImageVector` content is tinted with the item's color, so monochrome
+    Material icons adopt the rail's color. This applies to both main-rail and nested-rail items
+    (the DSL `content` field). The standalone `AzButton`/`AzToggle`/`AzCycler` instead take a
+    composable `itemContent` lambda, which is also clipped to the button shape.
 
 ```kotlin
 // Menu-only item
@@ -179,6 +186,9 @@ azRailItem(id = "color-item", text = "Color", content = Color.Red)
 
 // Rail item with Icon Resource
 azRailItem(id = "icon-item", text = "Icon", content = android.R.drawable.ic_menu_agenda)
+
+// Rail item with a Compose ImageVector (fills + clips to the shape, tinted with the item color)
+azRailItem(id = "vector-item", text = "Delete", content = Icons.Default.Delete)
 
 // Rail item with specific shape override
 azRailItem(id = "none-shape", text = "No Shape", shape = AzButtonShape.NONE)
