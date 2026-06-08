@@ -144,10 +144,11 @@ class AzBottomSheetWindowHost(
 
         navBarExtensionState.value = resolveExtensionPx(configState.value)
         val params = buildParams(configState.value, controller.detent)
+        // Publish sheetView/sheetParams before addView so an inset callback firing during
+        // addView() sees non-null params and can resize the window.
         sheetView = composeView
         sheetParams = params
         wm.addView(composeView, params)
-        sheetParams = params
         // Kick an initial dispatch so the overlay window picks up insets without waiting for a
         // system change (rotation, IME, etc.).
         ViewCompat.requestApplyInsets(composeView)
