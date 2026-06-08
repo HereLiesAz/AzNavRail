@@ -160,8 +160,10 @@ export function AzBottomSheet(props: AzBottomSheetProps): React.ReactElement {
             return;
           }
           const thresholdPx = cfg.dragThresholdDp * PixelRatio.get();
+          // Up-drag steps up one detent; down-drag steps DOWN one detent (FULL → HALF → PEEK →
+          // HIDDEN) rather than collapsing in a single jump, mirroring the up-drag's stepUp().
           if (gesture.dy <= -thresholdPx) controller.stepUp();
-          else if (gesture.dy >= thresholdPx) controller.snapTo(AzSheetDetent.HIDDEN);
+          else if (gesture.dy >= thresholdPx) controller.stepDown();
           dragAccumulatorRef.current = 0;
         },
       }),

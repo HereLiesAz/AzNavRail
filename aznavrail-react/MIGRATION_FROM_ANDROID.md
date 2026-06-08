@@ -98,6 +98,15 @@ The `onInteraction` callback fires whenever a user interacts with any rail item.
 
 The Android callback receives `(itemId: String, item: AzNavItem)`. The React callback receives `(action: string, details?: string, item?: AzNavItem)` — the third parameter was added for parity and may be `undefined` for non-item actions (header tap, drag start, etc.).
 
+## What's new in 0.3.0
+
+- Bottom sheet **drag-to-collapse is gentler**: a downward drag now steps **down one detent**
+  (`FULL → HALF → PEEK → HIDDEN`) instead of snapping straight to HIDDEN, mirroring the
+  up-drag's one-step expand. Matches the Android `9.2` `AzSheetGestures` change.
+- Parity note: `<AzBottomSheet config={...}>` already recomputes detent heights when the
+  `config` prop changes, which is the React analog of the Android `AzBottomSheetWindowHost.updateConfig()` live-resize fix in `9.2`. Window insets remain handled by
+  `AzBottomSheetInsetAware` (see `KNOWN_GAPS.md`).
+
 ## What's new in 0.2.0
 
 - `AzBottomSheet`, `AzBottomSheetInsetAware`, `useAzSheetController`, `AzSheetDetent`,

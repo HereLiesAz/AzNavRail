@@ -313,6 +313,67 @@ describe('<AzBottomSheet> swipe callbacks (PanResponder wiring)', () => {
     }
   });
 
+  it('vertical down-drag steps down ONE detent (FULL -> HALF), not straight to HIDDEN', () => {
+    // Failure: If detent becomes HIDDEN, the down-drag branch in onPanResponderRelease is still
+    // calling snapTo(HIDDEN) instead of stepDown() — mirror the up-drag's one-step behaviour.
+    let captured: any = null;
+    const spy = jest
+      .spyOn(PanResponder, 'create')
+      .mockImplementation((cfg: any) => {
+        captured = cfg;
+        return { panHandlers: {} } as any;
+      });
+    try {
+      let ctrl: any = null;
+      function H() {
+        const controller = useAzSheetController(AzSheetDetent.FULL);
+        ctrl = controller;
+        return (
+          <AzBottomSheet controller={controller} config={{ dragThresholdDp: 10 }}>
+            <Text>body</Text>
+          </AzBottomSheet>
+        );
+      }
+      render(<H />);
+      // gesture.dy strongly positive (downward), beyond the threshold, with no horizontal intent.
+      act(() => {
+        captured.onPanResponderRelease({}, { dx: 0, dy: 500 });
+      });
+      expect(ctrl.detent).toBe(AzSheetDetent.HALF);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('vertical up-drag steps up ONE detent (PEEK -> HALF)', () => {
+    let captured: any = null;
+    const spy = jest
+      .spyOn(PanResponder, 'create')
+      .mockImplementation((cfg: any) => {
+        captured = cfg;
+        return { panHandlers: {} } as any;
+      });
+    try {
+      let ctrl: any = null;
+      function H() {
+        const controller = useAzSheetController(AzSheetDetent.PEEK);
+        ctrl = controller;
+        return (
+          <AzBottomSheet controller={controller} config={{ dragThresholdDp: 10 }}>
+            <Text>body</Text>
+          </AzBottomSheet>
+        );
+      }
+      render(<H />);
+      act(() => {
+        captured.onPanResponderRelease({}, { dx: 0, dy: -500 });
+      });
+      expect(ctrl.detent).toBe(AzSheetDetent.HALF);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
   it('horizontal swipe is suppressed when horizontalSwipeEnabled=false (default config)', () => {
     // Failure: If callbacks fire when horizontalSwipeEnabled is false, the gate in
     // onPanResponderRelease is missing or inverted.

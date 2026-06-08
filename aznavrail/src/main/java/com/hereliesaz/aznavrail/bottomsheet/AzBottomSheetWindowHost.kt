@@ -13,9 +13,12 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStoreOwner
@@ -71,6 +74,8 @@ class AzBottomSheetWindowHost(
     private var sheetView: ComposeView? = null
     private var sheetParams: WindowManager.LayoutParams? = null
     private var navBarDecor: AzNavBarDecorWindow? = null
+    private var lastNavBarInsetPx: Int = 0
+    private var collectJob: kotlinx.coroutines.Job? = null
 
     /**
      * Adds the sheet's overlay window. Idempotent: a second call without an intervening [detach] is a no-op.
@@ -107,17 +112,37 @@ class AzBottomSheetWindowHost(
             }
         }
 
+        // Wire window insets through the outer ComposeView so the inner AndroidComposeView's
+        // own WindowInsetsHolder still receives them and WindowInsets.navigationBars /
+        // Modifier.navigationBarsPadding() resolve inside the content. We record the nav-bar
+        // bottom inset (for tests/diagnostics) but return the insets unchanged — never consumed,
+        // so both the Compose tree and the app below keep seeing them.
+        ViewCompat.setOnApplyWindowInsetsListener(composeView) { v, insets ->
+            lastNavBarInsetPx = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+            ViewCompat.onApplyWindowInsets(v, insets)
+            insets
+        }
+
         val params = buildParams(configState.value, controller.detent)
         wm.addView(composeView, params)
         sheetView = composeView
         sheetParams = params
+        // Kick an initial dispatch so the overlay window picks up insets without waiting for a
+        // system change (rotation, IME, etc.).
+        ViewCompat.requestApplyInsets(composeView)
 
         lifecycleOwner.lifecycleScope.launch {
             lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                combine(controller.detentFlow, controller.enabledFlow) { d, e -> d to e }
-                    .collect { (detent, _) ->
+                // Combine in configState (via snapshotFlow) alongside the detent so updateConfig()
+                // re-applies the WindowManager layout immediately, not just on the next detent change.
+                combine(
+                    controller.detentFlow,
+                    controller.enabledFlow,
+                    snapshotFlow { configState.value },
+                ) { detent, _, config -> detent to config }
+                    .collect { (detent, config) ->
                         val current = sheetParams ?: return@collect
-                        val newHeight = heightForDetent(detent, /* parentHeight */ 0.dp, configState.value)
+                        val newHeight = heightForDetent(detent, /* parentHeight */ 0.dp, config)
                         // For HIDDEN/PEEK the height is absolute Dp; for HALF/FULL we use
                         // MATCH_PARENT and let the shell fill via fractions inside.
                         val needsFocus = detent == AzSheetDetent.HALF || detent == AzSheetDetent.FULL
@@ -141,11 +166,19 @@ class AzBottomSheetWindowHost(
         sheetView?.let { runCatching { wm.removeView(it) } }
         sheetView = null
         sheetParams = null
+        lastNavBarInsetPx = 0
+        collectJob?.cancel()
+        collectJob = null
         navBarDecor?.detach()
         navBarDecor = null
     }
 
-    /** Updates the live config without rebuilding the window. Effects apply on next recomposition. */
+    /**
+     * Updates the live config without rebuilding the window. Content effects apply on the next
+     * recomposition; in addition, while the sheet is attached at [AzSheetDetent.HIDDEN] or
+     * [AzSheetDetent.PEEK] the overlay window is resized immediately to match the new
+     * `hiddenStripDp`/`peekDp` (HALF/FULL stay `MATCH_PARENT`).
+     */
     fun updateConfig(config: AzSheetConfig) {
         configState.value = config
     }
@@ -216,6 +249,12 @@ class AzBottomSheetWindowHost(
 
     /** Exposed for tests. */
     internal fun isNavBarDecorAttached(): Boolean = navBarDecor != null
+
+    /** Exposed for tests: the last navigation-bar bottom inset (px) delivered to the sheet view. */
+    internal fun lastNavBarInsetPx(): Int = lastNavBarInsetPx
+
+    /** Exposed for tests: the live sheet view, or null when detached. */
+    internal fun sheetViewForTest(): View? = sheetView
 
     @Suppress("unused")
     private val unusedView: View? get() = sheetView
