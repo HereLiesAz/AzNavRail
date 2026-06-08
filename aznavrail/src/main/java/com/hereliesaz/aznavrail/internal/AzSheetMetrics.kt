@@ -21,3 +21,26 @@ internal fun heightForDetent(
     AzSheetDetent.HALF -> parentHeight * config.halfFraction
     AzSheetDetent.FULL -> parentHeight * config.fullFraction
 }
+
+/**
+ * Pixels by which the system-overlay sheet window should grow *downward*, into the
+ * navigation-bar region, when [AzSheetConfig.drawBehindNavBar] is enabled.
+ *
+ * The window stays anchored `Gravity.BOTTOM` with `y = 0`, so adding this to the window height
+ * extends it behind the bar without moving the top edge of any detent. The growth only applies in
+ * button navigation, where the measured navigation-bar inset is non-zero; in gesture navigation the
+ * inset is ~0, making this a no-op.
+ *
+ * Crucially this is *not* added to the consumer-visible detent height — the exposed (above-bar)
+ * height stays the value the consumer sized its detents to. Only the actual window grows; the extra
+ * band is where content flows behind the nav-bar buttons.
+ *
+ * @param drawBehindNavBar [AzSheetConfig.drawBehindNavBar].
+ * @param buttonNav Whether the device uses button (3-button / 2-button) navigation.
+ * @param navBarInsetPx The measured navigation-bar inset in pixels (0 in gesture navigation).
+ */
+internal fun navBarExtensionPx(
+    drawBehindNavBar: Boolean,
+    buttonNav: Boolean,
+    navBarInsetPx: Int,
+): Int = if (drawBehindNavBar && buttonNav && navBarInsetPx > 0) navBarInsetPx else 0
