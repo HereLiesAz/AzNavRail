@@ -2,6 +2,15 @@
 
 ## 0.3.0
 
+### Added
+- **Pages (Z-ordering) on the host.** `<AzOnscreen>` and `<AzBackground>` accept a
+  `page?: number`, and `<AzHostActivityLayout>` accepts `pagesEnabled?: boolean` (default
+  `true`). Items sharing a page are co-planar (positioned via `alignment`); items on different
+  pages stack in Z — a **higher** page draws **further back**. Decimals (`1.5`) insert a layer
+  between existing ones. `<AzBackground>` forms its own book of pages beneath the `<AzOnscreen>`
+  book; `weight` breaks ties within a background page. Mirrors the Android `AzHostActivityLayout`
+  pages system for parity.
+
 ### Changed
 - **Bottom sheet drag-to-collapse is now gentler.** A downward drag steps the sheet **down
   one detent** (FULL → HALF → PEEK → HIDDEN) instead of snapping straight to `HIDDEN`,

@@ -142,6 +142,7 @@ fun SampleScreen() {
 * **`isLandscape`**: Explicitly set the orientation. If null, it is automatically derived from the screen configuration.
 * **`initiallyExpanded`**: Set to `true` to have the rail expanded by default (e.g., for bubble activities).
 * **`disableSwipeToOpen`**: Set to `true` to disable the swipe gesture that opens the menu.
+* **`pagesEnabled`**: Toggles the **pages** Z-ordering system (default `true`). See below.
 
 ### AzHostActivityLayout Layout Rules
 
@@ -151,6 +152,22 @@ fun SampleScreen() {
 2.  **Vertical Safe Zones**: Content is restricted from the top 10% and bottom 10% of the screen.
 3.  **Automatic Flipping**: Alignments passed to `onscreen` (e.g., `TopStart`) are automatically mirrored if the rail is docked to the right.
 4.  **Backgrounds**: Use the `background(weight)` DSL to place full-screen content behind the UI (e.g., maps, camera feeds). Backgrounds ignore safe zones.
+
+### Pages (Z-ordering)
+
+Both `onscreen(...)` and `background(...)` accept a `page: Float` (default `0f`). Pages are a simple Z-ordering system layered on top of standard Compose positioning:
+
+* **Same page = one co-planar layer.** Items on the same page are positioned with normal Compose `alignment` (give them distinct alignments — or compose your own `Row`/`Column` inside the content — so they tile without overlapping).
+* **Different pages stack in Z and may overlap.** A **higher** page number is drawn **further back**; the lowest page is on top. Two items on different pages can freely share the same screen region.
+* **Decimals insert without renumbering.** `page = 1.5f` slots a layer between `1f` and `2f`.
+* **Two books.** `background()` items form their own book of pages that sits entirely beneath the `onscreen` book (which sits beneath the rail and nav bar). `onscreen` pages still respect the safe zones; backgrounds still fill the screen.
+* **Forced when on.** With `pagesEnabled = true` (default) the system is always active — items with no explicit `page` simply share the default page `0f`. Set `pagesEnabled = false` to fall back to plain declaration-order rendering (backgrounds by `weight`), ignoring `page`.
+
+```kotlin
+onscreen(alignment = Alignment.Center, page = 0f) { /* base layer */ }
+onscreen(alignment = Alignment.Center, page = 1f) { /* drawn BEHIND page 0, can overlap it */ }
+background(weight = 0, page = 2f) { /* a background layer, even further back */ }
+```
 
 ### Help Overlay (Help Mode)
 

@@ -91,19 +91,35 @@ interface AzNavHostScope : AzNavRailScope {
     /**
      * Adds a background layer behind the main content.
      *
-     * @param weight The Z-order weight. Lower weights are drawn first (further back).
+     * Backgrounds form their own "book" of pages that sits entirely beneath the onscreen book
+     * (and therefore beneath the rail and nav bar). See [onscreen] for how [page] orders layers.
+     *
+     * @param weight Tie-breaker Z-order within a single background [page]. Lower weights are drawn
+     *   first (further back).
+     * @param page The page this background belongs to. Higher page numbers are drawn further back;
+     *   decimals (e.g. `1.5f`) insert a page between existing ones without renumbering. Honoured
+     *   only when the host's `pagesEnabled` is `true` (the default).
      * @param content The composable content for the background.
      */
-    fun background(weight: Int = 0, content: @Composable () -> Unit)
+    fun background(weight: Int = 0, page: Float = 0f, content: @Composable () -> Unit)
 
     /**
      * Adds content to the main screen area, respecting safe zones and rail padding.
      *
+     * **Pages.** Items sharing a [page] render on one co-planar layer and are positioned with
+     * standard Compose [alignment] (give same-page items distinct alignments — or compose your own
+     * `Row`/`Column` inside [content] — so they tile without overlapping). Items on *different*
+     * pages are stacked in Z and may overlap: a **higher** page number is drawn **further back**.
+     * Decimal page numbers (e.g. `1.5f`) insert a page between existing ones without renumbering.
+     * Paging is honoured only when the host's `pagesEnabled` is `true` (the default); when on it is
+     * forced, so unlabelled items all share the default page `0f`.
+     *
      * @param alignment The alignment of the content within the safe area. Note: Alignment is
      *                  automatically mirrored if the rail is docked on the right.
+     * @param page The page this content belongs to (Z-layer); see above. Defaults to `0f`.
      * @param content The composable content.
      */
-    fun onscreen(alignment: Alignment = Alignment.TopStart, content: @Composable () -> Unit)
+    fun onscreen(alignment: Alignment = Alignment.TopStart, page: Float = 0f, content: @Composable () -> Unit)
 
     /**
      * Registers a bottom sheet that draws above the rail, the menu, and the onscreen area, and
@@ -136,10 +152,27 @@ interface AzNavHostScope : AzNavRailScope {
 }
 
 /** Holds a sorted-background layer registered via [AzNavHostScope.background]. */
-data class AzBackgroundItem(val weight: Int, val content: @Composable () -> Unit)
+data class AzBackgroundItem(val weight: Int, val page: Float = 0f, val content: @Composable () -> Unit)
 
 /** Holds an onscreen content item registered via [AzNavHostScope.onscreen]. */
-data class AzOnscreenItem(val alignment: Alignment, val content: @Composable () -> Unit)
+data class AzOnscreenItem(val alignment: Alignment, val page: Float = 0f, val content: @Composable () -> Unit)
+
+/**
+ * Orders the background "book" back-to-front for rendering (the first element is drawn first, i.e.
+ * is the backmost). When [pagesEnabled], a **higher** page draws further back; `weight` breaks ties
+ * within a page (lower weight further back). When disabled, falls back to the legacy weight sort.
+ */
+internal fun azOrderBackgrounds(items: List<AzBackgroundItem>, pagesEnabled: Boolean): List<AzBackgroundItem> =
+    if (pagesEnabled) items.sortedWith(compareByDescending<AzBackgroundItem> { it.page }.thenBy { it.weight })
+    else items.sortedBy { it.weight }
+
+/**
+ * Orders the onscreen "book" back-to-front for rendering (the first element is drawn first, i.e. is
+ * the backmost). When [pagesEnabled], a **higher** page draws further back; items sharing a page keep
+ * their declaration order (stable sort). When disabled, declaration order is preserved unchanged.
+ */
+internal fun azOrderOnscreen(items: List<AzOnscreenItem>, pagesEnabled: Boolean): List<AzOnscreenItem> =
+    if (pagesEnabled) items.sortedByDescending { it.page } else items
 
 /** Concrete implementation of [AzNavHostScope] used internally by [AzHostActivityLayout]. */
 class AzNavHostScopeImpl(
@@ -158,12 +191,12 @@ class AzNavHostScopeImpl(
         railScope.navController = controller
     }
 
-    override fun background(weight: Int, content: @Composable () -> Unit) {
-        backgrounds.add(AzBackgroundItem(weight, content))
+    override fun background(weight: Int, page: Float, content: @Composable () -> Unit) {
+        backgrounds.add(AzBackgroundItem(weight, page, content))
     }
 
-    override fun onscreen(alignment: Alignment, content: @Composable () -> Unit) {
-        onscreenItems.add(AzOnscreenItem(alignment, content))
+    override fun onscreen(alignment: Alignment, page: Float, content: @Composable () -> Unit) {
+        onscreenItems.add(AzOnscreenItem(alignment, page, content))
     }
 
     override fun azBottomSheet(
@@ -202,6 +235,10 @@ class AzNavHostScopeImpl(
  * @param isLandscape Explicitly set landscape mode. Auto-detected if null.
  * @param initiallyExpanded Whether the rail is initially expanded.
  * @param disableSwipeToOpen Disable swipe-to-open gesture for the rail menu.
+ * @param pagesEnabled Whether the pages Z-ordering system is active (default `true`). When on, the
+ *   `page` of every [AzNavHostScope.onscreen] / [AzNavHostScope.background] item is honoured and
+ *   forced — items with no explicit page share the default page `0f`. When off, items render in
+ *   declaration order (backgrounds by `weight`) and `page` is ignored.
  * @param content The configuration block for rail items and onscreen content.
  */
 @OptIn(AzStrictLayout::class)
@@ -213,6 +250,7 @@ fun AzHostActivityLayout(
     isLandscape: Boolean? = null,
     initiallyExpanded: Boolean = false,
     disableSwipeToOpen: Boolean = false,
+    pagesEnabled: Boolean = true,
     content: AzNavHostScope.() -> Unit
 ) {
     val context = LocalContext.current
@@ -318,7 +356,7 @@ fun AzHostActivityLayout(
     }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-        scope.backgrounds.sortedBy { it.weight }.forEach { item ->
+        azOrderBackgrounds(scope.backgrounds, pagesEnabled).forEach { item ->
             Box(modifier = Modifier.fillMaxSize()) { item.content() }
         }
 
@@ -379,7 +417,7 @@ fun AzHostActivityLayout(
                 endPadding = endPadding,
                 topPadding = topPadding,
                 bottomPadding = bottomPadding,
-                items = scope.onscreenItems,
+                items = azOrderOnscreen(scope.onscreenItems, pagesEnabled),
                 dockingSide = dockingSide
             )
         }

@@ -110,6 +110,10 @@ The Android callback receives `(itemId: String, item: AzNavItem)`. The React cal
   forced-transparent system navigation bar on button-nav devices) and the automatic
   gesture-navigation zero-bottom-margin have no equivalent on the web (no system navigation bar
   or navigation mode). See `KNOWN_GAPS.md`.
+- **Pages (Z-ordering)** reach full parity: the Android `onscreen(page)` / `background(page)` and
+  `AzHostActivityLayout(pagesEnabled)` map directly to `<AzOnscreen page>` / `<AzBackground page>`
+  and the `pagesEnabled` prop. Higher page numbers render further back; decimals insert layers;
+  `<AzBackground>` is its own page-book beneath the `<AzOnscreen>` book.
 
 ## What's new in 0.2.0
 
