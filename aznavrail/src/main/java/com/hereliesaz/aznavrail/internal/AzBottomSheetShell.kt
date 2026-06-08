@@ -50,6 +50,11 @@ import com.hereliesaz.aznavrail.model.AzSheetDetent
  *   `config.animateInTree`; the system-overlay path passes `false` since the window itself jumps.
  * @param onSwipeLeft / [onSwipeRight] Optional horizontal-swipe callbacks gated by
  *   [AzSheetConfig.horizontalSwipeEnabled].
+ * @param navBarExtensionDp Extra height by which the *card* extends downward into the navigation-bar
+ *   region when the system-overlay host opts into [AzSheetConfig.drawBehindNavBar]. The detent's
+ *   exposed (above-bar) height is resolved against `parentHeight - navBarExtensionDp` and this band
+ *   is added back on, so the card's top edge does not move while its content flows behind the bar.
+ *   Defaults to `0.dp` (the in-tree path never extends the card).
  * @param content Caller-provided sheet content.
  */
 @Composable
@@ -61,10 +66,14 @@ internal fun AzBottomSheetShell(
     onSwipeLeft: (() -> Unit)?,
     onSwipeRight: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    navBarExtensionDp: Dp = 0.dp,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val density = LocalDensity.current
-    val targetHeight = heightForDetent(controller.detent, parentHeight, config)
+    // Resolve the detent against the exposed (above-bar) height, then add the nav-bar band back so
+    // the card grows downward by exactly the extension without shifting its top edge.
+    val targetHeight =
+        heightForDetent(controller.detent, parentHeight - navBarExtensionDp, config) + navBarExtensionDp
     val animatedHeight by animateDpAsState(
         targetValue = if (animate) targetHeight else targetHeight,
         label = "az-sheet-height",

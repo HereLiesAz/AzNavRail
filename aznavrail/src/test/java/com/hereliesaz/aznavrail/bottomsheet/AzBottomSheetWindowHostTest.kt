@@ -180,6 +180,115 @@ class AzBottomSheetWindowHostTest {
     }
 
     @Test
+    fun drawBehindNavBar_growsHiddenWindow_byNavBarInset_underButtonNav() {
+        val ctx = newContext()
+        val owner = TestOwner().also { it.registry.currentState = Lifecycle.State.RESUMED }
+        val controller = AzSheetController(initial = AzSheetDetent.HIDDEN)
+        val host = AzBottomSheetWindowHost(
+            context = ctx,
+            controller = controller,
+            config = AzSheetConfig(hiddenStripDp = 28.dp, drawBehindNavBar = true),
+            lifecycleOwner = owner,
+            viewModelStoreOwner = owner,
+            savedStateRegistryOwner = owner,
+            navBarHeightPx = 0,
+        ) { Box(modifier = androidx.compose.ui.Modifier) {} }
+
+        host.attach()
+        idleMain()
+        val density = ctx.resources.displayMetrics.density
+        val basePx = (28f * density).toInt()
+
+        // Deliver a button-nav-sized inset; the window must grow downward by exactly that inset
+        // while the exposed (above-bar) strip height is unchanged.
+        val navBar = 60
+        val view = host.sheetViewForTest()!!
+        val insets = WindowInsetsCompat.Builder()
+            .setInsets(WindowInsetsCompat.Type.navigationBars(), Insets.of(0, 0, 0, navBar))
+            .build()
+        ViewCompat.dispatchApplyWindowInsets(view, insets)
+        idleMain()
+
+        assertEquals(
+            "drawBehindNavBar must grow the HIDDEN overlay window by the measured nav-bar inset.",
+            basePx + navBar,
+            host.currentParams()!!.height,
+        )
+        assertEquals(navBar, host.navBarExtensionPxForTest())
+
+        host.detach()
+    }
+
+    @Test
+    fun drawBehindNavBar_disabled_doesNotGrowWindow() {
+        val ctx = newContext()
+        val owner = TestOwner().also { it.registry.currentState = Lifecycle.State.RESUMED }
+        val controller = AzSheetController(initial = AzSheetDetent.HIDDEN)
+        val host = AzBottomSheetWindowHost(
+            context = ctx,
+            controller = controller,
+            config = AzSheetConfig(hiddenStripDp = 28.dp, drawBehindNavBar = false),
+            lifecycleOwner = owner,
+            viewModelStoreOwner = owner,
+            savedStateRegistryOwner = owner,
+        ) { Box(modifier = androidx.compose.ui.Modifier) {} }
+
+        host.attach()
+        idleMain()
+        val density = ctx.resources.displayMetrics.density
+
+        val insets = WindowInsetsCompat.Builder()
+            .setInsets(WindowInsetsCompat.Type.navigationBars(), Insets.of(0, 0, 0, 60))
+            .build()
+        ViewCompat.dispatchApplyWindowInsets(host.sheetViewForTest()!!, insets)
+        idleMain()
+
+        assertEquals(
+            "Without drawBehindNavBar the window height must equal the bare detent height.",
+            (28f * density).toInt(),
+            host.currentParams()!!.height,
+        )
+        assertEquals(0, host.navBarExtensionPxForTest())
+
+        host.detach()
+    }
+
+    @Test
+    fun drawBehindNavBar_setsLayoutNoLimits_andCutoutMode() {
+        val ctx = newContext()
+        val owner = TestOwner().also { it.registry.currentState = Lifecycle.State.RESUMED }
+        val controller = AzSheetController(initial = AzSheetDetent.HIDDEN)
+        val host = AzBottomSheetWindowHost(
+            context = ctx,
+            controller = controller,
+            config = AzSheetConfig(drawBehindNavBar = true),
+            lifecycleOwner = owner,
+            viewModelStoreOwner = owner,
+            savedStateRegistryOwner = owner,
+        ) { Box(modifier = androidx.compose.ui.Modifier) {} }
+
+        host.attach()
+        idleMain()
+        val params = host.currentParams()!!
+        assertTrue(
+            "The overlay must set FLAG_LAYOUT_NO_LIMITS so the WM does not clamp it above the nav bar.",
+            (params.flags and WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS) != 0,
+        )
+        assertTrue(
+            "The overlay must set FLAG_LAYOUT_IN_SCREEN.",
+            (params.flags and WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN) != 0,
+        )
+        assertEquals(
+            "The overlay must lay out into the system-bar / cutout area.",
+            WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS,
+            params.layoutInDisplayCutoutMode,
+        )
+        assertEquals("The overlay must be anchored flush to the screen bottom.", 0, params.y)
+
+        host.detach()
+    }
+
+    @Test
     fun attach_wiresWindowInsets_withoutConsumingThem() {
         val ctx = newContext()
         val owner = TestOwner().also { it.registry.currentState = Lifecycle.State.RESUMED }

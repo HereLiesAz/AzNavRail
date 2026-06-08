@@ -16,6 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -32,6 +33,7 @@ import com.hereliesaz.aznavrail.internal.AzBottomSheetShell
 import com.hereliesaz.aznavrail.internal.AzNavBarDecorWindow
 import com.hereliesaz.aznavrail.internal.AzNavMode
 import com.hereliesaz.aznavrail.internal.heightForDetent
+import com.hereliesaz.aznavrail.internal.navBarExtensionPx
 import com.hereliesaz.aznavrail.model.AzSheetConfig
 import com.hereliesaz.aznavrail.model.AzSheetDetent
 import kotlinx.coroutines.flow.combine
@@ -76,6 +78,9 @@ class AzBottomSheetWindowHost(
     private var sheetParams: WindowManager.LayoutParams? = null
     private var navBarDecor: AzNavBarDecorWindow? = null
     private var lastNavBarInsetPx: Int = 0
+    // Pixels the overlay window grows downward into the nav-bar region (drawBehindNavBar + button
+    // nav). Backed by a Compose state so the shell extends the card in lock-step with the window.
+    private val navBarExtensionState = mutableStateOf(0)
     private var collectJob: kotlinx.coroutines.Job? = null
 
     /**
@@ -91,6 +96,7 @@ class AzBottomSheetWindowHost(
             setViewTreeSavedStateRegistryOwner(savedStateRegistryOwner)
             setContent {
                 BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                    val extensionDp = with(LocalDensity.current) { navBarExtensionState.value.toDp() }
                     AzBottomSheetShell(
                         controller = controller,
                         config = configState.value,
@@ -98,6 +104,7 @@ class AzBottomSheetWindowHost(
                         animate = false,
                         onSwipeLeft = null,
                         onSwipeRight = null,
+                        navBarExtensionDp = extensionDp,
                         content = content,
                     )
                 }
@@ -120,10 +127,22 @@ class AzBottomSheetWindowHost(
         // so both the Compose tree and the app below keep seeing them.
         ViewCompat.setOnApplyWindowInsetsListener(composeView) { v, insets ->
             lastNavBarInsetPx = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+            // Once we know the real nav-bar inset, (re)derive how far the window must grow behind
+            // the bar and resize it immediately — the initial layout may have run before insets
+            // were available, so HIDDEN/PEEK strips would otherwise stop above the bar.
+            val ext = resolveExtensionPx(configState.value)
+            if (ext != navBarExtensionState.value) {
+                navBarExtensionState.value = ext
+                sheetParams?.let { p ->
+                    p.height = windowHeightFor(controller.detent, configState.value)
+                    runCatching { wm.updateViewLayout(composeView, p) }
+                }
+            }
             ViewCompat.onApplyWindowInsets(v, insets)
             insets
         }
 
+        navBarExtensionState.value = resolveExtensionPx(configState.value)
         val params = buildParams(configState.value, controller.detent)
         wm.addView(composeView, params)
         sheetView = composeView
@@ -143,17 +162,13 @@ class AzBottomSheetWindowHost(
                 ) { detent, _, config -> detent to config }
                     .collect { (detent, config) ->
                         val current = sheetParams ?: return@collect
-                        val newHeight = heightForDetent(detent, /* parentHeight */ 0.dp, config)
-                        // For HIDDEN/PEEK the height is absolute Dp; for HALF/FULL we use
-                        // MATCH_PARENT and let the shell fill via fractions inside.
+                        // Keep the card's downward extension in sync with config changes (e.g.
+                        // toggling drawBehindNavBar live) before resizing the window.
+                        navBarExtensionState.value = resolveExtensionPx(config)
+                        // For HIDDEN/PEEK the height is absolute Dp (plus the nav-bar extension);
+                        // for HALF/FULL we use MATCH_PARENT and let the shell fill via fractions.
                         val needsFocus = detent == AzSheetDetent.HALF || detent == AzSheetDetent.FULL
-                        current.height = when (detent) {
-                            AzSheetDetent.HIDDEN, AzSheetDetent.PEEK -> {
-                                val d = context.resources.displayMetrics.density
-                                (newHeight.value * d).toInt()
-                            }
-                            AzSheetDetent.HALF, AzSheetDetent.FULL -> WindowManager.LayoutParams.MATCH_PARENT
-                        }
+                        current.height = windowHeightFor(detent, config)
                         current.flags = baseFlags(needsFocus)
                         runCatching { wm.updateViewLayout(composeView, current) }
                     }
@@ -168,6 +183,7 @@ class AzBottomSheetWindowHost(
         sheetView = null
         sheetParams = null
         lastNavBarInsetPx = 0
+        navBarExtensionState.value = 0
         collectJob?.cancel()
         collectJob = null
         navBarDecor?.detach()
@@ -210,25 +226,55 @@ class AzBottomSheetWindowHost(
             @Suppress("DEPRECATION")
             WindowManager.LayoutParams.TYPE_SYSTEM_ALERT
         }
-        val height = when (detent) {
-            AzSheetDetent.HIDDEN, AzSheetDetent.PEEK -> {
-                val d = context.resources.displayMetrics.density
-                (heightForDetent(detent, 0.dp, config).value * d).toInt()
-            }
-            AzSheetDetent.HALF, AzSheetDetent.FULL -> WindowManager.LayoutParams.MATCH_PARENT
-        }
         val needsFocus = detent == AzSheetDetent.HALF || detent == AzSheetDetent.FULL
         return WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
-            height,
+            windowHeightFor(detent, config),
             type,
             baseFlags(needsFocus),
             PixelFormat.TRANSLUCENT,
         ).apply {
             gravity = Gravity.BOTTOM
+            // Anchor flush to the screen bottom; the height already includes any nav-bar extension.
+            y = 0
             @Suppress("DEPRECATION")
             softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+            // Allow the window to lay out into the display cutout / system-bar area so the extended
+            // height can actually occupy the nav-bar region (paired with FLAG_LAYOUT_NO_LIMITS).
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+            }
         }
+    }
+
+    /**
+     * Window height (px) for a [detent]. HIDDEN/PEEK resolve to an absolute pixel height; HALF/FULL
+     * use `MATCH_PARENT` and let the shell fill via fractions. When [AzSheetConfig.drawBehindNavBar]
+     * is active on button-nav, the absolute heights grow by the nav-bar inset so the window extends
+     * behind the bar (the top edge stays put because the window is anchored `Gravity.BOTTOM`).
+     */
+    private fun windowHeightFor(detent: AzSheetDetent, config: AzSheetConfig): Int = when (detent) {
+        AzSheetDetent.HIDDEN, AzSheetDetent.PEEK -> {
+            val d = context.resources.displayMetrics.density
+            (heightForDetent(detent, 0.dp, config).value * d).toInt() + resolveExtensionPx(config)
+        }
+        AzSheetDetent.HALF, AzSheetDetent.FULL -> WindowManager.LayoutParams.MATCH_PARENT
+    }
+
+    /**
+     * Pixels by which the window grows downward into the nav-bar region. Uses the live measured
+     * navigation-bar inset when available (the authoritative button-vs-gesture signal), falling back
+     * to the consumer-supplied [navBarHeightPx] under button navigation before insets first arrive.
+     */
+    private fun resolveExtensionPx(config: AzSheetConfig): Int {
+        val measured = lastNavBarInsetPx
+        val inset = if (measured > 0) measured else if (AzNavMode.isButtonNav(context)) navBarHeightPx else 0
+        return navBarExtensionPx(
+            drawBehindNavBar = config.drawBehindNavBar,
+            buttonNav = AzNavMode.isButtonNav(context),
+            navBarInsetPx = inset,
+        )
     }
 
     private fun baseFlags(focusable: Boolean): Int {
@@ -254,6 +300,9 @@ class AzBottomSheetWindowHost(
 
     /** Exposed for tests: the last navigation-bar bottom inset (px) delivered to the sheet view. */
     internal fun lastNavBarInsetPx(): Int = lastNavBarInsetPx
+
+    /** Exposed for tests: the px the window currently grows downward behind the nav bar. */
+    internal fun navBarExtensionPxForTest(): Int = navBarExtensionState.value
 
     /** Exposed for tests: the live sheet view, or null when detached. */
     internal fun sheetViewForTest(): View? = sheetView
