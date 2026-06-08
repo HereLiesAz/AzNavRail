@@ -26,6 +26,15 @@ import com.hereliesaz.aznavrail.model.AzSheetConfig
 import com.hereliesaz.aznavrail.model.AzSheetDetent
 
 /**
+ * Alpha the navigation-bar decoration paints at. When the sheet opts into
+ * [AzSheetConfig.drawBehindNavBar] and the device uses button navigation, the decoration is
+ * capped at a semi-transparent value so the sheet window behind it shows through (the
+ * "draw behind the nav bar" look); otherwise it uses the full [AzSheetConfig.backgroundAlpha].
+ */
+internal fun decorAlphaFor(config: AzSheetConfig, buttonNav: Boolean): Float =
+    if (config.drawBehindNavBar && buttonNav) minOf(config.backgroundAlpha, 0.5f) else config.backgroundAlpha
+
+/**
  * Manages a `TYPE_ACCESSIBILITY_OVERLAY` window painted on top of the system navigation bar so
  * its color visually blends with an [com.hereliesaz.aznavrail.bottomsheet.AzBottomSheetWindowHost].
  * The view is non-interactive (`FLAG_NOT_TOUCHABLE`); taps and gesture-nav swipes pass through
@@ -40,6 +49,9 @@ import com.hereliesaz.aznavrail.model.AzSheetDetent
  * @param navBarHeightPx Height of the system navigation bar in pixels.
  * @param configProvider Lambda yielding the current [AzSheetConfig]; called each frame so opacity
  *   and color changes track the sheet.
+ * @param buttonNav Whether the device uses button (3-button / 2-button) navigation. When `true`
+ *   and the config opts into [AzSheetConfig.drawBehindNavBar], the decoration paints
+ *   semi-transparent so the sheet shows through behind the nav bar.
  * @param lifecycleOwner / [viewModelStoreOwner] / [savedStateRegistryOwner] Compose-view owners
  *   the consumer provides (typically the Service implementing the relevant interfaces).
  */
@@ -48,6 +60,7 @@ internal class AzNavBarDecorWindow(
     private val controller: AzSheetController,
     private val navBarHeightPx: Int,
     private val configProvider: () -> AzSheetConfig,
+    private val buttonNav: Boolean,
     private val lifecycleOwner: LifecycleOwner,
     private val viewModelStoreOwner: ViewModelStoreOwner,
     private val savedStateRegistryOwner: SavedStateRegistryOwner,
@@ -67,7 +80,7 @@ internal class AzNavBarDecorWindow(
                 val cfg = configProvider()
                 val visible = enabled && detent != AzSheetDetent.HIDDEN
                 val resolvedBg = if (cfg.backgroundColor.value == Color.Unspecified.value) Color.Black else cfg.backgroundColor
-                val color = if (visible) resolvedBg.copy(alpha = cfg.backgroundAlpha) else Color.Transparent
+                val color = if (visible) resolvedBg.copy(alpha = decorAlphaFor(cfg, buttonNav)) else Color.Transparent
                 Box(Modifier.fillMaxSize().background(color))
             }
         }

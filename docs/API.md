@@ -414,6 +414,9 @@ The bottom-sheet shell is ported from [LogKitty](https://github.com/HereLiesAz/L
 | `animateInTree` | `Boolean` | `true` | In-tree shell animates between heights; system-overlay always hard-jumps. |
 | `cornerRadiusDp` | `Dp` | `16.dp` | Top-corner radius. |
 | `handleVisible` | `Boolean` | `true` | Centered drag-handle pill. |
+| `drawBehindNavBar` | `Boolean` | `false` | When `true` **and** the device uses button navigation, the sheet draws behind the system nav bar (exposed height unchanged) and the bar is forced see-through so content shows through. No-op in gesture navigation. |
+
+> **Automatic gesture-nav margin:** independent of any config, `AzHostActivityLayout` imposes **zero** bottom margin on on-screen content when the device is in gesture navigation (detected via `Settings.Secure` `navigation_mode`); button-navigation devices keep the `max(10% safe-zone, nav-bar inset)` bottom margin.
 
 ### System-overlay flavor
 

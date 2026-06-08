@@ -30,6 +30,7 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.hereliesaz.aznavrail.internal.AzBottomSheetShell
 import com.hereliesaz.aznavrail.internal.AzNavBarDecorWindow
+import com.hereliesaz.aznavrail.internal.AzNavMode
 import com.hereliesaz.aznavrail.internal.heightForDetent
 import com.hereliesaz.aznavrail.model.AzSheetConfig
 import com.hereliesaz.aznavrail.model.AzSheetDetent
@@ -191,6 +192,7 @@ class AzBottomSheetWindowHost(
             controller = controller,
             navBarHeightPx = navBarHeightPx,
             configProvider = { configState.value },
+            buttonNav = AzNavMode.isButtonNav(context),
             lifecycleOwner = lifecycleOwner,
             viewModelStoreOwner = viewModelStoreOwner,
             savedStateRegistryOwner = savedStateRegistryOwner,

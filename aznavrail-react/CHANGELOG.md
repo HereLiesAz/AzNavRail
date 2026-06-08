@@ -17,6 +17,9 @@
   native, `env(safe-area-inset-bottom)` on web). See `KNOWN_GAPS.md` for the web caveat.
 - Tracks the Android `9.2` release (live overlay-window resize on `updateConfig()`, window
   insets delivered to sheet content, and the matching gentler drag-to-collapse).
+- The Android `9.2` navigation-mode behaviors — `AzSheetConfig.drawBehindNavBar` and the
+  automatic gesture-nav zero-bottom-margin — have **no web analog** (no system navigation bar /
+  navigation mode on web). See `KNOWN_GAPS.md`.
 
 ## 0.2.0
 
