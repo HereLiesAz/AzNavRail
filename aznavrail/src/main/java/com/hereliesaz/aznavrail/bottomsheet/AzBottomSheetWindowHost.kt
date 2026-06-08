@@ -269,10 +269,11 @@ class AzBottomSheetWindowHost(
      */
     private fun resolveExtensionPx(config: AzSheetConfig): Int {
         val measured = lastNavBarInsetPx
-        val inset = if (measured > 0) measured else if (AzNavMode.isButtonNav(context)) navBarHeightPx else 0
+        val isButton = AzNavMode.isButtonNav(context)
+        val inset = if (measured > 0) measured else if (isButton) navBarHeightPx else 0
         return navBarExtensionPx(
             drawBehindNavBar = config.drawBehindNavBar,
-            buttonNav = AzNavMode.isButtonNav(context),
+            buttonNav = isButton,
             navBarInsetPx = inset,
         )
     }
