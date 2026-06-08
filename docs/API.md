@@ -391,8 +391,8 @@ The bottom-sheet shell is ported from [LogKitty](https://github.com/HereLiesAz/L
 | `isEnabled` | `Boolean` (mutable) | `false` forces `HIDDEN` and blocks step calls. |
 | `detentFlow` | `StateFlow<AzSheetDetent>` | Read-only. |
 | `enabledFlow` | `StateFlow<Boolean>` | Read-only. |
-| `stepUp()` / `stepDown()` | – | One detent per call; clamps at the ends. Swipe-down gesture uses `snapTo(HIDDEN)` instead. |
-| `snapTo(target)` | – | Direct jump; blocked when disabled and target ≠ HIDDEN. Used by swipe-down to dismiss entirely. |
+| `stepUp()` / `stepDown()` | – | One detent per call; clamps at the ends. The swipe-down gesture calls `stepDown()` (descends one detent at a time, mirroring swipe-up). |
+| `snapTo(target)` | – | Direct jump; blocked when disabled and target ≠ HIDDEN. |
 
 ### Configuration
 
@@ -408,7 +408,7 @@ The bottom-sheet shell is ported from [LogKitty](https://github.com/HereLiesAz/L
 | `peekDp` | `Dp` | `56.dp` | Height in PEEK. |
 | `halfFraction` | `Float` | `0.5f` | Fraction of parent height in HALF. |
 | `fullFraction` | `Float` | `0.9f` | Fraction of parent height in FULL. |
-| `dragThresholdDp` | `Dp` | `24.dp` | Cumulative drag needed per step. Swipe up steps one detent; swipe down snaps to HIDDEN. |
+| `dragThresholdDp` | `Dp` | `24.dp` | Cumulative drag needed per step. Swipe up steps one detent up; swipe down steps one detent down. |
 | `collapseOnBack` | `Boolean` | `true` | Back press steps down. |
 | `horizontalSwipeEnabled` | `Boolean` | `false` | Enables `onSwipeLeft` / `onSwipeRight`. |
 | `animateInTree` | `Boolean` | `true` | In-tree shell animates between heights; system-overlay always hard-jumps. |
@@ -424,6 +424,8 @@ The bottom-sheet shell is ported from [LogKitty](https://github.com/HereLiesAz/L
 | `attach()` | Adds the sheet's `TYPE_APPLICATION_OVERLAY` window. Idempotent. |
 | `attachNavBarDecor()` | Adds the secondary `TYPE_ACCESSIBILITY_OVERLAY` that tints the system nav bar. Call after your accessibility service binds. No-op when `navBarHeightPx <= 0`. |
 | `detach()` | Removes both windows. |
-| `updateConfig(config)` | Replaces the live config. |
+| `updateConfig(config)` | Replaces the live config and, while attached at `HIDDEN`/`PEEK`, **immediately resizes the overlay window** to the new `hiddenStripDp`/`peekDp` (`HALF`/`FULL` stay `MATCH_PARENT`). |
+
+The overlay window also delivers real window insets to its content: `WindowInsets.navigationBars` / `Modifier.navigationBarsPadding()` resolve to the actual system nav-bar inset inside the `content` slot (insets are forwarded un-consumed, so the app below still receives them).
 
 Consumer manifest: declares `SYSTEM_ALERT_WINDOW` (and `BIND_ACCESSIBILITY_SERVICE` for the nav-bar decoration). The library itself ships no permissions or services.

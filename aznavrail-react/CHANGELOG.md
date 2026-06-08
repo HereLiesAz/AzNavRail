@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.3.0
+
+### Changed
+- **Bottom sheet drag-to-collapse is now gentler.** A downward drag steps the sheet **down
+  one detent** (FULL → HALF → PEEK → HIDDEN) instead of snapping straight to `HIDDEN`,
+  mirroring the up-drag's one-step `stepUp()`. Tap-to-dismiss overlays (the scrim at
+  HALF/FULL and the tap layer at PEEK) still call `stepDown()` as before.
+
+### Notes
+- Runtime resizing already works on the React port: `<AzBottomSheet config={...}>` recomputes
+  the detent heights whenever the `config` prop (`peekDp` / `hiddenStripDp` / fractions)
+  changes, so no `updateConfig()` method is needed — re-render with a new `config`. This is
+  the React analog of the Android `AzBottomSheetWindowHost.updateConfig()` live-resize fix.
+- Window insets continue to be delivered via `AzBottomSheetInsetAware` (`SafeAreaView` on
+  native, `env(safe-area-inset-bottom)` on web). See `KNOWN_GAPS.md` for the web caveat.
+- Tracks the Android `9.2` release (live overlay-window resize on `updateConfig()`, window
+  insets delivered to sheet content, and the matching gentler drag-to-collapse).
+
 ## 0.2.0
 
 ### Added

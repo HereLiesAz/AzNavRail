@@ -8,7 +8,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import com.hereliesaz.aznavrail.bottomsheet.AzSheetController
-import com.hereliesaz.aznavrail.model.AzSheetDetent
 
 /**
  * Vertical drag detector that mirrors LogKitty's accumulated-delta gesture.
@@ -19,7 +18,8 @@ import com.hereliesaz.aznavrail.model.AzSheetDetent
  * so the next gesture starts fresh.
  *
  * Up-drag (negative accumulator) calls [AzSheetController.stepUp]; down-drag calls
- * [AzSheetController.snapTo] with [AzSheetDetent.HIDDEN] to dismiss the sheet entirely.
+ * [AzSheetController.stepDown] to descend one detent at a time (mirroring the up-drag),
+ * so dragging down from FULL goes FULL → HALF → PEEK → HIDDEN rather than collapsing in one step.
  * When [AzSheetController.isEnabled] is `false`, drags are ignored.
  */
 internal fun Modifier.azSheetVerticalDrag(
@@ -44,7 +44,7 @@ internal fun Modifier.azSheetVerticalDrag(
                 change.consume()
             }
             accumulated >= thresholdPx -> {
-                controller.snapTo(AzSheetDetent.HIDDEN)
+                controller.stepDown()
                 fired = true
                 change.consume()
             }

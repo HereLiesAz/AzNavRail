@@ -826,7 +826,7 @@ sheetController.isEnabled = false                  // forces HIDDEN, blocks step
 ### 10.4 Gestures
 
 - **Swipe up** on the sheet card or hidden strip accumulates per-frame delta and calls `stepUp()` exactly once when `config.dragThresholdDp` is crossed.
-- **Swipe down** calls `snapTo(HIDDEN)`, dismissing the sheet entirely in one gesture rather than stepping down one detent at a time.
+- **Swipe down** calls `stepDown()`, descending one detent at a time (`FULL → HALF → PEEK → HIDDEN`) to mirror the swipe-up's one-step expand.
 - **Scrim tap** in `HALF` / `FULL` calls `stepDown()` (dim overlay visible).
 - **Transparent tap overlay** at `PEEK` — a non-dimmed, full-screen tap catcher that calls `stepDown()`, transitioning to HIDDEN. Makes the dismiss gesture discoverable for users who tap rather than swipe.
 - System **back press** calls `stepDown()` while the sheet is non-HIDDEN when `config.collapseOnBack = true`.
@@ -874,6 +874,10 @@ class MyOverlayService : LifecycleService(), ViewModelStoreOwner, SavedStateRegi
 Call `sheetHost.attachNavBarDecor()` from an accessibility service's `onServiceConnected` to add the secondary `TYPE_ACCESSIBILITY_OVERLAY` window that tints the system nav bar to match the sheet color.
 
 The in-tree flavor animates between detent heights with `animateDpAsState`; the system-overlay flavor hard-jumps via `WindowManager.updateViewLayout`, matching LogKitty's existing look frame-for-frame.
+
+`updateConfig(newConfig)` mutates the live config and — while the sheet is attached at `HIDDEN` or `PEEK` — **immediately resizes the overlay window** to the new `hiddenStripDp` / `peekDp` (the `HALF` / `FULL` detents stay `MATCH_PARENT`). The collector folds `configState` in via `snapshotFlow`, so a config change re-applies the `WindowManager` layout without waiting for the next detent change. This lets a consumer recompute content-driven detent heights or the nav-bar inset on rotation / split-screen without re-attaching.
+
+The overlay also **delivers real window insets to the content**: an `OnApplyWindowInsetsListener` on the host `ComposeView` lets `WindowInsets.navigationBars` / `Modifier.navigationBarsPadding()` resolve to the actual system navigation-bar inset inside the `content` slot, so consumers no longer have to measure the nav bar themselves. The insets are forwarded un-consumed, so the app below still receives them.
 
 ### 10.7 LogKitty migration
 
