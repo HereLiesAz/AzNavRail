@@ -127,6 +127,18 @@ The base class for your Activity.
 ### `AzGraph` (Generated)
 The KSP processor generates this object. It casts the `activity` to your specific instance type to access the bound properties, ensuring **Recomposition** occurs whenever your `mutableStateOf` properties change.
 
+### Pages (Z-ordering)
+
+`onscreen(alignment, page = 0f) { }` and `background(weight, page = 0f) { }` accept a `page: Float`. Pages add Z-ordering over standard Compose positioning:
+
+| Concept | Behavior |
+| :--- | :--- |
+| Same page | One co-planar layer; position items with normal Compose `alignment` (or `Row`/`Column` inside the content) so they tile without overlapping. |
+| Different pages | Stacked in Z and may overlap. **Higher `page` → further back**; lowest page is on top. |
+| Decimals | `page = 1.5f` inserts a layer between `1f` and `2f` without renumbering. |
+| Two books | `background()` pages form a book entirely beneath the `onscreen` book (which is beneath the rail/nav bar). `onscreen` pages respect safe zones; backgrounds fill the screen. `weight` breaks ties within a background page. |
+| `AzHostActivityLayout(pagesEnabled = true)` | Default. Forced when on — unlabelled items share page `0f`. Set `false` to render in declaration order (backgrounds by `weight`) and ignore `page`. |
+
 ---
 
 ## 5. Tutorial Framework API

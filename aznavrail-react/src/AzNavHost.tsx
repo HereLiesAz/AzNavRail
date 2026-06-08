@@ -21,6 +21,7 @@ export enum AzAlignment {
 interface AzBackgroundItem {
   id: string;
   weight: number;
+  page: number;
   content: React.ReactNode;
 }
 
@@ -28,6 +29,7 @@ interface AzBackgroundItem {
 interface AzOnscreenItem {
   id: string;
   alignment: AzAlignment;
+  page: number;
   content: React.ReactNode;
 }
 
@@ -50,40 +52,49 @@ export const useAzHostContext = () => useContext(AzHostContext);
 
 /**
  * Registers a background layer inside `AzHostActivityLayout`.
- * @param props.weight - Z-order weight; lower values render behind higher values.
+ *
+ * Backgrounds form their own "book" of pages beneath the onscreen book (see {@link AzOnscreen}).
+ * @param props.weight - Tie-breaker Z-order within a page; lower values render behind higher values.
+ * @param props.page - The page (Z-layer). Higher numbers render further back; decimals (e.g. `1.5`)
+ *   insert a page between existing ones. Honoured when the host's `pagesEnabled` is `true` (default).
  * @param props.children - Content rendered as an absolute fill layer behind the rail and screen content.
  */
-export const AzBackground: React.FC<{ weight?: number; children: React.ReactNode }> = ({ weight = 0, children }) => {
+export const AzBackground: React.FC<{ weight?: number; page?: number; children: React.ReactNode }> = ({ weight = 0, page = 0, children }) => {
   const context = useAzHostContext();
   const id = useMemo(() => Math.random().toString(36).substr(2, 9), []);
 
   useEffect(() => {
     if (context) {
-      context.registerBackground({ id, weight, content: children });
+      context.registerBackground({ id, weight, page, content: children });
       return () => context.unregisterBackground(id);
     }
     return undefined;
-  }, [context, id, weight, children]);
+  }, [context, id, weight, page, children]);
 
   return null;
 };
 
 /**
  * Registers an absolutely-positioned overlay inside `AzHostActivityLayout`, respecting safe zones.
+ *
+ * Items sharing a `page` render co-planar (positioned via `alignment`); items on different pages are
+ * stacked in Z and may overlap — a **higher** page number renders **further back**. Decimals insert
+ * a page between existing ones. Honoured when the host's `pagesEnabled` is `true` (default).
  * @param props.alignment - Where the overlay is anchored relative to the content area.
+ * @param props.page - The page (Z-layer); see above. Defaults to `0`.
  * @param props.children - Content rendered as an overlay at the specified alignment.
  */
-export const AzOnscreen: React.FC<{ alignment?: AzAlignment; children: React.ReactNode }> = ({ alignment = AzAlignment.TopStart, children }) => {
+export const AzOnscreen: React.FC<{ alignment?: AzAlignment; page?: number; children: React.ReactNode }> = ({ alignment = AzAlignment.TopStart, page = 0, children }) => {
   const context = useAzHostContext();
   const id = useMemo(() => Math.random().toString(36).substr(2, 9), []);
 
   useEffect(() => {
     if (context) {
-      context.registerOnscreen({ id, alignment, content: children });
+      context.registerOnscreen({ id, alignment, page, content: children });
       return () => context.unregisterOnscreen(id);
     }
     return undefined;
-  }, [context, id, alignment, children]);
+  }, [context, id, alignment, page, children]);
 
   return null;
 };
@@ -102,9 +113,33 @@ export interface AzHostActivityLayoutProps extends AzNavRailSettings {
   initiallyExpanded?: boolean;
   /** When true, disables the swipe gesture that expands the rail. */
   disableSwipeToOpen?: boolean;
+  /**
+   * Whether the pages Z-ordering system is active (default `true`). When on, the `page` of every
+   * `AzBackground`/`AzOnscreen` is honoured and forced — items with no explicit page share page `0`.
+   * When off, items render in declaration order (backgrounds by `weight`) and `page` is ignored.
+   */
+  pagesEnabled?: boolean;
   /** Screen content and any `AzBackground`/`AzOnscreen` declarations. */
   children: React.ReactNode;
 }
+
+/**
+ * Orders the background "book" back-to-front (first element is drawn first / backmost). When
+ * `pagesEnabled`, a higher page draws further back, with `weight` breaking ties within a page;
+ * otherwise falls back to the legacy weight sort.
+ */
+export const orderBackgrounds = (items: AzBackgroundItem[], pagesEnabled: boolean): AzBackgroundItem[] =>
+  pagesEnabled
+    ? [...items].sort((a, b) => (b.page - a.page) || (a.weight - b.weight))
+    : [...items].sort((a, b) => a.weight - b.weight);
+
+/**
+ * Orders the onscreen "book" back-to-front (first element is drawn first / backmost). When
+ * `pagesEnabled`, a higher page draws further back, with declaration order preserved within a page
+ * (stable sort); otherwise declaration order is preserved unchanged.
+ */
+export const orderOnscreen = (items: AzOnscreenItem[], pagesEnabled: boolean): AzOnscreenItem[] =>
+  pagesEnabled ? [...items].sort((a, b) => b.page - a.page) : items;
 
 const getAlignmentStyle = (alignment: AzAlignment, dockingSide: AzDockingSide) => {
   // Mirror logic for right docking
@@ -142,6 +177,7 @@ export const AzHostActivityLayout: React.FC<AzHostActivityLayoutProps> = (props)
     navController,
     currentDestination,
     dockingSide = AzDockingSide.LEFT,
+    pagesEnabled = true,
     children,
     ...railProps
   } = props;
@@ -215,7 +251,7 @@ export const AzHostActivityLayout: React.FC<AzHostActivityLayoutProps> = (props)
     <AzHostContext.Provider value={hostContext}>
       <View style={styles.container}>
         {/* Backgrounds */}
-        {[...backgrounds].sort((a, b) => a.weight - b.weight).map(bg => (
+        {orderBackgrounds(backgrounds, pagesEnabled).map(bg => (
           <View key={bg.id} style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
             {bg.content}
           </View>
@@ -242,7 +278,7 @@ export const AzHostActivityLayout: React.FC<AzHostActivityLayoutProps> = (props)
               paddingRight: dockingSide === AzDockingSide.RIGHT ? collapsedRailWidth : 0,
             }
         ]} pointerEvents="box-none">
-            {onscreenItems.map(item => (
+            {orderOnscreen(onscreenItems, pagesEnabled).map(item => (
                 <View key={item.id} style={getAlignmentStyle(item.alignment, dockingSide)} pointerEvents="box-none">
                     {item.content}
                 </View>
