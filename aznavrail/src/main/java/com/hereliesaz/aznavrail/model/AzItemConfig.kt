@@ -39,5 +39,10 @@ data class AzItemConfig(
     val color: Color? = null,
     val textColor: Color? = null,
     val fillColor: Color? = null,
-    val shape: AzButtonShape? = null
+    val shape: AzButtonShape? = null,
+    /**
+     * Host items only: auto-expand the first time the host appears (user can
+     * still collapse).
+     */
+    val initiallyExpanded: Boolean = false
 )

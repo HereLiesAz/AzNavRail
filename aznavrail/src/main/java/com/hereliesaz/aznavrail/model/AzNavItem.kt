@@ -76,6 +76,11 @@ data class AzNavItem(
     val isSubItem: Boolean = false,
     val hostId: String? = null,
     val isExpanded: Boolean = false,
+    /**
+     * When true, the host is auto-expanded the first time it appears (the user
+     * can still collapse it).
+     */
+    val initiallyExpanded: Boolean = false,
     val info: String? = null,
     val isRelocItem: Boolean = false,
     val hiddenMenuItems: List<HiddenMenuItem>? = null,

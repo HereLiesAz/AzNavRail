@@ -1,23 +1,23 @@
 package com.hereliesaz.aznavrail
 
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
+import com.hereliesaz.aznavrail.model.AzAdvancedConfig
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
+import com.hereliesaz.aznavrail.model.AzItemConfig
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
-import com.hereliesaz.aznavrail.model.AzItemConfig
-import com.hereliesaz.aznavrail.model.AzAdvancedConfig
 import java.util.Collections.emptySet
 
 /**
@@ -292,12 +292,29 @@ interface AzNavRailScope {
     fun azMenuHostItem(id: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, onClick: (() -> Unit)? = null)
 
     /**
-     * Adds a Host Item to the rail. Sub-items targeting [id] via their `hostId` parameter expand
-     * inline beneath this host when it is tapped (rail flavor).
+     * Adds a Host Item to the rail. Sub-items targeting [id] via their
+     * `hostId` parameter expand inline beneath this host when it is tapped
+     * (rail flavor).
      *
      * Parameters mirror [azMenuHostItem]; see that method's docs for details.
      */
-    fun azRailHostItem(id: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, onClick: (() -> Unit)? = null)
+    fun azRailHostItem(
+        id: String,
+        text: String,
+        route: String? = null,
+        content: Any? = null,
+        color: Color? = null,
+        shape: AzButtonShape? = null,
+        disabled: Boolean = false,
+        screenTitle: String? = null,
+        info: String? = null,
+        classifiers: Set<String> = emptySet(),
+        menuText: String? = null,
+        textColor: Color? = null,
+        fillColor: Color? = null,
+        initiallyExpanded: Boolean = false,
+        onClick: (() -> Unit)? = null
+    )
 
     /**
      * Adds a Sub Item to a Host Item in the menu.
@@ -324,13 +341,31 @@ interface AzNavRailScope {
     fun azMenuSubHostItem(id: String, hostId: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, onClick: (() -> Unit)? = null)
 
     /**
-     * Adds a Sub Item that is itself a Host Item to the rail. It is a child of [hostId] (so it only
-     * renders while that parent host is expanded) and, like any host, expands inline to reveal its
-     * own sub-items. Parameters mirror [azMenuSubHostItem]. Hosts can nest to any depth.
+     * Adds a Sub Item that is itself a Host Item to the rail. It is a child of
+     * [hostId] (so it only renders while that parent host is expanded) and,
+     * like any host, expands inline to reveal its own sub-items. Parameters
+     * mirror [azMenuSubHostItem]. Hosts can nest to any depth.
      *
      * @param hostId The ID of the parent Host Item this sub-host belongs to.
      */
-    fun azRailSubHostItem(id: String, hostId: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, onClick: (() -> Unit)? = null)
+    fun azRailSubHostItem(
+        id: String,
+        hostId: String,
+        text: String,
+        route: String? = null,
+        content: Any? = null,
+        color: Color? = null,
+        shape: AzButtonShape? = null,
+        disabled: Boolean = false,
+        screenTitle: String? = null,
+        info: String? = null,
+        classifiers: Set<String> = emptySet(),
+        menuText: String? = null,
+        textColor: Color? = null,
+        fillColor: Color? = null,
+        initiallyExpanded: Boolean = false,
+        onClick: (() -> Unit)? = null
+    )
 
     /**
      * Adds a Sub Toggle to a Host Item in the menu. The toggle only renders when its host is
@@ -810,8 +845,43 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         addItem(id = id, text = text, menuText = menuText, config = AzItemConfig(classifiers = classifiers, route = route, screenTitle = screenTitle, info = info, isRailItem = false, disabled = disabled, isHost = true, content = content, color = color, textColor = textColor, fillColor = fillColor, shape = shape), onClick = onClick ?: {})
     }
 
-    override fun azRailHostItem(id: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, onClick: (() -> Unit)?) {
-        addItem(id = id, text = text, menuText = menuText, config = AzItemConfig(classifiers = classifiers, route = route, screenTitle = screenTitle, info = info, isRailItem = true, disabled = disabled, isHost = true, content = content, color = color, textColor = textColor, fillColor = fillColor, shape = shape), onClick = onClick ?: {})
+    override fun azRailHostItem(
+        id: String,
+        text: String,
+        route: String?,
+        content: Any?,
+        color: Color?,
+        shape: AzButtonShape?,
+        disabled: Boolean,
+        screenTitle: String?,
+        info: String?,
+        classifiers: Set<String>,
+        menuText: String?,
+        textColor: Color?,
+        fillColor: Color?,
+        initiallyExpanded: Boolean,
+        onClick: (() -> Unit)?
+    ) {
+        addItem(
+            id = id,
+            text = text,
+            menuText = menuText,
+            config = AzItemConfig(
+                classifiers = classifiers,
+                route = route,
+                screenTitle = screenTitle,
+                info = info,
+                isRailItem = true,
+                disabled = disabled,
+                isHost = true,
+                content = content,
+                color = color,
+                textColor = textColor,
+                fillColor = fillColor,
+                shape = shape,
+                initiallyExpanded = initiallyExpanded
+            ),
+            onClick = onClick ?: {})
     }
 
     override fun azMenuSubItem(id: String, hostId: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, onClick: (() -> Unit)?) {
@@ -827,9 +897,47 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         addItem(id = id, text = text, menuText = menuText, config = AzItemConfig(classifiers = classifiers, route = route, screenTitle = screenTitle, info = info, isRailItem = false, disabled = disabled, isHost = true, isSubItem = true, hostId = hostId, content = content, color = color, textColor = textColor, fillColor = fillColor, shape = shape), onClick = onClick ?: {})
     }
 
-    override fun azRailSubHostItem(id: String, hostId: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, onClick: (() -> Unit)?) {
+    override fun azRailSubHostItem(
+        id: String,
+        hostId: String,
+        text: String,
+        route: String?,
+        content: Any?,
+        color: Color?,
+        shape: AzButtonShape?,
+        disabled: Boolean,
+        screenTitle: String?,
+        info: String?,
+        classifiers: Set<String>,
+        menuText: String?,
+        textColor: Color?,
+        fillColor: Color?,
+        initiallyExpanded: Boolean,
+        onClick: (() -> Unit)?
+    ) {
         checkSubHost(id, hostId, "azRailSubHostItem")
-        addItem(id = id, text = text, menuText = menuText, config = AzItemConfig(classifiers = classifiers, route = route, screenTitle = screenTitle, info = info, isRailItem = true, disabled = disabled, isHost = true, isSubItem = true, hostId = hostId, content = content, color = color, textColor = textColor, fillColor = fillColor, shape = shape), onClick = onClick ?: {})
+        addItem(
+            id = id,
+            text = text,
+            menuText = menuText,
+            config = AzItemConfig(
+                classifiers = classifiers,
+                route = route,
+                screenTitle = screenTitle,
+                info = info,
+                isRailItem = true,
+                disabled = disabled,
+                isHost = true,
+                isSubItem = true,
+                hostId = hostId,
+                content = content,
+                color = color,
+                textColor = textColor,
+                fillColor = fillColor,
+                shape = shape,
+                initiallyExpanded = initiallyExpanded
+            ),
+            onClick = onClick ?: {})
     }
 
     /**
@@ -955,7 +1063,10 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
                 isRailItem = config.isRailItem, disabled = config.disabled, isHost = config.isHost,
                 isSubItem = config.isSubItem, hostId = config.hostId, info = config.info,
                 classifiers = config.classifiers, content = config.content, color = config.color,
-                textColor = config.textColor, fillColor = config.fillColor, shape = config.shape
+                textColor = config.textColor,
+                fillColor = config.fillColor,
+                shape = config.shape,
+                initiallyExpanded = config.initiallyExpanded
             )
         )
     }
