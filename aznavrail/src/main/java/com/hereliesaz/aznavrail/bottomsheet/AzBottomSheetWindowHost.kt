@@ -152,7 +152,7 @@ class AzBottomSheetWindowHost(
         // system change (rotation, IME, etc.).
         ViewCompat.requestApplyInsets(composeView)
 
-        lifecycleOwner.lifecycleScope.launch {
+        collectJob = lifecycleOwner.lifecycleScope.launch {
             lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 // Combine in configState (via snapshotFlow) alongside the detent so updateConfig()
                 // re-applies the WindowManager layout immediately, not just on the next detent change.
@@ -180,13 +180,15 @@ class AzBottomSheetWindowHost(
     /** Removes the sheet (and decor) overlay windows. Safe to call multiple times. */
     fun detach() {
         val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        // Cancel the collector before removing the view so it can't fire updateViewLayout() on an
+        // already-detached window in the gap between removal and cancellation.
+        collectJob?.cancel()
+        collectJob = null
         sheetView?.let { runCatching { wm.removeView(it) } }
         sheetView = null
         sheetParams = null
         lastNavBarInsetPx = 0
         navBarExtensionState.value = 0
-        collectJob?.cancel()
-        collectJob = null
         navBarDecor?.detach()
         navBarDecor = null
     }
@@ -308,6 +310,9 @@ class AzBottomSheetWindowHost(
 
     /** Exposed for tests: the live sheet view, or null when detached. */
     internal fun sheetViewForTest(): View? = sheetView
+
+    /** Exposed for tests: whether the detent/config collector coroutine is still running. */
+    internal fun isCollectorActiveForTest(): Boolean = collectJob?.isActive == true
 
     @Suppress("unused")
     private val unusedView: View? get() = sheetView

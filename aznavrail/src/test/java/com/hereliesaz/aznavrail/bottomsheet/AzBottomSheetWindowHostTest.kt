@@ -80,6 +80,35 @@ class AzBottomSheetWindowHostTest {
     }
 
     @Test
+    fun detach_cancelsCollectorCoroutine() {
+        val ctx = newContext()
+        val owner = TestOwner().also { it.registry.currentState = Lifecycle.State.RESUMED }
+        val controller = AzSheetController(initial = AzSheetDetent.PEEK)
+        val host = AzBottomSheetWindowHost(
+            context = ctx,
+            controller = controller,
+            lifecycleOwner = owner,
+            viewModelStoreOwner = owner,
+            savedStateRegistryOwner = owner,
+        ) { Box(modifier = androidx.compose.ui.Modifier) {} }
+
+        host.attach()
+        idleMain()
+        assertTrue(
+            "After attach() the detent/config collector must be running.",
+            host.isCollectorActiveForTest(),
+        )
+
+        host.detach()
+        idleMain()
+        assertFalse(
+            "detach() must cancel the collector coroutine — it was previously leaked because the " +
+                "launch result was never assigned to collectJob.",
+            host.isCollectorActiveForTest(),
+        )
+    }
+
+    @Test
     fun attach_isIdempotent() {
         val ctx = newContext()
         val owner = TestOwner().also { it.registry.currentState = androidx.lifecycle.Lifecycle.State.RESUMED }
