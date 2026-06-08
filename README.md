@@ -525,32 +525,6 @@ const items: AzNavItem[] = [
 ];
 ```
 
-
-### Documentation
-
-The library includes a comprehensive **Complete Guide** (`docs/AZNAVRAIL_COMPLETE_GUIDE.md`) containing:
-* Full Getting Started instructions.
-* Complete API and DSL references.
-* Layout rules and best practices.
-* Complete Sample App source code.
-
-## License
-
-Copyright 2024 The AzNavRail Authors
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    https://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-
 ## Tutorial Framework
 
 AzNavRail ships a full interactive tutorial framework. Tutorials are scripted as sequences of scenes and cards, rendered over a dimmed overlay with optional item spotlights. The framework supports four advance conditions, variable-driven branching, event-driven advances, checklist cards, media cards, and cross-platform persistence of read state.
@@ -750,3 +724,27 @@ The repo ships two showcase apps:
 
 - **`SampleApp/`** — Android `MainActivity` that demonstrates every public capability: rail/menu items at every shape, both nested rail alignments, reloc items with `keepNestedRailOpen`, live theming, help overlay, tutorials, FAB-mode rail drag with `AzNavRailSimpleOverlayService`, bottom sheets, forms. See `SampleApp/COVERAGE.md` for the symbol-by-symbol audit.
 - **`sample-pwa/`** — Vite + React + react-native-web showcase deployed to GitHub Pages at **<https://HereLiesAz.github.io/AzNavRail/>** via `.github/workflows/jekyll-gh-pages.yml`. Demonstrates the React port's bottom sheet, shape options, both nested alignments, and the help overlay.
+
+## Documentation
+
+The library includes a comprehensive **Complete Guide** (`docs/AZNAVRAIL_COMPLETE_GUIDE.md`) containing:
+* Full Getting Started instructions.
+* Complete API and DSL references.
+* Layout rules and best practices.
+* Complete Sample App source code.
+
+## License
+
+Copyright 2024 The AzNavRail Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
