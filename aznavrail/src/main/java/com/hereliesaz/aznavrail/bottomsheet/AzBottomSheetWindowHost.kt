@@ -167,6 +167,8 @@ class AzBottomSheetWindowHost(
         sheetView = null
         sheetParams = null
         lastNavBarInsetPx = 0
+        collectJob?.cancel()
+        collectJob = null
         navBarDecor?.detach()
         navBarDecor = null
     }
