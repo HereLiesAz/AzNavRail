@@ -73,7 +73,7 @@ internal fun AzBottomSheetShell(
     // Resolve the detent against the exposed (above-bar) height, then add the nav-bar band back so
     // the card grows downward by exactly the extension without shifting its top edge.
     val targetHeight =
-        heightForDetent(controller.detent, parentHeight - navBarExtensionDp, config) + navBarExtensionDp
+        heightForDetent(controller.detent, (parentHeight - navBarExtensionDp).coerceAtLeast(0.dp), config) + navBarExtensionDp
     val animatedHeight by animateDpAsState(
         targetValue = if (animate) targetHeight else targetHeight,
         label = "az-sheet-height",
