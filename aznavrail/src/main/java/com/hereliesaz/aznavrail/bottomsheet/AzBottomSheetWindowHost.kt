@@ -116,8 +116,9 @@ class AzBottomSheetWindowHost(
         // Modifier.navigationBarsPadding() resolve inside the content. We record the nav-bar
         // bottom inset (for tests/diagnostics) but return the insets unchanged — never consumed,
         // so both the Compose tree and the app below keep seeing them.
-        ViewCompat.setOnApplyWindowInsetsListener(composeView) { _, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(composeView) { v, insets ->
             lastNavBarInsetPx = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+            ViewCompat.onApplyWindowInsets(v, insets)
             insets
         }
 
