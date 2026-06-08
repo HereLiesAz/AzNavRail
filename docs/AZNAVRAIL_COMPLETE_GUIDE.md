@@ -879,6 +879,11 @@ The in-tree flavor animates between detent heights with `animateDpAsState`; the 
 
 The overlay also **delivers real window insets to the content**: an `OnApplyWindowInsetsListener` on the host `ComposeView` lets `WindowInsets.navigationBars` / `Modifier.navigationBarsPadding()` resolve to the actual system navigation-bar inset inside the `content` slot, so consumers no longer have to measure the nav bar themselves. The insets are forwarded un-consumed, so the app below still receives them.
 
+**Navigation-mode awareness.** The library detects the device's navigation mode via the `Settings.Secure` `navigation_mode` key (no permission required). Two behaviors follow:
+
+- `AzSheetConfig.drawBehindNavBar` (default `false`): when `true` **and** the device uses button navigation (3-button / 2-button), the sheet draws *behind* the system navigation bar — the exposed height above the bar is unchanged, but the bar is forced see-through so the sheet content shows through it. In the in-tree flavor this sets the host Activity's `navigationBarColor` transparent (and disables contrast enforcement on API 29+), restoring the previous values when the sheet leaves the composition; in the system-overlay flavor `AzNavBarDecorWindow` paints at a capped semi-transparent alpha (`minOf(backgroundAlpha, 0.5)`) so the sheet window behind it shows through. It is a no-op in gesture navigation.
+- **Automatic, no flag:** in gesture navigation `AzHostActivityLayout` imposes **zero** bottom margin on on-screen content (it runs edge-to-edge — there is no button bar to clear). Button-navigation devices keep the usual `max(10% content safe-zone, nav-bar inset)` bottom margin. The rail's own symmetric safe-zone is unaffected.
+
 ### 10.7 LogKitty migration
 
 LogKitty currently maintains its own `SheetController`, `LogBottomSheet`, and nav-bar-decoration code inside `LogKittyOverlayService`. To replace them with AzNavRail's shell:

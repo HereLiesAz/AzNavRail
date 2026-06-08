@@ -106,6 +106,10 @@ The Android callback receives `(itemId: String, item: AzNavItem)`. The React cal
 - Parity note: `<AzBottomSheet config={...}>` already recomputes detent heights when the
   `config` prop changes, which is the React analog of the Android `AzBottomSheetWindowHost.updateConfig()` live-resize fix in `9.2`. Window insets remain handled by
   `AzBottomSheetInsetAware` (see `KNOWN_GAPS.md`).
+- No web analog: the Android `9.2` `AzSheetConfig.drawBehindNavBar` (draw the sheet behind a
+  forced-transparent system navigation bar on button-nav devices) and the automatic
+  gesture-navigation zero-bottom-margin have no equivalent on the web (no system navigation bar
+  or navigation mode). See `KNOWN_GAPS.md`.
 
 ## What's new in 0.2.0
 

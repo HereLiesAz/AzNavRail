@@ -33,6 +33,13 @@ import androidx.compose.ui.unit.dp
  *   to animate between detent heights. The system-overlay flavor always hard-jumps to match LogKitty's look.
  * @property cornerRadiusDp Top-corner radius of the sheet card.
  * @property handleVisible When `true`, draws a centered drag-handle pill at the top of the sheet.
+ * @property drawBehindNavBar When `true` **and** the device uses button navigation (3-button /
+ *   2-button), the sheet draws behind the system navigation bar: its exposed height above the bar
+ *   is unchanged, but the navigation-bar background is forced semi-transparent / see-through so
+ *   the sheet content shows through it. Has no effect in gesture navigation (the bar is already a
+ *   thin pill). In-tree this makes the host Activity's navigation bar see-through; in the
+ *   system-overlay flavor it makes the [com.hereliesaz.aznavrail.bottomsheet.AzBottomSheetWindowHost]
+ *   navigation-bar decoration paint semi-transparent. Defaults to `false`.
  */
 data class AzSheetConfig(
     val backgroundColor: Color = Color.Unspecified,
@@ -53,4 +60,5 @@ data class AzSheetConfig(
     val animateInTree: Boolean = true,
     val cornerRadiusDp: Dp = 16.dp,
     val handleVisible: Boolean = true,
+    val drawBehindNavBar: Boolean = false,
 )

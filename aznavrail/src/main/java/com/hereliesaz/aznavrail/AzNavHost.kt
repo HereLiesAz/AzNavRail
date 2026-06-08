@@ -26,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
@@ -54,9 +55,11 @@ import com.hereliesaz.aznavrail.bottomsheet.AzBottomSheet
 import com.hereliesaz.aznavrail.bottomsheet.AzSheetController
 import com.hereliesaz.aznavrail.internal.AzBottomSheetItem
 import com.hereliesaz.aznavrail.internal.AzLayoutConfig
+import com.hereliesaz.aznavrail.internal.AzNavMode
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.internal.AzRailLayoutHelper
 import com.hereliesaz.aznavrail.internal.AzSafeZones
+import com.hereliesaz.aznavrail.internal.azResolveSafeBottom
 import com.hereliesaz.aznavrail.internal.AzVisualSide
 import com.hereliesaz.aznavrail.tutorial.LocalAzTutorialController
 import com.hereliesaz.aznavrail.tutorial.rememberAzTutorialController
@@ -213,16 +216,19 @@ fun AzHostActivityLayout(
     content: AzNavHostScope.() -> Unit
 ) {
     val context = LocalContext.current
-    LaunchedEffect(context) {
-        var currentContext = context
-        var activity: Activity? = null
+    val activity = remember(context) {
+        var currentContext: android.content.Context = context
+        var found: Activity? = null
         while (currentContext is ContextWrapper) {
             if (currentContext is Activity) {
-                activity = currentContext
+                found = currentContext
                 break
             }
             currentContext = currentContext.baseContext
         }
+        found
+    }
+    LaunchedEffect(activity) {
         activity?.let {
             WindowCompat.setDecorFitsSystemWindows(it.window, false)
             // Deprecated direct property access replaced with WindowCompat or ignored if handled by themes/edge-to-edge
@@ -272,8 +278,44 @@ fun AzHostActivityLayout(
     val calculatedTop = with(density) { (screenHeight * AzLayoutConfig.ContentSafeTopPercent).toDp() }
     val calculatedBottom = with(density) { (screenHeight * AzLayoutConfig.ContentSafeBottomPercent).toDp() }
 
+    // In gesture navigation the library imposes no bottom margin — on-screen content runs fully
+    // edge-to-edge at the bottom (there is no button bar to clear). In button navigation we keep
+    // the larger of the 10% content safe-zone and the system navigation-bar inset.
+    val gestureNav = AzNavMode.isGestureNav(context)
     val safeTop = max(calculatedTop, systemBars.calculateTopPadding())
-    val safeBottom = max(calculatedBottom, systemBars.calculateBottomPadding())
+    val safeBottom = azResolveSafeBottom(gestureNav, calculatedBottom, systemBars.calculateBottomPadding())
+
+    // Feature 1 (in-tree): when any registered sheet opts into `drawBehindNavBar` and the device
+    // uses button navigation, force the Activity's navigation bar see-through so the sheet — which
+    // already draws to the bottom edge — is visible behind it. The exposed height above the bar is
+    // unchanged. No-op in gesture navigation. Prior window values are restored on dispose.
+    val wantDrawBehindNavBar = scope.bottomSheets.any { it.config.drawBehindNavBar }
+    DisposableEffect(activity, wantDrawBehindNavBar, gestureNav) {
+        val window = activity?.window
+        if (window != null && wantDrawBehindNavBar && !gestureNav) {
+            @Suppress("DEPRECATION")
+            val previousColor = window.navigationBarColor
+            val previousContrast = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                window.isNavigationBarContrastEnforced
+            } else {
+                null
+            }
+            @Suppress("DEPRECATION")
+            window.navigationBarColor = android.graphics.Color.TRANSPARENT
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                window.isNavigationBarContrastEnforced = false
+            }
+            onDispose {
+                @Suppress("DEPRECATION")
+                window.navigationBarColor = previousColor
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q && previousContrast != null) {
+                    window.isNavigationBarContrastEnforced = previousContrast
+                }
+            }
+        } else {
+            onDispose { }
+        }
+    }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         scope.backgrounds.sortedBy { it.weight }.forEach { item ->

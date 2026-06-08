@@ -32,6 +32,18 @@ gesture-bar inset on every platform:
 If pixel-perfect parity with the Android `windowInsetsPadding(WindowInsets.navigationBars)`
 result matters on web, callers should provide their own bottom padding via the `style` prop.
 
+## Navigation-mode behaviors (`drawBehindNavBar`, gesture-nav margin)
+
+The Android library detects the system navigation mode (3-button / 2-button / gesture) via
+`Settings.Secure.navigation_mode` and uses it to (a) optionally draw the bottom sheet behind a
+forced-transparent system navigation bar (`AzSheetConfig.drawBehindNavBar`) on button-nav
+devices, and (b) automatically drop all bottom margin in gesture navigation.
+
+The web has no system navigation bar and no equivalent "navigation mode", so neither behavior
+has a meaningful web analog. The closest web primitive is `env(safe-area-inset-bottom)`, already
+applied by `AzBottomSheetInsetAware`, which is `0` on devices without a home indicator. No
+`drawBehindNavBar` flag is exposed on the React `AzSheetConfig`.
+
 ## `AzActivity` / `AzGraphInterface`
 
 The Android library exposes an `AzActivity` base class plus a KSP-generated
