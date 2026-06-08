@@ -75,6 +75,7 @@ class AzBottomSheetWindowHost(
     private var sheetParams: WindowManager.LayoutParams? = null
     private var navBarDecor: AzNavBarDecorWindow? = null
     private var lastNavBarInsetPx: Int = 0
+    private var collectJob: kotlinx.coroutines.Job? = null
 
     /**
      * Adds the sheet's overlay window. Idempotent: a second call without an intervening [detach] is a no-op.
