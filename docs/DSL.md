@@ -59,7 +59,7 @@ fun azAdvanced(
 )
 ~~~
 
-`onInteraction` is called whenever any rail item is interacted with — click, toggle, cycler advance, nested rail open, or reloc drag. It receives the item's `id` and the `AzNavItem` itself, enabling analytics integration and UI feedback without per-item callbacks.
+`onInteraction` is called whenever any rail item is interacted with — click, toggle, cycler advance, nested rail open, reloc drag, or host expand/collapse. It fires for both leaf items (`azRailItem` / `azRailSubItem`) and host items (`azRailHostItem`), in both the compact rail and the expanded menu, so opening a host menu is observable just like tapping a leaf. It receives the item's `id` and the `AzNavItem` itself, enabling analytics, UI feedback, and tutorial advancement (pair it with `controller.fireEvent(...)` and an `AzAdvanceCondition.Event` card) without per-item callbacks.
 
 ## Hidden Menu Builders (for `azRailRelocItem`)
 * `listItem(text, route)`

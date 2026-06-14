@@ -54,7 +54,7 @@ All items now support the following **Reactive Binding Fields**. Provide the nam
 * `isLoadingProperty`: Binds the global loading spinner to a `Boolean` property.
 * `helpEnabled`: When `true`, auto-injects a Help item into the menu drawer if no explicit `azHelpRailItem` / `azHelpSubItem` is registered. The overlay itself is toggled exclusively by tapping a help item (there is no public API to open it externally).
 * `helpList`: An optional mapping of `RailItem` IDs to help texts to be shown in the help overlay alongside `info`.
-* `onInteraction`: Optional callback `((String, AzNavItem) -> Unit)?` invoked whenever any rail item is interacted with (click, toggle, cycler advance, nested rail open, reloc drag). Receives the item's ID and the `AzNavItem` itself.
+* `onInteraction`: Optional callback `((String, AzNavItem) -> Unit)?` invoked whenever any rail item is interacted with (click, toggle, cycler advance, nested rail open, reloc drag, **and host expand/collapse**). Receives the item's ID and the `AzNavItem` itself. Fires for both leaf items (`azRailItem` / `azRailSubItem`) and host items (`azRailHostItem`), in both the compact rail and the expanded menu — so a host tap that opens a sub-menu is observable exactly like a leaf tap. This is the supported way to react to "the user used the rail" (e.g. to drive a tutorial's `AzAdvanceCondition.Event` via `controller.fireEvent(...)`); it does not require — and is not affected by — the rail consuming its own taps.
 
 ### Help overlay scoping & rendering
 
