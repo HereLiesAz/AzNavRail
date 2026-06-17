@@ -1,5 +1,5 @@
 import { parseRepo, humanize, parseContents, orderToc } from '../services/githubDocs';
-import { parseLinks, extractOg } from '../services/moreFromAz';
+import { parseLinks, extractOg, derivePlayUrl } from '../services/moreFromAz';
 
 describe('githubDocs', () => {
   it('parseRepo extracts owner/repo and strips .git', () => {
@@ -45,6 +45,29 @@ describe('moreFromAz', () => {
     expect(version).toBe(7);
     expect(links).toHaveLength(2);
     expect(links[1].web).toBe('w');
+  });
+
+  it('derivePlayUrl builds the conventional package id from a github repo', () => {
+    expect(derivePlayUrl('https://github.com/HereLiesAz/CueDetat')).toBe(
+      'https://play.google.com/store/apps/details?id=com.hereliesaz.cuedetat'
+    );
+    expect(derivePlayUrl('https://gitlab.com/a/b')).toBeUndefined();
+  });
+
+  it('parseLinks tolerates pasted bare-URL manifests', () => {
+    const messy = `{ "version": 5, "apps": [
+      { https://github.com/HereLiesAz/AzNavRail }
+      {
+        https://github.com/HereLiesAz/CueDetat
+        https://play.google.com/store/apps/details?id=com.hereliesaz.cuedetat
+      }
+      { }
+    ] }`;
+    const [version, links] = parseLinks(messy);
+    expect(version).toBe(5);
+    expect(links).toHaveLength(2);
+    expect(links[0].github).toBe('https://github.com/HereLiesAz/AzNavRail');
+    expect(links[1].play).toContain('id=com.hereliesaz.cuedetat');
   });
 
   it('extractOg pulls content regardless of attribute order', () => {

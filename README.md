@@ -547,25 +547,36 @@ const settings: AzNavRailSettings = {
 
 A built-in carousel of the library author's other apps, reachable from a **"More from Az"** entry in
 the About screen and/or a pinned **"More"** rail item. It is driven by a **link-only**
-[`more-from-az.json`](more-from-az.json) maintained in *this* repo — each entry is just one or two
-links and the **name, icon, and description are auto-populated** by resolving them (Google Play
-OpenGraph tags, a website/PWA's OpenGraph tags, or the GitHub repository API):
+[`more-from-az.json`](more-from-az.json) maintained in *this* repo — **just paste links**; the
+**name, icon, and description are auto-populated** by resolving them (Google Play OpenGraph tags, a
+website/PWA's OpenGraph tags, or the GitHub repository API).
+
+In the common case you only paste a **GitHub** link: the Play Store URL is **auto-derived** from the
+repo as `com.<owner>.<repo>` (e.g. `HereLiesAz/CueDetat` → `…?id=com.hereliesaz.cuedetat`) and used
+only if that listing actually exists. Add an explicit `play` (e.g. an internal-test link) or `web`
+(PWA) only when the convention doesn't apply:
 
 ```json
 {
   "version": 1,
   "apps": [
     { "github": "https://github.com/HereLiesAz/AzNavRail" },
-    { "play": "https://play.google.com/store/apps/details?id=com.example", "github": "https://github.com/you/example" },
+    { "github": "https://github.com/HereLiesAz/CueDetat" },
+    { "github": "https://github.com/you/example", "play": "https://play.google.com/apps/internaltest/123" },
     { "web": "https://your-pwa.example.com" }
   ]
 }
 ```
 
-- **Self-versioning:** the `version` integer is **auto-incremented by a GitHub Action**
-  (`.github/workflows/bump-more-from-az.yml`) whenever the file changes, committed back with
-  `[skip ci]`. The rail reads `version` to refresh its cache — **so you never cut a release just to
-  add an app.** Do not hand-edit `version`.
+You don't even have to write valid JSON: paste bare URLs (one app per line, or inside `{ }` blocks)
+and the **normalize workflow** (`.github/workflows/bump-more-from-az.yml`) tidies the file into clean
+JSON and bumps `version` on commit. The rail parser is also lenient, so a half-formatted manifest
+still renders.
+
+- **Self-versioning & self-normalizing:** the same GitHub Action normalizes your paste into clean
+  JSON and **auto-increments `version`** whenever the file changes, committed back with `[skip ci]`
+  — **so you never cut a release just to add an app**, and never hand-format JSON. Do not hand-edit
+  `version`.
 - **PWAs supported:** a `web` link is treated as a website/PWA and gets an **Open** button.
 - **Config & placement:**
 

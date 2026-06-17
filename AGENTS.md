@@ -178,6 +178,11 @@ restores the browser behavior.
 pinned "More" rail item (`moreRailItem`). It is driven by a **link-only** `more-from-az.json` at the
 repo root: each entry is just `{ github?, play?, web? }` and the name/icon/description are
 auto-populated by resolving the link (Play OpenGraph, website/PWA OpenGraph, or GitHub repo API).
+The maintainer is meant to **just paste links** — a GitHub link is enough, because the Play URL is
+auto-derived from the repo (`com.<owner>.<repo>`) and used only if that listing resolves. The file
+need not even be valid JSON on paste: the bump workflow normalizes it (URLs classified by host:
+github.com→github, play.google.com→play, else→web; grouped per `{}` block or per line) and the rail
+parsers (`parseLinks`) fall back to the same lenient scan.
 Everything is built from the rail's own components (`AzButton`, `AzLoad`, `AzDivider`,
 `AutoSizeText`) and tokens (`activeColor`, `translucentBackground`, `defaultShape`, `headerIconShape`)
 so it matches the rail's aesthetic.
