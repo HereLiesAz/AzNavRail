@@ -461,7 +461,7 @@ fun AzNavRail(
                         color = if (scope.translucentBackground != Color.Unspecified) scope.translucentBackground else MaterialTheme.colorScheme.surface,
                         shape = RoundedCornerShape(12.dp),
                         tonalElevation = 2.dp,
-                        modifier = Modifier.shadow(8.dp, RoundedCornerShape(12.dp))
+                        shadowElevation = 8.dp
                     ) {
                         val dropScroll = rememberScrollState()
                         if (scope.dropdownSource == AzDropdownSource.MENU) {
