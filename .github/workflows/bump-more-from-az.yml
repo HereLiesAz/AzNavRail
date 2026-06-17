@@ -1,0 +1,42 @@
+name: Bump more-from-az version
+
+# Auto-increments the `version` integer in more-from-az.json whenever its content changes, so the
+# rail's "More from Az" carousel can invalidate its cache without cutting a library release.
+#
+# Loop safety: the bot commit message contains [skip ci], which GitHub honors to skip ALL workflows
+# for that push (so neither this workflow nor android-sample-build.yml re-runs on the bump commit).
+# The job is additionally guarded against the bot actor and [skip ci] messages.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'more-from-az.json'
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    if: github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[skip ci]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Increment version
+        run: |
+          current=$(jq '.version' more-from-az.json)
+          next=$((current + 1))
+          tmp=$(mktemp)
+          jq ".version = $next" more-from-az.json > "$tmp" && mv "$tmp" more-from-az.json
+          echo "Bumped more-from-az version $current -> $next"
+
+      - name: Commit bumped version
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: bump more-from-az version [skip ci]"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "41898282+github-actions[bot]@users.noreply.github.com"
+          file_pattern: more-from-az.json

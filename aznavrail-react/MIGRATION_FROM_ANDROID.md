@@ -51,6 +51,23 @@ content the full width. It excludes FAB/dragging, rail↔menu expansion, `noMenu
 physical docking, the footer, nested-rail popups, the bleeding app-name header, and the help overlay
 — matching the Android behaviour. `headerIconSize` is a pixel `number` on React vs a `Dp` on Android.
 
+### In-app About reader & "More from Az"
+
+| Android | React |
+| --- | --- |
+| `azAbout(inAppAbout = true)` | `<AzNavRail inAppAbout />` / `settings.inAppAbout` |
+| `azAbout(moreFromAzEnabled = true)` | `moreFromAzEnabled` |
+| `azAbout(moreRailItem = true)` | `moreRailItem` |
+| `azAbout(moreFromAzJsonUrl = "…")` | `moreFromAzJsonUrl` |
+| `azConfig(appRepositoryUrl = "…")` | `appRepositoryUrl` |
+
+The footer "About" opens an in-app markdown reader that auto-discovers the repo's docs (root +
+`docs/`) via the GitHub API; "More from Az" is a link-only, CI-versioned carousel. Both are themed
+from `activeColor`/`translucentBackground` and built from the library's own components. Markdown is
+rendered by a small self-contained renderer (no `react-markdown` dependency). **Web caveat:** Play /
+website link metadata for "More from Az" is subject to CORS and may not resolve in the browser build
+(GitHub links always do); native resolves all. Use `appRepositoryUrl` to point the reader at your repo.
+
 ## Bottom sheets
 
 The Android library registers sheets via `AzNavHostScope.azBottomSheet(controller, config, ...)`

@@ -165,4 +165,28 @@ Drop-down menu mode: the rail can be used as a drop-down menu via `dropdownMenu 
   nested-rail popups, the rail width settings, the bleeding app-name header, the rail safe-zone
   padding, and the help overlay/tutorials. Host items still expand inline as an accordion.
 
+In-app About reader + "More from Az": the footer "About" item opens a built-in, full-screen, themed
+markdown reader (an overlay drawn over the live UI, like the help overlay) instead of opening the repo
+URL in a browser. It auto-discovers the consuming app's docs by listing the `.md` files in the
+repository root and the `docs/` folder of `appRepositoryUrl` via the GitHub contents API, builds a
+table of contents, and renders each doc inline. Fetches are cached (ETag + TTL) to respect GitHub's
+unauthenticated rate limit; offline/limited shows the last cached copy. Public repos only. Configured
+via `azAbout(inAppAbout, moreFromAzEnabled, moreFromAzJsonUrl, moreRailItem)`; `inAppAbout = false`
+restores the browser behavior.
+
+"More from Az" is a carousel of the author's other apps reachable from the About screen and/or a
+pinned "More" rail item (`moreRailItem`). It is driven by a **link-only** `more-from-az.json` at the
+repo root: each entry is just `{ github?, play?, web? }` and the name/icon/description are
+auto-populated by resolving the link (Play OpenGraph, website/PWA OpenGraph, or GitHub repo API).
+Everything is built from the rail's own components (`AzButton`, `AzLoad`, `AzDivider`,
+`AutoSizeText`) and tokens (`activeColor`, `translucentBackground`, `defaultShape`, `headerIconShape`)
+so it matches the rail's aesthetic.
+
+INVARIANT — do not break: `more-from-az.json`'s `version` integer is auto-incremented by
+`.github/workflows/bump-more-from-az.yml` on every content change, committed back as
+`github-actions[bot]` with a `[skip ci]` message. The `[skip ci]` is load-bearing: it stops the bump
+commit from re-triggering both that workflow and `android-sample-build.yml` (which also has
+`paths-ignore` for `more-from-az.json` and `**/*.md`). The rail reads `version` to invalidate its
+cache. Do not hand-edit `version`.
+
 As an option, I am changing how the AzNavRail switches from portrait to landscape mode. Instead of maintaining its position on the side of the screen, it maintains its position on the side of the device, and all elements of the rail each rotate in place. This may take some careful consideration for whatever logic is needed in different circumstances, like how RailHostItems are expanded, or the difference between the rail being docked on the right or left in portrait mode. Also--PAY ATTENTION--if the rail is docked to the left in portrait mode, rotating the device clockwise means it will be at the top of the screen. But if I rotate counter-clockwise, it should be at the bottom of the screen. And if I turned the device upside down, the rail should be on the left side.

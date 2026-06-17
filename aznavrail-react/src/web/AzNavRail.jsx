@@ -7,6 +7,8 @@ import AzNestedRailPopup from './AzNestedRailPopup';
 import { RelocItemHandler } from '../util/RelocItemHandler';
 import AzDivider from './AzDivider';
 import AzTextBox from './AzTextBox';
+import AboutOverlay from './AboutOverlay';
+import MoreFromAzOverlay from './MoreFromAzOverlay';
 
 /**
  * An M3-style navigation rail that expands into a menu drawer for web applications.
@@ -41,7 +43,12 @@ const AzNavRail = ({
     activeColor,
     translucentBackground,
     packRailButtons = false,
-    headerIconShape = 'CIRCLE'
+    headerIconShape = 'CIRCLE',
+    inAppAbout = true,
+    moreFromAzEnabled = true,
+    moreFromAzJsonUrl = 'https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json',
+    moreRailItem = false,
+    appRepositoryUrl = 'https://github.com/HereLiesAz/AzNavRail'
   } = settings;
 
   // If noMenu is true, we force expanded to false, unless infoScreen overrides (which it doesn't really)
@@ -61,6 +68,9 @@ const AzNavRail = ({
   // Drop-down menu mode: a single boolean gates whether the chosen item set is unfolded under
   // the app-icon trigger (reusing the floating-rail fold/unfold idea).
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  // In-app About reader + More-from-Az overlays.
+  const [showAbout, setShowAbout] = useState(false);
+  const [showMoreFromAz, setShowMoreFromAz] = useState(false);
 
   const onToggle = () => {
       if (infoScreen) return;
@@ -613,6 +623,17 @@ const AzNavRail = ({
                     </div>
                   );
                 })}
+              {moreRailItem && moreFromAzEnabled && (
+                <div
+                  className="az-nav-rail-button rectangle"
+                  role="button"
+                  tabIndex={0}
+                  style={{ borderColor: activeColor || 'blue', color: activeColor || 'blue', cursor: 'pointer', marginTop: 8 }}
+                  onClick={() => setShowMoreFromAz(true)}
+                >
+                  More
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -621,7 +642,14 @@ const AzNavRail = ({
       {showFooter && isExpanded && (
         <div className="footer" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px', color: activeColor || 'currentColor' }}>
              <div className="az-menu-item-text" style={{ padding: '8px 0', fontWeight: 'bold' }}>{appName}</div>
-             <div className="az-menu-item-text" style={{ padding: '4px 0' }}>About</div>
+             <div
+               className="az-menu-item-text"
+               style={{ padding: '4px 0', cursor: 'pointer' }}
+               onClick={() => {
+                 if (inAppAbout) { setShowAbout(true); setIsExpanded(false); }
+                 else window.open(appRepositoryUrl, '_blank', 'noopener');
+               }}
+             >About</div>
              <div className="az-menu-item-text" style={{ padding: '4px 0' }}>Feedback</div>
              <div className="az-menu-item-text" style={{ padding: '4px 0', opacity: 0.5 }}>@HereLiesAz</div>
         </div>
@@ -655,6 +683,24 @@ const AzNavRail = ({
             onDismiss={onDismissInfoScreen}
             nestedRailVisibleId={nestedRailVisibleId}
             helpList={settings?.helpList || {}}
+        />
+    )}
+
+    {showAbout && (
+        <AboutOverlay
+            repoUrl={appRepositoryUrl}
+            settings={settings}
+            moreFromAzEnabled={moreFromAzEnabled}
+            moreFromAzJsonUrl={moreFromAzJsonUrl}
+            onDismiss={() => setShowAbout(false)}
+        />
+    )}
+
+    {showMoreFromAz && (
+        <MoreFromAzOverlay
+            jsonUrl={moreFromAzJsonUrl}
+            settings={settings}
+            onDismiss={() => setShowMoreFromAz(false)}
         />
     )}
 

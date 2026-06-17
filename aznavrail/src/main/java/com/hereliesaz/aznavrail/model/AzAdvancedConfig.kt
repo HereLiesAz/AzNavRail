@@ -24,6 +24,15 @@ import androidx.compose.ui.geometry.Rect
  * @param tutorials Map of item ID → [com.hereliesaz.aznavrail.tutorial.AzTutorial] for interactive step-by-step guides.
  * @param onInteraction Callback invoked whenever any rail item is interacted with (click, toggle,
  *   cycler advance, nested rail open, reloc drag). Receives the item's `id` and the [AzNavItem] itself.
+ * @param inAppAbout When true (default), the footer "About" item opens the in-app About reader overlay
+ *   (auto-generated from the repo's markdown docs) instead of opening [com.hereliesaz.aznavrail.AzNavRailScopeImpl.appRepositoryUrl]
+ *   in a browser.
+ * @param moreFromAzEnabled When true (default), the About overlay offers a "More from Az" entry that
+ *   opens a carousel of the library author's other apps, fetched from [moreFromAzJsonUrl].
+ * @param moreFromAzJsonUrl Raw URL of the JSON manifest backing the "More from Az" carousel. Its
+ *   `version` integer is CI-managed and used to invalidate the local cache.
+ * @param moreFromAzRailItem When true, a "More" item is pinned at the bottom of the collapsed rail
+ *   that opens the "More from Az" carousel directly (independent of the About screen).
  */
 data class AzAdvancedConfig(
     val isLoading: Boolean = false,
@@ -39,5 +48,9 @@ data class AzAdvancedConfig(
     val secLocPort: Int = 10203,
     val helpList: Map<String, Any> = emptyMap(),
     val tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap(),
-    val onInteraction: ((String, AzNavItem) -> Unit)? = null
+    val onInteraction: ((String, AzNavItem) -> Unit)? = null,
+    val inAppAbout: Boolean = true,
+    val moreFromAzEnabled: Boolean = true,
+    val moreFromAzJsonUrl: String = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json",
+    val moreFromAzRailItem: Boolean = false
 )

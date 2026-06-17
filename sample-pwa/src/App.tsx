@@ -39,6 +39,7 @@ import CustomizationDemo, {
 import FormDemo from './screens/FormDemo'
 import HelpSystemDemo from './screens/HelpSystemDemo'
 import TutorialDemo from './screens/TutorialDemo'
+import AboutDemo from './screens/AboutDemo'
 import LegacyPlayground from './screens/LegacyPlayground'
 
 function App() {
@@ -100,6 +101,9 @@ function App() {
       headerIconSize={customization.headerIconSize || undefined}
       dropdownMenu={customization.dropdownMenu}
       dropdownSource={customization.dropdownSource}
+      inAppAbout
+      moreFromAzEnabled
+      moreRailItem
       onDismissInfoScreen={() => {
         setShowHelp(false)
         setDismissCount((n) => n + 1)
@@ -124,6 +128,7 @@ function App() {
       <AzMenuItem id="help-system" text="Help System" route="help-system" info="screenTitle, info, classifiers, helpList." classifiers={new Set(['focus'])} onClick={() => navigate('/help-system')} />
       <AzMenuItem id="tutorial" text="Tutorials" route="tutorial" info="AzTutorial DSL — every advance condition + highlight." classifiers={new Set(['advanced'])} onClick={() => navigate('/tutorial')} />
       <AzMenuItem id="legacy" text="Rail Playground" route="legacy" info="The original rail demos." onClick={() => navigate('/legacy')} />
+      <AzMenuItem id="about-demo" text="About & More" route="about-demo" info="In-app About reader + More from Az carousel." onClick={() => navigate('/about-demo')} />
 
       <AzDivider />
 
@@ -376,6 +381,7 @@ function App() {
               }
             />
             <Route path="/tutorial" element={<TutorialDemo />} />
+            <Route path="/about-demo" element={<AboutDemo />} />
             <Route path="/legacy" element={<LegacyPlayground />} />
             <Route path="*" element={<LegacyPlayground />} />
           </Routes>

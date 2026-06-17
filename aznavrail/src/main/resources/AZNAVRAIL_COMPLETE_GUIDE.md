@@ -143,6 +143,31 @@ const settings: AzNavRailSettings = {
 > **Note on Help Overlay:**
 > The `HelpOverlay` displays a short, truncated entry for each item to conserve space. Tapping a help card expands it to reveal the full description and any extra text provided in `helpList`. Furthermore, `helpList` can be supplied dynamically to `AzNestedRail` components for distinct, localized help data.
 
+
+### D. About reader & "More from Az" (`azAbout`)
+
+```kotlin
+azAbout(
+    inAppAbout = true,         // footer "About" opens the in-app markdown reader (vs a browser)
+    moreFromAzEnabled = true,  // show the "More from Az" entry in the About screen
+    moreRailItem = false,      // also pin a "More" item at the bottom of the rail
+    moreFromAzJsonUrl = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json",
+)
+```
+
+The **About reader** auto-discovers the markdown docs (`.md` in the repo root + `docs/`) of
+`azConfig`'s `appRepositoryUrl` via the GitHub API (cached; public repos only) and renders them
+inline in a themed reader, with a "View on GitHub" button pinned at the bottom.
+
+**More from Az** is a carousel of other apps backed by a **link-only** `more-from-az.json` in this
+repo — each entry is just `{ "github"?, "play"?, "web"? }` and the name/icon/description are
+auto-populated by resolving the link. Its `version` is auto-incremented by CI so new entries appear
+without a release. A `web` link is treated as a website/PWA (with an "Open" button).
+
+**React:** the same options are flat props/settings — `inAppAbout`, `moreFromAzEnabled`,
+`moreRailItem`, `moreFromAzJsonUrl`, `appRepositoryUrl`. On the web build, Play/website link metadata
+is subject to CORS (GitHub links always resolve).
+
 ---
 
 ## 3. Navigation Items (DSL)

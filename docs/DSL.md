@@ -74,6 +74,22 @@ fun azAdvanced(
 )
 ~~~
 
+### `azAbout`
+Configures the built-in **About** reader and the **"More from Az"** carousel.
+
+~~~kotlin
+fun azAbout(
+    inAppAbout: Boolean = true,        // footer "About" opens the in-app reader vs a browser
+    moreFromAzEnabled: Boolean = true, // show the "More from Az" entry in the About screen
+    moreFromAzJsonUrl: String = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json",
+    moreRailItem: Boolean = false      // also pin a "More" item at the bottom of the rail
+)
+~~~
+
+The About reader auto-discovers the markdown docs (root + `docs/`) of `azConfig`'s `appRepositoryUrl`
+via the GitHub API (cached; public repos only) and renders them inline. "More from Az" is a link-only,
+CI-versioned carousel — see the README's "In-App About Reader" and "More from Az" sections.
+
 `onInteraction` is called whenever any rail item is interacted with — click, toggle, cycler advance, nested rail open, reloc drag, or host expand/collapse. It fires for both leaf items (`azRailItem` / `azRailSubItem`) and host items (`azRailHostItem`), in both the compact rail and the expanded menu, so opening a host menu is observable just like tapping a leaf. It receives the item's `id` and the `AzNavItem` itself, enabling analytics, UI feedback, and tutorial advancement (pair it with `controller.fireEvent(...)` and an `AzAdvanceCondition.Event` card) without per-item callbacks.
 
 ## Hidden Menu Builders (for `azRailRelocItem`)
