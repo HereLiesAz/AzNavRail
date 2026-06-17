@@ -52,7 +52,7 @@ export default function MoreFromAzOverlay({ jsonUrl, settings = {}, onDismiss })
             {current.description && <div className="az-more-desc">{current.description}</div>}
             <div className="az-more-actions">
               {current.webUrl && (
-                <a className="az-about-repo" href={current.webUrl} target="_blank" rel="noreferrer" style={{ borderColor: accent, color: accent }}>Open</a>
+                <a className="az-about-repo" href={current.webUrl} target="_blank" rel="noreferrer" style={{ borderColor: accent, color: accent }}>{current.isPwa ? 'Open' : 'Website'}</a>
               )}
               {current.playStoreUrl && (
                 <a className="az-about-repo" href={current.playStoreUrl} target="_blank" rel="noreferrer" style={{ borderColor: accent, color: accent }}>Play Store</a>

@@ -56,7 +56,7 @@ Add JitPack to your `settings.gradle.kts`:
 - **Drop-down Menu Mode**: Use the rail as a top-anchored drop-down. The app icon replaces the hamburger; tapping it unfolds *either* the rail items or the menu items like an accordion, while `onscreen` content gets the full screen width. (`dropdownMenu = true`)
 - **Sizable Header Icon**: Set the app-icon to an exact diameter via `headerIconSize`.
 - **In-App About Reader**: The footer "About" opens a themed in-app markdown reader that auto-discovers your repo's docs (root + `docs/`) and renders them inline. (`azAbout`)
-- **More from Az**: A self-versioning, link-only carousel of other apps (name/icon/description auto-populated from GitHub/Play/PWA links); optionally pinned as a "More" rail item.
+- **More from Az**: A self-versioning carousel of other apps — paste GitHub repo links and CI bakes name/icon/description, a verified Play link, and the homepage website/PWA (WIP apps excluded, Play-first); optionally pinned as a "More" rail item.
 - **AzHostActivityLayout**: A layout container that enforces strict safe zones and automatic alignment rules.
 - **AzNavHost**: A wrapper around `androidx.navigation.compose.NavHost` for seamless integration.
 - **Smart Transitions**: `AzNavHost` automatically configures directional transitions (slide in/out) based on the docking side (e.g., standard LTR or mirrored for Right dock).
@@ -546,38 +546,33 @@ const settings: AzNavRailSettings = {
 ### More from Az
 
 A built-in carousel of the library author's other apps, reachable from a **"More from Az"** entry in
-the About screen and/or a pinned **"More"** rail item. It is driven by a **link-only**
-[`more-from-az.json`](more-from-az.json) maintained in *this* repo — **just paste links**; the
-**name, icon, and description are auto-populated** by resolving them (Google Play OpenGraph tags, a
-website/PWA's OpenGraph tags, or the GitHub repository API).
-
-In the common case you only paste a **GitHub** link: the Play Store URL is **auto-derived** from the
-repo as `com.<owner>.<repo>` (e.g. `HereLiesAz/CueDetat` → `…?id=com.hereliesaz.cuedetat`) and used
-only if that listing actually exists. Add an explicit `play` (e.g. an internal-test link) or `web`
-(PWA) only when the convention doesn't apply:
+the About screen and/or a pinned **"More"** rail item. You maintain it by **pasting GitHub repo
+links — one per line, any order** — into [`more-from-az.json`](more-from-az.json). That's all; a
+GitHub Action resolves everything else and bakes a finished manifest the rail just renders:
 
 ```json
-{
-  "version": 1,
-  "apps": [
-    { "github": "https://github.com/HereLiesAz/AzNavRail" },
-    { "github": "https://github.com/HereLiesAz/CueDetat" },
-    { "github": "https://github.com/you/example", "play": "https://play.google.com/apps/internaltest/123" },
-    { "web": "https://your-pwa.example.com" }
-  ]
-}
+{ "version": 1, "apps": [
+  "https://github.com/HereLiesAz/AzNavRail",
+  "https://github.com/HereLiesAz/CueDetat",
+  "https://github.com/HereLiesAz/GraffitiXR"
+] }
 ```
 
-You don't even have to write valid JSON: paste bare URLs (one app per line, or inside `{ }` blocks)
-and the **normalize workflow** (`.github/workflows/bump-more-from-az.yml`) tidies the file into clean
-JSON and bumps `version` on commit. The rail parser is also lenient, so a half-formatted manifest
-still renders.
+For each repo, `.github/workflows/bump-more-from-az.yml` (running server-side with the authenticated
+`GITHUB_TOKEN`):
+- pulls **name / icon / description** from the repo,
+- **constructs and verifies** the Play link from the package convention `com.<owner>.<repo>` (e.g.
+  `HereLiesAz/CueDetat` → `…?id=com.hereliesaz.cuedetat`), keeping it only if the listing exists,
+- reads the **website / PWA** from the repo's GitHub **homepage** (PWA → an "Open" button; otherwise
+  a "Website" button),
+- **excludes** any app whose README's **first line says `WIP`**,
+- **sorts apps with a working Play link first**,
+- and **bumps `version`**, committing the baked manifest back with `[skip ci]`.
 
-- **Self-versioning & self-normalizing:** the same GitHub Action normalizes your paste into clean
-  JSON and **auto-increments `version`** whenever the file changes, committed back with `[skip ci]`
-  — **so you never cut a release just to add an app**, and never hand-format JSON. Do not hand-edit
-  `version`.
-- **PWAs supported:** a `web` link is treated as a website/PWA and gets an **Open** button.
+So you never hand-format JSON, never construct a Play link, and never cut a release to add an app. Do
+not hand-edit `version` (CI-managed). The rail parser is lenient, so the list still renders in the
+brief window before CI bakes. Grouping is by repository, so paste order never matters.
+
 - **Config & placement:**
 
 ```kotlin
@@ -596,9 +591,8 @@ const settings: AzNavRailSettings = {
 };
 ```
 
-> **Web note:** Play-Store/website link metadata is fetched client-side and is subject to CORS, so on
-> the web build those links may not auto-resolve (GitHub links always do). Native Android resolves all
-> link types. The link-out buttons always work regardless.
+Because all resolution happens in CI (not in the app), metadata is identical on Android and web —
+there's no client-side CORS limitation, and the runtime never spends GitHub's rate-limit budget.
 
 
 ### Reorderable Items (AzRailRelocItem)

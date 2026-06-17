@@ -15,23 +15,9 @@ data class AzDocEntry(
 )
 
 /**
- * A raw entry in the `more-from-az.json` manifest: **just links**. Everything else (name, icon,
- * description) is auto-populated at runtime by resolving these links — the Google Play listing's
- * OpenGraph tags when [play] is present, otherwise the GitHub repository's API metadata.
- *
- * @param github Optional GitHub repository link.
- * @param play Optional Google Play listing link.
- * @param web Optional website / PWA link.
- */
-data class AzMoreFromLink(
-    val github: String? = null,
-    val play: String? = null,
-    val web: String? = null
-)
-
-/**
- * A fully-resolved app shown in the "More from Az" carousel: the link entry enriched with metadata
- * fetched from the link itself.
+ * A fully-resolved app shown in the "More from Az" carousel. Resolution (name/icon/description and
+ * the Play/website links) is performed in CI and baked into `more-from-az.json`; the rail just reads
+ * these.
  *
  * @param name Display name (Play title or GitHub repo name).
  * @param iconUrl Icon image URL (Play `og:image` or GitHub owner avatar), loaded with Coil.
@@ -39,6 +25,7 @@ data class AzMoreFromLink(
  * @param githubUrl Optional GitHub repository link.
  * @param playStoreUrl Optional Google Play listing link.
  * @param webUrl Optional website / PWA link.
+ * @param isPwa When true, [webUrl] is a PWA (an "Open" launch button); otherwise it's a "Website".
  */
 data class AzMoreFromApp(
     val name: String,
@@ -46,5 +33,6 @@ data class AzMoreFromApp(
     val description: String,
     val githubUrl: String? = null,
     val playStoreUrl: String? = null,
-    val webUrl: String? = null
+    val webUrl: String? = null,
+    val isPwa: Boolean = false
 )

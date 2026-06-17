@@ -62,52 +62,35 @@ class AboutServiceTest {
     }
 
     @Test
-    fun `parseLinks reads version and link-only entries`() {
-        val (version, links) = MoreFromAzRepository.parseLinks(
-            """{ "version": 7, "apps": [ {"github":"https://github.com/a/b"}, {"play":"p","web":"w"}, {} ] }"""
-        )
-        assertEquals(7, version)
-        assertEquals(2, links.size) // the empty entry is dropped
-        assertEquals("https://github.com/a/b", links[0].github)
-        assertEquals("w", links[1].web)
-    }
-
-    @Test
-    fun `derivePlayUrl builds the conventional package id from a github repo`() {
-        assertEquals(
-            "https://play.google.com/store/apps/details?id=com.hereliesaz.cuedetat",
-            MoreFromAzRepository.derivePlayUrl("https://github.com/HereLiesAz/CueDetat")
-        )
-        assertNull(MoreFromAzRepository.derivePlayUrl("https://gitlab.com/a/b"))
-    }
-
-    @Test
-    fun `parseLinks tolerates pasted bare-URL manifests`() {
-        // A maintainer paste: bare URLs inside braces, no keys/quotes/commas, plus an empty block.
-        val messy = """
-            { "version": 5, "apps": [
-              { https://github.com/HereLiesAz/AzNavRail }
-              {
-                https://github.com/HereLiesAz/CueDetat
-                https://play.google.com/store/apps/details?id=com.hereliesaz.cuedetat
-              }
-              { }
+    fun `parse reads a baked manifest and sorts Play-first`() {
+        val baked = """
+            { "version": 7, "apps": [
+              { "name": "NoPlay", "iconUrl": "", "description": "d", "github": "https://github.com/a/b" },
+              { "name": "HasPlay", "iconUrl": "i", "description": "d",
+                "github": "https://github.com/a/c",
+                "play": "https://play.google.com/store/apps/details?id=com.a.c", "isPwa": true,
+                "web": "https://c.example.com" }
             ] }
         """.trimIndent()
-        val (version, links) = MoreFromAzRepository.parseLinks(messy)
-        assertEquals(5, version)
-        assertEquals(2, links.size) // empty block dropped
-        assertEquals("https://github.com/HereLiesAz/AzNavRail", links[0].github)
-        assertEquals("https://github.com/HereLiesAz/CueDetat", links[1].github)
-        assertTrue(links[1].play!!.contains("id=com.hereliesaz.cuedetat"))
+        val result = MoreFromAzRepository.parse(baked)
+        assertEquals(7, result.version)
+        assertEquals(2, result.apps.size)
+        assertEquals("HasPlay", result.apps.first().name) // Play app sorted first
+        assertEquals("https://c.example.com", result.apps.first().webUrl)
+        assertTrue(result.apps.first().isPwa)
     }
 
     @Test
-    fun `extractOg pulls opengraph content regardless of attribute order`() {
-        val html = """<meta property="og:title" content="My App - Apps on Google Play">""" +
-            """<meta content="https://img/icon.png" property="og:image">"""
-        assertEquals("My App - Apps on Google Play", MoreFromAzRepository.extractOg(html, "title"))
-        assertEquals("https://img/icon.png", MoreFromAzRepository.extractOg(html, "image"))
-        assertNull(MoreFromAzRepository.extractOg(html, "description"))
+    fun `parse tolerates an un-baked github-link list (degraded cards)`() {
+        val raw = """
+            { "version": 2, "apps": [
+              "https://github.com/HereLiesAz/AzNavRail",
+              "https://github.com/HereLiesAz/CueDetat"
+            ] }
+        """.trimIndent()
+        val result = MoreFromAzRepository.parse(raw)
+        assertEquals(2, result.apps.size)
+        assertEquals("AzNavRail", result.apps[0].name)
+        assertEquals("https://github.com/HereLiesAz/CueDetat", result.apps[1].githubUrl)
     }
 }
