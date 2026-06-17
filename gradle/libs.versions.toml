@@ -3,7 +3,7 @@ aznavrail = "9.10"
 # Android & Jetpack
 composeBom = "2026.05.00"
 coreKtx = "1.18.0"
-material3 = "1.4.0"
+material3 = "1.5.0-alpha01"
 coil = "2.7.0"
 navigationCompose = "2.9.8"
 

@@ -111,6 +111,27 @@ interface AzNavRailScope {
     fun azAdvanced(isLoading: Boolean = false, helpEnabled: Boolean = false, onDismissHelp: (() -> Unit)? = null, overlayService: Class<out android.app.Service>? = null, onUndock: (() -> Unit)? = null, enableRailDragging: Boolean = false, onRailDrag: ((Float, Float) -> Unit)? = null, onOverlayDrag: ((Float, Float) -> Unit)? = null, onItemGloballyPositioned: ((String, Rect) -> Unit)? = null, secLoc: String? = null, secLocPort: Int = 10203, helpList: Map<String, Any> = emptyMap(), tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap(), onInteraction: ((String, com.hereliesaz.aznavrail.model.AzNavItem) -> Unit)? = null)
 
     /**
+     * Configures the built-in **About** screen and the **"More from Az"** carousel.
+     *
+     * When [inAppAbout] is true (the default), tapping the footer's "About" item opens an in-app,
+     * themed markdown reader that auto-discovers this app's documentation (`.md` files in the repo
+     * root and `docs/` folder of [azConfig]'s `appRepositoryUrl`), builds a table of contents, and
+     * renders each doc inline. A GitHub repo button sits pinned at the bottom. Set [inAppAbout] to
+     * false to restore the legacy behavior of opening the repository URL in a browser.
+     *
+     * When [moreFromAzEnabled] is true (the default), the About screen also offers a "More from Az"
+     * entry that opens a carousel of the library author's other apps, fetched at runtime from
+     * [moreFromAzJsonUrl] (a CI-versioned JSON manifest). Public GitHub repos only.
+     *
+     * @param inAppAbout Whether the footer "About" opens the in-app reader (true) or a browser (false).
+     * @param moreFromAzEnabled Whether the "More from Az" carousel entry is shown.
+     * @param moreFromAzJsonUrl Raw URL of the `more-from-az.json` manifest.
+     * @param moreRailItem When true, pins a "More" item at the bottom of the collapsed rail that
+     *   opens the "More from Az" carousel directly.
+     */
+    fun azAbout(inAppAbout: Boolean = true, moreFromAzEnabled: Boolean = true, moreFromAzJsonUrl: String = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json", moreRailItem: Boolean = false)
+
+    /**
      * A comprehensive configuration method combining settings, theme, and advanced options.
      * This mirrors the structure used in the `AZNAVRAIL_COMPLETE_GUIDE.md`.
      */
@@ -676,6 +697,15 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         this.appRepositoryUrl = appRepositoryUrl
         this.dropdownMenu = dropdownMenu
         this.dropdownSource = dropdownSource
+    }
+
+    override fun azAbout(inAppAbout: Boolean, moreFromAzEnabled: Boolean, moreFromAzJsonUrl: String, moreRailItem: Boolean) {
+        this.advancedConfig = this.advancedConfig.copy(
+            inAppAbout = inAppAbout,
+            moreFromAzEnabled = moreFromAzEnabled,
+            moreFromAzJsonUrl = moreFromAzJsonUrl,
+            moreFromAzRailItem = moreRailItem
+        )
     }
 
     override fun azTheme(activeColor: Color, defaultShape: AzButtonShape, headerIconShape: AzHeaderIconShape, translucentBackground: Color, helpLineColors: List<Color>, headerIconSize: Dp) {

@@ -55,6 +55,8 @@ Add JitPack to your `settings.gradle.kts`:
 - **No Menu Mode**: Treat all items as rail items, removing the side drawer.
 - **Drop-down Menu Mode**: Use the rail as a top-anchored drop-down. The app icon replaces the hamburger; tapping it unfolds *either* the rail items or the menu items like an accordion, while `onscreen` content gets the full screen width. (`dropdownMenu = true`)
 - **Sizable Header Icon**: Set the app-icon to an exact diameter via `headerIconSize`.
+- **In-App About Reader**: The footer "About" opens a themed in-app markdown reader that auto-discovers your repo's docs (root + `docs/`) and renders them inline. (`azAbout`)
+- **More from Az**: A self-versioning, link-only carousel of other apps (name/icon/description auto-populated from GitHub/Play/PWA links); optionally pinned as a "More" rail item.
 - **AzHostActivityLayout**: A layout container that enforces strict safe zones and automatic alignment rules.
 - **AzNavHost**: A wrapper around `androidx.navigation.compose.NavHost` for seamless integration.
 - **Smart Transitions**: `AzNavHost` automatically configures directional transitions (slide in/out) based on the docking side (e.g., standard LTR or mirrored for Right dock).
@@ -512,6 +514,80 @@ azSettings(headerIconSize = 48.dp)
 ```tsx
 const settings: AzNavRailSettings = { headerIconSize: 48 };
 ```
+
+
+### In-App About Reader
+
+The footer **About** item can open a built-in, themed **in-app documentation reader** instead of
+launching the browser. It **auto-discovers** your app's markdown docs — every `.md` file in the repo
+**root** and the **`docs/`** folder of your configured `appRepositoryUrl` — via the GitHub API, builds
+a table of contents, and renders each doc inline with a markdown renderer themed to the rail
+(`activeColor` links, `translucentBackground` surfaces). A **View on GitHub** button is pinned at the
+bottom with extra spacing.
+
+```kotlin
+azConfig(appRepositoryUrl = "https://github.com/YourOrg/YourApp")
+azAbout(inAppAbout = true)   // default; set false to open the repo URL in a browser instead
+```
+
+```tsx
+const settings: AzNavRailSettings = {
+  appRepositoryUrl: 'https://github.com/YourOrg/YourApp',
+  inAppAbout: true,
+};
+```
+
+- **Caching & rate limit:** results are cached (ETag + 6h TTL) to stay well under GitHub's
+  unauthenticated ~60 req/hr limit; when offline or rate-limited the reader shows the last cached copy.
+- **Public repos only** (unauthenticated GitHub API). Private repos won't resolve.
+- The system **back** button (Android) / back arrow returns from a doc to the table of contents, then
+  dismisses.
+
+### More from Az
+
+A built-in carousel of the library author's other apps, reachable from a **"More from Az"** entry in
+the About screen and/or a pinned **"More"** rail item. It is driven by a **link-only**
+[`more-from-az.json`](more-from-az.json) maintained in *this* repo — each entry is just one or two
+links and the **name, icon, and description are auto-populated** by resolving them (Google Play
+OpenGraph tags, a website/PWA's OpenGraph tags, or the GitHub repository API):
+
+```json
+{
+  "version": 1,
+  "apps": [
+    { "github": "https://github.com/HereLiesAz/AzNavRail" },
+    { "play": "https://play.google.com/store/apps/details?id=com.example", "github": "https://github.com/you/example" },
+    { "web": "https://your-pwa.example.com" }
+  ]
+}
+```
+
+- **Self-versioning:** the `version` integer is **auto-incremented by a GitHub Action**
+  (`.github/workflows/bump-more-from-az.yml`) whenever the file changes, committed back with
+  `[skip ci]`. The rail reads `version` to refresh its cache — **so you never cut a release just to
+  add an app.** Do not hand-edit `version`.
+- **PWAs supported:** a `web` link is treated as a website/PWA and gets an **Open** button.
+- **Config & placement:**
+
+```kotlin
+azAbout(
+    moreFromAzEnabled = true,                 // show the "More from Az" entry in the About screen
+    moreRailItem = true,                      // also pin a "More" item at the bottom of the rail
+    moreFromAzJsonUrl = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json",
+)
+```
+
+```tsx
+const settings: AzNavRailSettings = {
+  moreFromAzEnabled: true,
+  moreRailItem: true,
+  moreFromAzJsonUrl: 'https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json',
+};
+```
+
+> **Web note:** Play-Store/website link metadata is fetched client-side and is subject to CORS, so on
+> the web build those links may not auto-resolve (GitHub links always do). Native Android resolves all
+> link types. The link-out buttons always work regardless.
 
 
 ### Reorderable Items (AzRailRelocItem)

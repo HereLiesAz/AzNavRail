@@ -51,6 +51,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -68,8 +69,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
+import com.hereliesaz.aznavrail.internal.AboutOverlay
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.internal.AzNavRailLogger
+import com.hereliesaz.aznavrail.internal.MoreFromAzOverlay
 import com.hereliesaz.aznavrail.internal.CyclerTransientState
 import com.hereliesaz.aznavrail.internal.Footer
 import com.hereliesaz.aznavrail.internal.HelpOverlay
@@ -233,6 +236,9 @@ fun AzNavRail(
     var showFloatingButtons by remember { mutableStateOf(false) }
     var railContentHeight by remember { mutableStateOf(0f) }
     var showHelpOverlay by remember { mutableStateOf(false) }
+    // About reader + "More from Az" carousel overlays (drawn over the live UI like the help overlay).
+    var showAboutOverlay by remember { mutableStateOf(false) }
+    var showMoreFromAz by remember { mutableStateOf(false) }
     // When the help item that triggered the overlay lives inside a nested rail, this holds the
     // parent item's id so the overlay shows only that nested rail's cards. Null = main rail scope.
     var helpScopeId by remember { mutableStateOf<String?>(null) }
@@ -921,6 +927,20 @@ fun AzNavRail(
                                 helpEnabled = showHelpOverlay,
                                 rotationDegrees = rotationDegrees
                             )
+
+                            // Optional pinned "More" rail item that opens the More-from-Az carousel.
+                            if (scope.advancedConfig.moreFromAzRailItem &&
+                                scope.advancedConfig.moreFromAzEnabled && !isFloating
+                            ) {
+                                val moreColor = scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
+                                AzButton(
+                                    onClick = { showMoreFromAz = true },
+                                    text = "More",
+                                    color = moreColor,
+                                    activeColor = moreColor,
+                                    shape = scope.defaultShape
+                                )
+                            }
                         }
                     }
                 }
@@ -940,7 +960,10 @@ fun AzNavRail(
                             },
                             onSecretClick = onSecretClick,
                             scope = scope,
-                            footerColor = scope.activeColor
+                            footerColor = scope.activeColor,
+                            onAboutClick = if (scope.advancedConfig.inAppAbout) {
+                                { isExpanded = false; showAboutOverlay = true }
+                            } else null
                         )
                     }
                 }
@@ -961,6 +984,27 @@ fun AzNavRail(
             nestedRailOpenId = helpScopeId,
             tutorials = scope.advancedConfig.tutorials,
             onTutorialLaunch = { toggleHelpOverlay(it) }
+        )
+    }
+
+    // In-app About reader overlay (auto-generated from the repo's markdown docs).
+    if (showAboutOverlay) {
+        AboutOverlay(
+            repoUrl = scope.appRepositoryUrl,
+            scope = scope,
+            onOpenMoreFromAz = if (scope.advancedConfig.moreFromAzEnabled) {
+                { showMoreFromAz = true }
+            } else null,
+            onDismiss = { showAboutOverlay = false }
+        )
+    }
+
+    // "More from Az" carousel overlay, drawn above the About reader.
+    if (showMoreFromAz) {
+        MoreFromAzOverlay(
+            jsonUrl = scope.advancedConfig.moreFromAzJsonUrl,
+            scope = scope,
+            onDismiss = { showMoreFromAz = false }
         )
     }
 

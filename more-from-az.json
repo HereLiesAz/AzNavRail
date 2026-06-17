@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "apps": [
+    { "github": "https://github.com/HereLiesAz/AzNavRail" },
+    { "github": "https://github.com/HereLiesAz/CueDetat" }
+  ]
+}

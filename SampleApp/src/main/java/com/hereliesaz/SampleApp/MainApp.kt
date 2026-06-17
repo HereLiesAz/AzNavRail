@@ -174,6 +174,10 @@ fun MainApp() {
             headerIconSize = customization.headerIconSize,
         )
 
+        // In-app About reader (auto-generated from this repo's docs) + pinned "More" rail item that
+        // opens the "More from Az" carousel.
+        azAbout(moreRailItem = true)
+
         azAdvanced(
             isLoading = isLoading,
             enableRailDragging = fabState.railDragEnabled,

@@ -124,6 +124,24 @@ fun azTheme(
 * `headerIconSize`: `Dp` — exact diameter of the header app-icon. `Dp.Unspecified` (default) sizes
   the icon to the rail width (legacy behavior).
 
+### `azAbout`
+Configures the built-in About reader and the "More from Az" carousel.
+
+~~~kotlin
+fun azAbout(
+    inAppAbout: Boolean = true,
+    moreFromAzEnabled: Boolean = true,
+    moreFromAzJsonUrl: String = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json",
+    moreRailItem: Boolean = false
+)
+~~~
+
+* `inAppAbout` — footer "About" opens the in-app markdown reader (auto-generated from the repo's docs)
+  instead of opening `appRepositoryUrl` in a browser.
+* `moreFromAzEnabled` — show the "More from Az" entry inside the About screen.
+* `moreFromAzJsonUrl` — raw URL of the link-only, CI-versioned `more-from-az.json` manifest.
+* `moreRailItem` — also pin a "More" item at the bottom of the collapsed rail that opens the carousel.
+
 ---
 
 ## 3. UI Components

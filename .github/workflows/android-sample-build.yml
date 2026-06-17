@@ -2,6 +2,9 @@ name: Android Sample Build
 
 on:
   push:
+    paths-ignore:
+      - 'more-from-az.json'
+      - '**/*.md'
 
 jobs:
   build:
