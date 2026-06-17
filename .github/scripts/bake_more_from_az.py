@@ -105,9 +105,10 @@ def http_get(url, token=False):
 
 
 def resolve_play(url):
+    separator = "&" if "?" in url else "?"
+    if "hl=" not in url:
+        url = f"{url}{separator}hl=en"
     status, html = http_get(url)
-    if status != 200:
-        return None
     title = og(html, "title")
     if not title:
         return None
