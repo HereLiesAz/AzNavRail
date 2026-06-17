@@ -149,7 +149,7 @@ fun CustomizationDemoScreen(
             options = dropdownSources.map { it.name },
             selectedOption = state.dropdownSource.name,
             onCycle = {
-                val next = dropdownSources[(dropdownSources.indexOf(state.dropdownSource) + 1) % dropdownSources.size]
+                val next = dropdownSources[(state.dropdownSource.ordinal + 1) % dropdownSources.size]
                 onChange(state.copy(dropdownSource = next))
             },
             shape = AzButtonShape.RECTANGLE,
