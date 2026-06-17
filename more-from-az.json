@@ -1,7 +1,11 @@
 {
-  "version": 1,
+  "version": 2,
   "apps": [
-    { "github": "https://github.com/HereLiesAz/AzNavRail" },
-    { "github": "https://github.com/HereLiesAz/CueDetat" }
+    {
+      "github": "https://github.com/HereLiesAz/AzNavRail"
+    },
+    {
+      "github": "https://github.com/HereLiesAz/CueDetat"
+    }
   ]
 }
