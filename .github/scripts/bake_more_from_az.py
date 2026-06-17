@@ -174,6 +174,8 @@ def resolve_github(github_url):
     # Website / PWA from the repo homepage.
     home = (meta.get("homepage") or "").strip()
     if home and "github.com" not in home and "play.google.com" not in home:
+        if not home.startswith(("http://", "https://")):
+            home = "https://" + home
         ws, whtml = http_get(home)
         app["web"] = home
         app["isPwa"] = detect_pwa(whtml) if ws == 200 else False
