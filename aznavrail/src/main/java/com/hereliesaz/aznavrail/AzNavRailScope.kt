@@ -14,6 +14,7 @@ import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.model.AzAdvancedConfig
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
+import com.hereliesaz.aznavrail.model.AzDropdownSource
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzItemConfig
 import com.hereliesaz.aznavrail.model.AzNavItem
@@ -66,8 +67,16 @@ interface AzNavRailScope {
      * @param collapsedWidth The width of the rail when collapsed.
      * @param showFooter Whether to show the footer (Privacy, Terms, Help) in the menu.
      * @param appRepositoryUrl The URL of the application's repository to link to in the footer's "About" section. Defaults to the AzNavRail repo.
+     * @param dropdownMenu If true, the rail collapses to a single app-icon trigger anchored at the top
+     *   (the icon replaces the hamburger) and unfolds [dropdownSource] downward like an accordion when
+     *   tapped. `onscreen` content is given the full screen width. This mode runs at the explicit
+     *   exclusion of FAB/dragging, rail-to-menu expansion, swipe gestures, physical docking, the
+     *   footer, nested-rail popups, the bleeding app-name header, and the help overlay.
+     * @param dropdownSource Which set of items the drop-down reveals — [AzDropdownSource.RAIL] (the
+     *   packed rail buttons) or [AzDropdownSource.MENU] (the full drawer rows). Only honoured when
+     *   [dropdownMenu] is true.
      */
-    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 160.dp, collapsedWidth: Dp = 100.dp, showFooter: Boolean = true, appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail")
+    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 160.dp, collapsedWidth: Dp = 100.dp, showFooter: Boolean = true, appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail", dropdownMenu: Boolean = false, dropdownSource: AzDropdownSource = AzDropdownSource.RAIL)
 
     /**
      * Configures the visual theme of the rail.
@@ -77,8 +86,10 @@ interface AzNavRailScope {
      * @param headerIconShape The shape of the header icon (Circle, Rounded, None).
      * @param translucentBackground The translucent background color for the rail and popup menus.
      * @param helpLineColors List of colors to use for the connecting lines in the Help overlay.
+     * @param headerIconSize The exact diameter (width and height) of the app icon in the header.
+     *   When [Dp.Unspecified] (the default) the icon sizes itself to the rail width as before.
      */
-    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.CIRCLE, headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE, translucentBackground: Color = Color.Unspecified, helpLineColors: List<Color> = emptyList())
+    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.CIRCLE, headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE, translucentBackground: Color = Color.Unspecified, helpLineColors: List<Color> = emptyList(), headerIconSize: Dp = Dp.Unspecified)
 
     /**
      * Configures advanced features like loading states, help screens, and overlays.
@@ -113,6 +124,7 @@ interface AzNavRailScope {
         defaultShape: AzButtonShape = AzButtonShape.CIRCLE,
         enableRailDragging: Boolean = false,
         headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
+        headerIconSize: Dp = Dp.Unspecified,
         onUndock: (() -> Unit)? = null,
         overlayService: Class<out android.app.Service>? = null,
         onOverlayDrag: ((Float, Float) -> Unit)? = null,
@@ -129,7 +141,9 @@ interface AzNavRailScope {
         helpList: Map<String, Any> = emptyMap(),
         tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap(),
         helpLineColors: List<Color> = emptyList(),
-        onInteraction: ((String, com.hereliesaz.aznavrail.model.AzNavItem) -> Unit)? = null
+        onInteraction: ((String, com.hereliesaz.aznavrail.model.AzNavItem) -> Unit)? = null,
+        dropdownMenu: Boolean = false,
+        dropdownSource: AzDropdownSource = AzDropdownSource.RAIL
     )
 
     /**
@@ -609,6 +623,14 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     var packButtons: Boolean = false
     /** If true, the side menu drawer is disabled; the rail operates icon-only. */
     var noMenu: Boolean = false
+    /**
+     * If true, the rail is used as a drop-down menu: it collapses to a single app-icon trigger
+     * anchored at the top of the screen, and unfolds [dropdownSource] downward when tapped. See
+     * [AzNavRailScope.azConfig] for the full list of features this mode disables.
+     */
+    var dropdownMenu: Boolean = false
+    /** Which item set the drop-down reveals when [dropdownMenu] is true. */
+    var dropdownSource: AzDropdownSource = AzDropdownSource.RAIL
     /** If true, haptic feedback is triggered on header tap and drag events. */
     var vibrate: Boolean = false
     /** If true, the header area shows the app name instead of the app icon. */
@@ -625,6 +647,11 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     var defaultShape: AzButtonShape = AzButtonShape.CIRCLE // Restored: default is circle
     /** Shape applied to the app icon in the rail header. */
     var headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE // Default per legacy, overridden in UI
+    /**
+     * Exact diameter (width and height) of the app icon in the header. [Dp.Unspecified] (the
+     * default) keeps the legacy behaviour of sizing the icon to the rail width.
+     */
+    var headerIconSize: Dp = Dp.Unspecified
     /** Background color for popup overlays (nested rails, hidden menus). [Color.Unspecified] uses the surface color. */
     var translucentBackground: Color = Color.Unspecified
     /** Colors used for the connecting lines drawn in the Help overlay. Falls back to a built-in rainbow palette. */
@@ -635,7 +662,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     var advancedConfig: AzAdvancedConfig = AzAdvancedConfig()
 
 
-    override fun azConfig(dockingSide: AzDockingSide, packButtons: Boolean, noMenu: Boolean, vibrate: Boolean, displayAppName: Boolean, activeClassifiers: Set<String>, usePhysicalDocking: Boolean, expandedWidth: Dp, collapsedWidth: Dp, showFooter: Boolean, appRepositoryUrl: String) {
+    override fun azConfig(dockingSide: AzDockingSide, packButtons: Boolean, noMenu: Boolean, vibrate: Boolean, displayAppName: Boolean, activeClassifiers: Set<String>, usePhysicalDocking: Boolean, expandedWidth: Dp, collapsedWidth: Dp, showFooter: Boolean, appRepositoryUrl: String, dropdownMenu: Boolean, dropdownSource: AzDropdownSource) {
         this.dockingSide = dockingSide
         this.packButtons = packButtons
         this.noMenu = noMenu
@@ -647,14 +674,17 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         this.collapsedWidth = collapsedWidth
         this.showFooter = showFooter
         this.appRepositoryUrl = appRepositoryUrl
+        this.dropdownMenu = dropdownMenu
+        this.dropdownSource = dropdownSource
     }
 
-    override fun azTheme(activeColor: Color, defaultShape: AzButtonShape, headerIconShape: AzHeaderIconShape, translucentBackground: Color, helpLineColors: List<Color>) {
+    override fun azTheme(activeColor: Color, defaultShape: AzButtonShape, headerIconShape: AzHeaderIconShape, translucentBackground: Color, helpLineColors: List<Color>, headerIconSize: Dp) {
         this.activeColor = activeColor
         this.defaultShape = defaultShape
         this.headerIconShape = headerIconShape
         this.translucentBackground = translucentBackground
         this.helpLineColors = helpLineColors
+        this.headerIconSize = headerIconSize
     }
 
     override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, secLoc: String?, secLocPort: Int, helpList: Map<String, Any>, tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial>, onInteraction: ((String, AzNavItem) -> Unit)?) {
@@ -686,6 +716,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         defaultShape: AzButtonShape,
         enableRailDragging: Boolean,
         headerIconShape: AzHeaderIconShape,
+        headerIconSize: Dp,
         onUndock: (() -> Unit)?,
         overlayService: Class<out android.app.Service>?,
         onOverlayDrag: ((Float, Float) -> Unit)?,
@@ -702,16 +733,21 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         helpList: Map<String, Any>,
         tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial>,
         helpLineColors: List<Color>,
-        onInteraction: ((String, AzNavItem) -> Unit)?
+        onInteraction: ((String, AzNavItem) -> Unit)?,
+        dropdownMenu: Boolean,
+        dropdownSource: AzDropdownSource
     ) {
         // Map to internal properties
         this.displayAppName = displayAppNameInHeader
+        this.dropdownMenu = dropdownMenu
+        this.dropdownSource = dropdownSource
         this.packButtons = packRailButtons
         this.expandedWidth = expandedRailWidth
         this.collapsedWidth = collapsedRailWidth
         this.showFooter = showFooter
         this.defaultShape = defaultShape
         this.headerIconShape = headerIconShape
+        this.headerIconSize = headerIconSize
         if (activeColor != null) this.activeColor = activeColor
         this.vibrate = vibrate
         this.dockingSide = dockingSide

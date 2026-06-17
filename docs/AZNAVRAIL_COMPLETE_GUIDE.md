@@ -79,7 +79,9 @@ azConfig(
     packButtons = packRailButtons,       // Boolean: Pack items tightly vs spaced
     dockingSide = AzDockingSide.LEFT,    // Enum: LEFT or RIGHT
     noMenu = noMenu,                     // Boolean: Disable the side drawer entirely
-    usePhysicalDocking = usePhysicalDocking // Boolean: Anchor to physical hardware edge vs visual left
+    usePhysicalDocking = usePhysicalDocking, // Boolean: Anchor to physical hardware edge vs visual left
+    dropdownMenu = false,                // Boolean: Use the rail as a top-anchored drop-down menu
+    dropdownSource = AzDropdownSource.RAIL // Enum: which set the drop-down unfolds (RAIL or MENU)
 )
 ```
 
@@ -91,7 +93,8 @@ Controls visual style defaults.
 azTheme(
     defaultShape = AzButtonShape.RECTANGLE, // Default shape for all items
     activeColor = MaterialTheme.colorScheme.primary, // Color for active state
-    translucentBackground = Color.Black.copy(alpha = 0.5f) // Set the background color for menus/overlays!
+    translucentBackground = Color.Black.copy(alpha = 0.5f), // Set the background color for menus/overlays!
+    headerIconSize = 48.dp                  // Exact app-icon diameter (Dp.Unspecified = size to rail width)
 )
 ```
 
@@ -142,6 +145,43 @@ const settings: AzNavRailSettings = {
 
 > **Note on Help Overlay:**
 > The `HelpOverlay` displays a short, truncated entry for each item to conserve space. Tapping a help card expands it to reveal the full description and any extra text provided in `helpList`. Furthermore, `helpList` can be supplied dynamically to `AzNestedRail` components for distinct, localized help data.
+
+
+### D. Drop-down Menu Mode (`dropdownMenu`)
+
+Setting `dropdownMenu = true` turns the rail into a top-anchored **drop-down menu** instead of a
+docked side strip:
+
+- The rail collapses to a single **app-icon trigger** anchored at the top — the app icon takes the
+  place of the hamburger menu icon.
+- `onscreen` content is given the **entire width of the screen** (the rail reserves no horizontal
+  band; it floats above the content).
+- Tapping the icon unfolds the chosen item set **downward like an accordion** (the same fold/unfold
+  mechanism used by FAB mode). Tapping the icon again, tapping an item, or tapping outside folds it
+  back up.
+- `dropdownSource` chooses **one** rendering — there is no rail↔menu expansion:
+  - `AzDropdownSource.RAIL` *(default)* → the packed **rail** buttons.
+  - `AzDropdownSource.MENU` → the full drawer **menu** rows.
+
+```kotlin
+azConfig(dropdownMenu = true, dropdownSource = AzDropdownSource.MENU)
+azTheme(headerIconSize = 56.dp)
+```
+
+```tsx
+const settings: AzNavRailSettings = {
+    dropdownMenu: true,
+    dropdownSource: AzDropdownSource.MENU, // or AzDropdownSource.RAIL
+    headerIconSize: 56,
+};
+```
+
+**Excluded features.** Drop-down mode runs at the explicit exclusion of: FAB mode / draggable rail
+and the overlay service; rail↔menu expansion (`initiallyExpanded`); `noMenu`; all swipe gestures;
+physical docking / rotate-in-place; the footer; nested-rail popups (`azNestedRail`); the rail width
+settings (`RAIL` sizes to content, `MENU` uses `expandedWidth`); the bleeding app-name header
+(`displayAppName`); the rail safe-zone padding; and the help overlay / tutorials. Host items still
+expand inline as an accordion.
 
 ---
 

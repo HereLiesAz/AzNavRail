@@ -12,6 +12,65 @@
   border-left: 1px solid rgba(0, 0, 0, 0.12);
 }
 
+/* ---- Drop-down menu mode ---- */
+/* The rail is a floating top-anchored trigger; it reserves no width so page content can run
+   edge-to-edge underneath it. */
+.az-nav-rail.dropdown {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: auto;
+  width: auto;
+  background-color: transparent;
+  border: none;
+  z-index: 1000;
+  align-items: flex-start;
+}
+
+.az-nav-rail.dropdown.right {
+  left: auto;
+  right: 0;
+  align-items: flex-end;
+}
+
+/* Full-screen invisible layer that folds the panel back up on an outside click. */
+.az-dropdown-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+}
+
+/* The unfolded accordion of items, dropping down directly under the icon trigger. */
+.az-dropdown-panel {
+  display: flex;
+  flex-direction: column;
+  margin-top: 4px;
+  max-height: 80vh;
+  overflow-y: auto;
+  border-radius: 12px;
+  background-color: #f0f0f0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  animation: az-dropdown-unfold 0.18s ease-out;
+}
+
+.az-dropdown-panel.rail {
+  align-items: center;
+  padding: 8px;
+}
+
+.az-dropdown-panel.menu {
+  padding: 8px;
+}
+
+.az-dropdown-panel.packed .az-nav-rail-button {
+  margin: 0;
+}
+
+@keyframes az-dropdown-unfold {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 .header {
   padding: 16px;
   text-align: center;

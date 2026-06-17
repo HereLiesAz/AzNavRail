@@ -36,6 +36,18 @@ export enum AzNestedRailAlignment {
   HORIZONTAL = 'HORIZONTAL',
 }
 
+/**
+ * Selects which set of items the rail reveals when it is used as a drop-down menu
+ * (see `AzNavRailSettings.dropdownMenu`). There is exactly one set — the app icon acts as the
+ * trigger and tapping it unfolds whichever set this names.
+ */
+export enum AzDropdownSource {
+  /** Unfold the rail items, rendered as the packed rail buttons. */
+  RAIL = 'RAIL',
+  /** Unfold the menu items, rendered as the full drawer rows. */
+  MENU = 'MENU',
+}
+
 /** General orientation flag used by layout helpers. */
 export enum AzOrientation {
   /** Components arranged in a column. */
@@ -78,6 +90,21 @@ export interface AzNavRailSettings {
   dockingSide?: AzDockingSide;
   /** When true, the rail never expands into a menu — icon-only mode is permanent. */
   noMenu?: boolean;
+  /**
+   * When true, the rail is used as a drop-down menu: it collapses to a single app-icon trigger
+   * anchored at the top (the icon replaces the hamburger) and unfolds `dropdownSource` downward
+   * like an accordion when tapped. Content is given the full screen width. This mode runs at the
+   * explicit exclusion of FAB/dragging, rail-to-menu expansion, swipe gestures, physical docking,
+   * the footer, nested-rail popups, the bleeding app-name header, and the help overlay.
+   */
+  dropdownMenu?: boolean;
+  /**
+   * Which set of items the drop-down reveals — `RAIL` (the packed rail buttons) or `MENU` (the
+   * full drawer rows). Only honoured when `dropdownMenu` is true. Defaults to `RAIL`.
+   */
+  dropdownSource?: AzDropdownSource;
+  /** Exact diameter (px) of the app icon in the header. When omitted the icon uses its default size. */
+  headerIconSize?: number;
   /** When true, the help/info overlay is displayed over the screen. */
   infoScreen?: boolean;
   /** Called when the user dismisses the info screen overlay. */

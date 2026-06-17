@@ -77,6 +77,7 @@ import com.hereliesaz.aznavrail.internal.MenuItem
 import com.hereliesaz.aznavrail.internal.RailItems
 import com.hereliesaz.aznavrail.internal.SecretScreens
 import com.hereliesaz.aznavrail.model.AzDockingSide
+import com.hereliesaz.aznavrail.model.AzDropdownSource
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
@@ -357,6 +358,167 @@ fun AzNavRail(
         }
     }
 
+    // DROP-DOWN MENU MODE.
+    //
+    // When enabled, the rail abandons its docked side-strip identity entirely and behaves as a
+    // single app-icon trigger anchored at the top (the icon replaces the hamburger). Tapping it
+    // unfolds the chosen item set downward — reusing the same fold/unfold idea as FAB mode: a
+    // single boolean gates whether the items render. There is no rail<->menu expansion, no
+    // dragging, no swipes, no footer, no nested-rail popups, and no help overlay here; this branch
+    // returns before any of that machinery is reached. `onscreen` content is widened to the full
+    // screen by AzHostActivityLayout (it zeroes the rail-offset padding in this mode).
+    if (scope.dropdownMenu) {
+        var isDropdownOpen by remember { mutableStateOf(false) }
+        val dropAlignment = if (visualDockingSide == AzDockingSide.RIGHT) Alignment.TopEnd else Alignment.TopStart
+        val iconDiameter = if (scope.headerIconSize != androidx.compose.ui.unit.Dp.Unspecified) {
+            scope.headerIconSize
+        } else {
+            minOf(100.dp, scope.collapsedWidth)
+        }
+        val maxPanelHeight = (configuration.screenHeightDp * 0.8f).dp
+
+        // Shared rail-cycler debounce handler, identical to the docked rail's behaviour.
+        val onDropdownCyclerClick: (AzNavItem) -> Unit = { item ->
+            val state = cyclerStates[item.id]
+            if (state != null && !item.disabled) {
+                state.job?.cancel()
+                val options = item.options ?: emptyList()
+                val enabledOptions = options.filterNot { it in (item.disabledOptions ?: emptyList()) }
+                if (enabledOptions.isNotEmpty()) {
+                    val currentIndex = enabledOptions.indexOf(state.displayedOption)
+                    val nextOption = enabledOptions[(currentIndex + 1) % enabledOptions.size]
+                    scope.transientCyclerOptions[item.id] = nextOption
+                    cyclerStates[item.id] = state.copy(
+                        displayedOption = nextOption,
+                        job = coroutineScope.launch {
+                            delay(1000L)
+                            scope.onClickMap[item.id]?.invoke()
+                            cyclerStates[item.id] = cyclerStates[item.id]?.copy(job = null) ?: state
+                        }
+                    )
+                }
+                scope.advancedConfig.onInteraction?.invoke(item.id, item)
+            }
+        }
+
+        Box(modifier = modifier.fillMaxSize()) {
+            // Tap anywhere outside the open dropdown to fold it back up.
+            if (isDropdownOpen) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .pointerInput(Unit) {
+                            detectTapGestures(onTap = {
+                                isDropdownOpen = false
+                                Log.d("AzNavRail", "Dropdown: tap outside, folded up.")
+                            })
+                        }
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .align(dropAlignment)
+                    .padding(AzNavRailDefaults.HeaderPadding),
+                horizontalAlignment = if (visualDockingSide == AzDockingSide.RIGHT) Alignment.End else Alignment.Start
+            ) {
+                // App icon == hamburger trigger.
+                Box(
+                    modifier = Modifier
+                        .size(iconDiameter)
+                        .pointerInput(scope.vibrate) {
+                            detectTapGestures(onTap = {
+                                isDropdownOpen = !isDropdownOpen
+                                if (scope.vibrate) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                Log.d(
+                                    "AzNavRail",
+                                    "Dropdown trigger tapped: ${if (isDropdownOpen) "unfolding" else "folding"} ${scope.dropdownSource} items."
+                                )
+                            })
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (appIcon != null) {
+                        val baseModifier = Modifier.fillMaxSize()
+                        val clipModifier = when (scope.headerIconShape) {
+                            AzHeaderIconShape.CIRCLE -> baseModifier.clip(CircleShape)
+                            AzHeaderIconShape.ROUNDED -> baseModifier.clip(RoundedCornerShape(12.dp))
+                            else -> baseModifier
+                        }
+                        Image(
+                            painter = rememberAsyncImagePainter(appIcon),
+                            contentDescription = "Menu",
+                            modifier = clipModifier
+                        )
+                    } else {
+                        Icon(Icons.Default.Menu, "Menu")
+                    }
+                }
+
+                // The unfolded set — exactly one of the two renderings.
+                if (isDropdownOpen) {
+                    Surface(
+                        color = Color.Transparent,
+                        tonalElevation = 2.dp,
+                        modifier = Modifier.shadow(8.dp, RectangleShape)
+                    ) {
+                        val dropScroll = rememberScrollState()
+                        if (scope.dropdownSource == AzDropdownSource.MENU) {
+                            Column(
+                                modifier = Modifier
+                                    .width(scope.expandedWidth)
+                                    .heightIn(max = maxPanelHeight)
+                                    .verticalScroll(dropScroll)
+                            ) {
+                                scope.navItems.forEach { item ->
+                                    if (!item.isSubItem) {
+                                        MenuItemNode(
+                                            item = item,
+                                            allItems = scope.navItems,
+                                            navController = effectiveNavController,
+                                            currentDestination = actualCurrentDestination,
+                                            scope = scope,
+                                            hostStates = hostStates,
+                                            showHelpOverlay = false,
+                                            onToggleHelp = { },
+                                            onCollapseMenu = { isDropdownOpen = false }
+                                        )
+                                    }
+                                }
+                            }
+                        } else {
+                            Column(
+                                modifier = Modifier
+                                    .heightIn(max = maxPanelHeight)
+                                    .verticalScroll(dropScroll),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                RailItems(
+                                    items = scope.navItems,
+                                    scope = scope,
+                                    navController = effectiveNavController,
+                                    currentDestination = actualCurrentDestination,
+                                    buttonSize = activeButtonSize,
+                                    onRailCyclerClick = onDropdownCyclerClick,
+                                    onItemSelected = { item ->
+                                        if (item.collapseOnClick) isDropdownOpen = false
+                                    },
+                                    hostStates = hostStates,
+                                    packRailButtons = true,
+                                    visualDockingSide = visualDockingSide,
+                                    onItemGloballyPositioned = null,
+                                    helpEnabled = false,
+                                    rotationDegrees = rotationDegrees
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return
+    }
+
     fun toggleExpanded() {
         if (!showHelpOverlay) {
             if (isFloating) {
@@ -610,8 +772,13 @@ fun AzNavRail(
                         )
                     } else {
                         // Reverts to identical App Icon logic
+                        val headerIconDiameter = if (scope.headerIconSize != androidx.compose.ui.unit.Dp.Unspecified) {
+                            scope.headerIconSize
+                        } else {
+                            minOf(100.dp, targetRailWidth)
+                        }
                         Box(
-                            modifier = Modifier.size(minOf(100.dp, targetRailWidth)),
+                            modifier = Modifier.size(headerIconDiameter),
                             contentAlignment = Alignment.Center
                         ) {
                             if (appIcon != null) {

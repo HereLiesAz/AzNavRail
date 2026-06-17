@@ -1,8 +1,11 @@
 package com.hereliesaz.aznavrail
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
+import com.hereliesaz.aznavrail.model.AzDropdownSource
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -45,6 +48,41 @@ class AzNavRailScopeTest {
 
         assertEquals(Color.Red, scope.activeColor)
         assertEquals(AzButtonShape.SQUARE, scope.defaultShape)
+    }
+
+    @Test
+    fun `dropdownMenu defaults are off`() {
+        assertEquals(false, scope.dropdownMenu)
+        assertEquals(AzDropdownSource.RAIL, scope.dropdownSource)
+        assertEquals(Dp.Unspecified, scope.headerIconSize)
+    }
+
+    @Test
+    fun `azConfig enables dropdown menu mode`() {
+        scope.azConfig(dropdownMenu = true, dropdownSource = AzDropdownSource.MENU)
+
+        assertTrue(scope.dropdownMenu)
+        assertEquals(AzDropdownSource.MENU, scope.dropdownSource)
+    }
+
+    @Test
+    fun `azSettings enables dropdown and header icon size`() {
+        scope.azSettings(
+            dropdownMenu = true,
+            dropdownSource = AzDropdownSource.RAIL,
+            headerIconSize = 56.dp
+        )
+
+        assertTrue(scope.dropdownMenu)
+        assertEquals(AzDropdownSource.RAIL, scope.dropdownSource)
+        assertEquals(56.dp, scope.headerIconSize)
+    }
+
+    @Test
+    fun `azTheme sets header icon size`() {
+        scope.azTheme(headerIconSize = 40.dp)
+
+        assertEquals(40.dp, scope.headerIconSize)
     }
 
     @Test

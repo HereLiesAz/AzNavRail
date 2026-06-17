@@ -142,4 +142,27 @@ In landscape mode, the RailItems are still way too small, and should be the same
 
 There's a quirky bug with the generated screen title. When I click an AzRailToggle or an AzRailCycler, it displays the text on the button that was present when clicked. It SHOULD display the text of the option that is active.
 
+The app icon in the header must be sizable to a specific diameter. Provide `headerIconSize`
+(a `Dp` on Android via `azTheme`/`azSettings`, a pixel number on React). When unset, the icon keeps
+its legacy behavior of sizing to the rail width. When set, the header icon is rendered at exactly
+that width and height.
+
+Drop-down menu mode: the rail can be used as a drop-down menu via `dropdownMenu = true` in
+`azConfig`/`azSettings` (a `dropdownMenu` boolean in React settings). In this mode:
+
+- `onscreen()` content is allowed the entire width of the screen (the rail reserves no horizontal
+  band). The rail renders as a floating top-anchored trigger above the content.
+- The app icon takes the place of the hamburger menu icon. The bleeding app-name header is not used
+  here; it is always the icon.
+- Tapping the icon causes either the menu items or the rail items to unfold like an accordion
+  downward, reusing the exact fold/unfold mechanism already programmed for the floating-rail (FAB)
+  feature. Tapping the icon again, tapping an item, or tapping outside folds them back up.
+- The developer selects which set unfolds via `dropdownSource` (`RAIL` or `MENU`). There is no
+  collapsing the rail or expanding the menu; whichever they choose is the one and only set the
+  drop-down shows.
+- This mode works at the explicit exclusion of: FAB mode/draggable rail and the overlay service,
+  rail↔menu expansion, `noMenu`, all swipe gestures, physical docking/rotate-in-place, the footer,
+  nested-rail popups, the rail width settings, the bleeding app-name header, the rail safe-zone
+  padding, and the help overlay/tutorials. Host items still expand inline as an accordion.
+
 As an option, I am changing how the AzNavRail switches from portrait to landscape mode. Instead of maintaining its position on the side of the screen, it maintains its position on the side of the device, and all elements of the rail each rotate in place. This may take some careful consideration for whatever logic is needed in different circumstances, like how RailHostItems are expanded, or the difference between the rail being docked on the right or left in portrait mode. Also--PAY ATTENTION--if the rail is docked to the left in portrait mode, rotating the device clockwise means it will be at the top of the screen. But if I rotate counter-clockwise, it should be at the bottom of the screen. And if I turned the device upside down, the rail should be on the left side.
