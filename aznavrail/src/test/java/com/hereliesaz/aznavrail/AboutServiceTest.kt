@@ -3,6 +3,7 @@ package com.hereliesaz.aznavrail
 import com.hereliesaz.aznavrail.service.GithubDocsRepository
 import com.hereliesaz.aznavrail.service.MoreFromAzRepository
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -43,6 +44,16 @@ class AboutServiceTest {
         val docs = GithubDocsRepository.parseContents(json)
         assertEquals(2, docs.size)
         assertTrue(docs.all { it.path.endsWith(".md") })
+    }
+
+    @Test
+    fun `azignore excludes listed docs from the TOC`() {
+        val patterns = GithubDocsRepository.parseIgnore("# private\n\nCHANGELOG.md\ndocs/internal/\n*.draft.md\n")
+        assertTrue(GithubDocsRepository.isIgnored("CHANGELOG.md", patterns))
+        assertTrue(GithubDocsRepository.isIgnored("docs/internal/notes.md", patterns))
+        assertTrue(GithubDocsRepository.isIgnored("docs/x.draft.md", patterns))
+        assertFalse(GithubDocsRepository.isIgnored("README.md", patterns))
+        assertFalse(GithubDocsRepository.isIgnored("docs/API.md", patterns))
     }
 
     @Test

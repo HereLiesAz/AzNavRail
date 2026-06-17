@@ -172,7 +172,9 @@ repository root and the `docs/` folder of `appRepositoryUrl` via the GitHub cont
 table of contents, and renders each doc inline. Fetches are cached (ETag + TTL) to respect GitHub's
 unauthenticated rate limit; offline/limited shows the last cached copy. Public repos only. Configured
 via `azAbout(inAppAbout, moreFromAzEnabled, moreFromAzJsonUrl, moreRailItem)`; `inAppAbout = false`
-restores the browser behavior.
+restores the browser behavior. A repo-root `.azignore` (one pattern per line; `#` comments; exact
+paths, `dir/` prefixes, or `*` globs) excludes listed docs from the About TOC — implemented in
+`GithubDocsRepository.parseIgnore`/`isIgnored` (Android) and `githubDocs.ts` (React).
 
 "More from Az" is a carousel of the author's other apps reachable from the About screen and/or a
 pinned "More" rail item (`moreRailItem`). The maintainer **pastes GitHub repo links, one per line,

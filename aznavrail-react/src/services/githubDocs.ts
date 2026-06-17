@@ -67,7 +67,32 @@ export async function listDocs(repoUrl: string): Promise<DocsResult> {
   const root = rootRes ? safeParse(rootRes.body) : [];
   const docs = docsRes ? safeParse(docsRes.body) : [];
   const offline = Boolean(rootRes?.rateLimited || docsRes?.rateLimited);
-  return { entries: orderToc(root, docs), offline };
+
+  // Honor a repo-root `.azignore`: docs it lists are excluded from the About TOC.
+  const ignore = await cachedGet(`https://raw.githubusercontent.com/${owner}/${repo}/HEAD/.azignore`);
+  const patterns = ignore ? parseIgnore(ignore.body) : [];
+  const entries = orderToc(root, docs).filter((e) => !isIgnored(e.path, patterns));
+  return { entries, offline };
+}
+
+/** Parses a `.azignore` file into its non-comment, non-blank patterns. */
+export function parseIgnore(text: string): string[] {
+  return text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l && !l.startsWith('#'))
+    .map((l) => l.replace(/^\.\//, ''));
+}
+
+/** True if `path` (a repo-relative doc path) matches any `.azignore` pattern. */
+export function isIgnored(path: string, patterns: string[]): boolean {
+  if (!patterns.length) return false;
+  const fileName = path.split('/').pop() || path;
+  return patterns.some((pat) => {
+    if (pat.endsWith('/')) return path === pat.slice(0, -1) || path.startsWith(pat);
+    const re = new RegExp('^' + pat.split('*').map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$');
+    return re.test(path) || re.test(fileName);
+  });
 }
 
 function safeParse(body: string): AzDocEntry[] {

@@ -540,6 +540,9 @@ const settings: AzNavRailSettings = {
 - **Caching & rate limit:** results are cached (ETag + 6h TTL) to stay well under GitHub's
   unauthenticated ~60 req/hr limit; when offline or rate-limited the reader shows the last cached copy.
 - **Public repos only** (unauthenticated GitHub API). Private repos won't resolve.
+- **`.azignore`:** add a `.azignore` file at your repo root listing docs to exclude from the About
+  TOC — one pattern per line (`#` comments; exact paths like `CHANGELOG.md`, directory prefixes like
+  `docs/internal/`, or `*` globs like `*.draft.md`).
 - The system **back** button (Android) / back arrow returns from a doc to the table of contents, then
   dismisses.
 

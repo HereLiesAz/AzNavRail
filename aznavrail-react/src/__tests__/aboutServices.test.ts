@@ -1,4 +1,4 @@
-import { parseRepo, humanize, parseContents, orderToc } from '../services/githubDocs';
+import { parseRepo, humanize, parseContents, orderToc, parseIgnore, isIgnored } from '../services/githubDocs';
 import { parse } from '../services/moreFromAz';
 
 describe('githubDocs', () => {
@@ -34,6 +34,15 @@ describe('githubDocs', () => {
     const toc = orderToc(root, docs);
     expect(toc[0].title).toBe('README');
     expect(toc[toc.length - 1].path).toBe('docs/DSL.md');
+  });
+
+  it('azignore excludes listed docs from the TOC', () => {
+    const p = parseIgnore('# private\n\nCHANGELOG.md\ndocs/internal/\n*.draft.md\n');
+    expect(isIgnored('CHANGELOG.md', p)).toBe(true);
+    expect(isIgnored('docs/internal/notes.md', p)).toBe(true);
+    expect(isIgnored('docs/x.draft.md', p)).toBe(true);
+    expect(isIgnored('README.md', p)).toBe(false);
+    expect(isIgnored('docs/API.md', p)).toBe(false);
   });
 });
 
