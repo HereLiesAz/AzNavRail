@@ -18,16 +18,54 @@ export interface AzMoreFromApp {
   webUrl?: string;
 }
 
-/** Parses the manifest into `[version, links]`. */
+const URL_RE = /https?:\/\/[^\s"'<>,}\]]+/g;
+
+function classifyUrls(urls: string[]): AzMoreFromLink | null {
+  const app: AzMoreFromLink = {};
+  for (const raw of urls) {
+    const u = raw.replace(/[.,;]+$/, '');
+    if (u.includes('github.com')) app.github ??= u;
+    else if (u.includes('play.google.com')) app.play ??= u;
+    else app.web ??= u;
+  }
+  return app.github || app.play || app.web ? app : null;
+}
+
+/** Lenient fallback: pull URLs out of a not-quite-JSON manifest, grouping by `{}` block or line. */
+export function parseLinksLoose(raw: string): [number, AzMoreFromLink[]] {
+  const version = Number(/"version"\s*:\s*(\d+)/.exec(raw)?.[1]) || 0;
+  const links: AzMoreFromLink[] = [];
+  const blocks = raw.match(/\{[^{}]*\}/g) || [];
+  for (const b of blocks) {
+    const app = classifyUrls(b.match(URL_RE) || []);
+    if (app) links.push(app);
+  }
+  if (links.length === 0) {
+    for (const line of raw.split('\n')) {
+      const app = classifyUrls(line.match(URL_RE) || []);
+      if (app) links.push(app);
+    }
+  }
+  return [version, links];
+}
+
+/**
+ * Parses the manifest into `[version, links]`. Tries strict JSON first; on failure (e.g. bare URLs
+ * pasted before CI normalized the file) falls back to a lenient URL scan so the carousel still works.
+ */
 export function parseLinks(json: string): [number, AzMoreFromLink[]] {
-  const obj = JSON.parse(json);
-  const version = typeof obj.version === 'number' ? obj.version : 0;
-  const apps: AzMoreFromLink[] = Array.isArray(obj.apps)
-    ? obj.apps
-        .map((a: any) => ({ github: a?.github || undefined, play: a?.play || undefined, web: a?.web || undefined }))
-        .filter((a: AzMoreFromLink) => a.github || a.play || a.web)
-    : [];
-  return [version, apps];
+  try {
+    const obj = JSON.parse(json);
+    const version = typeof obj.version === 'number' ? obj.version : 0;
+    const apps: AzMoreFromLink[] = Array.isArray(obj.apps)
+      ? obj.apps
+          .map((a: any) => ({ github: a?.github || undefined, play: a?.play || undefined, web: a?.web || undefined }))
+          .filter((a: AzMoreFromLink) => a.github || a.play || a.web)
+      : [];
+    return [version, apps];
+  } catch {
+    return parseLinksLoose(json);
+  }
 }
 
 /** Extracts an OpenGraph `content` value, tolerant of attribute order. */
@@ -104,13 +142,38 @@ async function resolveGithub(link: AzMoreFromLink): Promise<AzMoreFromApp | null
   }
 }
 
-/** Resolves one link into an app (richest metadata first: Play, then web/PWA, then GitHub). */
+/**
+ * Derives the conventional Play Store URL for a GitHub repo (`com.<owner>.<repo>`, lower-cased).
+ * Only used if it actually resolves to a real listing (see {@link resolve}).
+ */
+export function derivePlayUrl(githubUrl: string): string | undefined {
+  const parsed = parseRepo(githubUrl);
+  if (!parsed) return undefined;
+  const [owner, repo] = parsed;
+  return `https://play.google.com/store/apps/details?id=com.${owner.toLowerCase()}.${repo.toLowerCase()}`;
+}
+
+/**
+ * Resolves one link into an app. Order: explicit Play, derived Play (verified by fetch), web/PWA,
+ * then GitHub. (On the web, Play/website fetches are CORS-limited, so GitHub is the usual resolver.)
+ */
 export async function resolve(link: AzMoreFromLink): Promise<AzMoreFromApp | null> {
-  return (
-    (link.play ? await resolvePlay(link) : null) ??
-    (link.web ? await resolveWeb(link) : null) ??
-    (await resolveGithub(link))
-  );
+  if (link.play) {
+    const viaPlay = await resolvePlay(link);
+    if (viaPlay) return viaPlay;
+  }
+  if (!link.play && link.github) {
+    const derived = derivePlayUrl(link.github);
+    if (derived) {
+      const viaDerived = await resolvePlay({ ...link, play: derived });
+      if (viaDerived) return viaDerived;
+    }
+  }
+  if (link.web) {
+    const viaWeb = await resolveWeb(link);
+    if (viaWeb) return viaWeb;
+  }
+  return resolveGithub(link);
 }
 
 export interface MoreFromResult {

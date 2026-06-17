@@ -1,11 +1,13 @@
-name: Bump more-from-az version
+name: Normalize & bump more-from-az
 
-# Auto-increments the `version` integer in more-from-az.json whenever its content changes, so the
-# rail's "More from Az" carousel can invalidate its cache without cutting a library release.
+# Whenever more-from-az.json changes, normalize it into clean JSON and bump its `version`, so the
+# maintainer can just *paste a list of links* (any shape — bare URLs inside or outside braces, on one
+# line or many) and CI tidies it up. Each app object keeps whatever links it has; URLs are classified
+# by host (github.com -> github, play.google.com -> play, anything else -> web). The Play link is also
+# auto-derived from the GitHub repo at runtime by the rail, so GitHub-only entries are enough.
 #
 # Loop safety: the bot commit message contains [skip ci], which GitHub honors to skip ALL workflows
 # for that push (so neither this workflow nor android-sample-build.yml re-runs on the bump commit).
-# The job is additionally guarded against the bot actor and [skip ci] messages.
 on:
   push:
     branches: [main]
@@ -16,7 +18,7 @@ permissions:
   contents: write
 
 jobs:
-  bump:
+  normalize:
     if: github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[skip ci]')
     runs-on: ubuntu-latest
     steps:
@@ -25,18 +27,52 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Increment version
+      - name: Normalize and bump version
         run: |
-          current=$(jq '.version' more-from-az.json)
-          next=$((current + 1))
-          tmp=$(mktemp)
-          jq ".version = $next" more-from-az.json > "$tmp" && mv "$tmp" more-from-az.json
-          echo "Bumped more-from-az version $current -> $next"
+          python3 - <<'PY'
+          import re, json
+          raw = open('more-from-az.json').read()
 
-      - name: Commit bumped version
+          m = re.search(r'"version"\s*:\s*(\d+)', raw)
+          version = (int(m.group(1)) if m else 0) + 1
+
+          def classify(urls):
+              app = {}
+              for u in urls:
+                  u = u.rstrip('.,;')
+                  if 'github.com' in u:
+                      app.setdefault('github', u)
+                  elif 'play.google.com' in u:
+                      app.setdefault('play', u)
+                  else:
+                      app.setdefault('web', u)
+              return app
+
+          url_re = re.compile(r'https?://[^\s"\'<>,}\]]+')
+          apps = []
+          # Prefer grouping by innermost { ... } blocks (one app per block).
+          blocks = re.findall(r'\{[^{}]*\}', raw)
+          for b in blocks:
+              urls = url_re.findall(b)
+              if urls:
+                  apps.append(classify(urls))
+          # Fallback: no usable blocks -> one app per line that contains URL(s).
+          if not apps:
+              for line in raw.splitlines():
+                  urls = url_re.findall(line)
+                  if urls:
+                      apps.append(classify(urls))
+
+          out = {"version": version, "apps": apps}
+          with open('more-from-az.json', 'w') as f:
+              f.write(json.dumps(out, indent=2) + "\n")
+          print(f"Normalized {len(apps)} apps; version -> {version}")
+          PY
+
+      - name: Commit normalized manifest
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: bump more-from-az version [skip ci]"
+          commit_message: "chore: normalize & bump more-from-az [skip ci]"
           commit_user_name: "github-actions[bot]"
           commit_user_email: "41898282+github-actions[bot]@users.noreply.github.com"
           file_pattern: more-from-az.json

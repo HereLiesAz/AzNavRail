@@ -17,8 +17,13 @@ import org.json.JSONObject
  */
 object MoreFromAzRepository {
 
-    /** Parses the manifest into its `version` and the raw link list. */
-    internal fun parseLinks(json: String): Pair<Int, List<AzMoreFromLink>> {
+    /**
+     * Parses the manifest into its `version` and the raw link list. Tries strict JSON first; if that
+     * fails (e.g. a maintainer pasted bare URLs and CI hasn't normalized the file yet), falls back to
+     * a lenient scan that extracts URLs from `{ ... }` blocks (or, failing that, per line) so the
+     * carousel still works.
+     */
+    internal fun parseLinks(json: String): Pair<Int, List<AzMoreFromLink>> = try {
         val obj = JSONObject(json)
         val version = obj.optInt("version", 0)
         val arr = obj.optJSONArray("apps")
@@ -31,6 +36,39 @@ object MoreFromAzRepository {
                     val web = a.optString("web").takeIf { it.isNotBlank() }
                     if (github != null || play != null || web != null) add(AzMoreFromLink(github, play, web))
                 }
+            }
+        }
+        version to links
+    } catch (e: Exception) {
+        parseLinksLoose(json)
+    }
+
+    private val URL_RE = Regex("""https?://[^\s"'<>,}\]]+""")
+
+    private fun classifyUrls(urls: List<String>): AzMoreFromLink? {
+        var gh: String? = null; var play: String? = null; var web: String? = null
+        for (raw in urls) {
+            val u = raw.trimEnd('.', ',', ';')
+            when {
+                u.contains("github.com") -> if (gh == null) gh = u
+                u.contains("play.google.com") -> if (play == null) play = u
+                else -> if (web == null) web = u
+            }
+        }
+        return if (gh != null || play != null || web != null) AzMoreFromLink(gh, play, web) else null
+    }
+
+    /** Lenient fallback: pull URLs out of a not-quite-JSON manifest, grouping by `{}` block or line. */
+    internal fun parseLinksLoose(raw: String): Pair<Int, List<AzMoreFromLink>> {
+        val version = Regex("""\"version\"\s*:\s*(\d+)""").find(raw)?.groupValues?.get(1)?.toIntOrNull() ?: 0
+        val links = mutableListOf<AzMoreFromLink>()
+        Regex("""\{[^{}]*\}""").findAll(raw).forEach { block ->
+            classifyUrls(URL_RE.findAll(block.value).map { it.value }.toList())?.let { links.add(it) }
+        }
+        if (links.isEmpty()) {
+            raw.lineSequence().forEach { line ->
+                val urls = URL_RE.findAll(line).map { it.value }.toList()
+                if (urls.isNotEmpty()) classifyUrls(urls)?.let { links.add(it) }
             }
         }
         return version to links
@@ -98,11 +136,34 @@ object MoreFromAzRepository {
         }.getOrNull()
     }
 
-    /** Resolves one link entry into an app (richest metadata first: Play, then web/PWA, then GitHub). */
-    internal suspend fun resolve(context: Context, link: AzMoreFromLink): AzMoreFromApp? =
-        (if (link.play != null) resolvePlay(context, link) else null)
-            ?: (if (link.web != null) resolveWeb(context, link) else null)
-            ?: resolveGithub(context, link)
+    /**
+     * Derives the conventional Play Store URL for a GitHub repo (`com.<owner>.<repo>`, lower-cased),
+     * e.g. `HereLiesAz/CueDetat` -> `…?id=com.hereliesaz.cuedetat`. The candidate is only used if it
+     * actually resolves to a real listing (see [resolve]), so a wrong guess for an unpublished app is
+     * silently dropped.
+     */
+    internal fun derivePlayUrl(githubUrl: String): String? {
+        val (owner, repo) = GithubDocsRepository.parseRepo(githubUrl) ?: return null
+        val pkg = "com.${owner.lowercase()}.${repo.lowercase()}"
+        return "https://play.google.com/store/apps/details?id=$pkg"
+    }
+
+    /**
+     * Resolves one link entry into an app. Order (richest metadata first):
+     *  1. explicit Play link, 2. **derived** Play link from the GitHub repo (verified by fetch),
+     *  3. website/PWA link, 4. GitHub repo API.
+     * Resolving via Play also avoids a GitHub API call (saving the rate-limit budget) for published apps.
+     */
+    internal suspend fun resolve(context: Context, link: AzMoreFromLink): AzMoreFromApp? {
+        if (link.play != null) resolvePlay(context, link)?.let { return it }
+        if (link.play == null && link.github != null) {
+            derivePlayUrl(link.github)?.let { derived ->
+                resolvePlay(context, link.copy(play = derived))?.let { return it }
+            }
+        }
+        if (link.web != null) resolveWeb(context, link)?.let { return it }
+        return resolveGithub(context, link)
+    }
 
     /** Result of [fetch]: the manifest version plus the resolved apps (failed entries are dropped). */
     data class MoreFromResult(val version: Int, val apps: List<AzMoreFromApp>)

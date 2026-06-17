@@ -73,6 +73,36 @@ class AboutServiceTest {
     }
 
     @Test
+    fun `derivePlayUrl builds the conventional package id from a github repo`() {
+        assertEquals(
+            "https://play.google.com/store/apps/details?id=com.hereliesaz.cuedetat",
+            MoreFromAzRepository.derivePlayUrl("https://github.com/HereLiesAz/CueDetat")
+        )
+        assertNull(MoreFromAzRepository.derivePlayUrl("https://gitlab.com/a/b"))
+    }
+
+    @Test
+    fun `parseLinks tolerates pasted bare-URL manifests`() {
+        // A maintainer paste: bare URLs inside braces, no keys/quotes/commas, plus an empty block.
+        val messy = """
+            { "version": 5, "apps": [
+              { https://github.com/HereLiesAz/AzNavRail }
+              {
+                https://github.com/HereLiesAz/CueDetat
+                https://play.google.com/store/apps/details?id=com.hereliesaz.cuedetat
+              }
+              { }
+            ] }
+        """.trimIndent()
+        val (version, links) = MoreFromAzRepository.parseLinks(messy)
+        assertEquals(5, version)
+        assertEquals(2, links.size) // empty block dropped
+        assertEquals("https://github.com/HereLiesAz/AzNavRail", links[0].github)
+        assertEquals("https://github.com/HereLiesAz/CueDetat", links[1].github)
+        assertTrue(links[1].play!!.contains("id=com.hereliesaz.cuedetat"))
+    }
+
+    @Test
     fun `extractOg pulls opengraph content regardless of attribute order`() {
         val html = """<meta property="og:title" content="My App - Apps on Google Play">""" +
             """<meta content="https://img/icon.png" property="og:image">"""
