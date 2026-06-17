@@ -42,7 +42,7 @@ function appFromObject(o: any): AzMoreFromApp | null {
   }
   // Un-baked link object { github?, play?, web? } -> degraded card.
   const anchor = o?.github || o?.play || o?.web;
-  if (!anchor) return null;
+  if (typeof anchor !== 'string' || !anchor) return null;
   return {
     name: displayNameFor(anchor),
     iconUrl: '',

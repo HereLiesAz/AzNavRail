@@ -56,11 +56,41 @@ def derive_play_url(github_url):
 
 
 def is_wip_first_line(readme):
-    """True if the first non-empty README line contains the whole word WIP (case-insensitive)."""
+    """True if the first content README line contains the whole word WIP (case-insensitive).
+
+    Leading blank lines and common non-content decorations (HTML comments, badges, images) are
+    skipped so the check lands on the real first line of content (usually the title)."""
     for line in (readme or "").splitlines():
-        if line.strip():
-            return re.search(r"\bWIP\b", line, re.I) is not None
+        s = line.strip()
+        if not s or s.startswith(("<!--", "<img", "![", "[![")):
+            continue
+        return re.search(r"\bWIP\b", s, re.I) is not None
     return False
+
+
+def app_links_from_input(raw):
+    """Ordered anchor links to resolve, from either a baked JSON manifest or a raw pasted list.
+
+    Crucially, when the input is already baked, only each app's GitHub link (or a standalone
+    play/web) is re-emitted — the baked icon/name and a repo's derived play/web are NOT re-processed
+    (the repo re-derives them), so re-baking is idempotent and never spawns duplicate/junk cards."""
+    try:
+        data = json.loads(raw)
+        apps = data.get("apps") if isinstance(data, dict) else None
+    except Exception:
+        apps = None
+    if isinstance(apps, list):
+        out = []
+        for e in apps:
+            if isinstance(e, str) and e.strip():
+                out.append(e.strip())
+            elif isinstance(e, dict):
+                anchor = e.get("github") or e.get("play") or e.get("web")
+                if isinstance(anchor, str) and anchor:
+                    out.append(anchor)
+        return out
+    # Not a structured manifest (raw paste) -> every URL in the text, one per line / any order.
+    return extract_urls(raw)
 
 
 def og(html, prop):
@@ -144,7 +174,12 @@ def resolve_github(github_url):
     status, body = http_get(f"https://api.github.com/repos/{owner}/{repo}", token=True)
     if status != 200:
         return None
-    meta = json.loads(body)
+    try:
+        meta = json.loads(body)
+    except Exception:
+        return None
+    if not isinstance(meta, dict):
+        return None
     branch = meta.get("default_branch") or "HEAD"
 
     # README — used only for the WIP check.
@@ -191,7 +226,7 @@ def bake(raw):
     version = (int(m.group(1)) if m else 0) + 1
 
     apps, seen_repo = [], set()
-    for url in extract_urls(raw):
+    for url in app_links_from_input(raw):
         parsed = parse_repo(url)
         if parsed:
             key = f"{parsed[0].lower()}/{parsed[1].lower()}"
