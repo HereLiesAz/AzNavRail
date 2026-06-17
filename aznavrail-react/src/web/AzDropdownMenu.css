@@ -1,0 +1,48 @@
+/* Standalone hamburger drop-down menu (web). Placed inline like any widget; the panel is
+   absolutely positioned relative to the trigger and anchored via `dropdownAlignment`. */
+.az-dropdown-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.az-dropdown-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.az-dropdown-menu-trigger.circle { border-radius: 50%; }
+.az-dropdown-menu-trigger.rounded { border-radius: 12px; }
+
+/* Full-screen invisible layer that folds the panel back up on an outside click. */
+.az-dropdown-menu-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+}
+
+.az-dropdown-menu-panel {
+  position: absolute;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 8px;
+  border-radius: 12px;
+  background-color: #ffffff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  animation: az-dropdown-menu-unfold 0.18s ease-out;
+}
+
+@keyframes az-dropdown-menu-unfold {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

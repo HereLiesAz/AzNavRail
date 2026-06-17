@@ -3,6 +3,13 @@ import React, { useRef, useState, useEffect } from 'react';
 import { View, PanResponder, Animated, StyleSheet, TouchableOpacity, Text, Modal, Linking } from 'react-native';
 import { AzButton } from './AzButton';
 import { AzTextBox } from './AzTextBox';
+
+/** Internal props for `DraggableRailItemWrapper`. */
+
+/**
+ * Renders a single reloc item that can be dragged vertically and long-pressed to reveal a hidden menu.
+ * Used internally by `AzNavRail` to host `AzRailRelocItem` declarations.
+ */
 export const DraggableRailItemWrapper = ({
   item,
   index,
@@ -110,6 +117,7 @@ export const DraggableRailItemWrapper = ({
           key: i,
           style: styles.hiddenMenuItem
         }, /*#__PURE__*/React.createElement(AzTextBox, {
+          containerStyle: styles.hiddenMenuInput,
           initialValue: menuItem.initialValue,
           hint: menuItem.hint,
           onValueChange: menuItem.onValueChange,
@@ -199,6 +207,11 @@ const styles = StyleSheet.create({
   hiddenMenuItemText: {
     fontSize: 16,
     color: 'black'
+  },
+  // Explicit width for input items so the text boxes (not the popup) drive the
+  // hidden menu's width. Mirrors the Kotlin library's menuItemWidth = 250.dp.
+  hiddenMenuInput: {
+    width: 250
   }
 });
 //# sourceMappingURL=DraggableRailItemWrapper.js.map

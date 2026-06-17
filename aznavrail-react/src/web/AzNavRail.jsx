@@ -9,7 +9,6 @@ import AzDivider from './AzDivider';
 import AzTextBox from './AzTextBox';
 import AboutOverlay from './AboutOverlay';
 import MoreFromAzOverlay from './MoreFromAzOverlay';
-import { parseDropdownAnchor } from '../dropdownPlacement';
 
 /**
  * An M3-style navigation rail that expands into a menu drawer for web applications.
@@ -37,10 +36,6 @@ const AzNavRail = ({
     onDismissInfoScreen,
     dockingSide = 'LEFT',
     noMenu = false,
-    dropdownMenu = false,
-    dropdownSource = 'RAIL',
-    dropdownAlignment = 'top-start',
-    dropdownOffset,
     headerIconSize,
     activeClassifiers = new Set(), // Set of strings
     activeColor,
@@ -68,19 +63,13 @@ const AzNavRail = ({
   }, [effectiveNoMenu, isExpanded]);
 
   const [showFooterPopup, setShowFooterPopup] = useState(false);
-  // Drop-down menu mode: a single boolean gates whether the chosen item set is unfolded under
-  // the app-icon trigger (reusing the floating-rail fold/unfold idea).
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   // In-app About reader + More-from-Az overlays.
   const [showAbout, setShowAbout] = useState(false);
   const [showMoreFromAz, setShowMoreFromAz] = useState(false);
 
   const onToggle = () => {
       if (infoScreen) return;
-      if (dropdownMenu) {
-          // In drop-down mode an item click closes the panel (action + fold up).
-          setIsDropdownOpen(false);
-      } else if (effectiveNoMenu) {
+      if (effectiveNoMenu) {
           setShowFooterPopup(!showFooterPopup);
       } else {
           setIsExpanded(!isExpanded);
@@ -376,84 +365,6 @@ const AzNavRail = ({
 
   // Renders a single rail item inside the drop-down panel (RAIL source). Hosts expand inline as an
   // accordion; cyclers stay open for multi-tap; any other tap performs its action and folds up.
-  // Nested-rail popups and reloc dragging are intentionally not supported in drop-down mode.
-  const renderDropdownRailItem = (item) => {
-      if (item.isDivider) return <AzDivider key={item.id} />;
-      const finalItem = item.isCycler
-        ? { ...item, selectedOption: cyclerStates[item.id]?.displayedOption }
-        : item;
-      const isActive = checkIsActive(item);
-      const isHostItem = item.isHost || !!item.items || !!subItemsMap[item.id];
-      return (
-          <React.Fragment key={item.id}>
-              <div ref={(el) => updateItemBound(item.id, el)} style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                  <AzNavRailButton
-                      item={{ ...finalItem, isActive }}
-                      onCyclerClick={() => handleCyclerClick(item)}
-                      onClickOverride={
-                          isHostItem
-                            ? () => toggleHost(item)
-                            : (item.isCycler
-                                ? undefined
-                                : () => { if (item.onClick) item.onClick(); setIsDropdownOpen(false); })
-                      }
-                      style={{ borderColor: isActive && activeColor ? activeColor : (item.color || 'blue') }}
-                  />
-              </div>
-              {isHostItem && hostStates[item.id] && (subItemsMap[item.id] || [])
-                  .filter(sub => sub.isRailItem)
-                  .map(sub => renderDropdownRailItem(sub))}
-          </React.Fragment>
-      );
-  };
-
-  if (dropdownMenu) {
-      const iconStyle = headerIconSize ? { width: headerIconSize, height: headerIconSize } : undefined;
-      // The trigger is a plain hamburger button placed wherever the dev asks (nine anchors + a fine
-      // offset), not a docked strip — the docking side no longer dictates its spot.
-      const { vert, horiz, isBottom } = parseDropdownAnchor(dropdownAlignment);
-      const offX = dropdownOffset?.x ?? 0;
-      const offY = dropdownOffset?.y ?? 0;
-      const txCenter = horiz === 'center' ? '-50%' : '0px';
-      const tyCenter = vert === 'center' ? '-50%' : '0px';
-      const placementStyle = {
-          top: vert === 'bottom' ? 'auto' : vert === 'center' ? '50%' : 0,
-          bottom: vert === 'bottom' ? 0 : 'auto',
-          left: horiz === 'end' ? 'auto' : horiz === 'center' ? '50%' : 0,
-          right: horiz === 'end' ? 0 : 'auto',
-          alignItems: horiz === 'end' ? 'flex-end' : horiz === 'center' ? 'center' : 'flex-start',
-          flexDirection: isBottom ? 'column-reverse' : 'column',
-          transform: `translate(calc(${txCenter} + ${offX}px), calc(${tyCenter} + ${offY}px))`,
-      };
-      const panelBaseStyle = isBottom ? { marginTop: 0, marginBottom: 4 } : {};
-      return (
-          <>
-              {isDropdownOpen && (
-                  <div
-                      className="az-dropdown-scrim"
-                      onClick={() => setIsDropdownOpen(false)}
-                  />
-              )}
-              <div className={`az-nav-rail dropdown ${isDropdownOpen ? 'open' : ''}`} style={placementStyle}>
-                  <div className="header" onClick={() => setIsDropdownOpen(o => !o)}>
-                      <img src="/app-icon.png" alt="Menu" className={getHeaderIconClass()} style={iconStyle} />
-                  </div>
-                  {isDropdownOpen && (
-                      <div
-                          className={`az-dropdown-panel ${dropdownSource === 'MENU' ? 'menu' : 'rail'} ${packRailButtons ? 'packed' : ''}`}
-                          style={dropdownSource === 'MENU'
-                              ? { ...panelBaseStyle, width: expandedRailWidth, backgroundColor: translucentBackground || undefined }
-                              : { ...panelBaseStyle, backgroundColor: translucentBackground || undefined }}
-                      >
-                          {dropdownSource === 'MENU'
-                              ? menuItems.map(item => renderMenuItem(item))
-                              : effectiveRailItems.map(item => renderDropdownRailItem(item))}
-                      </div>
-                  )}
-              </div>
-          </>
-      );
-  }
 
   return (
     <>

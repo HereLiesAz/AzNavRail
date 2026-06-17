@@ -25,26 +25,13 @@ fun azConfig(
     expandedWidth: Dp = 130.dp,
     collapsedWidth: Dp = 80.dp,
     showFooter: Boolean = true,
-    appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail",
-    dropdownMenu: Boolean = false,
-    dropdownSource: AzDropdownSource = AzDropdownSource.RAIL,
-    dropdownAlignment: AzDropdownAlignment = AzDropdownAlignment.TOP_START,
-    dropdownOffset: DpOffset = DpOffset.Zero
+    appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail"
 )
 ~~~
 
-`dropdownMenu` turns the rail into a drop-down whose trigger behaves like a plain hamburger button:
-the app icon replaces the hamburger and tapping it unfolds `dropdownSource` (`RAIL` = packed rail
-buttons, `MENU` = full drawer rows) like an accordion. `onscreen` content spans the **full screen** —
-drop-down mode reserves **no** top/bottom content safe zones, so content runs edge-to-edge and the
-trigger floats over it. This mode excludes FAB/dragging, rail↔menu expansion, `noMenu`, swipe
-gestures, physical docking, the footer, nested-rail popups, the bleeding app-name header, and the
-help overlay.
-
-`dropdownAlignment` places the trigger icon at one of nine standard anchors (`TOP_START` … `BOTTOM_END`);
-`dropdownOffset` is a fine `DpOffset` nudge from that anchor. The panel unfolds downward for
-top/centre anchors and upward for bottom anchors, so it always grows away from the nearest edge. See
-the README's "Drop-down Menu Mode" section.
+> A hamburger drop-down menu is **not** a rail mode. Use the standalone `AzDropdownMenu` composable —
+> placed inline like `AzButton`, with no `AzNavHost`, no scope, and no safe zones. See
+> "`AzDropdownMenu`" below.
 
 ### `azTheme`
 Controls the visual style of the rail.
@@ -100,6 +87,51 @@ via the GitHub API (cached; public repos only) and renders them inline. "More fr
 CI-versioned carousel — see the README's "In-App About Reader" and "More from Az" sections.
 
 `onInteraction` is called whenever any rail item is interacted with — click, toggle, cycler advance, nested rail open, reloc drag, or host expand/collapse. It fires for both leaf items (`azRailItem` / `azRailSubItem`) and host items (`azRailHostItem`), in both the compact rail and the expanded menu, so opening a host menu is observable just like tapping a leaf. It receives the item's `id` and the `AzNavItem` itself, enabling analytics, UI feedback, and tutorial advancement (pair it with `controller.fireEvent(...)` and an `AzAdvanceCondition.Event` card) without per-item callbacks.
+
+## `AzDropdownMenu` (standalone hamburger menu)
+
+A drop-down menu is a standalone composable, used the usual way — drop it inline anywhere, like
+`AzButton`/`AzTextBox`. There is **no** `AzNavHost`, no DSL scope, no `background()`/`onscreen()`, and
+no reserved safe zones. It renders a tappable icon; tapping it unfolds a panel anchored to the icon
+(via a `Popup`) holding the items you declare. Tapping outside or pressing back folds it up.
+
+~~~kotlin
+@Composable
+fun AzDropdownMenu(
+    modifier: Modifier = Modifier,
+    icon: Painter? = null,                 // null → Icons.Default.Menu
+    contentDescription: String = "Menu",
+    iconSize: Dp = 48.dp,
+    iconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
+    iconTint: Color = Color.Unspecified,
+    menuWidth: Dp = Dp.Unspecified,        // wraps content when unspecified
+    backgroundColor: Color = Color.Unspecified,
+    alignment: AzDropdownAlignment = AzDropdownAlignment.TOP_START,
+    offset: DpOffset = DpOffset.Zero,
+    vibrate: Boolean = false,
+    expanded: Boolean? = null,             // optional controlled state
+    onExpandedChange: ((Boolean) -> Unit)? = null,
+    content: @Composable AzDropdownMenuScope.() -> Unit
+)
+~~~
+
+Items reuse the library's own widgets through `AzDropdownMenuScope` — `azItem` (→ `AzButton`),
+`azToggle` (→ `AzToggle`), `azCycler` (→ `AzCycler`), `azDivider` (→ `AzDivider`), plus `azCustom { }`
+and `dismiss()`. `azItem` folds the menu after its callback by default (`closeOnClick = true`).
+`alignment` anchors the panel to the icon and sets the unfold direction (top/centre → downward,
+`BOTTOM_*` → upward); `offset` nudges it.
+
+~~~kotlin
+AzDropdownMenu(alignment = AzDropdownAlignment.TOP_END) {
+    azItem("Settings") { openSettings() }
+    azToggle(isChecked = dark, toggleOnText = "Dark", toggleOffText = "Light") { dark = it }
+    azDivider()
+    azItem("Sign out") { signOut() }
+}
+~~~
+
+On React the equivalent is `<AzDropdownMenu>` with `<AzDropdownItem>` children (plus `AzToggle`/
+`AzCycler`/`AzDivider`); props mirror the Kotlin names (`alignment`, `offset`, `iconShape`, …).
 
 ## Hidden Menu Builders (for `azRailRelocItem`)
 * `listItem(text, route)`

@@ -10,6 +10,12 @@ var _AzButton = require("./AzButton");
 var _AzTextBox = require("./AzTextBox");
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function (e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, default: e }; if (null === e || "object" != typeof e && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (const t in e) "default" !== t && {}.hasOwnProperty.call(e, t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, t)) && (i.get || i.set) ? o(f, t, i) : f[t] = e[t]); return f; })(e, t); }
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+/** Internal props for `DraggableRailItemWrapper`. */
+
+/**
+ * Renders a single reloc item that can be dragged vertically and long-pressed to reveal a hidden menu.
+ * Used internally by `AzNavRail` to host `AzRailRelocItem` declarations.
+ */
 const DraggableRailItemWrapper = ({
   item,
   index,
@@ -117,6 +123,7 @@ const DraggableRailItemWrapper = ({
           key: i,
           style: styles.hiddenMenuItem
         }, /*#__PURE__*/_react.default.createElement(_AzTextBox.AzTextBox, {
+          containerStyle: styles.hiddenMenuInput,
           initialValue: menuItem.initialValue,
           hint: menuItem.hint,
           onValueChange: menuItem.onValueChange,
@@ -207,6 +214,11 @@ const styles = _reactNative.StyleSheet.create({
   hiddenMenuItemText: {
     fontSize: 16,
     color: 'black'
+  },
+  // Explicit width for input items so the text boxes (not the popup) drive the
+  // hidden menu's width. Mirrors the Kotlin library's menuItemWidth = 250.dp.
+  hiddenMenuInput: {
+    width: 250
   }
 });
 //# sourceMappingURL=DraggableRailItemWrapper.js.map

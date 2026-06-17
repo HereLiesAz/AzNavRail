@@ -3,14 +3,13 @@ package com.hereliesaz.aznavrail.model
 import androidx.compose.ui.Alignment
 
 /**
- * Where the drop-down menu's trigger icon is anchored on screen
- * (see [com.hereliesaz.aznavrail.AzNavRailScope.azConfig]'s `dropdownMenu` flag).
+ * Where an [com.hereliesaz.aznavrail.AzDropdownMenu] panel anchors to its trigger icon and which
+ * way it unfolds.
  *
- * In drop-down mode the rail is **not** a docked side-strip — it is a single hamburger-style icon
- * the developer can place anywhere, exactly like a plain menu button. This enum names the nine
- * standard anchor points; a fine `dropdownOffset` (a [androidx.compose.ui.unit.DpOffset]) nudges
- * the icon from that anchor. The unfolded panel opens **downward** for top/centre anchors and
- * **upward** for the bottom anchors, so it always grows away from the nearest screen edge.
+ * The drop-down menu is a standalone, hamburger-style widget placed inline like
+ * [com.hereliesaz.aznavrail.AzButton]. This enum names the nine standard anchor points; the panel
+ * opens **downward** for top/centre anchors and **upward** for the bottom anchors, so it always
+ * grows away from the nearest screen edge. A fine offset nudges the panel from that anchor.
  */
 enum class AzDropdownAlignment {
     TOP_START,

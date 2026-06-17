@@ -10,6 +10,7 @@ export * from './components/AzForm';
 export * from './components/AzLoad';
 export * from './components/AzRoller';
 export * from './components/AzDivider';
+export * from './components/AzDropdownMenu';
 export * from './components/AzBottomSheet';
 export * from './components/AzBottomSheetInsetAware';
 export * from './components/AzFloatingRail';

@@ -54,7 +54,6 @@ import com.hereliesaz.aznavrail.bottomsheet.rememberAzSheetController
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzComposableContent
 import com.hereliesaz.aznavrail.model.AzDockingSide
-import com.hereliesaz.aznavrail.model.AzDropdownSource
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 import com.hereliesaz.aznavrail.model.AzSheetConfig
@@ -161,10 +160,6 @@ fun MainApp() {
             collapsedWidth = customization.collapsedWidth,
             showFooter = customization.showFooter,
             appRepositoryUrl = customization.appRepositoryUrl,
-            dropdownMenu = customization.dropdownMenu,
-            dropdownSource = customization.dropdownSource,
-            dropdownAlignment = customization.dropdownAlignment,
-            dropdownOffset = customization.dropdownOffset,
         )
 
         azTheme(

@@ -37,12 +37,12 @@ azTheme(activeColor = MaterialTheme.colorScheme.primary)
 </AzNavRail>
 ```
 
-### Drop-down menu mode & header icon size
+### Drop-down menu (`AzDropdownMenu`) & header icon size
 
 | Android | React |
 | --- | --- |
-| `azConfig(dropdownMenu = true, dropdownSource = AzDropdownSource.RAIL)` | `<AzNavRail dropdownMenu dropdownSource={AzDropdownSource.RAIL}>` (or via `settings` on the web build) |
-| `azConfig(dropdownSource = AzDropdownSource.MENU)` | `dropdownSource={AzDropdownSource.MENU}` |
+| `AzDropdownMenu { azItem("Settings") { … } }` | `<AzDropdownMenu><AzDropdownItem text="Settings" onClick={…} /></AzDropdownMenu>` |
+| `AzDropdownMenu(alignment = AzDropdownAlignment.TOP_END)` | `<AzDropdownMenu alignment={AzDropdownAlignment.TOP_END}>` |
 | `azTheme(headerIconSize = 48.dp)` / `azSettings(headerIconSize = 48.dp)` | `headerIconSize={48}` |
 
 Drop-down mode collapses the rail to a top-anchored app-icon trigger (the icon replaces the
@@ -133,8 +133,9 @@ The Android callback receives `(itemId: String, item: AzNavItem)`. The React cal
 
 ## What's new in 0.3.0
 
-- **Drop-down menu mode** (`dropdownMenu` + `dropdownSource`) and a **sizable header icon**
-  (`headerIconSize`) reach parity with Android. See "Drop-down menu mode & header icon size" above.
+- The standalone **`AzDropdownMenu`** (with `AzDropdownItem`) and a **sizable header icon**
+  (`headerIconSize`) reach parity with Android. See "Drop-down menu (`AzDropdownMenu`) & header icon
+  size" above.
 - Bottom sheet **drag-to-collapse is gentler**: a downward drag now steps **down one detent**
   (`FULL → HALF → PEEK → HIDDEN`) instead of snapping straight to HIDDEN, mirroring the
   up-drag's one-step expand. Matches the Android `9.2` `AzSheetGestures` change.

@@ -11,19 +11,22 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.AzButton
 import com.hereliesaz.aznavrail.AzCycler
+import com.hereliesaz.aznavrail.AzDropdownMenu
 import com.hereliesaz.aznavrail.AzToggle
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDropdownAlignment
-import com.hereliesaz.aznavrail.model.AzDropdownSource
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 
 /** Live theme/config state surfaced from MainApp so the rail can re-key on each change. */
@@ -39,15 +42,10 @@ data class CustomizationState(
     val helpLineColors: List<Color>,
     val vibrate: Boolean,
     val headerIconSize: Dp = Dp.Unspecified,
-    val dropdownMenu: Boolean = false,
-    val dropdownSource: AzDropdownSource = AzDropdownSource.RAIL,
-    val dropdownAlignment: AzDropdownAlignment = AzDropdownAlignment.TOP_START,
-    val dropdownOffset: DpOffset = DpOffset.Zero,
 )
 
 private val headerIconShapes = AzHeaderIconShape.values().toList()
 private val defaultShapes = AzButtonShape.values().toList()
-private val dropdownSources = AzDropdownSource.values().toList()
 private val dropdownAlignments = AzDropdownAlignment.values().toList()
 private val translucentChoices = listOf(
     "Unspecified" to Color.Unspecified,
@@ -140,50 +138,8 @@ fun CustomizationDemoScreen(
             valueRange = 0f..120f,
         )
 
-        SectionLabel("dropdownMenu — use the rail as a drop-down (app icon = hamburger)")
-        AzToggle(
-            isChecked = state.dropdownMenu,
-            onToggle = { onChange(state.copy(dropdownMenu = !state.dropdownMenu)) },
-            toggleOnText = "Dropdown On",
-            toggleOffText = "Dropdown Off",
-            shape = AzButtonShape.RECTANGLE,
-        )
-
-        SectionLabel("dropdownSource (which set the drop-down unfolds)")
-        AzCycler(
-            options = dropdownSources.map { it.name },
-            selectedOption = state.dropdownSource.name,
-            onCycle = {
-                val next = dropdownSources[(state.dropdownSource.ordinal + 1) % dropdownSources.size]
-                onChange(state.copy(dropdownSource = next))
-            },
-            shape = AzButtonShape.RECTANGLE,
-        )
-
-        SectionLabel("dropdownAlignment (where the hamburger icon sits)")
-        AzCycler(
-            options = dropdownAlignments.map { it.name },
-            selectedOption = state.dropdownAlignment.name,
-            onCycle = {
-                val next = dropdownAlignments[(state.dropdownAlignment.ordinal + 1) % dropdownAlignments.size]
-                onChange(state.copy(dropdownAlignment = next))
-            },
-            shape = AzButtonShape.RECTANGLE,
-        )
-
-        SectionLabel("dropdownOffset.x: ${state.dropdownOffset.x.value.toInt()}dp")
-        Slider(
-            value = state.dropdownOffset.x.value,
-            onValueChange = { onChange(state.copy(dropdownOffset = DpOffset(it.dp, state.dropdownOffset.y))) },
-            valueRange = -64f..64f,
-        )
-
-        SectionLabel("dropdownOffset.y: ${state.dropdownOffset.y.value.toInt()}dp")
-        Slider(
-            value = state.dropdownOffset.y.value,
-            onValueChange = { onChange(state.copy(dropdownOffset = DpOffset(state.dropdownOffset.x, it.dp))) },
-            valueRange = -64f..64f,
-        )
+        SectionLabel("AzDropdownMenu — standalone hamburger menu, placed inline like any widget")
+        AzDropdownMenuDemo()
 
         SectionLabel("displayAppName")
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -260,6 +216,40 @@ fun CustomizationDemoScreen(
             text = "Reset to defaults",
             shape = AzButtonShape.RECTANGLE,
         )
+    }
+}
+
+/**
+ * Demonstrates the standalone [AzDropdownMenu] — no rail, no host, no `azConfig`. It is dropped
+ * inline here exactly like an [AzButton], its panel anchored to its own icon. The alignment cycler
+ * shows how the panel anchors/unfolds relative to the trigger.
+ */
+@Composable
+private fun AzDropdownMenuDemo() {
+    var alignment by remember { mutableStateOf(AzDropdownAlignment.TOP_START) }
+    var dark by remember { mutableStateOf(false) }
+    var lastAction by remember { mutableStateOf("none") }
+
+    AzCycler(
+        options = dropdownAlignments.map { it.name },
+        selectedOption = alignment.name,
+        onCycle = { alignment = dropdownAlignments[(alignment.ordinal + 1) % dropdownAlignments.size] },
+        shape = AzButtonShape.RECTANGLE,
+    )
+
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        AzDropdownMenu(alignment = alignment) {
+            azItem("Profile") { lastAction = "Profile" }
+            azItem("Settings") { lastAction = "Settings" }
+            azToggle(
+                isChecked = dark,
+                toggleOnText = "Dark",
+                toggleOffText = "Light",
+            ) { dark = it }
+            azDivider()
+            azItem("Sign out") { lastAction = "Sign out" }
+        }
+        Text("last: $lastAction", style = MaterialTheme.typography.bodyMedium)
     }
 }
 

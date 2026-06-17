@@ -53,7 +53,7 @@ Add JitPack to your `settings.gradle.kts`:
 - **Tutorial Framework**: Scripted multi-scene tutorials with spotlights, 4 advance conditions (Button, TapTarget, TapAnywhere, Event), variable-driven branching, TapTarget branching, checklist cards, media cards, and cross-platform read-state persistence.
 - **Left/Right Docking**: Position the rail on the left or right side of the screen.
 - **No Menu Mode**: Treat all items as rail items, removing the side drawer.
-- **Drop-down Menu Mode**: Use the rail as a hamburger-style drop-down you can place anywhere. The app icon replaces the hamburger; tapping it unfolds *either* the rail items or the menu items like an accordion. Position the trigger with `dropdownAlignment` (nine anchors) + `dropdownOffset`, and `onscreen` content gets the **full screen** — no safe zones reserved. (`dropdownMenu = true`)
+- **`AzDropdownMenu`**: A standalone, hamburger-style drop-down menu placed inline like `AzButton` — no rail, no host. Its panel anchors to the icon (`alignment` + `offset`) and its entries reuse `AzButton`/`AzToggle`/`AzCycler`/`AzDivider`.
 - **Sizable Header Icon**: Set the app-icon to an exact diameter via `headerIconSize`.
 - **In-App About Reader**: The footer "About" opens a themed in-app markdown reader that auto-discovers your repo's docs (root + `docs/`) and renders them inline. (`azAbout`)
 - **More from Az**: A self-versioning carousel of other apps — paste GitHub repo links and CI bakes name/icon/description, a verified Play link, and the homepage website/PWA (WIP apps excluded, Play-first); optionally pinned as a "More" rail item.
@@ -441,72 +441,42 @@ const settings: AzNavRailSettings = {
 // Pass settings to AzNavRail
 ```
 
-### Drop-down Menu Mode
+### `AzDropdownMenu` — standalone hamburger menu
 
-Use the rail as a classic **drop-down menu**. Instead of a docked side strip, the rail collapses to
-a single **app-icon trigger you place wherever you want — the app icon takes the place of the
-hamburger menu icon and behaves exactly like one**. Tapping it unfolds the items like an accordion;
-tapping the icon again, tapping an item, or tapping outside folds them back up. With this mode
-enabled, `onscreen` content is given the **entire screen** — drop-down mode reserves **no** top/bottom
-content safe zones (and no horizontal band), so your content runs edge-to-edge and the trigger floats
-over it.
+A drop-down menu is a **standalone composable**, used the usual, expected way — you drop it inline
+anywhere in your own UI, exactly like `AzButton` or `AzTextBox`. It is **not** a mode of the rail:
+there is no `AzNavHost`, no DSL scope, no `background()`/`onscreen()`, and no reserved safe zones. It
+renders a tappable hamburger icon; tapping it unfolds a panel anchored to the icon (a `Popup`) holding
+the items you declare. Tapping outside, pressing back, or tapping an item folds it back up.
 
-Enable it with `dropdownMenu = true` and choose **one** of two renderings with `dropdownSource`:
-
-- `AzDropdownSource.RAIL` *(default)* — unfolds the **rail items** as the packed rail buttons.
-- `AzDropdownSource.MENU` — unfolds the **menu items** as the full drawer rows.
-
-There is no rail-to-menu expansion and no menu-to-rail collapse: whichever source you pick is the
-one and only set the drop-down shows.
-
-Place the trigger with `dropdownAlignment` (one of nine anchors, `TOP_START` … `BOTTOM_END`) and nudge
-it with `dropdownOffset` (a `DpOffset`). The panel unfolds **downward** for top/centre anchors and
-**upward** for bottom anchors, so it always opens away from the nearest screen edge.
+Items reuse the library's own widgets via a small content-slot DSL — `azItem` (an `AzButton`),
+`azToggle`, `azCycler`, `azDivider`, plus `azCustom { }` and `dismiss()`. `azItem` folds the menu
+after its callback by default (`closeOnClick = true`). `alignment` (one of nine anchors,
+`TOP_START` … `BOTTOM_END`) anchors the panel to the icon and sets the unfold direction — top/centre
+anchors open **downward**, `BOTTOM_*` anchors open **upward** — and `offset` (a `DpOffset`) nudges it.
 
 ```kotlin
-AzHostActivityLayout(navController = navController) {
-    azConfig(
-        dropdownMenu = true,
-        dropdownSource = AzDropdownSource.MENU, // or AzDropdownSource.RAIL
-        dropdownAlignment = AzDropdownAlignment.TOP_END, // place the hamburger top-right
-        dropdownOffset = DpOffset(0.dp, 8.dp),           // nudge it down a touch
-    )
-    azTheme(headerIconSize = 56.dp)
-
-    azRailItem(id = "home", text = "Home", route = "home")
-    azMenuItem(id = "settings", text = "Settings", route = "settings")
-
-    onscreen { /* now spans the full screen */ }
+AzDropdownMenu(
+    alignment = AzDropdownAlignment.TOP_END,   // panel anchors to the icon's top-right
+    offset = DpOffset(0.dp, 8.dp),             // nudge it down a touch
+    iconSize = 56.dp,
+) {
+    azItem("Settings") { openSettings() }
+    azToggle(isChecked = dark, toggleOnText = "Dark", toggleOffText = "Light") { dark = it }
+    azDivider()
+    azItem("Sign out") { signOut() }
 }
 ```
 
-> **This mode runs at the explicit exclusion of many other features.** When `dropdownMenu` is true,
-> the following are intentionally disabled/ignored:
->
-> - **FAB mode / draggable rail** (`enableRailDragging`, `overlayService`, `onUndock`, `onOverlayDrag`) — no undocking or dragging.
-> - **Rail ↔ menu expansion** (`initiallyExpanded`, the two-state drawer) — there is only the single drop-down.
-> - **`noMenu`** — superseded by `dropdownSource`.
-> - **Swipe gestures** — both the horizontal swipe-to-open/close and the vertical swipe-to-undock. Only a tap toggles the drop-down.
-> - **Physical docking / rotate-in-place** (`usePhysicalDocking`) — the trigger anchors at `dropdownAlignment`, not a device edge.
-> - **The footer** (`showFooter`) — not shown.
-> - **Nested-rail popups** (`azNestedRail`) — not supported. (Host items still expand inline as an accordion.)
-> - **Rail width settings** (`expandedWidth`/`collapsedWidth`) — ignored for `RAIL`; the panel sizes to its content. (`MENU` uses `expandedWidth` for the panel width.)
-> - **The bleeding app-name header** (`displayAppName`) — the header is always the app icon.
-> - **Content safe zones** (top/bottom) — **not reserved** in drop-down mode: `onscreen` content runs fully edge-to-edge, and the trigger floats over it wherever `dropdownAlignment`/`dropdownOffset` place it.
-> - **Help overlay & tutorials** — not driven from the drop-down (their positioning relies on the docked rail).
-
 **React Implementation:**
 ```tsx
-import { AzNavRailSettings, AzDropdownSource, AzDropdownAlignment } from '@HereLiesAz/aznavrail-react';
+import { AzDropdownMenu, AzDropdownItem, AzDivider, AzDropdownAlignment } from '@HereLiesAz/aznavrail-react';
 
-const settings: AzNavRailSettings = {
-    dropdownMenu: true,
-    dropdownSource: AzDropdownSource.MENU, // or AzDropdownSource.RAIL
-    dropdownAlignment: AzDropdownAlignment.TOP_END, // place the hamburger top-right
-    dropdownOffset: { x: 0, y: 8 },                 // nudge it down a touch (px)
-    headerIconSize: 56,
-};
-// Pass settings to <AzNavRail settings={settings} ... />
+<AzDropdownMenu alignment={AzDropdownAlignment.TOP_END} offset={{ x: 0, y: 8 }} iconSize={56}>
+  <AzDropdownItem text="Settings" onClick={openSettings} />
+  <AzDivider />
+  <AzDropdownItem text="Sign out" onClick={signOut} />
+</AzDropdownMenu>
 ```
 
 ### Sizable Header Icon

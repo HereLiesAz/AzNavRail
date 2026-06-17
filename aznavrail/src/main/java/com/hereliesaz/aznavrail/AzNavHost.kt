@@ -360,17 +360,10 @@ fun AzHostActivityLayout(
             Box(modifier = Modifier.fillMaxSize()) { item.content() }
         }
 
-        // In drop-down mode the rail is a floating, dev-placed trigger, not a docked side-strip, so
-        // it reserves no horizontal/vertical band: onscreen content spans the full screen width. It
-        // also reserves NO top/bottom content safe zones — the icon is a plain hamburger button, so
-        // content runs edge-to-edge and the dev is free to place the trigger over it.
-        val isDropdown = railScope.dropdownMenu
-        val startPadding = if (!isDropdown && visualSide == AzVisualSide.LEFT) railWidth else 0.dp
-        val endPadding = if (!isDropdown && visualSide == AzVisualSide.RIGHT) railWidth else 0.dp
-        val topPadding = if (!isDropdown && visualSide == AzVisualSide.TOP) railWidth else 0.dp
-        val bottomPadding = if (!isDropdown && visualSide == AzVisualSide.BOTTOM) railWidth else 0.dp
-        val effectiveSafeTop = if (isDropdown) 0.dp else safeTop
-        val effectiveSafeBottom = if (isDropdown) 0.dp else safeBottom
+        val startPadding = if (visualSide == AzVisualSide.LEFT) railWidth else 0.dp
+        val endPadding = if (visualSide == AzVisualSide.RIGHT) railWidth else 0.dp
+        val topPadding = if (visualSide == AzVisualSide.TOP) railWidth else 0.dp
+        val bottomPadding = if (visualSide == AzVisualSide.BOTTOM) railWidth else 0.dp
 
         // Identify active item and pull actual transient states
         val railScopeImpl = scope.getRailScopeImpl()
@@ -393,7 +386,7 @@ fun AzHostActivityLayout(
         val titleAlignment = if (visualDockingSideProxy == AzDockingSide.LEFT) Alignment.CenterEnd else Alignment.CenterStart
         val titlePaddingSide = if (visualDockingSideProxy == AzDockingSide.LEFT) Modifier.padding(end = 32.dp) else Modifier.padding(start = 32.dp)
 
-        if (!isDropdown && currentTitle != null && currentTitle != AzNavRailDefaults.NO_TITLE && currentTitle.isNotBlank()) {
+        if (currentTitle != null && currentTitle != AzNavRailDefaults.NO_TITLE && currentTitle.isNotBlank()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -418,8 +411,8 @@ fun AzHostActivityLayout(
             LocalAzTutorialController provides tutorialController
         ) {
             AzHostFragmentLayout(
-                safeTop = effectiveSafeTop,
-                safeBottom = effectiveSafeBottom,
+                safeTop = safeTop,
+                safeBottom = safeBottom,
                 startPadding = startPadding,
                 endPadding = endPadding,
                 topPadding = topPadding,
@@ -431,7 +424,7 @@ fun AzHostActivityLayout(
 
         CompositionLocalProvider(
             LocalAzNavHostPresent provides true,
-            LocalAzSafeZones provides AzSafeZones(effectiveSafeTop, effectiveSafeBottom),
+            LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom),
             LocalAzTutorialController provides tutorialController
         ) {
             AzNavRail(

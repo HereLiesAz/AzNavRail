@@ -7,6 +7,12 @@ exports.AzCycler = void 0;
 var _react = _interopRequireWildcard(require("react"));
 var _AzButton = require("./AzButton");
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function (e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, default: e }; if (null === e || "object" != typeof e && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (const t in e) "default" !== t && {}.hasOwnProperty.call(e, t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, t)) && (i.get || i.set) ? o(f, t, i) : f[t] = e[t]); return f; })(e, t); }
+/** Props for the standalone `AzCycler` button used inside the rail to step through a list of options. */
+
+/**
+ * Button that cycles forward through `options` on each tap with a 1 s commit debounce
+ * before `onCycle` is invoked with the final selected value.
+ */
 const AzCycler = ({
   options,
   selectedOption,

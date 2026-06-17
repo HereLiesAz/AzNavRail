@@ -7,6 +7,8 @@ import AzNestedRailPopup from './AzNestedRailPopup';
 import { RelocItemHandler } from '../util/RelocItemHandler';
 import AzDivider from './AzDivider';
 import AzTextBox from './AzTextBox';
+import AboutOverlay from './AboutOverlay';
+import MoreFromAzOverlay from './MoreFromAzOverlay';
 
 /**
  * An M3-style navigation rail that expands into a menu drawer for web applications.
@@ -25,8 +27,8 @@ const AzNavRail = ({
 }) => {
   const {
     displayAppNameInHeader = false,
-    expandedRailWidth = '260px',
-    collapsedRailWidth = '80px',
+    expandedRailWidth = '160px',
+    collapsedRailWidth = '100px',
     showFooter = true,
     isLoading = false,
     appName = 'App',
@@ -34,12 +36,18 @@ const AzNavRail = ({
     onDismissInfoScreen,
     dockingSide = 'LEFT',
     noMenu = false,
+    headerIconSize,
     activeClassifiers = new Set(),
     // Set of strings
     activeColor,
     translucentBackground,
     packRailButtons = false,
-    headerIconShape = 'CIRCLE'
+    headerIconShape = 'CIRCLE',
+    inAppAbout = true,
+    moreFromAzEnabled = true,
+    moreFromAzJsonUrl = 'https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json',
+    moreRailItem = false,
+    appRepositoryUrl = 'https://github.com/HereLiesAz/AzNavRail'
   } = settings;
 
   // If noMenu is true, we force expanded to false, unless infoScreen overrides (which it doesn't really)
@@ -54,6 +62,9 @@ const AzNavRail = ({
     }
   }, [effectiveNoMenu, isExpanded]);
   const [showFooterPopup, setShowFooterPopup] = useState(false);
+  // In-app About reader + More-from-Az overlays.
+  const [showAbout, setShowAbout] = useState(false);
+  const [showMoreFromAz, setShowMoreFromAz] = useState(false);
   const onToggle = () => {
     if (infoScreen) return;
     if (effectiveNoMenu) {
@@ -332,6 +343,10 @@ const AzNavRail = ({
         return 'app-icon circle';
     }
   };
+
+  // Renders a single rail item inside the drop-down panel (RAIL source). Hosts expand inline as an
+  // accordion; cyclers stay open for multi-tap; any other tap performs its action and folds up.
+
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: `az-nav-rail ${isExpanded ? 'expanded' : 'collapsed'} ${dockingSide === 'RIGHT' ? 'right' : ''}`,
     style: {
@@ -341,11 +356,18 @@ const AzNavRail = ({
   }, /*#__PURE__*/React.createElement("div", {
     className: "header",
     onClick: onToggle
-  }, displayAppNameInHeader ? /*#__PURE__*/React.createElement("span", null, appName) : /*#__PURE__*/React.createElement("img", {
+  }, !isExpanded || !displayAppNameInHeader ? /*#__PURE__*/React.createElement("img", {
     src: "/app-icon.png",
     alt: "App Icon",
     className: getHeaderIconClass()
-  })), isLoading ? /*#__PURE__*/React.createElement("div", {
+  }) : /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: '24px',
+      fontWeight: 'bold',
+      width: '1000px',
+      whiteSpace: 'nowrap'
+    }
+  }, appName)), isLoading ? /*#__PURE__*/React.createElement("div", {
     className: "loading-spinner"
   }, "Loading...") : /*#__PURE__*/React.createElement("div", {
     className: "content"
@@ -556,7 +578,18 @@ const AzNavRail = ({
         }
       }));
     }));
-  }))), showFooter && isExpanded && /*#__PURE__*/React.createElement("div", {
+  }), moreRailItem && moreFromAzEnabled && /*#__PURE__*/React.createElement("div", {
+    className: "az-nav-rail-button rectangle",
+    role: "button",
+    tabIndex: 0,
+    style: {
+      borderColor: activeColor || 'blue',
+      color: activeColor || 'blue',
+      cursor: 'pointer',
+      marginTop: 8
+    },
+    onClick: () => setShowMoreFromAz(true)
+  }, "More"))), showFooter && isExpanded && /*#__PURE__*/React.createElement("div", {
     className: "footer",
     style: {
       display: 'flex',
@@ -574,7 +607,14 @@ const AzNavRail = ({
   }, appName), /*#__PURE__*/React.createElement("div", {
     className: "az-menu-item-text",
     style: {
-      padding: '4px 0'
+      padding: '4px 0',
+      cursor: 'pointer'
+    },
+    onClick: () => {
+      if (inAppAbout) {
+        setShowAbout(true);
+        setIsExpanded(false);
+      } else window.open(appRepositoryUrl, '_blank', 'noopener');
     }
   }, "About"), /*#__PURE__*/React.createElement("div", {
     className: "az-menu-item-text",
@@ -612,6 +652,16 @@ const AzNavRail = ({
     onDismiss: onDismissInfoScreen,
     nestedRailVisibleId: nestedRailVisibleId,
     helpList: (settings === null || settings === void 0 ? void 0 : settings.helpList) || {}
+  }), showAbout && /*#__PURE__*/React.createElement(AboutOverlay, {
+    repoUrl: appRepositoryUrl,
+    settings: settings,
+    moreFromAzEnabled: moreFromAzEnabled,
+    moreFromAzJsonUrl: moreFromAzJsonUrl,
+    onDismiss: () => setShowAbout(false)
+  }), showMoreFromAz && /*#__PURE__*/React.createElement(MoreFromAzOverlay, {
+    jsonUrl: moreFromAzJsonUrl,
+    settings: settings,
+    onDismiss: () => setShowMoreFromAz(false)
   }), effectiveRailItems.filter(i => i.isNestedRail).map(item => /*#__PURE__*/React.createElement(AzNestedRailPopup, {
     key: `nested-${item.id}`,
     visible: nestedRailVisibleId === item.id,
