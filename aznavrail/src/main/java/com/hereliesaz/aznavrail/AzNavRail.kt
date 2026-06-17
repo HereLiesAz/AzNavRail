@@ -458,9 +458,10 @@ fun AzNavRail(
                 // The unfolded set — exactly one of the two renderings.
                 if (isDropdownOpen) {
                     Surface(
-                        color = Color.Transparent,
+                        color = if (scope.translucentBackground != Color.Unspecified) scope.translucentBackground else MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(12.dp),
                         tonalElevation = 2.dp,
-                        modifier = Modifier.shadow(8.dp, RectangleShape)
+                        modifier = Modifier.shadow(8.dp, RoundedCornerShape(12.dp))
                     ) {
                         val dropScroll = rememberScrollState()
                         if (scope.dropdownSource == AzDropdownSource.MENU) {
