@@ -9,6 +9,7 @@ import AzDivider from './AzDivider';
 import AzTextBox from './AzTextBox';
 import AboutOverlay from './AboutOverlay';
 import MoreFromAzOverlay from './MoreFromAzOverlay';
+import { parseDropdownAnchor } from '../dropdownPlacement';
 
 /**
  * An M3-style navigation rail that expands into a menu drawer for web applications.
@@ -38,6 +39,8 @@ const AzNavRail = ({
     noMenu = false,
     dropdownMenu = false,
     dropdownSource = 'RAIL',
+    dropdownAlignment = 'top-start',
+    dropdownOffset,
     headerIconSize,
     activeClassifiers = new Set(), // Set of strings
     activeColor,
@@ -406,6 +409,23 @@ const AzNavRail = ({
 
   if (dropdownMenu) {
       const iconStyle = headerIconSize ? { width: headerIconSize, height: headerIconSize } : undefined;
+      // The trigger is a plain hamburger button placed wherever the dev asks (nine anchors + a fine
+      // offset), not a docked strip — the docking side no longer dictates its spot.
+      const { vert, horiz, isBottom } = parseDropdownAnchor(dropdownAlignment);
+      const offX = dropdownOffset?.x ?? 0;
+      const offY = dropdownOffset?.y ?? 0;
+      const txCenter = horiz === 'center' ? '-50%' : '0px';
+      const tyCenter = vert === 'center' ? '-50%' : '0px';
+      const placementStyle = {
+          top: vert === 'bottom' ? 'auto' : vert === 'center' ? '50%' : 0,
+          bottom: vert === 'bottom' ? 0 : 'auto',
+          left: horiz === 'end' ? 'auto' : horiz === 'center' ? '50%' : 0,
+          right: horiz === 'end' ? 0 : 'auto',
+          alignItems: horiz === 'end' ? 'flex-end' : horiz === 'center' ? 'center' : 'flex-start',
+          flexDirection: isBottom ? 'column-reverse' : 'column',
+          transform: `translate(calc(${txCenter} + ${offX}px), calc(${tyCenter} + ${offY}px))`,
+      };
+      const panelBaseStyle = isBottom ? { marginTop: 0, marginBottom: 4 } : {};
       return (
           <>
               {isDropdownOpen && (
@@ -414,14 +434,16 @@ const AzNavRail = ({
                       onClick={() => setIsDropdownOpen(false)}
                   />
               )}
-              <div className={`az-nav-rail dropdown ${dockingSide === 'RIGHT' ? 'right' : ''} ${isDropdownOpen ? 'open' : ''}`}>
+              <div className={`az-nav-rail dropdown ${isDropdownOpen ? 'open' : ''}`} style={placementStyle}>
                   <div className="header" onClick={() => setIsDropdownOpen(o => !o)}>
                       <img src="/app-icon.png" alt="Menu" className={getHeaderIconClass()} style={iconStyle} />
                   </div>
                   {isDropdownOpen && (
                       <div
                           className={`az-dropdown-panel ${dropdownSource === 'MENU' ? 'menu' : 'rail'} ${packRailButtons ? 'packed' : ''}`}
-                          style={dropdownSource === 'MENU' ? { width: expandedRailWidth, backgroundColor: translucentBackground || undefined } : { backgroundColor: translucentBackground || undefined }}
+                          style={dropdownSource === 'MENU'
+                              ? { ...panelBaseStyle, width: expandedRailWidth, backgroundColor: translucentBackground || undefined }
+                              : { ...panelBaseStyle, backgroundColor: translucentBackground || undefined }}
                       >
                           {dropdownSource === 'MENU'
                               ? menuItems.map(item => renderMenuItem(item))

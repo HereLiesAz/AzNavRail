@@ -48,6 +48,24 @@ export enum AzDropdownSource {
   MENU = 'MENU',
 }
 
+/**
+ * Where the drop-down trigger icon is anchored on screen (see `AzNavRailSettings.dropdownAlignment`).
+ * In drop-down mode the icon is a plain hamburger button the dev can place anywhere; these are the
+ * nine standard anchor points. The panel unfolds downward for top/centre anchors and upward for the
+ * bottom anchors, so it always grows away from the nearest screen edge.
+ */
+export enum AzDropdownAlignment {
+  TOP_START = 'top-start',
+  TOP_CENTER = 'top-center',
+  TOP_END = 'top-end',
+  CENTER_START = 'center-start',
+  CENTER = 'center',
+  CENTER_END = 'center-end',
+  BOTTOM_START = 'bottom-start',
+  BOTTOM_CENTER = 'bottom-center',
+  BOTTOM_END = 'bottom-end',
+}
+
 /** General orientation flag used by layout helpers. */
 export enum AzOrientation {
   /** Components arranged in a column. */
@@ -103,6 +121,17 @@ export interface AzNavRailSettings {
    * full drawer rows). Only honoured when `dropdownMenu` is true. Defaults to `RAIL`.
    */
   dropdownSource?: AzDropdownSource;
+  /**
+   * Where the drop-down trigger icon is anchored (one of nine standard positions). The panel
+   * unfolds downward for top/centre anchors and upward for bottom anchors. Only honoured when
+   * `dropdownMenu` is true. Defaults to `top-start`.
+   */
+  dropdownAlignment?: AzDropdownAlignment;
+  /**
+   * A fine nudge (px) applied to the drop-down trigger icon from its `dropdownAlignment` anchor.
+   * Only honoured when `dropdownMenu` is true. Defaults to no offset.
+   */
+  dropdownOffset?: { x?: number; y?: number };
   /** Exact diameter (px) of the app icon in the header. When omitted the icon uses its default size. */
   headerIconSize?: number;
   /** When true, the help/info overlay is displayed over the screen. */

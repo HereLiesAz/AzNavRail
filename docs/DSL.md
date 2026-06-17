@@ -27,15 +27,24 @@ fun azConfig(
     showFooter: Boolean = true,
     appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail",
     dropdownMenu: Boolean = false,
-    dropdownSource: AzDropdownSource = AzDropdownSource.RAIL
+    dropdownSource: AzDropdownSource = AzDropdownSource.RAIL,
+    dropdownAlignment: AzDropdownAlignment = AzDropdownAlignment.TOP_START,
+    dropdownOffset: DpOffset = DpOffset.Zero
 )
 ~~~
 
-`dropdownMenu` turns the rail into a top-anchored drop-down: the app icon replaces the hamburger and
-tapping it unfolds `dropdownSource` (`RAIL` = packed rail buttons, `MENU` = full drawer rows) like an
-accordion, while `onscreen` content spans the full screen width. This mode excludes FAB/dragging,
-rail↔menu expansion, `noMenu`, swipe gestures, physical docking, the footer, nested-rail popups, the
-bleeding app-name header, and the help overlay. See the README's "Drop-down Menu Mode" section.
+`dropdownMenu` turns the rail into a drop-down whose trigger behaves like a plain hamburger button:
+the app icon replaces the hamburger and tapping it unfolds `dropdownSource` (`RAIL` = packed rail
+buttons, `MENU` = full drawer rows) like an accordion. `onscreen` content spans the **full screen** —
+drop-down mode reserves **no** top/bottom content safe zones, so content runs edge-to-edge and the
+trigger floats over it. This mode excludes FAB/dragging, rail↔menu expansion, `noMenu`, swipe
+gestures, physical docking, the footer, nested-rail popups, the bleeding app-name header, and the
+help overlay.
+
+`dropdownAlignment` places the trigger icon at one of nine standard anchors (`TOP_START` … `BOTTOM_END`);
+`dropdownOffset` is a fine `DpOffset` nudge from that anchor. The panel unfolds downward for
+top/centre anchors and upward for bottom anchors, so it always grows away from the nearest edge. See
+the README's "Drop-down Menu Mode" section.
 
 ### `azTheme`
 Controls the visual style of the rail.

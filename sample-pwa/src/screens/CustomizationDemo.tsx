@@ -1,5 +1,6 @@
 import {
   AzButtonShape,
+  AzDropdownAlignment,
   AzDropdownSource,
   AzHeaderIconShape,
 } from '@HereLiesAz/aznavrail-react'
@@ -17,11 +18,15 @@ export interface CustomizationState {
   headerIconSize: number
   dropdownMenu: boolean
   dropdownSource: AzDropdownSource
+  dropdownAlignment: AzDropdownAlignment
+  dropdownOffsetX: number
+  dropdownOffsetY: number
 }
 
 const headerShapes = Object.values(AzHeaderIconShape) as AzHeaderIconShape[]
 const buttonShapes = Object.values(AzButtonShape) as AzButtonShape[]
 const dropdownSources = Object.values(AzDropdownSource) as AzDropdownSource[]
+const dropdownAlignments = Object.values(AzDropdownAlignment) as AzDropdownAlignment[]
 const repoChoices: { label: string; url: string }[] = [
   { label: 'AzNavRail', url: 'https://github.com/HereLiesAz/AzNavRail' },
   { label: 'Anthropic', url: 'https://github.com/anthropics' },
@@ -96,6 +101,29 @@ export default function CustomizationDemo({
         >
           {dropdownSources.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
+      </Block>
+
+      <Block label={`dropdownAlignment: ${state.dropdownAlignment} (where the hamburger sits — only in dropdown mode)`}>
+        <select
+          value={state.dropdownAlignment}
+          onChange={(e) => onChange({ ...state, dropdownAlignment: e.target.value as AzDropdownAlignment })}
+        >
+          {dropdownAlignments.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </Block>
+
+      <Block label={`dropdownOffset.x: ${state.dropdownOffsetX}px`}>
+        <input
+          type="range" min={-64} max={64} value={state.dropdownOffsetX}
+          onChange={(e) => onChange({ ...state, dropdownOffsetX: Number(e.target.value) })}
+        />
+      </Block>
+
+      <Block label={`dropdownOffset.y: ${state.dropdownOffsetY}px`}>
+        <input
+          type="range" min={-64} max={64} value={state.dropdownOffsetY}
+          onChange={(e) => onChange({ ...state, dropdownOffsetY: Number(e.target.value) })}
+        />
       </Block>
 
       <Toggle

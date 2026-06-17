@@ -360,13 +360,17 @@ fun AzHostActivityLayout(
             Box(modifier = Modifier.fillMaxSize()) { item.content() }
         }
 
-        // In drop-down mode the rail is a floating top-anchored trigger, not a docked side-strip,
-        // so it reserves no horizontal/vertical band: onscreen content spans the full screen width.
+        // In drop-down mode the rail is a floating, dev-placed trigger, not a docked side-strip, so
+        // it reserves no horizontal/vertical band: onscreen content spans the full screen width. It
+        // also reserves NO top/bottom content safe zones — the icon is a plain hamburger button, so
+        // content runs edge-to-edge and the dev is free to place the trigger over it.
         val isDropdown = railScope.dropdownMenu
         val startPadding = if (!isDropdown && visualSide == AzVisualSide.LEFT) railWidth else 0.dp
         val endPadding = if (!isDropdown && visualSide == AzVisualSide.RIGHT) railWidth else 0.dp
         val topPadding = if (!isDropdown && visualSide == AzVisualSide.TOP) railWidth else 0.dp
         val bottomPadding = if (!isDropdown && visualSide == AzVisualSide.BOTTOM) railWidth else 0.dp
+        val effectiveSafeTop = if (isDropdown) 0.dp else safeTop
+        val effectiveSafeBottom = if (isDropdown) 0.dp else safeBottom
 
         // Identify active item and pull actual transient states
         val railScopeImpl = scope.getRailScopeImpl()
@@ -414,8 +418,8 @@ fun AzHostActivityLayout(
             LocalAzTutorialController provides tutorialController
         ) {
             AzHostFragmentLayout(
-                safeTop = safeTop,
-                safeBottom = safeBottom,
+                safeTop = effectiveSafeTop,
+                safeBottom = effectiveSafeBottom,
                 startPadding = startPadding,
                 endPadding = endPadding,
                 topPadding = topPadding,
@@ -427,7 +431,7 @@ fun AzHostActivityLayout(
 
         CompositionLocalProvider(
             LocalAzNavHostPresent provides true,
-            LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom),
+            LocalAzSafeZones provides AzSafeZones(effectiveSafeTop, effectiveSafeBottom),
             LocalAzTutorialController provides tutorialController
         ) {
             AzNavRail(

@@ -150,20 +150,28 @@ that width and height.
 Drop-down menu mode: the rail can be used as a drop-down menu via `dropdownMenu = true` in
 `azConfig`/`azSettings` (a `dropdownMenu` boolean in React settings). In this mode:
 
-- `onscreen()` content is allowed the entire width of the screen (the rail reserves no horizontal
-  band). The rail renders as a floating top-anchored trigger above the content.
-- The app icon takes the place of the hamburger menu icon. The bleeding app-name header is not used
-  here; it is always the icon.
-- Tapping the icon causes either the menu items or the rail items to unfold like an accordion
-  downward, reusing the exact fold/unfold mechanism already programmed for the floating-rail (FAB)
-  feature. Tapping the icon again, tapping an item, or tapping outside folds them back up.
+- `onscreen()` content is allowed the entire screen. The rail reserves **no** horizontal band **and
+  no top/bottom content safe zones** in this mode (`effectiveSafeTop`/`effectiveSafeBottom` are zeroed
+  in `AzNavHost`, and `LocalAzSafeZones` reports zero) — content runs fully edge-to-edge and the
+  floating trigger draws over it.
+- The trigger is placed wherever the dev asks via `dropdownAlignment` (an `AzDropdownAlignment` enum:
+  nine anchors `TOP_START`…`BOTTOM_END`; web/RN use the lowercase string values like `'bottom-end'`)
+  plus a fine `dropdownOffset` (`DpOffset` on Android, `{x,y}` px on React). The docking side no longer
+  dictates the trigger's spot. The shared `parseDropdownAnchor` helper (React) and
+  `AzDropdownAlignment.toAlignment()/toHorizontalAlignment()/isBottom` (Android) drive placement.
+- The app icon takes the place of the hamburger menu icon and behaves exactly like one. The bleeding
+  app-name header is not used here; it is always the icon.
+- Tapping the icon causes either the menu items or the rail items to unfold like an accordion,
+  reusing the exact fold/unfold mechanism already programmed for the floating-rail (FAB) feature. The
+  panel unfolds **downward** for top/centre anchors and **upward** for bottom anchors. Tapping the
+  icon again, tapping an item, or tapping outside folds them back up.
 - The developer selects which set unfolds via `dropdownSource` (`RAIL` or `MENU`). There is no
   collapsing the rail or expanding the menu; whichever they choose is the one and only set the
   drop-down shows.
 - This mode works at the explicit exclusion of: FAB mode/draggable rail and the overlay service,
   rail↔menu expansion, `noMenu`, all swipe gestures, physical docking/rotate-in-place, the footer,
-  nested-rail popups, the rail width settings, the bleeding app-name header, the rail safe-zone
-  padding, and the help overlay/tutorials. Host items still expand inline as an accordion.
+  nested-rail popups, the rail width settings, the bleeding app-name header, the content safe zones,
+  and the help overlay/tutorials. Host items still expand inline as an accordion.
 
 In-app About reader + "More from Az": the footer "About" item opens a built-in, full-screen, themed
 markdown reader (an overlay drawn over the live UI, like the help overlay) instead of opening the repo
