@@ -13,8 +13,13 @@ import { DraggableRailItemWrapper } from './components/DraggableRailItemWrapper'
 import { RelocItemHandler } from './util/RelocItemHandler';
 import { AzNestedRailPopup } from './components/AzNestedRailPopup';
 import { HelpOverlay } from './components/HelpOverlay';
+import { AboutOverlay } from './components/AboutOverlay';
+import { MoreFromAzOverlay } from './components/MoreFromAzOverlay';
 import { AzTutorialProvider, useAzTutorialController } from './tutorial/AzTutorialController';
 import { AzTutorialOverlay } from './components/AzTutorialOverlay';
+
+/** Props for the `AzNavRail` component, extending all `AzNavRailSettings` options. */
+
 const AzNavRailInner = props => {
   const {
     children,
@@ -30,6 +35,7 @@ const AzNavRailInner = props => {
     enableRailDragging = false,
     dockingSide = AzDockingSide.LEFT,
     noMenu = false,
+    headerIconSize,
     infoScreen = false,
     onDismissInfoScreen,
     activeColor,
@@ -38,11 +44,16 @@ const AzNavRailInner = props => {
     vibrate = false,
     onExpandedChange,
     onInteraction,
-    helpList = {}
+    helpList = {},
+    appRepositoryUrl = 'https://github.com/HereLiesAz/AzNavRail',
+    inAppAbout = true,
+    moreFromAzEnabled = true,
+    moreFromAzJsonUrl = 'https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json',
+    moreRailItem = false
   } = props;
-  const logInteraction = useCallback((action, details) => {
+  const logInteraction = useCallback((action, details, item) => {
     if (onInteraction) {
-      onInteraction(action, details);
+      onInteraction(action, details, item);
       return;
     }
     if (typeof __DEV__ !== 'undefined' && __DEV__) {
@@ -64,15 +75,23 @@ const AzNavRailInner = props => {
     enableRailDragging: dslOverrides.enableRailDragging ?? enableRailDragging,
     dockingSide: dslOverrides.dockingSide ?? dockingSide,
     noMenu: dslOverrides.noMenu ?? noMenu,
+    headerIconSize: dslOverrides.headerIconSize ?? headerIconSize,
     infoScreen: dslOverrides.infoScreen ?? infoScreen,
     activeColor: dslOverrides.activeColor ?? activeColor,
     headerIconShape: dslOverrides.headerIconShape ?? headerIconShape,
     translucentBackground: dslOverrides.translucentBackground ?? translucentBackground,
     vibrate: dslOverrides.vibrate ?? vibrate,
     onItemGloballyPositioned: dslOverrides.onItemGloballyPositioned,
-    helpList: dslOverrides.helpList ?? helpList
+    helpList: dslOverrides.helpList ?? helpList,
+    appRepositoryUrl: dslOverrides.appRepositoryUrl ?? appRepositoryUrl,
+    inAppAbout: dslOverrides.inAppAbout ?? inAppAbout,
+    moreFromAzEnabled: dslOverrides.moreFromAzEnabled ?? moreFromAzEnabled,
+    moreFromAzJsonUrl: dslOverrides.moreFromAzJsonUrl ?? moreFromAzJsonUrl,
+    moreRailItem: dslOverrides.moreRailItem ?? moreRailItem
   };
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded && !config.noMenu);
+  const [showAbout, setShowAbout] = useState(false);
+  const [showMoreFromAz, setShowMoreFromAz] = useState(false);
   const [isFloating, setIsFloating] = useState(false);
   const [showFloatingButtons, setShowFloatingButtons] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -235,7 +254,7 @@ const AzNavRailInner = props => {
   // Reloc Item Logic
   const handleRelocDragStart = draggedItemIndex => {
     if (vibrate) Vibration.vibrate(50);
-    logInteraction('Reloc drag started', items[draggedItemIndex].text);
+    logInteraction('Reloc drag started', items[draggedItemIndex].text, items[draggedItemIndex]);
   };
   const handleRelocDragEnd = _draggedItemIndex => {
     Object.values(itemOffsets.current).forEach(anim => anim.setValue(0));
@@ -419,7 +438,12 @@ const AzNavRailInner = props => {
       setIsExpanded(!isExpanded);
     }
   };
-  const renderRailItem = (item, _index, overrideConfig = config) => {
+  const renderRailItem = (item, _index, overrideConfig = config, ancestors = new Set()) => {
+    // Cycle guard: unlike the Kotlin DSL (which requires a host be declared before its sub-items,
+    // forming a DAG), the React DSL has no ordering guarantee, so a cyclic `hostId` chain
+    // (A -> B -> A, or a self-reference) is possible. Bail before recursing into an ancestor to
+    // avoid "Maximum call stack size exceeded".
+    if (ancestors.has(item.id)) return null;
     const isExpandedHost = hostStates[item.id] || false;
     const subItems = subItemsMap[item.id] || [];
     const isRect = item.shape === AzButtonShape.RECTANGLE;
@@ -463,9 +487,9 @@ const AzNavRailInner = props => {
             ...prev,
             [item.id]: !prev[item.id]
           }));
-          logInteraction('Host toggled', item.text);
+          logInteraction('Host toggled', item.text, item);
         }
-      })), isExpandedHost && subItems.map((sub, _i) => renderRailItem(sub, items.indexOf(sub))));
+      })), isExpandedHost && subItems.filter(sub => sub.isRailItem).map(sub => renderRailItem(sub, items.indexOf(sub), overrideConfig, new Set(ancestors).add(item.id))));
     }
     if (item.isCycler) {
       return /*#__PURE__*/React.createElement(AzCycler, _extends({}, commonProps, {
@@ -474,7 +498,7 @@ const AzNavRailInner = props => {
         selectedOption: item.selectedOption || '',
         onCycle: () => {
           if (item.onClick) item.onClick();
-          logInteraction('Cycler cycled', item.text);
+          logInteraction('Cycler cycled', item.text, item);
         }
       }));
     }
@@ -486,7 +510,7 @@ const AzNavRailInner = props => {
         toggleOffText: item.toggleOffText,
         onToggle: () => {
           if (item.onClick) item.onClick();
-          logInteraction('Toggle toggled', item.text);
+          logInteraction('Toggle toggled', item.text, item);
         }
       }));
     }
@@ -499,7 +523,7 @@ const AzNavRailInner = props => {
       content: item.content,
       hasCustomContent: !!item.content,
       onClick: () => {
-        logInteraction('Item clicked', item.text);
+        logInteraction('Item clicked', item.text, item);
         if (item.isNestedRail) {
           setNestedRailVisible(item.id);
           // Use actual bounds if available
@@ -520,7 +544,10 @@ const AzNavRailInner = props => {
       }
     })));
   };
-  const renderMenuItem = (item, depth = 0) => {
+  const renderMenuItem = (item, depth = 0, ancestors = new Set()) => {
+    // Cycle guard (see renderRailItem): stop before recursing into an ancestor so a cyclic or
+    // self-referential `hostId` chain can't overflow the stack.
+    if (ancestors.has(item.id)) return null;
     const isExpandedHost = hostStates[item.id] || false;
     const subItems = subItemsMap[item.id] || [];
     return /*#__PURE__*/React.createElement(View, {
@@ -535,11 +562,11 @@ const AzNavRailInner = props => {
         [item.id]: !prev[item.id]
       })),
       onItemClick: () => {
-        logInteraction('Menu item clicked', item.text);
+        logInteraction('Menu item clicked', item.text, item);
         if (item.onClick) item.onClick();
         if (item.collapseOnClick) setIsExpanded(false);
       },
-      renderSubItems: () => /*#__PURE__*/React.createElement(React.Fragment, null, subItems.map(subItem => renderMenuItem(subItem, depth + 1)))
+      renderSubItems: () => /*#__PURE__*/React.createElement(React.Fragment, null, subItems.map(subItem => renderMenuItem(subItem, depth + 1, new Set(ancestors).add(item.id))))
     }));
   };
   const renderFooter = () => {
@@ -552,7 +579,12 @@ const AzNavRailInner = props => {
       }
     };
     const handleAbout = () => {
-      Linking.openURL('https://github.com/HereLiesAz/AzNavRail').catch(e => console.error("Could not open About", e));
+      if (config.inAppAbout) {
+        setIsExpanded(false);
+        setShowAbout(true);
+      } else {
+        Linking.openURL(config.appRepositoryUrl).catch(e => console.error("Could not open About", e));
+      }
     };
     const handleFeedback = () => {
       Linking.openURL('mailto:hereliesaz@gmail.com?subject=Feedback for AzNavRail').catch(e => console.error("Could not open Mail", e));
@@ -619,20 +651,11 @@ const AzNavRailInner = props => {
     }, "@HereLiesAz")));
   };
   const effectiveRailItems = useMemo(() => {
-    const list = [];
-    items.forEach(i => {
-      if (!i.isSubItem && (config.noMenu || i.isRailItem)) {
-        list.push(i);
-        if (hostStates[i.id] && !i.isNestedRail) {
-          const subItems = subItemsMap[i.id] || [];
-          subItems.forEach(sub => {
-            if (sub.isRailItem) list.push(sub);
-          });
-        }
-      }
-    });
-    return list;
-  }, [items, config.noMenu, hostStates, subItemsMap]);
+    // Only the top-level items are listed here; `renderRailItem`'s host branch renders each
+    // expanded host's sub-items inline and recurses for sub-hosts, so hosts nest to any depth
+    // without this list having to be flattened (which would otherwise double-render sub-items).
+    return items.filter(i => !i.isSubItem && (config.noMenu || i.isRailItem));
+  }, [items, config.noMenu]);
   const menuItems = useMemo(() => {
     return items.filter(i => !i.isSubItem);
   }, [items]);
@@ -714,7 +737,12 @@ const AzNavRailInner = props => {
     return renderMenuItem(item);
   }), showFooter && renderFooter()) : /*#__PURE__*/React.createElement(ScrollView, {
     contentContainerStyle: styles.railContent
-  }, isFloating && !showFloatingButtons ? null : effectiveRailItems.map((item, index) => renderRailItem(item, index)))), items.filter(i => i.isNestedRail).map(item => {
+  }, isFloating && !showFloatingButtons ? null : effectiveRailItems.map((item, index) => renderRailItem(item, index)), !isFloating && config.moreRailItem && config.moreFromAzEnabled && /*#__PURE__*/React.createElement(AzButton, {
+    text: "More",
+    color: config.activeColor || '#6200ee',
+    shape: config.defaultShape,
+    onClick: () => setShowMoreFromAz(true)
+  }))), items.filter(i => i.isNestedRail).map(item => {
     const effectiveConfig = item.nestedRailSettings ? {
       ...config,
       ...item.nestedRailSettings
@@ -750,6 +778,22 @@ const AzNavRailInner = props => {
     itemBounds: itemBounds,
     nestedRailVisibleId: nestedRailVisible,
     tutorials: config.tutorials
+  }), showAbout && /*#__PURE__*/React.createElement(AboutOverlay, {
+    repoUrl: config.appRepositoryUrl,
+    settings: {
+      activeColor: config.activeColor,
+      translucentBackground: config.translucentBackground
+    },
+    moreFromAzEnabled: config.moreFromAzEnabled,
+    moreFromAzJsonUrl: config.moreFromAzJsonUrl,
+    onDismiss: () => setShowAbout(false)
+  }), showMoreFromAz && /*#__PURE__*/React.createElement(MoreFromAzOverlay, {
+    jsonUrl: config.moreFromAzJsonUrl,
+    settings: {
+      activeColor: config.activeColor,
+      translucentBackground: config.translucentBackground
+    },
+    onDismiss: () => setShowMoreFromAz(false)
   }), /*#__PURE__*/React.createElement(TutorialOverlayWrapper, {
     tutorials: config.tutorials,
     itemBounds: itemBounds
@@ -771,6 +815,34 @@ const TutorialOverlayWrapper = ({
     itemBoundsCache: itemBounds
   });
 };
+
+/**
+ * Main navigation rail component for React Native.
+ * Renders a collapsible side rail with icon buttons, an expandable menu, and optional tutorial/help overlay support.
+ * Declare items as JSX children using the `AzNavRailScope` DSL helpers.
+ *
+ * @example
+ * ```tsx
+ * <AzNavRail
+ *   dockingSide={AzDockingSide.LEFT}
+ *   activeColor="#6200ee"
+ *   enableRailDragging
+ * >
+ *   <AzRailItem id="home" text="Home" onClick={() => nav.push('/home')} />
+ *   <AzRailToggle
+ *     id="dark"
+ *     text="Theme"
+ *     isChecked={dark}
+ *     toggleOnText="Dark"
+ *     toggleOffText="Light"
+ *     onClick={() => setDark(v => !v)}
+ *   />
+ *   <AzRailDivider />
+ *   <AzMenuItem id="about" text="About" onClick={openAbout} />
+ *   <MyScreen />
+ * </AzNavRail>
+ * ```
+ */
 export const AzNavRail = props => {
   return /*#__PURE__*/React.createElement(AzTutorialProvider, null, /*#__PURE__*/React.createElement(AzNavRailInner, props));
 };

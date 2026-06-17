@@ -1,5 +1,9 @@
 import React from 'react';
 import { AzButton } from './AzButton';
+
+/** Props for the standalone `AzToggle` button used inside the rail to render a two-state item. */
+
+/** Two-state toggle button — internally an `AzButton` whose label is driven by `isChecked`. */
 export const AzToggle = ({
   isChecked,
   onToggle,

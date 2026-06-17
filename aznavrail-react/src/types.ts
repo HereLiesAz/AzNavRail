@@ -37,22 +37,9 @@ export enum AzNestedRailAlignment {
 }
 
 /**
- * Selects which set of items the rail reveals when it is used as a drop-down menu
- * (see `AzNavRailSettings.dropdownMenu`). There is exactly one set — the app icon acts as the
- * trigger and tapping it unfolds whichever set this names.
- */
-export enum AzDropdownSource {
-  /** Unfold the rail items, rendered as the packed rail buttons. */
-  RAIL = 'RAIL',
-  /** Unfold the menu items, rendered as the full drawer rows. */
-  MENU = 'MENU',
-}
-
-/**
- * Where the drop-down trigger icon is anchored on screen (see `AzNavRailSettings.dropdownAlignment`).
- * In drop-down mode the icon is a plain hamburger button the dev can place anywhere; these are the
- * nine standard anchor points. The panel unfolds downward for top/centre anchors and upward for the
- * bottom anchors, so it always grows away from the nearest screen edge.
+ * Where an `AzDropdownMenu` panel anchors to its trigger icon and which way it unfolds. These are
+ * the nine standard anchor points; top/centre anchors open the panel downward (below the icon) and
+ * the bottom anchors open it upward (above the icon).
  */
 export enum AzDropdownAlignment {
   TOP_START = 'top-start',
@@ -108,30 +95,6 @@ export interface AzNavRailSettings {
   dockingSide?: AzDockingSide;
   /** When true, the rail never expands into a menu — icon-only mode is permanent. */
   noMenu?: boolean;
-  /**
-   * When true, the rail is used as a drop-down menu: it collapses to a single app-icon trigger
-   * anchored at the top (the icon replaces the hamburger) and unfolds `dropdownSource` downward
-   * like an accordion when tapped. Content is given the full screen width. This mode runs at the
-   * explicit exclusion of FAB/dragging, rail-to-menu expansion, swipe gestures, physical docking,
-   * the footer, nested-rail popups, the bleeding app-name header, and the help overlay.
-   */
-  dropdownMenu?: boolean;
-  /**
-   * Which set of items the drop-down reveals — `RAIL` (the packed rail buttons) or `MENU` (the
-   * full drawer rows). Only honoured when `dropdownMenu` is true. Defaults to `RAIL`.
-   */
-  dropdownSource?: AzDropdownSource;
-  /**
-   * Where the drop-down trigger icon is anchored (one of nine standard positions). The panel
-   * unfolds downward for top/centre anchors and upward for bottom anchors. Only honoured when
-   * `dropdownMenu` is true. Defaults to `top-start`.
-   */
-  dropdownAlignment?: AzDropdownAlignment;
-  /**
-   * A fine nudge (px) applied to the drop-down trigger icon from its `dropdownAlignment` anchor.
-   * Only honoured when `dropdownMenu` is true. Defaults to no offset.
-   */
-  dropdownOffset?: { x?: number; y?: number };
   /** Exact diameter (px) of the app icon in the header. When omitted the icon uses its default size. */
   headerIconSize?: number;
   /** When true, the help/info overlay is displayed over the screen. */

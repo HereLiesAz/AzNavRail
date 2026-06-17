@@ -147,31 +147,24 @@ The app icon in the header must be sizable to a specific diameter. Provide `head
 its legacy behavior of sizing to the rail width. When set, the header icon is rendered at exactly
 that width and height.
 
-Drop-down menu mode: the rail can be used as a drop-down menu via `dropdownMenu = true` in
-`azConfig`/`azSettings` (a `dropdownMenu` boolean in React settings). In this mode:
+Drop-down menu (`AzDropdownMenu`): a hamburger drop-down is a **standalone composable**, not a rail
+mode. It is placed inline like `AzButton`/`AzTextBox` — no `AzNavHost`, no DSL scope, no
+`background()`/`onscreen()`, no safe zones. (`AzNavRail` has no `dropdownMenu`/`dropdownSource`
+config; that rail mode was removed.)
 
-- `onscreen()` content is allowed the entire screen. The rail reserves **no** horizontal band **and
-  no top/bottom content safe zones** in this mode (`effectiveSafeTop`/`effectiveSafeBottom` are zeroed
-  in `AzNavHost`, and `LocalAzSafeZones` reports zero) — content runs fully edge-to-edge and the
-  floating trigger draws over it.
-- The trigger is placed wherever the dev asks via `dropdownAlignment` (an `AzDropdownAlignment` enum:
-  nine anchors `TOP_START`…`BOTTOM_END`; web/RN use the lowercase string values like `'bottom-end'`)
-  plus a fine `dropdownOffset` (`DpOffset` on Android, `{x,y}` px on React). The docking side no longer
-  dictates the trigger's spot. The shared `parseDropdownAnchor` helper (React) and
-  `AzDropdownAlignment.toAlignment()/toHorizontalAlignment()/isBottom` (Android) drive placement.
-- The app icon takes the place of the hamburger menu icon and behaves exactly like one. The bleeding
-  app-name header is not used here; it is always the icon.
-- Tapping the icon causes either the menu items or the rail items to unfold like an accordion,
-  reusing the exact fold/unfold mechanism already programmed for the floating-rail (FAB) feature. The
-  panel unfolds **downward** for top/centre anchors and **upward** for bottom anchors. Tapping the
-  icon again, tapping an item, or tapping outside folds them back up.
-- The developer selects which set unfolds via `dropdownSource` (`RAIL` or `MENU`). There is no
-  collapsing the rail or expanding the menu; whichever they choose is the one and only set the
-  drop-down shows.
-- This mode works at the explicit exclusion of: FAB mode/draggable rail and the overlay service,
-  rail↔menu expansion, `noMenu`, all swipe gestures, physical docking/rotate-in-place, the footer,
-  nested-rail popups, the rail width settings, the bleeding app-name header, the content safe zones,
-  and the help overlay/tutorials. Host items still expand inline as an accordion.
+- File: `aznavrail/src/main/java/com/hereliesaz/aznavrail/AzDropdownMenu.kt` (Android),
+  `aznavrail-react/src/components/AzDropdownMenu.tsx` (RN) and `src/web/AzDropdownMenu.jsx` (web).
+- It renders a tappable icon (defaults to `Icons.Default.Menu`); tapping it unfolds a panel anchored
+  to the icon (Android `Popup`; RN `Modal` overlay; web absolute panel) holding the items. Tapping
+  outside, back, or an item folds it up. Optional controlled `expanded`/`onExpandedChange`.
+- Items use a content-slot DSL (`AzDropdownMenuScope`: `azItem`→`AzButton`, `azToggle`, `azCycler`,
+  `azDivider`, `azCustom`, `dismiss()`); React uses `<AzDropdownItem>` children + a dismiss context.
+  `azItem` folds the menu after its callback by default (`closeOnClick`).
+- `alignment` (`AzDropdownAlignment`: nine anchors `TOP_START`…`BOTTOM_END`; web/RN use the lowercase
+  string values like `'bottom-end'`) anchors the panel to the icon and sets the unfold direction
+  (top/centre → downward, `BOTTOM_*` → upward); `offset` nudges it. Placement is driven by
+  `AzDropdownAlignment.toAlignment()/isBottom` + a custom `PopupPositionProvider` (Android) and the
+  shared `parseDropdownAnchor` helper (React).
 
 In-app About reader + "More from Az": the footer "About" item opens a built-in, full-screen, themed
 markdown reader (an overlay drawn over the live UI, like the help overlay) instead of opening the repo

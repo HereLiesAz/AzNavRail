@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AzButton } from './AzButton';
+
+/** Props for the standalone `AzCycler` button used inside the rail to step through a list of options. */
+
+/**
+ * Button that cycles forward through `options` on each tap with a 1 s commit debounce
+ * before `onCycle` is invoked with the final selected value.
+ */
 export const AzCycler = ({
   options,
   selectedOption,

@@ -8,9 +8,19 @@ var _react = _interopRequireWildcard(require("react"));
 var _reactNative = require("react-native");
 var _HistoryManager = require("../util/HistoryManager");
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function (e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, default: e }; if (null === e || "object" != typeof e && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (const t in e) "default" !== t && {}.hasOwnProperty.call(e, t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, t)) && (i.get || i.set) ? o(f, t, i) : f[t] = e[t]); return f; })(e, t); }
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+/** Module-level configuration for `AzTextBox` autocomplete behaviour. */
 const AzTextBoxDefaults = exports.AzTextBoxDefaults = {
+  /** Sets the maximum number of suggestion entries retained by the shared `historyManager`. */
   setSuggestionLimit: limit => _HistoryManager.historyManager.setLimit(limit)
 };
+
+/** Props for the `AzTextBox` text input. Extends `TextInputProps` minus `value`/`onChangeText` which are renamed below. */
+
+/**
+ * Text input with optional outline, inline submit button, history-backed autocomplete
+ * suggestions (keyed by `historyContext`), secret-mode reveal toggle, and clear button.
+ */
 const AzTextBox = ({
   value: controlledValue,
   onValueChange,
@@ -19,6 +29,8 @@ const AzTextBox = ({
   multiline = false,
   secret = false,
   outlineColor = '#6200ee',
+  textColor,
+  fillColor,
   historyContext = 'global',
   submitButtonContent,
   onSubmit,
@@ -27,7 +39,12 @@ const AzTextBox = ({
   backgroundColor = 'transparent',
   backgroundOpacity = 1,
   enabled = true,
-  initialValue = ''
+  initialValue = '',
+  isError = false,
+  leadingIcon,
+  trailingIcon,
+  showClearButton = true,
+  ...textInputProps
 }) => {
   const isControlled = controlledValue !== undefined;
   const [internalValue, setInternalValue] = (0, _react.useState)(initialValue);
@@ -85,6 +102,9 @@ const AzTextBox = ({
     setIsSecretVisible(!isSecretVisible);
   };
   const clearText = () => handleChange('');
+  const effectiveColor = isError ? 'red' : outlineColor;
+  const effectiveTextColor = isError ? 'red' : textColor || outlineColor;
+  const effectiveFillColor = fillColor || backgroundColor;
   return /*#__PURE__*/_react.default.createElement(_reactNative.View, {
     style: [styles.container, containerStyle, {
       zIndex: showSuggestions ? 1000 : 1,
@@ -92,45 +112,56 @@ const AzTextBox = ({
     }]
   }, /*#__PURE__*/_react.default.createElement(_reactNative.View, {
     style: [styles.inputRow, {
-      borderColor: outlineColor,
+      borderColor: effectiveColor,
       borderWidth: outlined ? 1 : 0,
-      backgroundColor: backgroundColor,
+      backgroundColor: effectiveFillColor,
       opacity: backgroundOpacity
     }]
-  }, /*#__PURE__*/_react.default.createElement(_reactNative.TextInput, {
+  }, leadingIcon && /*#__PURE__*/_react.default.createElement(_reactNative.View, {
+    style: styles.iconWrapper
+  }, leadingIcon), /*#__PURE__*/_react.default.createElement(_reactNative.TextInput, _extends({}, textInputProps, {
     value: currentValue,
     onChangeText: handleChange,
     placeholder: currentValue.trim().length > 0 ? '' : hint,
-    placeholderTextColor: outlineColor + '80',
+    placeholderTextColor: effectiveColor + '80',
     secureTextEntry: secret && !isSecretVisible,
     multiline: effectiveMultiline,
     editable: enabled,
-    style: [styles.input, {
-      color: outlineColor,
+    style: [styles.input, textInputProps.style, {
+      color: effectiveTextColor,
       minHeight: effectiveMultiline ? 40 : 40,
       height: effectiveMultiline ? undefined : 40,
       textAlignVertical: effectiveMultiline ? 'top' : 'center'
     }]
-  }), currentValue.length > 0 && /*#__PURE__*/_react.default.createElement(_reactNative.TouchableOpacity, {
+  })), trailingIcon && /*#__PURE__*/_react.default.createElement(_reactNative.View, {
+    style: styles.iconWrapper
+  }, trailingIcon), isError && /*#__PURE__*/_react.default.createElement(_reactNative.View, {
+    style: styles.iconWrapper
+  }, /*#__PURE__*/_react.default.createElement(_reactNative.Text, {
+    style: {
+      color: 'red',
+      fontWeight: 'bold'
+    }
+  }, "!")), currentValue.length > 0 && showClearButton && /*#__PURE__*/_react.default.createElement(_reactNative.TouchableOpacity, {
     onPress: secret ? toggleSecret : clearText,
     style: styles.iconButton,
     disabled: !enabled
   }, /*#__PURE__*/_react.default.createElement(_reactNative.Text, {
     style: {
-      color: outlineColor,
+      color: effectiveColor,
       fontSize: 10
     }
   }, secret ? isSecretVisible ? 'HIDE' : 'SHOW' : 'X')), showSubmitButton && /*#__PURE__*/_react.default.createElement(_reactNative.TouchableOpacity, {
     onPress: handleSubmit,
     disabled: !enabled,
     style: [styles.submitButton, {
-      backgroundColor: backgroundColor,
-      borderColor: outlineColor,
+      backgroundColor: effectiveFillColor,
+      borderColor: effectiveColor,
       borderWidth: !outlined ? 1 : 0
     }]
   }, submitButtonContent || /*#__PURE__*/_react.default.createElement(_reactNative.Text, {
     style: {
-      color: outlineColor,
+      color: effectiveTextColor,
       fontSize: 10
     }
   }, "GO"))), showSuggestions && /*#__PURE__*/_react.default.createElement(_reactNative.View, {
@@ -162,6 +193,11 @@ const styles = _reactNative.StyleSheet.create({
   },
   iconButton: {
     padding: 8
+  },
+  iconWrapper: {
+    paddingHorizontal: 8,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   submitButton: {
     padding: 8,

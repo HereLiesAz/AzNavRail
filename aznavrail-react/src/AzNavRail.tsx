@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   Animated,
   StyleSheet,
   PanResponder,
@@ -14,9 +13,8 @@ import {
   UIManager,
 } from 'react-native';
 import { AzNavRailContext } from './AzNavRailScope';
-import { AzNavItem, AzNavRailSettings, AzButtonShape, AzDockingSide, AzDropdownSource, AzDropdownAlignment, AzHeaderIconShape, AzNestedRailAlignment } from './types';
+import { AzNavItem, AzNavRailSettings, AzButtonShape, AzDockingSide, AzHeaderIconShape, AzNestedRailAlignment } from './types';
 import { AzNavRailDefaults } from './AzNavRailDefaults';
-import { parseDropdownAnchor } from './dropdownPlacement';
 import { AzButton } from './components/AzButton';
 import { AzToggle } from './components/AzToggle';
 import { AzCycler } from './components/AzCycler';
@@ -66,10 +64,6 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       enableRailDragging = false,
       dockingSide = AzDockingSide.LEFT,
       noMenu = false,
-      dropdownMenu = false,
-      dropdownSource = AzDropdownSource.RAIL,
-      dropdownAlignment = AzDropdownAlignment.TOP_START,
-      dropdownOffset,
       headerIconSize,
       infoScreen = false,
       onDismissInfoScreen,
@@ -115,10 +109,6 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       enableRailDragging: dslOverrides.enableRailDragging ?? enableRailDragging,
       dockingSide: dslOverrides.dockingSide ?? dockingSide,
       noMenu: dslOverrides.noMenu ?? noMenu,
-      dropdownMenu: dslOverrides.dropdownMenu ?? dropdownMenu,
-      dropdownSource: dslOverrides.dropdownSource ?? dropdownSource,
-      dropdownAlignment: dslOverrides.dropdownAlignment ?? dropdownAlignment,
-      dropdownOffset: dslOverrides.dropdownOffset ?? dropdownOffset,
       headerIconSize: dslOverrides.headerIconSize ?? headerIconSize,
       infoScreen: dslOverrides.infoScreen ?? infoScreen,
       activeColor: dslOverrides.activeColor ?? activeColor,
@@ -135,7 +125,6 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   };
 
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded && !config.noMenu);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showMoreFromAz, setShowMoreFromAz] = useState(false);
   const [isFloating, setIsFloating] = useState(false);
@@ -554,7 +543,6 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                     }
                     if (item.onClick) item.onClick();
                     if (item.collapseOnClick && !config.noMenu) setIsExpanded(false);
-                    if (item.collapseOnClick) setIsDropdownOpen(false);
                 }}
             />
           </View>
@@ -581,7 +569,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                   onItemClick={() => {
                       logInteraction('Menu item clicked', item.text, item);
                       if (item.onClick) item.onClick();
-                      if (item.collapseOnClick) { setIsExpanded(false); setIsDropdownOpen(false); }
+                      if (item.collapseOnClick) setIsExpanded(false);
                   }}
                   renderSubItems={() => (
                       <>
@@ -665,69 +653,6 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
 
   const flexDirection = config.dockingSide === AzDockingSide.RIGHT ? 'row-reverse' : 'row';
 
-  // DROP-DOWN MENU MODE.
-  //
-  // The rail becomes a single app-icon trigger anchored at the top; the icon replaces the
-  // hamburger. Tapping it unfolds the chosen item set (`config.dropdownSource`) downward; tapping
-  // it again, tapping an item, or tapping outside folds it back up. The rail reserves no width so
-  // `children` (the screen content) spans the full width underneath. FAB/dragging, rail-to-menu
-  // expansion, swipes, the footer, nested-rail popups and the help overlay are all bypassed here.
-  if (config.dropdownMenu) {
-      const iconSize = (config as any).headerIconSize ?? AzNavRailDefaults.HeaderIconSize;
-      // The trigger is a plain hamburger button placed wherever the dev asks (nine anchors + a fine
-      // offset), not a docked strip — the docking side no longer dictates its spot.
-      const { vert, horiz, isBottom } = parseDropdownAnchor(config.dropdownAlignment ?? AzDropdownAlignment.TOP_START);
-      const justifyContent: 'flex-start' | 'center' | 'flex-end' =
-          vert === 'top' ? 'flex-start' : vert === 'bottom' ? 'flex-end' : 'center';
-      const alignItems: 'flex-start' | 'center' | 'flex-end' =
-          horiz === 'start' ? 'flex-start' : horiz === 'end' ? 'flex-end' : 'center';
-      const offsetX = config.dropdownOffset?.x ?? 0;
-      const offsetY = config.dropdownOffset?.y ?? 0;
-      return (
-          <AzNavRailContext.Provider value={{ register, unregister, updateSettings, getDividerId, hasItem }}>
-              <View style={{ flex: 1 }}>
-                  <View style={{ flex: 1 }}>{children}</View>
-
-                  {isDropdownOpen && (
-                      <TouchableWithoutFeedback onPress={() => { logInteraction('Dropdown tap outside', 'folded'); setIsDropdownOpen(false); }}>
-                          <View style={[StyleSheet.absoluteFill, { zIndex: 999 }]} />
-                      </TouchableWithoutFeedback>
-                  )}
-
-                  {/* Full-screen, touch-transparent positioning layer: the inner column lands at the
-                      chosen anchor; only the icon/panel actually receive touches. */}
-                  <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, { justifyContent, alignItems, padding: AzNavRailDefaults.HeaderPadding, zIndex: 1000 }]}>
-                      <View style={{ flexDirection: isBottom ? 'column-reverse' : 'column', alignItems, transform: [{ translateX: offsetX }, { translateY: offsetY }] }}>
-                          <TouchableOpacity
-                              onPress={() => { const o = !isDropdownOpen; setIsDropdownOpen(o); logInteraction('Dropdown trigger tapped', o ? `unfolding ${config.dropdownSource}` : 'folding'); }}
-                              accessibilityRole="button"
-                              accessibilityLabel="Menu"
-                          >
-                              <View style={{ width: iconSize, height: iconSize, backgroundColor: 'gray', borderRadius: getHeaderBorderRadius(), alignItems: 'center', justifyContent: 'center' }}>
-                                  <Text style={{ color: 'white' }}>Icon</Text>
-                              </View>
-                          </TouchableOpacity>
-
-                          {isDropdownOpen && (
-                              <ScrollView
-                                  style={[styles.dropdownPanel, { maxHeight: screenHeightRef.current * 0.8 }, isBottom ? { marginTop: 0, marginBottom: 4 } : undefined]}
-                                  contentContainerStyle={config.dropdownSource === AzDropdownSource.MENU ? { width: config.expandedRailWidth } : { alignItems: 'center' }}
-                              >
-                                  {config.dropdownSource === AzDropdownSource.MENU
-                                      ? menuItems.map(item => item.isDivider ? <View key={item.id} style={styles.divider} /> : renderMenuItem(item))
-                                      : effectiveRailItems.map((item, index) => renderRailItem(item, index))}
-                              </ScrollView>
-                          )}
-                      </View>
-                  </View>
-
-                  {isLoading && (
-                      <View style={styles.loaderOverlay}><AzLoad /></View>
-                  )}
-              </View>
-          </AzNavRailContext.Provider>
-      );
-  }
 
   return (
     <AzNavRailContext.Provider value={{ register, unregister, updateSettings, getDividerId, hasItem }}>
@@ -939,17 +864,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: AzNavRailDefaults.RailContentHorizontalPadding,
     paddingVertical: 8,
     alignItems: 'center',
-  },
-  dropdownPanel: {
-    marginTop: 4,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 12,
-    padding: 8,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 8 },
   },
   menuContent: {
     flex: 1,

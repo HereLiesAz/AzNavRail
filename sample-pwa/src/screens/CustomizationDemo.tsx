@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import {
   AzButtonShape,
   AzDropdownAlignment,
-  AzDropdownSource,
+  AzDropdownMenu,
+  AzDropdownItem,
+  AzDivider,
   AzHeaderIconShape,
 } from '@HereLiesAz/aznavrail-react'
 
@@ -16,16 +19,10 @@ export interface CustomizationState {
   vibrate: boolean
   activeClassifiers: Set<string>
   headerIconSize: number
-  dropdownMenu: boolean
-  dropdownSource: AzDropdownSource
-  dropdownAlignment: AzDropdownAlignment
-  dropdownOffsetX: number
-  dropdownOffsetY: number
 }
 
 const headerShapes = Object.values(AzHeaderIconShape) as AzHeaderIconShape[]
 const buttonShapes = Object.values(AzButtonShape) as AzButtonShape[]
-const dropdownSources = Object.values(AzDropdownSource) as AzDropdownSource[]
 const dropdownAlignments = Object.values(AzDropdownAlignment) as AzDropdownAlignment[]
 const repoChoices: { label: string; url: string }[] = [
   { label: 'AzNavRail', url: 'https://github.com/HereLiesAz/AzNavRail' },
@@ -88,42 +85,8 @@ export default function CustomizationDemo({
         />
       </Block>
 
-      <Toggle
-        label="dropdownMenu — use the rail as a drop-down (app icon = hamburger)"
-        value={state.dropdownMenu}
-        onChange={(v) => onChange({ ...state, dropdownMenu: v })}
-      />
-
-      <Block label={`dropdownSource: ${state.dropdownSource}`}>
-        <select
-          value={state.dropdownSource}
-          onChange={(e) => onChange({ ...state, dropdownSource: e.target.value as AzDropdownSource })}
-        >
-          {dropdownSources.map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
-      </Block>
-
-      <Block label={`dropdownAlignment: ${state.dropdownAlignment} (where the hamburger sits — only in dropdown mode)`}>
-        <select
-          value={state.dropdownAlignment}
-          onChange={(e) => onChange({ ...state, dropdownAlignment: e.target.value as AzDropdownAlignment })}
-        >
-          {dropdownAlignments.map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
-      </Block>
-
-      <Block label={`dropdownOffset.x: ${state.dropdownOffsetX}px`}>
-        <input
-          type="range" min={-64} max={64} value={state.dropdownOffsetX}
-          onChange={(e) => onChange({ ...state, dropdownOffsetX: Number(e.target.value) })}
-        />
-      </Block>
-
-      <Block label={`dropdownOffset.y: ${state.dropdownOffsetY}px`}>
-        <input
-          type="range" min={-64} max={64} value={state.dropdownOffsetY}
-          onChange={(e) => onChange({ ...state, dropdownOffsetY: Number(e.target.value) })}
-        />
+      <Block label="AzDropdownMenu — standalone hamburger menu, placed inline like any widget">
+        <AzDropdownMenuDemo />
       </Block>
 
       <Toggle
@@ -175,6 +138,31 @@ export default function CustomizationDemo({
           })}
         </div>
       </Block>
+    </div>
+  )
+}
+
+/**
+ * The standalone AzDropdownMenu — no rail, no host, no settings. Dropped inline here like any
+ * widget; the alignment picker shows how the panel anchors/unfolds relative to the trigger icon.
+ */
+function AzDropdownMenuDemo() {
+  const [alignment, setAlignment] = useState<AzDropdownAlignment>(AzDropdownAlignment.TOP_START)
+  const [dark, setDark] = useState(false)
+  const [last, setLast] = useState('none')
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+      <select value={alignment} onChange={(e) => setAlignment(e.target.value as AzDropdownAlignment)}>
+        {dropdownAlignments.map((s) => <option key={s} value={s}>{s}</option>)}
+      </select>
+      <AzDropdownMenu alignment={alignment}>
+        <AzDropdownItem text="Profile" onClick={() => setLast('Profile')} />
+        <AzDropdownItem text="Settings" onClick={() => setLast('Settings')} />
+        <AzDivider />
+        <AzDropdownItem text={dark ? 'Dark' : 'Light'} closeOnClick={false} onClick={() => setDark((v) => !v)} />
+        <AzDropdownItem text="Sign out" onClick={() => setLast('Sign out')} />
+      </AzDropdownMenu>
+      <span style={{ opacity: 0.7 }}>last: {last}</span>
     </div>
   )
 }
