@@ -360,10 +360,13 @@ fun AzHostActivityLayout(
             Box(modifier = Modifier.fillMaxSize()) { item.content() }
         }
 
-        val startPadding = if (visualSide == AzVisualSide.LEFT) railWidth else 0.dp
-        val endPadding = if (visualSide == AzVisualSide.RIGHT) railWidth else 0.dp
-        val topPadding = if (visualSide == AzVisualSide.TOP) railWidth else 0.dp
-        val bottomPadding = if (visualSide == AzVisualSide.BOTTOM) railWidth else 0.dp
+        // In drop-down mode the rail is a floating top-anchored trigger, not a docked side-strip,
+        // so it reserves no horizontal/vertical band: onscreen content spans the full screen width.
+        val isDropdown = railScope.dropdownMenu
+        val startPadding = if (!isDropdown && visualSide == AzVisualSide.LEFT) railWidth else 0.dp
+        val endPadding = if (!isDropdown && visualSide == AzVisualSide.RIGHT) railWidth else 0.dp
+        val topPadding = if (!isDropdown && visualSide == AzVisualSide.TOP) railWidth else 0.dp
+        val bottomPadding = if (!isDropdown && visualSide == AzVisualSide.BOTTOM) railWidth else 0.dp
 
         // Identify active item and pull actual transient states
         val railScopeImpl = scope.getRailScopeImpl()
@@ -386,7 +389,7 @@ fun AzHostActivityLayout(
         val titleAlignment = if (visualDockingSideProxy == AzDockingSide.LEFT) Alignment.CenterEnd else Alignment.CenterStart
         val titlePaddingSide = if (visualDockingSideProxy == AzDockingSide.LEFT) Modifier.padding(end = 32.dp) else Modifier.padding(start = 32.dp)
 
-        if (currentTitle != null && currentTitle != AzNavRailDefaults.NO_TITLE && currentTitle.isNotBlank()) {
+        if (!isDropdown && currentTitle != null && currentTitle != AzNavRailDefaults.NO_TITLE && currentTitle.isNotBlank()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

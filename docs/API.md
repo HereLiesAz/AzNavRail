@@ -93,9 +93,36 @@ fun azConfig(
     usePhysicalDocking: Boolean = false,
     expandedWidth: Dp = 130.dp,
     collapsedWidth: Dp = 80.dp,
-    showFooter: Boolean = true
+    showFooter: Boolean = true,
+    appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail",
+    dropdownMenu: Boolean = false,
+    dropdownSource: AzDropdownSource = AzDropdownSource.RAIL
 )
 ~~~
+
+* `dropdownMenu`: `Boolean` — use the rail as a top-anchored drop-down menu. The app icon replaces
+  the hamburger; tapping it unfolds `dropdownSource` like an accordion while `onscreen` content gets
+  the full screen width. Excludes FAB/dragging, rail↔menu expansion, `noMenu`, swipe gestures,
+  physical docking, the footer, nested-rail popups, the bleeding app-name header, and the help overlay.
+* `dropdownSource`: `AzDropdownSource` — `RAIL` (packed rail buttons) or `MENU` (full drawer rows).
+  Only honoured when `dropdownMenu` is true.
+
+### `azTheme`
+Controls the visual style of the rail.
+
+~~~kotlin
+fun azTheme(
+    activeColor: Color = Color.Unspecified,
+    defaultShape: AzButtonShape = AzButtonShape.CIRCLE,
+    headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
+    translucentBackground: Color = Color.Unspecified,
+    helpLineColors: List<Color> = emptyList(),
+    headerIconSize: Dp = Dp.Unspecified
+)
+~~~
+
+* `headerIconSize`: `Dp` — exact diameter of the header app-icon. `Dp.Unspecified` (default) sizes
+  the icon to the rail width (legacy behavior).
 
 ---
 
