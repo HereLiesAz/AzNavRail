@@ -48,3 +48,7 @@ build*.txt
 test*.txt
 *output*.txt
 aznavrail-react/lib/
+
+# Python bytecode cache
+__pycache__/
+*.pyc
