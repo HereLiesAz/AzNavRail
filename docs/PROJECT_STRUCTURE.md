@@ -34,10 +34,9 @@ This document provides a brief but thorough description of what each file in the
 | `API.md` | Direct documentation of the public-facing API. |
 | `DSL.md` | Direct documentation covering the builder Domain Specific Language parameters. |
 | `PROJECT_STRUCTURE.md` | Explains the layout of the repository. |
-| `DIMENSIONAL_COMPARISON.md` | Documents differences between major versions (v6.99 vs v7.25). |
 | `SECURITY.md` | Security policy and vulnerability reporting. |
-| `MIGRATION_GUIDE.md` | Guide for migrating to newer versions. |
-| `AZ_HIGH_INFERENCE.md` | Documentation for the annotation-based High-Inference system. |
+| `MIGRATION_GUIDE.md` | Guide for migrating to the current architecture. |
+| `TUTORIAL_FRAMEWORK_PROPOSAL.md` | Reference for the cross-platform tutorial framework. |
 
 #### .github Directory
 
@@ -52,6 +51,9 @@ This document provides a brief but thorough description of what each file in the
 | `android-sample-build.yml` | Validates Android builds on push. |
 | `codeql.yml` | Code security scanning action. |
 | `jekyll-gh-pages.yml` | Documentation deployment pipeline. |
+| `bump-more-from-az.yml` | Resolves and bakes the "More from Az" manifest from pasted GitHub links. |
+| `sync-embedded-guide.yml` | Copies `docs/AZNAVRAIL_COMPLETE_GUIDE.md` into the library's bundled `assets/` + `resources/` copies so all three stay identical. |
+| `gradle-publish.yml` / `npm-publish.yml` / `publish-npm.yml` | Release publishing pipelines. |
 
 #### SampleApp Directory
 

@@ -199,4 +199,12 @@ message. The `[skip ci]` is load-bearing: it stops the bake commit from re-trigg
 workflow and `android-sample-build.yml` (which also has `paths-ignore` for `more-from-az.json` and
 `**/*.md`). Do not hand-edit `version`.
 
+Embedded guide sync: the Complete Guide has a single canonical copy at
+`docs/AZNAVRAIL_COMPLETE_GUIDE.md`. The library also ships two bundled copies
+(`aznavrail/src/main/assets/AZNAVRAIL_COMPLETE_GUIDE.md` and `…/resources/AZNAVRAIL_COMPLETE_GUIDE.md`)
+packaged into the AAR. Edit ONLY the canonical `docs/` copy — `.github/workflows/sync-embedded-guide.yml`
+copies it into both bundled paths and commits back (as `github-actions[bot]`, `[skip ci]`, same
+loop-safety pattern as the bake workflow). Never hand-edit the bundled copies; they must stay
+byte-identical to `docs/`.
+
 As an option, I am changing how the AzNavRail switches from portrait to landscape mode. Instead of maintaining its position on the side of the screen, it maintains its position on the side of the device, and all elements of the rail each rotate in place. This may take some careful consideration for whatever logic is needed in different circumstances, like how RailHostItems are expanded, or the difference between the rail being docked on the right or left in portrait mode. Also--PAY ATTENTION--if the rail is docked to the left in portrait mode, rotating the device clockwise means it will be at the top of the screen. But if I rotate counter-clockwise, it should be at the bottom of the screen. And if I turned the device upside down, the rail should be on the left side.

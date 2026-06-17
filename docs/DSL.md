@@ -2,9 +2,9 @@
 
 This document outlines the API surface of `AzNavRailScope`. This interface defines the DSL used to configure the rail, whether manually or via the generated code.
 
-## The Live Dictatorship (v7.25)
+## Reactive Property Binding
 
-The **v7.25 KSP Processor** injects reactive logic. When using `@Az` annotations with property bindings (e.g., `textProperty = "myTitle"`), the generated code no longer passes hardcoded literals. Instead, it accesses your `AzActivity` instance directly.
+The **KSP Processor** injects reactive logic. When using `@Az` annotations with property bindings (e.g., `textProperty = "myTitle"`), the generated code no longer passes hardcoded literals. Instead, it accesses your `AzActivity` instance directly.
 
 Because these properties are ideally `mutableStateOf`, the entire `AzGraph` will **recompose** automatically when your Activity state changes.
 
@@ -22,8 +22,8 @@ fun azConfig(
     displayAppName: Boolean = false,
     activeClassifiers: Set<String> = emptySet(),
     usePhysicalDocking: Boolean = false,
-    expandedWidth: Dp = 130.dp,
-    collapsedWidth: Dp = 80.dp,
+    expandedWidth: Dp = 160.dp,
+    collapsedWidth: Dp = 100.dp,
     showFooter: Boolean = true,
     appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail"
 )

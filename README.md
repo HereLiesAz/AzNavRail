@@ -35,7 +35,7 @@ Add JitPack to your `settings.gradle.kts`:
 - **Layout**: Pack buttons or preserve spacing.
 - **Disabled State**: Disable items or options.
 - **Loading State**: Built-in loading animation.
-- **Standalone Components**: `AzButton`, `AzToggle`, `AzCycler`, `AzDivider`, `AzRoller`.
+- **Standalone Components**: `AzButton`, `AzToggle`, `AzCycler`, `AzDivider`, `AzRoller`, `AzTextBox`, `AzForm`, `AzDropdownMenu`.
 - **Navigation**: seamless Jetpack Navigation integration.
 - **Hierarchy**: Nested menus with host and sub-items. Sub-items can themselves be hosts (`azRailSubHostItem` / `azMenuSubHostItem`), so hosts nest to any depth.
 - **Draggable (FAB Mode)**: Detach and move the rail.

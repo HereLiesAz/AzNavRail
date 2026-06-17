@@ -2,19 +2,12 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 8.x.x   | :white_check_mark: |
-| 7.x.x   | :white_check_mark: |
-| < 7.0   | :x:                |
+AzNavRail is always about the **latest** release. Only the most recent published version receives
+security updates — older versions are not supported. Pull the newest tag from JitPack (Android) or
+npm (`@HereLiesAz/aznavrail-react`) before reporting.
 
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
-
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+Open a security advisory or issue on the [GitHub repository](https://github.com/HereLiesAz/AzNavRail)
+describing the vulnerability and the steps to reproduce it. You can expect an initial response within
+a few days; accepted issues are fixed in the next release and credited in the changelog.

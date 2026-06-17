@@ -2,9 +2,9 @@
 
 If you are reading this, you are attempting to upgrade AzNavRail from its chaotic, manual-DSL era to the totalitarian KSP architecture.
 
-## v7.25: The Live Dictatorship Migration
+## The Live Dictatorship Migration
 
-Version 7.25 introduces breaking changes to the annotation parameters to support dynamic binding and resolve cyclic dependencies.
+The annotation parameters changed to support dynamic binding and resolve cyclic dependencies.
 
 ### 1. Enum to String Literal Conversion
 To prevent the `annotation` module from depending on the `core` library, all Enum-based parameters in annotations have been converted to `String`.
@@ -54,7 +54,7 @@ The bloated `azSettings` function has been destroyed. **Furthermore, `azTheme` h
 
 Parameters like `expandedWidth`, `collapsedWidth`, and `showFooter` have been absorbed into `azConfig` and the `@App` annotation.
 
-## Phase 4: The Help/Info System Overhaul (v8.00)
+## Phase 4: The Help/Info System Overhaul
 
 The help system has been promoted to a first-class citizen with explicit triggers and scrollable, interactive info cards.
 

@@ -91,7 +91,8 @@ Controls visual style defaults.
 azTheme(
     defaultShape = AzButtonShape.RECTANGLE, // Default shape for all items
     activeColor = MaterialTheme.colorScheme.primary, // Color for active state
-    translucentBackground = Color.Black.copy(alpha = 0.5f) // Set the background color for menus/overlays!
+    translucentBackground = Color.Black.copy(alpha = 0.5f), // Set the background color for menus/overlays!
+    headerIconSize = 48.dp                  // Exact app-icon diameter (Dp.Unspecified = size to rail width)
 )
 ```
 
@@ -144,31 +145,31 @@ const settings: AzNavRailSettings = {
 > The `HelpOverlay` displays a short, truncated entry for each item to conserve space. Tapping a help card expands it to reveal the full description and any extra text provided in `helpList`. Furthermore, `helpList` can be supplied dynamically to `AzNestedRail` components for distinct, localized help data.
 
 
-### D. About reader & "More from Az" (`azAbout`)
+### D. Drop-down menu — `AzDropdownMenu` (standalone)
+
+A hamburger drop-down is **not** a rail mode — it is a standalone composable, `AzDropdownMenu`, placed
+inline like `AzButton` (no `AzNavHost`, no scope, no `onscreen()`, no safe zones). It renders a
+tappable icon; tapping it unfolds a panel anchored to the icon (a `Popup`) holding the items. Items
+use a content-slot DSL that reuses the library's widgets (`azItem`→`AzButton`, `azToggle`, `azCycler`,
+`azDivider`); `alignment` (`AzDropdownAlignment`) anchors the panel and sets the unfold direction and
+`offset` nudges it.
 
 ```kotlin
-azAbout(
-    inAppAbout = true,         // footer "About" opens the in-app markdown reader (vs a browser)
-    moreFromAzEnabled = true,  // show the "More from Az" entry in the About screen
-    moreRailItem = false,      // also pin a "More" item at the bottom of the rail
-    moreFromAzJsonUrl = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json",
-)
+AzDropdownMenu(alignment = AzDropdownAlignment.TOP_END) {
+    azItem("Settings") { openSettings() }
+    azToggle(isChecked = dark, toggleOnText = "Dark", toggleOffText = "Light") { dark = it }
+    azDivider()
+    azItem("Sign out") { signOut() }
+}
 ```
 
-The **About reader** auto-discovers the markdown docs (`.md` in the repo root + `docs/`) of
-`azConfig`'s `appRepositoryUrl` via the GitHub API (cached; public repos only) and renders them
-inline in a themed reader, with a "View on GitHub" button pinned at the bottom.
-
-**More from Az** is a carousel of other apps. You paste **GitHub repo links, one per line** into
-`more-from-az.json`; a GitHub Action resolves each repo and bakes the finished manifest — name/icon/
-description from the repo, a Play link constructed (`com.<owner>.<repo>`) and verified, the
-website/PWA from the repo homepage (PWA → "Open", else "Website"), apps whose README first line says
-`WIP` excluded, and apps with a working Play link sorted first. `version` is auto-incremented so the
-list refreshes without a release. The app does no resolution — it renders the baked manifest.
-
-**React:** the same options are flat props/settings — `inAppAbout`, `moreFromAzEnabled`,
-`moreRailItem`, `moreFromAzJsonUrl`, `appRepositoryUrl`. Resolution is done in CI, so "More from Az"
-metadata is identical on web and native (no CORS limitation).
+```tsx
+<AzDropdownMenu alignment={AzDropdownAlignment.TOP_END}>
+  <AzDropdownItem text="Settings" onClick={openSettings} />
+  <AzDivider />
+  <AzDropdownItem text="Sign out" onClick={signOut} />
+</AzDropdownMenu>
+```
 
 ---
 
@@ -472,19 +473,6 @@ azRailRelocItem(
 
 These components are used within your screens (e.g., inside `AzNavHost`), not inside the rail configuration.
 
-### Standalone Buttons
-You can use `AzButton`, `AzToggle`, and `AzCycler` anywhere in your app to match the aesthetic of the rail. They support text or custom composable content.
-
-```kotlin
-AzButton(
-    text = "Click Me",
-    onClick = { /* Do something */ },
-    shape = AzButtonShape.RECTANGLE,
-    color = MaterialTheme.colorScheme.secondary,
-    itemContent = { Icon(Icons.Default.Add, contentDescription = "Add") } // Optional custom content
-)
-```
-
 ### AzTextBox
 Advanced text input with history support.
 
@@ -532,18 +520,6 @@ AzButton(text = "Button", onClick = {}, shape = AzButtonShape.SQUARE)
 AzToggle(isChecked = true, onToggle = {}, toggleOnText = "On", toggleOffText = "Off")
 AzCycler(options = listOf("1", "2"), selectedOption = "1", onCycle = {})
 ```
-
-
-### D. Item Customization (Colors & Text)
-Most navigation items (`azRailItem`, `azMenuItem`, toggles, cyclers, etc.) support overriding their display text and colors when shown in the menu versus the rail:
-- `menuText`: Optional alternate text to display when the item is expanded in the side menu (overrides `text`).
-- `menuToggleOnText`, `menuToggleOffText`: Optional alternate text for toggles when in the menu.
-- `menuOptions`: Optional alternate list of strings for cyclers when in the menu.
-- `textColor`: Custom color for the text itself.
-- `fillColor`: Custom color for the button's translucent background surface. By default, the `fillColor` is Black (with 25% opacity), unless the item's main color is Black, in which case it is White (with 25% opacity) to ensure proper contrast.
-
-### E. Menu Font Size & Theming
-The expanded menu text font size (and the footer items text size) is strictly controlled by your app's `MaterialTheme.typography.titleLarge`. To adjust the text size inside the side menu drawer, simply customize the `titleLarge` attribute in your app's typography theme!
 
 
 ## 9. Tutorial Framework
@@ -910,8 +886,6 @@ sheetController.stepDown()                        // reverse
 sheetController.snapTo(AzSheetDetent.FULL)         // direct jump
 sheetController.isEnabled = false                  // forces HIDDEN, blocks step calls
 ```
-
-When `isEnabled` is set to `false`: the sheet immediately collapses to `HIDDEN`, `stepUp()` becomes a no-op, `stepDown()` forces `HIDDEN`, and `snapTo()` only allows `HIDDEN` as a target. Setting `isEnabled = true` re-enables all operations.
 
 ### 10.4 Gestures
 
