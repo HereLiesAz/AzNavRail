@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- **`AzDropdownMenu` (+ `AzDropdownItem`).** A standalone, hamburger-style drop-down menu placed
+  inline like `AzButton`/`AzTextBox` — no `AzNavHost`, no settings, no safe zones. It renders a
+  tappable icon; tapping it shows a panel anchored to the icon (RN `Modal` overlay; web absolute
+  panel) holding `<AzDropdownItem>` entries (plus `AzToggle`/`AzCycler`/`AzDivider`) that reuse the
+  library's own widgets and auto-close via a dismiss context. Props mirror Android:
+  `alignment` (`AzDropdownAlignment`), `offset`, `iconShape`, `menuWidth`, controlled
+  `expanded`/`onExpandedChange`. Reaches parity with the Android `AzDropdownMenu` composable.
+- **Sizable header icon** (`headerIconSize`) and the **in-app About reader + "More from Az"**
+  carousel (`appRepositoryUrl`, `inAppAbout`, `moreRailItem`) reach parity with Android.
+
+### Removed
+- **The rail-coupled drop-down mode.** `dropdownMenu` / `dropdownSource` / `dropdownAlignment` /
+  `dropdownOffset` settings and the `AzDropdownSource` enum are gone — use the standalone
+  `AzDropdownMenu` instead. `AzDropdownAlignment` is kept (it now configures `AzDropdownMenu`).
+
 ## 0.3.0
 
 ### Added

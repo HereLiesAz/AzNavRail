@@ -28,7 +28,7 @@ AzHostActivityLayout(
 While Android uses `AzHostActivityLayout` and a DSL to manage positioning and Safe Zones automatically, React projects explicitly construct their layout and pass properties and arrays of objects. The React version enforces the same visual rules via standard flex layouts.
 
 ```tsx
-import { AzNavRail, AzNavItem, AzNavRailSettings } from '@HereLiesAz/aznavrail-react';
+import { AzNavRail, AzNavItem, AzNavRailSettings, AzDockingSide, AzButtonShape } from '@HereLiesAz/aznavrail-react';
 import { View } from 'react-native';
 
 const settings: AzNavRailSettings = {

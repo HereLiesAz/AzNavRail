@@ -1,6 +1,6 @@
-# AzNavRail API Reference (v7.25: The Live Dictatorship)
+# AzNavRail API Reference
 
-This document serves as the technical reference for the AzNavRail library. Version 7.25 introduces **Dynamic Reactive Binding**, allowing the annotation-driven architecture to react to runtime state changes in the host Activity.
+This document serves as the technical reference for the AzNavRail library. **Dynamic Reactive Binding** lets the annotation-driven architecture react to runtime state changes in the host Activity.
 
 * **[1. High-Inference API](#1-high-inference-api-az)**: The annotation system used to dictate structure and reactive bindings.
 * **[2. The Configuration Duality (Scope API)](#2-the-configuration-duality-scope-api)**: The backend API used to inject runtime configurations.
@@ -11,7 +11,7 @@ This document serves as the technical reference for the AzNavRail library. Versi
 
 ## 1. High-Inference API (`@Az`)
 
-The primary interface for the library is the `@Az` annotation. In v7.25, annotations now support `*Property` strings which bind directly to properties in your `AzActivity` (ideally `mutableStateOf`).
+The primary interface for the library is the `@Az` annotation. Annotations support `*Property` strings which bind directly to properties in your `AzActivity` (ideally `mutableStateOf`).
 
 ### `com.hereliesaz.aznavrail.annotation.Az`
 
@@ -91,8 +91,8 @@ fun azConfig(
     displayAppName: Boolean = false,
     activeClassifiers: Set<String> = emptySet(),
     usePhysicalDocking: Boolean = false,
-    expandedWidth: Dp = 130.dp,
-    collapsedWidth: Dp = 80.dp,
+    expandedWidth: Dp = 160.dp,
+    collapsedWidth: Dp = 100.dp,
     showFooter: Boolean = true,
     appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail"
 )
