@@ -159,14 +159,16 @@ The **About reader** auto-discovers the markdown docs (`.md` in the repo root + 
 `azConfig`'s `appRepositoryUrl` via the GitHub API (cached; public repos only) and renders them
 inline in a themed reader, with a "View on GitHub" button pinned at the bottom.
 
-**More from Az** is a carousel of other apps backed by a **link-only** `more-from-az.json` in this
-repo — each entry is just `{ "github"?, "play"?, "web"? }` and the name/icon/description are
-auto-populated by resolving the link. Its `version` is auto-incremented by CI so new entries appear
-without a release. A `web` link is treated as a website/PWA (with an "Open" button).
+**More from Az** is a carousel of other apps. You paste **GitHub repo links, one per line** into
+`more-from-az.json`; a GitHub Action resolves each repo and bakes the finished manifest — name/icon/
+description from the repo, a Play link constructed (`com.<owner>.<repo>`) and verified, the
+website/PWA from the repo homepage (PWA → "Open", else "Website"), apps whose README first line says
+`WIP` excluded, and apps with a working Play link sorted first. `version` is auto-incremented so the
+list refreshes without a release. The app does no resolution — it renders the baked manifest.
 
 **React:** the same options are flat props/settings — `inAppAbout`, `moreFromAzEnabled`,
-`moreRailItem`, `moreFromAzJsonUrl`, `appRepositoryUrl`. On the web build, Play/website link metadata
-is subject to CORS (GitHub links always resolve).
+`moreRailItem`, `moreFromAzJsonUrl`, `appRepositoryUrl`. Resolution is done in CI, so "More from Az"
+metadata is identical on web and native (no CORS limitation).
 
 ---
 

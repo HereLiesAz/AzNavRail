@@ -180,7 +180,7 @@ private fun DetailPane(app: AzMoreFromApp, accent: Color, openUrl: (String) -> U
         Spacer(Modifier.height(16.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             app.webUrl?.let { url ->
-                AzButton(onClick = { openUrl(url) }, text = "Open", color = accent, activeColor = accent, shape = AzButtonShape.RECTANGLE)
+                AzButton(onClick = { openUrl(url) }, text = if (app.isPwa) "Open" else "Website", color = accent, activeColor = accent, shape = AzButtonShape.RECTANGLE)
             }
             app.playStoreUrl?.let { url ->
                 AzButton(onClick = { openUrl(url) }, text = "Play Store", color = accent, activeColor = accent, shape = AzButtonShape.RECTANGLE)

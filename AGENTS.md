@@ -172,26 +172,30 @@ repository root and the `docs/` folder of `appRepositoryUrl` via the GitHub cont
 table of contents, and renders each doc inline. Fetches are cached (ETag + TTL) to respect GitHub's
 unauthenticated rate limit; offline/limited shows the last cached copy. Public repos only. Configured
 via `azAbout(inAppAbout, moreFromAzEnabled, moreFromAzJsonUrl, moreRailItem)`; `inAppAbout = false`
-restores the browser behavior.
+restores the browser behavior. A repo-root `.azignore` (one pattern per line; `#` comments; exact
+paths, `dir/` prefixes, or `*` globs) excludes listed docs from the About TOC — implemented in
+`GithubDocsRepository.parseIgnore`/`isIgnored` (Android) and `githubDocs.ts` (React).
 
 "More from Az" is a carousel of the author's other apps reachable from the About screen and/or a
-pinned "More" rail item (`moreRailItem`). It is driven by a **link-only** `more-from-az.json` at the
-repo root: each entry is just `{ github?, play?, web? }` and the name/icon/description are
-auto-populated by resolving the link (Play OpenGraph, website/PWA OpenGraph, or GitHub repo API).
-The maintainer is meant to **just paste links** — a GitHub link is enough, because the Play URL is
-auto-derived from the repo (`com.<owner>.<repo>`) and used only if that listing resolves. The file
-need not even be valid JSON on paste: the bump workflow normalizes it (URLs classified by host:
-github.com→github, play.google.com→play, else→web; grouped per `{}` block or per line) and the rail
-parsers (`parseLinks`) fall back to the same lenient scan.
-Everything is built from the rail's own components (`AzButton`, `AzLoad`, `AzDivider`,
-`AutoSizeText`) and tokens (`activeColor`, `translucentBackground`, `defaultShape`, `headerIconShape`)
-so it matches the rail's aesthetic.
+pinned "More" rail item (`moreRailItem`). The maintainer **pastes GitHub repo links, one per line,
+any order** into `more-from-az.json`. ALL resolution happens in CI, not the app:
+`.github/scripts/bake_more_from_az.py` (run by `.github/workflows/bump-more-from-az.yml`, server-side
+with the authenticated `GITHUB_TOKEN`) resolves each repo and **bakes a finished manifest**
+(`{ version, apps:[{ name, iconUrl, description, github?, play?, web?, isPwa? }] }`):
+- groups by repository (one repo = one app; never by URL-string matching),
+- constructs+verifies the Play link from `com.<owner>.<repo>` (kept only if the listing resolves),
+- reads website/PWA from the repo's GitHub homepage (PWA detected via `rel="manifest"`),
+- excludes apps whose README first line contains the whole word `WIP`,
+- sorts apps with a Play link first, fills name/icon/description, bumps `version`.
+The rail (`service/MoreFromAzRepository.kt`, `services/moreFromAz.ts`) is a **thin renderer** that
+just parses the baked apps (with a lenient fallback rendering degraded cards from raw link/string
+entries before CI bakes). Do NOT reintroduce per-app runtime resolution in the rail — keep it in CI
+(avoids the unauthenticated GitHub rate limit and web CORS). The carousel is built from the rail's
+own components (`AzButton`, `AzLoad`, `AzDivider`, `AutoSizeText`) and tokens so it matches the rail.
 
-INVARIANT — do not break: `more-from-az.json`'s `version` integer is auto-incremented by
-`.github/workflows/bump-more-from-az.yml` on every content change, committed back as
-`github-actions[bot]` with a `[skip ci]` message. The `[skip ci]` is load-bearing: it stops the bump
-commit from re-triggering both that workflow and `android-sample-build.yml` (which also has
-`paths-ignore` for `more-from-az.json` and `**/*.md`). The rail reads `version` to invalidate its
-cache. Do not hand-edit `version`.
+INVARIANT — do not break: the bake commit is made as `github-actions[bot]` with a `[skip ci]`
+message. The `[skip ci]` is load-bearing: it stops the bake commit from re-triggering both that
+workflow and `android-sample-build.yml` (which also has `paths-ignore` for `more-from-az.json` and
+`**/*.md`). Do not hand-edit `version`.
 
 As an option, I am changing how the AzNavRail switches from portrait to landscape mode. Instead of maintaining its position on the side of the screen, it maintains its position on the side of the device, and all elements of the rail each rotate in place. This may take some careful consideration for whatever logic is needed in different circumstances, like how RailHostItems are expanded, or the difference between the rail being docked on the right or left in portrait mode. Also--PAY ATTENTION--if the rail is docked to the left in portrait mode, rotating the device clockwise means it will be at the top of the screen. But if I rotate counter-clockwise, it should be at the bottom of the screen. And if I turned the device upside down, the rail should be on the left side.

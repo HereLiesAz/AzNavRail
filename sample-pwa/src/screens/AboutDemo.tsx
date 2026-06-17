@@ -28,15 +28,17 @@ export default function AboutDemo() {
       <section>
         <h3 style={{ marginBottom: 4 }}>More from Az</h3>
         <p style={{ opacity: 0.85, marginTop: 0 }}>
-          A carousel of other apps, driven by a <strong>link-only</strong>{' '}
-          <code>more-from-az.json</code> in this repo — name, icon, and description are auto-populated
-          from each app's Play / website / GitHub link. Reach it from the About screen's “More from
-          Az” entry, or via the pinned <strong>More</strong> rail item (<code>moreRailItem</code>).
-          Its <code>version</code> is auto-incremented by CI, so the list refreshes without a release.
+          A carousel of other apps. You just paste <strong>GitHub repo links, one per line</strong>,
+          into <code>more-from-az.json</code>; a GitHub Action resolves each repo (name, icon,
+          description, a constructed+verified Play link, and the website/PWA from the repo homepage),
+          drops WIP apps, sorts Play-first, and bakes the manifest the rail renders. Reach it from the
+          About screen's “More from Az” entry or the pinned <strong>More</strong> rail item
+          (<code>moreRailItem</code>). <code>version</code> is auto-incremented, so the list refreshes
+          without a release.
         </p>
         <p style={{ opacity: 0.6, marginTop: 0, fontSize: 13 }}>
-          Note: on the web, metadata for Play/website links is subject to CORS and may not resolve;
-          GitHub links always resolve. Native Android has no such limitation.
+          Because resolution happens in CI, metadata is identical on web and Android — no CORS limits
+          and no runtime GitHub rate-limit usage.
         </p>
       </section>
     </div>

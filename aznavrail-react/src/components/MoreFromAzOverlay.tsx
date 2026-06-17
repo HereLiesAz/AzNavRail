@@ -72,7 +72,7 @@ export const MoreFromAzOverlay: React.FC<MoreFromAzOverlayProps> = ({ jsonUrl, s
             <Text style={styles.name}>{current.name}</Text>
             {!!current.description && <Text style={styles.desc}>{current.description}</Text>}
             <View style={styles.actions}>
-              {current.webUrl ? <AzButton text="Open" color={accent} shape={AzButtonShape.RECTANGLE} onClick={() => open(current.webUrl)} /> : null}
+              {current.webUrl ? <AzButton text={current.isPwa ? 'Open' : 'Website'} color={accent} shape={AzButtonShape.RECTANGLE} onClick={() => open(current.webUrl)} /> : null}
               {current.playStoreUrl ? <AzButton text="Play Store" color={accent} shape={AzButtonShape.RECTANGLE} onClick={() => open(current.playStoreUrl)} /> : null}
               {current.githubUrl ? <AzButton text="GitHub" color={accent} shape={AzButtonShape.RECTANGLE} onClick={() => open(current.githubUrl)} /> : null}
             </View>

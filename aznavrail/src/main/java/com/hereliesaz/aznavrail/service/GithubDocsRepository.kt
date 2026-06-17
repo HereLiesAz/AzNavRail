@@ -84,7 +84,35 @@ object GithubDocsRepository {
         val root = rootRes?.body?.let { runCatching { parseContents(it) }.getOrDefault(emptyList()) } ?: emptyList()
         val docs = docsRes?.body?.let { runCatching { parseContents(it) }.getOrDefault(emptyList()) } ?: emptyList()
         val limited = (rootRes?.rateLimited == true) || (docsRes?.rateLimited == true)
-        return Result.success(DocsResult(orderToc(root, docs), limited))
+
+        // Honor a repo-root `.azignore`: docs it lists are excluded from the About TOC.
+        val ignore = AzHttpCache.get(context, "https://raw.githubusercontent.com/$owner/$repo/HEAD/.azignore")
+        val patterns = ignore?.body?.let { parseIgnore(it) } ?: emptyList()
+        val toc = orderToc(root, docs).filterNot { isIgnored(it.path, patterns) }
+        return Result.success(DocsResult(toc, limited))
+    }
+
+    /** Parses a `.azignore` file into its non-comment, non-blank patterns. */
+    internal fun parseIgnore(text: String): List<String> =
+        text.lineSequence()
+            .map { it.trim() }
+            .filter { it.isNotEmpty() && !it.startsWith("#") }
+            .map { it.removePrefix("./") }
+            .toList()
+
+    /** True if [path] (a repo-relative doc path) matches any `.azignore` [patterns]. */
+    internal fun isIgnored(path: String, patterns: List<String>): Boolean {
+        if (patterns.isEmpty()) return false
+        val fileName = path.substringAfterLast('/')
+        return patterns.any { pat ->
+            when {
+                pat.endsWith("/") -> path == pat.dropLast(1) || path.startsWith(pat)
+                else -> {
+                    val regex = "^" + pat.split("*").joinToString(".*") { Regex.escape(it) } + "$"
+                    Regex(regex).matches(path) || Regex(regex).matches(fileName)
+                }
+            }
+        }
     }
 
     /** Fetches the raw markdown for a single TOC [entry] (cached). */

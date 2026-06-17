@@ -62,11 +62,13 @@ physical docking, the footer, nested-rail popups, the bleeding app-name header, 
 | `azConfig(appRepositoryUrl = "…")` | `appRepositoryUrl` |
 
 The footer "About" opens an in-app markdown reader that auto-discovers the repo's docs (root +
-`docs/`) via the GitHub API; "More from Az" is a link-only, CI-versioned carousel. Both are themed
-from `activeColor`/`translucentBackground` and built from the library's own components. Markdown is
-rendered by a small self-contained renderer (no `react-markdown` dependency). **Web caveat:** Play /
-website link metadata for "More from Az" is subject to CORS and may not resolve in the browser build
-(GitHub links always do); native resolves all. Use `appRepositoryUrl` to point the reader at your repo.
+`docs/`) via the GitHub API. "More from Az" is a carousel whose `more-from-az.json` you fill by
+pasting GitHub repo links (one per line); a GitHub Action resolves each repo and **bakes** the
+finished manifest (name/icon/description, a verified Play link, the homepage website/PWA, WIP
+filtering, Play-first sort). Both screens are themed from `activeColor`/`translucentBackground` and
+built from the library's own components; markdown uses a small self-contained renderer (no
+`react-markdown` dependency). Because resolution is done in CI, "More from Az" metadata is identical
+on web and native — no CORS limitation. Use `appRepositoryUrl` to point the reader at your repo.
 
 ## Bottom sheets
 
