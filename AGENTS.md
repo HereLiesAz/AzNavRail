@@ -201,7 +201,7 @@ workflow and `android-sample-build.yml` (which also has `paths-ignore` for `more
 
 Embedded guide sync: the Complete Guide has a single canonical copy at
 `docs/AZNAVRAIL_COMPLETE_GUIDE.md`. The library also ships two bundled copies
-(`aznavrail/src/main/assets/AZNAVRAIL_COMPLETE_GUIDE.md` and `…/resources/AZNAVRAIL_COMPLETE_GUIDE.md`)
+(`aznavrail/src/main/assets/AZNAVRAIL_COMPLETE_GUIDE.md` and `aznavrail/src/main/resources/AZNAVRAIL_COMPLETE_GUIDE.md`)
 packaged into the AAR. Edit ONLY the canonical `docs/` copy — `.github/workflows/sync-embedded-guide.yml`
 copies it into both bundled paths and commits back (as `github-actions[bot]`, `[skip ci]`, same
 loop-safety pattern as the bake workflow). Never hand-edit the bundled copies; they must stay
