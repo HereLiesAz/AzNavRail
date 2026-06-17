@@ -21,6 +21,7 @@ import com.hereliesaz.aznavrail.AzButton
 import com.hereliesaz.aznavrail.AzCycler
 import com.hereliesaz.aznavrail.AzToggle
 import com.hereliesaz.aznavrail.model.AzButtonShape
+import com.hereliesaz.aznavrail.model.AzDropdownSource
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 
 /** Live theme/config state surfaced from MainApp so the rail can re-key on each change. */
@@ -35,10 +36,14 @@ data class CustomizationState(
     val appRepositoryUrl: String,
     val helpLineColors: List<Color>,
     val vibrate: Boolean,
+    val headerIconSize: Dp = Dp.Unspecified,
+    val dropdownMenu: Boolean = false,
+    val dropdownSource: AzDropdownSource = AzDropdownSource.RAIL,
 )
 
 private val headerIconShapes = AzHeaderIconShape.values().toList()
 private val defaultShapes = AzButtonShape.values().toList()
+private val dropdownSources = AzDropdownSource.values().toList()
 private val translucentChoices = listOf(
     "Unspecified" to Color.Unspecified,
     "Black 40%" to Color.Black.copy(alpha = 0.4f),
@@ -121,6 +126,33 @@ fun CustomizationDemoScreen(
             value = state.collapsedWidth.value,
             onValueChange = { onChange(state.copy(collapsedWidth = it.dp)) },
             valueRange = 60f..160f,
+        )
+
+        SectionLabel("headerIconSize: ${if (state.headerIconSize == Dp.Unspecified) "auto (rail width)" else "${state.headerIconSize.value.toInt()} dp"}")
+        Slider(
+            value = if (state.headerIconSize == Dp.Unspecified) 0f else state.headerIconSize.value,
+            onValueChange = { onChange(state.copy(headerIconSize = if (it < 1f) Dp.Unspecified else it.dp)) },
+            valueRange = 0f..120f,
+        )
+
+        SectionLabel("dropdownMenu — use the rail as a drop-down (app icon = hamburger)")
+        AzToggle(
+            isChecked = state.dropdownMenu,
+            onToggle = { onChange(state.copy(dropdownMenu = !state.dropdownMenu)) },
+            toggleOnText = "Dropdown On",
+            toggleOffText = "Dropdown Off",
+            shape = AzButtonShape.RECTANGLE,
+        )
+
+        SectionLabel("dropdownSource (which set the drop-down unfolds)")
+        AzCycler(
+            options = dropdownSources.map { it.name },
+            selectedOption = state.dropdownSource.name,
+            onCycle = {
+                val next = dropdownSources[(dropdownSources.indexOf(state.dropdownSource) + 1) % dropdownSources.size]
+                onChange(state.copy(dropdownSource = next))
+            },
+            shape = AzButtonShape.RECTANGLE,
         )
 
         SectionLabel("displayAppName")

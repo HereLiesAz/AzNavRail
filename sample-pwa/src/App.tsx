@@ -6,6 +6,7 @@ import {
   AzAlignment,
   AzButtonShape,
   AzDockingSide,
+  AzDropdownSource,
   AzHeaderIconShape,
   AzNestedRailAlignment,
   AzRailItem,
@@ -69,6 +70,9 @@ function App() {
     appRepositoryUrl: 'https://github.com/HereLiesAz/AzNavRail',
     vibrate: false,
     activeClassifiers: new Set<string>(),
+    headerIconSize: 0,
+    dropdownMenu: false,
+    dropdownSource: AzDropdownSource.RAIL,
   })
 
   const themeColor = '#6200EE'
@@ -93,6 +97,9 @@ function App() {
       appRepositoryUrl={customization.appRepositoryUrl}
       vibrate={customization.vibrate}
       activeClassifiers={customization.activeClassifiers}
+      headerIconSize={customization.headerIconSize || undefined}
+      dropdownMenu={customization.dropdownMenu}
+      dropdownSource={customization.dropdownSource}
       onDismissInfoScreen={() => {
         setShowHelp(false)
         setDismissCount((n) => n + 1)

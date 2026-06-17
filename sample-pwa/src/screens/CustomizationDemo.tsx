@@ -1,5 +1,6 @@
 import {
   AzButtonShape,
+  AzDropdownSource,
   AzHeaderIconShape,
 } from '@HereLiesAz/aznavrail-react'
 
@@ -13,10 +14,14 @@ export interface CustomizationState {
   appRepositoryUrl: string
   vibrate: boolean
   activeClassifiers: Set<string>
+  headerIconSize: number
+  dropdownMenu: boolean
+  dropdownSource: AzDropdownSource
 }
 
 const headerShapes = Object.values(AzHeaderIconShape) as AzHeaderIconShape[]
 const buttonShapes = Object.values(AzButtonShape) as AzButtonShape[]
+const dropdownSources = Object.values(AzDropdownSource) as AzDropdownSource[]
 const repoChoices: { label: string; url: string }[] = [
   { label: 'AzNavRail', url: 'https://github.com/HereLiesAz/AzNavRail' },
   { label: 'Anthropic', url: 'https://github.com/anthropics' },
@@ -69,6 +74,28 @@ export default function CustomizationDemo({
           type="range" min={80} max={200} value={state.collapsedRailWidth}
           onChange={(e) => onChange({ ...state, collapsedRailWidth: Number(e.target.value) })}
         />
+      </Block>
+
+      <Block label={`headerIconSize: ${state.headerIconSize ? `${state.headerIconSize}px` : 'auto (default)'}`}>
+        <input
+          type="range" min={0} max={96} value={state.headerIconSize}
+          onChange={(e) => onChange({ ...state, headerIconSize: Number(e.target.value) })}
+        />
+      </Block>
+
+      <Toggle
+        label="dropdownMenu — use the rail as a drop-down (app icon = hamburger)"
+        value={state.dropdownMenu}
+        onChange={(v) => onChange({ ...state, dropdownMenu: v })}
+      />
+
+      <Block label={`dropdownSource: ${state.dropdownSource}`}>
+        <select
+          value={state.dropdownSource}
+          onChange={(e) => onChange({ ...state, dropdownSource: e.target.value as AzDropdownSource })}
+        >
+          {dropdownSources.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
       </Block>
 
       <Toggle
