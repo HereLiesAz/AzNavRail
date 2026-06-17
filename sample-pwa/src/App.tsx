@@ -6,6 +6,7 @@ import {
   AzAlignment,
   AzButtonShape,
   AzDockingSide,
+  AzDropdownAlignment,
   AzDropdownSource,
   AzHeaderIconShape,
   AzNestedRailAlignment,
@@ -74,6 +75,9 @@ function App() {
     headerIconSize: 0,
     dropdownMenu: false,
     dropdownSource: AzDropdownSource.RAIL,
+    dropdownAlignment: AzDropdownAlignment.TOP_START,
+    dropdownOffsetX: 0,
+    dropdownOffsetY: 0,
   })
 
   const themeColor = '#6200EE'
@@ -101,6 +105,8 @@ function App() {
       headerIconSize={customization.headerIconSize || undefined}
       dropdownMenu={customization.dropdownMenu}
       dropdownSource={customization.dropdownSource}
+      dropdownAlignment={customization.dropdownAlignment}
+      dropdownOffset={{ x: customization.dropdownOffsetX, y: customization.dropdownOffsetY }}
       inAppAbout
       moreFromAzEnabled
       moreRailItem

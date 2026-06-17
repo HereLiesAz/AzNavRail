@@ -2,9 +2,11 @@ package com.hereliesaz.aznavrail
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
+import com.hereliesaz.aznavrail.model.AzDropdownAlignment
 import com.hereliesaz.aznavrail.model.AzDropdownSource
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 import org.junit.Assert.assertEquals
@@ -54,7 +56,33 @@ class AzNavRailScopeTest {
     fun `dropdownMenu defaults are off`() {
         assertEquals(false, scope.dropdownMenu)
         assertEquals(AzDropdownSource.RAIL, scope.dropdownSource)
+        assertEquals(AzDropdownAlignment.TOP_START, scope.dropdownAlignment)
+        assertEquals(DpOffset.Zero, scope.dropdownOffset)
         assertEquals(Dp.Unspecified, scope.headerIconSize)
+    }
+
+    @Test
+    fun `azConfig sets dropdown alignment and offset`() {
+        scope.azConfig(
+            dropdownMenu = true,
+            dropdownAlignment = AzDropdownAlignment.BOTTOM_END,
+            dropdownOffset = DpOffset(8.dp, (-12).dp)
+        )
+
+        assertEquals(AzDropdownAlignment.BOTTOM_END, scope.dropdownAlignment)
+        assertEquals(DpOffset(8.dp, (-12).dp), scope.dropdownOffset)
+    }
+
+    @Test
+    fun `azSettings sets dropdown alignment and offset`() {
+        scope.azSettings(
+            dropdownMenu = true,
+            dropdownAlignment = AzDropdownAlignment.TOP_END,
+            dropdownOffset = DpOffset(4.dp, 4.dp)
+        )
+
+        assertEquals(AzDropdownAlignment.TOP_END, scope.dropdownAlignment)
+        assertEquals(DpOffset(4.dp, 4.dp), scope.dropdownOffset)
     }
 
     @Test

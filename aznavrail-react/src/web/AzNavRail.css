@@ -13,24 +13,17 @@
 }
 
 /* ---- Drop-down menu mode ---- */
-/* The rail is a floating top-anchored trigger; it reserves no width so page content can run
-   edge-to-edge underneath it. */
+/* The rail is a floating, dev-placed trigger; it reserves no width so page content can run
+   edge-to-edge underneath it. The exact anchor (top/bottom/left/right + offset) and unfold
+   direction are supplied inline from `dropdownAlignment`/`dropdownOffset`. */
 .az-nav-rail.dropdown {
   position: fixed;
-  top: 0;
-  left: 0;
+  display: flex;
   height: auto;
   width: auto;
   background-color: transparent;
   border: none;
   z-index: 1000;
-  align-items: flex-start;
-}
-
-.az-nav-rail.dropdown.right {
-  left: auto;
-  right: 0;
-  align-items: flex-end;
 }
 
 /* Full-screen invisible layer that folds the panel back up on an outside click. */

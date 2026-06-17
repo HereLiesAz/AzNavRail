@@ -16,11 +16,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.AzButton
 import com.hereliesaz.aznavrail.AzCycler
 import com.hereliesaz.aznavrail.AzToggle
 import com.hereliesaz.aznavrail.model.AzButtonShape
+import com.hereliesaz.aznavrail.model.AzDropdownAlignment
 import com.hereliesaz.aznavrail.model.AzDropdownSource
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 
@@ -39,11 +41,14 @@ data class CustomizationState(
     val headerIconSize: Dp = Dp.Unspecified,
     val dropdownMenu: Boolean = false,
     val dropdownSource: AzDropdownSource = AzDropdownSource.RAIL,
+    val dropdownAlignment: AzDropdownAlignment = AzDropdownAlignment.TOP_START,
+    val dropdownOffset: DpOffset = DpOffset.Zero,
 )
 
 private val headerIconShapes = AzHeaderIconShape.values().toList()
 private val defaultShapes = AzButtonShape.values().toList()
 private val dropdownSources = AzDropdownSource.values().toList()
+private val dropdownAlignments = AzDropdownAlignment.values().toList()
 private val translucentChoices = listOf(
     "Unspecified" to Color.Unspecified,
     "Black 40%" to Color.Black.copy(alpha = 0.4f),
@@ -153,6 +158,31 @@ fun CustomizationDemoScreen(
                 onChange(state.copy(dropdownSource = next))
             },
             shape = AzButtonShape.RECTANGLE,
+        )
+
+        SectionLabel("dropdownAlignment (where the hamburger icon sits)")
+        AzCycler(
+            options = dropdownAlignments.map { it.name },
+            selectedOption = state.dropdownAlignment.name,
+            onCycle = {
+                val next = dropdownAlignments[(state.dropdownAlignment.ordinal + 1) % dropdownAlignments.size]
+                onChange(state.copy(dropdownAlignment = next))
+            },
+            shape = AzButtonShape.RECTANGLE,
+        )
+
+        SectionLabel("dropdownOffset.x: ${state.dropdownOffset.x.value.toInt()}dp")
+        Slider(
+            value = state.dropdownOffset.x.value,
+            onValueChange = { onChange(state.copy(dropdownOffset = DpOffset(it.dp, state.dropdownOffset.y))) },
+            valueRange = -64f..64f,
+        )
+
+        SectionLabel("dropdownOffset.y: ${state.dropdownOffset.y.value.toInt()}dp")
+        Slider(
+            value = state.dropdownOffset.y.value,
+            onValueChange = { onChange(state.copy(dropdownOffset = DpOffset(state.dropdownOffset.x, it.dp))) },
+            valueRange = -64f..64f,
         )
 
         SectionLabel("displayAppName")

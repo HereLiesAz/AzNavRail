@@ -163,6 +163,8 @@ fun MainApp() {
             appRepositoryUrl = customization.appRepositoryUrl,
             dropdownMenu = customization.dropdownMenu,
             dropdownSource = customization.dropdownSource,
+            dropdownAlignment = customization.dropdownAlignment,
+            dropdownOffset = customization.dropdownOffset,
         )
 
         azTheme(

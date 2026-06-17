@@ -14,8 +14,9 @@ import {
   UIManager,
 } from 'react-native';
 import { AzNavRailContext } from './AzNavRailScope';
-import { AzNavItem, AzNavRailSettings, AzButtonShape, AzDockingSide, AzDropdownSource, AzHeaderIconShape, AzNestedRailAlignment } from './types';
+import { AzNavItem, AzNavRailSettings, AzButtonShape, AzDockingSide, AzDropdownSource, AzDropdownAlignment, AzHeaderIconShape, AzNestedRailAlignment } from './types';
 import { AzNavRailDefaults } from './AzNavRailDefaults';
+import { parseDropdownAnchor } from './dropdownPlacement';
 import { AzButton } from './components/AzButton';
 import { AzToggle } from './components/AzToggle';
 import { AzCycler } from './components/AzCycler';
@@ -67,6 +68,8 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       noMenu = false,
       dropdownMenu = false,
       dropdownSource = AzDropdownSource.RAIL,
+      dropdownAlignment = AzDropdownAlignment.TOP_START,
+      dropdownOffset,
       headerIconSize,
       infoScreen = false,
       onDismissInfoScreen,
@@ -114,6 +117,8 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       noMenu: dslOverrides.noMenu ?? noMenu,
       dropdownMenu: dslOverrides.dropdownMenu ?? dropdownMenu,
       dropdownSource: dslOverrides.dropdownSource ?? dropdownSource,
+      dropdownAlignment: dslOverrides.dropdownAlignment ?? dropdownAlignment,
+      dropdownOffset: dslOverrides.dropdownOffset ?? dropdownOffset,
       headerIconSize: dslOverrides.headerIconSize ?? headerIconSize,
       infoScreen: dslOverrides.infoScreen ?? infoScreen,
       activeColor: dslOverrides.activeColor ?? activeColor,
@@ -669,7 +674,15 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   // expansion, swipes, the footer, nested-rail popups and the help overlay are all bypassed here.
   if (config.dropdownMenu) {
       const iconSize = (config as any).headerIconSize ?? AzNavRailDefaults.HeaderIconSize;
-      const isRight = config.dockingSide === AzDockingSide.RIGHT;
+      // The trigger is a plain hamburger button placed wherever the dev asks (nine anchors + a fine
+      // offset), not a docked strip — the docking side no longer dictates its spot.
+      const { vert, horiz, isBottom } = parseDropdownAnchor(config.dropdownAlignment ?? AzDropdownAlignment.TOP_START);
+      const justifyContent: 'flex-start' | 'center' | 'flex-end' =
+          vert === 'top' ? 'flex-start' : vert === 'bottom' ? 'flex-end' : 'center';
+      const alignItems: 'flex-start' | 'center' | 'flex-end' =
+          horiz === 'start' ? 'flex-start' : horiz === 'end' ? 'flex-end' : 'center';
+      const offsetX = config.dropdownOffset?.x ?? 0;
+      const offsetY = config.dropdownOffset?.y ?? 0;
       return (
           <AzNavRailContext.Provider value={{ register, unregister, updateSettings, getDividerId, hasItem }}>
               <View style={{ flex: 1 }}>
@@ -681,27 +694,31 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                       </TouchableWithoutFeedback>
                   )}
 
-                  <View style={{ position: 'absolute', top: 0, left: isRight ? undefined : 0, right: isRight ? 0 : undefined, padding: AzNavRailDefaults.HeaderPadding, alignItems: isRight ? 'flex-end' : 'flex-start', zIndex: 1000 }}>
-                      <TouchableOpacity
-                          onPress={() => { const o = !isDropdownOpen; setIsDropdownOpen(o); logInteraction('Dropdown trigger tapped', o ? `unfolding ${config.dropdownSource}` : 'folding'); }}
-                          accessibilityRole="button"
-                          accessibilityLabel="Menu"
-                      >
-                          <View style={{ width: iconSize, height: iconSize, backgroundColor: 'gray', borderRadius: getHeaderBorderRadius(), alignItems: 'center', justifyContent: 'center' }}>
-                              <Text style={{ color: 'white' }}>Icon</Text>
-                          </View>
-                      </TouchableOpacity>
-
-                      {isDropdownOpen && (
-                          <ScrollView
-                              style={[styles.dropdownPanel, { maxHeight: screenHeightRef.current * 0.8 }]}
-                              contentContainerStyle={config.dropdownSource === AzDropdownSource.MENU ? { width: config.expandedRailWidth } : { alignItems: 'center' }}
+                  {/* Full-screen, touch-transparent positioning layer: the inner column lands at the
+                      chosen anchor; only the icon/panel actually receive touches. */}
+                  <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, { justifyContent, alignItems, padding: AzNavRailDefaults.HeaderPadding, zIndex: 1000 }]}>
+                      <View style={{ flexDirection: isBottom ? 'column-reverse' : 'column', alignItems, transform: [{ translateX: offsetX }, { translateY: offsetY }] }}>
+                          <TouchableOpacity
+                              onPress={() => { const o = !isDropdownOpen; setIsDropdownOpen(o); logInteraction('Dropdown trigger tapped', o ? `unfolding ${config.dropdownSource}` : 'folding'); }}
+                              accessibilityRole="button"
+                              accessibilityLabel="Menu"
                           >
-                              {config.dropdownSource === AzDropdownSource.MENU
-                                  ? menuItems.map(item => item.isDivider ? <View key={item.id} style={styles.divider} /> : renderMenuItem(item))
-                                  : effectiveRailItems.map((item, index) => renderRailItem(item, index))}
-                          </ScrollView>
-                      )}
+                              <View style={{ width: iconSize, height: iconSize, backgroundColor: 'gray', borderRadius: getHeaderBorderRadius(), alignItems: 'center', justifyContent: 'center' }}>
+                                  <Text style={{ color: 'white' }}>Icon</Text>
+                              </View>
+                          </TouchableOpacity>
+
+                          {isDropdownOpen && (
+                              <ScrollView
+                                  style={[styles.dropdownPanel, { maxHeight: screenHeightRef.current * 0.8 }, isBottom ? { marginTop: 0, marginBottom: 4 } : null]}
+                                  contentContainerStyle={config.dropdownSource === AzDropdownSource.MENU ? { width: config.expandedRailWidth } : { alignItems: 'center' }}
+                              >
+                                  {config.dropdownSource === AzDropdownSource.MENU
+                                      ? menuItems.map(item => item.isDivider ? <View key={item.id} style={styles.divider} /> : renderMenuItem(item))
+                                      : effectiveRailItems.map((item, index) => renderRailItem(item, index))}
+                              </ScrollView>
+                          )}
+                      </View>
                   </View>
 
                   {isLoading && (

@@ -8,12 +8,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.model.AzAdvancedConfig
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
+import com.hereliesaz.aznavrail.model.AzDropdownAlignment
 import com.hereliesaz.aznavrail.model.AzDropdownSource
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzItemConfig
@@ -67,16 +69,23 @@ interface AzNavRailScope {
      * @param collapsedWidth The width of the rail when collapsed.
      * @param showFooter Whether to show the footer (Privacy, Terms, Help) in the menu.
      * @param appRepositoryUrl The URL of the application's repository to link to in the footer's "About" section. Defaults to the AzNavRail repo.
-     * @param dropdownMenu If true, the rail collapses to a single app-icon trigger anchored at the top
-     *   (the icon replaces the hamburger) and unfolds [dropdownSource] downward like an accordion when
-     *   tapped. `onscreen` content is given the full screen width. This mode runs at the explicit
-     *   exclusion of FAB/dragging, rail-to-menu expansion, swipe gestures, physical docking, the
-     *   footer, nested-rail popups, the bleeding app-name header, and the help overlay.
+     * @param dropdownMenu If true, the rail collapses to a single app-icon trigger placed at
+     *   [dropdownAlignment] (the icon replaces the hamburger) and unfolds [dropdownSource] like an
+     *   accordion when tapped. `onscreen` content is given the full screen — drop-down mode reserves
+     *   **no** top/bottom content safe zones, so the icon behaves like a plain hamburger button you
+     *   can drop anywhere. This mode runs at the explicit exclusion of FAB/dragging, rail-to-menu
+     *   expansion, swipe gestures, physical docking, the footer, nested-rail popups, the bleeding
+     *   app-name header, and the help overlay.
      * @param dropdownSource Which set of items the drop-down reveals — [AzDropdownSource.RAIL] (the
      *   packed rail buttons) or [AzDropdownSource.MENU] (the full drawer rows). Only honoured when
      *   [dropdownMenu] is true.
+     * @param dropdownAlignment Where the drop-down trigger icon is anchored on screen (one of nine
+     *   standard positions). The panel unfolds downward for top/centre anchors and upward for bottom
+     *   anchors. Only honoured when [dropdownMenu] is true. Defaults to [AzDropdownAlignment.TOP_START].
+     * @param dropdownOffset A fine nudge applied to the trigger icon from its [dropdownAlignment]
+     *   anchor. Only honoured when [dropdownMenu] is true. Defaults to no offset.
      */
-    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 160.dp, collapsedWidth: Dp = 100.dp, showFooter: Boolean = true, appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail", dropdownMenu: Boolean = false, dropdownSource: AzDropdownSource = AzDropdownSource.RAIL)
+    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 160.dp, collapsedWidth: Dp = 100.dp, showFooter: Boolean = true, appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail", dropdownMenu: Boolean = false, dropdownSource: AzDropdownSource = AzDropdownSource.RAIL, dropdownAlignment: AzDropdownAlignment = AzDropdownAlignment.TOP_START, dropdownOffset: DpOffset = DpOffset.Zero)
 
     /**
      * Configures the visual theme of the rail.
@@ -164,7 +173,9 @@ interface AzNavRailScope {
         helpLineColors: List<Color> = emptyList(),
         onInteraction: ((String, com.hereliesaz.aznavrail.model.AzNavItem) -> Unit)? = null,
         dropdownMenu: Boolean = false,
-        dropdownSource: AzDropdownSource = AzDropdownSource.RAIL
+        dropdownSource: AzDropdownSource = AzDropdownSource.RAIL,
+        dropdownAlignment: AzDropdownAlignment = AzDropdownAlignment.TOP_START,
+        dropdownOffset: DpOffset = DpOffset.Zero
     )
 
     /**
@@ -652,6 +663,10 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     var dropdownMenu: Boolean = false
     /** Which item set the drop-down reveals when [dropdownMenu] is true. */
     var dropdownSource: AzDropdownSource = AzDropdownSource.RAIL
+    /** Where the drop-down trigger icon is anchored when [dropdownMenu] is true. */
+    var dropdownAlignment: AzDropdownAlignment = AzDropdownAlignment.TOP_START
+    /** Fine nudge applied to the drop-down trigger icon from its [dropdownAlignment] anchor. */
+    var dropdownOffset: DpOffset = DpOffset.Zero
     /** If true, haptic feedback is triggered on header tap and drag events. */
     var vibrate: Boolean = false
     /** If true, the header area shows the app name instead of the app icon. */
@@ -683,7 +698,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     var advancedConfig: AzAdvancedConfig = AzAdvancedConfig()
 
 
-    override fun azConfig(dockingSide: AzDockingSide, packButtons: Boolean, noMenu: Boolean, vibrate: Boolean, displayAppName: Boolean, activeClassifiers: Set<String>, usePhysicalDocking: Boolean, expandedWidth: Dp, collapsedWidth: Dp, showFooter: Boolean, appRepositoryUrl: String, dropdownMenu: Boolean, dropdownSource: AzDropdownSource) {
+    override fun azConfig(dockingSide: AzDockingSide, packButtons: Boolean, noMenu: Boolean, vibrate: Boolean, displayAppName: Boolean, activeClassifiers: Set<String>, usePhysicalDocking: Boolean, expandedWidth: Dp, collapsedWidth: Dp, showFooter: Boolean, appRepositoryUrl: String, dropdownMenu: Boolean, dropdownSource: AzDropdownSource, dropdownAlignment: AzDropdownAlignment, dropdownOffset: DpOffset) {
         this.dockingSide = dockingSide
         this.packButtons = packButtons
         this.noMenu = noMenu
@@ -697,6 +712,8 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         this.appRepositoryUrl = appRepositoryUrl
         this.dropdownMenu = dropdownMenu
         this.dropdownSource = dropdownSource
+        this.dropdownAlignment = dropdownAlignment
+        this.dropdownOffset = dropdownOffset
     }
 
     override fun azAbout(inAppAbout: Boolean, moreFromAzEnabled: Boolean, moreFromAzJsonUrl: String, moreRailItem: Boolean) {
@@ -765,12 +782,16 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         helpLineColors: List<Color>,
         onInteraction: ((String, AzNavItem) -> Unit)?,
         dropdownMenu: Boolean,
-        dropdownSource: AzDropdownSource
+        dropdownSource: AzDropdownSource,
+        dropdownAlignment: AzDropdownAlignment,
+        dropdownOffset: DpOffset
     ) {
         // Map to internal properties
         this.displayAppName = displayAppNameInHeader
         this.dropdownMenu = dropdownMenu
         this.dropdownSource = dropdownSource
+        this.dropdownAlignment = dropdownAlignment
+        this.dropdownOffset = dropdownOffset
         this.packButtons = packRailButtons
         this.expandedWidth = expandedRailWidth
         this.collapsedWidth = collapsedRailWidth
