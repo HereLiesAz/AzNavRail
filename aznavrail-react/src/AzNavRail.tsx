@@ -710,7 +710,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
 
                           {isDropdownOpen && (
                               <ScrollView
-                                  style={[styles.dropdownPanel, { maxHeight: screenHeightRef.current * 0.8 }, isBottom ? { marginTop: 0, marginBottom: 4 } : null]}
+                                  style={[styles.dropdownPanel, { maxHeight: screenHeightRef.current * 0.8 }, isBottom ? { marginTop: 0, marginBottom: 4 } : undefined]}
                                   contentContainerStyle={config.dropdownSource === AzDropdownSource.MENU ? { width: config.expandedRailWidth } : { alignItems: 'center' }}
                               >
                                   {config.dropdownSource === AzDropdownSource.MENU

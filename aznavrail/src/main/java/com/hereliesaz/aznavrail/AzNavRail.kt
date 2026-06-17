@@ -418,7 +418,7 @@ fun AzNavRail(
         // or below the trigger icon depending on whether the anchor unfolds upward or downward.
         val dropdownPanel: @Composable () -> Unit = {
             Surface(
-                color = if (scope.translucentBackground != Color.Unspecified) scope.translucentBackground else MaterialTheme.colorScheme.surface,
+                color = scope.translucentBackground.takeOrElse { MaterialTheme.colorScheme.surface },
                 shape = RoundedCornerShape(12.dp),
                 tonalElevation = 2.dp,
                 shadowElevation = 8.dp

@@ -412,8 +412,8 @@ const AzNavRail = ({
       // The trigger is a plain hamburger button placed wherever the dev asks (nine anchors + a fine
       // offset), not a docked strip — the docking side no longer dictates its spot.
       const { vert, horiz, isBottom } = parseDropdownAnchor(dropdownAlignment);
-      const offX = (dropdownOffset && dropdownOffset.x) || 0;
-      const offY = (dropdownOffset && dropdownOffset.y) || 0;
+      const offX = dropdownOffset?.x ?? 0;
+      const offY = dropdownOffset?.y ?? 0;
       const txCenter = horiz === 'center' ? '-50%' : '0px';
       const tyCenter = vert === 'center' ? '-50%' : '0px';
       const placementStyle = {
