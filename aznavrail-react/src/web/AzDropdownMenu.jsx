@@ -107,15 +107,23 @@ const AzDropdownMenu = ({
   });
 
   // Measure the trigger so the (fixed-positioned) panel can drop from it while hugging the edge.
+  // Scroll/resize fire at a high rate, so coalesce measurements to one per animation frame to
+  // avoid layout thrashing.
   useEffect(() => {
     if (!isOpen) return undefined;
+    let frame = 0;
     const measure = () => { if (triggerRef.current) setRect(triggerRef.current.getBoundingClientRect()); };
+    const schedule = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => { frame = 0; measure(); });
+    };
     measure();
-    window.addEventListener('resize', measure);
-    window.addEventListener('scroll', measure, true);
+    window.addEventListener('resize', schedule);
+    window.addEventListener('scroll', schedule, true);
     return () => {
-      window.removeEventListener('resize', measure);
-      window.removeEventListener('scroll', measure, true);
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener('resize', schedule);
+      window.removeEventListener('scroll', schedule, true);
     };
   }, [isOpen]);
 

@@ -25,6 +25,10 @@ jest.mock('react-native', () => {
         get: jest.fn().mockReturnValue({ width: 375, height: 812 }),
         addEventListener: jest.fn(() => ({ remove: jest.fn() })),
     },
+    useWindowDimensions: jest.fn().mockReturnValue({ width: 375, height: 812, scale: 2, fontScale: 1 }),
+    I18nManager: {
+        isRTL: false,
+    },
     Animated: {
         Value: Value,
         ValueXY: ValueXY,

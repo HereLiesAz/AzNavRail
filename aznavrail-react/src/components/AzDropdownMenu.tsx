@@ -8,7 +8,8 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Dimensions,
+  useWindowDimensions,
+  I18nManager,
   ImageSourcePropType,
   ViewStyle,
   LayoutChangeEvent,
@@ -180,17 +181,20 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
   const { horiz, isBottom } = parseDropdownAnchor(alignment);
   const offX = offset?.x ?? 0;
   const offY = offset?.y ?? 0;
-  const screen = Dimensions.get('window');
+  // Reactive so the panel re-positions on orientation / split-screen changes.
+  const screen = useWindowDimensions();
 
   // The panel matches the rail/menu it imitates unless an explicit menuWidth is pinned.
   const panelWidth = menuWidth ?? (design === AzDropdownDesign.RAIL ? 100 : 160);
 
   const panelPosition: ViewStyle = { position: 'absolute' };
-  // Horizontal: pin to the screen edge named by the anchor (start=left, end=right, centre=centred).
+  // Horizontal: pin to the edge named by the anchor. `start`/`end` are layout-direction-relative —
+  // start hugs the leading edge (left in LTR, right in RTL), end the trailing edge; centre is centred.
+  const isRTL = I18nManager.isRTL;
   if (horiz === 'start') {
-    panelPosition.left = 0 + offX;
+    panelPosition.left = (isRTL ? screen.width - panelWidth : 0) + offX;
   } else if (horiz === 'end') {
-    panelPosition.left = screen.width - panelWidth + offX;
+    panelPosition.left = (isRTL ? 0 : screen.width - panelWidth) + offX;
   } else {
     panelPosition.left = (screen.width - panelWidth) / 2 + offX;
   }

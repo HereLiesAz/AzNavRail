@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, Dimensions } from 'react-native';
+import { Text, Dimensions, I18nManager } from 'react-native';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { AzDropdownMenu, AzDropdownItem } from '../components/AzDropdownMenu';
 import { AzDropdownAlignment, AzDropdownDesign } from '../types';
@@ -95,6 +95,23 @@ describe('AzDropdownMenu', () => {
     const screenWidth = Dimensions.get('window').width;
     const style = getByTestId('az-dropdown-panel').props.style.flat();
     expect(style).toEqual(expect.arrayContaining([expect.objectContaining({ left: screenWidth - 160 })]));
+  });
+
+  it('flips the pinned edge under RTL (start → right)', () => {
+    const original = I18nManager.isRTL;
+    (I18nManager as { isRTL: boolean }).isRTL = true;
+    try {
+      const { getByTestId } = render(
+        <AzDropdownMenu expanded alignment={AzDropdownAlignment.TOP_START}>
+          <AzDropdownItem text="Profile" onClick={() => {}} />
+        </AzDropdownMenu>
+      );
+      const screenWidth = Dimensions.get('window').width;
+      const style = getByTestId('az-dropdown-panel').props.style.flat();
+      expect(style).toEqual(expect.arrayContaining([expect.objectContaining({ left: screenWidth - 160 })]));
+    } finally {
+      (I18nManager as { isRTL: boolean }).isRTL = original;
+    }
   });
 
   it('supports arbitrary children via the dismiss context', () => {

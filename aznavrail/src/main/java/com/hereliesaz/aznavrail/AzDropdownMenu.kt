@@ -269,10 +269,13 @@ private class AzDropdownMenuScopeImpl(
     }
 }
 
-/** Resolves the row text colour: explicit [textColor], else [color], else the theme primary. */
+/**
+ * Resolves the row text colour: explicit [textColor], else [color], else the theme primary. Always
+ * returns a *specified* colour so callers can safely `copy(alpha = …)` it.
+ */
 @Composable
 private fun effectiveTextColor(textColor: Color?, color: Color): Color =
-    textColor ?: color.takeOrElse { MaterialTheme.colorScheme.primary }
+    (textColor ?: color).takeOrElse { MaterialTheme.colorScheme.primary }
 
 /**
  * A full-width, labeled menu row mirroring the expanded drawer's look (centred [titleLarge] text,
@@ -330,13 +333,16 @@ private class AzDropdownEdgePositionProvider(
         layoutDirection: LayoutDirection,
         popupContentSize: IntSize
     ): IntOffset {
+        // `start`/`end` are layout-direction-relative: start hugs the leading edge (left in LTR,
+        // right in RTL), end the trailing edge.
+        val isRtl = layoutDirection == LayoutDirection.Rtl
         val x = when (alignment) {
             AzDropdownAlignment.TOP_START, AzDropdownAlignment.CENTER_START, AzDropdownAlignment.BOTTOM_START ->
-                0
+                if (isRtl) windowSize.width - popupContentSize.width else 0
             AzDropdownAlignment.TOP_CENTER, AzDropdownAlignment.CENTER, AzDropdownAlignment.BOTTOM_CENTER ->
                 (windowSize.width - popupContentSize.width) / 2
             AzDropdownAlignment.TOP_END, AzDropdownAlignment.CENTER_END, AzDropdownAlignment.BOTTOM_END ->
-                windowSize.width - popupContentSize.width
+                if (isRtl) 0 else windowSize.width - popupContentSize.width
         }
         val y = if (alignment.isBottom) {
             anchorBounds.top - popupContentSize.height
