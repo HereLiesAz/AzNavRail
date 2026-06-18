@@ -1,5 +1,6 @@
-/* Standalone hamburger drop-down menu (web). Placed inline like any widget; the panel is
-   absolutely positioned relative to the trigger and anchored via `dropdownAlignment`. */
+/* Standalone hamburger drop-down menu (web). The icon is placed inline like any widget; the panel
+   is fixed-positioned, pinned to the left/right screen edge (per `alignment`), width-constrained to
+   the rail/menu width (per `design`), and drops from the trigger. */
 .az-dropdown-menu {
   position: relative;
   display: inline-flex;
@@ -27,7 +28,7 @@
 }
 
 .az-dropdown-menu-panel {
-  position: absolute;
+  position: fixed;
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -41,6 +42,26 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
   animation: az-dropdown-menu-unfold 0.18s ease-out;
 }
+
+/* Menu design: full-width labeled rows, edge-to-edge (rows carry their own padding). */
+.az-dropdown-menu-panel.menu {
+  align-items: stretch;
+  gap: 0;
+  padding: 4px 0;
+}
+
+.az-dropdown-menu-item--menu {
+  padding: 12px 24px;
+  text-align: center;
+  font-size: 1.25rem;
+  cursor: pointer;
+  user-select: none;
+  color: #6750A4;
+}
+
+.az-dropdown-menu-item--menu:hover { background-color: rgba(103, 80, 164, 0.08); }
+.az-dropdown-menu-item--menu.disabled { opacity: 0.5; cursor: default; }
+.az-dropdown-menu-item--menu.disabled:hover { background-color: transparent; }
 
 @keyframes az-dropdown-menu-unfold {
   from { opacity: 0; transform: translateY(-8px); }

@@ -1,7 +1,8 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { Text, Dimensions } from 'react-native';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { AzDropdownMenu, AzDropdownItem } from '../components/AzDropdownMenu';
+import { AzDropdownAlignment, AzDropdownDesign } from '../types';
 
 describe('AzDropdownMenu', () => {
   it('is closed initially and opens when the trigger is pressed', () => {
@@ -63,6 +64,37 @@ describe('AzDropdownMenu', () => {
       </AzDropdownMenu>
     );
     expect(queryByText('Profile')).not.toBeNull();
+  });
+
+  it('constrains the panel to the menu width by default (160)', () => {
+    const { getByTestId } = render(
+      <AzDropdownMenu expanded>
+        <AzDropdownItem text="Profile" onClick={() => {}} />
+      </AzDropdownMenu>
+    );
+    const style = getByTestId('az-dropdown-panel').props.style.flat();
+    expect(style).toEqual(expect.arrayContaining([expect.objectContaining({ width: 160 })]));
+  });
+
+  it('constrains the panel to the rail width for the rail design (100)', () => {
+    const { getByTestId } = render(
+      <AzDropdownMenu expanded design={AzDropdownDesign.RAIL}>
+        <AzDropdownItem text="Profile" onClick={() => {}} />
+      </AzDropdownMenu>
+    );
+    const style = getByTestId('az-dropdown-panel').props.style.flat();
+    expect(style).toEqual(expect.arrayContaining([expect.objectContaining({ width: 100 })]));
+  });
+
+  it('pins the panel to the right screen edge for end alignments', () => {
+    const { getByTestId } = render(
+      <AzDropdownMenu expanded alignment={AzDropdownAlignment.TOP_END}>
+        <AzDropdownItem text="Profile" onClick={() => {}} />
+      </AzDropdownMenu>
+    );
+    const screenWidth = Dimensions.get('window').width;
+    const style = getByTestId('az-dropdown-panel').props.style.flat();
+    expect(style).toEqual(expect.arrayContaining([expect.objectContaining({ left: screenWidth - 160 })]));
   });
 
   it('supports arbitrary children via the dismiss context', () => {

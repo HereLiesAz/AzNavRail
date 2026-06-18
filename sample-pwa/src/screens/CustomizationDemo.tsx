@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
   AzButtonShape,
   AzDropdownAlignment,
+  AzDropdownDesign,
   AzDropdownMenu,
   AzDropdownItem,
   AzDivider,
@@ -85,7 +86,7 @@ export default function CustomizationDemo({
         />
       </Block>
 
-      <Block label="AzDropdownMenu — standalone hamburger menu, placed inline like any widget">
+      <Block label="AzDropdownMenu — standalone hamburger; panel pins to the screen edge as rail/menu">
         <AzDropdownMenuDemo />
       </Block>
 
@@ -143,11 +144,13 @@ export default function CustomizationDemo({
 }
 
 /**
- * The standalone AzDropdownMenu — no rail, no host, no settings. Dropped inline here like any
- * widget; the alignment picker shows how the panel anchors/unfolds relative to the trigger icon.
+ * The standalone AzDropdownMenu — no rail, no host, no settings. The hamburger icon is dropped
+ * inline like any widget; its panel is an overlay pinned to the left/right screen edge (per the
+ * alignment picker) and styled as the rail or the menu (per the design picker).
  */
 function AzDropdownMenuDemo() {
   const [alignment, setAlignment] = useState<AzDropdownAlignment>(AzDropdownAlignment.TOP_START)
+  const [design, setDesign] = useState<AzDropdownDesign>(AzDropdownDesign.MENU)
   const [dark, setDark] = useState(false)
   const [last, setLast] = useState('none')
   return (
@@ -155,7 +158,10 @@ function AzDropdownMenuDemo() {
       <select value={alignment} onChange={(e) => setAlignment(e.target.value as AzDropdownAlignment)}>
         {dropdownAlignments.map((s) => <option key={s} value={s}>{s}</option>)}
       </select>
-      <AzDropdownMenu alignment={alignment}>
+      <select value={design} onChange={(e) => setDesign(e.target.value as AzDropdownDesign)}>
+        {Object.values(AzDropdownDesign).map((d) => <option key={d} value={d}>{d}</option>)}
+      </select>
+      <AzDropdownMenu alignment={alignment} design={design}>
         <AzDropdownItem text="Profile" onClick={() => setLast('Profile')} />
         <AzDropdownItem text="Settings" onClick={() => setLast('Settings')} />
         <AzDivider />

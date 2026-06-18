@@ -14,12 +14,14 @@ import {
   LayoutChangeEvent,
 } from 'react-native';
 import { AzButton } from './AzButton';
-import { AzButtonShape, AzDropdownAlignment } from '../types';
+import { AzButtonShape, AzDropdownAlignment, AzDropdownDesign } from '../types';
 import { parseDropdownAnchor } from '../dropdownPlacement';
 
 /** Context the menu provides so item components can fold it back up on press. */
 interface AzDropdownMenuContextValue {
   dismiss: () => void;
+  /** The panel design, so items can render rail-style or menu-style. */
+  design: AzDropdownDesign;
 }
 const AzDropdownMenuContext = createContext<AzDropdownMenuContextValue | null>(null);
 
@@ -39,11 +41,13 @@ export interface AzDropdownMenuProps {
   iconSize?: number;
   /** Clip shape for the trigger icon. */
   iconShape?: 'CIRCLE' | 'ROUNDED' | 'NONE';
-  /** Optional fixed width (px) for the panel; wraps content when omitted. */
+  /** Whether the panel imitates the collapsed rail or the expanded menu. */
+  design?: AzDropdownDesign;
+  /** Optional fixed width (px) for the panel; follows `design` (100/160) when omitted. */
   menuWidth?: number;
   /** Panel background color. */
   backgroundColor?: string;
-  /** Where the panel anchors to the icon and which way it unfolds. */
+  /** Which screen edge the panel pins to (start=left, end=right) and how it drops from the trigger. */
   alignment?: AzDropdownAlignment;
   /** A fine nudge (px) applied to the panel from its anchor. */
   offset?: { x?: number; y?: number };
@@ -69,7 +73,11 @@ export interface AzDropdownItemProps {
   closeOnClick?: boolean;
 }
 
-/** A tappable menu entry rendered as an {@link AzButton}; folds the menu on press by default. */
+/**
+ * A tappable menu entry. In a {@link AzDropdownDesign.MENU} panel it renders as a full-width labeled
+ * row (the expanded-drawer look); in a {@link AzDropdownDesign.RAIL} panel it renders as a compact
+ * {@link AzButton}. Folds the menu on press by default.
+ */
 export const AzDropdownItem: React.FC<AzDropdownItemProps> = ({
   text,
   onClick,
@@ -80,14 +88,30 @@ export const AzDropdownItem: React.FC<AzDropdownItemProps> = ({
   fillColor,
   closeOnClick = true,
 }) => {
-  const { dismiss } = useAzDropdownMenu();
+  const { dismiss, design } = useAzDropdownMenu();
+  const press = () => {
+    onClick();
+    if (closeOnClick) dismiss();
+  };
+  if (design === AzDropdownDesign.MENU) {
+    return (
+      <TouchableOpacity
+        style={styles.menuRow}
+        onPress={enabled ? press : undefined}
+        disabled={!enabled}
+        accessibilityRole="button"
+        accessibilityLabel={text}
+      >
+        <Text style={[styles.menuRowText, { color: textColor || color || '#6750A4', opacity: enabled ? 1 : 0.5 }]}>
+          {text}
+        </Text>
+      </TouchableOpacity>
+    );
+  }
   return (
     <AzButton
       text={text}
-      onClick={() => {
-        onClick();
-        if (closeOnClick) dismiss();
-      }}
+      onClick={press}
       shape={shape}
       enabled={enabled}
       color={color}
@@ -102,9 +126,11 @@ interface Anchor { x: number; y: number; width: number; height: number; }
 /**
  * A standalone, hamburger-style drop-down menu — used the usual, expected way.
  *
- * Drop it inline anywhere in your own UI, like {@link AzButton}: no host, no settings, no safe
- * zones. It renders a tappable icon; tapping it shows a panel anchored to the icon holding the
- * `children`. Tapping outside folds it up.
+ * Drop the icon inline anywhere in your own UI, like {@link AzButton}: it takes a normal slot, like
+ * a hamburger button. No host, no settings, no safe zones. Tapping it shows the `children` as a
+ * panel styled like the collapsed rail ({@link AzDropdownDesign.RAIL}) or expanded menu
+ * ({@link AzDropdownDesign.MENU}) — width-constrained to match — pinned to the left/right screen
+ * edge (per `alignment`) and dropping from the trigger. Tapping outside folds it up.
  *
  * ```tsx
  * <AzDropdownMenu>
@@ -119,6 +145,7 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
   contentDescription = 'Menu',
   iconSize = 48,
   iconShape = 'CIRCLE',
+  design = AzDropdownDesign.MENU,
   menuWidth,
   backgroundColor = '#ffffff',
   alignment = AzDropdownAlignment.TOP_START,
@@ -155,23 +182,24 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
   const offY = offset?.y ?? 0;
   const screen = Dimensions.get('window');
 
+  // The panel matches the rail/menu it imitates unless an explicit menuWidth is pinned.
+  const panelWidth = menuWidth ?? (design === AzDropdownDesign.RAIL ? 100 : 160);
+
   const panelPosition: ViewStyle = { position: 'absolute' };
-  // Horizontal edge.
+  // Horizontal: pin to the screen edge named by the anchor (start=left, end=right, centre=centred).
   if (horiz === 'start') {
-    panelPosition.left = anchor.x + offX;
+    panelPosition.left = 0 + offX;
   } else if (horiz === 'end') {
-    panelPosition.left = anchor.x + anchor.width - panelSize.width + offX;
+    panelPosition.left = screen.width - panelWidth + offX;
   } else {
-    panelPosition.left = anchor.x + anchor.width / 2 - panelSize.width / 2 + offX;
+    panelPosition.left = (screen.width - panelWidth) / 2 + offX;
   }
-  // Vertical: top/centre open downward; bottom opens upward.
+  // Vertical: drop from the trigger — top/centre open downward, bottom opens upward.
   if (isBottom) {
     panelPosition.top = anchor.y - panelSize.height + offY;
   } else {
     panelPosition.top = anchor.y + anchor.height + offY;
   }
-  // Keep on-screen.
-  panelPosition.left = Math.max(0, Math.min(panelPosition.left as number, screen.width - panelSize.width));
 
   const radius = iconShape === 'CIRCLE' ? iconSize / 2 : iconShape === 'ROUNDED' ? 12 : 0;
 
@@ -200,18 +228,24 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
         <Modal visible transparent animationType="fade" onRequestClose={() => setOpen(false)}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setOpen(false)}>
             <View
+              testID="az-dropdown-panel"
               onLayout={onPanelLayout}
               style={[
                 styles.panel,
                 panelPosition,
-                { backgroundColor, maxHeight: screen.height * 0.8 },
-                menuWidth ? { width: menuWidth } : null,
+                { backgroundColor, maxHeight: screen.height * 0.8, width: panelWidth },
               ]}
             >
               {/* Stop propagation so taps inside the panel don't dismiss it. */}
               <Pressable>
-                <ScrollView contentContainerStyle={{ alignItems: 'center', padding: 8 }}>
-                  <AzDropdownMenuContext.Provider value={{ dismiss: () => setOpen(false) }}>
+                <ScrollView
+                  contentContainerStyle={
+                    design === AzDropdownDesign.MENU
+                      ? { alignItems: 'stretch' }
+                      : { alignItems: 'center', padding: 8 }
+                  }
+                >
+                  <AzDropdownMenuContext.Provider value={{ dismiss: () => setOpen(false), design }}>
                     {children}
                   </AzDropdownMenuContext.Provider>
                 </ScrollView>
@@ -232,5 +266,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 8 },
+  },
+  // Expanded-drawer look: full-width labeled row with the menu's 24/12 padding.
+  menuRow: {
+    width: '100%',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuRowText: {
+    fontSize: 22,
+    textAlign: 'center',
   },
 });

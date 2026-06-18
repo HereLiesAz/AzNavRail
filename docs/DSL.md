@@ -90,10 +90,11 @@ CI-versioned carousel — see the README's "In-App About Reader" and "More from 
 
 ## `AzDropdownMenu` (standalone hamburger menu)
 
-A drop-down menu is a standalone composable, used the usual way — drop it inline anywhere, like
-`AzButton`/`AzTextBox`. There is **no** `AzNavHost`, no DSL scope, no `background()`/`onscreen()`, and
-no reserved safe zones. It renders a tappable icon; tapping it unfolds a panel anchored to the icon
-(via a `Popup`) holding the items you declare. Tapping outside or pressing back folds it up.
+A drop-down menu is a standalone composable, used the usual way. The hamburger **icon** is dropped
+inline anywhere, like `AzButton`/`AzTextBox` — it takes a normal layout slot. There is **no**
+`AzNavHost`, no DSL scope, no `background()`/`onscreen()`, and no reserved safe zones. Tapping the icon
+unfolds an **overlay panel** (via a `Popup`) holding the items you declare. Tapping outside or
+pressing back folds it up.
 
 ~~~kotlin
 @Composable
@@ -104,7 +105,8 @@ fun AzDropdownMenu(
     iconSize: Dp = 48.dp,
     iconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
     iconTint: Color = Color.Unspecified,
-    menuWidth: Dp = Dp.Unspecified,        // wraps content when unspecified
+    design: AzDropdownDesign = AzDropdownDesign.MENU,  // RAIL = rail width, MENU = menu width
+    menuWidth: Dp = Dp.Unspecified,        // follows `design` (≈100/160) when unspecified
     backgroundColor: Color = Color.Unspecified,
     alignment: AzDropdownAlignment = AzDropdownAlignment.TOP_START,
     offset: DpOffset = DpOffset.Zero,
@@ -115,14 +117,18 @@ fun AzDropdownMenu(
 )
 ~~~
 
+`design` decides how the panel looks and how wide it is: `AzDropdownDesign.RAIL` = compact rail
+buttons at the collapsed rail width (≈100dp); `AzDropdownDesign.MENU` (default) = full-width labeled
+rows at the expanded menu width (≈160dp). `menuWidth` overrides the width.
+
 Items reuse the library's own widgets through `AzDropdownMenuScope` — `azItem` (→ `AzButton`),
 `azToggle` (→ `AzToggle`), `azCycler` (→ `AzCycler`), `azDivider` (→ `AzDivider`), plus `azCustom { }`
 and `dismiss()`. `azItem` folds the menu after its callback by default (`closeOnClick = true`).
-`alignment` anchors the panel to the icon and sets the unfold direction (top/centre → downward,
-`BOTTOM_*` → upward); `offset` nudges it.
+`alignment` pins the panel to the screen edge (start = left, end = right, centre = centred) and sets
+the drop direction from the trigger (top/centre → downward, `BOTTOM_*` → upward); `offset` nudges it.
 
 ~~~kotlin
-AzDropdownMenu(alignment = AzDropdownAlignment.TOP_END) {
+AzDropdownMenu(design = AzDropdownDesign.MENU, alignment = AzDropdownAlignment.TOP_END) {
     azItem("Settings") { openSettings() }
     azToggle(isChecked = dark, toggleOnText = "Dark", toggleOffText = "Light") { dark = it }
     azDivider()

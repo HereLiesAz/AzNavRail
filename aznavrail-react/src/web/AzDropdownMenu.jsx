@@ -12,20 +12,39 @@ export function useAzDropdownMenu() {
   return ctx;
 }
 
-/** A tappable menu entry rendered as an AzButton; folds the menu on click by default. */
-export const AzDropdownItem = ({ text, onClick, shape = 'RECTANGLE', enabled = true, color, fillColor, closeOnClick = true }) => {
-  const { dismiss } = useAzDropdownMenu();
+/**
+ * A tappable menu entry. In a `menu`-design panel it renders as a full-width labeled row (the
+ * expanded-drawer look); in a `rail`-design panel it renders as a compact AzButton. Folds the menu
+ * on click by default.
+ */
+export const AzDropdownItem = ({ text, onClick, shape = 'RECTANGLE', enabled = true, color, textColor, fillColor, closeOnClick = true }) => {
+  const { dismiss, design } = useAzDropdownMenu();
+  const press = () => {
+    onClick && onClick();
+    if (closeOnClick) dismiss();
+  };
+  if (design === 'menu') {
+    return (
+      <div
+        className={`az-dropdown-menu-item--menu${enabled ? '' : ' disabled'}`}
+        style={{ color: textColor || color || undefined }}
+        role="menuitem"
+        tabIndex={enabled ? 0 : -1}
+        onClick={enabled ? press : undefined}
+      >
+        {text}
+      </div>
+    );
+  }
   return (
     <AzButton
       text={text}
       shape={shape}
       enabled={enabled}
       color={color}
+      textColor={textColor}
       fillColor={fillColor}
-      onClick={() => {
-        onClick && onClick();
-        if (closeOnClick) dismiss();
-      }}
+      onClick={press}
     />
   );
 };
@@ -33,17 +52,20 @@ export const AzDropdownItem = ({ text, onClick, shape = 'RECTANGLE', enabled = t
 /**
  * A standalone, hamburger-style drop-down menu (web) — used the usual, expected way.
  *
- * Drop it inline anywhere, like AzButton: it renders an icon trigger and an anchored panel holding
- * the `children`. Clicking outside folds it up.
+ * Drop the icon inline anywhere, like AzButton (it takes a normal slot, like a hamburger button).
+ * Clicking it shows the `children` as a panel styled like the collapsed rail (`design='rail'`) or
+ * the expanded menu (`design='menu'`) — width-constrained to match — pinned to the left/right
+ * screen edge (per `alignment`) and dropping from the trigger. Clicking outside folds it up.
  *
  * @param {object} props
  * @param {string} [props.icon] - URL of the hamburger icon. Falls back to a "≡" glyph.
  * @param {string} [props.contentDescription='Menu']
  * @param {number} [props.iconSize=48]
  * @param {'CIRCLE'|'ROUNDED'|'NONE'} [props.iconShape='CIRCLE']
- * @param {number} [props.menuWidth]
+ * @param {'rail'|'menu'} [props.design='menu'] - Rail look (rail width) or menu look (menu width).
+ * @param {number} [props.menuWidth] - Overrides the design width.
  * @param {string} [props.backgroundColor]
- * @param {string} [props.alignment='top-start'] - An AzDropdownAlignment value.
+ * @param {string} [props.alignment='top-start'] - An AzDropdownAlignment value; start=left edge, end=right edge.
  * @param {{x?:number,y?:number}} [props.offset]
  * @param {boolean} [props.expanded] - Optional controlled open-state.
  * @param {function} [props.onExpandedChange]
@@ -54,6 +76,7 @@ const AzDropdownMenu = ({
   contentDescription = 'Menu',
   iconSize = 48,
   iconShape = 'CIRCLE',
+  design = 'menu',
   menuWidth,
   backgroundColor,
   alignment = 'top-start',
@@ -65,6 +88,8 @@ const AzDropdownMenu = ({
   const [internalOpen, setInternalOpen] = useState(false);
   const isOpen = expanded ?? internalOpen;
   const rootRef = useRef(null);
+  const triggerRef = useRef(null);
+  const [rect, setRect] = useState(null);
 
   const setOpen = (value) => {
     if (expanded === undefined) setInternalOpen(value);
@@ -81,20 +106,44 @@ const AzDropdownMenu = ({
     return () => document.removeEventListener('mousedown', onDocClick);
   });
 
-  const { vert, horiz, isBottom } = parseDropdownAnchor(alignment);
+  // Measure the trigger so the (fixed-positioned) panel can drop from it while hugging the edge.
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const measure = () => { if (triggerRef.current) setRect(triggerRef.current.getBoundingClientRect()); };
+    measure();
+    window.addEventListener('resize', measure);
+    window.addEventListener('scroll', measure, true);
+    return () => {
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('scroll', measure, true);
+    };
+  }, [isOpen]);
+
+  const { horiz, isBottom } = parseDropdownAnchor(alignment);
   const offX = offset?.x ?? 0;
   const offY = offset?.y ?? 0;
-  const txCenter = horiz === 'center' ? '-50%' : '0px';
+  const panelWidth = menuWidth ?? (design === 'rail' ? 100 : 160);
+  const winW = typeof window !== 'undefined' ? window.innerWidth : 0;
+  const winH = typeof window !== 'undefined' ? window.innerHeight : 0;
 
+  // Horizontal: pin to the screen edge (start=left, end=right, centre=centred).
   const panelStyle = {
-    left: horiz === 'end' ? 'auto' : horiz === 'center' ? '50%' : 0,
-    right: horiz === 'end' ? 0 : 'auto',
-    top: isBottom ? 'auto' : '100%',
-    bottom: isBottom ? '100%' : 'auto',
-    transform: `translate(calc(${txCenter} + ${offX}px), ${offY}px)`,
+    position: 'fixed',
+    width: panelWidth,
     backgroundColor: backgroundColor || undefined,
-    width: menuWidth || undefined,
+    left: horiz === 'end' ? 'auto' : horiz === 'center' ? (winW - panelWidth) / 2 + offX : offX,
+    right: horiz === 'end' ? offX : 'auto',
   };
+  // Vertical: drop from the trigger — below it for top/centre anchors, above it for bottom.
+  if (rect) {
+    if (isBottom) {
+      panelStyle.bottom = winH - rect.top + offY;
+      panelStyle.top = 'auto';
+    } else {
+      panelStyle.top = rect.bottom + offY;
+      panelStyle.bottom = 'auto';
+    }
+  }
 
   const iconClass = iconShape === 'CIRCLE' ? 'circle' : iconShape === 'ROUNDED' ? 'rounded' : '';
 
@@ -102,6 +151,7 @@ const AzDropdownMenu = ({
     <div className="az-dropdown-menu" ref={rootRef}>
       <button
         type="button"
+        ref={triggerRef}
         className={`az-dropdown-menu-trigger ${iconClass}`}
         style={{ width: iconSize, height: iconSize, fontSize: iconSize * 0.5 }}
         aria-label={contentDescription}
@@ -112,8 +162,8 @@ const AzDropdownMenu = ({
         {icon ? <img src={icon} alt={contentDescription} style={{ width: iconSize, height: iconSize }} /> : '≡'}
       </button>
       {isOpen && (
-        <div className="az-dropdown-menu-panel" style={panelStyle} role="menu">
-          <AzDropdownMenuContext.Provider value={{ dismiss: () => setOpen(false) }}>
+        <div className={`az-dropdown-menu-panel ${design === 'menu' ? 'menu' : 'rail'}`} style={panelStyle} role="menu">
+          <AzDropdownMenuContext.Provider value={{ dismiss: () => setOpen(false), design }}>
             {children}
           </AzDropdownMenuContext.Provider>
         </div>

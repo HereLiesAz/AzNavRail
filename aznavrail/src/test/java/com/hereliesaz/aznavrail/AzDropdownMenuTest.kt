@@ -79,4 +79,19 @@ class AzDropdownMenuTest {
         }
         composeTestRule.onNodeWithText("Profile").assertIsDisplayed()
     }
+
+    @Test
+    fun rail_design_renders_items_and_fires_clicks() {
+        var clicked = false
+        composeTestRule.setContent {
+            AzDropdownMenu(design = com.hereliesaz.aznavrail.model.AzDropdownDesign.RAIL) {
+                azItem("Home") { clicked = true }
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Menu").performClick()
+        composeTestRule.onNodeWithText("Home").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Home").performClick()
+        assertTrue(clicked)
+    }
 }

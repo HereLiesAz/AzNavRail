@@ -27,6 +27,7 @@ import com.hereliesaz.aznavrail.AzDropdownMenu
 import com.hereliesaz.aznavrail.AzToggle
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDropdownAlignment
+import com.hereliesaz.aznavrail.model.AzDropdownDesign
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 
 /** Live theme/config state surfaced from MainApp so the rail can re-key on each change. */
@@ -138,7 +139,7 @@ fun CustomizationDemoScreen(
             valueRange = 0f..120f,
         )
 
-        SectionLabel("AzDropdownMenu — standalone hamburger menu, placed inline like any widget")
+        SectionLabel("AzDropdownMenu — standalone hamburger; panel pins to the screen edge as rail/menu")
         AzDropdownMenuDemo()
 
         SectionLabel("displayAppName")
@@ -220,13 +221,14 @@ fun CustomizationDemoScreen(
 }
 
 /**
- * Demonstrates the standalone [AzDropdownMenu] — no rail, no host, no `azConfig`. It is dropped
- * inline here exactly like an [AzButton], its panel anchored to its own icon. The alignment cycler
- * shows how the panel anchors/unfolds relative to the trigger.
+ * Demonstrates the standalone [AzDropdownMenu] — no rail, no host, no `azConfig`. The hamburger icon
+ * is dropped inline here like an [AzButton]; its panel is an overlay pinned to the left/right screen
+ * edge (per the alignment cycler) and styled as the rail or the menu (per the design cycler).
  */
 @Composable
 private fun AzDropdownMenuDemo() {
     var alignment by remember { mutableStateOf(AzDropdownAlignment.TOP_START) }
+    var design by remember { mutableStateOf(AzDropdownDesign.MENU) }
     var dark by remember { mutableStateOf(false) }
     var lastAction by remember { mutableStateOf("none") }
 
@@ -237,8 +239,16 @@ private fun AzDropdownMenuDemo() {
         shape = AzButtonShape.RECTANGLE,
     )
 
+    val designs = AzDropdownDesign.values()
+    AzCycler(
+        options = designs.map { it.name },
+        selectedOption = design.name,
+        onCycle = { design = designs[(design.ordinal + 1) % designs.size] },
+        shape = AzButtonShape.RECTANGLE,
+    )
+
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        AzDropdownMenu(alignment = alignment) {
+        AzDropdownMenu(alignment = alignment, design = design) {
             azItem("Profile") { lastAction = "Profile" }
             azItem("Settings") { lastAction = "Settings" }
             azToggle(
