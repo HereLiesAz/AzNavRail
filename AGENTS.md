@@ -148,23 +148,27 @@ its legacy behavior of sizing to the rail width. When set, the header icon is re
 that width and height.
 
 Drop-down menu (`AzDropdownMenu`): a hamburger drop-down is a **standalone composable**, not a rail
-mode. It is placed inline like `AzButton`/`AzTextBox` — no `AzNavHost`, no DSL scope, no
-`background()`/`onscreen()`, no safe zones. (`AzNavRail` has no `dropdownMenu`/`dropdownSource`
-config; that rail mode was removed.)
+mode. The **icon** is placed inline like `AzButton`/`AzTextBox` — it takes a normal layout slot; only
+the dropped item list is an overlay. No `AzNavHost`, no DSL scope, no `background()`/`onscreen()`, no
+safe zones. (`AzNavRail` has no `dropdownMenu`/`dropdownSource` config; that rail mode was removed.)
 
 - File: `aznavrail/src/main/java/com/hereliesaz/aznavrail/AzDropdownMenu.kt` (Android),
   `aznavrail-react/src/components/AzDropdownMenu.tsx` (RN) and `src/web/AzDropdownMenu.jsx` (web).
-- It renders a tappable icon (defaults to `Icons.Default.Menu`); tapping it unfolds a panel anchored
-  to the icon (Android `Popup`; RN `Modal` overlay; web absolute panel) holding the items. Tapping
-  outside, back, or an item folds it up. Optional controlled `expanded`/`onExpandedChange`.
+- It renders a tappable icon (defaults to `Icons.Default.Menu`); tapping it unfolds an overlay panel
+  (Android `Popup`; RN `Modal` overlay; web fixed panel) holding the items. Tapping outside, back, or
+  an item folds it up. Optional controlled `expanded`/`onExpandedChange`.
+- `design` (`AzDropdownDesign { RAIL, MENU }`, default `MENU`) styles the panel as the collapsed rail
+  (compact buttons, ≈100dp) or the expanded menu (full-width labeled rows, ≈160dp) and sets the
+  panel width; `menuWidth` overrides it.
 - Items use a content-slot DSL (`AzDropdownMenuScope`: `azItem`→`AzButton`, `azToggle`, `azCycler`,
   `azDivider`, `azCustom`, `dismiss()`); React uses `<AzDropdownItem>` children + a dismiss context.
-  `azItem` folds the menu after its callback by default (`closeOnClick`).
+  `azItem` folds the menu after its callback by default (`closeOnClick`). In `MENU` design items render
+  as full-width labeled rows (the expanded-drawer look) instead of compact buttons.
 - `alignment` (`AzDropdownAlignment`: nine anchors `TOP_START`…`BOTTOM_END`; web/RN use the lowercase
-  string values like `'bottom-end'`) anchors the panel to the icon and sets the unfold direction
-  (top/centre → downward, `BOTTOM_*` → upward); `offset` nudges it. Placement is driven by
-  `AzDropdownAlignment.toAlignment()/isBottom` + a custom `PopupPositionProvider` (Android) and the
-  shared `parseDropdownAnchor` helper (React).
+  string values like `'bottom-end'`) **pins the panel to the screen edge** (start = left, end = right,
+  centre = centred) and sets the drop direction from the trigger (top/centre → downward, `BOTTOM_*` →
+  upward); `offset` nudges it. Placement is driven by `AzDropdownAlignment.isBottom` + a custom
+  window-edge `PopupPositionProvider` (Android) and the shared `parseDropdownAnchor` helper (React).
 
 In-app About reader + "More from Az": the footer "About" item opens a built-in, full-screen, themed
 markdown reader (an overlay drawn over the live UI, like the help overlay) instead of opening the repo

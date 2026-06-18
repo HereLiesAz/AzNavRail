@@ -147,15 +147,18 @@ const settings: AzNavRailSettings = {
 
 ### D. Drop-down menu — `AzDropdownMenu` (standalone)
 
-A hamburger drop-down is **not** a rail mode — it is a standalone composable, `AzDropdownMenu`, placed
-inline like `AzButton` (no `AzNavHost`, no scope, no `onscreen()`, no safe zones). It renders a
-tappable icon; tapping it unfolds a panel anchored to the icon (a `Popup`) holding the items. Items
-use a content-slot DSL that reuses the library's widgets (`azItem`→`AzButton`, `azToggle`, `azCycler`,
-`azDivider`); `alignment` (`AzDropdownAlignment`) anchors the panel and sets the unfold direction and
-`offset` nudges it.
+A hamburger drop-down is **not** a rail mode — it is a standalone composable, `AzDropdownMenu`. Its
+hamburger **icon** sits inline like `AzButton` (no `AzNavHost`, no scope, no `onscreen()`, no safe
+zones), taking a normal layout slot. Tapping it unfolds an **overlay panel** (a `Popup`) holding the
+items. The panel is presented as a slice of the rail: `design` picks `AzDropdownDesign.RAIL` (compact
+rail buttons at the collapsed rail width ≈100dp) or `AzDropdownDesign.MENU` (default; full-width
+labeled rows at the expanded menu width ≈160dp), with `menuWidth` overriding. It is **pinned to the
+screen edge** named by `alignment` (start = left, end = right, centre = centred) and **drops from the
+trigger** (top/centre → downward, `BOTTOM_*` → upward); `offset` nudges it. Items use a content-slot
+DSL that reuses the library's widgets (`azItem`→`AzButton`, `azToggle`, `azCycler`, `azDivider`).
 
 ```kotlin
-AzDropdownMenu(alignment = AzDropdownAlignment.TOP_END) {
+AzDropdownMenu(design = AzDropdownDesign.MENU, alignment = AzDropdownAlignment.TOP_END) {
     azItem("Settings") { openSettings() }
     azToggle(isChecked = dark, toggleOnText = "Dark", toggleOffText = "Light") { dark = it }
     azDivider()
@@ -164,7 +167,7 @@ AzDropdownMenu(alignment = AzDropdownAlignment.TOP_END) {
 ```
 
 ```tsx
-<AzDropdownMenu alignment={AzDropdownAlignment.TOP_END}>
+<AzDropdownMenu design={AzDropdownDesign.MENU} alignment={AzDropdownAlignment.TOP_END}>
   <AzDropdownItem text="Settings" onClick={openSettings} />
   <AzDivider />
   <AzDropdownItem text="Sign out" onClick={signOut} />

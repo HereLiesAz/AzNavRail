@@ -48,6 +48,16 @@ export declare enum AzDropdownAlignment {
     BOTTOM_CENTER = "bottom-center",
     BOTTOM_END = "bottom-end"
 }
+/**
+ * The visual design of an `AzDropdownMenu` panel — a slice of the rail or the menu. The choice
+ * drives both the item rendering and the panel width (so it matches what it imitates).
+ */
+export declare enum AzDropdownDesign {
+    /** Collapsed-rail look: compact rail buttons, constrained to the collapsed rail width (≈100). */
+    RAIL = "rail",
+    /** Expanded-menu look: full-width labeled rows, constrained to the expanded menu width (≈160). */
+    MENU = "menu"
+}
 /** General orientation flag used by layout helpers. */
 export declare enum AzOrientation {
     /** Components arranged in a column. */

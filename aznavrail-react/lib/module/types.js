@@ -58,6 +58,18 @@ export let AzDropdownAlignment = /*#__PURE__*/function (AzDropdownAlignment) {
   return AzDropdownAlignment;
 }({});
 
+/**
+ * The visual design of an `AzDropdownMenu` panel — a slice of the rail or the menu. The choice
+ * drives both the item rendering and the panel width (so it matches what it imitates).
+ */
+export let AzDropdownDesign = /*#__PURE__*/function (AzDropdownDesign) {
+  /** Collapsed-rail look: compact rail buttons, constrained to the collapsed rail width (≈100). */
+  AzDropdownDesign["RAIL"] = "rail";
+  /** Expanded-menu look: full-width labeled rows, constrained to the expanded menu width (≈160). */
+  AzDropdownDesign["MENU"] = "menu";
+  return AzDropdownDesign;
+}({});
+
 /** General orientation flag used by layout helpers. */
 export let AzOrientation = /*#__PURE__*/function (AzOrientation) {
   /** Components arranged in a column. */

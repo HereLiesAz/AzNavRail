@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.AzVisualSide = exports.AzSheetDetent = exports.AzOrientation = exports.AzNestedRailAlignment = exports.AzHeaderIconShape = exports.AzDropdownAlignment = exports.AzDockingSide = exports.AzButtonShape = void 0;
+exports.AzVisualSide = exports.AzSheetDetent = exports.AzOrientation = exports.AzNestedRailAlignment = exports.AzHeaderIconShape = exports.AzDropdownDesign = exports.AzDropdownAlignment = exports.AzDockingSide = exports.AzButtonShape = void 0;
 /** Shape variant applied to an AzButton or nav-rail item icon. */
 let AzButtonShape = exports.AzButtonShape = /*#__PURE__*/function (AzButtonShape) {
   /** Circular border, equal width and height. */
@@ -58,6 +58,17 @@ let AzDropdownAlignment = exports.AzDropdownAlignment = /*#__PURE__*/function (A
   AzDropdownAlignment["BOTTOM_CENTER"] = "bottom-center";
   AzDropdownAlignment["BOTTOM_END"] = "bottom-end";
   return AzDropdownAlignment;
+}({});
+/**
+ * The visual design of an `AzDropdownMenu` panel — a slice of the rail or the menu. The choice
+ * drives both the item rendering and the panel width (so it matches what it imitates).
+ */
+let AzDropdownDesign = exports.AzDropdownDesign = /*#__PURE__*/function (AzDropdownDesign) {
+  /** Collapsed-rail look: compact rail buttons, constrained to the collapsed rail width (≈100). */
+  AzDropdownDesign["RAIL"] = "rail";
+  /** Expanded-menu look: full-width labeled rows, constrained to the expanded menu width (≈160). */
+  AzDropdownDesign["MENU"] = "menu";
+  return AzDropdownDesign;
 }({});
 /** General orientation flag used by layout helpers. */
 let AzOrientation = exports.AzOrientation = /*#__PURE__*/function (AzOrientation) {

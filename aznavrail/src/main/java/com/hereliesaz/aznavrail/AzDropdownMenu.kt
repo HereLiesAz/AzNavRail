@@ -4,6 +4,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -17,6 +19,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,6 +37,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
@@ -44,8 +48,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
+import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDropdownAlignment
+import com.hereliesaz.aznavrail.model.AzDropdownDesign
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 
 /**
@@ -119,6 +125,7 @@ interface AzDropdownMenuScope {
 }
 
 private class AzDropdownMenuScopeImpl(
+    private val design: AzDropdownDesign,
     private val onDismiss: () -> Unit
 ) : AzDropdownMenuScope {
 
@@ -136,19 +143,30 @@ private class AzDropdownMenuScopeImpl(
         closeOnClick: Boolean,
         onClick: () -> Unit
     ) {
-        AzButton(
-            onClick = {
-                onClick()
-                if (closeOnClick) onDismiss()
-            },
-            text = text,
-            modifier = modifier,
-            color = color.takeOrElse { MaterialTheme.colorScheme.primary },
-            textColor = textColor,
-            fillColor = fillColor,
-            shape = shape,
-            enabled = enabled
-        )
+        val action = {
+            onClick()
+            if (closeOnClick) onDismiss()
+        }
+        if (design == AzDropdownDesign.MENU) {
+            AzDropdownMenuRow(
+                text = text,
+                modifier = modifier,
+                enabled = enabled,
+                textColor = effectiveTextColor(textColor, color),
+                onClick = action
+            )
+        } else {
+            AzButton(
+                onClick = action,
+                text = text,
+                modifier = modifier,
+                color = color.takeOrElse { MaterialTheme.colorScheme.primary },
+                textColor = textColor,
+                fillColor = fillColor,
+                shape = shape,
+                enabled = enabled
+            )
+        }
     }
 
     @Composable
@@ -165,21 +183,34 @@ private class AzDropdownMenuScopeImpl(
         closeOnClick: Boolean,
         onToggle: (Boolean) -> Unit
     ) {
-        AzToggle(
-            isChecked = isChecked,
-            onToggle = {
-                onToggle(it)
-                if (closeOnClick) onDismiss()
-            },
-            toggleOnText = toggleOnText,
-            toggleOffText = toggleOffText,
-            modifier = modifier,
-            color = color.takeOrElse { MaterialTheme.colorScheme.primary },
-            textColor = textColor,
-            fillColor = fillColor,
-            shape = shape,
-            enabled = enabled
-        )
+        if (design == AzDropdownDesign.MENU) {
+            AzDropdownMenuRow(
+                text = if (isChecked) toggleOnText else toggleOffText,
+                modifier = modifier,
+                enabled = enabled,
+                textColor = effectiveTextColor(textColor, color),
+                onClick = {
+                    onToggle(!isChecked)
+                    if (closeOnClick) onDismiss()
+                }
+            )
+        } else {
+            AzToggle(
+                isChecked = isChecked,
+                onToggle = {
+                    onToggle(it)
+                    if (closeOnClick) onDismiss()
+                },
+                toggleOnText = toggleOnText,
+                toggleOffText = toggleOffText,
+                modifier = modifier,
+                color = color.takeOrElse { MaterialTheme.colorScheme.primary },
+                textColor = textColor,
+                fillColor = fillColor,
+                shape = shape,
+                enabled = enabled
+            )
+        }
     }
 
     @Composable
@@ -195,20 +226,36 @@ private class AzDropdownMenuScopeImpl(
         closeOnClick: Boolean,
         onCycle: (String) -> Unit
     ) {
-        AzCycler(
-            options = options,
-            selectedOption = selectedOption,
-            onCycle = {
-                onCycle(it)
-                if (closeOnClick) onDismiss()
-            },
-            modifier = modifier,
-            color = color.takeOrElse { MaterialTheme.colorScheme.primary },
-            textColor = textColor,
-            fillColor = fillColor,
-            shape = shape,
-            enabled = enabled
-        )
+        if (design == AzDropdownDesign.MENU) {
+            AzDropdownMenuRow(
+                text = selectedOption,
+                modifier = modifier,
+                enabled = enabled,
+                textColor = effectiveTextColor(textColor, color),
+                onClick = {
+                    if (options.isNotEmpty()) {
+                        val next = options[(options.indexOf(selectedOption) + 1).mod(options.size)]
+                        onCycle(next)
+                    }
+                    if (closeOnClick) onDismiss()
+                }
+            )
+        } else {
+            AzCycler(
+                options = options,
+                selectedOption = selectedOption,
+                onCycle = {
+                    onCycle(it)
+                    if (closeOnClick) onDismiss()
+                },
+                modifier = modifier,
+                color = color.takeOrElse { MaterialTheme.colorScheme.primary },
+                textColor = textColor,
+                fillColor = fillColor,
+                shape = shape,
+                enabled = enabled
+            )
+        }
     }
 
     @Composable
@@ -223,12 +270,59 @@ private class AzDropdownMenuScopeImpl(
 }
 
 /**
- * Anchors the unfolded panel to the trigger icon: top/centre anchors open downward (panel below the
- * icon), [AzDropdownAlignment.BOTTOM_START]/`BOTTOM_CENTER`/`BOTTOM_END` open upward (panel above
- * it); start/centre/end pick the horizontal edge the panel lines up with. A fine [offsetXPx]/
- * [offsetYPx] nudges the result.
+ * Resolves the row text colour: explicit [textColor], else [color], else the theme primary. Always
+ * returns a *specified* colour so callers can safely `copy(alpha = …)` it.
  */
-private class AzDropdownPositionProvider(
+@Composable
+private fun effectiveTextColor(textColor: Color?, color: Color): Color =
+    (textColor ?: color).takeOrElse { MaterialTheme.colorScheme.primary }
+
+/**
+ * A full-width, labeled menu row mirroring the expanded drawer's look (centred [titleLarge] text,
+ * the menu's horizontal/vertical padding). Used for [AzDropdownDesign.MENU] items.
+ */
+@Composable
+private fun AzDropdownMenuRow(
+    text: String,
+    modifier: Modifier,
+    enabled: Boolean,
+    textColor: Color,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(
+                horizontal = AzNavRailDefaults.MenuItemHorizontalPadding,
+                vertical = AzNavRailDefaults.MenuItemVerticalPadding
+            ),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            text.split('\n').forEach { line ->
+                Text(
+                    text = line,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = if (enabled) textColor else textColor.copy(alpha = 0.5f),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Pins the dropped panel to a **screen edge** horizontally and **drops it from the trigger**
+ * vertically. The anchor's start/centre/end picks the horizontal side — start hugs the left window
+ * edge, end hugs the right, centre is window-centred — ignoring the trigger's x. Top/centre anchors
+ * open downward from the trigger's bottom, [AzDropdownAlignment.BOTTOM_START]/`BOTTOM_CENTER`/
+ * `BOTTOM_END` open upward from its top. A fine [offsetXPx]/[offsetYPx] nudges the result.
+ */
+private class AzDropdownEdgePositionProvider(
     private val alignment: AzDropdownAlignment,
     private val offsetXPx: Int,
     private val offsetYPx: Int
@@ -239,13 +333,16 @@ private class AzDropdownPositionProvider(
         layoutDirection: LayoutDirection,
         popupContentSize: IntSize
     ): IntOffset {
+        // `start`/`end` are layout-direction-relative: start hugs the leading edge (left in LTR,
+        // right in RTL), end the trailing edge.
+        val isRtl = layoutDirection == LayoutDirection.Rtl
         val x = when (alignment) {
             AzDropdownAlignment.TOP_START, AzDropdownAlignment.CENTER_START, AzDropdownAlignment.BOTTOM_START ->
-                anchorBounds.left
+                if (isRtl) windowSize.width - popupContentSize.width else 0
             AzDropdownAlignment.TOP_CENTER, AzDropdownAlignment.CENTER, AzDropdownAlignment.BOTTOM_CENTER ->
-                anchorBounds.left + (anchorBounds.width - popupContentSize.width) / 2
+                (windowSize.width - popupContentSize.width) / 2
             AzDropdownAlignment.TOP_END, AzDropdownAlignment.CENTER_END, AzDropdownAlignment.BOTTOM_END ->
-                anchorBounds.right - popupContentSize.width
+                if (isRtl) 0 else windowSize.width - popupContentSize.width
         }
         val y = if (alignment.isBottom) {
             anchorBounds.top - popupContentSize.height
@@ -259,11 +356,13 @@ private class AzDropdownPositionProvider(
 /**
  * A standalone, hamburger-style drop-down menu — used the usual, expected way.
  *
- * Drop it **inline** anywhere in your own UI, exactly like [AzButton] or [AzTextBox]: there is no
- * `AzNavHost`, no DSL host scope, no `background()`/`onscreen()`, and no reserved safe zones. The
- * composable renders a tappable icon (the hamburger); tapping it unfolds a panel — anchored to the
- * icon via a [Popup] — containing the items you declare in [content]. Tapping outside or pressing
- * back folds it up.
+ * Drop the **icon** inline anywhere in your own UI, exactly like [AzButton] or [AzTextBox] — it
+ * takes a normal layout slot, like a hamburger button. There is no `AzNavHost`, no DSL host scope,
+ * no `background()`/`onscreen()`, and no reserved safe zones. Tapping the icon unfolds a [Popup]
+ * panel of the items you declare in [content]; the panel is presented as a slice of the rail
+ * ([AzDropdownDesign.RAIL]) or menu ([AzDropdownDesign.MENU]) — width-constrained to match — and is
+ * **pinned to the left or right screen edge** ([alignment] start/end) while dropping from the
+ * trigger. Tapping outside or pressing back folds it up.
  *
  * Items reuse the library's own widgets through [AzDropdownMenuScope]:
  * ```
@@ -281,9 +380,13 @@ private class AzDropdownPositionProvider(
  * @param iconSize Diameter of the trigger icon.
  * @param iconShape Clip shape for the trigger icon.
  * @param iconTint Tint for the default [Icons.Default.Menu] icon (ignored for image [icon]s).
- * @param menuWidth Optional fixed width for the panel; wraps its content when [Dp.Unspecified].
+ * @param design Whether the dropped panel imitates the collapsed [AzDropdownDesign.RAIL] (compact
+ *   buttons, rail width) or the expanded [AzDropdownDesign.MENU] (labeled rows, menu width).
+ * @param menuWidth Optional fixed width for the panel; when [Dp.Unspecified] the width follows
+ *   [design] (≈100dp for RAIL, ≈160dp for MENU).
  * @param backgroundColor Panel background; defaults to [MaterialTheme]'s surface.
- * @param alignment Where the panel anchors to the icon and which way it unfolds.
+ * @param alignment Which screen edge the panel pins to (start = left, end = right, centre =
+ *   centred) and which way it drops from the trigger.
  * @param offset A fine nudge applied to the panel from its anchor.
  * @param vibrate Haptic feedback when the trigger is tapped.
  * @param expanded Optional controlled open-state. When null the menu manages its own state.
@@ -298,6 +401,7 @@ fun AzDropdownMenu(
     iconSize: Dp = 48.dp,
     iconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
     iconTint: Color = Color.Unspecified,
+    design: AzDropdownDesign = AzDropdownDesign.MENU,
     menuWidth: Dp = Dp.Unspecified,
     backgroundColor: Color = Color.Unspecified,
     alignment: AzDropdownAlignment = AzDropdownAlignment.TOP_START,
@@ -318,9 +422,19 @@ fun AzDropdownMenu(
     val density = LocalDensity.current
     val maxPanelHeight = (LocalConfiguration.current.screenHeightDp * 0.8f).dp
 
+    // The panel matches the rail/menu it imitates: rail width for RAIL, menu width for MENU,
+    // unless the developer pins an explicit menuWidth.
+    val panelWidth = if (menuWidth != Dp.Unspecified) {
+        menuWidth
+    } else if (design == AzDropdownDesign.RAIL) {
+        100.dp
+    } else {
+        160.dp
+    }
+
     val positionProvider = remember(alignment, offset, density) {
         with(density) {
-            AzDropdownPositionProvider(
+            AzDropdownEdgePositionProvider(
                 alignment = alignment,
                 offsetXPx = offset.x.roundToPx(),
                 offsetYPx = offset.y.roundToPx()
@@ -375,13 +489,13 @@ fun AzDropdownMenu(
                     shadowElevation = 8.dp
                 ) {
                     val scrollState = rememberScrollState()
-                    val scope = AzDropdownMenuScopeImpl(onDismiss = { setOpen(false) })
+                    val scope = AzDropdownMenuScopeImpl(design = design, onDismiss = { setOpen(false) })
                     Column(
                         modifier = Modifier
-                            .then(if (menuWidth != Dp.Unspecified) Modifier.width(menuWidth) else Modifier)
+                            .width(panelWidth)
                             .heightIn(max = maxPanelHeight)
                             .verticalScroll(scrollState)
-                            .padding(8.dp),
+                            .then(if (design == AzDropdownDesign.RAIL) Modifier.padding(8.dp) else Modifier),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         scope.content()
