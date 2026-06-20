@@ -445,16 +445,17 @@ const settings: AzNavRailSettings = {
 
 A drop-down menu is a **standalone widget** declared with the same opinionated DSL as the rail. In
 AzNavRail tradition it accepts **only** what the rest of the library sanctions — no arbitrary panel
-background, offsets, icon styling, or free composable escape hatch. Its trigger is the **app icon**
-(auto-drawn exactly like the rail's header — not customizable), dropped inline like any widget.
-Tapping it unfolds an **overlay panel** of the items you declare; tapping outside, pressing back, or
-tapping an item folds it up.
+background, offsets, icon tint/source, or free composable escape hatch. Its trigger is the **app
+icon** (auto-drawn exactly like the rail's header), dropped inline like any widget. Tapping it unfolds
+an **overlay panel** of the items you declare; tapping outside, pressing back, or tapping an item
+folds it up.
 
 Configure it through `azConfig` (mirroring the rail): **`design`** picks `AzDropdownDesign.RAIL`
 (compact rail buttons at the **collapsed width**, ≈100dp) or `AzDropdownDesign.MENU` (the default;
 full-width labeled rows at the **expanded width**, ≈160dp); **`dockingSide`** pins the panel to the
-`LEFT` or `RIGHT` screen edge; `vibrate`/`expandedWidth`/`collapsedWidth` round out the config. The
-panel **drops from the trigger** automatically (downward when it fits, otherwise upward).
+`LEFT` or `RIGHT` screen edge; the app-icon **`headerIconShape`/`headerIconSize`** (mirroring the
+rail's `azTheme`) and `vibrate`/`expandedWidth`/`collapsedWidth` round out the config. The panel
+**drops from the trigger** automatically (downward when it fits, otherwise upward).
 
 Items are declared with `azItem` / `azToggle` / `azCycler` / `azDivider`, accepting only the rail's
 sanctioned per-item knobs (`color`/`textColor`/`fillColor`/`shape`/`enabled`/`closeOnClick`). Each may

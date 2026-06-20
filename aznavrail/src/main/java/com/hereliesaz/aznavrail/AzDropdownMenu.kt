@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
@@ -54,19 +55,18 @@ import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzDropdownDesign
-
-/** Fixed diameter of the drop-down's app-icon trigger. Not customizable, in the AzNavRail tradition. */
-private val AzDropdownTriggerSize = 48.dp
+import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 
 /**
  * DSL builder scope for an [AzDropdownMenu] — declared the same way as the rail
  * (`AzDropdownMenu { azConfig(...); azItem(...) { } }`).
  *
  * In keeping with AzNavRail's opinionated tradition, the drop-down only accepts configuration the
- * rest of the library sanctions: [azConfig] mirrors the rail's `azConfig` (design, docking side,
- * vibration, the collapsed/expanded widths) and the item builders accept only the per-item knobs the
- * rail's items accept (`color`/`textColor`/`fillColor`/`shape`/`enabled`, plus a navigation `route`).
- * There is no arbitrary panel background, offset, icon styling, or free composable escape hatch.
+ * rest of the library sanctions: [azConfig] mirrors the rail's `azConfig`/`azTheme` (design, docking
+ * side, vibration, the collapsed/expanded widths, and the app-icon shape/size) and the item builders
+ * accept only the per-item knobs the rail's items accept (`color`/`textColor`/`fillColor`/`shape`/
+ * `enabled`, plus a navigation `route`). There is no arbitrary panel background, offset, or free
+ * composable escape hatch.
  */
 interface AzDropdownMenuScope {
     /**
@@ -79,13 +79,19 @@ interface AzDropdownMenuScope {
      * @param vibrate Haptic feedback when the trigger is tapped.
      * @param expandedWidth Panel width in the [AzDropdownDesign.MENU] design.
      * @param collapsedWidth Panel width in the [AzDropdownDesign.RAIL] design.
+     * @param headerIconShape Clip shape for the app-icon trigger (mirrors the rail's
+     *   `azTheme(headerIconShape = …)`).
+     * @param headerIconSize Diameter of the app-icon trigger (mirrors the rail's
+     *   `azTheme(headerIconSize = …)`).
      */
     fun azConfig(
         design: AzDropdownDesign = AzDropdownDesign.MENU,
         dockingSide: AzDockingSide = AzDockingSide.LEFT,
         vibrate: Boolean = false,
         expandedWidth: Dp = 160.dp,
-        collapsedWidth: Dp = 100.dp
+        collapsedWidth: Dp = 100.dp,
+        headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
+        headerIconSize: Dp = 48.dp
     )
 
     /**
@@ -143,7 +149,9 @@ internal data class AzDropdownConfig(
     val dockingSide: AzDockingSide = AzDockingSide.LEFT,
     val vibrate: Boolean = false,
     val expandedWidth: Dp = 160.dp,
-    val collapsedWidth: Dp = 100.dp
+    val collapsedWidth: Dp = 100.dp,
+    val headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
+    val headerIconSize: Dp = 48.dp
 )
 
 /** One declared entry, collected by the builder and rendered by the composable. */
@@ -209,9 +217,13 @@ private class AzDropdownMenuScopeImpl : AzDropdownMenuScope {
         dockingSide: AzDockingSide,
         vibrate: Boolean,
         expandedWidth: Dp,
-        collapsedWidth: Dp
+        collapsedWidth: Dp,
+        headerIconShape: AzHeaderIconShape,
+        headerIconSize: Dp
     ) {
-        config = AzDropdownConfig(design, dockingSide, vibrate, expandedWidth, collapsedWidth)
+        config = AzDropdownConfig(
+            design, dockingSide, vibrate, expandedWidth, collapsedWidth, headerIconShape, headerIconSize
+        )
     }
 
     override fun azItem(
@@ -439,8 +451,9 @@ private class AzDropdownEdgePositionProvider(
 /**
  * A standalone, hamburger-style drop-down menu, declared with the same opinionated DSL as the rail.
  *
- * The trigger is the **app icon** (auto-drawn, exactly like the rail's header — not customizable),
- * dropped inline like any widget. Tapping it unfolds a [Popup] panel of the items you declare in
+ * The trigger is the **app icon** (auto-drawn exactly like the rail's header; its shape/size are set
+ * via [AzDropdownMenuScope.azConfig], mirroring the rail's `azTheme`), dropped inline like any
+ * widget. Tapping it unfolds a [Popup] panel of the items you declare in
  * [content]; the panel is presented as a slice of the rail ([AzDropdownDesign.RAIL]) or menu
  * ([AzDropdownDesign.MENU]), width-constrained to match, pinned to the [AzDockingSide] screen edge,
  * and dropping from the trigger. Tapping outside or pressing back folds it up.
@@ -501,12 +514,18 @@ fun AzDropdownMenu(
     }
 
     Box(modifier = modifier) {
-        // The inline app-icon trigger — fixed shape/size, no styling knobs. The icon itself is
-        // decorative; the box carries the "Menu" accessibility label.
+        // The inline app-icon trigger — the app icon, clipped to the configured shape/size. The icon
+        // itself is decorative; the box carries the "Menu" accessibility label.
+        val iconClipShape: Shape? = when (config.headerIconShape) {
+            AzHeaderIconShape.CIRCLE -> CircleShape
+            AzHeaderIconShape.ROUNDED -> RoundedCornerShape(12.dp)
+            else -> null
+        }
+        val clipModifier = if (iconClipShape != null) Modifier.clip(iconClipShape) else Modifier
         Box(
             modifier = Modifier
-                .size(AzDropdownTriggerSize)
-                .clip(CircleShape)
+                .size(config.headerIconSize)
+                .then(clipModifier)
                 .clickable {
                     setOpen(!isOpen)
                     if (config.vibrate) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -518,7 +537,7 @@ fun AzDropdownMenu(
                 Image(
                     painter = rememberAsyncImagePainter(appIcon),
                     contentDescription = null,
-                    modifier = Modifier.fillMaxSize().clip(CircleShape)
+                    modifier = Modifier.fillMaxSize().then(clipModifier)
                 )
             } else {
                 Icon(imageVector = Icons.Default.Menu, contentDescription = null)

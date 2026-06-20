@@ -150,8 +150,9 @@ const settings: AzNavRailSettings = {
 A hamburger drop-down is **not** a rail mode — it is a standalone widget, `AzDropdownMenu`, declared
 with the **same opinionated DSL as the rail**. In AzNavRail tradition it accepts only the
 configuration the rest of the library sanctions (no arbitrary panel background, offsets, icon
-styling, or free composable escape hatch). Its trigger is the **app icon** (auto-drawn like the
-rail's header — not customizable), dropped inline like any widget. Tapping it unfolds an **overlay
+tint/source, or free composable escape hatch). Its trigger is the **app icon** (auto-drawn like the
+rail's header; its shape/size set via `azConfig`'s `headerIconShape`/`headerIconSize`), dropped
+inline like any widget. Tapping it unfolds an **overlay
 panel** (a `Popup`) of the items you declare. Configure it through `azConfig`: `design` picks
 `AzDropdownDesign.RAIL` (compact rail buttons at the collapsed width ≈100dp) or `AzDropdownDesign.MENU`
 (default; full-width labeled rows at the expanded width ≈160dp); `dockingSide` pins the panel to the

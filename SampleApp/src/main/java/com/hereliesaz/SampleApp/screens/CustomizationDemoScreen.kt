@@ -249,7 +249,12 @@ private fun AzDropdownMenuDemo() {
 
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         AzDropdownMenu {
-            azConfig(design = design, dockingSide = dockingSide)
+            azConfig(
+                design = design,
+                dockingSide = dockingSide,
+                headerIconShape = AzHeaderIconShape.ROUNDED,
+                headerIconSize = 56.dp,
+            )
             azItem("Profile") { lastAction = "Profile" }
             azItem("Settings") { lastAction = "Settings" }
             azToggle(

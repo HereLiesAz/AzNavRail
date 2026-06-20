@@ -13,7 +13,7 @@ import {
   LayoutChangeEvent,
 } from 'react-native';
 import { AzButton } from './AzButton';
-import { AzButtonShape, AzDockingSide, AzDropdownDesign } from '../types';
+import { AzButtonShape, AzDockingSide, AzDropdownDesign, AzHeaderIconShape } from '../types';
 import { AzNavRailDefaults } from '../AzNavRailDefaults';
 
 /** Context the menu provides so item components can navigate, fold the menu, and match its design. */
@@ -37,6 +37,10 @@ export interface AzDropdownMenuProps {
   expandedWidth?: number;
   /** Panel width (px) in the RAIL design. */
   collapsedWidth?: number;
+  /** Clip shape for the app-icon trigger (mirrors the rail's `headerIconShape`). */
+  headerIconShape?: AzHeaderIconShape;
+  /** Diameter (px) of the app-icon trigger (mirrors the rail's `headerIconSize`). */
+  headerIconSize?: number;
   /** Optional controlled open-state. When omitted the menu manages its own. */
   expanded?: boolean;
   /** Called whenever the open-state changes. */
@@ -119,7 +123,8 @@ interface Anchor { x: number; y: number; width: number; height: number; }
 
 /**
  * A standalone, hamburger-style drop-down menu, declared with the same opinionated surface as the
- * rail. The trigger is the **app icon** (drawn like the rail's header — not customizable); the panel
+ * rail. The trigger is the **app icon** (drawn like the rail's header; its shape/size set via
+ * `headerIconShape`/`headerIconSize`); the panel
  * is configured by `design` + `dockingSide`, width-constrained to match, pinned to the chosen screen
  * edge, and dropped from the trigger. Items may carry a `route` dispatched through `onNavigate`.
  *
@@ -137,6 +142,8 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
   vibrate = false,
   expandedWidth = AzNavRailDefaults.ExpandedRailWidth,
   collapsedWidth = AzNavRailDefaults.CollapsedRailWidth,
+  headerIconShape = AzHeaderIconShape.CIRCLE,
+  headerIconSize = AzNavRailDefaults.HeaderIconSize,
   expanded,
   onExpandedChange,
   onNavigate,
@@ -169,7 +176,12 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
   // Reactive so the panel re-positions on orientation / split-screen changes.
   const screen = useWindowDimensions();
   const panelWidth = design === AzDropdownDesign.RAIL ? collapsedWidth : expandedWidth;
-  const triggerSize = AzNavRailDefaults.HeaderIconSize;
+  const triggerSize = headerIconSize;
+  // Clip radius mirrors the rail's header icon: circle = half, rounded = 8, anything else = 0.
+  const triggerRadius =
+    headerIconShape === AzHeaderIconShape.ROUNDED ? 8 :
+    headerIconShape === AzHeaderIconShape.CIRCLE ? triggerSize / 2 :
+    0;
 
   const panelPosition: ViewStyle = { position: 'absolute' };
   // Horizontal: pin to the physical docking-side edge.
@@ -185,7 +197,8 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
 
   return (
     <View style={style}>
-      {/* The app-icon trigger — drawn like the rail's header icon (gray placeholder), no styling knobs. */}
+      {/* The app-icon trigger — drawn like the rail's header icon (gray placeholder), clipped to the
+          configured shape/size. */}
       <TouchableOpacity
         ref={triggerRef as React.RefObject<any>}
         onPress={() => (isOpen ? setOpen(false) : openMenu())}
@@ -193,10 +206,11 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
         accessibilityLabel="Menu"
       >
         <View
+          testID="az-dropdown-trigger"
           style={{
             width: triggerSize,
             height: triggerSize,
-            borderRadius: triggerSize / 2,
+            borderRadius: triggerRadius,
             backgroundColor: 'gray',
             alignItems: 'center',
             justifyContent: 'center',

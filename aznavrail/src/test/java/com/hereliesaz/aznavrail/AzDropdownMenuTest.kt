@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.model.AzDropdownDesign
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -95,6 +96,23 @@ class AzDropdownMenuTest {
         composeTestRule.onNodeWithText("Home").assertIsDisplayed()
         composeTestRule.onNodeWithText("Home").performClick()
         assertTrue(clicked)
+    }
+
+    @Test
+    fun configurable_app_icon_shape_and_size_still_open_the_panel() {
+        composeTestRule.setContent {
+            AzDropdownMenu {
+                azConfig(
+                    headerIconShape = com.hereliesaz.aznavrail.model.AzHeaderIconShape.SQUARE,
+                    headerIconSize = 72.dp
+                )
+                azItem("Settings") { }
+            }
+        }
+
+        composeTestRule.onNodeWithText("Settings").assertDoesNotExist()
+        composeTestRule.onNodeWithContentDescription("Menu").performClick()
+        composeTestRule.onNodeWithText("Settings").assertIsDisplayed()
     }
 
     @Test

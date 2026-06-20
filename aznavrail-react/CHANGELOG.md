@@ -5,8 +5,9 @@
 ### Added
 - **`AzDropdownMenu` (+ `AzDropdownItem`).** A standalone, **app-icon** drop-down declared with the
   rail's opinionated surface — it accepts only what the rest of the library sanctions (no arbitrary
-  icon styling, panel background, offsets, or `menuWidth`). The trigger is the app icon (gray
-  placeholder on RN, `/app-icon.png` on web), dropped inline. Configured by `design`
+  icon tint/source, panel background, offsets, or `menuWidth`). The trigger is the app icon (gray
+  placeholder on RN, `/app-icon.png` on web), dropped inline, with configurable `headerIconShape`/
+  `headerIconSize` (mirroring the rail's `azTheme`). Configured by `design`
   (`AzDropdownDesign` RAIL/MENU → panel width) and `dockingSide` (`AzDockingSide` LEFT/RIGHT screen
   edge); the panel drops from the trigger (RN `Modal` overlay; web fixed panel). `<AzDropdownItem>`
   entries accept the sanctioned per-item knobs plus a `route` dispatched through the menu's

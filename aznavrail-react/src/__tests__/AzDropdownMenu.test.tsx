@@ -1,7 +1,7 @@
 import React from 'react';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { AzDropdownMenu, AzDropdownItem } from '../components/AzDropdownMenu';
-import { AzDockingSide, AzDropdownDesign } from '../types';
+import { AzDockingSide, AzDropdownDesign, AzHeaderIconShape } from '../types';
 
 describe('AzDropdownMenu', () => {
   it('is closed initially and opens when the app-icon trigger is pressed', () => {
@@ -102,6 +102,18 @@ describe('AzDropdownMenu', () => {
     // Default mocked window width is 375; right edge = 375 - 160 = 215.
     const rightStyle = right.getByTestId('az-dropdown-panel').props.style.flat();
     expect(rightStyle).toEqual(expect.arrayContaining([expect.objectContaining({ left: 375 - 160 })]));
+  });
+
+  it('applies a configurable app-icon size and shape to the trigger', () => {
+    const { getByTestId } = render(
+      <AzDropdownMenu headerIconSize={72} headerIconShape={AzHeaderIconShape.ROUNDED}>
+        <AzDropdownItem text="Profile" onClick={() => {}} />
+      </AzDropdownMenu>
+    );
+    const style = getByTestId('az-dropdown-trigger').props.style;
+    expect(style.width).toBe(72);
+    expect(style.height).toBe(72);
+    expect(style.borderRadius).toBe(8); // ROUNDED → 8
   });
 
   it('dispatches an item route through onNavigate before the callback', () => {
