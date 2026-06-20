@@ -1,11 +1,10 @@
 import React from 'react';
-import { Text, Dimensions, I18nManager } from 'react-native';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { AzDropdownMenu, AzDropdownItem } from '../components/AzDropdownMenu';
-import { AzDropdownAlignment, AzDropdownDesign } from '../types';
+import { AzDockingSide, AzDropdownDesign } from '../types';
 
 describe('AzDropdownMenu', () => {
-  it('is closed initially and opens when the trigger is pressed', () => {
+  it('is closed initially and opens when the app-icon trigger is pressed', () => {
     const { queryByText, getByLabelText } = render(
       <AzDropdownMenu>
         <AzDropdownItem text="Settings" onClick={() => {}} />
@@ -86,43 +85,42 @@ describe('AzDropdownMenu', () => {
     expect(style).toEqual(expect.arrayContaining([expect.objectContaining({ width: 100 })]));
   });
 
-  it('pins the panel to the right screen edge for end alignments', () => {
-    const { getByTestId } = render(
-      <AzDropdownMenu expanded alignment={AzDropdownAlignment.TOP_END}>
+  it('pins the panel to the left edge by default and the right edge when docked right', () => {
+    const left = render(
+      <AzDropdownMenu expanded dockingSide={AzDockingSide.LEFT}>
         <AzDropdownItem text="Profile" onClick={() => {}} />
       </AzDropdownMenu>
     );
-    const screenWidth = Dimensions.get('window').width;
-    const style = getByTestId('az-dropdown-panel').props.style.flat();
-    expect(style).toEqual(expect.arrayContaining([expect.objectContaining({ left: screenWidth - 160 })]));
-  });
+    const leftStyle = left.getByTestId('az-dropdown-panel').props.style.flat();
+    expect(leftStyle).toEqual(expect.arrayContaining([expect.objectContaining({ left: 0 })]));
 
-  it('flips the pinned edge under RTL (start → right)', () => {
-    const original = I18nManager.isRTL;
-    (I18nManager as { isRTL: boolean }).isRTL = true;
-    try {
-      const { getByTestId } = render(
-        <AzDropdownMenu expanded alignment={AzDropdownAlignment.TOP_START}>
-          <AzDropdownItem text="Profile" onClick={() => {}} />
-        </AzDropdownMenu>
-      );
-      const screenWidth = Dimensions.get('window').width;
-      const style = getByTestId('az-dropdown-panel').props.style.flat();
-      expect(style).toEqual(expect.arrayContaining([expect.objectContaining({ left: screenWidth - 160 })]));
-    } finally {
-      (I18nManager as { isRTL: boolean }).isRTL = original;
-    }
-  });
-
-  it('supports arbitrary children via the dismiss context', () => {
-    const { getByText, getByLabelText } = render(
-      <AzDropdownMenu>
-        <Text>Custom row</Text>
+    const right = render(
+      <AzDropdownMenu expanded dockingSide={AzDockingSide.RIGHT}>
+        <AzDropdownItem text="Profile" onClick={() => {}} />
       </AzDropdownMenu>
     );
+    // Default mocked window width is 375; right edge = 375 - 160 = 215.
+    const rightStyle = right.getByTestId('az-dropdown-panel').props.style.flat();
+    expect(rightStyle).toEqual(expect.arrayContaining([expect.objectContaining({ left: 375 - 160 })]));
+  });
+
+  it('dispatches an item route through onNavigate before the callback', () => {
+    const onNavigate = jest.fn();
+    const onClick = jest.fn();
+    const { getByText, getByLabelText } = render(
+      <AzDropdownMenu onNavigate={onNavigate}>
+        <AzDropdownItem text="Home" route="home" onClick={onClick} />
+      </AzDropdownMenu>
+    );
+
     act(() => {
       fireEvent.press(getByLabelText('Menu'));
     });
-    expect(getByText('Custom row')).toBeTruthy();
+    act(() => {
+      fireEvent.press(getByText('Home'));
+    });
+
+    expect(onNavigate).toHaveBeenCalledWith('home');
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 });

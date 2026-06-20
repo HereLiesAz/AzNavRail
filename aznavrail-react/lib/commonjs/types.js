@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.AzVisualSide = exports.AzSheetDetent = exports.AzOrientation = exports.AzNestedRailAlignment = exports.AzHeaderIconShape = exports.AzDropdownDesign = exports.AzDropdownAlignment = exports.AzDockingSide = exports.AzButtonShape = void 0;
+exports.AzVisualSide = exports.AzSheetDetent = exports.AzOrientation = exports.AzNestedRailAlignment = exports.AzHeaderIconShape = exports.AzDropdownDesign = exports.AzDockingSide = exports.AzButtonShape = void 0;
 /** Shape variant applied to an AzButton or nav-rail item icon. */
 let AzButtonShape = exports.AzButtonShape = /*#__PURE__*/function (AzButtonShape) {
   /** Circular border, equal width and height. */
@@ -41,23 +41,6 @@ let AzNestedRailAlignment = exports.AzNestedRailAlignment = /*#__PURE__*/functio
   /** Items flow in a row next to the host. */
   AzNestedRailAlignment["HORIZONTAL"] = "HORIZONTAL";
   return AzNestedRailAlignment;
-}({});
-/**
- * Where an `AzDropdownMenu` panel anchors to its trigger icon and which way it unfolds. These are
- * the nine standard anchor points; top/centre anchors open the panel downward (below the icon) and
- * the bottom anchors open it upward (above the icon).
- */
-let AzDropdownAlignment = exports.AzDropdownAlignment = /*#__PURE__*/function (AzDropdownAlignment) {
-  AzDropdownAlignment["TOP_START"] = "top-start";
-  AzDropdownAlignment["TOP_CENTER"] = "top-center";
-  AzDropdownAlignment["TOP_END"] = "top-end";
-  AzDropdownAlignment["CENTER_START"] = "center-start";
-  AzDropdownAlignment["CENTER"] = "center";
-  AzDropdownAlignment["CENTER_END"] = "center-end";
-  AzDropdownAlignment["BOTTOM_START"] = "bottom-start";
-  AzDropdownAlignment["BOTTOM_CENTER"] = "bottom-center";
-  AzDropdownAlignment["BOTTOM_END"] = "bottom-end";
-  return AzDropdownAlignment;
 }({});
 /**
  * The visual design of an `AzDropdownMenu` panel — a slice of the rail or the menu. The choice

@@ -147,28 +147,29 @@ The app icon in the header must be sizable to a specific diameter. Provide `head
 its legacy behavior of sizing to the rail width. When set, the header icon is rendered at exactly
 that width and height.
 
-Drop-down menu (`AzDropdownMenu`): a hamburger drop-down is a **standalone composable**, not a rail
-mode. The **icon** is placed inline like `AzButton`/`AzTextBox` — it takes a normal layout slot; only
-the dropped item list is an overlay. No `AzNavHost`, no DSL scope, no `background()`/`onscreen()`, no
-safe zones. (`AzNavRail` has no `dropdownMenu`/`dropdownSource` config; that rail mode was removed.)
+Drop-down menu (`AzDropdownMenu`): a standalone widget declared with the **same opinionated DSL as the
+rail**. In AzNavRail tradition it accepts only sanctioned config — it does **not** expose arbitrary
+icon styling, panel background, offsets, `menuWidth`, or a free `azCustom` escape hatch. The trigger is
+the **app icon** (auto-drawn exactly like the rail's header — `getApplicationIcon` on Android, gray
+placeholder on RN, `/app-icon.png` on web — not customizable), placed inline; only the dropped list is
+an overlay.
 
 - File: `aznavrail/src/main/java/com/hereliesaz/aznavrail/AzDropdownMenu.kt` (Android),
   `aznavrail-react/src/components/AzDropdownMenu.tsx` (RN) and `src/web/AzDropdownMenu.jsx` (web).
-- It renders a tappable icon (defaults to `Icons.Default.Menu`); tapping it unfolds an overlay panel
-  (Android `Popup`; RN `Modal` overlay; web fixed panel) holding the items. Tapping outside, back, or
-  an item folds it up. Optional controlled `expanded`/`onExpandedChange`.
+- DSL like the rail (collect-then-render): the `content` is a plain `AzDropdownMenuScope.() -> Unit`
+  builder. `azConfig(design, dockingSide, vibrate, expandedWidth, collapsedWidth)` mirrors the rail's
+  `azConfig`/`azTheme`; items are `azItem`/`azToggle`/`azCycler`/`azDivider` accepting only the rail's
+  per-item knobs (`color`/`textColor`/`fillColor`/`shape`/`enabled`/`closeOnClick`) plus a `route`.
 - `design` (`AzDropdownDesign { RAIL, MENU }`, default `MENU`) styles the panel as the collapsed rail
-  (compact buttons, ≈100dp) or the expanded menu (full-width labeled rows, ≈160dp) and sets the
-  panel width; `menuWidth` overrides it.
-- Items use a content-slot DSL (`AzDropdownMenuScope`: `azItem`→`AzButton`, `azToggle`, `azCycler`,
-  `azDivider`, `azCustom`, `dismiss()`); React uses `<AzDropdownItem>` children + a dismiss context.
-  `azItem` folds the menu after its callback by default (`closeOnClick`). In `MENU` design items render
-  as full-width labeled rows (the expanded-drawer look) instead of compact buttons.
-- `alignment` (`AzDropdownAlignment`: nine anchors `TOP_START`…`BOTTOM_END`; web/RN use the lowercase
-  string values like `'bottom-end'`) **pins the panel to the screen edge** (start = left, end = right,
-  centre = centred) and sets the drop direction from the trigger (top/centre → downward, `BOTTOM_*` →
-  upward); `offset` nudges it. Placement is driven by `AzDropdownAlignment.isBottom` + a custom
-  window-edge `PopupPositionProvider` (Android) and the shared `parseDropdownAnchor` helper (React).
+  (compact buttons, `collapsedWidth` ≈100dp) or the expanded menu (full-width labeled rows,
+  `expandedWidth` ≈160dp). `dockingSide` (`AzDockingSide { LEFT, RIGHT }`) **pins the panel to that
+  physical screen edge**; the vertical drop direction is derived automatically from the trigger
+  (downward when it fits, else upward) via a custom window-edge `PopupPositionProvider` (Android) /
+  measured-rect math (RN/web). The old `AzDropdownAlignment` + `parseDropdownAnchor` are removed.
+- Routing: the composable takes `navController: NavController? = LocalAzNavHostScope.current?.navController`
+  (auto-wires inside an `AzNavHost`); an item's `route` navigates it (then the callback, then dismiss),
+  exactly like `MenuItem.kt`. RN/web use an `onNavigate(route)` prop + `route?` on `AzDropdownItem`.
+- Controlled `expanded`/`onExpandedChange` remain. Tapping outside, back, or an item folds it up.
 
 In-app About reader + "More from Az": the footer "About" item opens a built-in, full-screen, themed
 markdown reader (an overlay drawn over the live UI, like the help overlay) instead of opening the repo

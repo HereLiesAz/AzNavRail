@@ -33,22 +33,6 @@ export declare enum AzNestedRailAlignment {
     HORIZONTAL = "HORIZONTAL"
 }
 /**
- * Where an `AzDropdownMenu` panel anchors to its trigger icon and which way it unfolds. These are
- * the nine standard anchor points; top/centre anchors open the panel downward (below the icon) and
- * the bottom anchors open it upward (above the icon).
- */
-export declare enum AzDropdownAlignment {
-    TOP_START = "top-start",
-    TOP_CENTER = "top-center",
-    TOP_END = "top-end",
-    CENTER_START = "center-start",
-    CENTER = "center",
-    CENTER_END = "center-end",
-    BOTTOM_START = "bottom-start",
-    BOTTOM_CENTER = "bottom-center",
-    BOTTOM_END = "bottom-end"
-}
-/**
  * The visual design of an `AzDropdownMenu` panel — a slice of the rail or the menu. The choice
  * drives both the item rendering and the panel width (so it matches what it imitates).
  */

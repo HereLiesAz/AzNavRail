@@ -88,56 +88,60 @@ CI-versioned carousel — see the README's "In-App About Reader" and "More from 
 
 `onInteraction` is called whenever any rail item is interacted with — click, toggle, cycler advance, nested rail open, reloc drag, or host expand/collapse. It fires for both leaf items (`azRailItem` / `azRailSubItem`) and host items (`azRailHostItem`), in both the compact rail and the expanded menu, so opening a host menu is observable just like tapping a leaf. It receives the item's `id` and the `AzNavItem` itself, enabling analytics, UI feedback, and tutorial advancement (pair it with `controller.fireEvent(...)` and an `AzAdvanceCondition.Event` card) without per-item callbacks.
 
-## `AzDropdownMenu` (standalone hamburger menu)
+## `AzDropdownMenu` (standalone app-icon drop-down)
 
-A drop-down menu is a standalone composable, used the usual way. The hamburger **icon** is dropped
-inline anywhere, like `AzButton`/`AzTextBox` — it takes a normal layout slot. There is **no**
-`AzNavHost`, no DSL scope, no `background()`/`onscreen()`, and no reserved safe zones. Tapping the icon
-unfolds an **overlay panel** (via a `Popup`) holding the items you declare. Tapping outside or
-pressing back folds it up.
+A drop-down menu is a standalone widget declared with the **same opinionated DSL as the rail**: it
+accepts only the configuration the rest of the library sanctions (no arbitrary panel background,
+offsets, icon styling, or free composable escape hatch). Its trigger is the **app icon** (auto-drawn
+like the rail's header — not customizable), dropped inline like any widget. Tapping it unfolds an
+**overlay panel** (a `Popup`) of the items you declare; tapping outside or pressing back folds it up.
 
 ~~~kotlin
 @Composable
 fun AzDropdownMenu(
     modifier: Modifier = Modifier,
-    icon: Painter? = null,                 // null → Icons.Default.Menu
-    contentDescription: String = "Menu",
-    iconSize: Dp = 48.dp,
-    iconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
-    iconTint: Color = Color.Unspecified,
-    design: AzDropdownDesign = AzDropdownDesign.MENU,  // RAIL = rail width, MENU = menu width
-    menuWidth: Dp = Dp.Unspecified,        // follows `design` (≈100/160) when unspecified
-    backgroundColor: Color = Color.Unspecified,
-    alignment: AzDropdownAlignment = AzDropdownAlignment.TOP_START,
-    offset: DpOffset = DpOffset.Zero,
-    vibrate: Boolean = false,
+    navController: NavController? = LocalAzNavHostScope.current?.navController,  // for item routes
     expanded: Boolean? = null,             // optional controlled state
     onExpandedChange: ((Boolean) -> Unit)? = null,
-    content: @Composable AzDropdownMenuScope.() -> Unit
+    content: AzDropdownMenuScope.() -> Unit // a plain builder, like the rail's
 )
+
+// Inside the builder:
+interface AzDropdownMenuScope {
+    fun azConfig(
+        design: AzDropdownDesign = AzDropdownDesign.MENU,   // RAIL = rail width, MENU = menu width
+        dockingSide: AzDockingSide = AzDockingSide.LEFT,    // which screen edge the panel pins to
+        vibrate: Boolean = false,
+        expandedWidth: Dp = 160.dp,
+        collapsedWidth: Dp = 100.dp
+    )
+    fun azItem(text, route = null, color, textColor, fillColor, shape, enabled, closeOnClick = true, onClick)
+    fun azToggle(isChecked, toggleOnText, toggleOffText, route = null, …, onToggle)
+    fun azCycler(options, selectedOption, route = null, …, onCycle)
+    fun azDivider()
+}
 ~~~
 
-`design` decides how the panel looks and how wide it is: `AzDropdownDesign.RAIL` = compact rail
-buttons at the collapsed rail width (≈100dp); `AzDropdownDesign.MENU` (default) = full-width labeled
-rows at the expanded menu width (≈160dp). `menuWidth` overrides the width.
-
-Items reuse the library's own widgets through `AzDropdownMenuScope` — `azItem` (→ `AzButton`),
-`azToggle` (→ `AzToggle`), `azCycler` (→ `AzCycler`), `azDivider` (→ `AzDivider`), plus `azCustom { }`
-and `dismiss()`. `azItem` folds the menu after its callback by default (`closeOnClick = true`).
-`alignment` pins the panel to the screen edge (start = left, end = right, centre = centred) and sets
-the drop direction from the trigger (top/centre → downward, `BOTTOM_*` → upward); `offset` nudges it.
+`azConfig` mirrors the rail's `azConfig`/`azTheme`: `design` sets the look + width
+(`AzDropdownDesign.RAIL` = compact rail buttons at `collapsedWidth` ≈100dp; `AzDropdownDesign.MENU`
+= full-width labeled rows at `expandedWidth` ≈160dp), and `dockingSide` pins the panel to the `LEFT`
+or `RIGHT` screen edge. The panel drops from the trigger automatically (downward when it fits, else
+upward). Items accept only the rail's sanctioned per-item knobs, plus a navigation `route`: when set,
+tapping navigates the `navController` (so the drop-down can drive an `AzNavHost`), then runs the
+callback, then folds up if `closeOnClick`.
 
 ~~~kotlin
-AzDropdownMenu(design = AzDropdownDesign.MENU, alignment = AzDropdownAlignment.TOP_END) {
-    azItem("Settings") { openSettings() }
+AzDropdownMenu(navController = navController) {
+    azConfig(design = AzDropdownDesign.MENU, dockingSide = AzDockingSide.LEFT)
+    azItem("Home", route = "home") { }
     azToggle(isChecked = dark, toggleOnText = "Dark", toggleOffText = "Light") { dark = it }
     azDivider()
     azItem("Sign out") { signOut() }
 }
 ~~~
 
-On React the equivalent is `<AzDropdownMenu>` with `<AzDropdownItem>` children (plus `AzToggle`/
-`AzCycler`/`AzDivider`); props mirror the Kotlin names (`alignment`, `offset`, `iconShape`, …).
+On React the equivalent is `<AzDropdownMenu design dockingSide onNavigate>` with `<AzDropdownItem>`
+children (each accepting an optional `route`); props mirror the Kotlin `azConfig` names.
 
 ## Hidden Menu Builders (for `azRailRelocItem`)
 * `listItem(text, route)`

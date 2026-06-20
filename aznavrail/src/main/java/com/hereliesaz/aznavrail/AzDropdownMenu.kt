@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -30,16 +31,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
@@ -48,231 +48,227 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
+import androidx.navigation.NavController
+import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.model.AzButtonShape
-import com.hereliesaz.aznavrail.model.AzDropdownAlignment
+import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzDropdownDesign
-import com.hereliesaz.aznavrail.model.AzHeaderIconShape
+
+/** Fixed diameter of the drop-down's app-icon trigger. Not customizable, in the AzNavRail tradition. */
+private val AzDropdownTriggerSize = 48.dp
 
 /**
- * Builder scope for the items inside an [AzDropdownMenu].
+ * DSL builder scope for an [AzDropdownMenu] — declared the same way as the rail
+ * (`AzDropdownMenu { azConfig(...); azItem(...) { } }`).
  *
- * The builders reuse the library's own standalone widgets ([AzButton], [AzToggle], [AzCycler],
- * [AzDivider]) so a drop-down's entries carry the exact AzNavRail aesthetic — this is **not** the
- * rail/menu `AzNavItem` machinery. Tapping an [azItem] runs its callback and (by default) folds the
- * menu back up; call [dismiss] to close it from anywhere.
+ * In keeping with AzNavRail's opinionated tradition, the drop-down only accepts configuration the
+ * rest of the library sanctions: [azConfig] mirrors the rail's `azConfig` (design, docking side,
+ * vibration, the collapsed/expanded widths) and the item builders accept only the per-item knobs the
+ * rail's items accept (`color`/`textColor`/`fillColor`/`shape`/`enabled`, plus a navigation `route`).
+ * There is no arbitrary panel background, offset, icon styling, or free composable escape hatch.
  */
 interface AzDropdownMenuScope {
-    /** Folds the menu back up. */
-    fun dismiss()
+    /**
+     * Configures the panel, mirroring the rail's `azConfig`/`azTheme`. Call at most once.
+     *
+     * @param design Whether the panel imitates the collapsed [AzDropdownDesign.RAIL] (compact rail
+     *   buttons at [collapsedWidth]) or the expanded [AzDropdownDesign.MENU] (labeled rows at
+     *   [expandedWidth]).
+     * @param dockingSide Which screen edge the panel pins to ([AzDockingSide.LEFT]/[AzDockingSide.RIGHT]).
+     * @param vibrate Haptic feedback when the trigger is tapped.
+     * @param expandedWidth Panel width in the [AzDropdownDesign.MENU] design.
+     * @param collapsedWidth Panel width in the [AzDropdownDesign.RAIL] design.
+     */
+    fun azConfig(
+        design: AzDropdownDesign = AzDropdownDesign.MENU,
+        dockingSide: AzDockingSide = AzDockingSide.LEFT,
+        vibrate: Boolean = false,
+        expandedWidth: Dp = 160.dp,
+        collapsedWidth: Dp = 100.dp
+    )
 
     /**
-     * A tappable entry rendered as an [AzButton].
-     *
-     * @param closeOnClick When true (default) the menu folds up after [onClick] runs.
+     * A tappable entry. Navigates to [route] (if set, via the menu's `navController`), runs [onClick],
+     * then folds the menu up when [closeOnClick] is true (the default).
      */
-    @Composable
     fun azItem(
         text: String,
-        modifier: Modifier = Modifier,
-        shape: AzButtonShape = AzButtonShape.RECTANGLE,
-        enabled: Boolean = true,
+        route: String? = null,
         color: Color = Color.Unspecified,
         textColor: Color? = null,
         fillColor: Color? = null,
+        shape: AzButtonShape = AzButtonShape.RECTANGLE,
+        enabled: Boolean = true,
         closeOnClick: Boolean = true,
-        onClick: () -> Unit
+        onClick: () -> Unit = {}
     )
 
-    /** A two-state entry rendered as an [AzToggle]. Stays open by default. */
-    @Composable
+    /** A two-state entry. Stays open by default. */
     fun azToggle(
         isChecked: Boolean,
         toggleOnText: String,
         toggleOffText: String,
-        modifier: Modifier = Modifier,
-        shape: AzButtonShape = AzButtonShape.RECTANGLE,
-        enabled: Boolean = true,
+        route: String? = null,
         color: Color = Color.Unspecified,
         textColor: Color? = null,
         fillColor: Color? = null,
+        shape: AzButtonShape = AzButtonShape.RECTANGLE,
+        enabled: Boolean = true,
         closeOnClick: Boolean = false,
         onToggle: (Boolean) -> Unit
     )
 
-    /** A rotating entry rendered as an [AzCycler]. Stays open by default. */
-    @Composable
+    /** A rotating entry. Stays open by default. */
     fun azCycler(
         options: List<String>,
         selectedOption: String,
-        modifier: Modifier = Modifier,
-        shape: AzButtonShape = AzButtonShape.RECTANGLE,
-        enabled: Boolean = true,
+        route: String? = null,
         color: Color = Color.Unspecified,
         textColor: Color? = null,
         fillColor: Color? = null,
+        shape: AzButtonShape = AzButtonShape.RECTANGLE,
+        enabled: Boolean = true,
         closeOnClick: Boolean = false,
         onCycle: (String) -> Unit
     )
 
     /** A separator rendered as an [AzDivider]. */
-    @Composable
     fun azDivider()
-
-    /** Escape hatch for arbitrary composable content inside the panel. */
-    @Composable
-    fun azCustom(content: @Composable () -> Unit)
 }
 
-private class AzDropdownMenuScopeImpl(
-    private val design: AzDropdownDesign,
-    private val onDismiss: () -> Unit
-) : AzDropdownMenuScope {
+/** Resolved drop-down configuration collected from [AzDropdownMenuScope.azConfig]. */
+internal data class AzDropdownConfig(
+    val design: AzDropdownDesign = AzDropdownDesign.MENU,
+    val dockingSide: AzDockingSide = AzDockingSide.LEFT,
+    val vibrate: Boolean = false,
+    val expandedWidth: Dp = 160.dp,
+    val collapsedWidth: Dp = 100.dp
+)
 
-    override fun dismiss() = onDismiss()
+/** One declared entry, collected by the builder and rendered by the composable. */
+internal sealed interface AzDropdownEntry {
+    val route: String?
 
-    @Composable
-    override fun azItem(
-        text: String,
-        modifier: Modifier,
-        shape: AzButtonShape,
-        enabled: Boolean,
-        color: Color,
-        textColor: Color?,
-        fillColor: Color?,
-        closeOnClick: Boolean,
-        onClick: () -> Unit
-    ) {
-        val action = {
-            onClick()
-            if (closeOnClick) onDismiss()
-        }
-        if (design == AzDropdownDesign.MENU) {
-            AzDropdownMenuRow(
-                text = text,
-                modifier = modifier,
-                enabled = enabled,
-                textColor = effectiveTextColor(textColor, color),
-                onClick = action
-            )
-        } else {
-            AzButton(
-                onClick = action,
-                text = text,
-                modifier = modifier,
-                color = color.takeOrElse { MaterialTheme.colorScheme.primary },
-                textColor = textColor,
-                fillColor = fillColor,
-                shape = shape,
-                enabled = enabled
-            )
-        }
-    }
+    data class Item(
+        val text: String,
+        override val route: String?,
+        val color: Color,
+        val textColor: Color?,
+        val fillColor: Color?,
+        val shape: AzButtonShape,
+        val enabled: Boolean,
+        val closeOnClick: Boolean,
+        val onClick: () -> Unit
+    ) : AzDropdownEntry
 
-    @Composable
-    override fun azToggle(
-        isChecked: Boolean,
-        toggleOnText: String,
-        toggleOffText: String,
-        modifier: Modifier,
-        shape: AzButtonShape,
-        enabled: Boolean,
-        color: Color,
-        textColor: Color?,
-        fillColor: Color?,
-        closeOnClick: Boolean,
-        onToggle: (Boolean) -> Unit
-    ) {
-        if (design == AzDropdownDesign.MENU) {
-            AzDropdownMenuRow(
-                text = if (isChecked) toggleOnText else toggleOffText,
-                modifier = modifier,
-                enabled = enabled,
-                textColor = effectiveTextColor(textColor, color),
-                onClick = {
-                    onToggle(!isChecked)
-                    if (closeOnClick) onDismiss()
-                }
-            )
-        } else {
-            AzToggle(
-                isChecked = isChecked,
-                onToggle = {
-                    onToggle(it)
-                    if (closeOnClick) onDismiss()
-                },
-                toggleOnText = toggleOnText,
-                toggleOffText = toggleOffText,
-                modifier = modifier,
-                color = color.takeOrElse { MaterialTheme.colorScheme.primary },
-                textColor = textColor,
-                fillColor = fillColor,
-                shape = shape,
-                enabled = enabled
-            )
-        }
-    }
+    data class Toggle(
+        val isChecked: Boolean,
+        val toggleOnText: String,
+        val toggleOffText: String,
+        override val route: String?,
+        val color: Color,
+        val textColor: Color?,
+        val fillColor: Color?,
+        val shape: AzButtonShape,
+        val enabled: Boolean,
+        val closeOnClick: Boolean,
+        val onToggle: (Boolean) -> Unit
+    ) : AzDropdownEntry
 
-    @Composable
-    override fun azCycler(
-        options: List<String>,
-        selectedOption: String,
-        modifier: Modifier,
-        shape: AzButtonShape,
-        enabled: Boolean,
-        color: Color,
-        textColor: Color?,
-        fillColor: Color?,
-        closeOnClick: Boolean,
-        onCycle: (String) -> Unit
-    ) {
-        if (design == AzDropdownDesign.MENU) {
-            AzDropdownMenuRow(
-                text = selectedOption,
-                modifier = modifier,
-                enabled = enabled,
-                textColor = effectiveTextColor(textColor, color),
-                onClick = {
-                    if (options.isNotEmpty()) {
-                        val next = options[(options.indexOf(selectedOption) + 1).mod(options.size)]
-                        onCycle(next)
-                    }
-                    if (closeOnClick) onDismiss()
-                }
-            )
-        } else {
-            AzCycler(
-                options = options,
-                selectedOption = selectedOption,
-                onCycle = {
-                    onCycle(it)
-                    if (closeOnClick) onDismiss()
-                },
-                modifier = modifier,
-                color = color.takeOrElse { MaterialTheme.colorScheme.primary },
-                textColor = textColor,
-                fillColor = fillColor,
-                shape = shape,
-                enabled = enabled
-            )
-        }
-    }
+    data class Cycler(
+        val options: List<String>,
+        val selectedOption: String,
+        override val route: String?,
+        val color: Color,
+        val textColor: Color?,
+        val fillColor: Color?,
+        val shape: AzButtonShape,
+        val enabled: Boolean,
+        val closeOnClick: Boolean,
+        val onCycle: (String) -> Unit
+    ) : AzDropdownEntry
 
-    @Composable
-    override fun azDivider() {
-        AzDivider()
-    }
-
-    @Composable
-    override fun azCustom(content: @Composable () -> Unit) {
-        content()
+    object Divider : AzDropdownEntry {
+        override val route: String? = null
     }
 }
 
 /**
- * Resolves the row text colour: explicit [textColor], else [color], else the theme primary. Always
- * returns a *specified* colour so callers can safely `copy(alpha = …)` it.
+ * Collects the [azConfig] result and the declared entries. Like the rail's scope, it is a plain
+ * (non-`@Composable`) builder; the composable creates a fresh one each recomposition, runs the DSL
+ * over it, then renders from [config] and [entries].
  */
+private class AzDropdownMenuScopeImpl : AzDropdownMenuScope {
+    var config = AzDropdownConfig()
+        private set
+    val entries = mutableListOf<AzDropdownEntry>()
+
+    override fun azConfig(
+        design: AzDropdownDesign,
+        dockingSide: AzDockingSide,
+        vibrate: Boolean,
+        expandedWidth: Dp,
+        collapsedWidth: Dp
+    ) {
+        config = AzDropdownConfig(design, dockingSide, vibrate, expandedWidth, collapsedWidth)
+    }
+
+    override fun azItem(
+        text: String,
+        route: String?,
+        color: Color,
+        textColor: Color?,
+        fillColor: Color?,
+        shape: AzButtonShape,
+        enabled: Boolean,
+        closeOnClick: Boolean,
+        onClick: () -> Unit
+    ) {
+        entries += AzDropdownEntry.Item(text, route, color, textColor, fillColor, shape, enabled, closeOnClick, onClick)
+    }
+
+    override fun azToggle(
+        isChecked: Boolean,
+        toggleOnText: String,
+        toggleOffText: String,
+        route: String?,
+        color: Color,
+        textColor: Color?,
+        fillColor: Color?,
+        shape: AzButtonShape,
+        enabled: Boolean,
+        closeOnClick: Boolean,
+        onToggle: (Boolean) -> Unit
+    ) {
+        entries += AzDropdownEntry.Toggle(
+            isChecked, toggleOnText, toggleOffText, route, color, textColor, fillColor, shape, enabled, closeOnClick, onToggle
+        )
+    }
+
+    override fun azCycler(
+        options: List<String>,
+        selectedOption: String,
+        route: String?,
+        color: Color,
+        textColor: Color?,
+        fillColor: Color?,
+        shape: AzButtonShape,
+        enabled: Boolean,
+        closeOnClick: Boolean,
+        onCycle: (String) -> Unit
+    ) {
+        entries += AzDropdownEntry.Cycler(
+            options, selectedOption, route, color, textColor, fillColor, shape, enabled, closeOnClick, onCycle
+        )
+    }
+
+    override fun azDivider() {
+        entries += AzDropdownEntry.Divider
+    }
+}
+
+/** Resolves the row text colour: explicit [textColor], else [color], else the theme primary. */
 @Composable
 private fun effectiveTextColor(textColor: Color?, color: Color): Color =
     (textColor ?: color).takeOrElse { MaterialTheme.colorScheme.primary }
@@ -284,13 +280,12 @@ private fun effectiveTextColor(textColor: Color?, color: Color): Color =
 @Composable
 private fun AzDropdownMenuRow(
     text: String,
-    modifier: Modifier,
     enabled: Boolean,
     textColor: Color,
     onClick: () -> Unit
 ) {
     Row(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
             .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(
@@ -315,17 +310,114 @@ private fun AzDropdownMenuRow(
     }
 }
 
+/** Renders one collected [AzDropdownEntry] in the panel, wiring navigation + dismissal. */
+@Composable
+private fun AzDropdownEntryItem(
+    entry: AzDropdownEntry,
+    design: AzDropdownDesign,
+    navController: NavController?,
+    dismiss: () -> Unit
+) {
+    fun navigate(route: String?) {
+        route?.let { navController?.navigate(it) }
+    }
+    when (entry) {
+        is AzDropdownEntry.Item -> {
+            val action = {
+                navigate(entry.route)
+                entry.onClick()
+                if (entry.closeOnClick) dismiss()
+            }
+            if (design == AzDropdownDesign.MENU) {
+                AzDropdownMenuRow(entry.text, entry.enabled, effectiveTextColor(entry.textColor, entry.color), action)
+            } else {
+                AzButton(
+                    onClick = action,
+                    text = entry.text,
+                    color = entry.color.takeOrElse { MaterialTheme.colorScheme.primary },
+                    textColor = entry.textColor,
+                    fillColor = entry.fillColor,
+                    shape = entry.shape,
+                    enabled = entry.enabled
+                )
+            }
+        }
+
+        is AzDropdownEntry.Toggle -> {
+            if (design == AzDropdownDesign.MENU) {
+                AzDropdownMenuRow(
+                    text = if (entry.isChecked) entry.toggleOnText else entry.toggleOffText,
+                    enabled = entry.enabled,
+                    textColor = effectiveTextColor(entry.textColor, entry.color),
+                    onClick = {
+                        navigate(entry.route)
+                        entry.onToggle(!entry.isChecked)
+                        if (entry.closeOnClick) dismiss()
+                    }
+                )
+            } else {
+                AzToggle(
+                    isChecked = entry.isChecked,
+                    onToggle = {
+                        navigate(entry.route)
+                        entry.onToggle(it)
+                        if (entry.closeOnClick) dismiss()
+                    },
+                    toggleOnText = entry.toggleOnText,
+                    toggleOffText = entry.toggleOffText,
+                    color = entry.color.takeOrElse { MaterialTheme.colorScheme.primary },
+                    textColor = entry.textColor,
+                    fillColor = entry.fillColor,
+                    shape = entry.shape,
+                    enabled = entry.enabled
+                )
+            }
+        }
+
+        is AzDropdownEntry.Cycler -> {
+            if (design == AzDropdownDesign.MENU) {
+                AzDropdownMenuRow(
+                    text = entry.selectedOption,
+                    enabled = entry.enabled,
+                    textColor = effectiveTextColor(entry.textColor, entry.color),
+                    onClick = {
+                        if (entry.options.isNotEmpty()) {
+                            val next = entry.options[(entry.options.indexOf(entry.selectedOption) + 1).mod(entry.options.size)]
+                            navigate(entry.route)
+                            entry.onCycle(next)
+                        }
+                        if (entry.closeOnClick) dismiss()
+                    }
+                )
+            } else {
+                AzCycler(
+                    options = entry.options,
+                    selectedOption = entry.selectedOption,
+                    onCycle = {
+                        navigate(entry.route)
+                        entry.onCycle(it)
+                        if (entry.closeOnClick) dismiss()
+                    },
+                    color = entry.color.takeOrElse { MaterialTheme.colorScheme.primary },
+                    textColor = entry.textColor,
+                    fillColor = entry.fillColor,
+                    shape = entry.shape,
+                    enabled = entry.enabled
+                )
+            }
+        }
+
+        AzDropdownEntry.Divider -> AzDivider()
+    }
+}
+
 /**
- * Pins the dropped panel to a **screen edge** horizontally and **drops it from the trigger**
- * vertically. The anchor's start/centre/end picks the horizontal side — start hugs the left window
- * edge, end hugs the right, centre is window-centred — ignoring the trigger's x. Top/centre anchors
- * open downward from the trigger's bottom, [AzDropdownAlignment.BOTTOM_START]/`BOTTOM_CENTER`/
- * `BOTTOM_END` open upward from its top. A fine [offsetXPx]/[offsetYPx] nudges the result.
+ * Pins the dropped panel to the [dockingSide] **screen edge** and **drops it from the trigger**: it
+ * opens downward from the trigger's bottom when there is room, otherwise upward from its top. Like
+ * the rail, the side is physical ([AzDockingSide.LEFT] → left edge, [AzDockingSide.RIGHT] → right).
  */
 private class AzDropdownEdgePositionProvider(
-    private val alignment: AzDropdownAlignment,
-    private val offsetXPx: Int,
-    private val offsetYPx: Int
+    private val dockingSide: AzDockingSide
 ) : PopupPositionProvider {
     override fun calculatePosition(
         anchorBounds: IntRect,
@@ -333,84 +425,60 @@ private class AzDropdownEdgePositionProvider(
         layoutDirection: LayoutDirection,
         popupContentSize: IntSize
     ): IntOffset {
-        // `start`/`end` are layout-direction-relative: start hugs the leading edge (left in LTR,
-        // right in RTL), end the trailing edge.
-        val isRtl = layoutDirection == LayoutDirection.Rtl
-        val x = when (alignment) {
-            AzDropdownAlignment.TOP_START, AzDropdownAlignment.CENTER_START, AzDropdownAlignment.BOTTOM_START ->
-                if (isRtl) windowSize.width - popupContentSize.width else 0
-            AzDropdownAlignment.TOP_CENTER, AzDropdownAlignment.CENTER, AzDropdownAlignment.BOTTOM_CENTER ->
-                (windowSize.width - popupContentSize.width) / 2
-            AzDropdownAlignment.TOP_END, AzDropdownAlignment.CENTER_END, AzDropdownAlignment.BOTTOM_END ->
-                if (isRtl) 0 else windowSize.width - popupContentSize.width
-        }
-        val y = if (alignment.isBottom) {
-            anchorBounds.top - popupContentSize.height
-        } else {
+        val x = if (dockingSide == AzDockingSide.LEFT) 0 else windowSize.width - popupContentSize.width
+        val fitsBelow = anchorBounds.bottom + popupContentSize.height <= windowSize.height
+        val y = if (fitsBelow) {
             anchorBounds.bottom
+        } else {
+            (anchorBounds.top - popupContentSize.height).coerceAtLeast(0)
         }
-        return IntOffset(x + offsetXPx, y + offsetYPx)
+        return IntOffset(x, y)
     }
 }
 
 /**
- * A standalone, hamburger-style drop-down menu — used the usual, expected way.
+ * A standalone, hamburger-style drop-down menu, declared with the same opinionated DSL as the rail.
  *
- * Drop the **icon** inline anywhere in your own UI, exactly like [AzButton] or [AzTextBox] — it
- * takes a normal layout slot, like a hamburger button. There is no `AzNavHost`, no DSL host scope,
- * no `background()`/`onscreen()`, and no reserved safe zones. Tapping the icon unfolds a [Popup]
- * panel of the items you declare in [content]; the panel is presented as a slice of the rail
- * ([AzDropdownDesign.RAIL]) or menu ([AzDropdownDesign.MENU]) — width-constrained to match — and is
- * **pinned to the left or right screen edge** ([alignment] start/end) while dropping from the
- * trigger. Tapping outside or pressing back folds it up.
+ * The trigger is the **app icon** (auto-drawn, exactly like the rail's header — not customizable),
+ * dropped inline like any widget. Tapping it unfolds a [Popup] panel of the items you declare in
+ * [content]; the panel is presented as a slice of the rail ([AzDropdownDesign.RAIL]) or menu
+ * ([AzDropdownDesign.MENU]), width-constrained to match, pinned to the [AzDockingSide] screen edge,
+ * and dropping from the trigger. Tapping outside or pressing back folds it up.
  *
- * Items reuse the library's own widgets through [AzDropdownMenuScope]:
+ * Configure and populate it through [AzDropdownMenuScope], like the rail:
  * ```
- * AzDropdownMenu(icon = painterResource(R.drawable.menu)) {
- *     azItem("Settings") { openSettings() }
+ * AzDropdownMenu(navController = navController) {
+ *     azConfig(design = AzDropdownDesign.MENU, dockingSide = AzDockingSide.LEFT)
+ *     azItem("Home", route = "home") { }
  *     azToggle(isChecked = dark, toggleOnText = "Dark", toggleOffText = "Light") { dark = it }
  *     azDivider()
  *     azItem("Sign out") { signOut() }
  * }
  * ```
  *
- * @param modifier Modifier applied to the trigger icon's box — place/position it like any widget.
- * @param icon The hamburger icon. When null, a default [Icons.Default.Menu] is shown.
- * @param contentDescription Accessibility label for the trigger.
- * @param iconSize Diameter of the trigger icon.
- * @param iconShape Clip shape for the trigger icon.
- * @param iconTint Tint for the default [Icons.Default.Menu] icon (ignored for image [icon]s).
- * @param design Whether the dropped panel imitates the collapsed [AzDropdownDesign.RAIL] (compact
- *   buttons, rail width) or the expanded [AzDropdownDesign.MENU] (labeled rows, menu width).
- * @param menuWidth Optional fixed width for the panel; when [Dp.Unspecified] the width follows
- *   [design] (≈100dp for RAIL, ≈160dp for MENU).
- * @param backgroundColor Panel background; defaults to [MaterialTheme]'s surface.
- * @param alignment Which screen edge the panel pins to (start = left, end = right, centre =
- *   centred) and which way it drops from the trigger.
- * @param offset A fine nudge applied to the panel from its anchor.
- * @param vibrate Haptic feedback when the trigger is tapped.
+ * Items may declare a `route`; when set, tapping navigates the [navController] (so the drop-down can
+ * drive an `AzNavHost`, just like the rail), then runs the item's callback.
+ *
+ * @param modifier Modifier applied to the trigger's box — place/position it like any widget.
+ * @param navController Controller used to navigate item `route`s. Defaults to the enclosing
+ *   `AzNavHost`'s controller when present.
  * @param expanded Optional controlled open-state. When null the menu manages its own state.
  * @param onExpandedChange Called whenever the open-state changes.
- * @param content The menu's items, declared via [AzDropdownMenuScope].
+ * @param content The menu's configuration and items, declared via [AzDropdownMenuScope].
  */
 @Composable
 fun AzDropdownMenu(
     modifier: Modifier = Modifier,
-    icon: Painter? = null,
-    contentDescription: String = "Menu",
-    iconSize: Dp = 48.dp,
-    iconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
-    iconTint: Color = Color.Unspecified,
-    design: AzDropdownDesign = AzDropdownDesign.MENU,
-    menuWidth: Dp = Dp.Unspecified,
-    backgroundColor: Color = Color.Unspecified,
-    alignment: AzDropdownAlignment = AzDropdownAlignment.TOP_START,
-    offset: DpOffset = DpOffset.Zero,
-    vibrate: Boolean = false,
+    navController: NavController? = LocalAzNavHostScope.current?.navController,
     expanded: Boolean? = null,
     onExpandedChange: ((Boolean) -> Unit)? = null,
-    content: @Composable AzDropdownMenuScope.() -> Unit
+    content: AzDropdownMenuScope.() -> Unit
 ) {
+    // Collect the DSL fresh each recomposition (no remembered mutable scope to reset).
+    val scope = AzDropdownMenuScopeImpl().apply(content)
+    val config = scope.config
+    val entries = scope.entries
+
     var internalOpen by rememberSaveable { mutableStateOf(false) }
     val isOpen = expanded ?: internalOpen
     val setOpen: (Boolean) -> Unit = { value ->
@@ -419,60 +487,41 @@ fun AzDropdownMenu(
     }
 
     val haptic = LocalHapticFeedback.current
-    val density = LocalDensity.current
+    val context = LocalContext.current
     val maxPanelHeight = (LocalConfiguration.current.screenHeightDp * 0.8f).dp
+    val panelWidth = if (config.design == AzDropdownDesign.RAIL) config.collapsedWidth else config.expandedWidth
 
-    // The panel matches the rail/menu it imitates: rail width for RAIL, menu width for MENU,
-    // unless the developer pins an explicit menuWidth.
-    val panelWidth = if (menuWidth != Dp.Unspecified) {
-        menuWidth
-    } else if (design == AzDropdownDesign.RAIL) {
-        100.dp
-    } else {
-        160.dp
+    val positionProvider = remember(config.dockingSide) {
+        AzDropdownEdgePositionProvider(config.dockingSide)
     }
 
-    val positionProvider = remember(alignment, offset, density) {
-        with(density) {
-            AzDropdownEdgePositionProvider(
-                alignment = alignment,
-                offsetXPx = offset.x.roundToPx(),
-                offsetYPx = offset.y.roundToPx()
-            )
-        }
-    }
-
-    val clipShape = when (iconShape) {
-        AzHeaderIconShape.CIRCLE -> CircleShape
-        AzHeaderIconShape.ROUNDED -> RoundedCornerShape(12.dp)
-        else -> RoundedCornerShape(0.dp)
+    // The trigger is the app's launcher icon, loaded exactly like the rail's header icon.
+    val appIcon = remember(context.packageName) {
+        try { context.packageManager.getApplicationIcon(context.packageName) } catch (e: Exception) { null }
     }
 
     Box(modifier = modifier) {
-        // The inline hamburger trigger.
+        // The inline app-icon trigger — fixed shape/size, no styling knobs. The icon itself is
+        // decorative; the box carries the "Menu" accessibility label.
         Box(
             modifier = Modifier
-                .size(iconSize)
-                .clip(clipShape)
+                .size(AzDropdownTriggerSize)
+                .clip(CircleShape)
                 .clickable {
                     setOpen(!isOpen)
-                    if (vibrate) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    if (config.vibrate) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 }
-                .semantics(mergeDescendants = true) {},
+                .semantics(mergeDescendants = true) { contentDescription = "Menu" },
             contentAlignment = Alignment.Center
         ) {
-            if (icon != null) {
+            if (appIcon != null) {
                 Image(
-                    painter = icon,
-                    contentDescription = contentDescription,
-                    modifier = Modifier.size(iconSize)
+                    painter = rememberAsyncImagePainter(appIcon),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize().clip(CircleShape)
                 )
             } else {
-                Icon(
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = contentDescription,
-                    tint = iconTint.takeOrElse { androidx.compose.material3.LocalContentColor.current }
-                )
+                Icon(imageVector = Icons.Default.Menu, contentDescription = null)
             }
         }
 
@@ -483,22 +532,24 @@ fun AzDropdownMenu(
                 properties = PopupProperties(focusable = true, dismissOnClickOutside = true)
             ) {
                 Surface(
-                    color = backgroundColor.takeOrElse { MaterialTheme.colorScheme.surface },
+                    color = MaterialTheme.colorScheme.surface,
                     shape = RoundedCornerShape(12.dp),
                     tonalElevation = 2.dp,
                     shadowElevation = 8.dp
                 ) {
                     val scrollState = rememberScrollState()
-                    val scope = AzDropdownMenuScopeImpl(design = design, onDismiss = { setOpen(false) })
+                    val dismiss = { setOpen(false) }
                     Column(
                         modifier = Modifier
                             .width(panelWidth)
                             .heightIn(max = maxPanelHeight)
                             .verticalScroll(scrollState)
-                            .then(if (design == AzDropdownDesign.RAIL) Modifier.padding(8.dp) else Modifier),
+                            .then(if (config.design == AzDropdownDesign.RAIL) Modifier.padding(8.dp) else Modifier),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        scope.content()
+                        entries.forEach { entry ->
+                            AzDropdownEntryItem(entry, config.design, navController, dismiss)
+                        }
                     }
                 }
             }

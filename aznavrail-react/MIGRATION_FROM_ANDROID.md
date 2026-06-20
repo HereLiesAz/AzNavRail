@@ -42,7 +42,8 @@ azTheme(activeColor = MaterialTheme.colorScheme.primary)
 | Android | React |
 | --- | --- |
 | `AzDropdownMenu { azItem("Settings") { … } }` | `<AzDropdownMenu><AzDropdownItem text="Settings" onClick={…} /></AzDropdownMenu>` |
-| `AzDropdownMenu(alignment = AzDropdownAlignment.TOP_END)` | `<AzDropdownMenu alignment={AzDropdownAlignment.TOP_END}>` |
+| `AzDropdownMenu { azConfig(design = MENU, dockingSide = LEFT); … }` | `<AzDropdownMenu design={AzDropdownDesign.MENU} dockingSide={AzDockingSide.LEFT}>` |
+| `azItem("Home", route = "home") { }` (navigates the `NavController`) | `<AzDropdownItem text="Home" route="home" … />` (calls `onNavigate`) |
 | `azTheme(headerIconSize = 48.dp)` / `azSettings(headerIconSize = 48.dp)` | `headerIconSize={48}` |
 
 Drop-down mode collapses the rail to a top-anchored app-icon trigger (the icon replaces the

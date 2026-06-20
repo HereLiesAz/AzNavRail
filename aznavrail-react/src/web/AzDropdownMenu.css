@@ -1,6 +1,6 @@
-/* Standalone hamburger drop-down menu (web). The icon is placed inline like any widget; the panel
-   is fixed-positioned, pinned to the left/right screen edge (per `alignment`), width-constrained to
-   the rail/menu width (per `design`), and drops from the trigger. */
+/* Standalone hamburger drop-down menu (web). The app-icon trigger is placed inline like any widget;
+   the panel is fixed-positioned, pinned to the left/right screen edge (per `dockingSide`),
+   width-constrained to the rail/menu width (per `design`), and drops from the trigger. */
 .az-dropdown-menu {
   position: relative;
   display: inline-flex;
@@ -10,6 +10,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 48px;
+  height: 48px;
   background: none;
   border: none;
   padding: 0;
@@ -18,7 +20,14 @@
 }
 
 .az-dropdown-menu-trigger.circle { border-radius: 50%; }
-.az-dropdown-menu-trigger.rounded { border-radius: 12px; }
+
+/* The app icon — fixed, fills the circular trigger. */
+.az-dropdown-menu-app-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
 
 /* Full-screen invisible layer that folds the panel back up on an outside click. */
 .az-dropdown-menu-scrim {
