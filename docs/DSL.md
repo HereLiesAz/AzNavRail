@@ -92,9 +92,10 @@ CI-versioned carousel — see the README's "In-App About Reader" and "More from 
 
 A drop-down menu is a standalone widget declared with the **same opinionated DSL as the rail**: it
 accepts only the configuration the rest of the library sanctions (no arbitrary panel background,
-offsets, icon styling, or free composable escape hatch). Its trigger is the **app icon** (auto-drawn
-like the rail's header — not customizable), dropped inline like any widget. Tapping it unfolds an
-**overlay panel** (a `Popup`) of the items you declare; tapping outside or pressing back folds it up.
+offsets, icon tint/source, or free composable escape hatch). Its trigger is the **app icon**
+(auto-drawn like the rail's header; shape/size set via `azConfig`), dropped inline like any widget.
+Tapping it unfolds an **overlay panel** (a `Popup`) of the items you declare; tapping outside or
+pressing back folds it up.
 
 ~~~kotlin
 @Composable
@@ -113,7 +114,9 @@ interface AzDropdownMenuScope {
         dockingSide: AzDockingSide = AzDockingSide.LEFT,    // which screen edge the panel pins to
         vibrate: Boolean = false,
         expandedWidth: Dp = 160.dp,
-        collapsedWidth: Dp = 100.dp
+        collapsedWidth: Dp = 100.dp,
+        headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,  // app-icon clip, like azTheme
+        headerIconSize: Dp = 48.dp                          // app-icon diameter, like azTheme
     )
     fun azItem(text, route = null, color, textColor, fillColor, shape, enabled, closeOnClick = true, onClick)
     fun azToggle(isChecked, toggleOnText, toggleOffText, route = null, …, onToggle)
@@ -124,9 +127,11 @@ interface AzDropdownMenuScope {
 
 `azConfig` mirrors the rail's `azConfig`/`azTheme`: `design` sets the look + width
 (`AzDropdownDesign.RAIL` = compact rail buttons at `collapsedWidth` ≈100dp; `AzDropdownDesign.MENU`
-= full-width labeled rows at `expandedWidth` ≈160dp), and `dockingSide` pins the panel to the `LEFT`
-or `RIGHT` screen edge. The panel drops from the trigger automatically (downward when it fits, else
-upward). Items accept only the rail's sanctioned per-item knobs, plus a navigation `route`: when set,
+= full-width labeled rows at `expandedWidth` ≈160dp), `dockingSide` pins the panel to the `LEFT`
+or `RIGHT` screen edge, and `headerIconShape`/`headerIconSize` set the app-icon trigger's clip and
+diameter (the same knobs the rail exposes via `azTheme`). The panel drops from the trigger
+automatically (downward when it fits, else upward). Items accept only the rail's sanctioned per-item
+knobs, plus a navigation `route`: when set,
 tapping navigates the `navController` (so the drop-down can drive an `AzNavHost`), then runs the
 callback, then folds up if `closeOnClick`.
 

@@ -51,10 +51,10 @@ export const AzDropdownItem = ({ text, onClick, route, shape = 'RECTANGLE', enab
 
 /**
  * A standalone, hamburger-style drop-down menu (web), declared with the same opinionated surface as
- * the rail. The trigger is the **app icon** (`/app-icon.png`, like the rail header — not
- * customizable); the panel is configured by `design` + `dockingSide`, width-constrained to match,
- * pinned to the chosen screen edge, and dropped from the trigger. Items may carry a `route`
- * dispatched through `onNavigate`. Clicking outside folds it up.
+ * the rail. The trigger is the **app icon** (`/app-icon.png`, like the rail header; its shape/size
+ * set via `headerIconShape`/`headerIconSize`); the panel is configured by `design` + `dockingSide`,
+ * width-constrained to match, pinned to the chosen screen edge, and dropped from the trigger. Items
+ * may carry a `route` dispatched through `onNavigate`. Clicking outside folds it up.
  *
  * @param {object} props
  * @param {'rail'|'menu'} [props.design='menu'] - Rail look (rail width) or menu look (menu width).
@@ -62,6 +62,8 @@ export const AzDropdownItem = ({ text, onClick, route, shape = 'RECTANGLE', enab
  * @param {boolean} [props.vibrate=false] - Haptic feedback on tap (where supported).
  * @param {number} [props.expandedWidth=160] - Panel width in the menu design.
  * @param {number} [props.collapsedWidth=100] - Panel width in the rail design.
+ * @param {'CIRCLE'|'ROUNDED'|'SQUARE'} [props.headerIconShape='CIRCLE'] - App-icon clip shape.
+ * @param {number} [props.headerIconSize=48] - App-icon trigger diameter (px).
  * @param {boolean} [props.expanded] - Optional controlled open-state.
  * @param {function} [props.onExpandedChange]
  * @param {function} [props.onNavigate] - Called with an item's `route` before its callback.
@@ -73,6 +75,8 @@ const AzDropdownMenu = ({
   vibrate = false,
   expandedWidth = 160,
   collapsedWidth = 100,
+  headerIconShape = 'CIRCLE',
+  headerIconSize = 48,
   expanded,
   onExpandedChange,
   onNavigate,
@@ -147,19 +151,26 @@ const AzDropdownMenu = ({
     }
   }
 
+  // Clip radius mirrors the rail's header icon: circle = half, rounded = 8, square = 0.
+  const triggerRadius =
+    headerIconShape === 'ROUNDED' ? 8 :
+    headerIconShape === 'SQUARE' ? 0 :
+    headerIconSize / 2;
+
   return (
     <div className="az-dropdown-menu" ref={rootRef}>
       <button
         type="button"
         ref={triggerRef}
-        className="az-dropdown-menu-trigger circle"
+        className="az-dropdown-menu-trigger"
+        style={{ width: headerIconSize, height: headerIconSize, borderRadius: triggerRadius }}
         aria-label="Menu"
         aria-haspopup="menu"
         aria-expanded={isOpen}
         onClick={toggle}
       >
-        {/* The app icon — drawn like the rail header, not customizable. */}
-        <img src="/app-icon.png" alt="App Icon" className="az-dropdown-menu-app-icon" />
+        {/* The app icon — drawn like the rail header, clipped to the configured shape/size. */}
+        <img src="/app-icon.png" alt="App Icon" className="az-dropdown-menu-app-icon" style={{ borderRadius: triggerRadius }} />
       </button>
       {isOpen && (
         <div className={`az-dropdown-menu-panel ${design === 'menu' ? 'menu' : 'rail'}`} style={panelStyle} role="menu">

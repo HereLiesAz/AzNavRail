@@ -149,17 +149,18 @@ that width and height.
 
 Drop-down menu (`AzDropdownMenu`): a standalone widget declared with the **same opinionated DSL as the
 rail**. In AzNavRail tradition it accepts only sanctioned config — it does **not** expose arbitrary
-icon styling, panel background, offsets, `menuWidth`, or a free `azCustom` escape hatch. The trigger is
-the **app icon** (auto-drawn exactly like the rail's header — `getApplicationIcon` on Android, gray
-placeholder on RN, `/app-icon.png` on web — not customizable), placed inline; only the dropped list is
-an overlay.
+icon tint/source, panel background, offsets, `menuWidth`, or a free `azCustom` escape hatch. The
+trigger is the **app icon** (auto-drawn exactly like the rail's header — `getApplicationIcon` on
+Android, gray placeholder on RN, `/app-icon.png` on web), placed inline; its shape/size are
+configurable (mirroring the rail's `azTheme`). Only the dropped list is an overlay.
 
 - File: `aznavrail/src/main/java/com/hereliesaz/aznavrail/AzDropdownMenu.kt` (Android),
   `aznavrail-react/src/components/AzDropdownMenu.tsx` (RN) and `src/web/AzDropdownMenu.jsx` (web).
 - DSL like the rail (collect-then-render): the `content` is a plain `AzDropdownMenuScope.() -> Unit`
-  builder. `azConfig(design, dockingSide, vibrate, expandedWidth, collapsedWidth)` mirrors the rail's
-  `azConfig`/`azTheme`; items are `azItem`/`azToggle`/`azCycler`/`azDivider` accepting only the rail's
-  per-item knobs (`color`/`textColor`/`fillColor`/`shape`/`enabled`/`closeOnClick`) plus a `route`.
+  builder. `azConfig(design, dockingSide, vibrate, expandedWidth, collapsedWidth, headerIconShape,
+  headerIconSize)` mirrors the rail's `azConfig`/`azTheme` (RN/web take `headerIconShape`/
+  `headerIconSize` props); items are `azItem`/`azToggle`/`azCycler`/`azDivider` accepting only the
+  rail's per-item knobs (`color`/`textColor`/`fillColor`/`shape`/`enabled`/`closeOnClick`) plus a `route`.
 - `design` (`AzDropdownDesign { RAIL, MENU }`, default `MENU`) styles the panel as the collapsed rail
   (compact buttons, `collapsedWidth` ≈100dp) or the expanded menu (full-width labeled rows,
   `expandedWidth` ≈160dp). `dockingSide` (`AzDockingSide { LEFT, RIGHT }`) **pins the panel to that

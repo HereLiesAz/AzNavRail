@@ -160,7 +160,7 @@ function AzDropdownMenuDemo() {
       <select value={dockingSide} onChange={(e) => setDockingSide(e.target.value as AzDockingSide)}>
         {Object.values(AzDockingSide).map((s) => <option key={s} value={s}>{s}</option>)}
       </select>
-      <AzDropdownMenu design={design} dockingSide={dockingSide}>
+      <AzDropdownMenu design={design} dockingSide={dockingSide} headerIconShape={AzHeaderIconShape.ROUNDED} headerIconSize={56}>
         <AzDropdownItem text="Profile" onClick={() => setLast('Profile')} />
         <AzDropdownItem text="Settings" onClick={() => setLast('Settings')} />
         <AzDivider />
