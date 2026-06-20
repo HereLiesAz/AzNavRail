@@ -67,6 +67,8 @@ export const AzDropdownItem = ({ text, onClick, route, shape = 'RECTANGLE', enab
  * @param {boolean} [props.expanded] - Optional controlled open-state.
  * @param {function} [props.onExpandedChange]
  * @param {function} [props.onNavigate] - Called with an item's `route` before its callback.
+ * @param {boolean} [props.showFooter=true] - Whether the menu design shows the About/Feedback/@HereLiesAz footer.
+ * @param {string} [props.appRepositoryUrl] - URL opened by the footer's "About" item.
  * @param {React.ReactNode} props.children
  */
 const AzDropdownMenu = ({
@@ -77,6 +79,8 @@ const AzDropdownMenu = ({
   collapsedWidth = 100,
   headerIconShape = 'CIRCLE',
   headerIconSize = 48,
+  showFooter = true,
+  appRepositoryUrl = 'https://github.com/HereLiesAz/AzNavRail',
   expanded,
   onExpandedChange,
   onNavigate,
@@ -177,6 +181,14 @@ const AzDropdownMenu = ({
           <AzDropdownMenuContext.Provider value={{ dismiss: () => setOpen(false), design, onNavigate }}>
             {children}
           </AzDropdownMenuContext.Provider>
+          {/* The expanded-menu design carries the rail's footer. */}
+          {design === 'menu' && showFooter && (
+            <div className="az-dropdown-menu-footer">
+              <div className="az-dropdown-menu-footer-item" onClick={() => window.open(appRepositoryUrl, '_blank', 'noopener')}>About</div>
+              <div className="az-dropdown-menu-footer-item" onClick={() => window.open('mailto:hereliesaz@gmail.com?subject=Feedback', '_self')}>Feedback</div>
+              <div className="az-dropdown-menu-footer-item" style={{ opacity: 0.5 }} onClick={() => window.open('https://instagram.com/HereLiesAz', '_blank', 'noopener')}>@HereLiesAz</div>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -59,10 +59,12 @@
   padding: 4px 0;
 }
 
+/* Matches the rail's menu item text: 16px / weight 500 / centred (see web MenuItem.css). */
 .az-dropdown-menu-item--menu {
-  padding: 12px 24px;
+  padding: 12px 16px;
   text-align: center;
-  font-size: 1.25rem;
+  font-size: 16px;
+  font-weight: 500;
   cursor: pointer;
   user-select: none;
   color: #6750A4;
@@ -71,6 +73,24 @@
 .az-dropdown-menu-item--menu:hover { background-color: rgba(103, 80, 164, 0.08); }
 .az-dropdown-menu-item--menu.disabled { opacity: 0.5; cursor: default; }
 .az-dropdown-menu-item--menu.disabled:hover { background-color: transparent; }
+
+/* The MENU design's footer — mirrors the rail's footer (About / Feedback / @HereLiesAz). */
+.az-dropdown-menu-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  color: #6750A4;
+}
+
+.az-dropdown-menu-footer-item {
+  padding: 4px 0;
+  font-size: 16px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.az-dropdown-menu-footer-item:hover { text-decoration: underline; }
 
 @keyframes az-dropdown-menu-unfold {
   from { opacity: 0; transform: translateY(-8px); }

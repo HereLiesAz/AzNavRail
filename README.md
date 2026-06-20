@@ -455,7 +455,10 @@ Configure it through `azConfig` (mirroring the rail): **`design`** picks `AzDrop
 full-width labeled rows at the **expanded width**, ≈160dp); **`dockingSide`** pins the panel to the
 `LEFT` or `RIGHT` screen edge; the app-icon **`headerIconShape`/`headerIconSize`** (mirroring the
 rail's `azTheme`) and `vibrate`/`expandedWidth`/`collapsedWidth` round out the config. The panel
-**drops from the trigger** automatically (downward when it fits, otherwise upward).
+**drops from the trigger** automatically (downward when it fits, otherwise upward). The `MENU` design
+renders rows at the rail's menu-item text size and carries the rail's **footer** (About / Feedback /
+@HereLiesAz, gated by `showFooter`, with `appRepositoryUrl` behind "About"), just like the expanded
+menu.
 
 Items are declared with `azItem` / `azToggle` / `azCycler` / `azDivider`, accepting only the rail's
 sanctioned per-item knobs (`color`/`textColor`/`fillColor`/`shape`/`enabled`/`closeOnClick`). Each may

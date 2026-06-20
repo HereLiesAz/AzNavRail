@@ -11,8 +11,10 @@
   (`AzDropdownDesign` RAIL/MENU → panel width) and `dockingSide` (`AzDockingSide` LEFT/RIGHT screen
   edge); the panel drops from the trigger (RN `Modal` overlay; web fixed panel). `<AzDropdownItem>`
   entries accept the sanctioned per-item knobs plus a `route` dispatched through the menu's
-  `onNavigate` (AzNavHost-style routing). Controlled `expanded`/`onExpandedChange`. Reaches parity
-  with the Android `AzDropdownMenu` DSL.
+  `onNavigate` (AzNavHost-style routing). Controlled `expanded`/`onExpandedChange`. The `MENU` design
+  renders rows at the rail's menu-item text size (16px) and carries the rail's footer
+  (About / Feedback / @HereLiesAz, gated by `showFooter`, with `appRepositoryUrl` behind "About").
+  Reaches parity with the Android `AzDropdownMenu` DSL.
 - **Sizable header icon** (`headerIconSize`) and the **in-app About reader + "More from Az"**
   carousel (`appRepositoryUrl`, `inAppAbout`, `moreRailItem`) reach parity with Android.
 

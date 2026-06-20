@@ -116,7 +116,9 @@ interface AzDropdownMenuScope {
         expandedWidth: Dp = 160.dp,
         collapsedWidth: Dp = 100.dp,
         headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,  // app-icon clip, like azTheme
-        headerIconSize: Dp = 48.dp                          // app-icon diameter, like azTheme
+        headerIconSize: Dp = 48.dp,                         // app-icon diameter, like azTheme
+        showFooter: Boolean = true,                         // MENU footer (About/Feedback/@HereLiesAz)
+        appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail"  // footer "About" link
     )
     fun azItem(text, route = null, color, textColor, fillColor, shape, enabled, closeOnClick = true, onClick)
     fun azToggle(isChecked, toggleOnText, toggleOffText, route = null, …, onToggle)
@@ -129,9 +131,11 @@ interface AzDropdownMenuScope {
 (`AzDropdownDesign.RAIL` = compact rail buttons at `collapsedWidth` ≈100dp; `AzDropdownDesign.MENU`
 = full-width labeled rows at `expandedWidth` ≈160dp), `dockingSide` pins the panel to the `LEFT`
 or `RIGHT` screen edge, and `headerIconShape`/`headerIconSize` set the app-icon trigger's clip and
-diameter (the same knobs the rail exposes via `azTheme`). The panel drops from the trigger
-automatically (downward when it fits, else upward). Items accept only the rail's sanctioned per-item
-knobs, plus a navigation `route`: when set,
+diameter (the same knobs the rail exposes via `azTheme`). The `MENU` design renders rows at the
+rail's menu-item text size and — like the rail's expanded menu — carries the footer
+(About / Feedback / @HereLiesAz, gated by `showFooter`, with `appRepositoryUrl` behind "About"). The
+panel drops from the trigger automatically (downward when it fits, else upward). Items accept only the
+rail's sanctioned per-item knobs, plus a navigation `route`: when set,
 tapping navigates the `navController` (so the drop-down can drive an `AzNavHost`), then runs the
 callback, then folds up if `closeOnClick`.
 
