@@ -53,7 +53,7 @@ Add JitPack to your `settings.gradle.kts`:
 - **Tutorial Framework**: Scripted multi-scene tutorials with spotlights, 4 advance conditions (Button, TapTarget, TapAnywhere, Event), variable-driven branching, TapTarget branching, checklist cards, media cards, and cross-platform read-state persistence.
 - **Left/Right Docking**: Position the rail on the left or right side of the screen.
 - **No Menu Mode**: Treat all items as rail items, removing the side drawer.
-- **`AzDropdownMenu`**: A standalone, hamburger-style drop-down menu whose icon sits inline like `AzButton` — no rail, no host. Its overlay panel is styled as the rail or menu (`design`), width-constrained to match, and pinned to the left/right screen edge (`alignment` + `offset`); entries reuse `AzButton`/`AzToggle`/`AzCycler`/`AzDivider`.
+- **`AzDropdownMenu`**: A standalone, app-icon drop-down declared with the rail's opinionated DSL (`azConfig` + `azItem`/`azToggle`/`azCycler`/`azDivider`). Its overlay panel is styled as the rail or menu (`design`), width-constrained to match, and pinned to the `dockingSide` screen edge. Items can carry a `route` to drive an `AzNavHost` via a `NavController`, exactly like the rail — and it accepts no styling the rest of the library doesn't.
 - **Sizable Header Icon**: Set the app-icon to an exact diameter via `headerIconSize`.
 - **In-App About Reader**: The footer "About" opens a themed in-app markdown reader that auto-discovers your repo's docs (root + `docs/`) and renders them inline. (`azAbout`)
 - **More from Az**: A self-versioning carousel of other apps — paste GitHub repo links and CI bakes name/icon/description, a verified Play link, and the homepage website/PWA (WIP apps excluded, Play-first); optionally pinned as a "More" rail item.
@@ -443,32 +443,28 @@ const settings: AzNavRailSettings = {
 
 ### `AzDropdownMenu` — standalone hamburger menu
 
-A drop-down menu is a **standalone composable**, used the usual, expected way. The hamburger **icon**
-is dropped inline anywhere in your own UI, exactly like `AzButton` or `AzTextBox` — it takes a normal
-layout slot, like any hamburger button. It is **not** a mode of the rail: there is no `AzNavHost`, no
-DSL scope, no `background()`/`onscreen()`, and no reserved safe zones. Tapping the icon unfolds an
-**overlay panel** (a `Popup`) holding the items you declare. Tapping outside, pressing back, or
-tapping an item folds it back up.
+A drop-down menu is a **standalone widget** declared with the same opinionated DSL as the rail. In
+AzNavRail tradition it accepts **only** what the rest of the library sanctions — no arbitrary panel
+background, offsets, icon styling, or free composable escape hatch. Its trigger is the **app icon**
+(auto-drawn exactly like the rail's header — not customizable), dropped inline like any widget.
+Tapping it unfolds an **overlay panel** of the items you declare; tapping outside, pressing back, or
+tapping an item folds it up.
 
-The panel is presented as a slice of the rail itself. **`design`** picks which:
-`AzDropdownDesign.RAIL` renders compact rail buttons constrained to the **collapsed rail width**
-(≈100dp); `AzDropdownDesign.MENU` (the default) renders full-width labeled rows constrained to the
-**expanded menu width** (≈160dp). `menuWidth` overrides the width. The panel is **pinned to the screen
-edge** named by `alignment` — start = left edge, end = right edge, centre = centred — and **drops from
-the trigger** (top/centre anchors open **downward**, `BOTTOM_*` open **upward**); `offset` nudges it.
+Configure it through `azConfig` (mirroring the rail): **`design`** picks `AzDropdownDesign.RAIL`
+(compact rail buttons at the **collapsed width**, ≈100dp) or `AzDropdownDesign.MENU` (the default;
+full-width labeled rows at the **expanded width**, ≈160dp); **`dockingSide`** pins the panel to the
+`LEFT` or `RIGHT` screen edge; `vibrate`/`expandedWidth`/`collapsedWidth` round out the config. The
+panel **drops from the trigger** automatically (downward when it fits, otherwise upward).
 
-Items reuse the library's own widgets via a small content-slot DSL — `azItem` (an `AzButton`),
-`azToggle`, `azCycler`, `azDivider`, plus `azCustom { }` and `dismiss()`. `azItem` folds the menu
-after its callback by default (`closeOnClick = true`).
+Items are declared with `azItem` / `azToggle` / `azCycler` / `azDivider`, accepting only the rail's
+sanctioned per-item knobs (`color`/`textColor`/`fillColor`/`shape`/`enabled`/`closeOnClick`). Each may
+carry a **`route`** which — like the rail — navigates the supplied `navController`, so the drop-down
+can drive an `AzNavHost`.
 
 ```kotlin
-AzDropdownMenu(
-    design = AzDropdownDesign.MENU,            // labeled rows at the menu width
-    alignment = AzDropdownAlignment.TOP_END,   // panel pins to the right screen edge
-    offset = DpOffset(0.dp, 8.dp),             // nudge it down a touch
-    iconSize = 56.dp,
-) {
-    azItem("Settings") { openSettings() }
+AzDropdownMenu(navController = navController) {
+    azConfig(design = AzDropdownDesign.MENU, dockingSide = AzDockingSide.LEFT)
+    azItem("Home", route = "home") { }
     azToggle(isChecked = dark, toggleOnText = "Dark", toggleOffText = "Light") { dark = it }
     azDivider()
     azItem("Sign out") { signOut() }
@@ -477,10 +473,10 @@ AzDropdownMenu(
 
 **React Implementation:**
 ```tsx
-import { AzDropdownMenu, AzDropdownItem, AzDivider, AzDropdownAlignment, AzDropdownDesign } from '@HereLiesAz/aznavrail-react';
+import { AzDropdownMenu, AzDropdownItem, AzDivider, AzDockingSide, AzDropdownDesign } from '@HereLiesAz/aznavrail-react';
 
-<AzDropdownMenu design={AzDropdownDesign.MENU} alignment={AzDropdownAlignment.TOP_END} offset={{ x: 0, y: 8 }} iconSize={56}>
-  <AzDropdownItem text="Settings" onClick={openSettings} />
+<AzDropdownMenu design={AzDropdownDesign.MENU} dockingSide={AzDockingSide.LEFT} onNavigate={go}>
+  <AzDropdownItem text="Home" route="home" onClick={() => {}} />
   <AzDivider />
   <AzDropdownItem text="Sign out" onClick={signOut} />
 </AzDropdownMenu>

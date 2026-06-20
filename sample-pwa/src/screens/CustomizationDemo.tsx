@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   AzButtonShape,
-  AzDropdownAlignment,
+  AzDockingSide,
   AzDropdownDesign,
   AzDropdownMenu,
   AzDropdownItem,
@@ -24,7 +24,6 @@ export interface CustomizationState {
 
 const headerShapes = Object.values(AzHeaderIconShape) as AzHeaderIconShape[]
 const buttonShapes = Object.values(AzButtonShape) as AzButtonShape[]
-const dropdownAlignments = Object.values(AzDropdownAlignment) as AzDropdownAlignment[]
 const repoChoices: { label: string; url: string }[] = [
   { label: 'AzNavRail', url: 'https://github.com/HereLiesAz/AzNavRail' },
   { label: 'Anthropic', url: 'https://github.com/anthropics' },
@@ -144,24 +143,24 @@ export default function CustomizationDemo({
 }
 
 /**
- * The standalone AzDropdownMenu — no rail, no host, no settings. The hamburger icon is dropped
- * inline like any widget; its panel is an overlay pinned to the left/right screen edge (per the
- * alignment picker) and styled as the rail or the menu (per the design picker).
+ * The standalone AzDropdownMenu — declared with the same opinionated surface as the rail. Its trigger
+ * is the app icon (not customizable); the panel is configured by `design` + `dockingSide` and pins to
+ * the chosen screen edge. The pickers below drive that config.
  */
 function AzDropdownMenuDemo() {
-  const [alignment, setAlignment] = useState<AzDropdownAlignment>(AzDropdownAlignment.TOP_START)
   const [design, setDesign] = useState<AzDropdownDesign>(AzDropdownDesign.MENU)
+  const [dockingSide, setDockingSide] = useState<AzDockingSide>(AzDockingSide.LEFT)
   const [dark, setDark] = useState(false)
   const [last, setLast] = useState('none')
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-      <select value={alignment} onChange={(e) => setAlignment(e.target.value as AzDropdownAlignment)}>
-        {dropdownAlignments.map((s) => <option key={s} value={s}>{s}</option>)}
-      </select>
       <select value={design} onChange={(e) => setDesign(e.target.value as AzDropdownDesign)}>
         {Object.values(AzDropdownDesign).map((d) => <option key={d} value={d}>{d}</option>)}
       </select>
-      <AzDropdownMenu alignment={alignment} design={design}>
+      <select value={dockingSide} onChange={(e) => setDockingSide(e.target.value as AzDockingSide)}>
+        {Object.values(AzDockingSide).map((s) => <option key={s} value={s}>{s}</option>)}
+      </select>
+      <AzDropdownMenu design={design} dockingSide={dockingSide}>
         <AzDropdownItem text="Profile" onClick={() => setLast('Profile')} />
         <AzDropdownItem text="Settings" onClick={() => setLast('Settings')} />
         <AzDivider />

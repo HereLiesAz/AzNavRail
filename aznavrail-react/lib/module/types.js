@@ -41,24 +41,6 @@ export let AzNestedRailAlignment = /*#__PURE__*/function (AzNestedRailAlignment)
 }({});
 
 /**
- * Where an `AzDropdownMenu` panel anchors to its trigger icon and which way it unfolds. These are
- * the nine standard anchor points; top/centre anchors open the panel downward (below the icon) and
- * the bottom anchors open it upward (above the icon).
- */
-export let AzDropdownAlignment = /*#__PURE__*/function (AzDropdownAlignment) {
-  AzDropdownAlignment["TOP_START"] = "top-start";
-  AzDropdownAlignment["TOP_CENTER"] = "top-center";
-  AzDropdownAlignment["TOP_END"] = "top-end";
-  AzDropdownAlignment["CENTER_START"] = "center-start";
-  AzDropdownAlignment["CENTER"] = "center";
-  AzDropdownAlignment["CENTER_END"] = "center-end";
-  AzDropdownAlignment["BOTTOM_START"] = "bottom-start";
-  AzDropdownAlignment["BOTTOM_CENTER"] = "bottom-center";
-  AzDropdownAlignment["BOTTOM_END"] = "bottom-end";
-  return AzDropdownAlignment;
-}({});
-
-/**
  * The visual design of an `AzDropdownMenu` panel — a slice of the rail or the menu. The choice
  * drives both the item rendering and the panel width (so it matches what it imitates).
  */

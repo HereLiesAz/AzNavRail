@@ -147,19 +147,22 @@ const settings: AzNavRailSettings = {
 
 ### D. Drop-down menu — `AzDropdownMenu` (standalone)
 
-A hamburger drop-down is **not** a rail mode — it is a standalone composable, `AzDropdownMenu`. Its
-hamburger **icon** sits inline like `AzButton` (no `AzNavHost`, no scope, no `onscreen()`, no safe
-zones), taking a normal layout slot. Tapping it unfolds an **overlay panel** (a `Popup`) holding the
-items. The panel is presented as a slice of the rail: `design` picks `AzDropdownDesign.RAIL` (compact
-rail buttons at the collapsed rail width ≈100dp) or `AzDropdownDesign.MENU` (default; full-width
-labeled rows at the expanded menu width ≈160dp), with `menuWidth` overriding. It is **pinned to the
-screen edge** named by `alignment` (start = left, end = right, centre = centred) and **drops from the
-trigger** (top/centre → downward, `BOTTOM_*` → upward); `offset` nudges it. Items use a content-slot
-DSL that reuses the library's widgets (`azItem`→`AzButton`, `azToggle`, `azCycler`, `azDivider`).
+A hamburger drop-down is **not** a rail mode — it is a standalone widget, `AzDropdownMenu`, declared
+with the **same opinionated DSL as the rail**. In AzNavRail tradition it accepts only the
+configuration the rest of the library sanctions (no arbitrary panel background, offsets, icon
+styling, or free composable escape hatch). Its trigger is the **app icon** (auto-drawn like the
+rail's header — not customizable), dropped inline like any widget. Tapping it unfolds an **overlay
+panel** (a `Popup`) of the items you declare. Configure it through `azConfig`: `design` picks
+`AzDropdownDesign.RAIL` (compact rail buttons at the collapsed width ≈100dp) or `AzDropdownDesign.MENU`
+(default; full-width labeled rows at the expanded width ≈160dp); `dockingSide` pins the panel to the
+`LEFT`/`RIGHT` screen edge; the panel drops from the trigger automatically. Items use
+`azItem`/`azToggle`/`azCycler`/`azDivider` with only the rail's sanctioned per-item knobs, plus a
+`route` that navigates the supplied `NavController` (so the drop-down can drive an `AzNavHost`).
 
 ```kotlin
-AzDropdownMenu(design = AzDropdownDesign.MENU, alignment = AzDropdownAlignment.TOP_END) {
-    azItem("Settings") { openSettings() }
+AzDropdownMenu(navController = navController) {
+    azConfig(design = AzDropdownDesign.MENU, dockingSide = AzDockingSide.LEFT)
+    azItem("Home", route = "home") { }
     azToggle(isChecked = dark, toggleOnText = "Dark", toggleOffText = "Light") { dark = it }
     azDivider()
     azItem("Sign out") { signOut() }
@@ -167,8 +170,8 @@ AzDropdownMenu(design = AzDropdownDesign.MENU, alignment = AzDropdownAlignment.T
 ```
 
 ```tsx
-<AzDropdownMenu design={AzDropdownDesign.MENU} alignment={AzDropdownAlignment.TOP_END}>
-  <AzDropdownItem text="Settings" onClick={openSettings} />
+<AzDropdownMenu design={AzDropdownDesign.MENU} dockingSide={AzDockingSide.LEFT} onNavigate={go}>
+  <AzDropdownItem text="Home" route="home" onClick={() => {}} />
   <AzDivider />
   <AzDropdownItem text="Sign out" onClick={signOut} />
 </AzDropdownMenu>

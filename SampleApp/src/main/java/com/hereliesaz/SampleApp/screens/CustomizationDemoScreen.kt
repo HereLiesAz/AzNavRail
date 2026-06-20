@@ -26,7 +26,7 @@ import com.hereliesaz.aznavrail.AzCycler
 import com.hereliesaz.aznavrail.AzDropdownMenu
 import com.hereliesaz.aznavrail.AzToggle
 import com.hereliesaz.aznavrail.model.AzButtonShape
-import com.hereliesaz.aznavrail.model.AzDropdownAlignment
+import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzDropdownDesign
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 
@@ -47,7 +47,6 @@ data class CustomizationState(
 
 private val headerIconShapes = AzHeaderIconShape.values().toList()
 private val defaultShapes = AzButtonShape.values().toList()
-private val dropdownAlignments = AzDropdownAlignment.values().toList()
 private val translucentChoices = listOf(
     "Unspecified" to Color.Unspecified,
     "Black 40%" to Color.Black.copy(alpha = 0.4f),
@@ -221,23 +220,16 @@ fun CustomizationDemoScreen(
 }
 
 /**
- * Demonstrates the standalone [AzDropdownMenu] — no rail, no host, no `azConfig`. The hamburger icon
- * is dropped inline here like an [AzButton]; its panel is an overlay pinned to the left/right screen
- * edge (per the alignment cycler) and styled as the rail or the menu (per the design cycler).
+ * Demonstrates the standalone [AzDropdownMenu] — declared with the same opinionated DSL as the rail.
+ * Its trigger is the app icon (not customizable); the panel is configured via `azConfig` (design +
+ * docking side) and pins to the chosen screen edge. The cyclers below drive that `azConfig`.
  */
 @Composable
 private fun AzDropdownMenuDemo() {
-    var alignment by remember { mutableStateOf(AzDropdownAlignment.TOP_START) }
     var design by remember { mutableStateOf(AzDropdownDesign.MENU) }
+    var dockingSide by remember { mutableStateOf(AzDockingSide.LEFT) }
     var dark by remember { mutableStateOf(false) }
     var lastAction by remember { mutableStateOf("none") }
-
-    AzCycler(
-        options = dropdownAlignments.map { it.name },
-        selectedOption = alignment.name,
-        onCycle = { alignment = dropdownAlignments[(alignment.ordinal + 1) % dropdownAlignments.size] },
-        shape = AzButtonShape.RECTANGLE,
-    )
 
     val designs = AzDropdownDesign.values()
     AzCycler(
@@ -247,8 +239,17 @@ private fun AzDropdownMenuDemo() {
         shape = AzButtonShape.RECTANGLE,
     )
 
+    val sides = AzDockingSide.values()
+    AzCycler(
+        options = sides.map { it.name },
+        selectedOption = dockingSide.name,
+        onCycle = { dockingSide = sides[(dockingSide.ordinal + 1) % sides.size] },
+        shape = AzButtonShape.RECTANGLE,
+    )
+
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        AzDropdownMenu(alignment = alignment, design = design) {
+        AzDropdownMenu {
+            azConfig(design = design, dockingSide = dockingSide)
             azItem("Profile") { lastAction = "Profile" }
             azItem("Settings") { lastAction = "Settings" }
             azToggle(

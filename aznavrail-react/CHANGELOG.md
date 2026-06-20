@@ -3,20 +3,26 @@
 ## Unreleased
 
 ### Added
-- **`AzDropdownMenu` (+ `AzDropdownItem`).** A standalone, hamburger-style drop-down menu placed
-  inline like `AzButton`/`AzTextBox` — no `AzNavHost`, no settings, no safe zones. It renders a
-  tappable icon; tapping it shows a panel anchored to the icon (RN `Modal` overlay; web absolute
-  panel) holding `<AzDropdownItem>` entries (plus `AzToggle`/`AzCycler`/`AzDivider`) that reuse the
-  library's own widgets and auto-close via a dismiss context. Props mirror Android:
-  `alignment` (`AzDropdownAlignment`), `offset`, `iconShape`, `menuWidth`, controlled
-  `expanded`/`onExpandedChange`. Reaches parity with the Android `AzDropdownMenu` composable.
+- **`AzDropdownMenu` (+ `AzDropdownItem`).** A standalone, **app-icon** drop-down declared with the
+  rail's opinionated surface — it accepts only what the rest of the library sanctions (no arbitrary
+  icon styling, panel background, offsets, or `menuWidth`). The trigger is the app icon (gray
+  placeholder on RN, `/app-icon.png` on web), dropped inline. Configured by `design`
+  (`AzDropdownDesign` RAIL/MENU → panel width) and `dockingSide` (`AzDockingSide` LEFT/RIGHT screen
+  edge); the panel drops from the trigger (RN `Modal` overlay; web fixed panel). `<AzDropdownItem>`
+  entries accept the sanctioned per-item knobs plus a `route` dispatched through the menu's
+  `onNavigate` (AzNavHost-style routing). Controlled `expanded`/`onExpandedChange`. Reaches parity
+  with the Android `AzDropdownMenu` DSL.
 - **Sizable header icon** (`headerIconSize`) and the **in-app About reader + "More from Az"**
   carousel (`appRepositoryUrl`, `inAppAbout`, `moreRailItem`) reach parity with Android.
 
 ### Removed
 - **The rail-coupled drop-down mode.** `dropdownMenu` / `dropdownSource` / `dropdownAlignment` /
   `dropdownOffset` settings and the `AzDropdownSource` enum are gone — use the standalone
-  `AzDropdownMenu` instead. `AzDropdownAlignment` is kept (it now configures `AzDropdownMenu`).
+  `AzDropdownMenu` instead.
+- **`AzDropdownAlignment`** (and the `parseDropdownAnchor` helper). `AzDropdownMenu` now pins to a
+  screen edge via `dockingSide` (`AzDockingSide` LEFT/RIGHT) and drops from the trigger automatically,
+  matching the rail; the nine-anchor enum and per-call `offset`/`iconShape`/`menuWidth`/
+  `backgroundColor` styling props are removed.
 
 ## 0.3.0
 

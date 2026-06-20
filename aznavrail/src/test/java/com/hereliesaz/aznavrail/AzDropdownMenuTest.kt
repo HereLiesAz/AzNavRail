@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.hereliesaz.aznavrail.model.AzDropdownDesign
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -21,7 +22,7 @@ class AzDropdownMenuTest {
     val composeTestRule = createComposeRule()
 
     @Test
-    fun trigger_renders_and_toggles_the_panel() {
+    fun app_icon_trigger_renders_and_toggles_the_panel() {
         composeTestRule.setContent {
             AzDropdownMenu {
                 azItem("Settings") { }
@@ -31,7 +32,7 @@ class AzDropdownMenuTest {
         // Closed initially.
         composeTestRule.onNodeWithText("Settings").assertDoesNotExist()
 
-        // Tap the hamburger to unfold.
+        // Tap the app-icon trigger (labeled "Menu") to unfold.
         composeTestRule.onNodeWithContentDescription("Menu").performClick()
         composeTestRule.onNodeWithText("Settings").assertIsDisplayed()
     }
@@ -81,10 +82,11 @@ class AzDropdownMenuTest {
     }
 
     @Test
-    fun rail_design_renders_items_and_fires_clicks() {
+    fun rail_design_via_azConfig_renders_items_and_fires_clicks() {
         var clicked = false
         composeTestRule.setContent {
-            AzDropdownMenu(design = com.hereliesaz.aznavrail.model.AzDropdownDesign.RAIL) {
+            AzDropdownMenu {
+                azConfig(design = AzDropdownDesign.RAIL)
                 azItem("Home") { clicked = true }
             }
         }
@@ -93,5 +95,29 @@ class AzDropdownMenuTest {
         composeTestRule.onNodeWithText("Home").assertIsDisplayed()
         composeTestRule.onNodeWithText("Home").performClick()
         assertTrue(clicked)
+    }
+
+    @Test
+    fun route_navigates_the_nav_controller() {
+        lateinit var navController: androidx.navigation.NavHostController
+        composeTestRule.setContent {
+            navController = androidx.navigation.compose.rememberNavController()
+            androidx.navigation.compose.NavHost(navController, startDestination = "start") {
+                androidx.navigation.compose.composable("start") {
+                    AzDropdownMenu(navController = navController) {
+                        azItem("Home", route = "home") { }
+                    }
+                }
+                androidx.navigation.compose.composable("home") {
+                    androidx.compose.material3.Text("home screen")
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Menu").performClick()
+        composeTestRule.onNodeWithText("Home").performClick()
+        composeTestRule.runOnIdle {
+            assertEquals("home", navController.currentDestination?.route)
+        }
     }
 }
