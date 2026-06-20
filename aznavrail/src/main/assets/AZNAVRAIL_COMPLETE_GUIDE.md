@@ -156,9 +156,12 @@ inline like any widget. Tapping it unfolds an **overlay
 panel** (a `Popup`) of the items you declare. Configure it through `azConfig`: `design` picks
 `AzDropdownDesign.RAIL` (compact rail buttons at the collapsed width ≈100dp) or `AzDropdownDesign.MENU`
 (default; full-width labeled rows at the expanded width ≈160dp); `dockingSide` pins the panel to the
-`LEFT`/`RIGHT` screen edge; the panel drops from the trigger automatically. Items use
-`azItem`/`azToggle`/`azCycler`/`azDivider` with only the rail's sanctioned per-item knobs, plus a
-`route` that navigates the supplied `NavController` (so the drop-down can drive an `AzNavHost`).
+`LEFT`/`RIGHT` screen edge; the panel drops from the trigger automatically. The `MENU` design
+renders rows at the rail's menu-item text size and, like the rail's expanded menu, carries the
+footer (About / Feedback / @HereLiesAz, gated by `showFooter`, with `appRepositoryUrl` behind
+"About"). Items use `azItem`/`azToggle`/`azCycler`/`azDivider` with only the rail's sanctioned
+per-item knobs, plus a `route` that navigates the supplied `NavController` (so the drop-down can
+drive an `AzNavHost`).
 
 ```kotlin
 AzDropdownMenu(navController = navController) {

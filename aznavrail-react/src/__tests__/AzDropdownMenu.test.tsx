@@ -116,6 +116,43 @@ describe('AzDropdownMenu', () => {
     expect(style.borderRadius).toBe(8); // ROUNDED → 8
   });
 
+  it('shows the rail footer in the MENU design by default', () => {
+    const { queryByText } = render(
+      <AzDropdownMenu expanded>
+        <AzDropdownItem text="Profile" onClick={() => {}} />
+      </AzDropdownMenu>
+    );
+    expect(queryByText('About')).not.toBeNull();
+    expect(queryByText('Feedback')).not.toBeNull();
+    expect(queryByText('@HereLiesAz')).not.toBeNull();
+  });
+
+  it('omits the footer when showFooter is false and in the RAIL design', () => {
+    const noFooter = render(
+      <AzDropdownMenu expanded showFooter={false}>
+        <AzDropdownItem text="Profile" onClick={() => {}} />
+      </AzDropdownMenu>
+    );
+    expect(noFooter.queryByText('Feedback')).toBeNull();
+
+    const rail = render(
+      <AzDropdownMenu expanded design={AzDropdownDesign.RAIL}>
+        <AzDropdownItem text="Profile" onClick={() => {}} />
+      </AzDropdownMenu>
+    );
+    expect(rail.queryByText('Feedback')).toBeNull();
+  });
+
+  it('renders menu rows at the rail menu-item text size (16)', () => {
+    const { getByText } = render(
+      <AzDropdownMenu expanded>
+        <AzDropdownItem text="Profile" onClick={() => {}} />
+      </AzDropdownMenu>
+    );
+    const style = getByText('Profile').props.style.flat();
+    expect(style).toEqual(expect.arrayContaining([expect.objectContaining({ fontSize: 16 })]));
+  });
+
   it('dispatches an item route through onNavigate before the callback', () => {
     const onNavigate = jest.fn();
     const onClick = jest.fn();

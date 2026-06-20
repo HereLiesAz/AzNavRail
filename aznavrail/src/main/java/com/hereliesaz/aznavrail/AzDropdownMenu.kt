@@ -1,12 +1,16 @@
 package com.hereliesaz.aznavrail
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -83,6 +87,9 @@ interface AzDropdownMenuScope {
      *   `azTheme(headerIconShape = …)`).
      * @param headerIconSize Diameter of the app-icon trigger (mirrors the rail's
      *   `azTheme(headerIconSize = …)`).
+     * @param showFooter Whether the [AzDropdownDesign.MENU] panel shows the rail's footer
+     *   (About / Feedback / @HereLiesAz), like the rail's expanded menu.
+     * @param appRepositoryUrl Repository URL opened by the footer's "About" item.
      */
     fun azConfig(
         design: AzDropdownDesign = AzDropdownDesign.MENU,
@@ -91,7 +98,9 @@ interface AzDropdownMenuScope {
         expandedWidth: Dp = 160.dp,
         collapsedWidth: Dp = 100.dp,
         headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
-        headerIconSize: Dp = 48.dp
+        headerIconSize: Dp = 48.dp,
+        showFooter: Boolean = true,
+        appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail"
     )
 
     /**
@@ -151,7 +160,9 @@ internal data class AzDropdownConfig(
     val expandedWidth: Dp = 160.dp,
     val collapsedWidth: Dp = 100.dp,
     val headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
-    val headerIconSize: Dp = 48.dp
+    val headerIconSize: Dp = 48.dp,
+    val showFooter: Boolean = true,
+    val appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail"
 )
 
 /** One declared entry, collected by the builder and rendered by the composable. */
@@ -219,10 +230,13 @@ private class AzDropdownMenuScopeImpl : AzDropdownMenuScope {
         expandedWidth: Dp,
         collapsedWidth: Dp,
         headerIconShape: AzHeaderIconShape,
-        headerIconSize: Dp
+        headerIconSize: Dp,
+        showFooter: Boolean,
+        appRepositoryUrl: String
     ) {
         config = AzDropdownConfig(
-            design, dockingSide, vibrate, expandedWidth, collapsedWidth, headerIconShape, headerIconSize
+            design, dockingSide, vibrate, expandedWidth, collapsedWidth, headerIconShape, headerIconSize,
+            showFooter, appRepositoryUrl
         )
     }
 
@@ -319,6 +333,78 @@ private fun AzDropdownMenuRow(
                 )
             }
         }
+    }
+}
+
+/**
+ * The drop-down's footer for the [AzDropdownDesign.MENU] design — mirrors the rail's footer
+ * ([com.hereliesaz.aznavrail.internal.Footer]): About (opens [appRepositoryUrl]), Feedback (email),
+ * and the @HereLiesAz attribution. Centred [titleLarge] text in the theme primary, like the rail.
+ */
+@Composable
+private fun AzDropdownFooter(appRepositoryUrl: String) {
+    val context = LocalContext.current
+    val footerColor = MaterialTheme.colorScheme.primary
+    val appName = remember(context.packageName) {
+        try {
+            context.packageManager.getApplicationLabel(
+                context.packageManager.getApplicationInfo(context.packageName, 0)
+            ).toString()
+        } catch (e: Exception) {
+            "App"
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "About",
+            style = MaterialTheme.typography.titleLarge.copy(color = footerColor),
+            modifier = Modifier
+                .clickable {
+                    // Only follow plain web URLs, never an injected scheme (e.g. javascript:/content:).
+                    val isHttp = appRepositoryUrl.startsWith("http://", ignoreCase = true) ||
+                        appRepositoryUrl.startsWith("https://", ignoreCase = true)
+                    if (isHttp) {
+                        try {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(appRepositoryUrl)))
+                        } catch (e: Exception) {}
+                    }
+                }
+                .padding(vertical = 4.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Feedback",
+            style = MaterialTheme.typography.titleLarge.copy(color = footerColor),
+            modifier = Modifier
+                .clickable {
+                    try {
+                        val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
+                            data = Uri.parse("mailto:hereliesaz@gmail.com")
+                            putExtra(Intent.EXTRA_SUBJECT, appName)
+                        }
+                        context.startActivity(Intent.createChooser(emailIntent, "Send feedback"))
+                    } catch (e: Exception) {}
+                }
+                .padding(vertical = 4.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "@HereLiesAz",
+            style = MaterialTheme.typography.titleLarge.copy(color = footerColor.copy(alpha = 0.5f)),
+            modifier = Modifier
+                .clickable {
+                    try {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://instagram.com/HereLiesAz")))
+                    } catch (e: Exception) {}
+                }
+                .padding(vertical = 4.dp)
+        )
     }
 }
 
@@ -568,6 +654,11 @@ fun AzDropdownMenu(
                     ) {
                         entries.forEach { entry ->
                             AzDropdownEntryItem(entry, config.design, navController, dismiss)
+                        }
+                        // The expanded-menu design carries the rail's footer (About / Feedback / @HereLiesAz).
+                        if (config.design == AzDropdownDesign.MENU && config.showFooter) {
+                            AzDivider()
+                            AzDropdownFooter(appRepositoryUrl = config.appRepositoryUrl)
                         }
                     }
                 }

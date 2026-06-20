@@ -8,6 +8,7 @@ import {
   ScrollView,
   StyleSheet,
   Vibration,
+  Linking,
   useWindowDimensions,
   ViewStyle,
   LayoutChangeEvent,
@@ -41,6 +42,10 @@ export interface AzDropdownMenuProps {
   headerIconShape?: AzHeaderIconShape;
   /** Diameter (px) of the app-icon trigger (mirrors the rail's `headerIconSize`). */
   headerIconSize?: number;
+  /** Whether the MENU design shows the rail's footer (About / Feedback / @HereLiesAz). */
+  showFooter?: boolean;
+  /** Repository URL opened by the footer's "About" item. */
+  appRepositoryUrl?: string;
   /** Optional controlled open-state. When omitted the menu manages its own. */
   expanded?: boolean;
   /** Called whenever the open-state changes. */
@@ -144,6 +149,8 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
   collapsedWidth = AzNavRailDefaults.CollapsedRailWidth,
   headerIconShape = AzHeaderIconShape.CIRCLE,
   headerIconSize = AzNavRailDefaults.HeaderIconSize,
+  showFooter = true,
+  appRepositoryUrl = 'https://github.com/HereLiesAz/AzNavRail',
   expanded,
   onExpandedChange,
   onNavigate,
@@ -243,12 +250,40 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
                   <AzDropdownMenuContext.Provider value={{ dismiss: () => setOpen(false), design, onNavigate }}>
                     {children}
                   </AzDropdownMenuContext.Provider>
+                  {/* The expanded-menu design carries the rail's footer. */}
+                  {design === AzDropdownDesign.MENU && showFooter && (
+                    <AzDropdownFooter appRepositoryUrl={appRepositoryUrl} />
+                  )}
                 </ScrollView>
               </Pressable>
             </View>
           </Pressable>
         </Modal>
       )}
+    </View>
+  );
+};
+
+/** The MENU design's footer — mirrors the rail's footer (About / Feedback / @HereLiesAz). */
+const AzDropdownFooter: React.FC<{ appRepositoryUrl: string }> = ({ appRepositoryUrl }) => {
+  const footerColor = '#6750A4';
+  // Only open safe schemes — this also runs on the web via react-native-web, where a `javascript:`
+  // URL would otherwise execute.
+  const open = (url: string) => {
+    const isSafe = url.startsWith('http://') || url.startsWith('https://') || url.startsWith('mailto:');
+    if (isSafe) Linking.openURL(url).catch(() => {});
+  };
+  return (
+    <View style={styles.footer}>
+      <TouchableOpacity onPress={() => open(appRepositoryUrl)} style={styles.footerRow} accessibilityRole="button">
+        <Text style={[styles.footerText, { color: footerColor }]}>About</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => open('mailto:hereliesaz@gmail.com?subject=Feedback')} style={styles.footerRow} accessibilityRole="button">
+        <Text style={[styles.footerText, { color: footerColor }]}>Feedback</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => open('https://instagram.com/HereLiesAz')} style={styles.footerRow} accessibilityRole="button">
+        <Text style={[styles.footerText, { color: footerColor, opacity: 0.5 }]}>@HereLiesAz</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -263,16 +298,28 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 8 },
   },
-  // Expanded-drawer look: full-width labeled row with the menu's 24/12 padding.
+  // Expanded-drawer look: full-width labeled row matching the rail's menu item (16px text, 12/16 pad).
   menuRow: {
     width: '100%',
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   menuRowText: {
-    fontSize: 22,
+    fontSize: 16,
     textAlign: 'center',
+  },
+  footer: {
+    padding: 16,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(103, 80, 164, 0.12)',
+  },
+  footerRow: {
+    paddingVertical: 6,
+  },
+  footerText: {
+    fontSize: 16,
   },
 });

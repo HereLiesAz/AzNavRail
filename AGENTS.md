@@ -158,9 +158,13 @@ configurable (mirroring the rail's `azTheme`). Only the dropped list is an overl
   `aznavrail-react/src/components/AzDropdownMenu.tsx` (RN) and `src/web/AzDropdownMenu.jsx` (web).
 - DSL like the rail (collect-then-render): the `content` is a plain `AzDropdownMenuScope.() -> Unit`
   builder. `azConfig(design, dockingSide, vibrate, expandedWidth, collapsedWidth, headerIconShape,
-  headerIconSize)` mirrors the rail's `azConfig`/`azTheme` (RN/web take `headerIconShape`/
-  `headerIconSize` props); items are `azItem`/`azToggle`/`azCycler`/`azDivider` accepting only the
-  rail's per-item knobs (`color`/`textColor`/`fillColor`/`shape`/`enabled`/`closeOnClick`) plus a `route`.
+  headerIconSize, showFooter, appRepositoryUrl)` mirrors the rail's `azConfig`/`azTheme` (RN/web take
+  the same as props); items are `azItem`/`azToggle`/`azCycler`/`azDivider` accepting only the rail's
+  per-item knobs (`color`/`textColor`/`fillColor`/`shape`/`enabled`/`closeOnClick`) plus a `route`.
+- The `MENU` design renders rows at the rail's menu-item text size (Android `titleLarge`; RN/web 16px,
+  matching `RailMenuItem`/`.az-menu-item-text`) and — like the rail's expanded menu — appends the
+  footer (About → `appRepositoryUrl`, Feedback → mailto, @HereLiesAz → Instagram) when `showFooter`,
+  mirroring `internal/Footer.kt` / the rail's `renderFooter`.
 - `design` (`AzDropdownDesign { RAIL, MENU }`, default `MENU`) styles the panel as the collapsed rail
   (compact buttons, `collapsedWidth` ≈100dp) or the expanded menu (full-width labeled rows,
   `expandedWidth` ≈160dp). `dockingSide` (`AzDockingSide { LEFT, RIGHT }`) **pins the panel to that

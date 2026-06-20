@@ -116,6 +116,30 @@ class AzDropdownMenuTest {
     }
 
     @Test
+    fun menu_design_shows_the_footer_unless_disabled() {
+        composeTestRule.setContent {
+            AzDropdownMenu(expanded = true) {
+                azItem("Profile") { }
+            }
+        }
+        // The MENU design carries the rail's footer.
+        composeTestRule.onNodeWithText("About").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Feedback").assertIsDisplayed()
+        composeTestRule.onNodeWithText("@HereLiesAz").assertIsDisplayed()
+    }
+
+    @Test
+    fun footer_is_hidden_when_showFooter_is_false() {
+        composeTestRule.setContent {
+            AzDropdownMenu(expanded = true) {
+                azConfig(showFooter = false)
+                azItem("Profile") { }
+            }
+        }
+        composeTestRule.onNodeWithText("Feedback").assertDoesNotExist()
+    }
+
+    @Test
     fun route_navigates_the_nav_controller() {
         lateinit var navController: androidx.navigation.NavHostController
         composeTestRule.setContent {
