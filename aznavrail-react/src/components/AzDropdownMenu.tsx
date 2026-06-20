@@ -267,7 +267,12 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
 /** The MENU design's footer — mirrors the rail's footer (About / Feedback / @HereLiesAz). */
 const AzDropdownFooter: React.FC<{ appRepositoryUrl: string }> = ({ appRepositoryUrl }) => {
   const footerColor = '#6750A4';
-  const open = (url: string) => { Linking.openURL(url).catch(() => {}); };
+  // Only open safe schemes — this also runs on the web via react-native-web, where a `javascript:`
+  // URL would otherwise execute.
+  const open = (url: string) => {
+    const isSafe = url.startsWith('http://') || url.startsWith('https://') || url.startsWith('mailto:');
+    if (isSafe) Linking.openURL(url).catch(() => {});
+  };
   return (
     <View style={styles.footer}>
       <TouchableOpacity onPress={() => open(appRepositoryUrl)} style={styles.footerRow} accessibilityRole="button">
@@ -308,6 +313,8 @@ const styles = StyleSheet.create({
   footer: {
     padding: 16,
     alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(103, 80, 164, 0.12)',
   },
   footerRow: {
     paddingVertical: 6,

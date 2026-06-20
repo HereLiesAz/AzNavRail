@@ -184,9 +184,14 @@ const AzDropdownMenu = ({
           {/* The expanded-menu design carries the rail's footer. */}
           {design === 'menu' && showFooter && (
             <div className="az-dropdown-menu-footer">
-              <div className="az-dropdown-menu-footer-item" onClick={() => window.open(appRepositoryUrl, '_blank', 'noopener')}>About</div>
+              <div className="az-dropdown-menu-footer-item" onClick={() => {
+                // Only follow plain web URLs, never an injected scheme (e.g. javascript:).
+                if (appRepositoryUrl && (appRepositoryUrl.startsWith('http://') || appRepositoryUrl.startsWith('https://'))) {
+                  window.open(appRepositoryUrl, '_blank', 'noopener,noreferrer');
+                }
+              }}>About</div>
               <div className="az-dropdown-menu-footer-item" onClick={() => window.open('mailto:hereliesaz@gmail.com?subject=Feedback', '_self')}>Feedback</div>
-              <div className="az-dropdown-menu-footer-item" style={{ opacity: 0.5 }} onClick={() => window.open('https://instagram.com/HereLiesAz', '_blank', 'noopener')}>@HereLiesAz</div>
+              <div className="az-dropdown-menu-footer-item" style={{ opacity: 0.5 }} onClick={() => window.open('https://instagram.com/HereLiesAz', '_blank', 'noopener,noreferrer')}>@HereLiesAz</div>
             </div>
           )}
         </div>

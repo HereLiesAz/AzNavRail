@@ -81,6 +81,7 @@
   align-items: center;
   padding: 16px;
   color: #6750A4;
+  border-top: 1px solid rgba(103, 80, 164, 0.12);
 }
 
 .az-dropdown-menu-footer-item {

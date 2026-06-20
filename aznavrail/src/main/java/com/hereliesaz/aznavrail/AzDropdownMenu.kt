@@ -366,9 +366,14 @@ private fun AzDropdownFooter(appRepositoryUrl: String) {
             style = MaterialTheme.typography.titleLarge.copy(color = footerColor),
             modifier = Modifier
                 .clickable {
-                    try {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(appRepositoryUrl)))
-                    } catch (e: Exception) {}
+                    // Only follow plain web URLs, never an injected scheme (e.g. javascript:/content:).
+                    val isHttp = appRepositoryUrl.startsWith("http://", ignoreCase = true) ||
+                        appRepositoryUrl.startsWith("https://", ignoreCase = true)
+                    if (isHttp) {
+                        try {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(appRepositoryUrl)))
+                        } catch (e: Exception) {}
+                    }
                 }
                 .padding(vertical = 4.dp)
         )
