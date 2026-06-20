@@ -194,18 +194,13 @@ internal sealed interface AzDropdownEntry {
 
 /**
  * Collects the [azConfig] result and the declared entries. Like the rail's scope, it is a plain
- * (non-`@Composable`) builder: the composable [reset]s it and re-runs the DSL on each recomposition,
- * then renders from [config] and [entries].
+ * (non-`@Composable`) builder; the composable creates a fresh one each recomposition, runs the DSL
+ * over it, then renders from [config] and [entries].
  */
 private class AzDropdownMenuScopeImpl : AzDropdownMenuScope {
     var config = AzDropdownConfig()
         private set
     val entries = mutableListOf<AzDropdownEntry>()
-
-    fun reset() {
-        config = AzDropdownConfig()
-        entries.clear()
-    }
 
     override fun azConfig(
         design: AzDropdownDesign,
@@ -477,12 +472,10 @@ fun AzDropdownMenu(
     onExpandedChange: ((Boolean) -> Unit)? = null,
     content: AzDropdownMenuScope.() -> Unit
 ) {
-    // Collect the DSL each recomposition, mirroring the rail's reset → apply → render flow.
-    val scope = remember { AzDropdownMenuScopeImpl() }
-    scope.reset()
-    scope.content()
+    // Collect the DSL fresh each recomposition (no remembered mutable scope to reset).
+    val scope = AzDropdownMenuScopeImpl().apply(content)
     val config = scope.config
-    val entries = scope.entries.toList()
+    val entries = scope.entries
 
     var internalOpen by rememberSaveable { mutableStateOf(false) }
     val isOpen = expanded ?: internalOpen
