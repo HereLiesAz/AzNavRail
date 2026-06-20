@@ -177,11 +177,11 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
   const screen = useWindowDimensions();
   const panelWidth = design === AzDropdownDesign.RAIL ? collapsedWidth : expandedWidth;
   const triggerSize = headerIconSize;
-  // Clip radius mirrors the rail's header icon: circle = half, rounded = 8, square = 0.
+  // Clip radius mirrors the rail's header icon: circle = half, rounded = 8, anything else = 0.
   const triggerRadius =
     headerIconShape === AzHeaderIconShape.ROUNDED ? 8 :
-    headerIconShape === AzHeaderIconShape.SQUARE ? 0 :
-    triggerSize / 2;
+    headerIconShape === AzHeaderIconShape.CIRCLE ? triggerSize / 2 :
+    0;
 
   const panelPosition: ViewStyle = { position: 'absolute' };
   // Horizontal: pin to the physical docking-side edge.

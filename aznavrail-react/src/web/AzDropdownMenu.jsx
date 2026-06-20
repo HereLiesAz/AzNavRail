@@ -151,11 +151,11 @@ const AzDropdownMenu = ({
     }
   }
 
-  // Clip radius mirrors the rail's header icon: circle = half, rounded = 8, square = 0.
+  // Clip radius mirrors the rail's header icon: circle = half, rounded = 8, anything else = 0.
   const triggerRadius =
     headerIconShape === 'ROUNDED' ? 8 :
-    headerIconShape === 'SQUARE' ? 0 :
-    headerIconSize / 2;
+    headerIconShape === 'CIRCLE' ? headerIconSize / 2 :
+    0;
 
   return (
     <div className="az-dropdown-menu" ref={rootRef}>
