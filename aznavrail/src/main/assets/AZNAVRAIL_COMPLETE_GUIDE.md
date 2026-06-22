@@ -818,8 +818,6 @@ Persistence: `@react-native-async-storage/async-storage` (optional peer dependen
 
 The web library is a TypeScript port of Android. New files: `web/AzTutorialController.tsx`, `web/AzTutorialOverlay.tsx`, `web/HelpOverlay.tsx`.
 
-The web library is a TypeScript port of Android. New files: `web/AzTutorialController.tsx`, `web/AzTutorialOverlay.tsx`, `web/HelpOverlay.tsx`.
-
 ```tsx
 import {
     AzWebTutorialProvider,
