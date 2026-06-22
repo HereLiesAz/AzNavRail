@@ -110,6 +110,9 @@ fun MainApp() {
     // expandWhen demo: toggling this causes the Rail Host to auto-expand/collapse.
     val expandWhenDemoState = remember { mutableStateOf(false) }
 
+    // onExpandedChange demo: tracks the current rail expansion state from outside the composable.
+    var railIsExpanded by remember { mutableStateOf(false) }
+
     // Help system state — drives azAdvanced(helpEnabled, helpList) and azConfig(activeClassifiers).
     var helpSystem by remember { mutableStateOf(HelpSystemState(autoInjectHelpEnabled = false, activeClassifiers = emptySet(), dismissCount = 0)) }
 
@@ -150,6 +153,7 @@ fun MainApp() {
         currentDestination = currentDestination,
         isLandscape = isLandscape,
         initiallyExpanded = false,
+        onExpandedChange = { railIsExpanded = it },
     ) {
         azConfig(
             packButtons = packRailButtons,
@@ -604,7 +608,10 @@ fun MainApp() {
         onscreen(alignment = Alignment.Center) {
             AzNavHost(startDestination = "showcase-home", navController = navController) {
                 composable("showcase-home") {
-                    ShowcaseHomeScreen(onNavigate = { route -> navController.navigate(route) })
+                    ShowcaseHomeScreen(
+                        onNavigate = { route -> navController.navigate(route) },
+                        railIsExpanded = railIsExpanded,
+                    )
                 }
                 composable("bottom-sheet") {
                     BottomSheetDemoScreen(
