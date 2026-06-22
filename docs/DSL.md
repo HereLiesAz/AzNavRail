@@ -176,12 +176,12 @@ The following functions are used to define the rail structure.
 * `azMenuCycler(id, options, selectedOption, route, color, shape, disabled, disabledOptions, screenTitle, info, onClick)`
 * `azRailCycler(id, options, selectedOption, route, color, shape, disabled, disabledOptions, screenTitle, info, onClick)`
 * `azDivider()`
-* `azMenuHostItem(id, text, route, content, color, shape, disabled, screenTitle, info, classifiers, menuText, textColor, fillColor, initiallyExpanded, expandWhen, onClick)`
-* `azRailHostItem(id, text, route, content, color, shape, disabled, screenTitle, info, classifiers, menuText, textColor, fillColor, initiallyExpanded, expandWhen, onClick)`
+* `azMenuHostItem(id, text, route, content, color, shape, disabled, screenTitle, info, classifiers, menuText, textColor, fillColor, initiallyExpanded, expandWhen, onExpandedChange, onClick)`
+* `azRailHostItem(id, text, route, content, color, shape, disabled, screenTitle, info, classifiers, menuText, textColor, fillColor, initiallyExpanded, expandWhen, onExpandedChange, onClick)`
 * `azMenuSubItem(id, hostId, text, route, content, color, shape, disabled, screenTitle, info, onClick)`
 * `azRailSubItem(id, hostId, text, route, content, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick)`
-* `azMenuSubHostItem(id, hostId, text, route, content, color, shape, disabled, screenTitle, info, classifiers, menuText, textColor, fillColor, initiallyExpanded, expandWhen, onClick)` — a sub-item that is itself a host; nests to any depth.
-* `azRailSubHostItem(id, hostId, text, route, content, color, shape, disabled, screenTitle, info, classifiers, menuText, textColor, fillColor, initiallyExpanded, expandWhen, onClick)` — a sub-item that is itself a host; nests to any depth.
+* `azMenuSubHostItem(id, hostId, text, route, content, color, shape, disabled, screenTitle, info, classifiers, menuText, textColor, fillColor, initiallyExpanded, expandWhen, onExpandedChange, onClick)` — a sub-item that is itself a host; nests to any depth.
+* `azRailSubHostItem(id, hostId, text, route, content, color, shape, disabled, screenTitle, info, classifiers, menuText, textColor, fillColor, initiallyExpanded, expandWhen, onExpandedChange, onClick)` — a sub-item that is itself a host; nests to any depth.
 * `azMenuSubToggle(id, hostId, isChecked, toggleOnText, toggleOffText, route, color, shape, disabled, screenTitle, info, onClick)`
 * `azRailSubToggle(id, hostId, isChecked, toggleOnText, toggleOffText, route, color, shape, disabled, screenTitle, info, onClick)`
 * `azMenuSubCycler(id, hostId, options, selectedOption, route, color, shape, disabled, disabledOptions, screenTitle, info, onClick)`
@@ -228,6 +228,48 @@ azRailHostItem(
 
 Both the `expandWhen` and `initiallyExpanded` qualifiers can coexist. `initiallyExpanded`
 fires once on first appearance; `expandWhen` fires on every edge transition thereafter.
+
+---
+
+## Observing Host Expansion (`onExpandedChange`)
+
+All four host-item builders accept an optional `onExpandedChange` callback that fires whenever the user manually expands or collapses that specific host item. It does NOT fire for programmatic changes driven by `expandWhen` or `initiallyExpanded`.
+
+**Callback signature**
+
+| Platform | Type |
+| :--- | :--- |
+| Android / Kotlin | `((Boolean) -> Unit)?` |
+| React / TypeScript | `(expanded: boolean) => void` |
+
+**Typical use — persist expansion per host**
+
+~~~kotlin
+// Android
+azRailHostItem(
+    id = "settings",
+    text = "Settings",
+    initiallyExpanded = savedExpandedIds.contains("settings"),
+    onExpandedChange = { isExpanded ->
+        if (isExpanded) savedExpandedIds.add("settings")
+        else savedExpandedIds.remove("settings")
+    }
+)
+~~~
+
+~~~tsx
+// React
+const [expanded, setExpanded] = useLocalStorage<Record<string, boolean>>('hostExpanded', {})
+
+<AzRailHostItem
+  id="settings"
+  text="Settings"
+  initiallyExpanded={expanded['settings'] ?? false}
+  onExpandedChange={(isExpanded) => setExpanded(prev => ({ ...prev, settings: isExpanded }))}
+/>
+~~~
+
+The callback covers all four builder types: `azMenuHostItem`, `azRailHostItem`, `azMenuSubHostItem`, and `azRailSubHostItem`, including hosts nested inside a nested-rail popup.
 
 ---
 

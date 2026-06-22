@@ -481,8 +481,10 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                      content={item.content}
                      hasCustomContent={!!item.content}
                      onClick={() => {
-                         setHostStates(prev => ({...prev, [item.id]: !prev[item.id]}));
+                         const newHostState = !(hostStates[item.id] || false);
+                         setHostStates(prev => ({...prev, [item.id]: newHostState}));
                          logInteraction('Host toggled', item.text, item);
+                         item.onExpandedChange?.(newHostState);
                      }}
                  />
                  {isExpandedHost && subItems.filter(sub => sub.isRailItem).map((sub) => renderRailItem(sub, items.indexOf(sub), overrideConfig, new Set(ancestors).add(item.id)))}
@@ -567,7 +569,11 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                   item={item}
                   depth={depth}
                   isExpandedHost={isExpandedHost}
-                  onToggleHost={() => setHostStates(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+                  onToggleHost={() => {
+                      const newHostState = !(hostStates[item.id] || false);
+                      setHostStates(prev => ({ ...prev, [item.id]: newHostState }));
+                      item.onExpandedChange?.(newHostState);
+                  }}
                   onItemClick={() => {
                       logInteraction('Menu item clicked', item.text, item);
                       if (item.onClick) item.onClick();

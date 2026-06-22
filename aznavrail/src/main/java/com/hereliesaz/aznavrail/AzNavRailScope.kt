@@ -313,7 +313,7 @@ interface AzNavRailScope {
      * @param info Help info string.
      * @param onClick Click callback.
      */
-    fun azMenuHostItem(id: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, expandWhen: (() -> Boolean)? = null, onClick: (() -> Unit)? = null)
+    fun azMenuHostItem(id: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, expandWhen: (() -> Boolean)? = null, onExpandedChange: ((Boolean) -> Unit)? = null, onClick: (() -> Unit)? = null)
 
     /**
      * Adds a Host Item to the rail. Sub-items targeting [id] via their
@@ -338,6 +338,7 @@ interface AzNavRailScope {
         fillColor: Color? = null,
         initiallyExpanded: Boolean = false,
         expandWhen: (() -> Boolean)? = null,
+        onExpandedChange: ((Boolean) -> Unit)? = null,
         onClick: (() -> Unit)? = null
     )
 
@@ -363,7 +364,7 @@ interface AzNavRailScope {
      *
      * @param hostId The ID of the parent Host Item this sub-host belongs to.
      */
-    fun azMenuSubHostItem(id: String, hostId: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, expandWhen: (() -> Boolean)? = null, onClick: (() -> Unit)? = null)
+    fun azMenuSubHostItem(id: String, hostId: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, expandWhen: (() -> Boolean)? = null, onExpandedChange: ((Boolean) -> Unit)? = null, onClick: (() -> Unit)? = null)
 
     /**
      * Adds a Sub Item that is itself a Host Item to the rail. It is a child of
@@ -390,6 +391,7 @@ interface AzNavRailScope {
         fillColor: Color? = null,
         initiallyExpanded: Boolean = false,
         expandWhen: (() -> Boolean)? = null,
+        onExpandedChange: ((Boolean) -> Unit)? = null,
         onClick: (() -> Unit)? = null
     )
 
@@ -554,6 +556,12 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
      */
     val expandWhenMap = mutableMapOf<String, () -> Boolean>()
     /**
+     * Maps host item IDs to an expansion-change callback. Populated by the DSL and cleared on
+     * each [reset]; the [com.hereliesaz.aznavrail.AzNavRail] composable fires each callback
+     * whenever the corresponding host's expansion state transitions.
+     */
+    val onExpandedChangeMap = mutableMapOf<String, (Boolean) -> Unit>()
+    /**
      * Persisted reloc-item ordering keyed by `hostId`. Survives [reset] so drag-and-drop
      * reorders stick across recomposition (the DSL is re-applied on every recomposition and
      * would otherwise restore the original declaration order). Updated from `RailItems` on
@@ -578,6 +586,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         hiddenMenuOnValueChangeMap.clear()
         onRelocateMap.clear()
         expandWhenMap.clear()
+        onExpandedChangeMap.clear()
         itemBoundsCache.clear()
         // Without this, IDs registered on pass N stay in the set on pass N+1 and
         // the next recomposition crashes the moment any ID re-registers.
@@ -891,8 +900,9 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         navItems.add(AzNavItem(id = "divider_${navItems.size}", text = "", isRailItem = false, isDivider = true))
     }
 
-    override fun azMenuHostItem(id: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, expandWhen: (() -> Boolean)?, onClick: (() -> Unit)?) {
+    override fun azMenuHostItem(id: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, expandWhen: (() -> Boolean)?, onExpandedChange: ((Boolean) -> Unit)?, onClick: (() -> Unit)?) {
         if (expandWhen != null) expandWhenMap[id] = expandWhen
+        if (onExpandedChange != null) onExpandedChangeMap[id] = onExpandedChange
         addItem(id = id, text = text, menuText = menuText, config = AzItemConfig(classifiers = classifiers, route = route, screenTitle = screenTitle, info = info, isRailItem = false, disabled = disabled, isHost = true, content = content, color = color, textColor = textColor, fillColor = fillColor, shape = shape), onClick = onClick ?: {})
     }
 
@@ -912,9 +922,11 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         fillColor: Color?,
         initiallyExpanded: Boolean,
         expandWhen: (() -> Boolean)?,
+        onExpandedChange: ((Boolean) -> Unit)?,
         onClick: (() -> Unit)?
     ) {
         if (expandWhen != null) expandWhenMap[id] = expandWhen
+        if (onExpandedChange != null) onExpandedChangeMap[id] = onExpandedChange
         addItem(
             id = id,
             text = text,
@@ -945,9 +957,10 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         addItem(id = id, text = text, menuText = menuText, config = AzItemConfig(classifiers = classifiers, route = route, screenTitle = screenTitle, info = info, isRailItem = true, disabled = disabled, isSubItem = true, hostId = hostId, onFocus = onFocus, content = content, color = color, textColor = textColor, fillColor = fillColor, shape = shape), onClick = onClick ?: {})
     }
 
-    override fun azMenuSubHostItem(id: String, hostId: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, expandWhen: (() -> Boolean)?, onClick: (() -> Unit)?) {
+    override fun azMenuSubHostItem(id: String, hostId: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, expandWhen: (() -> Boolean)?, onExpandedChange: ((Boolean) -> Unit)?, onClick: (() -> Unit)?) {
         checkSubHost(id, hostId, "azMenuSubHostItem")
         if (expandWhen != null) expandWhenMap[id] = expandWhen
+        if (onExpandedChange != null) onExpandedChangeMap[id] = onExpandedChange
         addItem(id = id, text = text, menuText = menuText, config = AzItemConfig(classifiers = classifiers, route = route, screenTitle = screenTitle, info = info, isRailItem = false, disabled = disabled, isHost = true, isSubItem = true, hostId = hostId, content = content, color = color, textColor = textColor, fillColor = fillColor, shape = shape), onClick = onClick ?: {})
     }
 
@@ -968,10 +981,12 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         fillColor: Color?,
         initiallyExpanded: Boolean,
         expandWhen: (() -> Boolean)?,
+        onExpandedChange: ((Boolean) -> Unit)?,
         onClick: (() -> Unit)?
     ) {
         checkSubHost(id, hostId, "azRailSubHostItem")
         if (expandWhen != null) expandWhenMap[id] = expandWhen
+        if (onExpandedChange != null) onExpandedChangeMap[id] = onExpandedChange
         addItem(
             id = id,
             text = text,

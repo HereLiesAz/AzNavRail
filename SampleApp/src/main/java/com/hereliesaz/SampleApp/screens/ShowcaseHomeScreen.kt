@@ -38,7 +38,11 @@ private val entries = listOf(
 )
 
 @Composable
-fun ShowcaseHomeScreen(onNavigate: (String) -> Unit, railIsExpanded: Boolean = false) {
+fun ShowcaseHomeScreen(
+    onNavigate: (String) -> Unit,
+    railIsExpanded: Boolean = false,
+    hostExpandedStates: Map<String, Boolean> = emptyMap(),
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -75,6 +79,29 @@ fun ShowcaseHomeScreen(onNavigate: (String) -> Unit, railIsExpanded: Boolean = f
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
+        }
+        listOf("menu-host" to "Menu Host", "rail-host" to "Rail Host").forEach { (id, label) ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.tertiaryContainer)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "$label (onExpandedChange)",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+                Text(
+                    text = if (hostExpandedStates[id] == true) "Expanded" else "Collapsed",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+            }
         }
         Spacer(Modifier.height(4.dp))
         entries.forEach { entry ->

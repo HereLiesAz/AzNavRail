@@ -332,6 +332,8 @@ export interface AzNavItem {
   onClick?: () => void;
   /** Called when the item gains focus. */
   onFocus?: () => void;
+  /** Called when this host item expands or collapses. Receives `true` on expand, `false` on collapse. Only fires on user-initiated toggles. */
+  onExpandedChange?: (expanded: boolean) => void;
   // Reloc Item properties
   /** True when this item participates in drag-to-reorder within its host cluster. */
   isRelocItem?: boolean;
@@ -445,6 +447,8 @@ export interface AzHostItemProps extends AzNavItemProps {
   expandWhen?: () => boolean;
   /** When `true`, the host is expanded the first time it appears (one-shot; user can still collapse). */
   initiallyExpanded?: boolean;
+  /** Called when this host item expands or collapses due to a user tap. Receives `true` on expand, `false` on collapse. */
+  onExpandedChange?: (expanded: boolean) => void;
 }
 
 /** Props for sub-item DSL components — an item nested under a host. */

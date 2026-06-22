@@ -67,6 +67,11 @@ function App() {
   // onExpandedChange demo: tracks the current rail expansion state from outside the component.
   const [railExpanded, setRailExpanded] = useState(false)
 
+  // Per-host onExpandedChange demo: tracks individual host expansion states.
+  const [hostExpanded, setHostExpanded] = useState<Record<string, boolean>>({})
+  const onMenuHostExpanded = useCallback((v: boolean) => setHostExpanded(p => ({ ...p, 'menu-host': v })), [])
+  const onRailHostExpanded = useCallback((v: boolean) => setHostExpanded(p => ({ ...p, 'rail-host': v })), [])
+
   // Customization (lives at host scope so the rail re-renders live)
   const [customization, setCustomization] = useState<CustomizationState>({
     headerIconShape: AzHeaderIconShape.CIRCLE,
@@ -264,7 +269,7 @@ function App() {
       <AzDivider />
 
       {/* ---------- Host + sub items ---------- */}
-      <AzMenuHostItem id="menu-host" text="Menu Host" onClick={() => console.log('menu host')} />
+      <AzMenuHostItem id="menu-host" text="Menu Host" onExpandedChange={onMenuHostExpanded} onClick={() => console.log('menu host')} />
       <AzMenuSubItem id="menu-sub-1" hostId="menu-host" text="Menu Sub 1" onClick={() => console.log('menu sub 1')} />
       <AzMenuSubItem id="menu-sub-2" hostId="menu-host" text="Menu Sub 2" onClick={() => console.log('menu sub 2')} />
 
@@ -283,6 +288,7 @@ function App() {
         id="rail-host"
         text="Rail Host"
         expandWhen={expandWhenFn}
+        onExpandedChange={onRailHostExpanded}
         onClick={() => console.log('rail host')}
       />
       <AzRailSubItem id="rail-sub-1" hostId="rail-host" text="Rail Sub 1" onClick={() => console.log('rail sub 1')} />
@@ -382,8 +388,8 @@ function App() {
       <AzOnscreen alignment={AzAlignment.Center}>
         <div style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
           <Routes>
-            <Route path="/" element={<ShowcaseHome railExpanded={railExpanded} />} />
-            <Route path="/home" element={<ShowcaseHome railExpanded={railExpanded} />} />
+            <Route path="/" element={<ShowcaseHome railExpanded={railExpanded} hostExpanded={hostExpanded} />} />
+            <Route path="/home" element={<ShowcaseHome railExpanded={railExpanded} hostExpanded={hostExpanded} />} />
             <Route path="/bottom-sheet" element={<BottomSheetDemo />} />
             <Route path="/standalone" element={<StandaloneWidgets />} />
             <Route path="/customization" element={<CustomizationDemo state={customization} onChange={setCustomization} />} />

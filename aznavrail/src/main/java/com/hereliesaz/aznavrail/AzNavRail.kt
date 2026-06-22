@@ -926,7 +926,11 @@ private fun MenuItemNode(
             if (item.collapseOnClick) onCollapseMenu()
         },
         onItemClick = { if (item.collapseOnClick) onCollapseMenu() },
-        onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
+        onHostClick = {
+            val newHostState = !(hostStates[item.id] ?: false)
+            hostStates[item.id] = newHostState
+            scope.onExpandedChangeMap[item.id]?.invoke(newHostState)
+        },
         onItemGloballyPositioned = { id, bounds ->
             scope.itemBoundsCache[id] = bounds
             scope.advancedConfig.onItemGloballyPositioned?.invoke(id, bounds)

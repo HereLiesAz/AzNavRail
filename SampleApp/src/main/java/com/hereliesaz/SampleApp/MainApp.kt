@@ -113,6 +113,9 @@ fun MainApp() {
     // onExpandedChange demo: tracks the current rail expansion state from outside the composable.
     var railIsExpanded by remember { mutableStateOf(false) }
 
+    // Per-host onExpandedChange demo: tracks individual host expansion states.
+    val hostExpandedStates = remember { mutableStateMapOf<String, Boolean>() }
+
     // Help system state — drives azAdvanced(helpEnabled, helpList) and azConfig(activeClassifiers).
     var helpSystem by remember { mutableStateOf(HelpSystemState(autoInjectHelpEnabled = false, activeClassifiers = emptySet(), dismissCount = 0)) }
 
@@ -395,7 +398,8 @@ fun MainApp() {
         azDivider()
 
         // Host + sub items
-        azMenuHostItem(id = "menu-host", text = "Menu Host", route = "menu-host")
+        azMenuHostItem(id = "menu-host", text = "Menu Host", route = "menu-host",
+            onExpandedChange = { hostExpandedStates["menu-host"] = it })
         azMenuSubItem(id = "menu-sub-1", hostId = "menu-host", text = "Menu Sub 1", route = "menu-sub-1")
         azMenuSubItem(id = "menu-sub-2", hostId = "menu-host", text = "Menu Sub 2", route = "menu-sub-2")
         azHelpSubItem(id = "menu-host-help", hostId = "menu-host", text = "Help")
@@ -405,6 +409,7 @@ fun MainApp() {
             text = "Rail Host",
             route = "rail-host",
             expandWhen = { expandWhenDemoState.value },
+            onExpandedChange = { hostExpandedStates["rail-host"] = it },
         )
         azRailSubItem(id = "rail-sub-1", hostId = "rail-host", text = "Rail Sub 1", route = "rail-sub-1")
         azMenuSubItem(id = "rail-sub-2", hostId = "rail-host", text = "Menu Sub 2", route = "rail-sub-2")
@@ -611,6 +616,7 @@ fun MainApp() {
                     ShowcaseHomeScreen(
                         onNavigate = { route -> navController.navigate(route) },
                         railIsExpanded = railIsExpanded,
+                        hostExpandedStates = hostExpandedStates,
                     )
                 }
                 composable("bottom-sheet") {

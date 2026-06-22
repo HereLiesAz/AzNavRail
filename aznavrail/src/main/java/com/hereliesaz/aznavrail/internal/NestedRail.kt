@@ -66,7 +66,8 @@ internal fun NestedRail(
     isRightDocked: Boolean,
     helpList: Map<String, Any> = emptyMap(),
     onItemGloballyPositioned: ((String, androidx.compose.ui.geometry.Rect) -> Unit)? = null,
-    rotationDegrees: Float = 0f
+    rotationDegrees: Float = 0f,
+    onHostExpandedChange: ((String, Boolean) -> Unit)? = null
 ) {
     val configuration = LocalConfiguration.current
     val maxH = (configuration.screenHeightDp * 0.8f).dp
@@ -88,7 +89,7 @@ internal fun NestedRail(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             items.filter { !it.isSubItem }.forEach { item ->
-                NestedItemWrapper(item, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, items, true)
+                NestedItemWrapper(item, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, items, true, onHostExpandedChange)
             }
         }
     } else {
@@ -99,7 +100,7 @@ internal fun NestedRail(
             verticalAlignment = Alignment.CenterVertically
         ) {
             items.filter { !it.isSubItem }.forEach { item ->
-                NestedItemWrapper(item, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, items, false)
+                NestedItemWrapper(item, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, items, false, onHostExpandedChange)
             }
         }
     }
@@ -116,7 +117,8 @@ private fun NestedItemWrapper(
     onItemGloballyPositioned: ((String, androidx.compose.ui.geometry.Rect) -> Unit)?,
     hostStates: MutableMap<String, Boolean>,
     allItems: List<AzNavItem>,
-    isVerticalRail: Boolean
+    isVerticalRail: Boolean,
+    onHostExpandedChange: ((String, Boolean) -> Unit)? = null
 ) {
     // Evict cached bounds when this nested item leaves composition (popup closes). Without
     // this the help overlay would later draw cards/lines for the now-invisible nested rail.
@@ -142,7 +144,9 @@ private fun NestedItemWrapper(
             AzNavRailButton(
                 onClick = {
                     if (item.isHost) {
-                        hostStates[item.id] = !(hostStates[item.id] ?: false)
+                        val newHostState = !(hostStates[item.id] ?: false)
+                        hostStates[item.id] = newHostState
+                        onHostExpandedChange?.invoke(item.id, newHostState)
                     } else {
                         onItemSelected(item)
                     }

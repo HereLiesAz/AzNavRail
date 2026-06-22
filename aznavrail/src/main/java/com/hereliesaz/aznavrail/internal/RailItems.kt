@@ -653,7 +653,11 @@ private fun DraggableRailItemWrapper(
                     },
                     onRailCyclerClick = onRailCyclerClick,
                     onItemClick = { onItemSelected(item) },
-                    onHostClick = { hostStates[item.id] = !(hostStates[item.id] ?: false) },
+                    onHostClick = {
+                        val newHostState = !(hostStates[item.id] ?: false)
+                        hostStates[item.id] = newHostState
+                        scope.onExpandedChangeMap[item.id]?.invoke(newHostState)
+                    },
                     onItemGloballyPositioned = onItemGloballyPositioned,
                             onBoundsCalculated = { id, bounds -> scope.itemBoundsCache[id] = bounds },
                             onBoundsCleared = { id -> scope.itemBoundsCache.remove(id) },
@@ -698,7 +702,10 @@ private fun DraggableRailItemWrapper(
                             if (bounds == Rect.Zero) scope.itemBoundsCache.remove(id)
                             else scope.itemBoundsCache[id] = bounds
                         },
-                        rotationDegrees = rotationDegrees
+                        rotationDegrees = rotationDegrees,
+                        onHostExpandedChange = { id, expanded ->
+                            scope.onExpandedChangeMap[id]?.invoke(expanded)
+                        }
                     )
                 }
             } else {
@@ -733,7 +740,10 @@ private fun DraggableRailItemWrapper(
                             if (bounds == Rect.Zero) scope.itemBoundsCache.remove(id)
                             else scope.itemBoundsCache[id] = bounds
                         },
-                        rotationDegrees = rotationDegrees
+                        rotationDegrees = rotationDegrees,
+                        onHostExpandedChange = { id, expanded ->
+                            scope.onExpandedChangeMap[id]?.invoke(expanded)
+                        }
                     )
                 }
             }

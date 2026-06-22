@@ -10,7 +10,7 @@ const entries: { route: string; title: string; blurb: string }[] = [
   { route: '/help-system', title: 'Help System', blurb: 'screenTitle, info, classifiers, helpList; rail-scoped help cards.' },
 ]
 
-export default function ShowcaseHome({ railExpanded = false }: { railExpanded?: boolean }) {
+export default function ShowcaseHome({ railExpanded = false, hostExpanded = {} }: { railExpanded?: boolean; hostExpanded?: Record<string, boolean> }) {
   const navigate = useNavigate()
   return (
     <div style={page}>
@@ -23,6 +23,12 @@ export default function ShowcaseHome({ railExpanded = false }: { railExpanded?: 
         <span>Rail state (onExpandedChange)</span>
         <strong>{railExpanded ? 'Expanded' : 'Collapsed'}</strong>
       </div>
+      {(['menu-host', 'rail-host'] as const).map((id) => (
+        <div key={id} style={hostChip}>
+          <span>{id} (onExpandedChange)</span>
+          <strong>{hostExpanded[id] ? 'Expanded' : 'Collapsed'}</strong>
+        </div>
+      ))}
       <div style={{ display: 'grid', gap: 12, marginTop: 16 }}>
         {entries.map((e) => (
           <button key={e.route} onClick={() => navigate(e.route)} style={card}>
@@ -51,6 +57,18 @@ const card: React.CSSProperties = {
   cursor: 'pointer',
   color: 'inherit',
   font: 'inherit',
+}
+
+const hostChip: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginTop: 8,
+  padding: '8px 12px',
+  borderRadius: 8,
+  background: 'rgba(0,150,136,0.12)',
+  border: '1px solid rgba(0,150,136,0.3)',
+  fontSize: 13,
 }
 
 const statusChip: React.CSSProperties = {
