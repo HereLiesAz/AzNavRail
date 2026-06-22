@@ -408,6 +408,40 @@ The React/web equivalent is the `expandWhen` prop on `<AzRailHostItem>`:
 />
 ```
 
+### Observing expansion state (`onExpandedChange`)
+
+To react to the rail's own expand/collapse transitions from outside the composable — for example to adjust adjacent layout, drive analytics, or synchronise external state — pass `onExpandedChange` to `AzNavRail` (Android) or `AzHostActivityLayout` / `AzNavRail` (React/web).
+
+**Android:**
+```kotlin
+AzNavRail(
+    onExpandedChange = { expanded ->
+        // true when the rail opens its menu, false when it collapses
+        updateSidebarWidth(expanded)
+    }
+) { … }
+```
+
+Or via `AzHostActivityLayout`:
+```kotlin
+AzHostActivityLayout(
+    onExpandedChange = { expanded -> railIsExpanded = expanded },
+    …
+) { … }
+```
+
+**React/web:**
+```tsx
+<AzHostActivityLayout
+  onExpandedChange={(expanded) => setRailExpanded(expanded)}
+  …
+>
+  …
+</AzHostActivityLayout>
+```
+
+The callback fires once per state transition (expand or collapse), including on initial composition with the starting value. To also observe host-item sub-menu expansion, use `onInteraction` and filter for `action === 'Host toggled'` (React) or the item's `isHost` flag (Android).
+
 ---
 
 ## 5. Drag & Drop (Relocatable Items)

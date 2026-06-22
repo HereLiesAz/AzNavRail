@@ -56,6 +56,12 @@ All items now support the following **Reactive Binding Fields**. Provide the nam
 * `helpList`: An optional mapping of `RailItem` IDs to help texts to be shown in the help overlay alongside `info`.
 * `onInteraction`: Optional callback `((String, AzNavItem) -> Unit)?` invoked whenever any rail item is interacted with (click, toggle, cycler advance, nested rail open, reloc drag, **and host expand/collapse**). Receives the item's ID and the `AzNavItem` itself. Fires for both leaf items (`azRailItem` / `azRailSubItem`) and host items (`azRailHostItem`), in both the compact rail and the expanded menu — so a host tap that opens a sub-menu is observable exactly like a leaf tap. This is the supported way to react to "the user used the rail" (e.g. to drive a tutorial's `AzAdvanceCondition.Event` via `controller.fireEvent(...)`); it does not require — and is not affected by — the rail consuming its own taps.
 
+#### `AzNavRail` / `AzHostActivityLayout` parameters — expansion observability
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `onExpandedChange` | `((Boolean) -> Unit)?` | Called whenever the **rail** transitions between collapsed and expanded states. Receives `true` on expand, `false` on collapse. Also fires on initial composition with the starting state. Available on both `AzNavRail` (direct) and `AzHostActivityLayout` (forwarded). |
+
 ### Help overlay scoping & rendering
 
 * **Scope follows the trigger.** Tapping `azHelpRailItem` in the main rail shows cards for the main-rail items. Tapping `azHelpRailItem`/`azHelpSubItem` inside an `azNestedRail` block shows cards only for that nested rail's children. Internally the library tracks `helpScopeId = parent.id` (or `null` for main rail) at toggle time.

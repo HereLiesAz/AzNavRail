@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.4.1
+
+### Fixed
+- **`onExpandedChange` spurious firing.** The callback previously shared a `useEffect` with the
+  width animation, causing it to fire whenever `expandedRailWidth` or `collapsedRailWidth` changed
+  (e.g. from the Customization screen) rather than only on actual rail expand/collapse transitions.
+  The effects are now split — the callback fires exclusively on `isExpanded` state changes.
+
+### Added
+- **`onExpandedChange` and `onInteraction` on `AzHostActivityLayoutProps`.** Both callbacks were
+  already handled by the inner `AzNavRail` but were missing from the host layout's TypeScript
+  interface, making them invisible to callers using the typical `<AzHostActivityLayout>` entry
+  point. They are now declared on the props type and flow through the spread to `AzNavRail`
+  automatically.
+- **`onExpandedChange` demo in the React sample app.** `sample-pwa` now passes `onExpandedChange`
+  to `AzHostActivityLayout` and displays the live expansion state on the Showcase Home screen,
+  providing a working reference implementation.
+
 ## 0.4.0
 
 ### Added

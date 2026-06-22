@@ -10,7 +10,7 @@ const entries: { route: string; title: string; blurb: string }[] = [
   { route: '/help-system', title: 'Help System', blurb: 'screenTitle, info, classifiers, helpList; rail-scoped help cards.' },
 ]
 
-export default function ShowcaseHome() {
+export default function ShowcaseHome({ railExpanded = false }: { railExpanded?: boolean }) {
   const navigate = useNavigate()
   return (
     <div style={page}>
@@ -19,6 +19,10 @@ export default function ShowcaseHome() {
         Each card jumps to a demo that exercises a different slice of the React port. The rail items on the
         left of the screen drive global state (dock side, dark mode, packing, classifiers, etc.).
       </p>
+      <div style={statusChip}>
+        <span>Rail state (onExpandedChange)</span>
+        <strong>{railExpanded ? 'Expanded' : 'Collapsed'}</strong>
+      </div>
       <div style={{ display: 'grid', gap: 12, marginTop: 16 }}>
         {entries.map((e) => (
           <button key={e.route} onClick={() => navigate(e.route)} style={card}>
@@ -47,4 +51,16 @@ const card: React.CSSProperties = {
   cursor: 'pointer',
   color: 'inherit',
   font: 'inherit',
+}
+
+const statusChip: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginTop: 12,
+  padding: '8px 12px',
+  borderRadius: 8,
+  background: 'rgba(98,0,238,0.12)',
+  border: '1px solid rgba(98,0,238,0.3)',
+  fontSize: 13,
 }

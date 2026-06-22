@@ -235,6 +235,8 @@ class AzNavHostScopeImpl(
  * @param isLandscape Explicitly set landscape mode. Auto-detected if null.
  * @param initiallyExpanded Whether the rail is initially expanded.
  * @param disableSwipeToOpen Disable swipe-to-open gesture for the rail menu.
+ * @param onExpandedChange Called whenever the rail transitions between collapsed and expanded states.
+ *   Receives `true` when the rail expands and `false` when it collapses.
  * @param pagesEnabled Whether the pages Z-ordering system is active (default `true`). When on, the
  *   `page` of every [AzNavHostScope.onscreen] / [AzNavHostScope.background] item is honoured and
  *   forced — items with no explicit page share the default page `0f`. When off, items render in
@@ -250,6 +252,7 @@ fun AzHostActivityLayout(
     isLandscape: Boolean? = null,
     initiallyExpanded: Boolean = false,
     disableSwipeToOpen: Boolean = false,
+    onExpandedChange: ((Boolean) -> Unit)? = null,
     pagesEnabled: Boolean = true,
     content: AzNavHostScope.() -> Unit
 ) {
@@ -434,6 +437,7 @@ fun AzHostActivityLayout(
                 isLandscape = effectiveIsLandscape,
                 initiallyExpanded = initiallyExpanded,
                 disableSwipeToOpen = disableSwipeToOpen,
+                onExpandedChange = onExpandedChange,
                 providedScope = railScope,
                 orientation = orientation,
                 visualDockingSide = visualDockingSideProxy,

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { View, StyleSheet, Dimensions, Text } from 'react-native';
 import { AzNavRail } from './AzNavRail';
-import { AzDockingSide, AzNavRailSettings } from './types';
+import { AzDockingSide, AzNavItem, AzNavRailSettings } from './types';
 import { AzNavRailDefaults } from './AzNavRailDefaults';
 
 /** Alignment positions for `AzOnscreen` overlays, mirroring Jetpack Compose `Alignment` values. */
@@ -113,6 +113,10 @@ export interface AzHostActivityLayoutProps extends AzNavRailSettings {
   initiallyExpanded?: boolean;
   /** When true, disables the swipe gesture that expands the rail. */
   disableSwipeToOpen?: boolean;
+  /** Called whenever the rail transitions between collapsed and expanded states. */
+  onExpandedChange?: (expanded: boolean) => void;
+  /** Called whenever any rail item is interacted with. Receives the action name, an optional detail string, and the interacted item. */
+  onInteraction?: (action: string, details?: string, item?: AzNavItem) => void;
   /**
    * Whether the pages Z-ordering system is active (default `true`). When on, the `page` of every
    * `AzBackground`/`AzOnscreen` is honoured and forced — items with no explicit page share page `0`.

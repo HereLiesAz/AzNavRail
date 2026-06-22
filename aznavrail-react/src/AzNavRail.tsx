@@ -264,9 +264,11 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       duration: 300,
       useNativeDriver: false,
     }).start();
+  }, [isExpanded, config.expandedRailWidth, config.collapsedRailWidth]);
 
-    if (onExpandedChange) onExpandedChange(isExpanded);
-  }, [isExpanded, config.expandedRailWidth, config.collapsedRailWidth, onExpandedChange]);
+  useEffect(() => {
+    onExpandedChange?.(isExpanded);
+  }, [isExpanded, onExpandedChange]);
 
   useEffect(() => {
       items.forEach(item => {

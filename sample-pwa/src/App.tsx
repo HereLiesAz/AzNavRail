@@ -64,6 +64,9 @@ function App() {
   const [expandHostDemo, setExpandHostDemo] = useState(false)
   const expandWhenFn = useCallback(() => expandHostDemo, [expandHostDemo])
 
+  // onExpandedChange demo: tracks the current rail expansion state from outside the component.
+  const [railExpanded, setRailExpanded] = useState(false)
+
   // Customization (lives at host scope so the rail re-renders live)
   const [customization, setCustomization] = useState<CustomizationState>({
     headerIconShape: AzHeaderIconShape.CIRCLE,
@@ -83,6 +86,7 @@ function App() {
   return (
     <AzHostActivityLayout
       currentDestination={currentRoute}
+      onExpandedChange={setRailExpanded}
       packRailButtons={packRailButtons}
       dockingSide={isDockingRight ? AzDockingSide.RIGHT : AzDockingSide.LEFT}
       noMenu={noMenu}
@@ -378,8 +382,8 @@ function App() {
       <AzOnscreen alignment={AzAlignment.Center}>
         <div style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
           <Routes>
-            <Route path="/" element={<ShowcaseHome />} />
-            <Route path="/home" element={<ShowcaseHome />} />
+            <Route path="/" element={<ShowcaseHome railExpanded={railExpanded} />} />
+            <Route path="/home" element={<ShowcaseHome railExpanded={railExpanded} />} />
             <Route path="/bottom-sheet" element={<BottomSheetDemo />} />
             <Route path="/standalone" element={<StandaloneWidgets />} />
             <Route path="/customization" element={<CustomizationDemo state={customization} onChange={setCustomization} />} />

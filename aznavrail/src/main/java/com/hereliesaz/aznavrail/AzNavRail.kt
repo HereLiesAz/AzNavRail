@@ -129,6 +129,8 @@ object AzNavRail {
  * @param visualDockingSide The side of the screen where the rail is visually docked (Left or Right).
  * @param railAlignment The alignment of the rail within its container.
  * @param reverseLayout Whether to reverse the layout direction (e.g., for Right-to-Left languages or right docking).
+ * @param onExpandedChange Called whenever the rail transitions between collapsed and expanded states.
+ *   Receives `true` when the rail expands and `false` when it collapses.
  * @param content The configuration block for the rail, defined using the [AzNavRailScope] DSL.
  */
 @Composable
@@ -139,6 +141,7 @@ fun AzNavRail(
     isLandscape: Boolean? = null,
     initiallyExpanded: Boolean = false,
     disableSwipeToOpen: Boolean = false,
+    onExpandedChange: ((Boolean) -> Unit)? = null,
     providedScope: AzNavRailScopeImpl? = null,
     orientation: AzOrientation = AzOrientation.Vertical,
     visualDockingSide: AzDockingSide = AzDockingSide.LEFT,
@@ -363,6 +366,7 @@ fun AzNavRail(
     }
 
     LaunchedEffect(isExpanded) {
+        onExpandedChange?.invoke(isExpanded)
         if (!isExpanded) {
             cyclerStates.forEach { (id, state) ->
                 if (state.job != null) {

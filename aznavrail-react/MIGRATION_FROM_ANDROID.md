@@ -157,6 +157,18 @@ The `onInteraction` callback fires whenever a user interacts with any rail item.
 
 The Android callback receives `(itemId: String, item: AzNavItem)`. The React callback receives `(action: string, details?: string, item?: AzNavItem)` — the third parameter was added for parity and may be `undefined` for non-item actions (header tap, drag start, etc.).
 
+Both callbacks are also accepted directly on `<AzHostActivityLayout>` and forwarded to the inner rail.
+
+## Observing rail expansion (`onExpandedChange`)
+
+To react to the rail's own expand/collapse transitions, pass `onExpandedChange` directly to `AzNavRail` or `AzHostActivityLayout`.
+
+| Android | React |
+| --- | --- |
+| `AzNavRail(onExpandedChange = { expanded -> ... })` | `<AzHostActivityLayout onExpandedChange={(expanded) => ...}>` |
+
+The callback receives `true` when the rail expands into its menu and `false` when it collapses to icon-only. It fires on initial composition/mount with the starting state, then once per transition.
+
 ## What's new in 0.3.0
 
 - The standalone **`AzDropdownMenu`** (with `AzDropdownItem`) and a **sizable header icon**
