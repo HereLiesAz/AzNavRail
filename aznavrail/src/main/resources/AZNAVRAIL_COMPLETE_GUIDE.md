@@ -334,6 +334,42 @@ azRailSubItem(id = "nested-b", hostId = "rail-subhost", text = "Nested B")
 > The parent host referenced by `hostId` must be declared **before** the sub-host, and a
 > sub-host may not reference itself.
 
+### Reactive expansion (`expandWhen`)
+
+All host-item builders accept an optional `expandWhen: (() -> Boolean)?` parameter.
+The lambda is a reactive condition: when its return value transitions **false → true** the
+host auto-expands; when it transitions **true → false** the host auto-collapses.
+The "user wins" rule applies: a manual collapse while the condition is `true` is respected;
+the condition fires again only on the next false→true edge.
+
+```kotlin
+// Auto-expand the "features" host while a tutorial is active
+azRailHostItem(
+    id = "features",
+    text = "Features",
+    expandWhen = { tutorialController.activeTutorialId.value == "onboarding" }
+)
+azRailSubItem(id = "feature-a", hostId = "features", text = "Feature A")
+```
+
+This is particularly useful with the tutorial framework: a tutorial card that uses
+`AzHighlight.Item("feature-a")` requires "feature-a" to be laid out (and therefore in
+`itemBoundsCache`). Without `expandWhen` a collapsed host hides its children from layout,
+causing the punch-out to silently fall back to a full-screen dim.
+
+`expandWhen` and `initiallyExpanded` coexist: `initiallyExpanded` fires once on first
+appearance; `expandWhen` fires on every subsequent edge transition.
+
+The React/web equivalent is the `expandWhen` prop on `<AzRailHostItem>`:
+
+```tsx
+<AzRailHostItem
+  id="features"
+  text="Features"
+  expandWhen={() => tutorialController.activeTutorialId === 'onboarding'}
+/>
+```
+
 ---
 
 ## 5. Drag & Drop (Relocatable Items)
@@ -445,19 +481,6 @@ azRailRelocItem(
 
 These components are used within your screens (e.g., inside `AzNavHost`), not inside the rail configuration.
 
-### Standalone Buttons
-You can use `AzButton`, `AzToggle`, and `AzCycler` anywhere in your app to match the aesthetic of the rail. They support text or custom composable content.
-
-```kotlin
-AzButton(
-    text = "Click Me",
-    onClick = { /* Do something */ },
-    shape = AzButtonShape.RECTANGLE,
-    color = MaterialTheme.colorScheme.secondary,
-    itemContent = { Icon(Icons.Default.Add, contentDescription = "Add") } // Optional custom content
-)
-```
-
 ### AzTextBox
 Advanced text input with history support.
 
@@ -505,18 +528,6 @@ AzButton(text = "Button", onClick = {}, shape = AzButtonShape.SQUARE)
 AzToggle(isChecked = true, onToggle = {}, toggleOnText = "On", toggleOffText = "Off")
 AzCycler(options = listOf("1", "2"), selectedOption = "1", onCycle = {})
 ```
-
-
-### D. Item Customization (Colors & Text)
-Most navigation items (`azRailItem`, `azMenuItem`, toggles, cyclers, etc.) support overriding their display text and colors when shown in the menu versus the rail:
-- `menuText`: Optional alternate text to display when the item is expanded in the side menu (overrides `text`).
-- `menuToggleOnText`, `menuToggleOffText`: Optional alternate text for toggles when in the menu.
-- `menuOptions`: Optional alternate list of strings for cyclers when in the menu.
-- `textColor`: Custom color for the text itself.
-- `fillColor`: Custom color for the button's translucent background surface. By default, the `fillColor` is Black (with 25% opacity), unless the item's main color is Black, in which case it is White (with 25% opacity) to ensure proper contrast.
-
-### E. Menu Font Size & Theming
-The expanded menu text font size (and the footer items text size) is strictly controlled by your app's `MaterialTheme.typography.titleLarge`. To adjust the text size inside the side menu drawer, simply customize the `titleLarge` attribute in your app's typography theme!
 
 
 ## 9. Tutorial Framework
@@ -847,8 +858,6 @@ sheetController.stepDown()                        // reverse
 sheetController.snapTo(AzSheetDetent.FULL)         // direct jump
 sheetController.isEnabled = false                  // forces HIDDEN, blocks step calls
 ```
-
-When `isEnabled` is set to `false`: the sheet immediately collapses to `HIDDEN`, `stepUp()` becomes a no-op, `stepDown()` forces `HIDDEN`, and `snapTo()` only allows `HIDDEN` as a target. Setting `isEnabled = true` re-enables all operations.
 
 ### 10.4 Gestures
 

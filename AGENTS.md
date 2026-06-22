@@ -48,6 +48,15 @@ are easy to navigate.
   sub-items stay visible (accordion behavior at every level). Children attach to their host by
   `hostId` reference, not by position.
 
+- **Reactive Expansion (`expandWhen`)**: All host-item builders accept
+  `expandWhen: (() -> Boolean)?` (Android) / `expandWhen?: () => boolean` (React). When the
+  condition transitions false→true the host auto-expands; true→false auto-collapses. The
+  "user wins" rule applies: a manual collapse while the condition is `true` is honoured — the
+  condition acts again only on the next false→true edge. Lambdas are stored in
+  `expandWhenMap` (not on `AzNavItem`) and tracked via `snapshotFlow` on Android and via a
+  no-deps `useEffect` on React. Use `initiallyExpanded` for a one-shot expand on first
+  appearance; use `expandWhen` for ongoing reactive control.
+
 - **Nested Rails (`azNestedRail`)**: This is a distinct feature from Host Items. A Nested Rail opens a separate **popup overlay** adjacent to the parent item instead of expanding inline. It supports `VERTICAL` (column) and `HORIZONTAL` (row) alignment.
 
 - **Orientation Handling**: The rail supports two modes:

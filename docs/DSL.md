@@ -85,17 +85,58 @@ The following functions are used to define the rail structure.
 * `azMenuCycler(id, options, selectedOption, route, color, shape, disabled, disabledOptions, screenTitle, info, onClick)`
 * `azRailCycler(id, options, selectedOption, route, color, shape, disabled, disabledOptions, screenTitle, info, onClick)`
 * `azDivider()`
-* `azMenuHostItem(id, text, route, content, color, shape, disabled, screenTitle, info, onClick)`
-* `azRailHostItem(id, text, route, content, color, shape, disabled, screenTitle, info, onClick)`
+* `azMenuHostItem(id, text, route, content, color, shape, disabled, screenTitle, info, classifiers, menuText, textColor, fillColor, initiallyExpanded, expandWhen, onClick)`
+* `azRailHostItem(id, text, route, content, color, shape, disabled, screenTitle, info, classifiers, menuText, textColor, fillColor, initiallyExpanded, expandWhen, onClick)`
 * `azMenuSubItem(id, hostId, text, route, content, color, shape, disabled, screenTitle, info, onClick)`
 * `azRailSubItem(id, hostId, text, route, content, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick)`
-* `azMenuSubHostItem(id, hostId, text, route, content, color, shape, disabled, screenTitle, info, classifiers, menuText, textColor, fillColor, onClick)` — a sub-item that is itself a host; nests to any depth.
-* `azRailSubHostItem(id, hostId, text, route, content, color, shape, disabled, screenTitle, info, classifiers, menuText, textColor, fillColor, onClick)` — a sub-item that is itself a host; nests to any depth.
+* `azMenuSubHostItem(id, hostId, text, route, content, color, shape, disabled, screenTitle, info, classifiers, menuText, textColor, fillColor, initiallyExpanded, expandWhen, onClick)` — a sub-item that is itself a host; nests to any depth.
+* `azRailSubHostItem(id, hostId, text, route, content, color, shape, disabled, screenTitle, info, classifiers, menuText, textColor, fillColor, initiallyExpanded, expandWhen, onClick)` — a sub-item that is itself a host; nests to any depth.
 * `azMenuSubToggle(id, hostId, isChecked, toggleOnText, toggleOffText, route, color, shape, disabled, screenTitle, info, onClick)`
 * `azRailSubToggle(id, hostId, isChecked, toggleOnText, toggleOffText, route, color, shape, disabled, screenTitle, info, onClick)`
 * `azMenuSubCycler(id, hostId, options, selectedOption, route, color, shape, disabled, disabledOptions, screenTitle, info, onClick)`
 * `azRailSubCycler(id, hostId, options, selectedOption, route, color, shape, disabled, disabledOptions, screenTitle, info, onClick)`
 * `azRailRelocItem(id, hostId, text, route, content, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick, onRelocate, forceHiddenMenuOpen, onHiddenMenuDismiss) { ... }`
+
+---
+
+## Reactive Host Expansion (`expandWhen`)
+
+All four host-item builders (`azMenuHostItem`, `azRailHostItem`, `azMenuSubHostItem`,
+`azRailSubHostItem`) accept an optional `expandWhen: (() -> Boolean)?` parameter.
+
+**Behaviour**
+
+| Edge | Effect |
+| :--- | :--- |
+| `false → true` | Host auto-expands |
+| `true → false` | Host auto-collapses |
+| User collapse while `true` | Respected; condition acts again only on the next `false → true` edge |
+
+**How it works**
+
+`expandWhen` is a lambda — it cannot live on `AzNavItem` (a `@Parcelize` class). Instead it
+is stored in `AzNavRailScopeImpl.expandWhenMap` alongside the other callback maps
+(`onClickMap`, `onFocusMap`). Inside `AzNavRail`, a `LaunchedEffect` keyed on
+`scope.navItems` fans out one child coroutine per host item, each running
+`snapshotFlow { cond() }.collect { … }` so the runtime re-evaluates the condition whenever
+any Compose snapshot state it reads changes.
+
+**Typical use — tutorial framework**
+
+A tutorial card that highlights a sub-item inside a collapsed host would fail because the
+sub-item is not laid out (and therefore not in `itemBoundsCache`). Declare `expandWhen` on
+the host to auto-expand it when the tutorial is active:
+
+~~~kotlin
+azRailHostItem(
+    id = "my-host",
+    text = "Features",
+    expandWhen = { tutorialController.activeTutorialId.value == "onboarding" }
+)
+~~~
+
+Both the `expandWhen` and `initiallyExpanded` qualifiers can coexist. `initiallyExpanded`
+fires once on first appearance; `expandWhen` fires on every edge transition thereafter.
 
 ---
 

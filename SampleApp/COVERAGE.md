@@ -23,7 +23,7 @@ should be added before shipping.
 | `azRailItem` (Color/ResourceId/ImageVector/AzComposableContent content variants, shape, disabled, classifiers, info) | `MainApp.kt` rail items (`color-item`, `icon-item`, `vector-item`) |
 | `azRailToggle` / `azMenuToggle` | `MainApp.kt` (pack-rail, online, dark-mode, docking-side, no-menu, physical-docking) |
 | `azRailCycler` / `azMenuCycler` (`disabledOptions`) | `MainApp.kt` (rail-cycler with disabled "C", menu-cycler) |
-| `azRailHostItem` / `azMenuHostItem` | `MainApp.kt` |
+| `azRailHostItem` / `azMenuHostItem` (`initiallyExpanded`, `expandWhen`) | `MainApp.kt` (`expandWhen` driven by `expand-when-demo` `azMenuToggle`) |
 | `azRailSubItem` / `azMenuSubItem` | `MainApp.kt` |
 | `azRailSubHostItem` / `azMenuSubHostItem` (nested host under a host) | `MainApp.kt` (`rail-subhost`, `menu-subhost`) |
 | `azRailSubToggle` / `azMenuSubToggle` | `MainApp.kt` (sub-toggle under menu-host) |
@@ -96,6 +96,11 @@ a demo screen control, or a standalone widget showcase.
 
 ## Known gaps in coverage
 
+- `azRailHostItem` / `azMenuHostItem` `expandWhen` parameter — demoed via the
+  `expand-when-demo` `azMenuToggle` (covered). A tutorial-integrated version (reading
+  `activeTutorialId` from `LocalAzTutorialController`) is a stretch goal if desired.
+  The toggle demo already exercises both edges (false→true expand, true→false collapse) and
+  the user-wins rule (manual collapse while condition is `true`).
 - `AzNavRailOverlayService` (foreground variant with `getNotification()`) is not
   instantiated — the demo extends `AzNavRailSimpleOverlayService` instead. The foreground
   variant is functionally equivalent for the purposes of this showcase.

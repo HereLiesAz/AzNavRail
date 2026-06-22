@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import {
   AzHostActivityLayout,
@@ -57,6 +57,11 @@ function App() {
   const [showHelp, setShowHelp] = useState(false)
   const [dismissCount, setDismissCount] = useState(0)
   const [usePhysicalDocking, setUsePhysicalDocking] = useState(false)
+
+  // expandWhen demo: toggling this causes the Rail Host to auto-expand/collapse,
+  // demonstrating the feature and its tutorial use-case.
+  const [expandHostDemo, setExpandHostDemo] = useState(false)
+  const expandWhenFn = useCallback(() => expandHostDemo, [expandHostDemo])
 
   // Customization (lives at host scope so the rail re-renders live)
   const [customization, setCustomization] = useState<CustomizationState>({
@@ -252,7 +257,23 @@ function App() {
       <AzMenuSubItem id="menu-sub-1" hostId="menu-host" text="Menu Sub 1" onClick={() => console.log('menu sub 1')} />
       <AzMenuSubItem id="menu-sub-2" hostId="menu-host" text="Menu Sub 2" onClick={() => console.log('menu sub 2')} />
 
-      <AzRailHostItem id="rail-host" text="Rail Host" onClick={() => console.log('rail host')} />
+      {/* expandWhen demo toggle: appears in the menu so it doesn't clutter the rail */}
+      <AzMenuToggle
+        id="expand-when-demo"
+        text="Auto-Expand Host"
+        isChecked={expandHostDemo}
+        toggleOnText="Auto-Expand: On"
+        toggleOffText="Auto-Expand: Off"
+        info="expandWhen demo — when On, Rail Host auto-expands; toggling Off auto-collapses it. Manual collapse while On is respected (user-wins rule); the next On→Off→On cycle re-expands."
+        onClick={() => setExpandHostDemo((v) => !v)}
+      />
+
+      <AzRailHostItem
+        id="rail-host"
+        text="Rail Host"
+        expandWhen={expandWhenFn}
+        onClick={() => console.log('rail host')}
+      />
       <AzRailSubItem id="rail-sub-1" hostId="rail-host" text="Rail Sub 1" onClick={() => console.log('rail sub 1')} />
 
       {/* Nested host: a sub-item that is itself a host with its own sub-items. Children attach by

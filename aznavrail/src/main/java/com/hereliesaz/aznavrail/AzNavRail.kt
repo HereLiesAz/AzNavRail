@@ -45,6 +45,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -289,6 +290,8 @@ fun AzNavRail(
     // (host first appears, or its initiallyExpanded condition flips false -> true). After that the
     // user is free to collapse it; we won't fight them until the flag goes false then true again.
     val initiallyExpandedSeen = remember { mutableMapOf<String, Boolean>() }
+    // Tracks the last evaluated result of each host's `expandWhen` condition for edge detection.
+    val expandWhenSeen = remember { mutableMapOf<String, Boolean>() }
 
     val toggleHelpOverlay = remember(scope) {
         { itemId: String? ->
@@ -329,6 +332,26 @@ fun AzNavRail(
                     hostStates[item.id] = true
                 }
                 initiallyExpandedSeen[item.id] = item.initiallyExpanded
+            }
+        }
+    }
+
+    // Reactive expansion: watch each host's `expandWhen` condition via snapshotFlow so changes in
+    // Compose state captured by the lambda are detected automatically. Rising edge expands the host;
+    // falling edge collapses it. The user can still collapse a host while its condition is true
+    // (the condition only acts on transitions, not continuously).
+    LaunchedEffect(scope.navItems) {
+        scope.expandWhenMap.forEach { (id, cond) ->
+            launch {
+                snapshotFlow { cond() }.collect { conditionNow ->
+                    val conditionBefore = expandWhenSeen[id] ?: false
+                    if (conditionNow && !conditionBefore) {
+                        hostStates[id] = true
+                    } else if (!conditionNow && conditionBefore) {
+                        hostStates[id] = false
+                    }
+                    expandWhenSeen[id] = conditionNow
+                }
             }
         }
     }

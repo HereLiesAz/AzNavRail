@@ -334,6 +334,42 @@ azRailSubItem(id = "nested-b", hostId = "rail-subhost", text = "Nested B")
 > The parent host referenced by `hostId` must be declared **before** the sub-host, and a
 > sub-host may not reference itself.
 
+### Reactive expansion (`expandWhen`)
+
+All host-item builders accept an optional `expandWhen: (() -> Boolean)?` parameter.
+The lambda is a reactive condition: when its return value transitions **false → true** the
+host auto-expands; when it transitions **true → false** the host auto-collapses.
+The "user wins" rule applies: a manual collapse while the condition is `true` is respected;
+the condition fires again only on the next false→true edge.
+
+```kotlin
+// Auto-expand the "features" host while a tutorial is active
+azRailHostItem(
+    id = "features",
+    text = "Features",
+    expandWhen = { tutorialController.activeTutorialId.value == "onboarding" }
+)
+azRailSubItem(id = "feature-a", hostId = "features", text = "Feature A")
+```
+
+This is particularly useful with the tutorial framework: a tutorial card that uses
+`AzHighlight.Item("feature-a")` requires "feature-a" to be laid out (and therefore in
+`itemBoundsCache`). Without `expandWhen` a collapsed host hides its children from layout,
+causing the punch-out to silently fall back to a full-screen dim.
+
+`expandWhen` and `initiallyExpanded` coexist: `initiallyExpanded` fires once on first
+appearance; `expandWhen` fires on every subsequent edge transition.
+
+The React/web equivalent is the `expandWhen` prop on `<AzRailHostItem>`:
+
+```tsx
+<AzRailHostItem
+  id="features"
+  text="Features"
+  expandWhen={() => tutorialController.activeTutorialId === 'onboarding'}
+/>
+```
+
 ---
 
 ## 5. Drag & Drop (Relocatable Items)

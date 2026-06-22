@@ -23,6 +23,48 @@ AzHostActivityLayout(
 }
 ```
 
+
+**React (React Native / react-native-web) Equivalent:**
+While Android uses `AzHostActivityLayout` and a DSL to manage positioning and Safe Zones automatically, React projects explicitly construct their layout and pass properties and arrays of objects. The React version enforces the same visual rules via standard flex layouts.
+
+```tsx
+import { AzNavRail, AzNavItem, AzNavRailSettings } from '@HereLiesAz/aznavrail-react';
+import { View } from 'react-native';
+
+const settings: AzNavRailSettings = {
+    dockingSide: AzDockingSide.LEFT,
+    packRailButtons: false,
+    usePhysicalDocking: false,
+    defaultShape: AzButtonShape.RECTANGLE,
+    activeColor: '#6200EE',
+    translucentBackground: 'rgba(0,0,0,0.5)',
+    enableRailDragging: true,
+    isLoading: false,
+    helpList: { "home": "Home screen" },
+    infoScreen: false,
+    onDismissInfoScreen: () => {},
+};
+
+const items: AzNavItem[] = [
+    // Define items array here
+];
+
+export default function AppLayout() {
+    return (
+        <View style={{ flex: 1, flexDirection: 'row' }}>
+            <AzNavRail
+                appName="My App"
+                items={items}
+                expanded={false}
+                settings={settings}
+                onToggleExpand={() => {}}
+            />
+            {/* Background and Onscreen Content */}
+        </View>
+    );
+}
+```
+
 ---
 
 ## 2. Rail Configuration (DSL)
@@ -41,6 +83,7 @@ azConfig(
 )
 ```
 
+
 ### B. Theming (`azTheme`)
 Controls visual style defaults.
 
@@ -48,9 +91,21 @@ Controls visual style defaults.
 azTheme(
     defaultShape = AzButtonShape.RECTANGLE, // Default shape for all items
     activeColor = MaterialTheme.colorScheme.primary, // Color for active state
-    helpLineColors = listOf(Color.Red, Color.Green, Color.Blue) // Colors for Help card lines
+    translucentBackground = Color.Black.copy(alpha = 0.5f) // Set the background color for menus/overlays!
 )
 ```
+
+**React Implementation:**
+```tsx
+const settings: AzNavRailSettings = {
+    defaultShape: AzButtonShape.RECTANGLE,
+    activeColor: '#6200EE',
+    translucentBackground: 'rgba(0,0,0,0.5)',
+};
+// Pass this object to the settings prop on AzNavRail
+```
+
+
 
 ### C. Advanced Features (`azAdvanced`)
 Enables complex behaviors like drag-and-drop and help overlays.
@@ -68,21 +123,27 @@ azAdvanced(
 )
 ```
 
-`onInteraction` fires whenever any rail item is interacted with — click, toggle, cycler advance, nested rail open, or reloc drag. It receives the item's `id` and the full `AzNavItem`.
+`onInteraction` fires whenever any rail item is interacted with — click, toggle, cycler advance, nested rail open, or reloc drag. It receives the item's `id` and the full `AzNavItem`, enabling analytics integration without per-item callbacks.
+
+**React Implementation:**
+```tsx
+const settings: AzNavRailSettings = {
+    isLoading: isLoading,
+    enableRailDragging: true,
+    infoScreen: showHelp,
+    helpList: { "home": "Home screen" },
+    onDismissInfoScreen: () => setShowHelp(false),
+};
+// Pass this object to the settings prop on AzNavRail
+// onInteraction is passed as a prop on AzNavRail:
+// <AzNavRail onInteraction={(action, details, item) => console.log(action, item)} ...>
+```
+
+
+> **Note on Help Overlay:**
+> The `HelpOverlay` displays a short, truncated entry for each item to conserve space. Tapping a help card expands it to reveal the full description and any extra text provided in `helpList`. Furthermore, `helpList` can be supplied dynamically to `AzNestedRail` components for distinct, localized help data.
 
 ---
-
-
-### D. Item Customization (Colors & Text)
-Most navigation items (`azRailItem`, `azMenuItem`, toggles, cyclers, etc.) support overriding their display text and colors when shown in the menu versus the rail:
-- `menuText`: Optional alternate text to display when the item is expanded in the side menu (overrides `text`).
-- `menuToggleOnText`, `menuToggleOffText`: Optional alternate text for toggles when in the menu.
-- `menuOptions`: Optional alternate list of strings for cyclers when in the menu.
-- `textColor`: Custom color for the text itself.
-- `fillColor`: Custom color for the button's translucent background surface. By default, the `fillColor` is Black (with 25% opacity), unless the item's main color is Black, in which case it is White (with 25% opacity) to ensure proper contrast.
-
-### E. Menu Font Size & Theming
-The expanded menu text font size (and the footer items text size) is strictly controlled by your app's `MaterialTheme.typography.titleLarge`. To adjust the text size inside the side menu drawer, simply customize the `titleLarge` attribute in your app's typography theme!
 
 ## 3. Navigation Items (DSL)
 
@@ -132,6 +193,11 @@ azRailItem(id = "vector-item", text = "Delete", content = Icons.Default.Delete)
 // Rail item with specific shape override
 azRailItem(id = "none-shape", text = "No Shape", shape = AzButtonShape.NONE)
 
+// Rail item with Custom Composable Content Size
+azRailItem(id = "wide-composable", text = "Wide", content = AzComposableContent {
+    Box(Modifier.width(120.dp).background(Color.Blue))
+}) // Will not clip to rail width!
+
 // Disabled item
 azRailItem(id = "profile", text = "Profile", disabled = true, route = "profile")
 
@@ -161,6 +227,17 @@ azRailItem(
         }
     }
 )
+```
+
+**React Implementation:**
+```tsx
+// Tutorials are mapped through helpList in React
+const settings: AzNavRailSettings = {
+    infoScreen: true,
+    helpList: {
+        "item-1": "Help text for item 1"
+    }
+};
 ```
 
 ### Toggles
@@ -257,6 +334,42 @@ azRailSubItem(id = "nested-b", hostId = "rail-subhost", text = "Nested B")
 > The parent host referenced by `hostId` must be declared **before** the sub-host, and a
 > sub-host may not reference itself.
 
+### Reactive expansion (`expandWhen`)
+
+All host-item builders accept an optional `expandWhen: (() -> Boolean)?` parameter.
+The lambda is a reactive condition: when its return value transitions **false → true** the
+host auto-expands; when it transitions **true → false** the host auto-collapses.
+The "user wins" rule applies: a manual collapse while the condition is `true` is respected;
+the condition fires again only on the next false→true edge.
+
+```kotlin
+// Auto-expand the "features" host while a tutorial is active
+azRailHostItem(
+    id = "features",
+    text = "Features",
+    expandWhen = { tutorialController.activeTutorialId.value == "onboarding" }
+)
+azRailSubItem(id = "feature-a", hostId = "features", text = "Feature A")
+```
+
+This is particularly useful with the tutorial framework: a tutorial card that uses
+`AzHighlight.Item("feature-a")` requires "feature-a" to be laid out (and therefore in
+`itemBoundsCache`). Without `expandWhen` a collapsed host hides its children from layout,
+causing the punch-out to silently fall back to a full-screen dim.
+
+`expandWhen` and `initiallyExpanded` coexist: `initiallyExpanded` fires once on first
+appearance; `expandWhen` fires on every subsequent edge transition.
+
+The React/web equivalent is the `expandWhen` prop on `<AzRailHostItem>`:
+
+```tsx
+<AzRailHostItem
+  id="features"
+  text="Features"
+  expandWhen={() => tutorialController.activeTutorialId === 'onboarding'}
+/>
+```
+
 ---
 
 ## 5. Drag & Drop (Relocatable Items)
@@ -269,6 +382,8 @@ azRailRelocItem(
     id = "reloc-1",
     hostId = "rail-host", // Cluster ID
     text = "Reloc Item 1",
+    forceHiddenMenuOpen = false, // Programmatic control for hidden context menu
+    onHiddenMenuDismiss = { /* Menu was closed! */ },
     onRelocate = { from, to, newOrder -> /* handle reorder */ }
 ) {
     // Hidden Context Menu (Tap to open)
@@ -366,19 +481,6 @@ azRailRelocItem(
 
 These components are used within your screens (e.g., inside `AzNavHost`), not inside the rail configuration.
 
-### Standalone Buttons
-You can use `AzButton`, `AzToggle`, and `AzCycler` anywhere in your app to match the aesthetic of the rail. They support text or custom composable content.
-
-```kotlin
-AzButton(
-    text = "Click Me",
-    onClick = { /* Do something */ },
-    shape = AzButtonShape.RECTANGLE,
-    color = MaterialTheme.colorScheme.secondary,
-    itemContent = { Icon(Icons.Default.Add, contentDescription = "Add") } // Optional custom content
-)
-```
-
 ### AzTextBox
 Advanced text input with history support.
 
@@ -401,7 +503,7 @@ AzForm(
     formName = "loginForm",
     onSubmit = { formData -> /* Map<String, String> */ }
 ) {
-    entry(entryName = "username", hint = "Username")
+    entry(entryName = "username", hint = "Username", initialValue = "AzRailFan") // Pre-filled!
     entry(entryName = "password", hint = "Password", secret = true) // Password mask
     entry(entryName = "bio", hint = "Biography", multiline = true)  // Multi-line
 }
@@ -640,6 +742,8 @@ Persistence: `@react-native-async-storage/async-storage` (optional peer dependen
 
 ### 9.5 Web — Full Example
 
+The web library is a TypeScript port of Android. New files: `web/AzTutorialController.tsx`, `web/AzTutorialOverlay.tsx`, `web/HelpOverlay.tsx`.
+
 ```tsx
 import {
     AzWebTutorialProvider,
@@ -755,8 +859,6 @@ sheetController.snapTo(AzSheetDetent.FULL)         // direct jump
 sheetController.isEnabled = false                  // forces HIDDEN, blocks step calls
 ```
 
-When `isEnabled` is set to `false`: the sheet immediately collapses to `HIDDEN`, `stepUp()` becomes a no-op, `stepDown()` forces `HIDDEN`, and `snapTo()` only allows `HIDDEN` as a target. Setting `isEnabled = true` re-enables all operations.
-
 ### 10.4 Gestures
 
 - **Swipe up** on the sheet card or hidden strip accumulates per-frame delta and calls `stepUp()` exactly once when `config.dragThresholdDp` is crossed.
@@ -819,3 +921,14 @@ The overlay also **delivers real window insets to the content**: an `OnApplyWind
 - **Automatic, no flag:** in gesture navigation `AzHostActivityLayout` imposes **zero** bottom margin on on-screen content (it runs edge-to-edge — there is no button bar to clear). Button-navigation devices keep the usual `max(10% content safe-zone, nav-bar inset)` bottom margin. The rail's own symmetric safe-zone is unaffected.
 
 **Pages (Z-ordering).** `onscreen(alignment, page = 0f)` and `background(weight, page = 0f)` take a `page: Float`. Items sharing a page render on one co-planar layer (positioned with standard Compose `alignment`, so distinct alignments — or your own `Row`/`Column` inside the content — tile without overlapping). Items on *different* pages are stacked in Z and may overlap: a **higher** page number draws **further back**, the lowest page on top. Decimal pages (`1.5f`) insert a layer between existing ones without renumbering. `background()` items form their own book of pages beneath the entire `onscreen` book (itself beneath the rail and nav bar); `weight` breaks ties within a background page, and onscreen pages still respect the safe zones. The system is gated by `AzHostActivityLayout(pagesEnabled = true)` (the default); when on it is forced — items with no explicit page share page `0f`. Set `pagesEnabled = false` to fall back to plain declaration-order rendering (backgrounds by `weight`) with `page` ignored. The React port mirrors this on `<AzOnscreen page={…}>` / `<AzBackground page={…}>` and `pagesEnabled`.
+
+### 10.7 LogKitty migration
+
+LogKitty currently maintains its own `SheetController`, `LogBottomSheet`, and nav-bar-decoration code inside `LogKittyOverlayService`. To replace them with AzNavRail's shell:
+
+1. Add the `aznavrail` dependency.
+2. Replace `SheetController` and `LogBottomSheet` with `AzSheetController` and `AzBottomSheetWindowHost` (see snippet above).
+3. Pass LogKitty's existing tabs / log-list composable as the `content` slot.
+4. Delete `LogBottomSheet.kt`, `SheetController.kt`, and the inline nav-bar decoration block.
+
+Visual behavior — detent heights, drag feel, scrim, animation timing, and nav-bar color sync — is preserved frame-for-frame because `AzBottomSheetWindowHost` ports the same `WindowManager` flag set, the same accumulated-delta gesture, and the same nav-bar decoration window verbatim.

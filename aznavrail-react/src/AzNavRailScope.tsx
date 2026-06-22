@@ -39,7 +39,11 @@ const useAzItem = (item: AzNavItem) => {
                    prev.isRelocItem === item.isRelocItem &&
                    // Reloc props
                    JSON.stringify(prev.hiddenMenu) === JSON.stringify(item.hiddenMenu) &&
-                   prev.onRelocate === item.onRelocate;
+                   prev.onRelocate === item.onRelocate &&
+                   // Host reactive-expansion: compare by reference so a new closure (from a
+                   // parent re-render) causes a re-registration and keeps the live item fresh.
+                   // Callers should useCallback([dep]) to avoid re-registering on every render.
+                   prev.expandWhen === item.expandWhen;
 
     if (!isSame) {
         context.register(item);

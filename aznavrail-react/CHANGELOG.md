@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.4.0
+
+### Added
+- **`expandWhen` qualifier for host items.** All four host-item builders (`AzRailHostItem`,
+  `AzMenuHostItem`, `AzRailSubHostItem`, `AzMenuSubHostItem`) and the `AzHostItemProps`
+  interface accept an optional `expandWhen?: () => boolean` prop. When the function's return
+  value transitions **false→true** the host auto-expands; **true→false** auto-collapses.
+  A manual user collapse while the condition is `true` is respected — the condition fires
+  again only on the next false→true edge. Evaluated after every render via a no-deps
+  `useEffect`, so any parent state change that the function reads automatically propagates.
+  Mirrors the Android `expandWhen: (() -> Boolean)?` DSL parameter and `snapshotFlow`
+  implementation for full cross-platform parity.
+- **`initiallyExpanded` prop on `AzHostItemProps`.** Previously absent from the TypeScript
+  interface; now documented alongside `expandWhen` for completeness.
+
+### Typical use — tutorial framework
+
+```tsx
+<AzRailHostItem
+  id="features"
+  text="Features"
+  expandWhen={() => tutorialController.activeTutorialId === 'onboarding'}
+/>
+```
+
+A tutorial card that spotlights a sub-item of a collapsed host would silently degrade
+(sub-item not laid out → not in `itemBoundsCache` → no punch-out). `expandWhen` ensures
+the host is open whenever the tutorial needs it.
+
+---
+
 ## 0.3.0
 
 ### Added

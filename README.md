@@ -387,6 +387,7 @@ import { AzRoller } from '@HereLiesAz/aznavrail-react';
 -   **Sub-Items**: These are nested items that are only visible when their host item is expanded. They can also be placed in the rail or the menu.
 -   **Sub-Hosts**: A sub-item can itself be a host (`azRailSubHostItem` / `azMenuSubHostItem`), so hosts nest to **any depth**. Opening a sub-host reveals its children inline while sibling sub-items stay visible. Children attach to their host by `hostId` reference, not by position.
 -   **Exclusive Expansion**: Only one host item can be expanded at a time. Expanding a host item automatically collapses any other open host items.
+-   **Reactive Expansion (`expandWhen`)**: Pass `expandWhen = { condition }` to any host-item builder to auto-expand or auto-collapse based on a reactive condition. Rising edge (false→true) expands; falling edge (true→false) collapses. The user can still manually collapse a host while the condition is `true` — the condition re-fires only on the next false→true edge. Useful for tutorial frameworks that need sub-items to be laid out before they can be highlighted.
 
 
 **React Implementation:**

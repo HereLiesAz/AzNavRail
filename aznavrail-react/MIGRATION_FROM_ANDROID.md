@@ -19,6 +19,31 @@ the React/JSX surface exposed by `@HereLiesAz/aznavrail-react`.
 | `azDivider()` | `<AzDivider />` |
 | `azHelpRailItem(id)` / `azHelpSubItem(id, hostId)` | `<AzHelpRailItem id />` / `<AzHelpSubItem id hostId />` |
 
+### Host item qualifiers — `initiallyExpanded` and `expandWhen`
+
+Both qualifiers are supported identically on both platforms:
+
+| Android DSL | React prop |
+| --- | --- |
+| `azRailHostItem(..., initiallyExpanded = true)` | `<AzRailHostItem ... initiallyExpanded />` |
+| `azRailHostItem(..., expandWhen = { cond })` | `<AzRailHostItem ... expandWhen={() => cond} />` |
+
+`expandWhen` accepts a `() => boolean` function. On Android the lambda is tracked via
+`snapshotFlow`; on React the function is re-evaluated after every render (any parent state
+change triggers a re-render, which re-evaluates the condition). Edge detection (false→true /
+true→false) drives `hostStates` on both platforms. The "user wins" rule applies everywhere:
+a manual collapse while the condition is `true` is respected; the condition acts again only
+on the next false→true edge.
+
+```tsx
+// React example — expand the host while a tutorial is active
+<AzRailHostItem
+  id="features"
+  text="Features"
+  expandWhen={() => tutorialController.activeTutorialId === 'onboarding'}
+/>
+```
+
 ## Rail configuration
 
 Android exposes `azConfig`, `azTheme`, `azAdvanced`, and `azSettings` as DSL methods. The

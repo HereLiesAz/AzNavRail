@@ -131,6 +131,7 @@ const AzNavRail = ({
   const dragStartY = useRef(0);
   const longPressTimer = useRef(null);
   const itemsRef = useRef([]);
+  const expandWhenSeenRef = useRef({});
 
   useEffect(() => {
       setLocalNavItems(content || []);
@@ -172,6 +173,33 @@ const AzNavRail = ({
       Object.values(cyclerTimers.current).forEach(clearTimeout);
     };
   }, [navItems]);
+
+  // Evaluate expandWhen conditions after every render.
+  // Any parent state change causes re-render, re-evaluating conditions; edge detection then
+  // drives hostStates without requiring an external timer or subscription mechanism.
+  useEffect(() => {
+    let changed = false;
+    const updates = {};
+
+    const processItem = (item) => {
+      if (item.isHost && typeof item.expandWhen === 'function') {
+        const condNow = item.expandWhen();
+        const condBefore = expandWhenSeenRef.current[item.id] ?? false;
+        if (condNow !== condBefore) {
+          updates[item.id] = condNow;
+          expandWhenSeenRef.current[item.id] = condNow;
+          changed = true;
+        }
+      }
+      if (item.items) item.items.forEach(processItem);
+    };
+
+    navItems.forEach(processItem);
+
+    if (changed) {
+      setHostStates(prev => ({ ...prev, ...updates }));
+    }
+  });
 
   const handleCyclerClick = (item) => {
     if (cyclerTimers.current[item.id]) {

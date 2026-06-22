@@ -297,6 +297,13 @@ export interface AzNavItem {
   hostId?: string;
   /** Whether this host item's sub-items are currently visible. */
   isExpanded: boolean;
+  /**
+   * Reactive condition: when the return value transitions false→true the host auto-expands;
+   * true→false auto-collapses. Not serialisable — lives only in the runtime item object.
+   */
+  expandWhen?: () => boolean;
+  /** When `true`, the host is expanded the first time it appears (one-shot). */
+  initiallyExpanded?: boolean;
   /** Called when the item is tapped. */
   onClick?: () => void;
   /** Called when the item gains focus. */
@@ -403,7 +410,18 @@ export interface AzCyclerProps extends AzNavItemProps {
 }
 
 /** Props for host-type DSL items (`AzRailHostItem`, `AzMenuHostItem`) — a collapsible group header. */
-export interface AzHostItemProps extends AzNavItemProps {}
+export interface AzHostItemProps extends AzNavItemProps {
+  /**
+   * Reactive condition evaluated on every render. When the value transitions from `false` to
+   * `true` the host auto-expands; when it transitions from `true` to `false` the host
+   * auto-collapses. A manual user collapse while the condition is `true` is respected — the
+   * condition acts again only on the next false→true edge. Omit (or pass `undefined`) to
+   * disable reactive expansion for this host.
+   */
+  expandWhen?: () => boolean;
+  /** When `true`, the host is expanded the first time it appears (one-shot; user can still collapse). */
+  initiallyExpanded?: boolean;
+}
 
 /** Props for sub-item DSL components — an item nested under a host. */
 export interface AzSubItemProps extends AzNavItemProps {

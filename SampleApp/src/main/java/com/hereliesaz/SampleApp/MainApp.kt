@@ -107,6 +107,9 @@ fun MainApp() {
         )
     }
 
+    // expandWhen demo: toggling this causes the Rail Host to auto-expand/collapse.
+    val expandWhenDemoState = remember { mutableStateOf(false) }
+
     // Help system state — drives azAdvanced(helpEnabled, helpList) and azConfig(activeClassifiers).
     var helpSystem by remember { mutableStateOf(HelpSystemState(autoInjectHelpEnabled = false, activeClassifiers = emptySet(), dismissCount = 0)) }
 
@@ -366,6 +369,20 @@ fun MainApp() {
 
         azRailItem(id = "loading", text = "Load", onClick = { isLoading = !isLoading })
 
+        // expandWhen demo toggle — lives in the menu so it doesn't clutter the rail.
+        // Toggling On triggers a false→true edge on azRailHostItem("rail-host"), causing it
+        // to auto-expand. Toggling Off causes a true→false edge and auto-collapses it.
+        // If the user manually collapses while the toggle is On, that collapse is respected
+        // (user-wins); the next Off→On cycle will re-expand.
+        azMenuToggle(
+            id = "expand-when-demo",
+            isChecked = expandWhenDemoState.value,
+            toggleOnText = "Auto-Expand: On",
+            toggleOffText = "Auto-Expand: Off",
+            info = "expandWhen demo — when On, Rail Host auto-expands; toggling Off auto-collapses it. Manual collapse while On is respected (user-wins rule).",
+            onClick = { expandWhenDemoState.value = !expandWhenDemoState.value },
+        )
+
         azDivider()
 
         // Host + sub items
@@ -374,7 +391,12 @@ fun MainApp() {
         azMenuSubItem(id = "menu-sub-2", hostId = "menu-host", text = "Menu Sub 2", route = "menu-sub-2")
         azHelpSubItem(id = "menu-host-help", hostId = "menu-host", text = "Help")
 
-        azRailHostItem(id = "rail-host", text = "Rail Host", route = "rail-host")
+        azRailHostItem(
+            id = "rail-host",
+            text = "Rail Host",
+            route = "rail-host",
+            expandWhen = { expandWhenDemoState.value },
+        )
         azRailSubItem(id = "rail-sub-1", hostId = "rail-host", text = "Rail Sub 1", route = "rail-sub-1")
         azMenuSubItem(id = "rail-sub-2", hostId = "rail-host", text = "Menu Sub 2", route = "rail-sub-2")
 
