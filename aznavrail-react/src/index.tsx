@@ -10,10 +10,15 @@ export * from './components/AzForm';
 export * from './components/AzLoad';
 export * from './components/AzRoller';
 export * from './components/AzDivider';
+export * from './components/AzDropdownMenu';
 export * from './components/AzBottomSheet';
 export * from './components/AzBottomSheetInsetAware';
 export * from './components/AzFloatingRail';
+export * from './components/AboutOverlay';
+export * from './components/MoreFromAzOverlay';
 export * from './components/useAzSheetController';
+export * from './services/githubDocs';
+export * from './services/moreFromAz';
 export * from './types';
 // `AzToggleProps` / `AzCyclerProps` are declared both as the DSL prop types in `./types` and as the
 // component prop types in the component files above, so the two `export *` statements collide.

@@ -62,6 +62,40 @@ azTheme(activeColor = MaterialTheme.colorScheme.primary)
 </AzNavRail>
 ```
 
+### Drop-down menu (`AzDropdownMenu`) & header icon size
+
+| Android | React |
+| --- | --- |
+| `AzDropdownMenu { azItem("Settings") { … } }` | `<AzDropdownMenu><AzDropdownItem text="Settings" onClick={…} /></AzDropdownMenu>` |
+| `AzDropdownMenu { azConfig(design = MENU, dockingSide = LEFT); … }` | `<AzDropdownMenu design={AzDropdownDesign.MENU} dockingSide={AzDockingSide.LEFT}>` |
+| `azItem("Home", route = "home") { }` (navigates the `NavController`) | `<AzDropdownItem text="Home" route="home" … />` (calls `onNavigate`) |
+| `azTheme(headerIconSize = 48.dp)` / `azSettings(headerIconSize = 48.dp)` | `headerIconSize={48}` |
+
+Drop-down mode collapses the rail to a top-anchored app-icon trigger (the icon replaces the
+hamburger) that unfolds either the rail items or the menu items like an accordion, giving the screen
+content the full width. It excludes FAB/dragging, rail↔menu expansion, `noMenu`, swipe gestures,
+physical docking, the footer, nested-rail popups, the bleeding app-name header, and the help overlay
+— matching the Android behaviour. `headerIconSize` is a pixel `number` on React vs a `Dp` on Android.
+
+### In-app About reader & "More from Az"
+
+| Android | React |
+| --- | --- |
+| `azAbout(inAppAbout = true)` | `<AzNavRail inAppAbout />` / `settings.inAppAbout` |
+| `azAbout(moreFromAzEnabled = true)` | `moreFromAzEnabled` |
+| `azAbout(moreRailItem = true)` | `moreRailItem` |
+| `azAbout(moreFromAzJsonUrl = "…")` | `moreFromAzJsonUrl` |
+| `azConfig(appRepositoryUrl = "…")` | `appRepositoryUrl` |
+
+The footer "About" opens an in-app markdown reader that auto-discovers the repo's docs (root +
+`docs/`) via the GitHub API. "More from Az" is a carousel whose `more-from-az.json` you fill by
+pasting GitHub repo links (one per line); a GitHub Action resolves each repo and **bakes** the
+finished manifest (name/icon/description, a verified Play link, the homepage website/PWA, WIP
+filtering, Play-first sort). Both screens are themed from `activeColor`/`translucentBackground` and
+built from the library's own components; markdown uses a small self-contained renderer (no
+`react-markdown` dependency). Because resolution is done in CI, "More from Az" metadata is identical
+on web and native — no CORS limitation. Use `appRepositoryUrl` to point the reader at your repo.
+
 ## Bottom sheets
 
 The Android library registers sheets via `AzNavHostScope.azBottomSheet(controller, config, ...)`
@@ -125,6 +159,9 @@ The Android callback receives `(itemId: String, item: AzNavItem)`. The React cal
 
 ## What's new in 0.3.0
 
+- The standalone **`AzDropdownMenu`** (with `AzDropdownItem`) and a **sizable header icon**
+  (`headerIconSize`) reach parity with Android. See "Drop-down menu (`AzDropdownMenu`) & header icon
+  size" above.
 - Bottom sheet **drag-to-collapse is gentler**: a downward drag now steps **down one detent**
   (`FULL → HALF → PEEK → HIDDEN`) instead of snapping straight to HIDDEN, mirroring the
   up-drag's one-step expand. Matches the Android `9.2` `AzSheetGestures` change.

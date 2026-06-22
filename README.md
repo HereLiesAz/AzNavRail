@@ -35,7 +35,7 @@ Add JitPack to your `settings.gradle.kts`:
 - **Layout**: Pack buttons or preserve spacing.
 - **Disabled State**: Disable items or options.
 - **Loading State**: Built-in loading animation.
-- **Standalone Components**: `AzButton`, `AzToggle`, `AzCycler`, `AzDivider`, `AzRoller`.
+- **Standalone Components**: `AzButton`, `AzToggle`, `AzCycler`, `AzDivider`, `AzRoller`, `AzTextBox`, `AzForm`, `AzDropdownMenu`.
 - **Navigation**: seamless Jetpack Navigation integration.
 - **Hierarchy**: Nested menus with host and sub-items. Sub-items can themselves be hosts (`azRailSubHostItem` / `azMenuSubHostItem`), so hosts nest to any depth.
 - **Draggable (FAB Mode)**: Detach and move the rail.
@@ -53,6 +53,10 @@ Add JitPack to your `settings.gradle.kts`:
 - **Tutorial Framework**: Scripted multi-scene tutorials with spotlights, 4 advance conditions (Button, TapTarget, TapAnywhere, Event), variable-driven branching, TapTarget branching, checklist cards, media cards, and cross-platform read-state persistence.
 - **Left/Right Docking**: Position the rail on the left or right side of the screen.
 - **No Menu Mode**: Treat all items as rail items, removing the side drawer.
+- **`AzDropdownMenu`**: A standalone, app-icon drop-down declared with the rail's opinionated DSL (`azConfig` + `azItem`/`azToggle`/`azCycler`/`azDivider`). Its overlay panel is styled as the rail or menu (`design`), width-constrained to match, and pinned to the `dockingSide` screen edge. Items can carry a `route` to drive an `AzNavHost` via a `NavController`, exactly like the rail — and it accepts no styling the rest of the library doesn't.
+- **Sizable Header Icon**: Set the app-icon to an exact diameter via `headerIconSize`.
+- **In-App About Reader**: The footer "About" opens a themed in-app markdown reader that auto-discovers your repo's docs (root + `docs/`) and renders them inline. (`azAbout`)
+- **More from Az**: A self-versioning carousel of other apps — paste GitHub repo links and CI bakes name/icon/description, a verified Play link, and the homepage website/PWA (WIP apps excluded, Play-first); optionally pinned as a "More" rail item.
 - **AzHostActivityLayout**: A layout container that enforces strict safe zones and automatic alignment rules.
 - **AzNavHost**: A wrapper around `androidx.navigation.compose.NavHost` for seamless integration.
 - **Smart Transitions**: `AzNavHost` automatically configures directional transitions (slide in/out) based on the docking side (e.g., standard LTR or mirrored for Right dock).
@@ -437,6 +441,148 @@ const settings: AzNavRailSettings = {
 };
 // Pass settings to AzNavRail
 ```
+
+### `AzDropdownMenu` — standalone hamburger menu
+
+A drop-down menu is a **standalone widget** declared with the same opinionated DSL as the rail. In
+AzNavRail tradition it accepts **only** what the rest of the library sanctions — no arbitrary panel
+background, offsets, icon tint/source, or free composable escape hatch. Its trigger is the **app
+icon** (auto-drawn exactly like the rail's header), dropped inline like any widget. Tapping it unfolds
+an **overlay panel** of the items you declare; tapping outside, pressing back, or tapping an item
+folds it up.
+
+Configure it through `azConfig` (mirroring the rail): **`design`** picks `AzDropdownDesign.RAIL`
+(compact rail buttons at the **collapsed width**, ≈100dp) or `AzDropdownDesign.MENU` (the default;
+full-width labeled rows at the **expanded width**, ≈160dp); **`dockingSide`** pins the panel to the
+`LEFT` or `RIGHT` screen edge; the app-icon **`headerIconShape`/`headerIconSize`** (mirroring the
+rail's `azTheme`) and `vibrate`/`expandedWidth`/`collapsedWidth` round out the config. The panel
+**drops from the trigger** automatically (downward when it fits, otherwise upward). The `MENU` design
+renders rows at the rail's menu-item text size and carries the rail's **footer** (About / Feedback /
+@HereLiesAz, gated by `showFooter`, with `appRepositoryUrl` behind "About"), just like the expanded
+menu.
+
+Items are declared with `azItem` / `azToggle` / `azCycler` / `azDivider`, accepting only the rail's
+sanctioned per-item knobs (`color`/`textColor`/`fillColor`/`shape`/`enabled`/`closeOnClick`). Each may
+carry a **`route`** which — like the rail — navigates the supplied `navController`, so the drop-down
+can drive an `AzNavHost`.
+
+```kotlin
+AzDropdownMenu(navController = navController) {
+    azConfig(design = AzDropdownDesign.MENU, dockingSide = AzDockingSide.LEFT)
+    azItem("Home", route = "home") { }
+    azToggle(isChecked = dark, toggleOnText = "Dark", toggleOffText = "Light") { dark = it }
+    azDivider()
+    azItem("Sign out") { signOut() }
+}
+```
+
+**React Implementation:**
+```tsx
+import { AzDropdownMenu, AzDropdownItem, AzDivider, AzDockingSide, AzDropdownDesign } from '@HereLiesAz/aznavrail-react';
+
+<AzDropdownMenu design={AzDropdownDesign.MENU} dockingSide={AzDockingSide.LEFT} onNavigate={go}>
+  <AzDropdownItem text="Home" route="home" onClick={() => {}} />
+  <AzDivider />
+  <AzDropdownItem text="Sign out" onClick={signOut} />
+</AzDropdownMenu>
+```
+
+### Sizable Header Icon
+
+By default the app icon in the header sizes itself to the rail width. To pin it to an **exact
+diameter**, set `headerIconSize` (a `Dp` on Android, a pixel `number` on React):
+
+```kotlin
+azTheme(headerIconSize = 48.dp)
+// or via the combined helper:
+azSettings(headerIconSize = 48.dp)
+```
+
+```tsx
+const settings: AzNavRailSettings = { headerIconSize: 48 };
+```
+
+
+### In-App About Reader
+
+The footer **About** item can open a built-in, themed **in-app documentation reader** instead of
+launching the browser. It **auto-discovers** your app's markdown docs — every `.md` file in the repo
+**root** and the **`docs/`** folder of your configured `appRepositoryUrl` — via the GitHub API, builds
+a table of contents, and renders each doc inline with a markdown renderer themed to the rail
+(`activeColor` links, `translucentBackground` surfaces). A **View on GitHub** button is pinned at the
+bottom with extra spacing.
+
+```kotlin
+azConfig(appRepositoryUrl = "https://github.com/YourOrg/YourApp")
+azAbout(inAppAbout = true)   // default; set false to open the repo URL in a browser instead
+```
+
+```tsx
+const settings: AzNavRailSettings = {
+  appRepositoryUrl: 'https://github.com/YourOrg/YourApp',
+  inAppAbout: true,
+};
+```
+
+- **Caching & rate limit:** results are cached (ETag + 6h TTL) to stay well under GitHub's
+  unauthenticated ~60 req/hr limit; when offline or rate-limited the reader shows the last cached copy.
+- **Public repos only** (unauthenticated GitHub API). Private repos won't resolve.
+- **`.azignore`:** add a `.azignore` file at your repo root listing docs to exclude from the About
+  TOC — one pattern per line (`#` comments; exact paths like `CHANGELOG.md`, directory prefixes like
+  `docs/internal/`, or `*` globs like `*.draft.md`).
+- The system **back** button (Android) / back arrow returns from a doc to the table of contents, then
+  dismisses.
+
+### More from Az
+
+A built-in carousel of the library author's other apps, reachable from a **"More from Az"** entry in
+the About screen and/or a pinned **"More"** rail item. You maintain it by **pasting GitHub repo
+links — one per line, any order** — into [`more-from-az.json`](more-from-az.json). That's all; a
+GitHub Action resolves everything else and bakes a finished manifest the rail just renders:
+
+```json
+{ "version": 1, "apps": [
+  "https://github.com/HereLiesAz/AzNavRail",
+  "https://github.com/HereLiesAz/CueDetat",
+  "https://github.com/HereLiesAz/GraffitiXR"
+] }
+```
+
+For each repo, `.github/workflows/bump-more-from-az.yml` (running server-side with the authenticated
+`GITHUB_TOKEN`):
+- pulls **name / icon / description** from the repo,
+- **constructs and verifies** the Play link from the package convention `com.<owner>.<repo>` (e.g.
+  `HereLiesAz/CueDetat` → `…?id=com.hereliesaz.cuedetat`), keeping it only if the listing exists,
+- reads the **website / PWA** from the repo's GitHub **homepage** (PWA → an "Open" button; otherwise
+  a "Website" button),
+- **excludes** any app whose README's **first line says `WIP`**,
+- **sorts apps with a working Play link first**,
+- and **bumps `version`**, committing the baked manifest back with `[skip ci]`.
+
+So you never hand-format JSON, never construct a Play link, and never cut a release to add an app. Do
+not hand-edit `version` (CI-managed). The rail parser is lenient, so the list still renders in the
+brief window before CI bakes. Grouping is by repository, so paste order never matters.
+
+- **Config & placement:**
+
+```kotlin
+azAbout(
+    moreFromAzEnabled = true,                 // show the "More from Az" entry in the About screen
+    moreRailItem = true,                      // also pin a "More" item at the bottom of the rail
+    moreFromAzJsonUrl = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json",
+)
+```
+
+```tsx
+const settings: AzNavRailSettings = {
+  moreFromAzEnabled: true,
+  moreRailItem: true,
+  moreFromAzJsonUrl: 'https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json',
+};
+```
+
+Because all resolution happens in CI (not in the app), metadata is identical on Android and web —
+there's no client-side CORS limitation, and the runtime never spends GitHub's rate-limit budget.
 
 
 ### Reorderable Items (AzRailRelocItem)

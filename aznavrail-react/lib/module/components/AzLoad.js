@@ -1,5 +1,9 @@
 import React from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
+
+/** Props for the `AzLoad` activity indicator. */
+
+/** Card-style activity indicator overlay used by the rail when `isLoading` is set. */
 export const AzLoad = ({
   size = "large",
   color = "#6200ee"

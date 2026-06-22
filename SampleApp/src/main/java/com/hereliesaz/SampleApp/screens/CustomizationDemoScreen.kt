@@ -11,6 +11,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,8 +23,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.AzButton
 import com.hereliesaz.aznavrail.AzCycler
+import com.hereliesaz.aznavrail.AzDropdownMenu
 import com.hereliesaz.aznavrail.AzToggle
 import com.hereliesaz.aznavrail.model.AzButtonShape
+import com.hereliesaz.aznavrail.model.AzDockingSide
+import com.hereliesaz.aznavrail.model.AzDropdownDesign
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 
 /** Live theme/config state surfaced from MainApp so the rail can re-key on each change. */
@@ -35,6 +42,7 @@ data class CustomizationState(
     val appRepositoryUrl: String,
     val helpLineColors: List<Color>,
     val vibrate: Boolean,
+    val headerIconSize: Dp = Dp.Unspecified,
 )
 
 private val headerIconShapes = AzHeaderIconShape.values().toList()
@@ -123,6 +131,16 @@ fun CustomizationDemoScreen(
             valueRange = 60f..160f,
         )
 
+        SectionLabel("headerIconSize: ${if (state.headerIconSize == Dp.Unspecified) "auto (rail width)" else "${state.headerIconSize.value.toInt()} dp"}")
+        Slider(
+            value = if (state.headerIconSize == Dp.Unspecified) 0f else state.headerIconSize.value,
+            onValueChange = { onChange(state.copy(headerIconSize = if (it < 1f) Dp.Unspecified else it.dp)) },
+            valueRange = 0f..120f,
+        )
+
+        SectionLabel("AzDropdownMenu — standalone hamburger; panel pins to the screen edge as rail/menu")
+        AzDropdownMenuDemo()
+
         SectionLabel("displayAppName")
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             AzToggle(
@@ -198,6 +216,56 @@ fun CustomizationDemoScreen(
             text = "Reset to defaults",
             shape = AzButtonShape.RECTANGLE,
         )
+    }
+}
+
+/**
+ * Demonstrates the standalone [AzDropdownMenu] — declared with the same opinionated DSL as the rail.
+ * Its trigger is the app icon (not customizable); the panel is configured via `azConfig` (design +
+ * docking side) and pins to the chosen screen edge. The cyclers below drive that `azConfig`.
+ */
+@Composable
+private fun AzDropdownMenuDemo() {
+    var design by remember { mutableStateOf(AzDropdownDesign.MENU) }
+    var dockingSide by remember { mutableStateOf(AzDockingSide.LEFT) }
+    var dark by remember { mutableStateOf(false) }
+    var lastAction by remember { mutableStateOf("none") }
+
+    val designs = AzDropdownDesign.values()
+    AzCycler(
+        options = designs.map { it.name },
+        selectedOption = design.name,
+        onCycle = { design = designs[(design.ordinal + 1) % designs.size] },
+        shape = AzButtonShape.RECTANGLE,
+    )
+
+    val sides = AzDockingSide.values()
+    AzCycler(
+        options = sides.map { it.name },
+        selectedOption = dockingSide.name,
+        onCycle = { dockingSide = sides[(dockingSide.ordinal + 1) % sides.size] },
+        shape = AzButtonShape.RECTANGLE,
+    )
+
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        AzDropdownMenu {
+            azConfig(
+                design = design,
+                dockingSide = dockingSide,
+                headerIconShape = AzHeaderIconShape.ROUNDED,
+                headerIconSize = 56.dp,
+            )
+            azItem("Profile") { lastAction = "Profile" }
+            azItem("Settings") { lastAction = "Settings" }
+            azToggle(
+                isChecked = dark,
+                toggleOnText = "Dark",
+                toggleOffText = "Light",
+            ) { dark = it }
+            azDivider()
+            azItem("Sign out") { lastAction = "Sign out" }
+        }
+        Text("last: $lastAction", style = MaterialTheme.typography.bodyMedium)
     }
 }
 

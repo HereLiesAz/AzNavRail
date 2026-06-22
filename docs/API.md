@@ -1,6 +1,6 @@
-# AzNavRail API Reference (v7.25: The Live Dictatorship)
+# AzNavRail API Reference
 
-This document serves as the technical reference for the AzNavRail library. Version 7.25 introduces **Dynamic Reactive Binding**, allowing the annotation-driven architecture to react to runtime state changes in the host Activity.
+This document serves as the technical reference for the AzNavRail library. **Dynamic Reactive Binding** lets the annotation-driven architecture react to runtime state changes in the host Activity.
 
 * **[1. High-Inference API](#1-high-inference-api-az)**: The annotation system used to dictate structure and reactive bindings.
 * **[2. The Configuration Duality (Scope API)](#2-the-configuration-duality-scope-api)**: The backend API used to inject runtime configurations.
@@ -11,7 +11,7 @@ This document serves as the technical reference for the AzNavRail library. Versi
 
 ## 1. High-Inference API (`@Az`)
 
-The primary interface for the library is the `@Az` annotation. In v7.25, annotations now support `*Property` strings which bind directly to properties in your `AzActivity` (ideally `mutableStateOf`).
+The primary interface for the library is the `@Az` annotation. Annotations support `*Property` strings which bind directly to properties in your `AzActivity` (ideally `mutableStateOf`).
 
 ### `com.hereliesaz.aznavrail.annotation.Az`
 
@@ -54,7 +54,7 @@ All items now support the following **Reactive Binding Fields**. Provide the nam
 * `isLoadingProperty`: Binds the global loading spinner to a `Boolean` property.
 * `helpEnabled`: When `true`, auto-injects a Help item into the menu drawer if no explicit `azHelpRailItem` / `azHelpSubItem` is registered. The overlay itself is toggled exclusively by tapping a help item (there is no public API to open it externally).
 * `helpList`: An optional mapping of `RailItem` IDs to help texts to be shown in the help overlay alongside `info`.
-* `onInteraction`: Optional callback `((String, AzNavItem) -> Unit)?` invoked whenever any rail item is interacted with (click, toggle, cycler advance, nested rail open, reloc drag). Receives the item's ID and the `AzNavItem` itself.
+* `onInteraction`: Optional callback `((String, AzNavItem) -> Unit)?` invoked whenever any rail item is interacted with (click, toggle, cycler advance, nested rail open, reloc drag, **and host expand/collapse**). Receives the item's ID and the `AzNavItem` itself. Fires for both leaf items (`azRailItem` / `azRailSubItem`) and host items (`azRailHostItem`), in both the compact rail and the expanded menu — so a host tap that opens a sub-menu is observable exactly like a leaf tap. This is the supported way to react to "the user used the rail" (e.g. to drive a tutorial's `AzAdvanceCondition.Event` via `controller.fireEvent(...)`); it does not require — and is not affected by — the rail consuming its own taps.
 
 ### Help overlay scoping & rendering
 
@@ -91,11 +91,50 @@ fun azConfig(
     displayAppName: Boolean = false,
     activeClassifiers: Set<String> = emptySet(),
     usePhysicalDocking: Boolean = false,
-    expandedWidth: Dp = 130.dp,
-    collapsedWidth: Dp = 80.dp,
-    showFooter: Boolean = true
+    expandedWidth: Dp = 160.dp,
+    collapsedWidth: Dp = 100.dp,
+    showFooter: Boolean = true,
+    appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail"
 )
 ~~~
+
+> A hamburger drop-down menu is a standalone composable, **`AzDropdownMenu`** — not a rail mode. See
+> the README's "`AzDropdownMenu`" section and `docs/DSL.md`.
+
+### `azTheme`
+Controls the visual style of the rail.
+
+~~~kotlin
+fun azTheme(
+    activeColor: Color = Color.Unspecified,
+    defaultShape: AzButtonShape = AzButtonShape.CIRCLE,
+    headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
+    translucentBackground: Color = Color.Unspecified,
+    helpLineColors: List<Color> = emptyList(),
+    headerIconSize: Dp = Dp.Unspecified
+)
+~~~
+
+* `headerIconSize`: `Dp` — exact diameter of the header app-icon. `Dp.Unspecified` (default) sizes
+  the icon to the rail width (legacy behavior).
+
+### `azAbout`
+Configures the built-in About reader and the "More from Az" carousel.
+
+~~~kotlin
+fun azAbout(
+    inAppAbout: Boolean = true,
+    moreFromAzEnabled: Boolean = true,
+    moreFromAzJsonUrl: String = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json",
+    moreRailItem: Boolean = false
+)
+~~~
+
+* `inAppAbout` — footer "About" opens the in-app markdown reader (auto-generated from the repo's docs)
+  instead of opening `appRepositoryUrl` in a browser.
+* `moreFromAzEnabled` — show the "More from Az" entry inside the About screen.
+* `moreFromAzJsonUrl` — raw URL of the link-only, CI-versioned `more-from-az.json` manifest.
+* `moreRailItem` — also pin a "More" item at the bottom of the collapsed rail that opens the carousel.
 
 ---
 

@@ -13,8 +13,9 @@ this Vite PWA, not Jekyll).
   and the `AzBottomSheetInsetAware` variant.
 - **Standalone Widgets** — `AzButton`, `AzToggle`, `AzCycler` at every `AzButtonShape`,
   plus `AzRoller`, `AzDivider`, `AzLoad`.
-- **Customization** — live header icon shape, default shape, rail widths, footer, repo URL,
-  haptics, and `activeClassifiers` chips.
+- **Customization** — live header icon shape, header icon size, default shape, rail widths,
+  footer, repo URL, haptics, `activeClassifiers` chips, and a standalone **`AzDropdownMenu`** demo
+  (alignment + items).
 - **Forms** — `AzForm` + `AzTextBox` showcase.
 - **Rail Playground** — toggles, cyclers, host items, reloc items with hidden menus, and both
   vertical/horizontal nested rails (each with its own Help item that scopes the help overlay).

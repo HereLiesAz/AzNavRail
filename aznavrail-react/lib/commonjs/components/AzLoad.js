@@ -7,6 +7,9 @@ exports.AzLoad = void 0;
 var _react = _interopRequireDefault(require("react"));
 var _reactNative = require("react-native");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+/** Props for the `AzLoad` activity indicator. */
+
+/** Card-style activity indicator overlay used by the rail when `isLoading` is set. */
 const AzLoad = ({
   size = "large",
   color = "#6200ee"

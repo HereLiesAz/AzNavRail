@@ -7,6 +7,9 @@ exports.AzToggle = void 0;
 var _react = _interopRequireDefault(require("react"));
 var _AzButton = require("./AzButton");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+/** Props for the standalone `AzToggle` button used inside the rail to render a two-state item. */
+
+/** Two-state toggle button — internally an `AzButton` whose label is driven by `isChecked`. */
 const AzToggle = ({
   isChecked,
   onToggle,

@@ -77,8 +77,10 @@ interface AzNavRailScope {
      * @param headerIconShape The shape of the header icon (Circle, Rounded, None).
      * @param translucentBackground The translucent background color for the rail and popup menus.
      * @param helpLineColors List of colors to use for the connecting lines in the Help overlay.
+     * @param headerIconSize The exact diameter (width and height) of the app icon in the header.
+     *   When [Dp.Unspecified] (the default) the icon sizes itself to the rail width as before.
      */
-    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.CIRCLE, headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE, translucentBackground: Color = Color.Unspecified, helpLineColors: List<Color> = emptyList())
+    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.CIRCLE, headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE, translucentBackground: Color = Color.Unspecified, helpLineColors: List<Color> = emptyList(), headerIconSize: Dp = Dp.Unspecified)
 
     /**
      * Configures advanced features like loading states, help screens, and overlays.
@@ -100,6 +102,27 @@ interface AzNavRailScope {
     fun azAdvanced(isLoading: Boolean = false, helpEnabled: Boolean = false, onDismissHelp: (() -> Unit)? = null, overlayService: Class<out android.app.Service>? = null, onUndock: (() -> Unit)? = null, enableRailDragging: Boolean = false, onRailDrag: ((Float, Float) -> Unit)? = null, onOverlayDrag: ((Float, Float) -> Unit)? = null, onItemGloballyPositioned: ((String, Rect) -> Unit)? = null, secLoc: String? = null, secLocPort: Int = 10203, helpList: Map<String, Any> = emptyMap(), tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap(), onInteraction: ((String, com.hereliesaz.aznavrail.model.AzNavItem) -> Unit)? = null)
 
     /**
+     * Configures the built-in **About** screen and the **"More from Az"** carousel.
+     *
+     * When [inAppAbout] is true (the default), tapping the footer's "About" item opens an in-app,
+     * themed markdown reader that auto-discovers this app's documentation (`.md` files in the repo
+     * root and `docs/` folder of [azConfig]'s `appRepositoryUrl`), builds a table of contents, and
+     * renders each doc inline. A GitHub repo button sits pinned at the bottom. Set [inAppAbout] to
+     * false to restore the legacy behavior of opening the repository URL in a browser.
+     *
+     * When [moreFromAzEnabled] is true (the default), the About screen also offers a "More from Az"
+     * entry that opens a carousel of the library author's other apps, fetched at runtime from
+     * [moreFromAzJsonUrl] (a CI-versioned JSON manifest). Public GitHub repos only.
+     *
+     * @param inAppAbout Whether the footer "About" opens the in-app reader (true) or a browser (false).
+     * @param moreFromAzEnabled Whether the "More from Az" carousel entry is shown.
+     * @param moreFromAzJsonUrl Raw URL of the `more-from-az.json` manifest.
+     * @param moreRailItem When true, pins a "More" item at the bottom of the collapsed rail that
+     *   opens the "More from Az" carousel directly.
+     */
+    fun azAbout(inAppAbout: Boolean = true, moreFromAzEnabled: Boolean = true, moreFromAzJsonUrl: String = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json", moreRailItem: Boolean = false)
+
+    /**
      * A comprehensive configuration method combining settings, theme, and advanced options.
      * This mirrors the structure used in the `AZNAVRAIL_COMPLETE_GUIDE.md`.
      */
@@ -113,6 +136,7 @@ interface AzNavRailScope {
         defaultShape: AzButtonShape = AzButtonShape.CIRCLE,
         enableRailDragging: Boolean = false,
         headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
+        headerIconSize: Dp = Dp.Unspecified,
         onUndock: (() -> Unit)? = null,
         overlayService: Class<out android.app.Service>? = null,
         onOverlayDrag: ((Float, Float) -> Unit)? = null,
@@ -634,6 +658,11 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     var defaultShape: AzButtonShape = AzButtonShape.CIRCLE // Restored: default is circle
     /** Shape applied to the app icon in the rail header. */
     var headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE // Default per legacy, overridden in UI
+    /**
+     * Exact diameter (width and height) of the app icon in the header. [Dp.Unspecified] (the
+     * default) keeps the legacy behaviour of sizing the icon to the rail width.
+     */
+    var headerIconSize: Dp = Dp.Unspecified
     /** Background color for popup overlays (nested rails, hidden menus). [Color.Unspecified] uses the surface color. */
     var translucentBackground: Color = Color.Unspecified
     /** Colors used for the connecting lines drawn in the Help overlay. Falls back to a built-in rainbow palette. */
@@ -658,12 +687,22 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         this.appRepositoryUrl = appRepositoryUrl
     }
 
-    override fun azTheme(activeColor: Color, defaultShape: AzButtonShape, headerIconShape: AzHeaderIconShape, translucentBackground: Color, helpLineColors: List<Color>) {
+    override fun azAbout(inAppAbout: Boolean, moreFromAzEnabled: Boolean, moreFromAzJsonUrl: String, moreRailItem: Boolean) {
+        this.advancedConfig = this.advancedConfig.copy(
+            inAppAbout = inAppAbout,
+            moreFromAzEnabled = moreFromAzEnabled,
+            moreFromAzJsonUrl = moreFromAzJsonUrl,
+            moreFromAzRailItem = moreRailItem
+        )
+    }
+
+    override fun azTheme(activeColor: Color, defaultShape: AzButtonShape, headerIconShape: AzHeaderIconShape, translucentBackground: Color, helpLineColors: List<Color>, headerIconSize: Dp) {
         this.activeColor = activeColor
         this.defaultShape = defaultShape
         this.headerIconShape = headerIconShape
         this.translucentBackground = translucentBackground
         this.helpLineColors = helpLineColors
+        this.headerIconSize = headerIconSize
     }
 
     override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, secLoc: String?, secLocPort: Int, helpList: Map<String, Any>, tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial>, onInteraction: ((String, AzNavItem) -> Unit)?) {
@@ -695,6 +734,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         defaultShape: AzButtonShape,
         enableRailDragging: Boolean,
         headerIconShape: AzHeaderIconShape,
+        headerIconSize: Dp,
         onUndock: (() -> Unit)?,
         overlayService: Class<out android.app.Service>?,
         onOverlayDrag: ((Float, Float) -> Unit)?,
@@ -721,6 +761,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         this.showFooter = showFooter
         this.defaultShape = defaultShape
         this.headerIconShape = headerIconShape
+        this.headerIconSize = headerIconSize
         if (activeColor != null) this.activeColor = activeColor
         this.vibrate = vibrate
         this.dockingSide = dockingSide

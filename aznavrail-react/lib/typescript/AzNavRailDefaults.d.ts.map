@@ -1,1 +1,1 @@
-{"version":3,"file":"AzNavRailDefaults.d.ts","sourceRoot":"","sources":["../../src/AzNavRailDefaults.ts"],"names":[],"mappings":"AAAA,eAAO,MAAM,iBAAiB;;;;;;;;;;;;CAY7B,CAAC"}
+{"version":3,"file":"AzNavRailDefaults.d.ts","sourceRoot":"","sources":["../../src/AzNavRailDefaults.ts"],"names":[],"mappings":"AAAA,0GAA0G;AAC1G,eAAO,MAAM,iBAAiB;IAC5B,kEAAkE;;IAElE,uDAAuD;;IAEvD,kDAAkD;;IAElD,+DAA+D;;IAE/D,4DAA4D;;IAE5D,6FAA6F;;IAE7F,2GAA2G;;IAE3G,kEAAkE;;IAElE,qEAAqE;;IAErE,8DAA8D;;IAE9D,+EAA+E;;IAE/E,4FAA4F;;CAE7F,CAAC"}

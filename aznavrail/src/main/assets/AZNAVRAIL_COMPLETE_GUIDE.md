@@ -28,7 +28,7 @@ AzHostActivityLayout(
 While Android uses `AzHostActivityLayout` and a DSL to manage positioning and Safe Zones automatically, React projects explicitly construct their layout and pass properties and arrays of objects. The React version enforces the same visual rules via standard flex layouts.
 
 ```tsx
-import { AzNavRail, AzNavItem, AzNavRailSettings } from '@HereLiesAz/aznavrail-react';
+import { AzNavRail, AzNavItem, AzNavRailSettings, AzDockingSide, AzButtonShape } from '@HereLiesAz/aznavrail-react';
 import { View } from 'react-native';
 
 const settings: AzNavRailSettings = {
@@ -91,7 +91,8 @@ Controls visual style defaults.
 azTheme(
     defaultShape = AzButtonShape.RECTANGLE, // Default shape for all items
     activeColor = MaterialTheme.colorScheme.primary, // Color for active state
-    translucentBackground = Color.Black.copy(alpha = 0.5f) // Set the background color for menus/overlays!
+    translucentBackground = Color.Black.copy(alpha = 0.5f), // Set the background color for menus/overlays!
+    headerIconSize = 48.dp                  // Exact app-icon diameter (Dp.Unspecified = size to rail width)
 )
 ```
 
@@ -142,6 +143,43 @@ const settings: AzNavRailSettings = {
 
 > **Note on Help Overlay:**
 > The `HelpOverlay` displays a short, truncated entry for each item to conserve space. Tapping a help card expands it to reveal the full description and any extra text provided in `helpList`. Furthermore, `helpList` can be supplied dynamically to `AzNestedRail` components for distinct, localized help data.
+
+
+### D. Drop-down menu — `AzDropdownMenu` (standalone)
+
+A hamburger drop-down is **not** a rail mode — it is a standalone widget, `AzDropdownMenu`, declared
+with the **same opinionated DSL as the rail**. In AzNavRail tradition it accepts only the
+configuration the rest of the library sanctions (no arbitrary panel background, offsets, icon
+tint/source, or free composable escape hatch). Its trigger is the **app icon** (auto-drawn like the
+rail's header; its shape/size set via `azConfig`'s `headerIconShape`/`headerIconSize`), dropped
+inline like any widget. Tapping it unfolds an **overlay
+panel** (a `Popup`) of the items you declare. Configure it through `azConfig`: `design` picks
+`AzDropdownDesign.RAIL` (compact rail buttons at the collapsed width ≈100dp) or `AzDropdownDesign.MENU`
+(default; full-width labeled rows at the expanded width ≈160dp); `dockingSide` pins the panel to the
+`LEFT`/`RIGHT` screen edge; the panel drops from the trigger automatically. The `MENU` design
+renders rows at the rail's menu-item text size and, like the rail's expanded menu, carries the
+footer (About / Feedback / @HereLiesAz, gated by `showFooter`, with `appRepositoryUrl` behind
+"About"). Items use `azItem`/`azToggle`/`azCycler`/`azDivider` with only the rail's sanctioned
+per-item knobs, plus a `route` that navigates the supplied `NavController` (so the drop-down can
+drive an `AzNavHost`).
+
+```kotlin
+AzDropdownMenu(navController = navController) {
+    azConfig(design = AzDropdownDesign.MENU, dockingSide = AzDockingSide.LEFT)
+    azItem("Home", route = "home") { }
+    azToggle(isChecked = dark, toggleOnText = "Dark", toggleOffText = "Light") { dark = it }
+    azDivider()
+    azItem("Sign out") { signOut() }
+}
+```
+
+```tsx
+<AzDropdownMenu design={AzDropdownDesign.MENU} dockingSide={AzDockingSide.LEFT} onNavigate={go}>
+  <AzDropdownItem text="Home" route="home" onClick={() => {}} />
+  <AzDivider />
+  <AzDropdownItem text="Sign out" onClick={signOut} />
+</AzDropdownMenu>
+```
 
 ---
 
@@ -554,13 +592,49 @@ The tutorial framework scripts interactive, multi-scene walkthroughs over a dimm
 
 Card auto-positioning: defaults to bottom. Flips to top when highlight center Y > 60% of screen height. `TapTarget` degrades to `TapAnywhere` if the highlight is not `AzHighlight.Item`.
 
-### 9.2 Help/Info Overlay Integration
+### 9.2 How advancement works (read this before building your own coach)
+
+This framework is the supported way to walk a user through the rail. **Do not roll your own
+overlay that waits for taps on rail items to "fall through" to the canvas — they never will.**
+The rail consumes its own pointer events by design (a tap on a nav control must not leak to the
+content behind it). `AzTutorialOverlay` does **not** depend on that leak; it advances through its
+own hit-testing layer:
+
+- **`TapTarget`** — the overlay draws an invisible, full-screen tap absorber plus a clickable box
+  positioned exactly over the spotlight punch-out (computed from `itemBoundsCache`). Tapping inside
+  the spotlight advances (or branches via `branches`); tapping outside is swallowed. Advancement is
+  driven by the overlay's own box, not by the rail item's `onClick`. This is why `TapTarget`
+  **requires** an `AzHighlight.Item(id)` whose bounds are known — without bounds it degrades to
+  `TapAnywhere`.
+- **`Event(name)`** — you advance imperatively by calling `controller.fireEvent(name)` from your own
+  logic. Pair this with `azAdvanced(onInteraction = ...)` (see below) when you want a *real* rail tap
+  — including expanding a host — to drive the tutorial.
+- **`TapAnywhere` / `Button`** — advance on any screen tap, or on an explicit "Next" button.
+
+**Required wiring for item spotlights.** `AzHighlight.Item(id)` and `TapTarget` both need the live,
+measured bounds of the rail item. The rail reports these through
+`azAdvanced(onItemGloballyPositioned = { id, rect -> ... })`; you collect them into a map and pass
+that same map to the overlay as `itemBoundsCache`. If the cache is missing an id, the spotlight
+renders no punch-out and `TapTarget` degrades to `TapAnywhere`. This handshake is shown end-to-end
+in §9.4 (steps 2 and 3) and is easy to forget — if your spotlight never appears, this is the first
+thing to check.
+
+**Driving a tutorial from real rail taps (`onInteraction`).** When you want the tutorial to advance
+because the user *actually used* the rail — tapped a leaf item, flipped a toggle, or expanded a host
+menu — wire `azAdvanced(onInteraction = { id, item -> ... })` and call `controller.fireEvent(...)`
+from it for the ids you care about. `onInteraction` fires for **every** interactive item in **both**
+the compact rail and the expanded menu: leaf items (`azRailItem` / `azRailSubItem`), toggles,
+cyclers, nested-rail opens, reloc drags, **and host items** (`azRailHostItem` — the expand/collapse
+tap reports the interaction just like a leaf tap). This is the correct, supported alternative to
+intercepting taps yourself, and it composes cleanly with `Event` advance conditions.
+
+### 9.3 Help/Info Overlay Integration
 
 - **Collapsed card:** Shows a "Tutorial available" hint when a tutorial exists for that item.
 - **Expanded card:** Shows a "Start Tutorial" button. Tapping it calls `tutorialController.startTutorial(id)` and dismisses the help overlay.
 - The old behavior (any tap immediately starts the tutorial) is removed.
 
-### 9.3 Android — Full Example
+### 9.4 Android — Full Example
 
 ```kotlin
 import com.hereliesaz.aznavrail.tutorial.*
@@ -658,7 +732,7 @@ val hasRead = controller.isTutorialRead("tut-1")
 
 Persistence: `SharedPreferences` file `az_tutorial_prefs`, key `az_navrail_read_tutorials`. State is read on `rememberAzTutorialController()` and written on each `markTutorialRead()`.
 
-### 9.4 React Native — Full Example
+### 9.5 React Native — Full Example
 
 ```tsx
 import {
@@ -740,7 +814,9 @@ controller.fireEvent('menu_opened');
 
 Persistence: `@react-native-async-storage/async-storage` (optional peer dependency). Falls back to in-memory if not installed. Key: `az_navrail_read_tutorials`.
 
-### 9.5 Web — Full Example
+### 9.6 Web — Full Example
+
+The web library is a TypeScript port of Android. New files: `web/AzTutorialController.tsx`, `web/AzTutorialOverlay.tsx`, `web/HelpOverlay.tsx`.
 
 The web library is a TypeScript port of Android. New files: `web/AzTutorialController.tsx`, `web/AzTutorialOverlay.tsx`, `web/HelpOverlay.tsx`.
 
@@ -775,7 +851,7 @@ Spotlight implementation: `box-shadow: 0 0 0 9999px rgba(0,0,0,0.7)` applied to 
 
 Persistence: `localStorage`. Key: `az_navrail_read_tutorials`.
 
-### 9.6 Variable Branching
+### 9.7 Variable Branching
 
 Pass a `variables` map to `startTutorial`. Scenes with `branchVar` set evaluate their `branches` map on entry and redirect to the matching scene ID. A scene used only for branching can have an empty `cards` list and a transparent `content`.
 
@@ -791,7 +867,7 @@ controller.startTutorial('tut-1', { userLevel: 'advanced' });
 
 Circular branch detection: if a branch chain loops back to an already-visited scene, a warning is logged and the tutorial advances to the next scene by index. If no next scene exists, the tutorial ends.
 
-### 9.7 Event-Driven Advance
+### 9.8 Event-Driven Advance
 
 Use `AzAdvanceCondition.Event("event_name")` (Kotlin) or `{ type: 'Event', name: 'event_name' }` (TS) on a card. When your app logic fires that event, the overlay automatically advances.
 
@@ -802,11 +878,11 @@ controller.fireEvent("menu_opened")
 
 The overlay observes `pendingEvent` and calls `consumeEvent()` internally on match. You do not need to call `consumeEvent()` yourself.
 
-### 9.8 Checklist Cards
+### 9.9 Checklist Cards
 
 Provide `checklistItems` on a card. The Next button is disabled until every item is checked. Compatible with any advance condition (the checklist gates the advance even for `TapAnywhere`).
 
-### 9.9 Media Cards
+### 9.10 Media Cards
 
 Provide `mediaContent` (a composable/component) on a card. It is rendered between the title and the body text, clipped to a max height of 120dp/120px with 8dp/8px corner rounding. Useful for images, animated GIFs, or short video previews.
 

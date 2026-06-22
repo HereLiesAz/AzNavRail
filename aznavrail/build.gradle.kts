@@ -69,6 +69,7 @@ dependencies {
     api(libs.coil.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.activity.compose)
 
 
     testImplementation(libs.junit)

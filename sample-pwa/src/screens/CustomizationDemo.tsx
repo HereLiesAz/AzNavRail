@@ -1,5 +1,11 @@
+import { useState } from 'react'
 import {
   AzButtonShape,
+  AzDockingSide,
+  AzDropdownDesign,
+  AzDropdownMenu,
+  AzDropdownItem,
+  AzDivider,
   AzHeaderIconShape,
 } from '@HereLiesAz/aznavrail-react'
 
@@ -13,6 +19,7 @@ export interface CustomizationState {
   appRepositoryUrl: string
   vibrate: boolean
   activeClassifiers: Set<string>
+  headerIconSize: number
 }
 
 const headerShapes = Object.values(AzHeaderIconShape) as AzHeaderIconShape[]
@@ -71,6 +78,17 @@ export default function CustomizationDemo({
         />
       </Block>
 
+      <Block label={`headerIconSize: ${state.headerIconSize ? `${state.headerIconSize}px` : 'auto (default)'}`}>
+        <input
+          type="range" min={0} max={96} value={state.headerIconSize}
+          onChange={(e) => onChange({ ...state, headerIconSize: Number(e.target.value) })}
+        />
+      </Block>
+
+      <Block label="AzDropdownMenu — standalone hamburger; panel pins to the screen edge as rail/menu">
+        <AzDropdownMenuDemo />
+      </Block>
+
       <Toggle
         label="displayAppNameInHeader"
         value={state.displayAppNameInHeader}
@@ -120,6 +138,36 @@ export default function CustomizationDemo({
           })}
         </div>
       </Block>
+    </div>
+  )
+}
+
+/**
+ * The standalone AzDropdownMenu — declared with the same opinionated surface as the rail. Its trigger
+ * is the app icon (not customizable); the panel is configured by `design` + `dockingSide` and pins to
+ * the chosen screen edge. The pickers below drive that config.
+ */
+function AzDropdownMenuDemo() {
+  const [design, setDesign] = useState<AzDropdownDesign>(AzDropdownDesign.MENU)
+  const [dockingSide, setDockingSide] = useState<AzDockingSide>(AzDockingSide.LEFT)
+  const [dark, setDark] = useState(false)
+  const [last, setLast] = useState('none')
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+      <select value={design} onChange={(e) => setDesign(e.target.value as AzDropdownDesign)}>
+        {Object.values(AzDropdownDesign).map((d) => <option key={d} value={d}>{d}</option>)}
+      </select>
+      <select value={dockingSide} onChange={(e) => setDockingSide(e.target.value as AzDockingSide)}>
+        {Object.values(AzDockingSide).map((s) => <option key={s} value={s}>{s}</option>)}
+      </select>
+      <AzDropdownMenu design={design} dockingSide={dockingSide} headerIconShape={AzHeaderIconShape.ROUNDED} headerIconSize={56}>
+        <AzDropdownItem text="Profile" onClick={() => setLast('Profile')} />
+        <AzDropdownItem text="Settings" onClick={() => setLast('Settings')} />
+        <AzDivider />
+        <AzDropdownItem text={dark ? 'Dark' : 'Light'} closeOnClick={false} onClick={() => setDark((v) => !v)} />
+        <AzDropdownItem text="Sign out" onClick={() => setLast('Sign out')} />
+      </AzDropdownMenu>
+      <span style={{ opacity: 0.7 }}>last: {last}</span>
     </div>
   )
 }

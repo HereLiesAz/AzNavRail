@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+
+/** Internal props for `RailMenuItem` — one row inside the expanded-menu scroll view. */
+
+/**
+ * Internal renderer for a single row in the expanded menu, handling toggle, cycler, and host item modes.
+ * Used by `AzNavRail` when the menu is open.
+ */
 export const RailMenuItem = ({
   item,
   depth,

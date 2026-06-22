@@ -1,9 +1,20 @@
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 import React, { useState, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { historyManager } from '../util/HistoryManager';
+
+/** Module-level configuration for `AzTextBox` autocomplete behaviour. */
 export const AzTextBoxDefaults = {
+  /** Sets the maximum number of suggestion entries retained by the shared `historyManager`. */
   setSuggestionLimit: limit => historyManager.setLimit(limit)
 };
+
+/** Props for the `AzTextBox` text input. Extends `TextInputProps` minus `value`/`onChangeText` which are renamed below. */
+
+/**
+ * Text input with optional outline, inline submit button, history-backed autocomplete
+ * suggestions (keyed by `historyContext`), secret-mode reveal toggle, and clear button.
+ */
 export const AzTextBox = ({
   value: controlledValue,
   onValueChange,
@@ -12,6 +23,8 @@ export const AzTextBox = ({
   multiline = false,
   secret = false,
   outlineColor = '#6200ee',
+  textColor,
+  fillColor,
   historyContext = 'global',
   submitButtonContent,
   onSubmit,
@@ -20,7 +33,12 @@ export const AzTextBox = ({
   backgroundColor = 'transparent',
   backgroundOpacity = 1,
   enabled = true,
-  initialValue = ''
+  initialValue = '',
+  isError = false,
+  leadingIcon,
+  trailingIcon,
+  showClearButton = true,
+  ...textInputProps
 }) => {
   const isControlled = controlledValue !== undefined;
   const [internalValue, setInternalValue] = useState(initialValue);
@@ -78,6 +96,9 @@ export const AzTextBox = ({
     setIsSecretVisible(!isSecretVisible);
   };
   const clearText = () => handleChange('');
+  const effectiveColor = isError ? 'red' : outlineColor;
+  const effectiveTextColor = isError ? 'red' : textColor || outlineColor;
+  const effectiveFillColor = fillColor || backgroundColor;
   return /*#__PURE__*/React.createElement(View, {
     style: [styles.container, containerStyle, {
       zIndex: showSuggestions ? 1000 : 1,
@@ -85,45 +106,56 @@ export const AzTextBox = ({
     }]
   }, /*#__PURE__*/React.createElement(View, {
     style: [styles.inputRow, {
-      borderColor: outlineColor,
+      borderColor: effectiveColor,
       borderWidth: outlined ? 1 : 0,
-      backgroundColor: backgroundColor,
+      backgroundColor: effectiveFillColor,
       opacity: backgroundOpacity
     }]
-  }, /*#__PURE__*/React.createElement(TextInput, {
+  }, leadingIcon && /*#__PURE__*/React.createElement(View, {
+    style: styles.iconWrapper
+  }, leadingIcon), /*#__PURE__*/React.createElement(TextInput, _extends({}, textInputProps, {
     value: currentValue,
     onChangeText: handleChange,
     placeholder: currentValue.trim().length > 0 ? '' : hint,
-    placeholderTextColor: outlineColor + '80',
+    placeholderTextColor: effectiveColor + '80',
     secureTextEntry: secret && !isSecretVisible,
     multiline: effectiveMultiline,
     editable: enabled,
-    style: [styles.input, {
-      color: outlineColor,
+    style: [styles.input, textInputProps.style, {
+      color: effectiveTextColor,
       minHeight: effectiveMultiline ? 40 : 40,
       height: effectiveMultiline ? undefined : 40,
       textAlignVertical: effectiveMultiline ? 'top' : 'center'
     }]
-  }), currentValue.length > 0 && /*#__PURE__*/React.createElement(TouchableOpacity, {
+  })), trailingIcon && /*#__PURE__*/React.createElement(View, {
+    style: styles.iconWrapper
+  }, trailingIcon), isError && /*#__PURE__*/React.createElement(View, {
+    style: styles.iconWrapper
+  }, /*#__PURE__*/React.createElement(Text, {
+    style: {
+      color: 'red',
+      fontWeight: 'bold'
+    }
+  }, "!")), currentValue.length > 0 && showClearButton && /*#__PURE__*/React.createElement(TouchableOpacity, {
     onPress: secret ? toggleSecret : clearText,
     style: styles.iconButton,
     disabled: !enabled
   }, /*#__PURE__*/React.createElement(Text, {
     style: {
-      color: outlineColor,
+      color: effectiveColor,
       fontSize: 10
     }
   }, secret ? isSecretVisible ? 'HIDE' : 'SHOW' : 'X')), showSubmitButton && /*#__PURE__*/React.createElement(TouchableOpacity, {
     onPress: handleSubmit,
     disabled: !enabled,
     style: [styles.submitButton, {
-      backgroundColor: backgroundColor,
-      borderColor: outlineColor,
+      backgroundColor: effectiveFillColor,
+      borderColor: effectiveColor,
       borderWidth: !outlined ? 1 : 0
     }]
   }, submitButtonContent || /*#__PURE__*/React.createElement(Text, {
     style: {
-      color: outlineColor,
+      color: effectiveTextColor,
       fontSize: 10
     }
   }, "GO"))), showSuggestions && /*#__PURE__*/React.createElement(View, {
@@ -154,6 +186,11 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     padding: 8
+  },
+  iconWrapper: {
+    paddingHorizontal: 8,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   submitButton: {
     padding: 8,

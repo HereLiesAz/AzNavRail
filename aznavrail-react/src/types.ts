@@ -36,6 +36,17 @@ export enum AzNestedRailAlignment {
   HORIZONTAL = 'HORIZONTAL',
 }
 
+/**
+ * The visual design of an `AzDropdownMenu` panel — a slice of the rail or the menu. The choice
+ * drives both the item rendering and the panel width (so it matches what it imitates).
+ */
+export enum AzDropdownDesign {
+  /** Collapsed-rail look: compact rail buttons, constrained to the collapsed rail width (≈100). */
+  RAIL = 'rail',
+  /** Expanded-menu look: full-width labeled rows, constrained to the expanded menu width (≈160). */
+  MENU = 'menu',
+}
+
 /** General orientation flag used by layout helpers. */
 export enum AzOrientation {
   /** Components arranged in a column. */
@@ -78,6 +89,8 @@ export interface AzNavRailSettings {
   dockingSide?: AzDockingSide;
   /** When true, the rail never expands into a menu — icon-only mode is permanent. */
   noMenu?: boolean;
+  /** Exact diameter (px) of the app icon in the header. When omitted the icon uses its default size. */
+  headerIconSize?: number;
   /** When true, the help/info overlay is displayed over the screen. */
   infoScreen?: boolean;
   /** Called when the user dismisses the info screen overlay. */
@@ -94,8 +107,19 @@ export interface AzNavRailSettings {
   secLoc?: string;
   /** Port for the secret-location server (developer feature). */
   secLocPort?: number;
-  /** URL of the app's source repository, shown in the footer. */
+  /** URL of the app's source repository, shown in the footer and used by the in-app About reader. */
   appRepositoryUrl?: string;
+  /**
+   * When true (default), the footer "About" opens the in-app markdown reader (auto-generated from
+   * the repo's docs) instead of opening {@link appRepositoryUrl} in a browser.
+   */
+  inAppAbout?: boolean;
+  /** When true (default), the About screen offers a "More from Az" carousel of the author's apps. */
+  moreFromAzEnabled?: boolean;
+  /** Raw URL of the CI-versioned `more-from-az.json` manifest backing the carousel. */
+  moreFromAzJsonUrl?: string;
+  /** When true, pins a "More" item at the bottom of the rail that opens the "More from Az" carousel. */
+  moreRailItem?: boolean;
   /** Whether the help overlay feature is enabled. */
   helpEnabled?: boolean;
   /** When true, docking side follows the physical device edge rather than logical left/right. */

@@ -17,7 +17,8 @@ should be added before shipping.
 | DSL | Exercised by |
 | --- | --- |
 | `azConfig` (all params: `vibrate`, `displayAppName`, `activeClassifiers`, `expandedWidth`, `collapsedWidth`, `showFooter`, `appRepositoryUrl`, `packButtons`, `noMenu`, `usePhysicalDocking`, `dockingSide`) | `MainApp.kt`, driven by `CustomizationDemoScreen` + legacy toggles |
-| `azTheme` (`activeColor`, `defaultShape`, `headerIconShape`, `translucentBackground`, `helpLineColors`) | `MainApp.kt`, driven by `CustomizationDemoScreen` |
+| `azTheme` (`activeColor`, `defaultShape`, `headerIconShape`, `translucentBackground`, `helpLineColors`, `headerIconSize`) | `MainApp.kt`, driven by `CustomizationDemoScreen` |
+| Standalone `AzDropdownMenu` (`azItem`/`azToggle`/`azDivider`, `alignment`, `offset`) and `headerIconSize` | `CustomizationDemoScreen` (`AzDropdownMenuDemo`) / slider |
 | `azAdvanced` (`isLoading`, `helpEnabled`, `onDismissHelp`, `enableRailDragging`, `onRailDrag`, `onOverlayDrag`, `onUndock`, `helpList`, `tutorials`) | `MainApp.kt`, driven by `FabOverlayDemoScreen`, `HelpSystemDemoScreen`, `TutorialDemoScreen` |
 | `azMenuItem` | `MainApp.kt` (10× showcase menu items) |
 | `azRailItem` (Color/ResourceId/ImageVector/AzComposableContent content variants, shape, disabled, classifiers, info) | `MainApp.kt` rail items (`color-item`, `icon-item`, `vector-item`) |

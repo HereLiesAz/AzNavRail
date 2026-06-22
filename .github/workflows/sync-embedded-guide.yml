@@ -1,0 +1,42 @@
+name: Sync embedded guide
+
+# The canonical guide lives at docs/AZNAVRAIL_COMPLETE_GUIDE.md. The library also ships two bundled
+# copies (aznavrail/src/main/assets/ and aznavrail/src/main/resources/) that are packaged into the
+# AAR. This workflow keeps those two copies byte-identical to the canonical one so they can never
+# drift: whenever the canonical guide changes on main, it is copied into both embedded paths and
+# committed back.
+#
+# Loop safety: the bot commit message contains [skip ci], which GitHub honors to skip ALL workflows
+# for that push (so neither this nor android-sample-build.yml re-runs on the sync commit).
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/AZNAVRAIL_COMPLETE_GUIDE.md'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[skip ci]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Copy canonical guide into the bundled copies
+        run: |
+          cp docs/AZNAVRAIL_COMPLETE_GUIDE.md aznavrail/src/main/assets/AZNAVRAIL_COMPLETE_GUIDE.md
+          cp docs/AZNAVRAIL_COMPLETE_GUIDE.md aznavrail/src/main/resources/AZNAVRAIL_COMPLETE_GUIDE.md
+
+      - name: Commit synced copies
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: sync embedded guide [skip ci]"
+          file_pattern: >-
+            aznavrail/src/main/assets/AZNAVRAIL_COMPLETE_GUIDE.md
+            aznavrail/src/main/resources/AZNAVRAIL_COMPLETE_GUIDE.md

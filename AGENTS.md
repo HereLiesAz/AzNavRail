@@ -151,4 +151,79 @@ In landscape mode, the RailItems are still way too small, and should be the same
 
 There's a quirky bug with the generated screen title. When I click an AzRailToggle or an AzRailCycler, it displays the text on the button that was present when clicked. It SHOULD display the text of the option that is active.
 
+The app icon in the header must be sizable to a specific diameter. Provide `headerIconSize`
+(a `Dp` on Android via `azTheme`/`azSettings`, a pixel number on React). When unset, the icon keeps
+its legacy behavior of sizing to the rail width. When set, the header icon is rendered at exactly
+that width and height.
+
+Drop-down menu (`AzDropdownMenu`): a standalone widget declared with the **same opinionated DSL as the
+rail**. In AzNavRail tradition it accepts only sanctioned config — it does **not** expose arbitrary
+icon tint/source, panel background, offsets, `menuWidth`, or a free `azCustom` escape hatch. The
+trigger is the **app icon** (auto-drawn exactly like the rail's header — `getApplicationIcon` on
+Android, gray placeholder on RN, `/app-icon.png` on web), placed inline; its shape/size are
+configurable (mirroring the rail's `azTheme`). Only the dropped list is an overlay.
+
+- File: `aznavrail/src/main/java/com/hereliesaz/aznavrail/AzDropdownMenu.kt` (Android),
+  `aznavrail-react/src/components/AzDropdownMenu.tsx` (RN) and `src/web/AzDropdownMenu.jsx` (web).
+- DSL like the rail (collect-then-render): the `content` is a plain `AzDropdownMenuScope.() -> Unit`
+  builder. `azConfig(design, dockingSide, vibrate, expandedWidth, collapsedWidth, headerIconShape,
+  headerIconSize, showFooter, appRepositoryUrl)` mirrors the rail's `azConfig`/`azTheme` (RN/web take
+  the same as props); items are `azItem`/`azToggle`/`azCycler`/`azDivider` accepting only the rail's
+  per-item knobs (`color`/`textColor`/`fillColor`/`shape`/`enabled`/`closeOnClick`) plus a `route`.
+- The `MENU` design renders rows at the rail's menu-item text size (Android `titleLarge`; RN/web 16px,
+  matching `RailMenuItem`/`.az-menu-item-text`) and — like the rail's expanded menu — appends the
+  footer (About → `appRepositoryUrl`, Feedback → mailto, @HereLiesAz → Instagram) when `showFooter`,
+  mirroring `internal/Footer.kt` / the rail's `renderFooter`.
+- `design` (`AzDropdownDesign { RAIL, MENU }`, default `MENU`) styles the panel as the collapsed rail
+  (compact buttons, `collapsedWidth` ≈100dp) or the expanded menu (full-width labeled rows,
+  `expandedWidth` ≈160dp). `dockingSide` (`AzDockingSide { LEFT, RIGHT }`) **pins the panel to that
+  physical screen edge**; the vertical drop direction is derived automatically from the trigger
+  (downward when it fits, else upward) via a custom window-edge `PopupPositionProvider` (Android) /
+  measured-rect math (RN/web). The old `AzDropdownAlignment` + `parseDropdownAnchor` are removed.
+- Routing: the composable takes `navController: NavController? = LocalAzNavHostScope.current?.navController`
+  (auto-wires inside an `AzNavHost`); an item's `route` navigates it (then the callback, then dismiss),
+  exactly like `MenuItem.kt`. RN/web use an `onNavigate(route)` prop + `route?` on `AzDropdownItem`.
+- Controlled `expanded`/`onExpandedChange` remain. Tapping outside, back, or an item folds it up.
+
+In-app About reader + "More from Az": the footer "About" item opens a built-in, full-screen, themed
+markdown reader (an overlay drawn over the live UI, like the help overlay) instead of opening the repo
+URL in a browser. It auto-discovers the consuming app's docs by listing the `.md` files in the
+repository root and the `docs/` folder of `appRepositoryUrl` via the GitHub contents API, builds a
+table of contents, and renders each doc inline. Fetches are cached (ETag + TTL) to respect GitHub's
+unauthenticated rate limit; offline/limited shows the last cached copy. Public repos only. Configured
+via `azAbout(inAppAbout, moreFromAzEnabled, moreFromAzJsonUrl, moreRailItem)`; `inAppAbout = false`
+restores the browser behavior. A repo-root `.azignore` (one pattern per line; `#` comments; exact
+paths, `dir/` prefixes, or `*` globs) excludes listed docs from the About TOC — implemented in
+`GithubDocsRepository.parseIgnore`/`isIgnored` (Android) and `githubDocs.ts` (React).
+
+"More from Az" is a carousel of the author's other apps reachable from the About screen and/or a
+pinned "More" rail item (`moreRailItem`). The maintainer **pastes GitHub repo links, one per line,
+any order** into `more-from-az.json`. ALL resolution happens in CI, not the app:
+`.github/scripts/bake_more_from_az.py` (run by `.github/workflows/bump-more-from-az.yml`, server-side
+with the authenticated `GITHUB_TOKEN`) resolves each repo and **bakes a finished manifest**
+(`{ version, apps:[{ name, iconUrl, description, github?, play?, web?, isPwa? }] }`):
+- groups by repository (one repo = one app; never by URL-string matching),
+- constructs+verifies the Play link from `com.<owner>.<repo>` (kept only if the listing resolves),
+- reads website/PWA from the repo's GitHub homepage (PWA detected via `rel="manifest"`),
+- excludes apps whose README first line contains the whole word `WIP`,
+- sorts apps with a Play link first, fills name/icon/description, bumps `version`.
+The rail (`service/MoreFromAzRepository.kt`, `services/moreFromAz.ts`) is a **thin renderer** that
+just parses the baked apps (with a lenient fallback rendering degraded cards from raw link/string
+entries before CI bakes). Do NOT reintroduce per-app runtime resolution in the rail — keep it in CI
+(avoids the unauthenticated GitHub rate limit and web CORS). The carousel is built from the rail's
+own components (`AzButton`, `AzLoad`, `AzDivider`, `AutoSizeText`) and tokens so it matches the rail.
+
+INVARIANT — do not break: the bake commit is made as `github-actions[bot]` with a `[skip ci]`
+message. The `[skip ci]` is load-bearing: it stops the bake commit from re-triggering both that
+workflow and `android-sample-build.yml` (which also has `paths-ignore` for `more-from-az.json` and
+`**/*.md`). Do not hand-edit `version`.
+
+Embedded guide sync: the Complete Guide has a single canonical copy at
+`docs/AZNAVRAIL_COMPLETE_GUIDE.md`. The library also ships two bundled copies
+(`aznavrail/src/main/assets/AZNAVRAIL_COMPLETE_GUIDE.md` and `aznavrail/src/main/resources/AZNAVRAIL_COMPLETE_GUIDE.md`)
+packaged into the AAR. Edit ONLY the canonical `docs/` copy — `.github/workflows/sync-embedded-guide.yml`
+copies it into both bundled paths and commits back (as `github-actions[bot]`, `[skip ci]`, same
+loop-safety pattern as the bake workflow). Never hand-edit the bundled copies; they must stay
+byte-identical to `docs/`.
+
 As an option, I am changing how the AzNavRail switches from portrait to landscape mode. Instead of maintaining its position on the side of the screen, it maintains its position on the side of the device, and all elements of the rail each rotate in place. This may take some careful consideration for whatever logic is needed in different circumstances, like how RailHostItems are expanded, or the difference between the rail being docked on the right or left in portrait mode. Also--PAY ATTENTION--if the rail is docked to the left in portrait mode, rotating the device clockwise means it will be at the top of the screen. But if I rotate counter-clockwise, it should be at the bottom of the screen. And if I turned the device upside down, the rail should be on the left side.

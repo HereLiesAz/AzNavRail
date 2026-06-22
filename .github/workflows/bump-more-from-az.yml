@@ -1,0 +1,49 @@
+name: Bake more-from-az
+
+# The maintainer pastes a list of GitHub repo links into more-from-az.json — one link per line, any
+# order. This workflow RESOLVES each repo and bakes a finished manifest the rail just renders:
+#   - groups by repository (one repo = one app),
+#   - constructs + verifies the Play link from the package convention com.<owner>.<repo>,
+#   - reads the website/PWA from the repo's GitHub "homepage" (detecting PWA vs site),
+#   - excludes apps whose README first line says WIP,
+#   - sorts apps with a working Play link first,
+#   - fills name / icon / description, and bumps `version`.
+# Resolution happens server-side here (authenticated GITHUB_TOKEN, no CORS), so the app needs no
+# network resolution and isn't subject to the unauthenticated rate limit.
+#
+# Loop safety: the bot commit message contains [skip ci], which GitHub honors to skip ALL workflows
+# for that push (so neither this nor android-sample-build.yml re-runs on the bake commit).
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'more-from-az.json'
+  schedule:
+    - cron: '0 6 * * 1' # weekly refresh of names/icons/descriptions
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bake:
+    if: github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[skip ci]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Resolve & bake manifest
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/bake_more_from_az.py
+
+      - name: Commit baked manifest
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: bake more-from-az [skip ci]"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "41898282+github-actions[bot]@users.noreply.github.com"
+          file_pattern: more-from-az.json

@@ -24,6 +24,8 @@ import { DraggableRailItemWrapper } from './components/DraggableRailItemWrapper'
 import { RelocItemHandler } from './util/RelocItemHandler';
 import { AzNestedRailPopup } from './components/AzNestedRailPopup';
 import { HelpOverlay } from './components/HelpOverlay';
+import { AboutOverlay } from './components/AboutOverlay';
+import { MoreFromAzOverlay } from './components/MoreFromAzOverlay';
 import { AzTutorialProvider, useAzTutorialController } from './tutorial/AzTutorialController';
 import { AzTutorialOverlay } from './components/AzTutorialOverlay';
 
@@ -62,6 +64,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       enableRailDragging = false,
       dockingSide = AzDockingSide.LEFT,
       noMenu = false,
+      headerIconSize,
       infoScreen = false,
       onDismissInfoScreen,
       activeColor,
@@ -71,6 +74,11 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       onExpandedChange,
       onInteraction,
       helpList = {},
+      appRepositoryUrl = 'https://github.com/HereLiesAz/AzNavRail',
+      inAppAbout = true,
+      moreFromAzEnabled = true,
+      moreFromAzJsonUrl = 'https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json',
+      moreRailItem = false,
   } = props;
   const logInteraction = useCallback(
     (action: string, details?: string, item?: AzNavItem) => {
@@ -101,6 +109,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       enableRailDragging: dslOverrides.enableRailDragging ?? enableRailDragging,
       dockingSide: dslOverrides.dockingSide ?? dockingSide,
       noMenu: dslOverrides.noMenu ?? noMenu,
+      headerIconSize: dslOverrides.headerIconSize ?? headerIconSize,
       infoScreen: dslOverrides.infoScreen ?? infoScreen,
       activeColor: dslOverrides.activeColor ?? activeColor,
       headerIconShape: dslOverrides.headerIconShape ?? headerIconShape,
@@ -108,9 +117,16 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       vibrate: dslOverrides.vibrate ?? vibrate,
       onItemGloballyPositioned: dslOverrides.onItemGloballyPositioned,
       helpList: dslOverrides.helpList ?? helpList,
+      appRepositoryUrl: (dslOverrides as any).appRepositoryUrl ?? appRepositoryUrl,
+      inAppAbout: dslOverrides.inAppAbout ?? inAppAbout,
+      moreFromAzEnabled: dslOverrides.moreFromAzEnabled ?? moreFromAzEnabled,
+      moreFromAzJsonUrl: dslOverrides.moreFromAzJsonUrl ?? moreFromAzJsonUrl,
+      moreRailItem: dslOverrides.moreRailItem ?? moreRailItem,
   };
 
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded && !config.noMenu);
+  const [showAbout, setShowAbout] = useState(false);
+  const [showMoreFromAz, setShowMoreFromAz] = useState(false);
   const [isFloating, setIsFloating] = useState(false);
   const [showFloatingButtons, setShowFloatingButtons] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -577,7 +593,12 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       };
 
       const handleAbout = () => {
-        Linking.openURL('https://github.com/HereLiesAz/AzNavRail').catch(e => console.error("Could not open About", e));
+        if (config.inAppAbout) {
+          setIsExpanded(false);
+          setShowAbout(true);
+        } else {
+          Linking.openURL(config.appRepositoryUrl).catch(e => console.error("Could not open About", e));
+        }
       };
 
       const handleFeedback = () => {
@@ -632,6 +653,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
 
   const flexDirection = config.dockingSide === AzDockingSide.RIGHT ? 'row-reverse' : 'row';
 
+
   return (
     <AzNavRailContext.Provider value={{ register, unregister, updateSettings, getDividerId, hasItem }}>
         <View style={{ flexDirection: flexDirection, height: '100%', flex: 1 }}>
@@ -681,6 +703,14 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
             ) : (
                 <ScrollView contentContainerStyle={styles.railContent}>
                      {(isFloating && !showFloatingButtons) ? null : effectiveRailItems.map((item, index) => renderRailItem(item, index))}
+                     {(!isFloating && config.moreRailItem && config.moreFromAzEnabled) && (
+                         <AzButton
+                             text="More"
+                             color={config.activeColor || '#6200ee'}
+                             shape={config.defaultShape}
+                             onClick={() => setShowMoreFromAz(true)}
+                         />
+                     )}
                 </ScrollView>
             )}
 
@@ -730,6 +760,24 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                     itemBounds={itemBounds}
                     nestedRailVisibleId={nestedRailVisible}
                     tutorials={(config as any).tutorials}
+                />
+            )}
+
+            {showAbout && (
+                <AboutOverlay
+                    repoUrl={config.appRepositoryUrl}
+                    settings={{ activeColor: config.activeColor, translucentBackground: config.translucentBackground }}
+                    moreFromAzEnabled={config.moreFromAzEnabled}
+                    moreFromAzJsonUrl={config.moreFromAzJsonUrl}
+                    onDismiss={() => setShowAbout(false)}
+                />
+            )}
+
+            {showMoreFromAz && (
+                <MoreFromAzOverlay
+                    jsonUrl={config.moreFromAzJsonUrl}
+                    settings={{ activeColor: config.activeColor, translucentBackground: config.translucentBackground }}
+                    onDismiss={() => setShowMoreFromAz(false)}
                 />
             )}
 

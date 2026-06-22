@@ -3,6 +3,20 @@
 ## 0.4.0
 
 ### Added
+- **`AzDropdownMenu` (+ `AzDropdownItem`).** A standalone, **app-icon** drop-down declared with the
+  rail's opinionated surface — it accepts only what the rest of the library sanctions (no arbitrary
+  icon tint/source, panel background, offsets, or `menuWidth`). The trigger is the app icon (gray
+  placeholder on RN, `/app-icon.png` on web), dropped inline, with configurable `headerIconShape`/
+  `headerIconSize` (mirroring the rail's `azTheme`). Configured by `design`
+  (`AzDropdownDesign` RAIL/MENU → panel width) and `dockingSide` (`AzDockingSide` LEFT/RIGHT screen
+  edge); the panel drops from the trigger (RN `Modal` overlay; web fixed panel). `<AzDropdownItem>`
+  entries accept the sanctioned per-item knobs plus a `route` dispatched through the menu's
+  `onNavigate` (AzNavHost-style routing). Controlled `expanded`/`onExpandedChange`. The `MENU` design
+  renders rows at the rail's menu-item text size (16px) and carries the rail's footer
+  (About / Feedback / @HereLiesAz, gated by `showFooter`, with `appRepositoryUrl` behind "About").
+  Reaches parity with the Android `AzDropdownMenu` DSL.
+- **Sizable header icon** (`headerIconSize`) and the **in-app About reader + "More from Az"**
+  carousel (`appRepositoryUrl`, `inAppAbout`, `moreRailItem`) reach parity with Android.
 - **`expandWhen` qualifier for host items.** All four host-item builders (`AzRailHostItem`,
   `AzMenuHostItem`, `AzRailSubHostItem`, `AzMenuSubHostItem`) and the `AzHostItemProps`
   interface accept an optional `expandWhen?: () => boolean` prop. When the function's return
@@ -11,23 +25,33 @@
   again only on the next false→true edge. Evaluated after every render via a no-deps
   `useEffect`, so any parent state change that the function reads automatically propagates.
   Mirrors the Android `expandWhen: (() -> Boolean)?` DSL parameter and `snapshotFlow`
-  implementation for full cross-platform parity.
+  implementation for full cross-platform parity. Wrap the lambda in `useCallback([dep])` to
+  avoid unnecessary re-registrations.
 - **`initiallyExpanded` prop on `AzHostItemProps`.** Previously absent from the TypeScript
   interface; now documented alongside `expandWhen` for completeness.
 
-### Typical use — tutorial framework
+### Typical use — `expandWhen` + tutorial framework
 
 ```tsx
 <AzRailHostItem
   id="features"
   text="Features"
-  expandWhen={() => tutorialController.activeTutorialId === 'onboarding'}
+  expandWhen={useCallback(() => activeTutorialId === 'onboarding', [activeTutorialId])}
 />
 ```
 
 A tutorial card that spotlights a sub-item of a collapsed host would silently degrade
 (sub-item not laid out → not in `itemBoundsCache` → no punch-out). `expandWhen` ensures
 the host is open whenever the tutorial needs it.
+
+### Removed
+- **The rail-coupled drop-down mode.** `dropdownMenu` / `dropdownSource` / `dropdownAlignment` /
+  `dropdownOffset` settings and the `AzDropdownSource` enum are gone — use the standalone
+  `AzDropdownMenu` instead.
+- **`AzDropdownAlignment`** (and the `parseDropdownAnchor` helper). `AzDropdownMenu` now pins to a
+  screen edge via `dockingSide` (`AzDockingSide` LEFT/RIGHT) and drops from the trigger automatically,
+  matching the rail; the nine-anchor enum and per-call `offset`/`iconShape`/`menuWidth`/
+  `backgroundColor` styling props are removed.
 
 ---
 

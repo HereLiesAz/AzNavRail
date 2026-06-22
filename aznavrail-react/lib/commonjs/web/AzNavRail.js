@@ -13,6 +13,8 @@ var _AzNestedRailPopup = _interopRequireDefault(require("./AzNestedRailPopup"));
 var _RelocItemHandler = require("../util/RelocItemHandler");
 var _AzDivider = _interopRequireDefault(require("./AzDivider"));
 var _AzTextBox = _interopRequireDefault(require("./AzTextBox"));
+var _AboutOverlay = _interopRequireDefault(require("./AboutOverlay"));
+var _MoreFromAzOverlay = _interopRequireDefault(require("./MoreFromAzOverlay"));
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function (e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, default: e }; if (null === e || "object" != typeof e && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (const t in e) "default" !== t && {}.hasOwnProperty.call(e, t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, t)) && (i.get || i.set) ? o(f, t, i) : f[t] = e[t]); return f; })(e, t); }
 /**
@@ -32,8 +34,8 @@ const AzNavRail = ({
 }) => {
   const {
     displayAppNameInHeader = false,
-    expandedRailWidth = '260px',
-    collapsedRailWidth = '80px',
+    expandedRailWidth = '160px',
+    collapsedRailWidth = '100px',
     showFooter = true,
     isLoading = false,
     appName = 'App',
@@ -41,12 +43,18 @@ const AzNavRail = ({
     onDismissInfoScreen,
     dockingSide = 'LEFT',
     noMenu = false,
+    headerIconSize,
     activeClassifiers = new Set(),
     // Set of strings
     activeColor,
     translucentBackground,
     packRailButtons = false,
-    headerIconShape = 'CIRCLE'
+    headerIconShape = 'CIRCLE',
+    inAppAbout = true,
+    moreFromAzEnabled = true,
+    moreFromAzJsonUrl = 'https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json',
+    moreRailItem = false,
+    appRepositoryUrl = 'https://github.com/HereLiesAz/AzNavRail'
   } = settings;
 
   // If noMenu is true, we force expanded to false, unless infoScreen overrides (which it doesn't really)
@@ -61,6 +69,9 @@ const AzNavRail = ({
     }
   }, [effectiveNoMenu, isExpanded]);
   const [showFooterPopup, setShowFooterPopup] = (0, _react.useState)(false);
+  // In-app About reader + More-from-Az overlays.
+  const [showAbout, setShowAbout] = (0, _react.useState)(false);
+  const [showMoreFromAz, setShowMoreFromAz] = (0, _react.useState)(false);
   const onToggle = () => {
     if (infoScreen) return;
     if (effectiveNoMenu) {
@@ -339,6 +350,10 @@ const AzNavRail = ({
         return 'app-icon circle';
     }
   };
+
+  // Renders a single rail item inside the drop-down panel (RAIL source). Hosts expand inline as an
+  // accordion; cyclers stay open for multi-tap; any other tap performs its action and folds up.
+
   return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("div", {
     className: `az-nav-rail ${isExpanded ? 'expanded' : 'collapsed'} ${dockingSide === 'RIGHT' ? 'right' : ''}`,
     style: {
@@ -348,11 +363,18 @@ const AzNavRail = ({
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "header",
     onClick: onToggle
-  }, displayAppNameInHeader ? /*#__PURE__*/_react.default.createElement("span", null, appName) : /*#__PURE__*/_react.default.createElement("img", {
+  }, !isExpanded || !displayAppNameInHeader ? /*#__PURE__*/_react.default.createElement("img", {
     src: "/app-icon.png",
     alt: "App Icon",
     className: getHeaderIconClass()
-  })), isLoading ? /*#__PURE__*/_react.default.createElement("div", {
+  }) : /*#__PURE__*/_react.default.createElement("span", {
+    style: {
+      fontSize: '24px',
+      fontWeight: 'bold',
+      width: '1000px',
+      whiteSpace: 'nowrap'
+    }
+  }, appName)), isLoading ? /*#__PURE__*/_react.default.createElement("div", {
     className: "loading-spinner"
   }, "Loading...") : /*#__PURE__*/_react.default.createElement("div", {
     className: "content"
@@ -563,7 +585,18 @@ const AzNavRail = ({
         }
       }));
     }));
-  }))), showFooter && isExpanded && /*#__PURE__*/_react.default.createElement("div", {
+  }), moreRailItem && moreFromAzEnabled && /*#__PURE__*/_react.default.createElement("div", {
+    className: "az-nav-rail-button rectangle",
+    role: "button",
+    tabIndex: 0,
+    style: {
+      borderColor: activeColor || 'blue',
+      color: activeColor || 'blue',
+      cursor: 'pointer',
+      marginTop: 8
+    },
+    onClick: () => setShowMoreFromAz(true)
+  }, "More"))), showFooter && isExpanded && /*#__PURE__*/_react.default.createElement("div", {
     className: "footer",
     style: {
       display: 'flex',
@@ -581,7 +614,14 @@ const AzNavRail = ({
   }, appName), /*#__PURE__*/_react.default.createElement("div", {
     className: "az-menu-item-text",
     style: {
-      padding: '4px 0'
+      padding: '4px 0',
+      cursor: 'pointer'
+    },
+    onClick: () => {
+      if (inAppAbout) {
+        setShowAbout(true);
+        setIsExpanded(false);
+      } else window.open(appRepositoryUrl, '_blank', 'noopener');
     }
   }, "About"), /*#__PURE__*/_react.default.createElement("div", {
     className: "az-menu-item-text",
@@ -619,6 +659,16 @@ const AzNavRail = ({
     onDismiss: onDismissInfoScreen,
     nestedRailVisibleId: nestedRailVisibleId,
     helpList: (settings === null || settings === void 0 ? void 0 : settings.helpList) || {}
+  }), showAbout && /*#__PURE__*/_react.default.createElement(_AboutOverlay.default, {
+    repoUrl: appRepositoryUrl,
+    settings: settings,
+    moreFromAzEnabled: moreFromAzEnabled,
+    moreFromAzJsonUrl: moreFromAzJsonUrl,
+    onDismiss: () => setShowAbout(false)
+  }), showMoreFromAz && /*#__PURE__*/_react.default.createElement(_MoreFromAzOverlay.default, {
+    jsonUrl: moreFromAzJsonUrl,
+    settings: settings,
+    onDismiss: () => setShowMoreFromAz(false)
   }), effectiveRailItems.filter(i => i.isNestedRail).map(item => /*#__PURE__*/_react.default.createElement(_AzNestedRailPopup.default, {
     key: `nested-${item.id}`,
     visible: nestedRailVisibleId === item.id,

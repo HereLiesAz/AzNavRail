@@ -1,0 +1,121 @@
+/* In-app About reader + More-from-Az overlay (web), themed to match the rail. */
+.az-about-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 20px calc(10% ) 20px;
+  padding-top: max(12px, 5%);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.az-about-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.az-about-title {
+  flex: 1;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.az-about-iconbtn {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  font: inherit;
+}
+
+.az-about-body,
+.az-about-reader {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  margin-top: 12px;
+}
+
+.az-about-toc {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.az-about-tocrow {
+  text-align: left;
+  background: transparent;
+  border: 1px solid;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  font: inherit;
+  opacity: 0.85;
+}
+.az-about-tocrow:hover { opacity: 1; }
+.az-about-tocrow.emphasized { border-width: 2px; font-weight: 700; opacity: 1; }
+
+.az-about-spacer { height: 32px; }
+.az-about-divider { width: 100%; opacity: 0.3; margin: 16px 0; }
+
+.az-about-repo {
+  display: inline-block;
+  text-align: center;
+  border: 2px solid;
+  border-radius: 12px;
+  padding: 12px 20px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.az-about-banner,
+.az-about-loading,
+.az-about-empty {
+  opacity: 0.7;
+  padding: 12px 0;
+}
+
+/* Markdown */
+.az-markdown { line-height: 1.55; }
+.az-markdown .az-md-h { margin: 0.8em 0 0.4em; font-weight: 700; }
+.az-markdown .az-md-p { margin: 0 0 0.7em; }
+.az-markdown .az-md-list { margin: 0 0 0.7em 1.2em; }
+.az-markdown .az-md-code { font-family: monospace; padding: 0 4px; border-radius: 4px; background: rgba(127,127,127,0.15); }
+.az-markdown .az-md-pre { background: rgba(127,127,127,0.12); border-radius: 8px; padding: 12px; overflow-x: auto; }
+.az-markdown .az-md-quote { border-left: 3px solid; margin: 0 0 0.7em; padding-left: 12px; opacity: 0.85; }
+.az-markdown .az-md-hr { border: none; border-top: 1px solid; opacity: 0.4; margin: 1em 0; }
+
+/* More from Az */
+.az-more-body { display: flex; flex-direction: column; margin-top: 12px; }
+.az-more-carousel {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 4px;
+}
+.az-more-card {
+  flex: 0 0 132px;
+  height: 132px;
+  border: 1px solid;
+  border-radius: 20px;
+  background: transparent;
+  cursor: pointer;
+  scroll-snap-align: center;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.az-more-card.focused { border-width: 3px; }
+.az-more-card img { width: 100%; height: 100%; object-fit: cover; }
+.az-more-name { font-size: 1.3rem; font-weight: 700; }
+.az-more-desc { margin-top: 6px; opacity: 0.85; }
+.az-more-actions { display: flex; gap: 12px; margin-top: 16px; }

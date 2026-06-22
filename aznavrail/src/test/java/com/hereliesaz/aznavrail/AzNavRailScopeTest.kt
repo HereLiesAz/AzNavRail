@@ -1,6 +1,8 @@
 package com.hereliesaz.aznavrail
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
@@ -45,6 +47,25 @@ class AzNavRailScopeTest {
 
         assertEquals(Color.Red, scope.activeColor)
         assertEquals(AzButtonShape.SQUARE, scope.defaultShape)
+    }
+
+    @Test
+    fun `headerIconSize defaults to unspecified`() {
+        assertEquals(Dp.Unspecified, scope.headerIconSize)
+    }
+
+    @Test
+    fun `azSettings sets header icon size`() {
+        scope.azSettings(headerIconSize = 56.dp)
+
+        assertEquals(56.dp, scope.headerIconSize)
+    }
+
+    @Test
+    fun `azTheme sets header icon size`() {
+        scope.azTheme(headerIconSize = 40.dp)
+
+        assertEquals(40.dp, scope.headerIconSize)
     }
 
     @Test

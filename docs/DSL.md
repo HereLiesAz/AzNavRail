@@ -2,9 +2,9 @@
 
 This document outlines the API surface of `AzNavRailScope`. This interface defines the DSL used to configure the rail, whether manually or via the generated code.
 
-## The Live Dictatorship (v7.25)
+## Reactive Property Binding
 
-The **v7.25 KSP Processor** injects reactive logic. When using `@Az` annotations with property bindings (e.g., `textProperty = "myTitle"`), the generated code no longer passes hardcoded literals. Instead, it accesses your `AzActivity` instance directly.
+The **KSP Processor** injects reactive logic. When using `@Az` annotations with property bindings (e.g., `textProperty = "myTitle"`), the generated code no longer passes hardcoded literals. Instead, it accesses your `AzActivity` instance directly.
 
 Because these properties are ideally `mutableStateOf`, the entire `AzGraph` will **recompose** automatically when your Activity state changes.
 
@@ -22,11 +22,16 @@ fun azConfig(
     displayAppName: Boolean = false,
     activeClassifiers: Set<String> = emptySet(),
     usePhysicalDocking: Boolean = false,
-    expandedWidth: Dp = 130.dp,
-    collapsedWidth: Dp = 80.dp,
-    showFooter: Boolean = true
+    expandedWidth: Dp = 160.dp,
+    collapsedWidth: Dp = 100.dp,
+    showFooter: Boolean = true,
+    appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail"
 )
 ~~~
+
+> A hamburger drop-down menu is **not** a rail mode. Use the standalone `AzDropdownMenu` composable —
+> placed inline like `AzButton`, with no `AzNavHost`, no scope, and no safe zones. See
+> "`AzDropdownMenu`" below.
 
 ### `azTheme`
 Controls the visual style of the rail.
@@ -35,9 +40,15 @@ Controls the visual style of the rail.
 fun azTheme(
     activeColor: Color = Color.Unspecified,
     defaultShape: AzButtonShape = AzButtonShape.CIRCLE,
-    headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE
+    headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
+    translucentBackground: Color = Color.Unspecified,
+    helpLineColors: List<Color> = emptyList(),
+    headerIconSize: Dp = Dp.Unspecified
 )
 ~~~
+
+`headerIconSize` pins the header app-icon to an exact diameter. When left `Dp.Unspecified` the icon
+sizes itself to the rail width (legacy behavior).
 
 ### `azAdvanced`
 Controls system overrides, loading states, and floating window bindings.
@@ -59,7 +70,87 @@ fun azAdvanced(
 )
 ~~~
 
-`onInteraction` is called whenever any rail item is interacted with — click, toggle, cycler advance, nested rail open, or reloc drag. It receives the item's `id` and the `AzNavItem` itself, enabling analytics integration and UI feedback without per-item callbacks.
+### `azAbout`
+Configures the built-in **About** reader and the **"More from Az"** carousel.
+
+~~~kotlin
+fun azAbout(
+    inAppAbout: Boolean = true,        // footer "About" opens the in-app reader vs a browser
+    moreFromAzEnabled: Boolean = true, // show the "More from Az" entry in the About screen
+    moreFromAzJsonUrl: String = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json",
+    moreRailItem: Boolean = false      // also pin a "More" item at the bottom of the rail
+)
+~~~
+
+The About reader auto-discovers the markdown docs (root + `docs/`) of `azConfig`'s `appRepositoryUrl`
+via the GitHub API (cached; public repos only) and renders them inline. "More from Az" is a link-only,
+CI-versioned carousel — see the README's "In-App About Reader" and "More from Az" sections.
+
+`onInteraction` is called whenever any rail item is interacted with — click, toggle, cycler advance, nested rail open, reloc drag, or host expand/collapse. It fires for both leaf items (`azRailItem` / `azRailSubItem`) and host items (`azRailHostItem`), in both the compact rail and the expanded menu, so opening a host menu is observable just like tapping a leaf. It receives the item's `id` and the `AzNavItem` itself, enabling analytics, UI feedback, and tutorial advancement (pair it with `controller.fireEvent(...)` and an `AzAdvanceCondition.Event` card) without per-item callbacks.
+
+## `AzDropdownMenu` (standalone app-icon drop-down)
+
+A drop-down menu is a standalone widget declared with the **same opinionated DSL as the rail**: it
+accepts only the configuration the rest of the library sanctions (no arbitrary panel background,
+offsets, icon tint/source, or free composable escape hatch). Its trigger is the **app icon**
+(auto-drawn like the rail's header; shape/size set via `azConfig`), dropped inline like any widget.
+Tapping it unfolds an **overlay panel** (a `Popup`) of the items you declare; tapping outside or
+pressing back folds it up.
+
+~~~kotlin
+@Composable
+fun AzDropdownMenu(
+    modifier: Modifier = Modifier,
+    navController: NavController? = LocalAzNavHostScope.current?.navController,  // for item routes
+    expanded: Boolean? = null,             // optional controlled state
+    onExpandedChange: ((Boolean) -> Unit)? = null,
+    content: AzDropdownMenuScope.() -> Unit // a plain builder, like the rail's
+)
+
+// Inside the builder:
+interface AzDropdownMenuScope {
+    fun azConfig(
+        design: AzDropdownDesign = AzDropdownDesign.MENU,   // RAIL = rail width, MENU = menu width
+        dockingSide: AzDockingSide = AzDockingSide.LEFT,    // which screen edge the panel pins to
+        vibrate: Boolean = false,
+        expandedWidth: Dp = 160.dp,
+        collapsedWidth: Dp = 100.dp,
+        headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,  // app-icon clip, like azTheme
+        headerIconSize: Dp = 48.dp,                         // app-icon diameter, like azTheme
+        showFooter: Boolean = true,                         // MENU footer (About/Feedback/@HereLiesAz)
+        appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail"  // footer "About" link
+    )
+    fun azItem(text, route = null, color, textColor, fillColor, shape, enabled, closeOnClick = true, onClick)
+    fun azToggle(isChecked, toggleOnText, toggleOffText, route = null, …, onToggle)
+    fun azCycler(options, selectedOption, route = null, …, onCycle)
+    fun azDivider()
+}
+~~~
+
+`azConfig` mirrors the rail's `azConfig`/`azTheme`: `design` sets the look + width
+(`AzDropdownDesign.RAIL` = compact rail buttons at `collapsedWidth` ≈100dp; `AzDropdownDesign.MENU`
+= full-width labeled rows at `expandedWidth` ≈160dp), `dockingSide` pins the panel to the `LEFT`
+or `RIGHT` screen edge, and `headerIconShape`/`headerIconSize` set the app-icon trigger's clip and
+diameter (the same knobs the rail exposes via `azTheme`). The `MENU` design renders rows at the
+rail's menu-item text size and — like the rail's expanded menu — carries the footer
+(About / Feedback / @HereLiesAz, gated by `showFooter`, with `appRepositoryUrl` behind "About"). The
+panel drops from the trigger automatically (downward when it fits, else upward). Items accept only the
+rail's sanctioned per-item knobs, plus a navigation `route`: when set,
+tapping navigates the `navController` (so the drop-down can drive an `AzNavHost`), then runs the
+callback, then folds up if `closeOnClick`.
+
+~~~kotlin
+AzDropdownMenu(navController = navController) {
+    azConfig(design = AzDropdownDesign.MENU, dockingSide = AzDockingSide.LEFT)
+    azItem("Home", route = "home") { }
+    azToggle(isChecked = dark, toggleOnText = "Dark", toggleOffText = "Light") { dark = it }
+    azDivider()
+    azItem("Sign out") { signOut() }
+}
+~~~
+
+On React the equivalent is `<AzDropdownMenu design dockingSide onNavigate>` with `<AzDropdownItem>`
+children (each accepting an optional `route`); props mirror the Kotlin `azConfig` names.
 
 ## Hidden Menu Builders (for `azRailRelocItem`)
 * `listItem(text, route)`

@@ -1,0 +1,167 @@
+{
+  "version": 3,
+  "apps": [
+    {
+      "name": "CueDetat",
+      "iconUrl": "https://play-lh.googleusercontent.com/E1DyZ-mqnDUiXM0hC_A4CcYqnBI9HeoAwAH6S5If8IGNhRcljRvlifIgAUXps4dYuTtX36RPqZYU2zDTK-KjKVA",
+      "description": "The sort of IRL pool shot visualization billiards app you've always thought should just... fucking... exist already.",
+      "github": "https://github.com/HereLiesAz/CueDetat",
+      "play": "https://play.google.com/store/apps/details?id=com.hereliesaz.cuedetat",
+      "web": "https://hereliesaz.github.io/CueDetat/",
+      "isPwa": false
+    },
+    {
+      "name": "GraffitiXR",
+      "iconUrl": "https://play-lh.googleusercontent.com/DjggsG5dq9gadBczm3L7sfiyxviCrjKnP5_AYGC4mBHxD1nU5Ssx-yTrLk7ptoWT2_PoyUeLMgUnYh2OuxNujA",
+      "description": "An offline Android app for street artists, using AR to project images onto walls using a confidence-based voxel mapping system.",
+      "github": "https://github.com/HereLiesAz/GraffitiXR",
+      "play": "https://play.google.com/store/apps/details?id=com.hereliesaz.graffitixr",
+      "web": "https://hereliesaz.github.io/GraffitiXR/",
+      "isPwa": false
+    },
+    {
+      "name": "AzNavRail",
+      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
+      "description": "A Jetpack menu and composables, the way I like it. Just me. Cuz it's for me. Me. ME! MEEEEEEEEEEEEEEEEEEEE!!!!!!!!!!!!",
+      "github": "https://github.com/HereLiesAz/AzNavRail",
+      "web": "https://hereliesaz.github.io/AzNavRail/",
+      "isPwa": false
+    },
+    {
+      "name": "BarBacker",
+      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
+      "description": "A digital paging system for bartenders and barbacks in high-volume (and loud, too) environments.",
+      "github": "https://github.com/HereLiesAz/BarBacker",
+      "web": "https://hereliesaz.github.io/BarBacker/",
+      "isPwa": true
+    },
+    {
+      "name": "IDEaz",
+      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
+      "description": "Mobile development that feels like it's just you and your IDEaz -- The Post-Code IDE for Android.",
+      "github": "https://github.com/HereLiesAz/IDEaz",
+      "web": "https://hereliesaz.github.io/IDEaz/",
+      "isPwa": false
+    },
+    {
+      "name": "TheLexorcist",
+      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
+      "description": "The Lexorcist is an Android app for legalitarians to parse, track, and manage case evidence.",
+      "github": "https://github.com/HereLiesAz/TheLexorcist",
+      "web": "https://hereliesaz.github.io/TheLexorcist/",
+      "isPwa": false
+    },
+    {
+      "name": "BluSnu",
+      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
+      "description": "",
+      "github": "https://github.com/HereLiesAz/BluSnu"
+    },
+    {
+      "name": "Liperty",
+      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
+      "description": "On-device lip reading, fine-tuned to the user. ",
+      "github": "https://github.com/HereLiesAz/Liperty"
+    },
+    {
+      "name": "LogKitty",
+      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
+      "description": "",
+      "github": "https://github.com/HereLiesAz/LogKitty"
+    },
+    {
+      "name": "RedBlightDistrict",
+      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
+      "description": "",
+      "github": "https://github.com/HereLiesAz/RedBlightDistrict",
+      "web": "https://nhenia.github.io/blight/",
+      "isPwa": true
+    },
+    {
+      "name": "HalfHashedKitty",
+      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
+      "description": "GUI for hashcat and related tools",
+      "github": "https://github.com/HereLiesAz/HalfHashedKitty"
+    },
+    {
+      "name": "QaRd",
+      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
+      "description": "QaRd: Design your QR code widget, shared like a digital business card or contact.",
+      "github": "https://github.com/HereLiesAz/QaRd"
+    },
+    {
+      "name": "BarCodeNcrypt",
+      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
+      "description": "I had this dream where, in the middle of our conversation, Dwayne \"The Rock\" Johnson pulled out his keys and scanned the barcode on a coupon club key fob.     \"What was that?\" I asked.     \"Oh,\" The Rock showed me his fob.     \"This is my password.\"",
+      "github": "https://github.com/HereLiesAz/BarCodeNcrypt"
+    },
+    {
+      "name": "CleanUnderwear",
+      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
+      "description": "",
+      "github": "https://github.com/HereLiesAz/CleanUnderwear",
+      "web": "https://hereliesaz.github.io/CleanUnderwear/",
+      "isPwa": false
+    },
+    {
+      "name": "QuicLoc",
+      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
+      "description": "Location sharing without the battery drain nor other creepinesses, for Android.",
+      "github": "https://github.com/HereLiesAz/QuicLoc"
+    },
+    {
+      "name": "Guillotine",
+      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
+      "description": "An AI-Powered Non-Linear Video Editor",
+      "github": "https://github.com/HereLiesAz/Guillotine"
+    },
+    {
+      "name": "MagNom",
+      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
+      "description": "An Android app to interface with Magspoof v4 and similar hardware, integrating  magstrip reading and recording tools like AudioSpoof. ",
+      "github": "https://github.com/HereLiesAz/MagNom"
+    },
+    {
+      "name": "pwnagotchiOnAndroid",
+      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
+      "description": "",
+      "github": "https://github.com/HereLiesAz/pwnagotchiOnAndroid"
+    },
+    {
+      "name": "ReUp",
+      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
+      "description": "A gentle cognitive behavioral helper in Android app form.",
+      "github": "https://github.com/HereLiesAz/ReUp"
+    },
+    {
+      "name": "Et2Brutus",
+      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
+      "description": "",
+      "github": "https://github.com/HereLiesAz/Et2Brutus"
+    },
+    {
+      "name": "LeFauxPass",
+      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
+      "description": "Unlimited free streetcar, ferry, and bus passes in New Orleans. ",
+      "github": "https://github.com/HereLiesAz/LeFauxPass"
+    },
+    {
+      "name": "MadeMeDance",
+      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
+      "description": "",
+      "github": "https://github.com/HereLiesAz/MadeMeDance"
+    },
+    {
+      "name": "Click",
+      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
+      "description": "A simple android app that allows the user to choose a button to press, tap the fingerprint scanner not located on the screen, or tap the camera lens itself to be able to take a picture.",
+      "github": "https://github.com/HereLiesAz/Click"
+    },
+    {
+      "name": "WifiHaqueur",
+      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
+      "description": "Wifi Haqueur is a blunt instrument you can whack a router with using the force of a brute.",
+      "github": "https://github.com/HereLiesAz/WifiHaqueur"
+    }
+  ]
+}
