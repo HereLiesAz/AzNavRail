@@ -55,7 +55,7 @@ Add JitPack to your `settings.gradle.kts`:
 - **No Menu Mode**: Treat all items as rail items, removing the side drawer.
 - **`AzDropdownMenu`**: A standalone, app-icon drop-down declared with the rail's opinionated DSL (`azConfig` + `azItem`/`azToggle`/`azCycler`/`azDivider`). Its overlay panel is styled as the rail or menu (`design`), width-constrained to match, and pinned to the `dockingSide` screen edge. Items can carry a `route` to drive an `AzNavHost` via a `NavController`, exactly like the rail — and it accepts no styling the rest of the library doesn't.
 - **Sizable Header Icon**: Set the app-icon to an exact diameter via `headerIconSize`.
-- **In-App About Reader**: The footer "About" opens a themed in-app markdown reader that auto-discovers your repo's docs (root + `docs/`) and renders them inline. (`azAbout`)
+- **In-App About Reader**: The footer "About" opens a themed in-app markdown reader that auto-discovers your repo's docs (root + `docs/`) and renders them inline. On Android the repo is auto-derived from the app namespace (`appRepositoryUrl` is an optional override); on web `appRepositoryUrl` is required. (`azAbout`)
 - **More from Az**: A self-versioning carousel of other apps — paste GitHub repo links and CI bakes name/icon/description, a verified Play link, and the homepage website/PWA (WIP apps excluded, Play-first); optionally pinned as a "More" rail item.
 - **AzHostActivityLayout**: A layout container that enforces strict safe zones and automatic alignment rules.
 - **AzNavHost**: A wrapper around `androidx.navigation.compose.NavHost` for seamless integration.
@@ -458,8 +458,11 @@ full-width labeled rows at the **expanded width**, ≈160dp); **`dockingSide`** 
 rail's `azTheme`) and `vibrate`/`expandedWidth`/`collapsedWidth` round out the config. The panel
 **drops from the trigger** automatically (downward when it fits, otherwise upward). The `MENU` design
 renders rows at the rail's menu-item text size and carries the rail's **footer** (About / Feedback /
-@HereLiesAz, gated by `showFooter`, with `appRepositoryUrl` behind "About"), just like the expanded
-menu.
+@HereLiesAz, gated by `showFooter`), just like the expanded menu. Because the dropdown has no
+onscreen/host area, tapping **About** opens a **full-screen in-app reader** drawn as its own layer
+(when `inAppAbout = true`, the default); set `inAppAbout = false` to open the repo in a browser
+instead. The repo is auto-derived from the app namespace on Android, with `appRepositoryUrl` as an
+optional override (never the AzNavRail library repo).
 
 Items are declared with `azItem` / `azToggle` / `azCycler` / `azDivider`, accepting only the rail's
 sanctioned per-item knobs (`color`/`textColor`/`fillColor`/`shape`/`enabled`/`closeOnClick`). Each may
@@ -507,19 +510,32 @@ const settings: AzNavRailSettings = { headerIconSize: 48 };
 
 The footer **About** item can open a built-in, themed **in-app documentation reader** instead of
 launching the browser. It **auto-discovers** your app's markdown docs — every `.md` file in the repo
-**root** and the **`docs/`** folder of your configured `appRepositoryUrl` — via the GitHub API, builds
+**root** and the **`docs/`** folder of the resolved repository — via the GitHub API, builds
 a table of contents, and renders each doc inline with a markdown renderer themed to the rail
 (`activeColor` links, `translucentBackground` surfaces). A **View on GitHub** button is pinned at the
 bottom with extra spacing.
 
+**Repo resolution differs by platform:**
+
+- **Android** auto-derives the repo from the app's **namespace**: `com.<owner>.<repo>` →
+  `https://github.com/<owner>/<repo>` (owner = 2nd package segment, repo = last segment; a trailing
+  build suffix like `.debug` is stripped). `appRepositoryUrl` is therefore **optional** — set it only
+  when the namespace doesn't match the repo. It **never** falls back to the AzNavRail library repo.
+- **Web** has no package namespace, so `appRepositoryUrl` is **required**; when it is unset the About
+  entry is hidden.
+
+The standalone `AzDropdownMenu` has no onscreen area, so its **About** opens as its own **full-screen**
+in-app reader (same namespace derivation; `inAppAbout = false` reverts to a browser link).
+
 ```kotlin
-azConfig(appRepositoryUrl = "https://github.com/YourOrg/YourApp")
+// Android: appRepositoryUrl is optional — the repo is derived from the namespace by default.
+azConfig(/* appRepositoryUrl = "https://github.com/YourOrg/YourApp" */)  // optional override
 azAbout(inAppAbout = true)   // default; set false to open the repo URL in a browser instead
 ```
 
 ```tsx
 const settings: AzNavRailSettings = {
-  appRepositoryUrl: 'https://github.com/YourOrg/YourApp',
+  appRepositoryUrl: 'https://github.com/YourOrg/YourApp', // required on web
   inAppAbout: true,
 };
 ```
@@ -532,6 +548,9 @@ const settings: AzNavRailSettings = {
   `docs/internal/`, or `*` globs like `*.draft.md`).
 - The system **back** button (Android) / back arrow returns from a doc to the table of contents, then
   dismisses.
+- **Guides hidden over footer screens (all platforms):** while a footer screen (About or More from Az)
+  is open, any visible Help cards and any in-progress tutorial are hidden, and they return **exactly**
+  where they were when the footer screen closes.
 
 ### More from Az
 

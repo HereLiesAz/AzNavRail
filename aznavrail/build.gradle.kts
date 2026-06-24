@@ -99,6 +99,22 @@ afterEvaluate {
         publications {
             register<MavenPublication>("release") {
                 from(components["release"])
+                pom {
+                    name.set("AzNavRail")
+                    description.set("An opinionated, DSL-driven navigation rail for Jetpack Compose.")
+                    url.set("https://github.com/HereLiesAz/AzNavRail")
+                    // jitpack only emits a <licenses> block in the generated POM when the
+                    // publication declares one; without it licensee/scanners report "no license".
+                    // The name is the SPDX id and the url is the canonical license URL so licensee
+                    // resolves it cleanly.
+                    licenses {
+                        license {
+                            name.set("Apache-2.0")
+                            url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                            distribution.set("repo")
+                        }
+                    }
+                }
             }
         }
     }

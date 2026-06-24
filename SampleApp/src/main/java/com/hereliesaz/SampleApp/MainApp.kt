@@ -100,7 +100,10 @@ fun MainApp() {
                 collapsedWidth = 100.dp,
                 displayAppName = false,
                 showFooter = true,
-                appRepositoryUrl = "https://github.com/HereLiesAz/AzNavRail",
+                // Blank → the About page auto-derives the repo from this app's namespace
+                // (com.hereliesaz.SampleApp → github.com/hereliesaz/SampleApp). The Customization
+                // screen can override it to demo the optional explicit URL.
+                appRepositoryUrl = "",
                 helpLineColors = emptyList(),
                 vibrate = false,
             )

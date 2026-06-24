@@ -58,7 +58,11 @@ private val helpLinePalettes = listOf(
     "Mono" to listOf(Color(0xFF00ACC1)),
     "Warm" to listOf(Color(0xFFEF6C00), Color(0xFFD32F2F), Color(0xFFC2185B)),
 )
+// The first choice (empty string) is the default: the About page auto-derives the repo from the
+// app's namespace (com.hereliesaz.SampleApp → github.com/hereliesaz/SampleApp). The remaining
+// entries demonstrate the OPTIONAL explicit override.
 private val repoChoices = listOf(
+    "Auto (from namespace)" to "",
     "AzNavRail" to "https://github.com/HereLiesAz/AzNavRail",
     "Anthropic" to "https://github.com/anthropics",
     "JetBrains Compose" to "https://github.com/JetBrains/compose-multiplatform",
@@ -162,6 +166,13 @@ fun CustomizationDemoScreen(
         )
 
         SectionLabel("appRepositoryUrl")
+        Text(
+            "Optional override for the About reader's repo. Blank (Auto) derives it from the app " +
+                "namespace on Android (com.<owner>.<repo> → github.com/<owner>/<repo>); it never " +
+                "falls back to the AzNavRail library repo. On web there is no namespace, so " +
+                "appRepositoryUrl is required there.",
+            style = MaterialTheme.typography.bodySmall,
+        )
         val repoLabel = repoChoices.firstOrNull { it.second == state.appRepositoryUrl }?.first ?: "Custom"
         AzCycler(
             options = repoChoices.map { it.first },
@@ -207,7 +218,7 @@ fun CustomizationDemoScreen(
                         collapsedWidth = 100.dp,
                         displayAppName = false,
                         showFooter = true,
-                        appRepositoryUrl = "https://github.com/HereLiesAz/AzNavRail",
+                        appRepositoryUrl = "",
                         helpLineColors = emptyList(),
                         vibrate = false,
                     )

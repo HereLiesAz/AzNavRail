@@ -100,12 +100,22 @@ fun azConfig(
     expandedWidth: Dp = 160.dp,
     collapsedWidth: Dp = 100.dp,
     showFooter: Boolean = true,
-    appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail"
+    appRepositoryUrl: String = ""
 )
 ~~~
 
-> A hamburger drop-down menu is a standalone composable, **`AzDropdownMenu`** — not a rail mode. See
-> the README's "`AzDropdownMenu`" section and `docs/DSL.md`.
+* `appRepositoryUrl` — **optional** override for the host app's GitHub repo used by the About reader.
+  Blank (the default) auto-derives the repo from the app **namespace**: `com.<owner>.<repo>` →
+  `https://github.com/<owner>/<repo>` (owner = 2nd segment, repo = last segment; a trailing build
+  suffix like `.debug` is stripped). It **never** falls back to the AzNavRail library repo. (Helper:
+  `GithubDocsRepository.repoUrlFromPackage`.) On **web** there is no package namespace, so
+  `appRepositoryUrl` is **required** there (no auto-derivation); when unset the About entry is hidden.
+
+> A hamburger drop-down menu is a standalone composable, **`AzDropdownMenu`** — not a rail mode. Its
+> `azConfig` also takes `inAppAbout = true` and `appRepositoryUrl = ""`; because the dropdown has no
+> onscreen area, "About" opens a **full-screen** in-app reader (`inAppAbout = false` reverts to a
+> browser link). Same namespace derivation as the rail. See the README's "`AzDropdownMenu`" section
+> and `docs/DSL.md`.
 
 ### `azTheme`
 Controls the visual style of the rail.
@@ -137,10 +147,16 @@ fun azAbout(
 ~~~
 
 * `inAppAbout` — footer "About" opens the in-app markdown reader (auto-generated from the repo's docs)
-  instead of opening `appRepositoryUrl` in a browser.
+  instead of opening the resolved repo in a browser. The repo is auto-derived from the app namespace
+  on Android (`azConfig`'s `appRepositoryUrl` is an optional override); on web `appRepositoryUrl` is
+  required (the About entry is hidden when it is unset).
 * `moreFromAzEnabled` — show the "More from Az" entry inside the About screen.
 * `moreFromAzJsonUrl` — raw URL of the link-only, CI-versioned `more-from-az.json` manifest.
 * `moreRailItem` — also pin a "More" item at the bottom of the collapsed rail that opens the carousel.
+
+> **Guides hidden over footer screens (all platforms):** while a footer screen (About or More from Az)
+> is open, visible Help cards and any in-progress tutorial are hidden, and they return exactly where
+> they were when the footer screen closes.
 
 ---
 

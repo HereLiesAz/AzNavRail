@@ -65,9 +65,12 @@ interface AzNavRailScope {
      * @param expandedWidth The width of the rail when expanded (menu visible).
      * @param collapsedWidth The width of the rail when collapsed.
      * @param showFooter Whether to show the footer (Privacy, Terms, Help) in the menu.
-     * @param appRepositoryUrl The URL of the application's repository to link to in the footer's "About" section. Defaults to the AzNavRail repo.
+     * @param appRepositoryUrl Optional explicit override for the host app's GitHub repository used by
+     *   the "About" screen. Leave blank (the default) to auto-derive it from the app's namespace
+     *   (`com.<owner>.<repo>` → `github.com/<owner>/<repo>`); set it only when the namespace doesn't
+     *   match the repo. **Not required.**
      */
-    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 160.dp, collapsedWidth: Dp = 100.dp, showFooter: Boolean = true, appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail")
+    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 160.dp, collapsedWidth: Dp = 100.dp, showFooter: Boolean = true, appRepositoryUrl: String = "")
 
     /**
      * Configures the visual theme of the rail.
@@ -106,9 +109,11 @@ interface AzNavRailScope {
      *
      * When [inAppAbout] is true (the default), tapping the footer's "About" item opens an in-app,
      * themed markdown reader that auto-discovers this app's documentation (`.md` files in the repo
-     * root and `docs/` folder of [azConfig]'s `appRepositoryUrl`), builds a table of contents, and
-     * renders each doc inline. A GitHub repo button sits pinned at the bottom. Set [inAppAbout] to
-     * false to restore the legacy behavior of opening the repository URL in a browser.
+     * root and `docs/` folder). The repository is derived automatically from the app's namespace
+     * (`com.<owner>.<repo>` → `github.com/<owner>/<repo>`); [azConfig]'s `appRepositoryUrl` is only
+     * an optional override. A table of contents is built and each doc rendered inline, with a GitHub
+     * repo button pinned at the bottom. Set [inAppAbout] to false to restore the legacy behavior of
+     * opening the repository URL in a browser.
      *
      * When [moreFromAzEnabled] is true (the default), the About screen also offers a "More from Az"
      * entry that opens a carousel of the library author's other apps, fetched at runtime from
@@ -643,8 +648,12 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     var collapsedWidth: Dp = 100.dp
     /** Whether the footer (About, Feedback, @HereLiesAz) is shown when the menu is expanded. */
     var showFooter: Boolean = true
-    /** URL opened when the user taps "About" in the footer. */
-    var appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail"
+    /**
+     * Optional explicit override for the host app's GitHub repository used by the "About" screen.
+     * Blank (the default) means auto-derive it from the app namespace at render time. Never defaults
+     * to the AzNavRail library repo.
+     */
+    var appRepositoryUrl: String = ""
     /** Logical docking side used to calculate the visual side and slide-in direction. */
     var dockingSide: AzDockingSide = AzDockingSide.LEFT
     /** If true, buttons are packed with no spacing between them. */

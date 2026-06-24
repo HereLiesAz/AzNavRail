@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- **About reader docs clarified for the repo-resolution split.** Android auto-derives the repo from
+  the app namespace (`com.<owner>.<repo>` → `github.com/<owner>/<repo>`), so `appRepositoryUrl` is an
+  optional override there and never falls back to the AzNavRail library repo. On **web** there is no
+  package namespace, so `appRepositoryUrl` remains **required** (no auto-derivation); when it is unset
+  the About entry is hidden. Also documented: the standalone `AzDropdownMenu`'s full-screen in-app
+  About reader, and that visible Help cards and any in-progress tutorial hide while a footer screen
+  (About / More from Az) is open and restore exactly where they were on close. Behavior on web is
+  unchanged — docs/migration notes only.
+
 ## 0.4.1
 
 ### Fixed

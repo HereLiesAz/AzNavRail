@@ -34,7 +34,9 @@ import com.hereliesaz.aznavrail.AzNavRailScopeImpl
  * @param onToggle Callback to collapse the rail (bound to the Close action, currently unused in footer).
  * @param onUndock Callback to detach the rail into FAB mode.
  * @param onSecretClick Callback that opens the Secret Screens dialog; null when [com.hereliesaz.aznavrail.model.AzAdvancedConfig.secLoc] is unset.
- * @param scope The active rail scope used to read dragging/undock flags and the repository URL.
+ * @param scope The active rail scope used to read dragging/undock flags.
+ * @param repoUrl The effective host-app repository URL (explicit override or namespace-derived),
+ *   opened in a browser by "About" when the in-app reader is disabled.
  * @param footerColor Tint color applied to all footer text items.
  * @param onAboutClick When non-null, the "About" item invokes this (to open the in-app About reader)
  *   instead of opening the repository URL in a browser. Null restores the legacy browser behavior.
@@ -46,6 +48,7 @@ internal fun Footer(
     onUndock: () -> Unit,
     onSecretClick: (() -> Unit)?,
     scope: AzNavRailScopeImpl,
+    repoUrl: String,
     footerColor: Color,
     onAboutClick: (() -> Unit)? = null
 ) {
@@ -77,7 +80,7 @@ internal fun Footer(
                     if (onAboutClick != null) {
                         onAboutClick()
                     } else {
-                        try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(scope.appRepositoryUrl))) } catch (e: Exception) {}
+                        try { if (repoUrl.isNotBlank()) context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(repoUrl))) } catch (e: Exception) {}
                     }
                 }
                 .padding(vertical = 4.dp)
