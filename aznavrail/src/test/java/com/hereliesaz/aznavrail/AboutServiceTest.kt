@@ -25,6 +25,22 @@ class AboutServiceTest {
     }
 
     @Test
+    fun `repoUrlFromPackage derives the host app repo from its namespace`() {
+        assertEquals("https://github.com/hereliesaz/SampleApp", GithubDocsRepository.repoUrlFromPackage("com.hereliesaz.SampleApp"))
+        // A trailing build-variant suffix (applicationIdSuffix) is stripped.
+        assertEquals("https://github.com/hereliesaz/SampleApp", GithubDocsRepository.repoUrlFromPackage("com.hereliesaz.SampleApp.debug"))
+        // The derived URL parses back to the same owner/repo via the existing parser.
+        assertEquals("hereliesaz" to "SampleApp", GithubDocsRepository.parseRepo(GithubDocsRepository.repoUrlFromPackage("com.hereliesaz.SampleApp")!!))
+    }
+
+    @Test
+    fun `repoUrlFromPackage returns null when the namespace is too short`() {
+        assertNull(GithubDocsRepository.repoUrlFromPackage("com.example"))
+        assertNull(GithubDocsRepository.repoUrlFromPackage("single"))
+        assertNull(GithubDocsRepository.repoUrlFromPackage(""))
+    }
+
+    @Test
     fun `humanize turns filenames into titles`() {
         assertEquals("Migration Guide", GithubDocsRepository.humanize("MIGRATION_GUIDE.md"))
         assertEquals("Api", GithubDocsRepository.humanize("api.md"))

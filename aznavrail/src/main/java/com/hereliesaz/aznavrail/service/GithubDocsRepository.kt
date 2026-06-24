@@ -16,6 +16,30 @@ object GithubDocsRepository {
 
     private val REPO_REGEX = Regex("""github\.com[/:]([^/]+)/([^/?#]+)""")
 
+    /** Build suffixes an `applicationIdSuffix` commonly appends; stripped before deriving the repo. */
+    private val BUILD_SUFFIXES = listOf("debug", "dev", "staging", "release", "beta", "alpha")
+
+    /**
+     * Derives the host app's GitHub repository URL from its package namespace, following the
+     * convention that the namespace reveals the repo: `com.<owner>.<repo>` →
+     * `https://github.com/<owner>/<repo>`. The owner is the second segment, the repo is the last
+     * segment (a trailing build suffix like `.debug` is stripped first, so `applicationIdSuffix`
+     * builds still resolve). GitHub owners/repos are case-insensitive, so no case fix-up is needed.
+     *
+     * Returns null when the package has fewer than three segments to derive from.
+     */
+    fun repoUrlFromPackage(packageName: String): String? {
+        val segments = packageName.split('.').filter { it.isNotBlank() }
+        if (segments.size < 3) return null
+        val owner = segments[1]
+        val last = segments.last()
+        // Drop a trailing build-variant suffix (e.g. com.hereliesaz.SampleApp.debug) when there is
+        // still a real repo segment in front of it.
+        val repo = if (last.lowercase() in BUILD_SUFFIXES && segments.size >= 4) segments[segments.size - 2] else last
+        if (owner.isBlank() || repo.isBlank()) return null
+        return "https://github.com/$owner/$repo"
+    }
+
     /** Extracts `owner` / `repo` from a GitHub URL, stripping a trailing `.git`. Null if not GitHub. */
     fun parseRepo(repoUrl: String): Pair<String, String>? {
         val m = REPO_REGEX.find(repoUrl) ?: return null

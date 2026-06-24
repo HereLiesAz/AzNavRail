@@ -70,16 +70,14 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
-import com.hereliesaz.aznavrail.internal.AboutOverlay
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.internal.AzNavRailLogger
-import com.hereliesaz.aznavrail.internal.MoreFromAzOverlay
 import com.hereliesaz.aznavrail.internal.CyclerTransientState
 import com.hereliesaz.aznavrail.internal.Footer
-import com.hereliesaz.aznavrail.internal.HelpOverlay
 import com.hereliesaz.aznavrail.internal.MenuItem
 import com.hereliesaz.aznavrail.internal.RailItems
 import com.hereliesaz.aznavrail.internal.SecretScreens
+import com.hereliesaz.aznavrail.service.GithubDocsRepository
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
@@ -231,6 +229,13 @@ fun AzNavRail(
     val appIcon = remember(packageName) {
         try { packageManager.getApplicationIcon(packageName) } catch (e: Exception) { null }
     }
+    // The repo backing the About screen / footer link: the explicit override if set, otherwise
+    // auto-derived from the app namespace. Never the AzNavRail library repo.
+    val effectiveRepoUrl = remember(scope.appRepositoryUrl, packageName) {
+        scope.appRepositoryUrl.ifBlank {
+            GithubDocsRepository.repoUrlFromPackage(packageName) ?: scope.appRepositoryUrl
+        }
+    }
 
     var isExpanded by remember { mutableStateOf(if (scope.noMenu) false else initiallyExpanded) }
     var isFloating by remember { mutableStateOf(false) }
@@ -238,13 +243,12 @@ fun AzNavRail(
     var offsetY by remember { mutableStateOf(0f) }
     var showFloatingButtons by remember { mutableStateOf(false) }
     var railContentHeight by remember { mutableStateOf(0f) }
-    var showHelpOverlay by remember { mutableStateOf(false) }
-    // About reader + "More from Az" carousel overlays (drawn over the live UI like the help overlay).
-    var showAboutOverlay by remember { mutableStateOf(false) }
-    var showMoreFromAz by remember { mutableStateOf(false) }
-    // When the help item that triggered the overlay lives inside a nested rail, this holds the
-    // parent item's id so the overlay shows only that nested rail's cards. Null = main rail scope.
-    var helpScopeId by remember { mutableStateOf<String?>(null) }
+    // Built-in overlay visibility (About / Help / More-from-Az) lives on the host scope so the host
+    // can render those overlays like the rest of the screen. The rail reads it here for
+    // snapshot-reactive UI below and flips it via host.show*/hide* in the trigger handlers. The host
+    // is always present (the rail errors out above without one), so this is effectively non-null.
+    val hostScope = LocalAzNavHostScope.current as? AzNavHostScopeImpl
+    val showHelpOverlay = hostScope?.helpVisible == true
     var wasFloatingOpenBeforeDrag by remember { mutableStateOf(false) }
     val tutorialController = LocalAzTutorialController.current
     val activeTutorialId by tutorialController.activeTutorialId
@@ -302,28 +306,26 @@ fun AzNavRail(
     // Tracks the last evaluated result of each host's `expandWhen` condition for edge detection.
     val expandWhenSeen = remember { mutableMapOf<String, Boolean>() }
 
-    val toggleHelpOverlay = remember(scope) {
+    val toggleHelpOverlay = remember(scope, hostScope) {
         { itemId: String? ->
             if (itemId != null && scope.advancedConfig.tutorials.containsKey(itemId)) {
                 tutorialController.startTutorial(itemId)
-                showHelpOverlay = false // ensure help overlay is closed
-                helpScopeId = null
+                hostScope?.hideHelp() // ensure help overlay is closed
             } else {
-                if (showHelpOverlay) {
-                    showHelpOverlay = false
-                    helpScopeId = null
+                if (hostScope?.helpVisible == true) {
+                    hostScope.hideHelp()
                     scope.advancedConfig.onDismissHelp?.invoke()
                 } else {
                     // Locate the tapped help item's parent nested rail (if any) so the overlay
                     // can scope its cards to that rail. A help item under a `azNestedRail { ... }`
                     // block lives in some parent's `nestedRailItems`; a main-rail help item lives
                     // directly in scope.navItems and resolves to scope=null.
-                    helpScopeId = itemId?.let { id ->
+                    val scopeId = itemId?.let { id ->
                         scope.navItems.firstOrNull { parent ->
                             parent.isNestedRail && parent.nestedRailItems?.any { it.id == id } == true
                         }?.id
                     }
-                    showHelpOverlay = true
+                    hostScope?.showHelp(scopeId)
                 }
             }
         }
@@ -798,7 +800,7 @@ fun AzNavRail(
                             ) {
                                 val moreColor = scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
                                 AzButton(
-                                    onClick = { showMoreFromAz = true },
+                                    onClick = { hostScope?.showMoreFromAz() },
                                     text = "More",
                                     color = moreColor,
                                     activeColor = moreColor,
@@ -824,9 +826,10 @@ fun AzNavRail(
                             },
                             onSecretClick = onSecretClick,
                             scope = scope,
+                            repoUrl = effectiveRepoUrl,
                             footerColor = scope.activeColor,
                             onAboutClick = if (scope.advancedConfig.inAppAbout) {
-                                { isExpanded = false; showAboutOverlay = true }
+                                { isExpanded = false; hostScope?.showAbout() }
                             } else null
                         )
                     }
@@ -836,50 +839,22 @@ fun AzNavRail(
     }
 }
 
-    if (showHelpOverlay) {
-        // helpScopeId controls the overlay's item scope: null = main rail, non-null = the parent
-        // nested-rail id whose children are the only items the overlay should describe.
-        HelpOverlay(
-            items = scope.navItems,
-            helpLineColors = scope.helpLineColors,
-            onDismiss = { toggleHelpOverlay(null) },
-            itemBoundsCache = scope.itemBoundsCache,
-            helpList = scope.advancedConfig.helpList,
-            nestedRailOpenId = helpScopeId,
-            tutorials = scope.advancedConfig.tutorials,
-            onTutorialLaunch = { toggleHelpOverlay(it) }
-        )
-    }
-
-    // In-app About reader overlay (auto-generated from the repo's markdown docs).
-    if (showAboutOverlay) {
-        AboutOverlay(
-            repoUrl = scope.appRepositoryUrl,
-            scope = scope,
-            onOpenMoreFromAz = if (scope.advancedConfig.moreFromAzEnabled) {
-                { showMoreFromAz = true }
-            } else null,
-            onDismiss = { showAboutOverlay = false }
-        )
-    }
-
-    // "More from Az" carousel overlay, drawn above the About reader.
-    if (showMoreFromAz) {
-        MoreFromAzOverlay(
-            jsonUrl = scope.advancedConfig.moreFromAzJsonUrl,
-            scope = scope,
-            onDismiss = { showMoreFromAz = false }
-        )
-    }
-
+    // The About reader, Help overlay, and "More from Az" carousel are now rendered by
+    // AzHostActivityLayout (About + More-from-Az flow through the onscreen() layout path; Help stays
+    // full-screen). The rail only flips their visibility on the host scope via the trigger handlers
+    // above. The interactive tutorial spotlight stays here — it is a guided overlay, not a content
+    // screen. While a footer screen (About / More-from-Az) is open it is hidden but kept mounted,
+    // so an in-progress tutorial resumes at the exact same scene/card/checklist on close.
     activeTutorialId?.let { tutorialId ->
         scope.advancedConfig.tutorials[tutorialId]?.let { tutorial ->
-            AzTutorialOverlay(
-                tutorialId = tutorialId,
-                tutorial = tutorial,
-                onDismiss = { tutorialController.endTutorial() },
-                itemBoundsCache = scope.itemBoundsCache
-            )
+            Box(Modifier.azSuppressGuide(hostScope?.aboutVisible == true || hostScope?.moreFromAzVisible == true)) {
+                AzTutorialOverlay(
+                    tutorialId = tutorialId,
+                    tutorial = tutorial,
+                    onDismiss = { tutorialController.endTutorial() },
+                    itemBoundsCache = scope.itemBoundsCache
+                )
+            }
         }
     }
 }

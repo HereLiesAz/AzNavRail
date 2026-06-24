@@ -8,12 +8,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -26,6 +29,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,7 +59,11 @@ import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import com.hereliesaz.aznavrail.internal.AboutOverlay
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
+import com.hereliesaz.aznavrail.internal.AzSafeZones
+import com.hereliesaz.aznavrail.internal.MoreFromAzOverlay
+import com.hereliesaz.aznavrail.service.GithubDocsRepository
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzDropdownDesign
@@ -89,7 +97,12 @@ interface AzDropdownMenuScope {
      *   `azTheme(headerIconSize = …)`).
      * @param showFooter Whether the [AzDropdownDesign.MENU] panel shows the rail's footer
      *   (About / Feedback / @HereLiesAz), like the rail's expanded menu.
-     * @param appRepositoryUrl Repository URL opened by the footer's "About" item.
+     * @param inAppAbout When true (the default), the footer's "About" opens a full-screen, in-app
+     *   markdown reader auto-generated from the host app's repo (the dropdown has no onscreen area,
+     *   so it draws its own full-screen layer). When false, "About" opens the repo in a browser.
+     * @param appRepositoryUrl Optional explicit override for the host app's GitHub repository used by
+     *   the "About" screen. Blank (the default) auto-derives it from the app namespace
+     *   (`com.<owner>.<repo>` → `github.com/<owner>/<repo>`); never the AzNavRail library repo.
      */
     fun azConfig(
         design: AzDropdownDesign = AzDropdownDesign.MENU,
@@ -100,7 +113,8 @@ interface AzDropdownMenuScope {
         headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
         headerIconSize: Dp = 48.dp,
         showFooter: Boolean = true,
-        appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail"
+        inAppAbout: Boolean = true,
+        appRepositoryUrl: String = ""
     )
 
     /**
@@ -162,7 +176,8 @@ internal data class AzDropdownConfig(
     val headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
     val headerIconSize: Dp = 48.dp,
     val showFooter: Boolean = true,
-    val appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail"
+    val inAppAbout: Boolean = true,
+    val appRepositoryUrl: String = ""
 )
 
 /** One declared entry, collected by the builder and rendered by the composable. */
@@ -232,11 +247,12 @@ private class AzDropdownMenuScopeImpl : AzDropdownMenuScope {
         headerIconShape: AzHeaderIconShape,
         headerIconSize: Dp,
         showFooter: Boolean,
+        inAppAbout: Boolean,
         appRepositoryUrl: String
     ) {
         config = AzDropdownConfig(
             design, dockingSide, vibrate, expandedWidth, collapsedWidth, headerIconShape, headerIconSize,
-            showFooter, appRepositoryUrl
+            showFooter, inAppAbout, appRepositoryUrl
         )
     }
 
@@ -338,11 +354,16 @@ private fun AzDropdownMenuRow(
 
 /**
  * The drop-down's footer for the [AzDropdownDesign.MENU] design — mirrors the rail's footer
- * ([com.hereliesaz.aznavrail.internal.Footer]): About (opens [appRepositoryUrl]), Feedback (email),
- * and the @HereLiesAz attribution. Centred [titleLarge] text in the theme primary, like the rail.
+ * ([com.hereliesaz.aznavrail.internal.Footer]): About, Feedback (email), and the @HereLiesAz
+ * attribution. Centred [titleLarge] text in the theme primary, like the rail.
+ *
+ * @param repoUrl The effective host-app repository (explicit override or namespace-derived) opened
+ *   by "About" when the in-app reader is disabled.
+ * @param onAboutClick When non-null, "About" opens the in-app reader via this callback instead of a
+ *   browser.
  */
 @Composable
-private fun AzDropdownFooter(appRepositoryUrl: String) {
+private fun AzDropdownFooter(repoUrl: String, onAboutClick: (() -> Unit)?) {
     val context = LocalContext.current
     val footerColor = MaterialTheme.colorScheme.primary
     val appName = remember(context.packageName) {
@@ -366,13 +387,17 @@ private fun AzDropdownFooter(appRepositoryUrl: String) {
             style = MaterialTheme.typography.titleLarge.copy(color = footerColor),
             modifier = Modifier
                 .clickable {
-                    // Only follow plain web URLs, never an injected scheme (e.g. javascript:/content:).
-                    val isHttp = appRepositoryUrl.startsWith("http://", ignoreCase = true) ||
-                        appRepositoryUrl.startsWith("https://", ignoreCase = true)
-                    if (isHttp) {
-                        try {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(appRepositoryUrl)))
-                        } catch (e: Exception) {}
+                    if (onAboutClick != null) {
+                        onAboutClick()
+                    } else {
+                        // Only follow plain web URLs, never an injected scheme (e.g. javascript:/content:).
+                        val isHttp = repoUrl.startsWith("http://", ignoreCase = true) ||
+                            repoUrl.startsWith("https://", ignoreCase = true)
+                        if (isHttp) {
+                            try {
+                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(repoUrl)))
+                            } catch (e: Exception) {}
+                        }
                     }
                 }
                 .padding(vertical = 4.dp)
@@ -585,8 +610,23 @@ fun AzDropdownMenu(
         onExpandedChange?.invoke(value)
     }
 
+    // Full-screen About / More-from-Az reader state. The dropdown has no host/onscreen area, so its
+    // About page is drawn as its own full-screen layer (above everything) rather than inline.
+    var showAbout by rememberSaveable { mutableStateOf(false) }
+    var showMoreFromAz by rememberSaveable { mutableStateOf(false) }
+    // A throwaway rail scope only supplies default theme tokens (accent/surface) to the reused
+    // overlays; the dropdown declares no rail theme of its own.
+    val overlayScope = remember { AzNavRailScopeImpl() }
+
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
+    // The repo backing the About reader: explicit override if set, else derived from the app
+    // namespace. Never the AzNavRail library repo.
+    val effectiveRepoUrl = remember(config.appRepositoryUrl, context.packageName) {
+        config.appRepositoryUrl.ifBlank {
+            GithubDocsRepository.repoUrlFromPackage(context.packageName) ?: config.appRepositoryUrl
+        }
+    }
     val maxPanelHeight = (LocalConfiguration.current.screenHeightDp * 0.8f).dp
     val panelWidth = if (config.design == AzDropdownDesign.RAIL) config.collapsedWidth else config.expandedWidth
 
@@ -658,11 +698,65 @@ fun AzDropdownMenu(
                         // The expanded-menu design carries the rail's footer (About / Feedback / @HereLiesAz).
                         if (config.design == AzDropdownDesign.MENU && config.showFooter) {
                             AzDivider()
-                            AzDropdownFooter(appRepositoryUrl = config.appRepositoryUrl)
+                            AzDropdownFooter(
+                                repoUrl = effectiveRepoUrl,
+                                onAboutClick = if (config.inAppAbout && effectiveRepoUrl.isNotBlank()) {
+                                    { dismiss(); showAbout = true }
+                                } else null
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Full-screen About reader / More-from-Az carousel for the dropdown. Drawn in its own Popup
+        // so it escapes the inline trigger box and covers the whole window (the dropdown has no host
+        // onscreen area). Safe-zone insets come from the system bars since there is no host to
+        // compute the rail's 10%/20% zones.
+        if (showAbout || showMoreFromAz) {
+            val systemBars = WindowInsets.systemBars.asPaddingValues()
+            Popup(
+                popupPositionProvider = AzFullScreenPopupPositionProvider,
+                onDismissRequest = { showAbout = false; showMoreFromAz = false },
+                properties = PopupProperties(focusable = true, dismissOnClickOutside = false)
+            ) {
+                CompositionLocalProvider(
+                    LocalAzSafeZones provides AzSafeZones(
+                        systemBars.calculateTopPadding(),
+                        systemBars.calculateBottomPadding()
+                    )
+                ) {
+                    Box(Modifier.fillMaxSize()) {
+                        if (showAbout) {
+                            AboutOverlay(
+                                repoUrl = effectiveRepoUrl,
+                                scope = overlayScope,
+                                onOpenMoreFromAz = { showMoreFromAz = true },
+                                onDismiss = { showAbout = false },
+                            )
+                        }
+                        // More-from-Az draws above About; dismissing it returns to About underneath.
+                        if (showMoreFromAz) {
+                            MoreFromAzOverlay(
+                                jsonUrl = overlayScope.advancedConfig.moreFromAzJsonUrl,
+                                scope = overlayScope,
+                                onDismiss = { showMoreFromAz = false },
+                            )
                         }
                     }
                 }
             }
         }
     }
+}
+
+/** Positions a [Popup] at the window origin so its `fillMaxSize` content covers the whole screen. */
+private val AzFullScreenPopupPositionProvider = object : PopupPositionProvider {
+    override fun calculatePosition(
+        anchorBounds: IntRect,
+        windowSize: IntSize,
+        layoutDirection: LayoutDirection,
+        popupContentSize: IntSize
+    ): IntOffset = IntOffset(0, 0)
 }

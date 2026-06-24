@@ -74,6 +74,8 @@ internal fun AboutOverlay(
     val context = LocalContext.current
     val accent = scope.activeColor.takeIf { it != Color.Unspecified } ?: MaterialTheme.colorScheme.primary
     val surface = scope.translucentBackground.takeIf { it != Color.Unspecified } ?: MaterialTheme.colorScheme.surface
+    // Safe-zone insets come from the host (rail) or a dropdown-supplied default; rail-offset padding,
+    // when present, is applied by the caller's wrapper.
     val safe = LocalAzSafeZones.current
     var selected by remember { mutableStateOf<AzDocEntry?>(null) }
 

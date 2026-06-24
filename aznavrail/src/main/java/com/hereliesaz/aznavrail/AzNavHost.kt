@@ -31,11 +31,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -53,11 +58,15 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.hereliesaz.aznavrail.bottomsheet.AzBottomSheet
 import com.hereliesaz.aznavrail.bottomsheet.AzSheetController
+import com.hereliesaz.aznavrail.internal.AboutOverlay
 import com.hereliesaz.aznavrail.internal.AzBottomSheetItem
 import com.hereliesaz.aznavrail.internal.AzLayoutConfig
 import com.hereliesaz.aznavrail.internal.AzNavMode
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.internal.AzRailLayoutHelper
+import com.hereliesaz.aznavrail.internal.HelpOverlay
+import com.hereliesaz.aznavrail.internal.MoreFromAzOverlay
+import com.hereliesaz.aznavrail.service.GithubDocsRepository
 import com.hereliesaz.aznavrail.internal.AzSafeZones
 import com.hereliesaz.aznavrail.internal.azResolveSafeBottom
 import com.hereliesaz.aznavrail.internal.AzVisualSide
@@ -174,6 +183,26 @@ internal fun azOrderBackgrounds(items: List<AzBackgroundItem>, pagesEnabled: Boo
 internal fun azOrderOnscreen(items: List<AzOnscreenItem>, pagesEnabled: Boolean): List<AzOnscreenItem> =
     if (pagesEnabled) items.sortedByDescending { it.page } else items
 
+/**
+ * Visually hides and input-disables a guide overlay (Help cards / interactive tutorial) while a
+ * footer screen (About / More-from-Az) is open, WITHOUT removing it from composition. Keeping the
+ * overlay mounted preserves its local progress state (tutorial scene/card/checklist, help
+ * expanded-card/scroll), so it reappears exactly where the user left it once the footer screen is
+ * dismissed. When [suppressed] it draws at `alpha = 0` and swallows all pointer input (so a stray
+ * tap on the still-mounted full-screen background can't dismiss it).
+ */
+internal fun Modifier.azSuppressGuide(suppressed: Boolean): Modifier =
+    if (!suppressed) this
+    else this
+        .graphicsLayer { alpha = 0f }
+        .pointerInput(Unit) {
+            awaitPointerEventScope {
+                while (true) {
+                    awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
+                }
+            }
+        }
+
 /** Concrete implementation of [AzNavHostScope] used internally by [AzHostActivityLayout]. */
 class AzNavHostScopeImpl(
     private val railScope: AzNavRailScopeImpl = AzNavRailScopeImpl()
@@ -185,6 +214,30 @@ class AzNavHostScopeImpl(
     val backgrounds = mutableStateListOf<AzBackgroundItem>()
     val onscreenItems = mutableStateListOf<AzOnscreenItem>()
     internal val bottomSheets = mutableStateListOf<AzBottomSheetItem>()
+
+    // --- Built-in overlay visibility ---
+    // The rail (which always runs inside this host) flips these on user action; the host renders the
+    // About reader and "More from Az" carousel through the onscreen() layout path, and the Help
+    // overlay full-screen (it draws connector lines to rail items that live outside the onscreen safe
+    // area). State lives here, not on the rail, so the host can render the overlays like any other
+    // onscreen content. It is deliberately NOT cleared by resetHost(), so visibility survives the DSL
+    // being re-applied on every recomposition.
+    var aboutVisible by mutableStateOf(false)
+        private set
+    var helpVisible by mutableStateOf(false)
+        private set
+    /** When non-null, the Help overlay is scoped to that nested rail's child items. */
+    var helpScopeId by mutableStateOf<String?>(null)
+        private set
+    var moreFromAzVisible by mutableStateOf(false)
+        private set
+
+    fun showAbout() { aboutVisible = true }
+    fun hideAbout() { aboutVisible = false }
+    fun showHelp(scopeId: String?) { helpScopeId = scopeId; helpVisible = true }
+    fun hideHelp() { helpVisible = false; helpScopeId = null }
+    fun showMoreFromAz() { moreFromAzVisible = true }
+    fun hideMoreFromAz() { moreFromAzVisible = false }
 
     fun setController(controller: NavHostController) {
         _navController = controller
@@ -427,6 +480,7 @@ fun AzHostActivityLayout(
 
         CompositionLocalProvider(
             LocalAzNavHostPresent provides true,
+            LocalAzNavHostScope provides scope,
             LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom),
             LocalAzTutorialController provides tutorialController
         ) {
@@ -445,6 +499,74 @@ fun AzHostActivityLayout(
                 reverseLayout = reverseLayout,
                 content = {}
             )
+        }
+
+        // Built-in overlays, host-managed and rendered like the rest of the screen. The rail flips
+        // the visibility flags on this host scope; the host renders the overlays here so they are no
+        // longer bespoke full-screen layers bolted onto the rail.
+        //
+        // About + More-from-Az are full content surfaces, so they flow through the SAME safe-zone /
+        // rail-padding / docking treatment as onscreen() content — the rail stays docked and visible
+        // beside them. Help stays full-screen: it draws connector lines from rail items (which sit in
+        // the rail strip, outside the onscreen safe area) to their cards, so it must span the window.
+        val effectiveRepoUrl = remember(railScope.appRepositoryUrl, context.packageName) {
+            railScope.appRepositoryUrl.ifBlank {
+                GithubDocsRepository.repoUrlFromPackage(context.packageName) ?: railScope.appRepositoryUrl
+            }
+        }
+
+        CompositionLocalProvider(
+            LocalAzNavHostScope provides scope,
+            LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom),
+            LocalAzTutorialController provides tutorialController,
+        ) {
+            if (scope.aboutVisible || scope.moreFromAzVisible) {
+                // Pad only the rail offset; the overlays apply top/bottom safe-zone insets themselves
+                // from the LocalAzSafeZones provided above (so the same composables work standalone
+                // under the dropdown, which has no host wrapper).
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = topPadding, bottom = bottomPadding, start = startPadding, end = endPadding)
+                ) {
+                    if (scope.aboutVisible) {
+                        AboutOverlay(
+                            repoUrl = effectiveRepoUrl,
+                            scope = railScope,
+                            onOpenMoreFromAz = if (railScope.advancedConfig.moreFromAzEnabled) {
+                                { scope.showMoreFromAz() }
+                            } else null,
+                            onDismiss = { scope.hideAbout() },
+                        )
+                    }
+                    // More-from-Az draws above About (later in the Box), so opening it from the About
+                    // screen covers it and dismissing returns to About underneath.
+                    if (scope.moreFromAzVisible) {
+                        MoreFromAzOverlay(
+                            jsonUrl = railScope.advancedConfig.moreFromAzJsonUrl,
+                            scope = railScope,
+                            onDismiss = { scope.hideMoreFromAz() },
+                        )
+                    }
+                }
+            }
+
+            // While a footer screen (About / More-from-Az) is open, the Help overlay is hidden but
+            // kept mounted so its expanded-card/scroll state restores untouched on close.
+            if (scope.helpVisible) {
+                Box(Modifier.azSuppressGuide(scope.aboutVisible || scope.moreFromAzVisible)) {
+                    HelpOverlay(
+                        items = railScope.navItems,
+                        helpLineColors = railScope.helpLineColors,
+                        onDismiss = { scope.hideHelp(); railScope.advancedConfig.onDismissHelp?.invoke() },
+                        itemBoundsCache = railScope.itemBoundsCache,
+                        helpList = railScope.advancedConfig.helpList,
+                        nestedRailOpenId = scope.helpScopeId,
+                        tutorials = railScope.advancedConfig.tutorials,
+                        onTutorialLaunch = { id -> tutorialController.startTutorial(id); scope.hideHelp() },
+                    )
+                }
+            }
         }
 
         // Bottom sheets registered via azBottomSheet { ... } draw above EVERYTHING — including

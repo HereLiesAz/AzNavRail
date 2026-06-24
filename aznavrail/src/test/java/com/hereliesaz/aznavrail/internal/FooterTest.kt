@@ -33,6 +33,7 @@ class FooterTest {
                 onToggle = { onToggleCalled = true },
                 onUndock = { onUndockCalled = true },
                 scope = scope,
+                repoUrl = "https://github.com/hereliesaz/TestApp",
                 footerColor = Color.Red,
                 onSecretClick = {}
             )
@@ -59,6 +60,7 @@ class FooterTest {
                 onToggle = { },
                 onUndock = { },
                 scope = scope,
+                repoUrl = "https://github.com/hereliesaz/TestApp",
                 footerColor = Color.Red,
                 onSecretClick = {}
             )
