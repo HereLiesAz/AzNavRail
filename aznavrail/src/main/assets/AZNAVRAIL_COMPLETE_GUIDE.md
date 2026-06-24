@@ -80,8 +80,18 @@ azConfig(
     dockingSide = AzDockingSide.LEFT,    // Enum: LEFT or RIGHT
     noMenu = noMenu,                     // Boolean: Disable the side drawer entirely
     usePhysicalDocking = usePhysicalDocking // Boolean: Anchor to physical hardware edge vs visual left
+    // appRepositoryUrl = ""                // Optional override for the About reader's repo (see below)
 )
 ```
+
+`azConfig` also takes `appRepositoryUrl` (default `""`), the repo the in-app **About** reader uses.
+On **Android** the repo is auto-derived from the app **namespace** — `com.<owner>.<repo>` →
+`https://github.com/<owner>/<repo>` (owner = 2nd segment, repo = last segment; a trailing build
+suffix like `.debug` is stripped) — so `appRepositoryUrl` is an **optional** override and it **never**
+falls back to the AzNavRail library repo. On **web** there is no package namespace, so
+`appRepositoryUrl` is **required** there (no auto-derivation); when unset the About entry is hidden.
+While a footer screen (About or More from Az) is open, visible Help cards and any in-progress tutorial
+are hidden and restore exactly where they were on close (all platforms).
 
 
 ### B. Theming (`azTheme`)
@@ -158,10 +168,13 @@ panel** (a `Popup`) of the items you declare. Configure it through `azConfig`: `
 (default; full-width labeled rows at the expanded width ≈160dp); `dockingSide` pins the panel to the
 `LEFT`/`RIGHT` screen edge; the panel drops from the trigger automatically. The `MENU` design
 renders rows at the rail's menu-item text size and, like the rail's expanded menu, carries the
-footer (About / Feedback / @HereLiesAz, gated by `showFooter`, with `appRepositoryUrl` behind
-"About"). Items use `azItem`/`azToggle`/`azCycler`/`azDivider` with only the rail's sanctioned
-per-item knobs, plus a `route` that navigates the supplied `NavController` (so the drop-down can
-drive an `AzNavHost`).
+footer (About / Feedback / @HereLiesAz, gated by `showFooter`). Because the dropdown has no
+onscreen/host area, tapping **About** opens a **full-screen** in-app reader drawn as its own layer
+when `inAppAbout = true` (the default; `inAppAbout = false` opens the repo in a browser). The repo is
+auto-derived from the app namespace on Android, with `azConfig`'s `appRepositoryUrl` as an optional
+override (never the AzNavRail library repo). Items use `azItem`/`azToggle`/`azCycler`/`azDivider` with
+only the rail's sanctioned per-item knobs, plus a `route` that navigates the supplied `NavController`
+(so the drop-down can drive an `AzNavHost`).
 
 ```kotlin
 AzDropdownMenu(navController = navController) {

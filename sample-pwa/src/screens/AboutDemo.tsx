@@ -18,10 +18,24 @@ export default function AboutDemo() {
         <h3 style={{ marginBottom: 4 }}>In-app About reader</h3>
         <p style={{ opacity: 0.85, marginTop: 0 }}>
           Expand the rail and tap <strong>About</strong> in the footer. The reader auto-discovers the
-          markdown docs in the configured repository's root and <code>docs/</code> folder
-          (<code>appRepositoryUrl</code>), builds a table of contents, and renders each doc inline. A
-          GitHub button is pinned at the bottom. Configure with{' '}
-          <code>inAppAbout</code> (set false to open the repo in a browser instead).
+          markdown docs in the configured repository's root and <code>docs/</code> folder, builds a
+          table of contents, and renders each doc inline. A GitHub button is pinned at the bottom.
+          Configure with <code>inAppAbout</code> (set false to open the repo in a browser instead).
+        </p>
+        <p style={{ opacity: 0.85, marginTop: 0 }}>
+          <strong>Repo resolution differs by platform.</strong> On Android the repo is auto-derived
+          from the app namespace (<code>com.&lt;owner&gt;.&lt;repo&gt;</code> →{' '}
+          <code>github.com/&lt;owner&gt;/&lt;repo&gt;</code>), so <code>appRepositoryUrl</code> is an
+          optional override and never falls back to the AzNavRail library repo. On web there is no
+          package namespace, so <code>appRepositoryUrl</code> is <strong>required</strong> (set in{' '}
+          <code>App.tsx</code>); when it is unset the About entry is hidden.
+        </p>
+        <p style={{ opacity: 0.85, marginTop: 0 }}>
+          The standalone <code>AzDropdownMenu</code> has no onscreen area, so its <strong>About</strong>{' '}
+          opens as its own full-screen in-app reader (same namespace derivation; <code>inAppAbout=false</code>{' '}
+          reverts to a browser link). While a footer screen (About or More from Az) is open, visible Help
+          cards and any in-progress tutorial are hidden, and they return exactly where they were when the
+          footer screen closes.
         </p>
       </section>
 

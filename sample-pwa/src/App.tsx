@@ -80,6 +80,9 @@ function App() {
     collapsedRailWidth: 136,
     displayAppNameInHeader: false,
     showFooter: true,
+    // Web has no package namespace, so appRepositoryUrl is REQUIRED (no auto-derivation) — when
+    // unset the About entry is hidden. Android instead auto-derives it from the app namespace and
+    // treats appRepositoryUrl as an optional override.
     appRepositoryUrl: 'https://github.com/HereLiesAz/AzNavRail',
     vibrate: false,
     activeClassifiers: new Set<string>(),

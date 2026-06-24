@@ -105,13 +105,18 @@ export default function CustomizationDemo({
         onChange={(v) => onChange({ ...state, vibrate: v })}
       />
 
-      <Block label="appRepositoryUrl">
+      <Block label="appRepositoryUrl (required on web)">
         <select
           value={state.appRepositoryUrl}
           onChange={(e) => onChange({ ...state, appRepositoryUrl: e.target.value })}
         >
           {repoChoices.map((r) => <option key={r.url} value={r.url}>{r.label}</option>)}
         </select>
+        <span style={{ opacity: 0.6, fontSize: 13, fontWeight: 400 }}>
+          Web has no package namespace, so this is required for the About reader (unset hides the
+          About entry). Android auto-derives the repo from the app namespace and treats this as an
+          optional override.
+        </span>
       </Block>
 
       <Block label="activeClassifiers">

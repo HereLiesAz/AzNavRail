@@ -85,16 +85,25 @@ physical docking, the footer, nested-rail popups, the bleeding app-name header, 
 | `azAbout(moreFromAzEnabled = true)` | `moreFromAzEnabled` |
 | `azAbout(moreRailItem = true)` | `moreRailItem` |
 | `azAbout(moreFromAzJsonUrl = "…")` | `moreFromAzJsonUrl` |
-| `azConfig(appRepositoryUrl = "…")` | `appRepositoryUrl` |
+| `azConfig(appRepositoryUrl = "…")` — **optional** override (auto-derived from namespace) | `appRepositoryUrl` — **required** (no namespace to derive from) |
 
 The footer "About" opens an in-app markdown reader that auto-discovers the repo's docs (root +
-`docs/`) via the GitHub API. "More from Az" is a carousel whose `more-from-az.json` you fill by
+`docs/`) via the GitHub API. **Repo resolution differs by platform:** on **Android** the repo is
+auto-derived from the app **namespace** (`com.<owner>.<repo>` → `https://github.com/<owner>/<repo>`),
+so `appRepositoryUrl` is an optional override and never falls back to the AzNavRail library repo.
+**Web has no package namespace, so `appRepositoryUrl` is required there** (no auto-derivation); when
+it is unset the About entry is hidden. The standalone `AzDropdownMenu` has no onscreen area, so its
+About is drawn as its own full-screen layer (Android); set `inAppAbout` false to open the repo in a
+browser instead. While a footer screen (About or More from Az) is open, visible Help cards and any
+in-progress tutorial are hidden and restore exactly where they were on close.
+
+"More from Az" is a carousel whose `more-from-az.json` you fill by
 pasting GitHub repo links (one per line); a GitHub Action resolves each repo and **bakes** the
 finished manifest (name/icon/description, a verified Play link, the homepage website/PWA, WIP
 filtering, Play-first sort). Both screens are themed from `activeColor`/`translucentBackground` and
 built from the library's own components; markdown uses a small self-contained renderer (no
 `react-markdown` dependency). Because resolution is done in CI, "More from Az" metadata is identical
-on web and native — no CORS limitation. Use `appRepositoryUrl` to point the reader at your repo.
+on web and native — no CORS limitation.
 
 ## Bottom sheets
 

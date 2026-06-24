@@ -25,9 +25,16 @@ fun azConfig(
     expandedWidth: Dp = 160.dp,
     collapsedWidth: Dp = 100.dp,
     showFooter: Boolean = true,
-    appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail"
+    appRepositoryUrl: String = ""
 )
 ~~~
+
+`appRepositoryUrl` is an **optional** override for the About reader's repo. Blank (the default)
+auto-derives the repo from the app **namespace** on Android: `com.<owner>.<repo>` →
+`https://github.com/<owner>/<repo>` (owner = 2nd segment, repo = last segment; trailing build suffixes
+like `.debug` are stripped). It **never** falls back to the AzNavRail library repo. On **web** there is
+no namespace, so `appRepositoryUrl` is **required** (no auto-derivation); when unset the About entry is
+hidden.
 
 > A hamburger drop-down menu is **not** a rail mode. Use the standalone `AzDropdownMenu` composable —
 > placed inline like `AzButton`, with no `AzNavHost`, no scope, and no safe zones. See
@@ -82,9 +89,15 @@ fun azAbout(
 )
 ~~~
 
-The About reader auto-discovers the markdown docs (root + `docs/`) of `azConfig`'s `appRepositoryUrl`
-via the GitHub API (cached; public repos only) and renders them inline. "More from Az" is a link-only,
-CI-versioned carousel — see the README's "In-App About Reader" and "More from Az" sections.
+The About reader auto-discovers the markdown docs (root + `docs/`) of the resolved repo via the GitHub
+API (cached; public repos only) and renders them inline. On **Android** the repo is auto-derived from
+the app namespace (`azConfig`'s `appRepositoryUrl` is an optional override, never the AzNavRail library
+repo); on **web** `appRepositoryUrl` is required (the About entry is hidden when unset). "More from Az"
+is a link-only, CI-versioned carousel — see the README's "In-App About Reader" and "More from Az"
+sections.
+
+While a footer screen (About or More from Az) is open, visible Help cards and any in-progress tutorial
+are hidden, and they return exactly where they were when the footer screen closes (all platforms).
 
 `onInteraction` is called whenever any rail item is interacted with — click, toggle, cycler advance, nested rail open, reloc drag, or host expand/collapse. It fires for both leaf items (`azRailItem` / `azRailSubItem`) and host items (`azRailHostItem`), in both the compact rail and the expanded menu, so opening a host menu is observable just like tapping a leaf. It receives the item's `id` and the `AzNavItem` itself, enabling analytics, UI feedback, and tutorial advancement (pair it with `controller.fireEvent(...)` and an `AzAdvanceCondition.Event` card) without per-item callbacks.
 
@@ -118,7 +131,8 @@ interface AzDropdownMenuScope {
         headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,  // app-icon clip, like azTheme
         headerIconSize: Dp = 48.dp,                         // app-icon diameter, like azTheme
         showFooter: Boolean = true,                         // MENU footer (About/Feedback/@HereLiesAz)
-        appRepositoryUrl: String = "https://github.com/HereLiesAz/AzNavRail"  // footer "About" link
+        inAppAbout: Boolean = true,                          // "About" opens a full-screen in-app reader
+        appRepositoryUrl: String = ""                        // optional override; else derived from namespace
     )
     fun azItem(text, route = null, color, textColor, fillColor, shape, enabled, closeOnClick = true, onClick)
     fun azToggle(isChecked, toggleOnText, toggleOffText, route = null, …, onToggle)
@@ -133,8 +147,12 @@ interface AzDropdownMenuScope {
 or `RIGHT` screen edge, and `headerIconShape`/`headerIconSize` set the app-icon trigger's clip and
 diameter (the same knobs the rail exposes via `azTheme`). The `MENU` design renders rows at the
 rail's menu-item text size and — like the rail's expanded menu — carries the footer
-(About / Feedback / @HereLiesAz, gated by `showFooter`, with `appRepositoryUrl` behind "About"). The
-panel drops from the trigger automatically (downward when it fits, else upward). Items accept only the
+(About / Feedback / @HereLiesAz, gated by `showFooter`). Because the dropdown has no onscreen/host
+area, tapping **About** opens a **full-screen in-app reader** drawn as its own layer when
+`inAppAbout = true` (the default); `inAppAbout = false` opens the repo in a browser. The repo is
+auto-derived from the app namespace on Android, with `appRepositoryUrl` as an optional override (never
+the AzNavRail library repo). The panel drops from the trigger automatically (downward when it fits,
+else upward). Items accept only the
 rail's sanctioned per-item knobs, plus a navigation `route`: when set,
 tapping navigates the `navController` (so the drop-down can drive an `AzNavHost`), then runs the
 callback, then folds up if `closeOnClick`.

@@ -167,13 +167,17 @@ configurable (mirroring the rail's `azTheme`). Only the dropped list is an overl
   `aznavrail-react/src/components/AzDropdownMenu.tsx` (RN) and `src/web/AzDropdownMenu.jsx` (web).
 - DSL like the rail (collect-then-render): the `content` is a plain `AzDropdownMenuScope.() -> Unit`
   builder. `azConfig(design, dockingSide, vibrate, expandedWidth, collapsedWidth, headerIconShape,
-  headerIconSize, showFooter, appRepositoryUrl)` mirrors the rail's `azConfig`/`azTheme` (RN/web take
-  the same as props); items are `azItem`/`azToggle`/`azCycler`/`azDivider` accepting only the rail's
-  per-item knobs (`color`/`textColor`/`fillColor`/`shape`/`enabled`/`closeOnClick`) plus a `route`.
+  headerIconSize, showFooter, inAppAbout = true, appRepositoryUrl = "")` mirrors the rail's
+  `azConfig`/`azTheme` (RN/web take the same as props); items are `azItem`/`azToggle`/`azCycler`/`azDivider`
+  accepting only the rail's per-item knobs (`color`/`textColor`/`fillColor`/`shape`/`enabled`/`closeOnClick`)
+  plus a `route`. `appRepositoryUrl` is an optional override — blank auto-derives the repo from the app
+  namespace (`com.<owner>.<repo>` → `github.com/<owner>/<repo>`), never the AzNavRail library repo.
 - The `MENU` design renders rows at the rail's menu-item text size (Android `titleLarge`; RN/web 16px,
   matching `RailMenuItem`/`.az-menu-item-text`) and — like the rail's expanded menu — appends the
-  footer (About → `appRepositoryUrl`, Feedback → mailto, @HereLiesAz → Instagram) when `showFooter`,
-  mirroring `internal/Footer.kt` / the rail's `renderFooter`.
+  footer (About, Feedback → mailto, @HereLiesAz → Instagram) when `showFooter`, mirroring
+  `internal/Footer.kt` / the rail's `renderFooter`. The dropdown has no onscreen/host area, so tapping
+  About opens a **full-screen** in-app reader drawn as its own layer when `inAppAbout = true` (the
+  default); `inAppAbout = false` opens the resolved repo in a browser.
 - `design` (`AzDropdownDesign { RAIL, MENU }`, default `MENU`) styles the panel as the collapsed rail
   (compact buttons, `collapsedWidth` ≈100dp) or the expanded menu (full-width labeled rows,
   `expandedWidth` ≈160dp). `dockingSide` (`AzDockingSide { LEFT, RIGHT }`) **pins the panel to that
@@ -185,16 +189,30 @@ configurable (mirroring the rail's `azTheme`). Only the dropped list is an overl
   exactly like `MenuItem.kt`. RN/web use an `onNavigate(route)` prop + `route?` on `AzDropdownItem`.
 - Controlled `expanded`/`onExpandedChange` remain. Tapping outside, back, or an item folds it up.
 
-In-app About reader + "More from Az": the footer "About" item opens a built-in, full-screen, themed
-markdown reader (an overlay drawn over the live UI, like the help overlay) instead of opening the repo
-URL in a browser. It auto-discovers the consuming app's docs by listing the `.md` files in the
-repository root and the `docs/` folder of `appRepositoryUrl` via the GitHub contents API, builds a
-table of contents, and renders each doc inline. Fetches are cached (ETag + TTL) to respect GitHub's
-unauthenticated rate limit; offline/limited shows the last cached copy. Public repos only. Configured
-via `azAbout(inAppAbout, moreFromAzEnabled, moreFromAzJsonUrl, moreRailItem)`; `inAppAbout = false`
-restores the browser behavior. A repo-root `.azignore` (one pattern per line; `#` comments; exact
-paths, `dir/` prefixes, or `*` globs) excludes listed docs from the About TOC — implemented in
-`GithubDocsRepository.parseIgnore`/`isIgnored` (Android) and `githubDocs.ts` (React).
+In-app About reader + "More from Az": the footer "About" item opens a built-in, themed markdown reader
+instead of opening the repo URL in a browser. On the rail (Android/web) About + More-from-Az flow
+through the host's `onscreen()` layout path (rail stays docked beside them); the standalone
+`AzDropdownMenu` has no onscreen area, so its About is drawn as its own **full-screen** layer. It
+auto-discovers the consuming app's docs by listing the `.md` files in the repository root and the
+`docs/` folder of the resolved repo via the GitHub contents API, builds a table of contents, and
+renders each doc inline. Fetches are cached (ETag + TTL) to respect GitHub's unauthenticated rate
+limit; offline/limited shows the last cached copy. Public repos only.
+
+Repo resolution: on **Android** the repo is auto-derived from the app **namespace** — `com.<owner>.<repo>`
+→ `https://github.com/<owner>/<repo>` (owner = 2nd segment, repo = last segment; a trailing build
+suffix like `.debug` is stripped), via `GithubDocsRepository.repoUrlFromPackage`. `appRepositoryUrl`
+(on `azConfig` and `AzDropdownMenu`'s `azConfig`, default `""`) is an **optional** override and the
+derivation **never** falls back to the AzNavRail library repo. On **web** there is no namespace, so
+`appRepositoryUrl` is **required** there (no auto-derivation); when unset the About entry is hidden.
+
+Configured via `azAbout(inAppAbout, moreFromAzEnabled, moreFromAzJsonUrl, moreRailItem)`;
+`inAppAbout = false` restores the browser behavior. A repo-root `.azignore` (one pattern per line;
+`#` comments; exact paths, `dir/` prefixes, or `*` globs) excludes listed docs from the About TOC —
+implemented in `GithubDocsRepository.parseIgnore`/`isIgnored` (Android) and `githubDocs.ts` (React).
+
+Guides hidden over footer screens (all platforms): while a footer screen (About or More-from-Az) is
+open, any visible Help cards and any in-progress tutorial are hidden but kept mounted, so they return
+exactly where they were when the footer screen closes.
 
 "More from Az" is a carousel of the author's other apps reachable from the About screen and/or a
 pinned "More" rail item (`moreRailItem`). The maintainer **pastes GitHub repo links, one per line,
