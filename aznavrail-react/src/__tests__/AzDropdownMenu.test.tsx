@@ -118,11 +118,23 @@ describe('AzDropdownMenu', () => {
 
   it('shows the rail footer in the MENU design by default', () => {
     const { queryByText } = render(
-      <AzDropdownMenu expanded>
+      <AzDropdownMenu expanded appRepositoryUrl="https://github.com/acme/app">
         <AzDropdownItem text="Profile" onClick={() => {}} />
       </AzDropdownMenu>
     );
     expect(queryByText('About')).not.toBeNull();
+    expect(queryByText('Feedback')).not.toBeNull();
+    expect(queryByText('@HereLiesAz')).not.toBeNull();
+  });
+
+  it('hides the footer About when no appRepositoryUrl is set', () => {
+    const { queryByText } = render(
+      <AzDropdownMenu expanded>
+        <AzDropdownItem text="Profile" onClick={() => {}} />
+      </AzDropdownMenu>
+    );
+    // About is gated on appRepositoryUrl; the rest of the footer still renders.
+    expect(queryByText('About')).toBeNull();
     expect(queryByText('Feedback')).not.toBeNull();
     expect(queryByText('@HereLiesAz')).not.toBeNull();
   });

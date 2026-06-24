@@ -16,6 +16,7 @@ import {
 import { AzButton } from './AzButton';
 import { AzButtonShape, AzDockingSide, AzDropdownDesign, AzHeaderIconShape } from '../types';
 import { AzNavRailDefaults } from '../AzNavRailDefaults';
+import { AboutOverlay } from './AboutOverlay';
 
 /** Context the menu provides so item components can navigate, fold the menu, and match its design. */
 interface AzDropdownMenuContextValue {
@@ -44,8 +45,20 @@ export interface AzDropdownMenuProps {
   headerIconSize?: number;
   /** Whether the MENU design shows the rail's footer (About / Feedback / @HereLiesAz). */
   showFooter?: boolean;
-  /** Repository URL opened by the footer's "About" item. */
+  /**
+   * Repository URL backing the footer's "About" item. When unset/blank, "About" is hidden entirely.
+   * When set, "About" opens the in-app reader if {@link inAppAbout} is true, else the URL.
+   */
   appRepositoryUrl?: string;
+  /**
+   * When true (default), the footer "About" opens the full-screen in-app reader; when false it opens
+   * {@link appRepositoryUrl} in a browser. Only takes effect when `appRepositoryUrl` is set.
+   */
+  inAppAbout?: boolean;
+  /** When true (default), the in-app About reader offers a "More from Az" carousel. */
+  moreFromAzEnabled?: boolean;
+  /** Raw URL of the `more-from-az.json` manifest backing the carousel. */
+  moreFromAzJsonUrl?: string;
   /** Optional controlled open-state. When omitted the menu manages its own. */
   expanded?: boolean;
   /** Called whenever the open-state changes. */
@@ -150,7 +163,10 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
   headerIconShape = AzHeaderIconShape.CIRCLE,
   headerIconSize = AzNavRailDefaults.HeaderIconSize,
   showFooter = true,
-  appRepositoryUrl = 'https://github.com/HereLiesAz/AzNavRail',
+  appRepositoryUrl,
+  inAppAbout = true,
+  moreFromAzEnabled = true,
+  moreFromAzJsonUrl = 'https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json',
   expanded,
   onExpandedChange,
   onNavigate,
@@ -162,6 +178,9 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
   const triggerRef = useRef<View>(null);
   const [anchor, setAnchor] = useState<Anchor>({ x: 0, y: 0, width: 0, height: 0 });
   const [panelSize, setPanelSize] = useState({ width: 0, height: 0 });
+  // Full-screen About reader reachable from the dropdown footer (parity with the rail). The
+  // "More from Az" carousel is reachable from within AboutOverlay itself.
+  const [showAbout, setShowAbout] = useState(false);
 
   const setOpen = (value: boolean) => {
     if (expanded === undefined) setInternalOpen(value);
@@ -252,11 +271,26 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
                   </AzDropdownMenuContext.Provider>
                   {/* The expanded-menu design carries the rail's footer. */}
                   {design === AzDropdownDesign.MENU && showFooter && (
-                    <AzDropdownFooter appRepositoryUrl={appRepositoryUrl} />
+                    <AzDropdownFooter
+                      appRepositoryUrl={appRepositoryUrl}
+                      inAppAbout={inAppAbout}
+                      onInAppAbout={() => setShowAbout(true)}
+                    />
                   )}
                 </ScrollView>
               </Pressable>
             </View>
+
+            {/* Full-screen footer screens, rendered above the dropdown panel — mirrors the rail.
+                Gated on `appRepositoryUrl`; About is hidden entirely when it is unset. */}
+            {showAbout && !!appRepositoryUrl && (
+              <AboutOverlay
+                repoUrl={appRepositoryUrl}
+                moreFromAzEnabled={moreFromAzEnabled}
+                moreFromAzJsonUrl={moreFromAzJsonUrl}
+                onDismiss={() => setShowAbout(false)}
+              />
+            )}
           </Pressable>
         </Modal>
       )}
@@ -265,7 +299,11 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
 };
 
 /** The MENU design's footer — mirrors the rail's footer (About / Feedback / @HereLiesAz). */
-const AzDropdownFooter: React.FC<{ appRepositoryUrl: string }> = ({ appRepositoryUrl }) => {
+const AzDropdownFooter: React.FC<{
+  appRepositoryUrl?: string;
+  inAppAbout?: boolean;
+  onInAppAbout?: () => void;
+}> = ({ appRepositoryUrl, inAppAbout = true, onInAppAbout }) => {
   const footerColor = '#6750A4';
   // Only open safe schemes — this also runs on the web via react-native-web, where a `javascript:`
   // URL would otherwise execute.
@@ -273,11 +311,19 @@ const AzDropdownFooter: React.FC<{ appRepositoryUrl: string }> = ({ appRepositor
     const isSafe = url.startsWith('http://') || url.startsWith('https://') || url.startsWith('mailto:');
     if (isSafe) Linking.openURL(url).catch(() => {});
   };
+  const onAbout = () => {
+    if (!appRepositoryUrl) return;
+    if (inAppAbout) onInAppAbout?.();
+    else open(appRepositoryUrl);
+  };
   return (
     <View style={styles.footer}>
-      <TouchableOpacity onPress={() => open(appRepositoryUrl)} style={styles.footerRow} accessibilityRole="button">
-        <Text style={[styles.footerText, { color: footerColor }]}>About</Text>
-      </TouchableOpacity>
+      {/* About is hidden entirely when no repository URL is configured. */}
+      {!!appRepositoryUrl && (
+        <TouchableOpacity onPress={onAbout} style={styles.footerRow} accessibilityRole="button">
+          <Text style={[styles.footerText, { color: footerColor }]}>About</Text>
+        </TouchableOpacity>
+      )}
       <TouchableOpacity onPress={() => open('mailto:hereliesaz@gmail.com?subject=Feedback')} style={styles.footerRow} accessibilityRole="button">
         <Text style={[styles.footerText, { color: footerColor }]}>Feedback</Text>
       </TouchableOpacity>

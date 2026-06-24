@@ -74,7 +74,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       onExpandedChange,
       onInteraction,
       helpList = {},
-      appRepositoryUrl = 'https://github.com/HereLiesAz/AzNavRail',
+      appRepositoryUrl,
       inAppAbout = true,
       moreFromAzEnabled = true,
       moreFromAzJsonUrl = 'https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json',
@@ -604,7 +604,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
         if (config.inAppAbout) {
           setIsExpanded(false);
           setShowAbout(true);
-        } else {
+        } else if (config.appRepositoryUrl) {
           Linking.openURL(config.appRepositoryUrl).catch(e => console.error("Could not open About", e));
         }
       };
@@ -634,7 +634,9 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
              {enableRailDragging && (
                  <TouchableOpacity onPress={handleUndock} style={{ paddingVertical: 8 }}><Text style={[styles.menuItemText, { color: footerColor, fontWeight: 'bold' }]}>{`Undock`}</Text></TouchableOpacity>
              )}
-             <TouchableOpacity onPress={handleAbout} style={{ paddingVertical: 4 }}><Text style={[styles.menuItemText, { color: footerColor }]}>About</Text></TouchableOpacity>
+             {!!config.appRepositoryUrl && (
+                 <TouchableOpacity onPress={handleAbout} style={{ paddingVertical: 4 }}><Text style={[styles.menuItemText, { color: footerColor }]}>About</Text></TouchableOpacity>
+             )}
              <TouchableOpacity onPress={handleFeedback} style={{ paddingVertical: 4 }}><Text style={[styles.menuItemText, { color: footerColor }]}>Feedback</Text></TouchableOpacity>
              <TouchableOpacity onPress={handleCredit} onLongPress={handleSecLocTrigger} delayLongPress={500} style={{ paddingVertical: 4 }}><Text style={[styles.menuItemText, { color: footerColor, opacity: 0.5 }]}>@HereLiesAz</Text></TouchableOpacity>
         </View>
@@ -760,20 +762,28 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                  </View>
             )}
 
+            {/* While a footer screen (About / More-from-Az) is open, the Help overlay is hidden and
+                input-disabled but kept MOUNTED so its expanded-card state is preserved and restored
+                when the footer screen closes. */}
             {infoScreen && (
-                <HelpOverlay
-                    items={items}
-                    helpList={config.helpList || {}}
-                    onDismiss={onDismissInfoScreen!}
-                    itemBounds={itemBounds}
-                    nestedRailVisibleId={nestedRailVisible}
-                    tutorials={(config as any).tutorials}
-                />
+                <View
+                    style={[StyleSheet.absoluteFill, (showAbout || showMoreFromAz) && { opacity: 0 }]}
+                    pointerEvents={(showAbout || showMoreFromAz) ? 'none' : 'auto'}
+                >
+                    <HelpOverlay
+                        items={items}
+                        helpList={config.helpList || {}}
+                        onDismiss={onDismissInfoScreen!}
+                        itemBounds={itemBounds}
+                        nestedRailVisibleId={nestedRailVisible}
+                        tutorials={(config as any).tutorials}
+                    />
+                </View>
             )}
 
             {showAbout && (
                 <AboutOverlay
-                    repoUrl={config.appRepositoryUrl}
+                    repoUrl={config.appRepositoryUrl ?? ''}
                     settings={{ activeColor: config.activeColor, translucentBackground: config.translucentBackground }}
                     moreFromAzEnabled={config.moreFromAzEnabled}
                     moreFromAzJsonUrl={config.moreFromAzJsonUrl}
@@ -792,6 +802,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
             <TutorialOverlayWrapper
               tutorials={(config as any).tutorials}
               itemBounds={itemBounds}
+              suppressed={showAbout || showMoreFromAz}
             />
         </View>
     </AzNavRailContext.Provider>
@@ -801,7 +812,12 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
 const TutorialOverlayWrapper: React.FC<{
   tutorials?: Record<string, import('./types').AzTutorial>;
   itemBounds: Record<string, any>;
-}> = ({ tutorials, itemBounds }) => {
+  /**
+   * When true, the in-progress tutorial overlay is hidden and input-disabled but kept MOUNTED
+   * (so its scene/card/checklist state is preserved) — used while a footer screen is open.
+   */
+  suppressed?: boolean;
+}> = ({ tutorials, itemBounds, suppressed = false }) => {
   const tutorialController = useAzTutorialController();
   const activeId = tutorialController.activeTutorialId;
 
@@ -810,12 +826,17 @@ const TutorialOverlayWrapper: React.FC<{
   }
 
   return (
-    <AzTutorialOverlay
-      tutorialId={activeId}
-      tutorial={tutorials[activeId]}
-      onDismiss={() => tutorialController.endTutorial()}
-      itemBoundsCache={itemBounds}
-    />
+    <View
+      style={[StyleSheet.absoluteFill, suppressed && { opacity: 0 }]}
+      pointerEvents={suppressed ? 'none' : 'auto'}
+    >
+      <AzTutorialOverlay
+        tutorialId={activeId}
+        tutorial={tutorials[activeId]}
+        onDismiss={() => tutorialController.endTutorial()}
+        itemBoundsCache={itemBounds}
+      />
+    </View>
   );
 };
 

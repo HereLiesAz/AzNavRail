@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import AzButton from './AzButton';
+import AboutOverlay from './AboutOverlay';
 import './AzDropdownMenu.css';
 
 const AzDropdownMenuContext = createContext(null);
@@ -68,7 +69,10 @@ export const AzDropdownItem = ({ text, onClick, route, shape = 'RECTANGLE', enab
  * @param {function} [props.onExpandedChange]
  * @param {function} [props.onNavigate] - Called with an item's `route` before its callback.
  * @param {boolean} [props.showFooter=true] - Whether the menu design shows the About/Feedback/@HereLiesAz footer.
- * @param {string} [props.appRepositoryUrl] - URL opened by the footer's "About" item.
+ * @param {string} [props.appRepositoryUrl] - URL backing the footer's "About" item. When unset/blank, "About" is hidden.
+ * @param {boolean} [props.inAppAbout=true] - When true, "About" opens the in-app reader; else the URL. Requires `appRepositoryUrl`.
+ * @param {boolean} [props.moreFromAzEnabled=true] - Whether the in-app About reader offers a "More from Az" carousel.
+ * @param {string} [props.moreFromAzJsonUrl] - Raw URL of the `more-from-az.json` manifest.
  * @param {React.ReactNode} props.children
  */
 const AzDropdownMenu = ({
@@ -80,7 +84,10 @@ const AzDropdownMenu = ({
   headerIconShape = 'CIRCLE',
   headerIconSize = 48,
   showFooter = true,
-  appRepositoryUrl = 'https://github.com/HereLiesAz/AzNavRail',
+  appRepositoryUrl,
+  inAppAbout = true,
+  moreFromAzEnabled = true,
+  moreFromAzJsonUrl = 'https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json',
   expanded,
   onExpandedChange,
   onNavigate,
@@ -91,6 +98,8 @@ const AzDropdownMenu = ({
   const rootRef = useRef(null);
   const triggerRef = useRef(null);
   const [rect, setRect] = useState(null);
+  // Full-screen in-app About reader reachable from the dropdown footer (parity with the rail).
+  const [showAbout, setShowAbout] = useState(false);
 
   const setOpen = (value) => {
     if (expanded === undefined) setInternalOpen(value);
@@ -184,17 +193,32 @@ const AzDropdownMenu = ({
           {/* The expanded-menu design carries the rail's footer. */}
           {design === 'menu' && showFooter && (
             <div className="az-dropdown-menu-footer">
-              <div className="az-dropdown-menu-footer-item" onClick={() => {
-                // Only follow plain web URLs, never an injected scheme (e.g. javascript:).
-                if (appRepositoryUrl && (appRepositoryUrl.startsWith('http://') || appRepositoryUrl.startsWith('https://'))) {
-                  window.open(appRepositoryUrl, '_blank', 'noopener,noreferrer');
-                }
-              }}>About</div>
+              {/* About is hidden entirely when no repository URL is configured. */}
+              {!!appRepositoryUrl && (
+                <div className="az-dropdown-menu-footer-item" onClick={() => {
+                  if (inAppAbout) {
+                    setShowAbout(true);
+                  } else if (appRepositoryUrl.startsWith('http://') || appRepositoryUrl.startsWith('https://')) {
+                    // Only follow plain web URLs, never an injected scheme (e.g. javascript:).
+                    window.open(appRepositoryUrl, '_blank', 'noopener,noreferrer');
+                  }
+                }}>About</div>
+              )}
               <div className="az-dropdown-menu-footer-item" onClick={() => window.open('mailto:hereliesaz@gmail.com?subject=Feedback', '_self')}>Feedback</div>
               <div className="az-dropdown-menu-footer-item" style={{ opacity: 0.5 }} onClick={() => window.open('https://instagram.com/HereLiesAz', '_blank', 'noopener,noreferrer')}>@HereLiesAz</div>
             </div>
           )}
         </div>
+      )}
+      {/* Full-screen in-app About reader above the dropdown panel — mirrors the rail. The
+          "More from Az" carousel is reachable from within AboutOverlay itself. */}
+      {showAbout && !!appRepositoryUrl && (
+        <AboutOverlay
+          repoUrl={appRepositoryUrl}
+          moreFromAzEnabled={moreFromAzEnabled}
+          moreFromAzJsonUrl={moreFromAzJsonUrl}
+          onDismiss={() => setShowAbout(false)}
+        />
       )}
     </div>
   );

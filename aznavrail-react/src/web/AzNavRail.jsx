@@ -46,7 +46,7 @@ const AzNavRail = ({
     moreFromAzEnabled = true,
     moreFromAzJsonUrl = 'https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json',
     moreRailItem = false,
-    appRepositoryUrl = 'https://github.com/HereLiesAz/AzNavRail'
+    appRepositoryUrl
   } = settings;
 
   // If noMenu is true, we force expanded to false, unless infoScreen overrides (which it doesn't really)
@@ -603,14 +603,16 @@ const AzNavRail = ({
       {showFooter && isExpanded && (
         <div className="footer" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px', color: activeColor || 'currentColor' }}>
              <div className="az-menu-item-text" style={{ padding: '8px 0', fontWeight: 'bold' }}>{appName}</div>
-             <div
-               className="az-menu-item-text"
-               style={{ padding: '4px 0', cursor: 'pointer' }}
-               onClick={() => {
-                 if (inAppAbout) { setShowAbout(true); setIsExpanded(false); }
-                 else window.open(appRepositoryUrl, '_blank', 'noopener');
-               }}
-             >About</div>
+             {!!appRepositoryUrl && (
+               <div
+                 className="az-menu-item-text"
+                 style={{ padding: '4px 0', cursor: 'pointer' }}
+                 onClick={() => {
+                   if (inAppAbout) { setShowAbout(true); setIsExpanded(false); }
+                   else window.open(appRepositoryUrl, '_blank', 'noopener');
+                 }}
+               >About</div>
+             )}
              <div className="az-menu-item-text" style={{ padding: '4px 0' }}>Feedback</div>
              <div className="az-menu-item-text" style={{ padding: '4px 0', opacity: 0.5 }}>@HereLiesAz</div>
         </div>
@@ -636,18 +638,27 @@ const AzNavRail = ({
       )}
     </div>
 
+    {/* While a footer screen (About / More-from-Az) is open, the Help overlay is hidden and
+        input-disabled but kept MOUNTED so its expanded-card state is preserved and restored
+        when the footer screen closes. */}
     {infoScreen && (
-        <HelpOverlay
-            items={visibleItems}
-            itemBounds={itemBounds}
-            railWidth={collapsedRailWidth}
-            onDismiss={onDismissInfoScreen}
-            nestedRailVisibleId={nestedRailVisibleId}
-            helpList={settings?.helpList || {}}
-        />
+        <div
+            style={(showAbout || showMoreFromAz)
+                ? { opacity: 0, pointerEvents: 'none' }
+                : undefined}
+        >
+            <HelpOverlay
+                items={visibleItems}
+                itemBounds={itemBounds}
+                railWidth={collapsedRailWidth}
+                onDismiss={onDismissInfoScreen}
+                nestedRailVisibleId={nestedRailVisibleId}
+                helpList={settings?.helpList || {}}
+            />
+        </div>
     )}
 
-    {showAbout && (
+    {showAbout && !!appRepositoryUrl && (
         <AboutOverlay
             repoUrl={appRepositoryUrl}
             settings={settings}
