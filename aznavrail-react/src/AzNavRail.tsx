@@ -605,7 +605,11 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
           setIsExpanded(false);
           setShowAbout(true);
         } else if (config.appRepositoryUrl) {
-          Linking.openURL(config.appRepositoryUrl).catch(e => console.error("Could not open About", e));
+          // Only follow safe web URLs — on react-native-web a `javascript:` URL would otherwise execute.
+          const isSafe = config.appRepositoryUrl.startsWith('http://') || config.appRepositoryUrl.startsWith('https://');
+          if (isSafe) {
+            Linking.openURL(config.appRepositoryUrl).catch(e => console.error("Could not open About", e));
+          }
         }
       };
 
@@ -781,9 +785,9 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                 </View>
             )}
 
-            {showAbout && (
+            {showAbout && !!config.appRepositoryUrl && (
                 <AboutOverlay
-                    repoUrl={config.appRepositoryUrl ?? ''}
+                    repoUrl={config.appRepositoryUrl}
                     settings={{ activeColor: config.activeColor, translucentBackground: config.translucentBackground }}
                     moreFromAzEnabled={config.moreFromAzEnabled}
                     moreFromAzJsonUrl={config.moreFromAzJsonUrl}

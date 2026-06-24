@@ -609,7 +609,10 @@ const AzNavRail = ({
                  style={{ padding: '4px 0', cursor: 'pointer' }}
                  onClick={() => {
                    if (inAppAbout) { setShowAbout(true); setIsExpanded(false); }
-                   else window.open(appRepositoryUrl, '_blank', 'noopener');
+                   // Only follow safe web URLs, never an injected scheme (e.g. javascript:).
+                   else if (appRepositoryUrl.startsWith('http://') || appRepositoryUrl.startsWith('https://')) {
+                     window.open(appRepositoryUrl, '_blank', 'noopener,noreferrer');
+                   }
                  }}
                >About</div>
              )}
