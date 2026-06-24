@@ -6,6 +6,10 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.hereliesaz.aznavrail.model.AzDropdownDesign
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -141,16 +145,16 @@ class AzDropdownMenuTest {
 
     @Test
     fun route_navigates_the_nav_controller() {
-        lateinit var navController: androidx.navigation.NavHostController
+        lateinit var navController: NavHostController
         composeTestRule.setContent {
-            navController = androidx.navigation.compose.rememberNavController()
-            androidx.navigation.compose.NavHost(navController, startDestination = "start") {
-                androidx.navigation.compose.composable("start") {
+            navController = rememberNavController()
+            NavHost(navController, startDestination = "start") {
+                composable("start") {
                     AzDropdownMenu(navController = navController) {
                         azItem("Home", route = "home") { }
                     }
                 }
-                androidx.navigation.compose.composable("home") {
+                composable("home") {
                     androidx.compose.material3.Text("home screen")
                 }
             }
