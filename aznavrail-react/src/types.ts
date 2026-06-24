@@ -107,7 +107,11 @@ export interface AzNavRailSettings {
   secLoc?: string;
   /** Port for the secret-location server (developer feature). */
   secLocPort?: number;
-  /** URL of the app's source repository, shown in the footer and used by the in-app About reader. */
+  /**
+   * URL of the app's source repository, shown in the footer and used by the in-app About reader.
+   * Required to surface "About": when unset or blank, the "About" entry is hidden entirely (the
+   * library never falls back to showing its own docs in a consuming app).
+   */
   appRepositoryUrl?: string;
   /**
    * When true (default), the footer "About" opens the in-app markdown reader (auto-generated from
