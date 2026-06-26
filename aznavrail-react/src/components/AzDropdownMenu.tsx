@@ -14,9 +14,10 @@ import {
   LayoutChangeEvent,
 } from 'react-native';
 import { AzButton } from './AzButton';
-import { AzButtonShape, AzDockingSide, AzDropdownDesign, AzHeaderIconShape } from '../types';
+import { AzButtonShape, AzDockingSide, AzDropdownDesign, AzEntrance, AzExit, AzHeaderIconShape } from '../types';
 import { AzNavRailDefaults } from '../AzNavRailDefaults';
 import { AboutOverlay } from './AboutOverlay';
+import { AzKineticItem, useAzClosing } from './AzKinetics';
 
 /** Context the menu provides so item components can navigate, fold the menu, and match its design. */
 interface AzDropdownMenuContextValue {
@@ -25,6 +26,8 @@ interface AzDropdownMenuContextValue {
   design: AzDropdownDesign;
   /** Navigation handler for item `route`s (AzNavHost-style routing). */
   onNavigate?: (route: string) => void;
+  /** Optional style merged over each MENU-design item's label (big/light/wide Metro type). */
+  itemTextStyle?: object;
 }
 const AzDropdownMenuContext = createContext<AzDropdownMenuContextValue | null>(null);
 
@@ -67,6 +70,23 @@ export interface AzDropdownMenuProps {
   onNavigate?: (route: string) => void;
   /** Style applied to the trigger container (placement only). */
   style?: ViewStyle;
+  // — Kinetic typography (WP7). Opt-in on the dropdown; defaults keep the legacy static look. —
+  /** Entrance played by each item when the panel opens. Default `None`. */
+  itemEntrance?: AzEntrance;
+  /** Exit played by each item when the panel dismisses. Default `None`. */
+  itemExit?: AzExit;
+  /** Style merged over each MENU-design item's label. */
+  itemTextStyle?: object;
+  /** Per-item cascade delay (ms), multiplied by position. Default 55. */
+  entranceStaggerMs?: number;
+  /** Duration (ms) of each item's entrance/exit. Default 360. */
+  entranceDurationMs?: number;
+  /** Starting rotateY (deg) for the turnstile sweep. Default 70. */
+  entranceStartAngle?: number;
+  /** When true, items tilt toward the press point (WP7 tilt effect). Default false. */
+  tiltOnPress?: boolean;
+  /** Maximum tilt angle (deg) for `tiltOnPress`. Default 10. */
+  maxTiltDegrees?: number;
   /** The menu items — `AzDropdownItem`, `AzDivider`, etc. */
   children?: React.ReactNode;
 }
@@ -103,7 +123,7 @@ export const AzDropdownItem: React.FC<AzDropdownItemProps> = ({
 }) => {
   const ctx = useContext(AzDropdownMenuContext);
   if (!ctx) throw new Error('AzDropdownItem must be used inside an <AzDropdownMenu>');
-  const { dismiss, design, onNavigate } = ctx;
+  const { dismiss, design, onNavigate, itemTextStyle } = ctx;
   const press = () => {
     if (route) onNavigate?.(route);
     onClick();
@@ -118,7 +138,7 @@ export const AzDropdownItem: React.FC<AzDropdownItemProps> = ({
         accessibilityRole="button"
         accessibilityLabel={text}
       >
-        <Text style={[styles.menuRowText, { color: textColor || color || '#6750A4', opacity: enabled ? 1 : 0.5 }]}>
+        <Text style={[styles.menuRowText, { color: textColor || color || '#6750A4', opacity: enabled ? 1 : 0.5 }, itemTextStyle]}>
           {text}
         </Text>
       </TouchableOpacity>
@@ -171,6 +191,14 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
   onExpandedChange,
   onNavigate,
   style,
+  itemEntrance = AzEntrance.None,
+  itemExit = AzExit.None,
+  itemTextStyle,
+  entranceStaggerMs = 55,
+  entranceDurationMs = 360,
+  entranceStartAngle = 70,
+  tiltOnPress = false,
+  maxTiltDegrees = 10,
   children,
 }) => {
   const [internalOpen, setInternalOpen] = useState(false);
@@ -221,6 +249,10 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
     if (width !== panelSize.width || height !== panelSize.height) setPanelSize({ width, height });
   };
 
+  // Keep the panel mounted through the staggered exit so items can animate out before teardown.
+  const items = React.Children.toArray(children);
+  const rendered = useAzClosing(isOpen, itemExit, items.length, entranceStaggerMs, entranceDurationMs);
+
   return (
     <View style={style}>
       {/* The app-icon trigger — drawn like the rail's header icon (gray placeholder), clipped to the
@@ -234,6 +266,8 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
         <View
           testID="az-dropdown-trigger"
           style={{
+            // Automatic breathing room around the app-icon trigger (parity with the rail header).
+            margin: 8,
             width: triggerSize,
             height: triggerSize,
             borderRadius: triggerRadius,
@@ -245,7 +279,7 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
         />
       </TouchableOpacity>
 
-      {isOpen && (
+      {rendered && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setOpen(false)}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setOpen(false)}>
             <View
@@ -266,8 +300,25 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
                       : { alignItems: 'center', padding: 8 }
                   }
                 >
-                  <AzDropdownMenuContext.Provider value={{ dismiss: () => setOpen(false), design, onNavigate }}>
-                    {children}
+                  <AzDropdownMenuContext.Provider value={{ dismiss: () => setOpen(false), design, onNavigate, itemTextStyle }}>
+                    {items.map((child, i) => (
+                      <AzKineticItem
+                        key={i}
+                        index={i}
+                        count={items.length}
+                        visible={isOpen}
+                        entrance={itemEntrance}
+                        exit={itemExit}
+                        staggerMs={entranceStaggerMs}
+                        durationMs={entranceDurationMs}
+                        startAngle={entranceStartAngle}
+                        tiltOnPress={tiltOnPress}
+                        maxTiltDegrees={maxTiltDegrees}
+                        dockingSide={dockingSide}
+                      >
+                        {child}
+                      </AzKineticItem>
+                    ))}
                   </AzDropdownMenuContext.Provider>
                   {/* The expanded-menu design carries the rail's footer. */}
                   {design === AzDropdownDesign.MENU && showFooter && (

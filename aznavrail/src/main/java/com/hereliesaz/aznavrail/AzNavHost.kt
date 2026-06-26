@@ -32,6 +32,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -64,6 +65,8 @@ import com.hereliesaz.aznavrail.internal.AzLayoutConfig
 import com.hereliesaz.aznavrail.internal.AzNavMode
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.internal.AzRailLayoutHelper
+import com.hereliesaz.aznavrail.internal.rememberAzKineticModifier
+import com.hereliesaz.aznavrail.model.AzExit
 import com.hereliesaz.aznavrail.internal.HelpOverlay
 import com.hereliesaz.aznavrail.internal.MoreFromAzOverlay
 import com.hereliesaz.aznavrail.service.GithubDocsRepository
@@ -451,12 +454,32 @@ fun AzHostActivityLayout(
                     .then(titlePaddingSide),
                 contentAlignment = titleAlignment
             ) {
-                Text(
-                    text = currentTitle,
-                    style = MaterialTheme.typography.displayMedium, // Much bigger requirement
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
+                // Keying on the title text restarts the composition (and the kinetic entrance) every
+                // time the active screen changes, giving the big Metro title its WP7 sweep-in.
+                key(currentTitle) {
+                    val titleKinetic = rememberAzKineticModifier(
+                        index = 0,
+                        count = 1,
+                        visible = true,
+                        entrance = railScopeImpl.titleEntrance,
+                        exit = AzExit.None,
+                        staggerMs = 0,
+                        durationMs = 420,
+                        easing = com.hereliesaz.aznavrail.model.AzEasing.Wp7Decelerate,
+                        startAngle = 70f,
+                        tiltOnPress = false,
+                        maxTiltDegrees = 0f,
+                        dockingSide = visualDockingSideProxy
+                    )
+                    Text(
+                        text = currentTitle,
+                        modifier = titleKinetic,
+                        style = MaterialTheme.typography.displayMedium // Much bigger requirement
+                            .copy(fontWeight = FontWeight.Bold)
+                            .merge(railScopeImpl.titleTextStyle),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
             }
         }
 

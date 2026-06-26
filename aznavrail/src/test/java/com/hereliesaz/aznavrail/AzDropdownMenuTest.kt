@@ -10,7 +10,11 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import com.hereliesaz.aznavrail.model.AzDropdownDesign
+import com.hereliesaz.aznavrail.model.AzEntrance
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -165,5 +169,59 @@ class AzDropdownMenuTest {
         composeTestRule.runOnIdle {
             assertEquals("home", navController.currentDestination?.route)
         }
+    }
+
+    @Test
+    fun turnstile_entrance_renders_items_and_click_still_fires() {
+        var clicked = false
+        composeTestRule.setContent {
+            AzDropdownMenu {
+                azConfig(itemEntrance = AzEntrance.Turnstile)
+                azItem("First") { }
+                azItem("Second") { clicked = true }
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Menu").performClick()
+        // The staggered entrance settles under the test clock; items remain present and clickable.
+        composeTestRule.onNodeWithText("Second").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Second").performClick()
+        assertTrue(clicked)
+        composeTestRule.onNodeWithText("Second").assertDoesNotExist()
+    }
+
+    @Test
+    fun tilt_on_press_still_fires_onClick() {
+        var clicked = false
+        composeTestRule.setContent {
+            AzDropdownMenu {
+                azConfig(tiltOnPress = true)
+                azItem("Tappable") { clicked = true }
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Menu").performClick()
+        composeTestRule.onNodeWithText("Tappable").performClick()
+        // The tilt gesture only observes pointer events, so the underlying click must still fire.
+        assertTrue(clicked)
+        composeTestRule.onNodeWithText("Tappable").assertDoesNotExist()
+    }
+
+    @Test
+    fun itemTextStyle_override_renders_and_clicks() {
+        var clicked = false
+        composeTestRule.setContent {
+            AzDropdownMenu {
+                azConfig(
+                    itemTextStyle = TextStyle(fontSize = 32.sp, fontWeight = FontWeight.Light)
+                )
+                azItem("Metro") { clicked = true }
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Menu").performClick()
+        composeTestRule.onNodeWithText("Metro").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Metro").performClick()
+        assertTrue(clicked)
     }
 }

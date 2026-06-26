@@ -490,6 +490,65 @@ import { AzDropdownMenu, AzDropdownItem, AzDivider, AzDockingSide, AzDropdownDes
 </AzDropdownMenu>
 ```
 
+The dropdown's app-icon trigger carries an **automatic margin**, so it never sits flush against
+neighbouring widgets.
+
+### Kinetic Typography (Windows-Phone-7 style)
+
+AzNavRail can animate its menu words natively — a staggered **turnstile** entrance/exit (each item
+swings in around the docked edge), a 3D **tilt-on-press**, and an **`itemTextStyle`** override so the
+words can be big/light/wide Metro type. It's config-driven (preset enums, no free-composable escape
+hatch). In **FAB / floating** mode, where there's no docked edge to hinge on, the cascade degrades to
+a vertical up/down slide.
+
+Three surfaces animate:
+
+- **The big screen title** (`AzNavHost`) sweeps in each time the active screen changes.
+- **The expanded rail menu** items cascade in on open and out on collapse.
+- **`AzDropdownMenu`** items (opt-in) do the same.
+
+The rail's kinetics are **on by default** (the library's signature look); opt a surface out with
+`AzEntrance.None` / `AzExit.None`.
+
+**Android** — the rail uses `azKinetics(...)`; the dropdown uses its own `azConfig(...)`:
+
+```kotlin
+AzNavRail {
+    azKinetics(
+        itemEntrance = AzEntrance.Turnstile,   // default
+        itemExit = AzExit.Turnstile,           // default
+        tiltOnPress = true,                    // off by default on the rail (drag-safe)
+        itemTextStyle = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Light),
+        titleEntrance = AzEntrance.Turnstile,  // the big screen title
+    )
+    // … items …
+}
+
+AzDropdownMenu {
+    azConfig(
+        itemEntrance = AzEntrance.Turnstile,
+        itemExit = AzExit.Turnstile,
+        tiltOnPress = true,
+        itemTextStyle = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.Light),
+    )
+    // … items …
+}
+```
+
+**React** — the rail reads kinetics from `settings`; the dropdown takes props:
+
+```tsx
+<AzNavRail settings={{ itemEntrance: AzEntrance.Turnstile, itemExit: AzExit.Turnstile, titleEntrance: AzEntrance.Turnstile }} … />
+
+<AzDropdownMenu itemEntrance={AzEntrance.Turnstile} itemExit={AzExit.Turnstile} tiltOnPress
+                itemTextStyle={{ fontSize: 28, fontWeight: '300' }}>
+  …
+</AzDropdownMenu>
+```
+
+`AzEntrance` is `None | Fade | SlideUp | Turnstile`; `AzExit` is `None | Fade | Turnstile`;
+`AzEasing.Wp7Decelerate` is the signature snappy curve (the default easing).
+
 ### Sizable Header Icon
 
 By default the app icon in the header sizes itself to the rail width. To pin it to an **exact

@@ -6,6 +6,8 @@ import {
   AzDropdownMenu,
   AzDropdownItem,
   AzDivider,
+  AzEntrance,
+  AzExit,
   AzHeaderIconShape,
 } from '@HereLiesAz/aznavrail-react'
 
@@ -155,8 +157,12 @@ export default function CustomizationDemo({
 function AzDropdownMenuDemo() {
   const [design, setDesign] = useState<AzDropdownDesign>(AzDropdownDesign.MENU)
   const [dockingSide, setDockingSide] = useState<AzDockingSide>(AzDockingSide.LEFT)
+  const [entrance, setEntrance] = useState<AzEntrance>(AzEntrance.Turnstile)
+  const [tilt, setTilt] = useState(true)
   const [dark, setDark] = useState(false)
   const [last, setLast] = useState('none')
+  // Mirror the entrance with a matching exit so the panel turnstiles in and out.
+  const exit = entrance === AzEntrance.None ? AzExit.None : AzExit.Turnstile
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
       <select value={design} onChange={(e) => setDesign(e.target.value as AzDropdownDesign)}>
@@ -165,7 +171,22 @@ function AzDropdownMenuDemo() {
       <select value={dockingSide} onChange={(e) => setDockingSide(e.target.value as AzDockingSide)}>
         {Object.values(AzDockingSide).map((s) => <option key={s} value={s}>{s}</option>)}
       </select>
-      <AzDropdownMenu design={design} dockingSide={dockingSide} headerIconShape={AzHeaderIconShape.ROUNDED} headerIconSize={56}>
+      <select value={entrance} onChange={(e) => setEntrance(e.target.value as AzEntrance)}>
+        {Object.values(AzEntrance).map((en) => <option key={en} value={en}>{en}</option>)}
+      </select>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <input type="checkbox" checked={tilt} onChange={(e) => setTilt(e.target.checked)} /> tilt
+      </label>
+      <AzDropdownMenu
+        design={design}
+        dockingSide={dockingSide}
+        headerIconShape={AzHeaderIconShape.ROUNDED}
+        headerIconSize={56}
+        itemEntrance={entrance}
+        itemExit={exit}
+        tiltOnPress={tilt}
+        itemTextStyle={{ fontSize: 28, fontWeight: '300' }}
+      >
         <AzDropdownItem text="Profile" onClick={() => setLast('Profile')} />
         <AzDropdownItem text="Settings" onClick={() => setLast('Settings')} />
         <AzDivider />

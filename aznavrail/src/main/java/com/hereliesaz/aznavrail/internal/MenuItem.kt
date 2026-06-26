@@ -25,6 +25,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.model.AzNavItem
@@ -58,7 +59,9 @@ internal fun MenuItem(
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
     onBoundsCleared: ((String) -> Unit)? = null,
     helpEnabled: Boolean = false,
-    activeColor: androidx.compose.ui.graphics.Color? = null
+    activeColor: androidx.compose.ui.graphics.Color? = null,
+    kineticModifier: Modifier = Modifier,
+    textStyle: TextStyle? = null
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -166,7 +169,7 @@ internal fun MenuItem(
     }
 
     Box(
-        modifier = Modifier
+        modifier = kineticModifier
             .onGloballyPositioned { coordinates ->
                 // positionInWindow + size so the bounds stay logical (unclipped) when the menu
                 // is scrolled or partly off-screen. See the matching comment in RailContent.kt.
@@ -201,7 +204,7 @@ internal fun MenuItem(
                 lines.forEachIndexed { index, line ->
                     Text(
                         text = line,
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleLarge.merge(textStyle),
                         color = textColor,
                         modifier = Modifier,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center

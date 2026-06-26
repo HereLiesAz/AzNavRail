@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { View, StyleSheet, Dimensions, Text } from 'react-native';
 import { AzNavRail } from './AzNavRail';
-import { AzDockingSide, AzNavItem, AzNavRailSettings } from './types';
+import { AzDockingSide, AzEntrance, AzNavItem, AzNavRailSettings } from './types';
 import { AzNavRailDefaults } from './AzNavRailDefaults';
+import { AzKineticTitle } from './components/AzKinetics';
 
 /** Alignment positions for `AzOnscreen` overlays, mirroring Jetpack Compose `Alignment` values. */
 export enum AzAlignment {
@@ -268,7 +269,15 @@ export const AzHostActivityLayout: React.FC<AzHostActivityLayoutProps> = (props)
                { top: titleTop, height: titleHeight },
                dockingSide === AzDockingSide.LEFT ? { right: 32, alignItems: 'flex-end' } : { left: 32, alignItems: 'flex-start' }
            ]} pointerEvents="none">
-               <Text style={styles.titleText}>{currentTitle}</Text>
+               {/* Keyed on the title so the WP7 sweep replays each time the active screen changes. */}
+               <AzKineticTitle
+                   key={currentTitle}
+                   title={currentTitle}
+                   entrance={(railProps?.settings as AzNavRailSettings | undefined)?.titleEntrance ?? AzEntrance.Turnstile}
+                   dockingSide={dockingSide}
+               >
+                   <Text style={[styles.titleText, (railProps?.settings as AzNavRailSettings | undefined)?.titleTextStyle]}>{currentTitle}</Text>
+               </AzKineticTitle>
            </View>
         ) : null}
 

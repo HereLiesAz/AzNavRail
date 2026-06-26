@@ -13,7 +13,8 @@ import {
   UIManager,
 } from 'react-native';
 import { AzNavRailContext } from './AzNavRailScope';
-import { AzNavItem, AzNavRailSettings, AzButtonShape, AzDockingSide, AzHeaderIconShape, AzNestedRailAlignment } from './types';
+import { AzNavItem, AzNavRailSettings, AzButtonShape, AzDockingSide, AzHeaderIconShape, AzNestedRailAlignment, AzEntrance, AzExit } from './types';
+import { AzKineticItem, useAzClosing } from './components/AzKinetics';
 import { AzNavRailDefaults } from './AzNavRailDefaults';
 import { AzButton } from './components/AzButton';
 import { AzToggle } from './components/AzToggle';
@@ -553,7 +554,14 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       );
   };
 
-  const renderMenuItem = (item: AzNavItem, depth = 0, ancestors: Set<string> = new Set()): React.ReactNode => {
+  const renderMenuItem = (
+      item: AzNavItem,
+      index = 0,
+      count = 1,
+      visible = true,
+      depth = 0,
+      ancestors: Set<string> = new Set(),
+  ): React.ReactNode => {
       // Cycle guard (see renderRailItem): stop before recursing into an ancestor so a cyclic or
       // self-referential `hostId` chain can't overflow the stack.
       if (ancestors.has(item.id)) return null;
@@ -561,31 +569,48 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       const subItems = subItemsMap[item.id] || [];
 
       return (
-          <View
+          <AzKineticItem
               key={item.id}
-              onLayout={(config.infoScreen || item.isHost) ? (e) => handleItemLayout(item.id, e) : undefined}
+              index={index}
+              count={count}
+              visible={visible}
+              entrance={kItemEntrance}
+              exit={kItemExit}
+              staggerMs={kStaggerMs}
+              durationMs={kDurationMs}
+              startAngle={kStartAngle}
+              // Suppress the press-tilt on draggable items so it never fights the drag gesture.
+              tiltOnPress={kTiltOnPress && !item.isRelocItem}
+              maxTiltDegrees={kMaxTilt}
+              dockingSide={kDockingSide}
+              floating={isFloating}
           >
-              <RailMenuItem
-                  item={item}
-                  depth={depth}
-                  isExpandedHost={isExpandedHost}
-                  onToggleHost={() => {
-                      const newHostState = !(hostStates[item.id] || false);
-                      setHostStates(prev => ({ ...prev, [item.id]: newHostState }));
-                      item.onExpandedChange?.(newHostState);
-                  }}
-                  onItemClick={() => {
-                      logInteraction('Menu item clicked', item.text, item);
-                      if (item.onClick) item.onClick();
-                      if (item.collapseOnClick) setIsExpanded(false);
-                  }}
-                  renderSubItems={() => (
-                      <>
-                      {subItems.map(subItem => renderMenuItem(subItem, depth + 1, new Set(ancestors).add(item.id)))}
-                      </>
-                  )}
-              />
-          </View>
+              <View
+                  onLayout={(config.infoScreen || item.isHost) ? (e) => handleItemLayout(item.id, e) : undefined}
+              >
+                  <RailMenuItem
+                      item={item}
+                      depth={depth}
+                      isExpandedHost={isExpandedHost}
+                      textStyle={kItemTextStyle}
+                      onToggleHost={() => {
+                          const newHostState = !(hostStates[item.id] || false);
+                          setHostStates(prev => ({ ...prev, [item.id]: newHostState }));
+                          item.onExpandedChange?.(newHostState);
+                      }}
+                      onItemClick={() => {
+                          logInteraction('Menu item clicked', item.text, item);
+                          if (item.onClick) item.onClick();
+                          if (item.collapseOnClick) setIsExpanded(false);
+                      }}
+                      renderSubItems={() => (
+                          <>
+                          {subItems.map((subItem, i) => renderMenuItem(subItem, i, subItems.length, visible, depth + 1, new Set(ancestors).add(item.id)))}
+                          </>
+                      )}
+                  />
+              </View>
+          </AzKineticItem>
       );
   };
 
@@ -659,6 +684,19 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     return items.filter(i => !i.isSubItem);
   }, [items]);
 
+  // — Kinetic typography (WP7). Defaults animate; opt out via settings (itemEntrance: None, …). —
+  const kItemEntrance = (config as AzNavRailSettings).itemEntrance ?? AzEntrance.Turnstile;
+  const kItemExit = (config as AzNavRailSettings).itemExit ?? AzExit.Turnstile;
+  const kStaggerMs = (config as AzNavRailSettings).entranceStaggerMs ?? 55;
+  const kDurationMs = (config as AzNavRailSettings).entranceDurationMs ?? 360;
+  const kStartAngle = (config as AzNavRailSettings).entranceStartAngle ?? 70;
+  const kTiltOnPress = (config as AzNavRailSettings).tiltOnPress ?? false;
+  const kMaxTilt = (config as AzNavRailSettings).maxTiltDegrees ?? 10;
+  const kItemTextStyle = (config as AzNavRailSettings).itemTextStyle;
+  const kDockingSide = config.dockingSide ?? AzDockingSide.LEFT;
+  // Keep the menu mounted through the staggered exit so items can turnstile out as the rail collapses.
+  const menuRendered = useAzClosing(isExpanded && !config.noMenu, kItemExit, menuItems.length, kStaggerMs, kDurationMs);
+
   const getHeaderBorderRadius = () => {
     if (config.headerIconShape === AzHeaderIconShape.SQUARE) return 0;
     if (config.headerIconShape === AzHeaderIconShape.ROUNDED) return 8;
@@ -704,13 +742,13 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                  )}
             </TouchableOpacity>
 
-            {isExpanded && !noMenu ? (
+            {menuRendered && !noMenu ? (
                 <ScrollView style={styles.menuContent}>
-                    {menuItems.map(item => {
+                    {menuItems.map((item, index) => {
                          if (item.isDivider) {
                              return <View key={item.id} style={styles.divider} />;
                          }
-                         return renderMenuItem(item);
+                         return renderMenuItem(item, index, menuItems.length, isExpanded);
                     })}
                     {showFooter && renderFooter()}
                 </ScrollView>

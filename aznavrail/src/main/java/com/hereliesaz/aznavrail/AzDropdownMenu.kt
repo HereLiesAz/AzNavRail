@@ -47,6 +47,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.animation.core.Easing
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -67,7 +69,12 @@ import com.hereliesaz.aznavrail.service.GithubDocsRepository
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzDropdownDesign
+import com.hereliesaz.aznavrail.model.AzEasing
+import com.hereliesaz.aznavrail.model.AzEntrance
+import com.hereliesaz.aznavrail.model.AzExit
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
+import com.hereliesaz.aznavrail.internal.rememberAzKineticModifier
+import com.hereliesaz.aznavrail.internal.rememberAzClosingState
 
 /**
  * DSL builder scope for an [AzDropdownMenu] — declared the same way as the rail
@@ -103,6 +110,19 @@ interface AzDropdownMenuScope {
      * @param appRepositoryUrl Optional explicit override for the host app's GitHub repository used by
      *   the "About" screen. Blank (the default) auto-derives it from the app namespace
      *   (`com.<owner>.<repo>` → `github.com/<owner>/<repo>`); never the AzNavRail library repo.
+     * @param itemTextStyle Optional override merged over each item's label style (lets the menu words
+     *   be big/light/wide Metro type). Applied to the [AzDropdownDesign.MENU] rows; [AzDropdownDesign.RAIL]
+     *   items keep their auto-sized text.
+     * @param itemEntrance Windows-Phone-7-style entrance played as the panel opens (see [AzEntrance]);
+     *   defaults to [AzEntrance.None].
+     * @param entranceStaggerMs Per-item cascade delay, multiplied by the item's position.
+     * @param entranceDurationMs Duration of each item's entrance animation.
+     * @param entranceEasing Easing for the entrance (defaults to [AzEasing.Wp7Decelerate]).
+     * @param entranceStartAngle Starting `rotationY` for the [AzEntrance.Turnstile] sweep, in degrees.
+     * @param tiltOnPress When true, items tilt in 3D toward the press point and spring back on release
+     *   (the WP7 "tilt effect"); the item's `onClick` still fires.
+     * @param maxTiltDegrees Maximum tilt angle for [tiltOnPress].
+     * @param itemExit Reserved exit animation (see [AzExit]); only [AzExit.None] is honored today.
      */
     fun azConfig(
         design: AzDropdownDesign = AzDropdownDesign.MENU,
@@ -114,7 +134,16 @@ interface AzDropdownMenuScope {
         headerIconSize: Dp = 48.dp,
         showFooter: Boolean = true,
         inAppAbout: Boolean = true,
-        appRepositoryUrl: String = ""
+        appRepositoryUrl: String = "",
+        itemTextStyle: TextStyle? = null,
+        itemEntrance: AzEntrance = AzEntrance.None,
+        entranceStaggerMs: Int = 55,
+        entranceDurationMs: Int = 360,
+        entranceEasing: Easing = AzEasing.Wp7Decelerate,
+        entranceStartAngle: Float = 70f,
+        tiltOnPress: Boolean = false,
+        maxTiltDegrees: Float = 10f,
+        itemExit: AzExit = AzExit.None
     )
 
     /**
@@ -177,7 +206,16 @@ internal data class AzDropdownConfig(
     val headerIconSize: Dp = 48.dp,
     val showFooter: Boolean = true,
     val inAppAbout: Boolean = true,
-    val appRepositoryUrl: String = ""
+    val appRepositoryUrl: String = "",
+    val itemTextStyle: TextStyle? = null,
+    val itemEntrance: AzEntrance = AzEntrance.None,
+    val entranceStaggerMs: Int = 55,
+    val entranceDurationMs: Int = 360,
+    val entranceEasing: Easing = AzEasing.Wp7Decelerate,
+    val entranceStartAngle: Float = 70f,
+    val tiltOnPress: Boolean = false,
+    val maxTiltDegrees: Float = 10f,
+    val itemExit: AzExit = AzExit.None
 )
 
 /** One declared entry, collected by the builder and rendered by the composable. */
@@ -248,11 +286,21 @@ private class AzDropdownMenuScopeImpl : AzDropdownMenuScope {
         headerIconSize: Dp,
         showFooter: Boolean,
         inAppAbout: Boolean,
-        appRepositoryUrl: String
+        appRepositoryUrl: String,
+        itemTextStyle: TextStyle?,
+        itemEntrance: AzEntrance,
+        entranceStaggerMs: Int,
+        entranceDurationMs: Int,
+        entranceEasing: Easing,
+        entranceStartAngle: Float,
+        tiltOnPress: Boolean,
+        maxTiltDegrees: Float,
+        itemExit: AzExit
     ) {
         config = AzDropdownConfig(
             design, dockingSide, vibrate, expandedWidth, collapsedWidth, headerIconShape, headerIconSize,
-            showFooter, inAppAbout, appRepositoryUrl
+            showFooter, inAppAbout, appRepositoryUrl, itemTextStyle, itemEntrance, entranceStaggerMs,
+            entranceDurationMs, entranceEasing, entranceStartAngle, tiltOnPress, maxTiltDegrees, itemExit
         )
     }
 
@@ -324,10 +372,12 @@ private fun AzDropdownMenuRow(
     text: String,
     enabled: Boolean,
     textColor: Color,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    textStyle: TextStyle? = null
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(
@@ -343,7 +393,7 @@ private fun AzDropdownMenuRow(
             text.split('\n').forEach { line ->
                 Text(
                     text = line,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleLarge.merge(textStyle),
                     color = if (enabled) textColor else textColor.copy(alpha = 0.5f),
                     textAlign = TextAlign.Center
                 )
@@ -436,14 +486,40 @@ private fun AzDropdownFooter(repoUrl: String, onAboutClick: (() -> Unit)?) {
 /** Renders one collected [AzDropdownEntry] in the panel, wiring navigation + dismissal. */
 @Composable
 private fun AzDropdownEntryItem(
+    index: Int,
+    count: Int,
+    visible: Boolean,
     entry: AzDropdownEntry,
-    design: AzDropdownDesign,
+    config: AzDropdownConfig,
     navController: NavController?,
     dismiss: () -> Unit
 ) {
+    val design = config.design
     fun navigate(route: String?) {
         route?.let { navController?.navigate(it) }
     }
+
+    // Dividers carry no kinetics; everything else gets the staggered entrance/exit + optional tilt.
+    if (entry is AzDropdownEntry.Divider) {
+        AzDivider()
+        return
+    }
+
+    val kinetic = rememberAzKineticModifier(
+        index = index,
+        count = count,
+        visible = visible,
+        entrance = config.itemEntrance,
+        exit = config.itemExit,
+        staggerMs = config.entranceStaggerMs,
+        durationMs = config.entranceDurationMs,
+        easing = config.entranceEasing,
+        startAngle = config.entranceStartAngle,
+        tiltOnPress = config.tiltOnPress,
+        maxTiltDegrees = config.maxTiltDegrees,
+        dockingSide = config.dockingSide
+    )
+
     when (entry) {
         is AzDropdownEntry.Item -> {
             val action = {
@@ -452,17 +528,26 @@ private fun AzDropdownEntryItem(
                 if (entry.closeOnClick) dismiss()
             }
             if (design == AzDropdownDesign.MENU) {
-                AzDropdownMenuRow(entry.text, entry.enabled, effectiveTextColor(entry.textColor, entry.color), action)
-            } else {
-                AzButton(
-                    onClick = action,
+                AzDropdownMenuRow(
                     text = entry.text,
-                    color = entry.color.takeOrElse { MaterialTheme.colorScheme.primary },
-                    textColor = entry.textColor,
-                    fillColor = entry.fillColor,
-                    shape = entry.shape,
-                    enabled = entry.enabled
+                    enabled = entry.enabled,
+                    textColor = effectiveTextColor(entry.textColor, entry.color),
+                    onClick = action,
+                    modifier = kinetic,
+                    textStyle = config.itemTextStyle
                 )
+            } else {
+                Box(modifier = kinetic) {
+                    AzButton(
+                        onClick = action,
+                        text = entry.text,
+                        color = entry.color.takeOrElse { MaterialTheme.colorScheme.primary },
+                        textColor = entry.textColor,
+                        fillColor = entry.fillColor,
+                        shape = entry.shape,
+                        enabled = entry.enabled
+                    )
+                }
             }
         }
 
@@ -476,24 +561,28 @@ private fun AzDropdownEntryItem(
                         navigate(entry.route)
                         entry.onToggle(!entry.isChecked)
                         if (entry.closeOnClick) dismiss()
-                    }
+                    },
+                    modifier = kinetic,
+                    textStyle = config.itemTextStyle
                 )
             } else {
-                AzToggle(
-                    isChecked = entry.isChecked,
-                    onToggle = {
-                        navigate(entry.route)
-                        entry.onToggle(it)
-                        if (entry.closeOnClick) dismiss()
-                    },
-                    toggleOnText = entry.toggleOnText,
-                    toggleOffText = entry.toggleOffText,
-                    color = entry.color.takeOrElse { MaterialTheme.colorScheme.primary },
-                    textColor = entry.textColor,
-                    fillColor = entry.fillColor,
-                    shape = entry.shape,
-                    enabled = entry.enabled
-                )
+                Box(modifier = kinetic) {
+                    AzToggle(
+                        isChecked = entry.isChecked,
+                        onToggle = {
+                            navigate(entry.route)
+                            entry.onToggle(it)
+                            if (entry.closeOnClick) dismiss()
+                        },
+                        toggleOnText = entry.toggleOnText,
+                        toggleOffText = entry.toggleOffText,
+                        color = entry.color.takeOrElse { MaterialTheme.colorScheme.primary },
+                        textColor = entry.textColor,
+                        fillColor = entry.fillColor,
+                        shape = entry.shape,
+                        enabled = entry.enabled
+                    )
+                }
             }
         }
 
@@ -510,27 +599,31 @@ private fun AzDropdownEntryItem(
                             entry.onCycle(next)
                         }
                         if (entry.closeOnClick) dismiss()
-                    }
+                    },
+                    modifier = kinetic,
+                    textStyle = config.itemTextStyle
                 )
             } else {
-                AzCycler(
-                    options = entry.options,
-                    selectedOption = entry.selectedOption,
-                    onCycle = {
-                        navigate(entry.route)
-                        entry.onCycle(it)
-                        if (entry.closeOnClick) dismiss()
-                    },
-                    color = entry.color.takeOrElse { MaterialTheme.colorScheme.primary },
-                    textColor = entry.textColor,
-                    fillColor = entry.fillColor,
-                    shape = entry.shape,
-                    enabled = entry.enabled
-                )
+                Box(modifier = kinetic) {
+                    AzCycler(
+                        options = entry.options,
+                        selectedOption = entry.selectedOption,
+                        onCycle = {
+                            navigate(entry.route)
+                            entry.onCycle(it)
+                            if (entry.closeOnClick) dismiss()
+                        },
+                        color = entry.color.takeOrElse { MaterialTheme.colorScheme.primary },
+                        textColor = entry.textColor,
+                        fillColor = entry.fillColor,
+                        shape = entry.shape,
+                        enabled = entry.enabled
+                    )
+                }
             }
         }
 
-        AzDropdownEntry.Divider -> AzDivider()
+        AzDropdownEntry.Divider -> Unit // handled above
     }
 }
 
@@ -650,6 +743,9 @@ fun AzDropdownMenu(
         val clipModifier = if (iconClipShape != null) Modifier.clip(iconClipShape) else Modifier
         Box(
             modifier = Modifier
+                // Automatic breathing room around the app-icon trigger so it never sits flush against
+                // neighbouring widgets (mirrors the rail header's spacing).
+                .padding(AzNavRailDefaults.HeaderPadding)
                 .size(config.headerIconSize)
                 .then(clipModifier)
                 .clickable {
@@ -670,7 +766,15 @@ fun AzDropdownMenu(
             }
         }
 
-        if (isOpen) {
+        // Keep the panel composed through the staggered exit so items can animate out before teardown.
+        val rendered = rememberAzClosingState(
+            open = isOpen,
+            exit = config.itemExit,
+            count = entries.size,
+            staggerMs = config.entranceStaggerMs,
+            durationMs = config.entranceDurationMs
+        )
+        if (rendered) {
             Popup(
                 popupPositionProvider = positionProvider,
                 onDismissRequest = { setOpen(false) },
@@ -692,8 +796,8 @@ fun AzDropdownMenu(
                             .then(if (config.design == AzDropdownDesign.RAIL) Modifier.padding(8.dp) else Modifier),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        entries.forEach { entry ->
-                            AzDropdownEntryItem(entry, config.design, navController, dismiss)
+                        entries.forEachIndexed { index, entry ->
+                            AzDropdownEntryItem(index, entries.size, isOpen, entry, config, navController, dismiss)
                         }
                         // The expanded-menu design carries the rail's footer (About / Feedback / @HereLiesAz).
                         if (config.design == AzDropdownDesign.MENU && config.showFooter) {

@@ -28,6 +28,37 @@ export enum AzHeaderIconShape {
   ROUNDED = 'ROUNDED',
 }
 
+/**
+ * Windows-Phone-7-style entrance for a menu/rail item or the screen title. Items animate in when
+ * their panel opens, cascaded by position via `entranceStaggerMs`.
+ */
+export enum AzEntrance {
+  /** No animation — appears immediately. */
+  None = 'None',
+  /** Fades up from transparent. */
+  Fade = 'Fade',
+  /** Rises into place (vertical slide) while fading. */
+  SlideUp = 'SlideUp',
+  /** The signature WP7 sweep: swings in around the docked edge like a turnstile (rotateY). */
+  Turnstile = 'Turnstile',
+}
+
+/** Optional exit for a menu/rail item when its panel dismisses or collapses. */
+export enum AzExit {
+  /** No exit — the item just unmounts. */
+  None = 'None',
+  /** Fades out. */
+  Fade = 'Fade',
+  /** Swings out around the docked edge (rotateY). */
+  Turnstile = 'Turnstile',
+}
+
+/** Reusable easings for AzNavRail's kinetic typography. */
+export const AzEasing = {
+  /** WP7's signature fast-out / gentle-settle bezier control points `[x1, y1, x2, y2]`. */
+  Wp7Decelerate: [0.1, 0.9, 0.2, 1] as [number, number, number, number],
+};
+
 /** Layout direction of a nested-rail popup relative to its host item. */
 export enum AzNestedRailAlignment {
   /** Items stack in a column next to the host. */
@@ -136,6 +167,28 @@ export interface AzNavRailSettings {
   helpList?: Record<string, string>;
   /** Map of tutorial id → `AzTutorial` definition; makes tutorials available to the help overlay. */
   tutorials?: Record<string, AzTutorial>;
+
+  // — Kinetic typography (WP7) — defaults animate; pass `None` to opt a surface out. —
+  /** Entrance played by each expanded-menu item when the menu opens. Default `Turnstile`. */
+  itemEntrance?: AzEntrance;
+  /** Exit played by each item when the menu collapses. Default `Turnstile`. */
+  itemExit?: AzExit;
+  /** Style merged over each menu item's label (big/light/wide Metro type). */
+  itemTextStyle?: object;
+  /** Per-item cascade delay (ms), multiplied by position. Default 55. */
+  entranceStaggerMs?: number;
+  /** Duration (ms) of each item's entrance/exit. Default 360. */
+  entranceDurationMs?: number;
+  /** Starting rotateY (deg) for the turnstile sweep. Default 70. */
+  entranceStartAngle?: number;
+  /** When true, menu items tilt toward the press point (suppressed for draggable items). Default false. */
+  tiltOnPress?: boolean;
+  /** Maximum tilt angle (deg) for `tiltOnPress`. Default 10. */
+  maxTiltDegrees?: number;
+  /** Entrance for the big screen-boundary title, replayed when the active screen changes. Default `Turnstile`. */
+  titleEntrance?: AzEntrance;
+  /** Style merged over the big screen title's default. */
+  titleTextStyle?: object;
 }
 
 /**

@@ -6,7 +6,9 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.animation.core.Easing
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -14,6 +16,9 @@ import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.model.AzAdvancedConfig
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
+import com.hereliesaz.aznavrail.model.AzEasing
+import com.hereliesaz.aznavrail.model.AzEntrance
+import com.hereliesaz.aznavrail.model.AzExit
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzItemConfig
 import com.hereliesaz.aznavrail.model.AzNavItem
@@ -84,6 +89,44 @@ interface AzNavRailScope {
      *   When [Dp.Unspecified] (the default) the icon sizes itself to the rail width as before.
      */
     fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.CIRCLE, headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE, translucentBackground: Color = Color.Unspecified, helpLineColors: List<Color> = emptyList(), headerIconSize: Dp = Dp.Unspecified)
+
+    /**
+     * Configures AzNavRail's WP7-style **kinetic typography** — the staggered turnstile entrance/exit on
+     * the expanded menu items, the press-tilt, and the big screen-boundary title's sweep. All of it is
+     * config-driven; there is no free-composable escape hatch.
+     *
+     * Defaults animate (this is the library's signature look). Pass [AzEntrance.None]/[AzExit.None] to
+     * opt a surface back out.
+     *
+     * @param itemEntrance Entrance played by each expanded-menu item when the menu opens.
+     * @param itemExit Exit played by each item when the menu collapses (items are held mounted through
+     *   the close so they can animate out).
+     * @param itemTextStyle Optional style merged over each menu item's label (big/light/wide Metro type).
+     * @param entranceStaggerMs Per-item cascade delay, multiplied by the item's position.
+     * @param entranceDurationMs Duration of each item's entrance/exit animation.
+     * @param entranceEasing Easing for the entrance/exit (defaults to [AzEasing.Wp7Decelerate]).
+     * @param entranceStartAngle Starting `rotationY` for the [AzEntrance.Turnstile] sweep, in degrees.
+     * @param tiltOnPress When true, menu items tilt in 3D toward the press point (the WP7 "tilt effect");
+     *   automatically suppressed for draggable/relocatable items. Defaults to false on the rail to avoid
+     *   competing with its drag gestures.
+     * @param maxTiltDegrees Maximum tilt angle for [tiltOnPress].
+     * @param titleEntrance Entrance for the big screen-boundary title, replayed each time the active
+     *   screen changes. Defaults to [AzEntrance.Turnstile]; use [AzEntrance.None] for a static title.
+     * @param titleTextStyle Optional style merged over the title's default (displayMedium, bold).
+     */
+    fun azKinetics(
+        itemEntrance: AzEntrance = AzEntrance.Turnstile,
+        itemExit: AzExit = AzExit.Turnstile,
+        itemTextStyle: TextStyle? = null,
+        entranceStaggerMs: Int = 55,
+        entranceDurationMs: Int = 360,
+        entranceEasing: Easing = AzEasing.Wp7Decelerate,
+        entranceStartAngle: Float = 70f,
+        tiltOnPress: Boolean = false,
+        maxTiltDegrees: Float = 10f,
+        titleEntrance: AzEntrance = AzEntrance.Turnstile,
+        titleTextStyle: TextStyle? = null
+    )
 
     /**
      * Configures advanced features like loading states, help screens, and overlays.
@@ -686,6 +729,30 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     /** Colors used for the connecting lines drawn in the Help overlay. Falls back to a built-in rainbow palette. */
     var helpLineColors: List<Color> = emptyList()
 
+    // Kinetic typography (set by [azKinetics]). Defaults animate — the library's signature WP7 look.
+    /** Entrance played by each expanded-menu item when the menu opens. */
+    var itemEntrance: AzEntrance = AzEntrance.Turnstile
+    /** Exit played by each expanded-menu item when the menu collapses. */
+    var itemExit: AzExit = AzExit.Turnstile
+    /** Optional style merged over each menu item's label. */
+    var itemTextStyle: TextStyle? = null
+    /** Per-item cascade delay (ms), multiplied by position. */
+    var entranceStaggerMs: Int = 55
+    /** Duration (ms) of each item's entrance/exit. */
+    var entranceDurationMs: Int = 360
+    /** Easing for the entrance/exit. */
+    var entranceEasing: Easing = AzEasing.Wp7Decelerate
+    /** Starting `rotationY` (deg) for the turnstile sweep. */
+    var entranceStartAngle: Float = 70f
+    /** When true, menu items tilt toward the press point (suppressed for draggable items). */
+    var tiltOnPress: Boolean = false
+    /** Maximum tilt angle (deg) for [tiltOnPress]. */
+    var maxTiltDegrees: Float = 10f
+    /** Entrance for the big screen-boundary title, replayed when the active screen changes. */
+    var titleEntrance: AzEntrance = AzEntrance.Turnstile
+    /** Optional style merged over the big screen title's default ([displayMedium], bold). */
+    var titleTextStyle: TextStyle? = null
+
     // Advanced
     /** Aggregated advanced configuration populated by [azAdvanced] and [azSettings] calls. */
     var advancedConfig: AzAdvancedConfig = AzAdvancedConfig()
@@ -721,6 +788,32 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         this.translucentBackground = translucentBackground
         this.helpLineColors = helpLineColors
         this.headerIconSize = headerIconSize
+    }
+
+    override fun azKinetics(
+        itemEntrance: AzEntrance,
+        itemExit: AzExit,
+        itemTextStyle: TextStyle?,
+        entranceStaggerMs: Int,
+        entranceDurationMs: Int,
+        entranceEasing: Easing,
+        entranceStartAngle: Float,
+        tiltOnPress: Boolean,
+        maxTiltDegrees: Float,
+        titleEntrance: AzEntrance,
+        titleTextStyle: TextStyle?
+    ) {
+        this.itemEntrance = itemEntrance
+        this.itemExit = itemExit
+        this.itemTextStyle = itemTextStyle
+        this.entranceStaggerMs = entranceStaggerMs
+        this.entranceDurationMs = entranceDurationMs
+        this.entranceEasing = entranceEasing
+        this.entranceStartAngle = entranceStartAngle
+        this.tiltOnPress = tiltOnPress
+        this.maxTiltDegrees = maxTiltDegrees
+        this.titleEntrance = titleEntrance
+        this.titleTextStyle = titleTextStyle
     }
 
     override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, secLoc: String?, secLocPort: Int, helpList: Map<String, Any>, tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial>, onInteraction: ((String, AzNavItem) -> Unit)?) {

@@ -16,6 +16,8 @@ interface RailMenuItemProps {
     onItemClick: () => void;
     /** Renders the host's sub-items beneath it when expanded. */
     renderSubItems: () => React.ReactNode;
+    /** Optional style merged over the row label (big/light/wide Metro type). */
+    textStyle?: object;
 }
 
 /**
@@ -28,7 +30,8 @@ export const RailMenuItem: React.FC<RailMenuItemProps> = ({
     isExpandedHost,
     onToggleHost,
     onItemClick,
-    renderSubItems
+    renderSubItems,
+    textStyle
 }) => {
     const [displayOption, setDisplayOption] = useState(item.selectedOption);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -92,7 +95,7 @@ export const RailMenuItem: React.FC<RailMenuItemProps> = ({
                 accessibilityLabel={displayText}
                 accessibilityState={accessibilityState}
             >
-                <Text style={[styles.menuItemText, { fontWeight: item.isHost ? 'bold' : 'normal', color: item.textColor ?? item.color ?? '#000000' }]}>
+                <Text style={[styles.menuItemText, { fontWeight: item.isHost ? 'bold' : 'normal', color: item.textColor ?? item.color ?? '#000000' }, textStyle]}>
                     {displayText}
                 </Text>
                 {item.isHost && (

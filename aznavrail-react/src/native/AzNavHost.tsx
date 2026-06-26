@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { AzNavRail } from '../AzNavRail';
 import { AzNavRailDefaults } from '../AzNavRailDefaults';
-import { AzDockingSide, AzNavItem } from '../types';
+import { AzDockingSide, AzEntrance, AzNavItem } from '../types';
+import { AzKineticTitle } from '../components/AzKinetics';
 
 /** Props for the native `AzNavHost` layout component. */
 interface AzNavHostProps {
@@ -68,7 +69,15 @@ const AzNavHost: React.FC<AzNavHostProps> = ({ railProps, background, children }
       ]}>
         {showTitle && (
             <View style={[styles.titleContainer, { alignItems: titleAlignment }, titlePaddingSide]}>
-                <Text style={styles.titleText}>{currentTitle}</Text>
+                {/* Keyed on the title so the WP7 sweep replays each time the active screen changes. */}
+                <AzKineticTitle
+                    key={currentTitle}
+                    title={currentTitle}
+                    entrance={settings.titleEntrance ?? AzEntrance.Turnstile}
+                    dockingSide={dockingSide}
+                >
+                    <Text style={[styles.titleText, settings.titleTextStyle]}>{currentTitle}</Text>
+                </AzKineticTitle>
             </View>
         )}
         <View style={[styles.onscreenContent, { marginTop: safeTop, marginBottom: safeBottom }]}>

@@ -134,6 +134,33 @@ fun azTheme(
 * `headerIconSize`: `Dp` — exact diameter of the header app-icon. `Dp.Unspecified` (default) sizes
   the icon to the rail width (legacy behavior).
 
+### `azKinetics`
+Configures the WP7-style kinetic typography (entrance/exit on the expanded menu items, press-tilt, and
+the big screen title's sweep). Defaults animate; pass `AzEntrance.None`/`AzExit.None` to opt out. In
+FAB/floating mode the cascade becomes a vertical up/down slide.
+
+~~~kotlin
+fun azKinetics(
+    itemEntrance: AzEntrance = AzEntrance.Turnstile,
+    itemExit: AzExit = AzExit.Turnstile,
+    itemTextStyle: TextStyle? = null,
+    entranceStaggerMs: Int = 55,
+    entranceDurationMs: Int = 360,
+    entranceEasing: Easing = AzEasing.Wp7Decelerate,
+    entranceStartAngle: Float = 70f,
+    tiltOnPress: Boolean = false,
+    maxTiltDegrees: Float = 10f,
+    titleEntrance: AzEntrance = AzEntrance.Turnstile,
+    titleTextStyle: TextStyle? = null
+)
+~~~
+
+* `AzEntrance`: `None | Fade | SlideUp | Turnstile`. `AzExit`: `None | Fade | Turnstile`.
+* `AzEasing.Wp7Decelerate`: the signature fast-out/gentle-settle bezier (the default easing).
+* `tiltOnPress` is auto-suppressed for draggable/relocatable items.
+* The standalone `AzDropdownMenu` exposes the same item knobs on its own `azConfig` (opt-in; defaults
+  `None`). React: the rail reads these from `settings`, the dropdown takes matching props.
+
 ### `azAbout`
 Configures the built-in About reader and the "More from Az" carousel.
 

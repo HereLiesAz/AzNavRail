@@ -57,6 +57,33 @@ fun azTheme(
 `headerIconSize` pins the header app-icon to an exact diameter. When left `Dp.Unspecified` the icon
 sizes itself to the rail width (legacy behavior).
 
+### `azKinetics`
+Configures the WP7-style **kinetic typography**: the staggered turnstile entrance/exit on the
+expanded menu items, the press-tilt, and the big screen-boundary title's sweep. Config-driven (preset
+enums, no free-composable escape hatch). Defaults animate — pass `AzEntrance.None`/`AzExit.None` to
+opt a surface out. In FAB/floating mode the cascade degrades to a vertical up/down slide.
+
+~~~kotlin
+fun azKinetics(
+    itemEntrance: AzEntrance = AzEntrance.Turnstile,
+    itemExit: AzExit = AzExit.Turnstile,
+    itemTextStyle: TextStyle? = null,
+    entranceStaggerMs: Int = 55,
+    entranceDurationMs: Int = 360,
+    entranceEasing: Easing = AzEasing.Wp7Decelerate,
+    entranceStartAngle: Float = 70f,
+    tiltOnPress: Boolean = false,   // off by default on the rail (drag-safe)
+    maxTiltDegrees: Float = 10f,
+    titleEntrance: AzEntrance = AzEntrance.Turnstile,
+    titleTextStyle: TextStyle? = null
+)
+~~~
+
+`AzEntrance` = `None | Fade | SlideUp | Turnstile`; `AzExit` = `None | Fade | Turnstile`;
+`AzEasing.Wp7Decelerate` is the signature snappy easing. `tiltOnPress` is automatically suppressed for
+draggable/relocatable items. In React, the rail reads these from `settings` (`itemEntrance`,
+`itemExit`, `titleEntrance`, …).
+
 ### `azAdvanced`
 Controls system overrides, loading states, and floating window bindings.
 
@@ -132,7 +159,17 @@ interface AzDropdownMenuScope {
         headerIconSize: Dp = 48.dp,                         // app-icon diameter, like azTheme
         showFooter: Boolean = true,                         // MENU footer (About/Feedback/@HereLiesAz)
         inAppAbout: Boolean = true,                          // "About" opens a full-screen in-app reader
-        appRepositoryUrl: String = ""                        // optional override; else derived from namespace
+        appRepositoryUrl: String = "",                       // optional override; else derived from namespace
+        // — kinetic typography (opt-in on the dropdown) —
+        itemTextStyle: TextStyle? = null,                    // merged over each MENU row label
+        itemEntrance: AzEntrance = AzEntrance.None,          // None | Fade | SlideUp | Turnstile
+        entranceStaggerMs: Int = 55,
+        entranceDurationMs: Int = 360,
+        entranceEasing: Easing = AzEasing.Wp7Decelerate,
+        entranceStartAngle: Float = 70f,
+        tiltOnPress: Boolean = false,                        // WP7 3D tilt toward the press
+        maxTiltDegrees: Float = 10f,
+        itemExit: AzExit = AzExit.None                       // None | Fade | Turnstile
     )
     fun azItem(text, route = null, color, textColor, fillColor, shape, enabled, closeOnClick = true, onClick)
     fun azToggle(isChecked, toggleOnText, toggleOffText, route = null, …, onToggle)

@@ -18,9 +18,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.hereliesaz.aznavrail.AzButton
 import com.hereliesaz.aznavrail.AzCycler
 import com.hereliesaz.aznavrail.AzDropdownMenu
@@ -28,6 +30,8 @@ import com.hereliesaz.aznavrail.AzToggle
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzDropdownDesign
+import com.hereliesaz.aznavrail.model.AzEntrance
+import com.hereliesaz.aznavrail.model.AzExit
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 
 /** Live theme/config state surfaced from MainApp so the rail can re-key on each change. */
@@ -241,6 +245,8 @@ private fun AzDropdownMenuDemo() {
     var dockingSide by remember { mutableStateOf(AzDockingSide.LEFT) }
     var dark by remember { mutableStateOf(false) }
     var lastAction by remember { mutableStateOf("none") }
+    var entrance by remember { mutableStateOf(AzEntrance.Turnstile) }
+    var tiltOnPress by remember { mutableStateOf(true) }
 
     val designs = AzDropdownDesign.values()
     AzCycler(
@@ -258,6 +264,23 @@ private fun AzDropdownMenuDemo() {
         shape = AzButtonShape.RECTANGLE,
     )
 
+    // WP7-style kinetic typography: pick the entrance and toggle the press-tilt, then reopen the
+    // panel to watch the staggered cascade.
+    val entrances = AzEntrance.values()
+    AzCycler(
+        options = entrances.map { it.name },
+        selectedOption = entrance.name,
+        onCycle = { entrance = entrances[(entrance.ordinal + 1) % entrances.size] },
+        shape = AzButtonShape.RECTANGLE,
+    )
+    AzToggle(
+        isChecked = tiltOnPress,
+        onToggle = { tiltOnPress = it },
+        toggleOnText = "Tilt: on",
+        toggleOffText = "Tilt: off",
+        shape = AzButtonShape.RECTANGLE,
+    )
+
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         AzDropdownMenu {
             azConfig(
@@ -265,6 +288,10 @@ private fun AzDropdownMenuDemo() {
                 dockingSide = dockingSide,
                 headerIconShape = AzHeaderIconShape.ROUNDED,
                 headerIconSize = 56.dp,
+                itemEntrance = entrance,
+                itemExit = if (entrance == AzEntrance.None) AzExit.None else AzExit.Turnstile,
+                tiltOnPress = tiltOnPress,
+                itemTextStyle = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.Light),
             )
             azItem("Profile") { lastAction = "Profile" }
             azItem("Settings") { lastAction = "Settings" }

@@ -75,6 +75,8 @@ import com.hereliesaz.aznavrail.internal.AzNavRailLogger
 import com.hereliesaz.aznavrail.internal.CyclerTransientState
 import com.hereliesaz.aznavrail.internal.Footer
 import com.hereliesaz.aznavrail.internal.MenuItem
+import com.hereliesaz.aznavrail.internal.rememberAzKineticModifier
+import com.hereliesaz.aznavrail.internal.rememberAzClosingState
 import com.hereliesaz.aznavrail.internal.RailItems
 import com.hereliesaz.aznavrail.internal.SecretScreens
 import com.hereliesaz.aznavrail.service.GithubDocsRepository
@@ -673,37 +675,50 @@ fun AzNavRail(
 
                 // MAIN CONTENT and MENU separation
                 BoxWithConstraints(modifier = Modifier.weight(1f)) {
-                    if (isExpanded) {
+                    val hasExplicitHelpItem = scope.navItems.any { it.isHelpItem || it.id == AzNavRailDefaults.AUTO_HELP_ID }
+                    val displayItems = if (scope.advancedConfig.helpEnabled && !hasExplicitHelpItem) {
+                        scope.navItems + AzNavItem.Help(
+                            id = AzNavRailDefaults.AUTO_HELP_ID,
+                            isRailItem = false
+                        )
+                    } else {
+                        scope.navItems
+                    }
+                    val topLevelItems = displayItems.filter { !it.isSubItem }
+                    // Keep the menu composed through the staggered exit so items can turnstile out as the
+                    // rail collapses (mirrors the entrance overlapping the expand). itemExit=None => the
+                    // legacy instant teardown.
+                    val menuRendered = rememberAzClosingState(
+                        open = isExpanded,
+                        exit = scope.itemExit,
+                        count = topLevelItems.size,
+                        staggerMs = scope.entranceStaggerMs,
+                        durationMs = scope.entranceDurationMs
+                    )
+                    if (menuRendered) {
                         val scrollState = rememberScrollState()
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .verticalScroll(scrollState)
                         ) {
-                            val hasExplicitHelpItem = scope.navItems.any { it.isHelpItem || it.id == AzNavRailDefaults.AUTO_HELP_ID }
-                            val displayItems = if (scope.advancedConfig.helpEnabled && !hasExplicitHelpItem) {
-                                scope.navItems + AzNavItem.Help(
-                                    id = AzNavRailDefaults.AUTO_HELP_ID,
-                                    isRailItem = false
+                            topLevelItems.forEachIndexed { index, item ->
+                                MenuItemNode(
+                                    item = item,
+                                    allItems = displayItems,
+                                    navController = effectiveNavController,
+                                    currentDestination = actualCurrentDestination,
+                                    scope = scope,
+                                    hostStates = hostStates,
+                                    showHelpOverlay = showHelpOverlay,
+                                    onToggleHelp = { toggleHelpOverlay(it) },
+                                    onCollapseMenu = { isExpanded = false },
+                                    index = index,
+                                    count = topLevelItems.size,
+                                    visible = isExpanded,
+                                    floating = isFloating,
+                                    dockingSide = scope.dockingSide
                                 )
-                            } else {
-                                scope.navItems
-                            }
-
-                            displayItems.forEach { item ->
-                                if (!item.isSubItem) {
-                                    MenuItemNode(
-                                        item = item,
-                                        allItems = displayItems,
-                                        navController = effectiveNavController,
-                                        currentDestination = actualCurrentDestination,
-                                        scope = scope,
-                                        hostStates = hostStates,
-                                        showHelpOverlay = showHelpOverlay,
-                                        onToggleHelp = { toggleHelpOverlay(it) },
-                                        onCollapseMenu = { isExpanded = false }
-                                    )
-                                }
                             }
                         }
                     } else {
@@ -876,8 +891,29 @@ private fun MenuItemNode(
     hostStates: MutableMap<String, Boolean>,
     showHelpOverlay: Boolean,
     onToggleHelp: (String?) -> Unit,
-    onCollapseMenu: () -> Unit
+    onCollapseMenu: () -> Unit,
+    index: Int,
+    count: Int,
+    visible: Boolean,
+    floating: Boolean,
+    dockingSide: AzDockingSide
 ) {
+    val kinetic = rememberAzKineticModifier(
+        index = index,
+        count = count,
+        visible = visible,
+        entrance = scope.itemEntrance,
+        exit = scope.itemExit,
+        staggerMs = scope.entranceStaggerMs,
+        durationMs = scope.entranceDurationMs,
+        easing = scope.entranceEasing,
+        startAngle = scope.entranceStartAngle,
+        // Suppress the press-tilt on draggable/relocatable items so it never fights the drag gesture.
+        tiltOnPress = scope.tiltOnPress && !item.isRelocItem,
+        maxTiltDegrees = scope.maxTiltDegrees,
+        dockingSide = dockingSide,
+        floating = floating
+    )
     MenuItem(
         item = item,
         navController = navController,
@@ -912,24 +948,30 @@ private fun MenuItemNode(
         },
         onBoundsCleared = { id -> scope.itemBoundsCache.remove(id) },
         helpEnabled = showHelpOverlay,
-        activeColor = scope.activeColor
+        activeColor = scope.activeColor,
+        kineticModifier = kinetic,
+        textStyle = scope.itemTextStyle
     )
 
     if (item.isHost && hostStates[item.id] == true) {
-        allItems.forEach { child ->
-            if (child.isSubItem && child.hostId == item.id) {
-                MenuItemNode(
-                    item = child,
-                    allItems = allItems,
-                    navController = navController,
-                    currentDestination = currentDestination,
-                    scope = scope,
-                    hostStates = hostStates,
-                    showHelpOverlay = showHelpOverlay,
-                    onToggleHelp = onToggleHelp,
-                    onCollapseMenu = onCollapseMenu
-                )
-            }
+        val children = allItems.filter { it.isSubItem && it.hostId == item.id }
+        children.forEachIndexed { childIndex, child ->
+            MenuItemNode(
+                item = child,
+                allItems = allItems,
+                navController = navController,
+                currentDestination = currentDestination,
+                scope = scope,
+                hostStates = hostStates,
+                showHelpOverlay = showHelpOverlay,
+                onToggleHelp = onToggleHelp,
+                onCollapseMenu = onCollapseMenu,
+                index = childIndex,
+                count = children.size,
+                visible = visible,
+                floating = floating,
+                dockingSide = dockingSide
+            )
         }
     }
 }
