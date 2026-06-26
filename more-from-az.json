@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "apps": [
     {
       "name": "CueDetat",
@@ -18,6 +18,13 @@
       "play": "https://play.google.com/store/apps/details?id=com.hereliesaz.graffitixr",
       "web": "https://hereliesaz.github.io/GraffitiXR/",
       "isPwa": false
+    },
+    {
+      "name": "QaRd",
+      "iconUrl": "https://play-lh.googleusercontent.com/04aUgd7tScnByYnTOaDzowe2Pry3lkQwa_YYdB1CjpR28qQrfs78vz7IebW7utZ8nOZS9umEx5JNtH8LiaV5",
+      "description": "QaRd: Design your QR code widget, shared like a digital business card or contact.",
+      "github": "https://github.com/HereLiesAz/QaRd",
+      "play": "https://play.google.com/store/apps/details?id=com.hereliesaz.qard"
     },
     {
       "name": "BarBacker",
@@ -74,12 +81,6 @@
       "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
       "description": "GUI for hashcat and related tools",
       "github": "https://github.com/HereLiesAz/HalfHashedKitty"
-    },
-    {
-      "name": "QaRd",
-      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
-      "description": "QaRd: Design your QR code widget, shared like a digital business card or contact.",
-      "github": "https://github.com/HereLiesAz/QaRd"
     },
     {
       "name": "BarCodeNcrypt",
