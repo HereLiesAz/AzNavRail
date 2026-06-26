@@ -20,14 +20,6 @@
       "isPwa": false
     },
     {
-      "name": "AzNavRail",
-      "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
-      "description": "A Jetpack menu and composables, the way I like it. Just me. Cuz it's for me. Me. ME! MEEEEEEEEEEEEEEEEEEEE!!!!!!!!!!!!",
-      "github": "https://github.com/HereLiesAz/AzNavRail",
-      "web": "https://hereliesaz.github.io/AzNavRail/",
-      "isPwa": false
-    },
-    {
       "name": "BarBacker",
       "iconUrl": "https://avatars.githubusercontent.com/u/103241502?v=4",
       "description": "A digital paging system for bartenders and barbacks in high-volume (and loud, too) environments.",
