@@ -61,6 +61,10 @@ export const AboutOverlay: React.FC<AboutOverlayProps> = ({ repoUrl, settings = 
 
   return (
     <View style={[styles.overlay, { backgroundColor: surface }]}>
+      {/* Hide the About reader entirely while More-from-Az is open, so its doc links can't bleed
+          through a translucent carousel surface. */}
+      {!showMore && (
+      <>
       <View style={styles.header}>
         {selected && (
           <TouchableOpacity onPress={() => setSelected(null)} accessibilityLabel="Back to contents">
@@ -106,6 +110,8 @@ export const AboutOverlay: React.FC<AboutOverlayProps> = ({ repoUrl, settings = 
             </>
           )}
         </View>
+      )}
+      </>
       )}
 
       {showMore && <MoreFromAzOverlay jsonUrl={moreFromAzJsonUrl} settings={settings} onDismiss={() => setShowMore(false)} />}

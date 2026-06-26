@@ -804,14 +804,10 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                  </View>
             )}
 
-            {/* While a footer screen (About / More-from-Az) is open, the Help overlay is hidden and
-                input-disabled but kept MOUNTED so its expanded-card state is preserved and restored
-                when the footer screen closes. */}
-            {infoScreen && (
-                <View
-                    style={[StyleSheet.absoluteFill, (showAbout || showMoreFromAz) && { opacity: 0 }]}
-                    pointerEvents={(showAbout || showMoreFromAz) ? 'none' : 'auto'}
-                >
+            {/* Help must be fully CLEARED from the screen while a footer screen (About / More-from-Az)
+                is open — not merely dimmed — so it is not rendered at all then. */}
+            {infoScreen && !showAbout && !showMoreFromAz && (
+                <View style={StyleSheet.absoluteFill}>
                     <HelpOverlay
                         items={items}
                         helpList={config.helpList || {}}
@@ -823,7 +819,9 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                 </View>
             )}
 
-            {showAbout && !!config.appRepositoryUrl && (
+            {/* Only one reader at a time: More-from-Az fully replaces About while open, so a
+                translucent surface can't let the About doc links bleed through its cards. */}
+            {showAbout && !showMoreFromAz && !!config.appRepositoryUrl && (
                 <AboutOverlay
                     repoUrl={config.appRepositoryUrl}
                     settings={{ activeColor: config.activeColor, translucentBackground: config.translucentBackground }}
@@ -841,11 +839,13 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                 />
             )}
 
-            <TutorialOverlayWrapper
-              tutorials={(config as any).tutorials}
-              itemBounds={itemBounds}
-              suppressed={showAbout || showMoreFromAz}
-            />
+            {/* Tutorial overlay is fully CLEARED while a footer screen is open. */}
+            {!showAbout && !showMoreFromAz && (
+              <TutorialOverlayWrapper
+                tutorials={(config as any).tutorials}
+                itemBounds={itemBounds}
+              />
+            )}
         </View>
     </AzNavRailContext.Provider>
   );

@@ -552,7 +552,9 @@ fun AzHostActivityLayout(
                         .fillMaxSize()
                         .padding(top = topPadding, bottom = bottomPadding, start = startPadding, end = endPadding)
                 ) {
-                    if (scope.aboutVisible) {
+                    // Only one reader at a time: when More-from-Az is open it fully replaces About, so
+                    // a translucent surface can't let the About doc links bleed through its cards.
+                    if (scope.aboutVisible && !scope.moreFromAzVisible) {
                         AboutOverlay(
                             repoUrl = effectiveRepoUrl,
                             scope = railScope,
@@ -562,8 +564,7 @@ fun AzHostActivityLayout(
                             onDismiss = { scope.hideAbout() },
                         )
                     }
-                    // More-from-Az draws above About (later in the Box), so opening it from the About
-                    // screen covers it and dismissing returns to About underneath.
+                    // More-from-Az replaces About while open; dismissing it returns to About.
                     if (scope.moreFromAzVisible) {
                         MoreFromAzOverlay(
                             jsonUrl = railScope.advancedConfig.moreFromAzJsonUrl,
@@ -574,21 +575,19 @@ fun AzHostActivityLayout(
                 }
             }
 
-            // While a footer screen (About / More-from-Az) is open, the Help overlay is hidden but
-            // kept mounted so its expanded-card/scroll state restores untouched on close.
-            if (scope.helpVisible) {
-                Box(Modifier.azSuppressGuide(scope.aboutVisible || scope.moreFromAzVisible)) {
-                    HelpOverlay(
-                        items = railScope.navItems,
-                        helpLineColors = railScope.helpLineColors,
-                        onDismiss = { scope.hideHelp(); railScope.advancedConfig.onDismissHelp?.invoke() },
-                        itemBoundsCache = railScope.itemBoundsCache,
-                        helpList = railScope.advancedConfig.helpList,
-                        nestedRailOpenId = scope.helpScopeId,
-                        tutorials = railScope.advancedConfig.tutorials,
-                        onTutorialLaunch = { id -> tutorialController.startTutorial(id); scope.hideHelp() },
-                    )
-                }
+            // The Help overlay must be fully CLEARED from the screen while a footer screen
+            // (About / More-from-Az) is open — not merely dimmed — so it is not composed at all then.
+            if (scope.helpVisible && !scope.aboutVisible && !scope.moreFromAzVisible) {
+                HelpOverlay(
+                    items = railScope.navItems,
+                    helpLineColors = railScope.helpLineColors,
+                    onDismiss = { scope.hideHelp(); railScope.advancedConfig.onDismissHelp?.invoke() },
+                    itemBoundsCache = railScope.itemBoundsCache,
+                    helpList = railScope.advancedConfig.helpList,
+                    nestedRailOpenId = scope.helpScopeId,
+                    tutorials = railScope.advancedConfig.tutorials,
+                    onTutorialLaunch = { id -> tutorialController.startTutorial(id); scope.hideHelp() },
+                )
             }
         }
 

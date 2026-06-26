@@ -858,11 +858,11 @@ fun AzNavRail(
     // AzHostActivityLayout (About + More-from-Az flow through the onscreen() layout path; Help stays
     // full-screen). The rail only flips their visibility on the host scope via the trigger handlers
     // above. The interactive tutorial spotlight stays here — it is a guided overlay, not a content
-    // screen. While a footer screen (About / More-from-Az) is open it is hidden but kept mounted,
-    // so an in-progress tutorial resumes at the exact same scene/card/checklist on close.
-    activeTutorialId?.let { tutorialId ->
-        scope.advancedConfig.tutorials[tutorialId]?.let { tutorial ->
-            Box(Modifier.azSuppressGuide(hostScope?.aboutVisible == true || hostScope?.moreFromAzVisible == true)) {
+    // screen. It must be fully CLEARED from the screen while a footer screen (About / More-from-Az)
+    // is open — not merely dimmed — so it is not composed at all then.
+    if (hostScope?.aboutVisible != true && hostScope?.moreFromAzVisible != true) {
+        activeTutorialId?.let { tutorialId ->
+            scope.advancedConfig.tutorials[tutorialId]?.let { tutorial ->
                 AzTutorialOverlay(
                     tutorialId = tutorialId,
                     tutorial = tutorial,
