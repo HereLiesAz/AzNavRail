@@ -68,11 +68,26 @@ export async function listDocs(repoUrl: string): Promise<DocsResult> {
   const docs = docsRes ? safeParse(docsRes.body) : [];
   const offline = Boolean(rootRes?.rateLimited || docsRes?.rateLimited);
 
-  // Honor a repo-root `.azignore`: docs it lists are excluded from the About TOC.
-  const ignore = await cachedGet(`https://raw.githubusercontent.com/${owner}/${repo}/HEAD/.azignore`);
+  // Honor a repo-root `.azignore` (or `.aiexclude`): docs it lists are excluded from the About TOC.
+  // Fetch it via the contents listing's resolved `download_url` — `raw.githubusercontent` with a
+  // `HEAD` ref doesn't resolve, so the previous approach silently never filtered.
+  const ignoreUrl = rootRes ? (findDownloadUrl(rootRes.body, '.azignore') ?? findDownloadUrl(rootRes.body, '.aiexclude')) : null;
+  const ignore = ignoreUrl ? await cachedGet(ignoreUrl) : null;
   const patterns = ignore ? parseIgnore(ignore.body) : [];
   const entries = orderToc(root, docs).filter((e) => !isIgnored(e.path, patterns));
   return { entries, offline };
+}
+
+/** Returns the `download_url` of a root file named `fileName` in a contents-API JSON array, or null. */
+export function findDownloadUrl(contentsJson: string, fileName: string): string | null {
+  try {
+    const arr = JSON.parse(contentsJson);
+    if (!Array.isArray(arr)) return null;
+    const f = arr.find((o) => o && o.type === 'file' && o.name === fileName && o.download_url);
+    return f ? f.download_url : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Parses a `.azignore` file into its non-comment, non-blank patterns. */

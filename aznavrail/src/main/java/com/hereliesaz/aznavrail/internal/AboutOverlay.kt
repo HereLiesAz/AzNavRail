@@ -158,17 +158,24 @@ internal fun AboutOverlay(
                                 items(state.entries, key = { it.path }) { entry ->
                                     TocRow(entry.title, accent) { selected = entry }
                                 }
-                                if (onOpenMoreFromAz != null) {
-                                    item {
-                                        TocRow("More from Az", accent, emphasized = true) { onOpenMoreFromAz() }
-                                    }
-                                }
                             }
                         }
-                        // GitHub link pinned at the bottom with extra separation.
+                        // Pinned bottom: "More from Az" (persistent, never scrolls away) then the
+                        // GitHub link, both separated from the list.
                         Spacer(Modifier.height(32.dp))
                         AzDivider()
                         Spacer(Modifier.height(16.dp))
+                        if (onOpenMoreFromAz != null) {
+                            AzButton(
+                                onClick = { onOpenMoreFromAz() },
+                                text = "More from Az",
+                                color = accent,
+                                activeColor = accent,
+                                shape = AzButtonShape.RECTANGLE,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Spacer(Modifier.height(12.dp))
+                        }
                         AzButton(
                             onClick = { openUrl(context, repoUrl) },
                             text = "View on GitHub",

@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, FlatList, TouchableOpacity, StyleSheet, Linking, BackHandler } from 'react-native';
-import { AzButton } from './AzButton';
 import { AzLoad } from './AzLoad';
-import { AzButtonShape } from '../types';
 import { fetchMoreFromAz, AzMoreFromApp } from '../services/moreFromAz';
 
 interface MoreFromAzOverlayProps {
@@ -11,16 +9,21 @@ interface MoreFromAzOverlayProps {
   onDismiss: () => void;
 }
 
+/** The app a card opens when tapped: prefer the website/PWA, then Play, then the GitHub repo. */
+const primaryUrl = (a: AzMoreFromApp): string | undefined => a.webUrl || a.playStoreUrl || a.githubUrl;
+/** True only for a genuine app icon — never the owner's GitHub avatar (which is not an app icon). */
+const isAppIcon = (url: string): boolean => !!url && !url.includes('avatars.githubusercontent.com');
+
 /**
- * Full-screen "More from Az" overlay for React Native: a horizontal, paging carousel of app-icon
- * cards with a detail pane below. Cards reuse the rail's transparent-shape-with-colored-stroke look;
- * data comes from the link-only manifest (metadata auto-resolved).
+ * Full-screen "More from Az" overlay for React Native: a horizontal carousel of the author's other
+ * apps. The cards are not a selection model — **tapping a card opens that app** (its website/PWA, else
+ * Play, else GitHub). Each card shows that app's own icon (never the owner's GitHub avatar — a
+ * blank/avatar icon falls back to the app's initials) and its name.
  */
 export const MoreFromAzOverlay: React.FC<MoreFromAzOverlayProps> = ({ jsonUrl, settings = {}, onDismiss }) => {
   const accent = settings.activeColor || '#6200ee';
   const surface = settings.translucentBackground || '#ffffff';
   const [apps, setApps] = useState<AzMoreFromApp[] | null>(null);
-  const [selected, setSelected] = useState(0);
 
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => { onDismiss(); return true; });
@@ -33,7 +36,6 @@ export const MoreFromAzOverlay: React.FC<MoreFromAzOverlayProps> = ({ jsonUrl, s
     return () => { active = false; };
   }, [jsonUrl]);
 
-  const current = apps && apps.length ? apps[Math.min(selected, apps.length - 1)] : null;
   const open = (url?: string) => url && Linking.openURL(url).catch(() => {});
 
   return (
@@ -46,38 +48,26 @@ export const MoreFromAzOverlay: React.FC<MoreFromAzOverlayProps> = ({ jsonUrl, s
       {apps === null && <AzLoad />}
       {apps && apps.length === 0 && <Text style={styles.empty}>Couldn't load apps right now.</Text>}
 
-      {current && (
-        <View style={styles.flex}>
-          <FlatList
-            data={apps!}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(a, i) => a.githubUrl || a.playStoreUrl || a.webUrl || String(i)}
-            contentContainerStyle={styles.carousel}
-            renderItem={({ item, index }) => (
-              <TouchableOpacity
-                style={[styles.card, { borderColor: index === selected ? accent : `${accent}66`, borderWidth: index === selected ? 3 : 1 }]}
-                onPress={() => setSelected(index)}
-              >
-                {item.iconUrl ? (
+      {apps && apps.length > 0 && (
+        <FlatList
+          data={apps}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={(a, i) => a.githubUrl || a.playStoreUrl || a.webUrl || String(i)}
+          contentContainerStyle={styles.carousel}
+          renderItem={({ item }) => (
+            <TouchableOpacity style={styles.cardWrap} onPress={() => open(primaryUrl(item))} accessibilityLabel={item.name}>
+              <View style={[styles.card, { borderColor: `${accent}66` }]}>
+                {isAppIcon(item.iconUrl) ? (
                   <Image source={{ uri: item.iconUrl }} style={styles.cardImg} resizeMode="cover" />
                 ) : (
                   <Text style={{ color: accent, fontSize: 28 }}>{item.name.slice(0, 2).toUpperCase()}</Text>
                 )}
-              </TouchableOpacity>
-            )}
-          />
-
-          <View style={styles.detail}>
-            <Text style={styles.name}>{current.name}</Text>
-            {!!current.description && <Text style={styles.desc}>{current.description}</Text>}
-            <View style={styles.actions}>
-              {current.webUrl ? <AzButton text={current.isPwa ? 'Open' : 'Website'} color={accent} shape={AzButtonShape.RECTANGLE} onClick={() => open(current.webUrl)} /> : null}
-              {current.playStoreUrl ? <AzButton text="Play Store" color={accent} shape={AzButtonShape.RECTANGLE} onClick={() => open(current.playStoreUrl)} /> : null}
-              {current.githubUrl ? <AzButton text="GitHub" color={accent} shape={AzButtonShape.RECTANGLE} onClick={() => open(current.githubUrl)} /> : null}
-            </View>
-          </View>
-        </View>
+              </View>
+              <Text style={[styles.cardName]} numberOfLines={1}>{item.name}</Text>
+            </TouchableOpacity>
+          )}
+        />
       )}
     </View>
   );
@@ -90,11 +80,9 @@ const styles = StyleSheet.create({
   title: { fontSize: 30, fontWeight: 'bold', marginLeft: 8 },
   icon: { fontSize: 22, paddingHorizontal: 6 },
   carousel: { gap: 12, paddingVertical: 4 },
-  card: { width: 132, height: 132, borderRadius: 20, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  cardWrap: { width: 132, alignItems: 'center' },
+  card: { width: 132, height: 132, borderRadius: 20, borderWidth: 1, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   cardImg: { width: '100%', height: '100%' },
-  detail: { marginTop: 20 },
-  name: { fontSize: 22, fontWeight: 'bold' },
-  desc: { marginTop: 6, opacity: 0.85, fontSize: 15 },
-  actions: { flexDirection: 'row', gap: 12, marginTop: 16 },
+  cardName: { marginTop: 8, fontSize: 16, fontWeight: '600' },
   empty: { opacity: 0.7, paddingVertical: 16 },
 });

@@ -93,14 +93,15 @@ export const AboutOverlay: React.FC<AboutOverlayProps> = ({ repoUrl, settings = 
                       <Text style={[styles.tocText, { color: accent }]}>{e.title}</Text>
                     </TouchableOpacity>
                   ))}
-                  {moreFromAzEnabled && (
-                    <TouchableOpacity style={[styles.tocRow, styles.emph, { borderColor: accent }]} onPress={() => setShowMore(true)}>
-                      <Text style={[styles.tocText, { color: accent, fontWeight: 'bold' }]}>More from Az</Text>
-                    </TouchableOpacity>
-                  )}
                 </ScrollView>
               )}
+              {/* Pinned bottom: "More from Az" (persistent, never scrolls away) then the GitHub link. */}
               <View style={styles.bottomSpacer} />
+              {moreFromAzEnabled && (
+                <View style={styles.bottomButton}>
+                  <AzButton text="More from Az" color={accent} shape={AzButtonShape.RECTANGLE} onClick={() => setShowMore(true)} />
+                </View>
+              )}
               <AzButton text="View on GitHub" color={accent} shape={AzButtonShape.RECTANGLE} onClick={() => Linking.openURL(repoUrl).catch(() => {})} />
             </>
           )}
@@ -125,4 +126,5 @@ const styles = StyleSheet.create({
   empty: { opacity: 0.7, paddingVertical: 16, fontSize: 15 },
   banner: { opacity: 0.6, paddingVertical: 8, fontSize: 12 },
   bottomSpacer: { height: 32 },
+  bottomButton: { marginBottom: 12 },
 });

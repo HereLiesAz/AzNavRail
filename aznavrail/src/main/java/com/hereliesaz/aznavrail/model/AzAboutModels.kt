@@ -20,7 +20,8 @@ data class AzDocEntry(
  * these.
  *
  * @param name Display name (Play title or GitHub repo name).
- * @param iconUrl Icon image URL (Play `og:image` or GitHub owner avatar), loaded with Coil.
+ * @param iconUrl That app's own icon URL (Play `og:image` or the app website's `og:image`), loaded
+ *   with Coil. Never the owner's GitHub avatar; blank falls back to the app's initials.
  * @param description Short description (Play `og:description` or GitHub repo description).
  * @param githubUrl Optional GitHub repository link.
  * @param playStoreUrl Optional Google Play listing link.

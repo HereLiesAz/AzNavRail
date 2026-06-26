@@ -73,6 +73,17 @@ class AboutServiceTest {
     }
 
     @Test
+    fun `findDownloadUrl locates a dotfile in the contents listing`() {
+        val json = """[
+          {"type":"file","name":"README.md","path":"README.md","download_url":"u-readme"},
+          {"type":"file","name":".azignore","path":".azignore","download_url":"u-azignore"},
+          {"type":"dir","name":"docs","path":"docs"}
+        ]"""
+        assertEquals("u-azignore", GithubDocsRepository.findDownloadUrl(json, ".azignore"))
+        assertEquals(null, GithubDocsRepository.findDownloadUrl(json, ".aiexclude"))
+    }
+
+    @Test
     fun `orderToc puts README first`() {
         val root = GithubDocsRepository.parseContents(
             """[

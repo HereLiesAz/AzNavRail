@@ -1,4 +1,4 @@
-import { parseRepo, humanize, parseContents, orderToc, parseIgnore, isIgnored } from '../services/githubDocs';
+import { parseRepo, humanize, parseContents, orderToc, parseIgnore, isIgnored, findDownloadUrl } from '../services/githubDocs';
 import { parse } from '../services/moreFromAz';
 
 describe('githubDocs', () => {
@@ -43,6 +43,16 @@ describe('githubDocs', () => {
     expect(isIgnored('docs/x.draft.md', p)).toBe(true);
     expect(isIgnored('README.md', p)).toBe(false);
     expect(isIgnored('docs/API.md', p)).toBe(false);
+  });
+
+  it('findDownloadUrl locates a dotfile in the contents listing', () => {
+    const json = JSON.stringify([
+      { type: 'file', name: 'README.md', path: 'README.md', download_url: 'u-readme' },
+      { type: 'file', name: '.azignore', path: '.azignore', download_url: 'u-azignore' },
+      { type: 'dir', name: 'docs', path: 'docs' },
+    ]);
+    expect(findDownloadUrl(json, '.azignore')).toBe('u-azignore');
+    expect(findDownloadUrl(json, '.aiexclude')).toBe(null);
   });
 });
 

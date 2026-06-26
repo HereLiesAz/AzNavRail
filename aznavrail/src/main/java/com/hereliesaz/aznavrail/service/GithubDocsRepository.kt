@@ -109,11 +109,26 @@ object GithubDocsRepository {
         val docs = docsRes?.body?.let { runCatching { parseContents(it) }.getOrDefault(emptyList()) } ?: emptyList()
         val limited = (rootRes?.rateLimited == true) || (docsRes?.rateLimited == true)
 
-        // Honor a repo-root `.azignore`: docs it lists are excluded from the About TOC.
-        val ignore = AzHttpCache.get(context, "https://raw.githubusercontent.com/$owner/$repo/HEAD/.azignore")
-        val patterns = ignore?.body?.let { parseIgnore(it) } ?: emptyList()
+        // Honor a repo-root `.azignore` (or `.aiexclude`): docs it lists are excluded from the About
+        // TOC. Fetch it via the contents listing's resolved `download_url` — `raw.githubusercontent`
+        // with a `HEAD` ref doesn't resolve, so the previous approach silently never filtered.
+        val ignoreUrl = rootRes?.body?.let {
+            runCatching { findDownloadUrl(it, ".azignore") ?: findDownloadUrl(it, ".aiexclude") }.getOrNull()
+        }
+        val patterns = ignoreUrl?.let { AzHttpCache.get(context, it)?.body?.let(::parseIgnore) } ?: emptyList()
         val toc = orderToc(root, docs).filterNot { isIgnored(it.path, patterns) }
         return Result.success(DocsResult(toc, limited))
+    }
+
+    /** Returns the `download_url` of a root file named [fileName] in a contents-API JSON array, or null. */
+    internal fun findDownloadUrl(contentsJson: String, fileName: String): String? {
+        val arr = JSONArray(contentsJson)
+        for (i in 0 until arr.length()) {
+            val o = arr.optJSONObject(i) ?: continue
+            if (o.optString("type") != "file" || o.optString("name") != fileName) continue
+            return o.optString("download_url").takeIf { it.isNotBlank() }
+        }
+        return null
     }
 
     /** Parses a `.azignore` file into its non-comment, non-blank patterns. */

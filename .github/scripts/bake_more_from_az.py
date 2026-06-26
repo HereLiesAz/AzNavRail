@@ -190,9 +190,11 @@ def resolve_github(github_url):
                 return None  # exclude WIP apps
             break
 
+    # Icon must be THAT APP's icon — never the owner's GitHub avatar. Sourced (in order) from the
+    # Play listing's og:image, else the app website's og:image; blank falls back to initials in-app.
     app = {
         "name": meta.get("name") or repo,
-        "iconUrl": meta.get("owner", {}).get("avatar_url", ""),
+        "iconUrl": "",
         "description": meta.get("description") or "",
         "github": github_url,
     }
@@ -206,7 +208,7 @@ def resolve_github(github_url):
             if play.get("iconUrl"):
                 app["iconUrl"] = play["iconUrl"]
 
-    # Website / PWA from the repo homepage.
+    # Website / PWA from the repo homepage — also the icon source for non-Play apps (its og:image).
     home = (meta.get("homepage") or "").strip()
     if home and "github.com" not in home and "play.google.com" not in home:
         if not home.startswith(("http://", "https://")):
@@ -214,6 +216,8 @@ def resolve_github(github_url):
         ws, whtml = http_get(home)
         app["web"] = home
         app["isPwa"] = detect_pwa(whtml) if ws == 200 else False
+        if not app["iconUrl"] and ws == 200:
+            app["iconUrl"] = og(whtml, "image") or ""
 
     return app
 
