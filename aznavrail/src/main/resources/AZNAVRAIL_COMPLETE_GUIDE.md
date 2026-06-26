@@ -134,8 +134,8 @@ azKinetics(
 )
 ```
 
-The standalone `AzDropdownMenu` exposes the same item knobs on its own `azConfig` (opt-in; defaults
-`None`), and its app-icon trigger carries an automatic margin.
+The standalone `AzDropdownMenu` exposes the same item knobs on its own `azConfig` (also on by
+default), and its app-icon trigger carries an automatic margin.
 
 **React Implementation:** the rail reads kinetics from `settings`
 (`itemEntrance`, `itemExit`, `titleEntrance`, `tiltOnPress`, `itemTextStyle`, …); `AzDropdownMenu`

@@ -160,16 +160,16 @@ interface AzDropdownMenuScope {
         showFooter: Boolean = true,                         // MENU footer (About/Feedback/@HereLiesAz)
         inAppAbout: Boolean = true,                          // "About" opens a full-screen in-app reader
         appRepositoryUrl: String = "",                       // optional override; else derived from namespace
-        // — kinetic typography (opt-in on the dropdown) —
+        // — kinetic typography (on by default; pass None to opt out) —
         itemTextStyle: TextStyle? = null,                    // merged over each MENU row label
-        itemEntrance: AzEntrance = AzEntrance.None,          // None | Fade | SlideUp | Turnstile
+        itemEntrance: AzEntrance = AzEntrance.Turnstile,     // None | Fade | SlideUp | Turnstile
         entranceStaggerMs: Int = 55,
         entranceDurationMs: Int = 360,
         entranceEasing: Easing = AzEasing.Wp7Decelerate,
         entranceStartAngle: Float = 70f,
         tiltOnPress: Boolean = false,                        // WP7 3D tilt toward the press
         maxTiltDegrees: Float = 10f,
-        itemExit: AzExit = AzExit.None                       // None | Fade | Turnstile
+        itemExit: AzExit = AzExit.Turnstile                  // None | Fade | Turnstile
     )
     fun azItem(text, route = null, color, textColor, fillColor, shape, enabled, closeOnClick = true, onClick)
     fun azToggle(isChecked, toggleOnText, toggleOffText, route = null, …, onToggle)

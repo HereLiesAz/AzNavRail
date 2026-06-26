@@ -158,8 +158,8 @@ fun azKinetics(
 * `AzEntrance`: `None | Fade | SlideUp | Turnstile`. `AzExit`: `None | Fade | Turnstile`.
 * `AzEasing.Wp7Decelerate`: the signature fast-out/gentle-settle bezier (the default easing).
 * `tiltOnPress` is auto-suppressed for draggable/relocatable items.
-* The standalone `AzDropdownMenu` exposes the same item knobs on its own `azConfig` (opt-in; defaults
-  `None`). React: the rail reads these from `settings`, the dropdown takes matching props.
+* The standalone `AzDropdownMenu` exposes the same item knobs on its own `azConfig` (also on by
+  default). React: the rail reads these from `settings`, the dropdown takes matching props.
 
 ### `azAbout`
 Configures the built-in About reader and the "More from Az" carousel.

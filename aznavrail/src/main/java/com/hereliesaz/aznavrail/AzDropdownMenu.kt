@@ -114,15 +114,16 @@ interface AzDropdownMenuScope {
      *   be big/light/wide Metro type). Applied to the [AzDropdownDesign.MENU] rows; [AzDropdownDesign.RAIL]
      *   items keep their auto-sized text.
      * @param itemEntrance Windows-Phone-7-style entrance played as the panel opens (see [AzEntrance]);
-     *   defaults to [AzEntrance.None].
+     *   defaults to [AzEntrance.Turnstile]. Pass [AzEntrance.None] for a static panel.
      * @param entranceStaggerMs Per-item cascade delay, multiplied by the item's position.
-     * @param entranceDurationMs Duration of each item's entrance animation.
-     * @param entranceEasing Easing for the entrance (defaults to [AzEasing.Wp7Decelerate]).
+     * @param entranceDurationMs Duration of each item's entrance/exit animation.
+     * @param entranceEasing Easing for the entrance/exit (defaults to [AzEasing.Wp7Decelerate]).
      * @param entranceStartAngle Starting `rotationY` for the [AzEntrance.Turnstile] sweep, in degrees.
      * @param tiltOnPress When true, items tilt in 3D toward the press point and spring back on release
      *   (the WP7 "tilt effect"); the item's `onClick` still fires.
      * @param maxTiltDegrees Maximum tilt angle for [tiltOnPress].
-     * @param itemExit Reserved exit animation (see [AzExit]); only [AzExit.None] is honored today.
+     * @param itemExit Exit played as the panel dismisses (see [AzExit]); defaults to [AzExit.Turnstile].
+     *   Items are held mounted through the close so they can animate out.
      */
     fun azConfig(
         design: AzDropdownDesign = AzDropdownDesign.MENU,
@@ -136,14 +137,14 @@ interface AzDropdownMenuScope {
         inAppAbout: Boolean = true,
         appRepositoryUrl: String = "",
         itemTextStyle: TextStyle? = null,
-        itemEntrance: AzEntrance = AzEntrance.None,
+        itemEntrance: AzEntrance = AzEntrance.Turnstile,
         entranceStaggerMs: Int = 55,
         entranceDurationMs: Int = 360,
         entranceEasing: Easing = AzEasing.Wp7Decelerate,
         entranceStartAngle: Float = 70f,
         tiltOnPress: Boolean = false,
         maxTiltDegrees: Float = 10f,
-        itemExit: AzExit = AzExit.None
+        itemExit: AzExit = AzExit.Turnstile
     )
 
     /**
@@ -208,14 +209,14 @@ internal data class AzDropdownConfig(
     val inAppAbout: Boolean = true,
     val appRepositoryUrl: String = "",
     val itemTextStyle: TextStyle? = null,
-    val itemEntrance: AzEntrance = AzEntrance.None,
+    val itemEntrance: AzEntrance = AzEntrance.Turnstile,
     val entranceStaggerMs: Int = 55,
     val entranceDurationMs: Int = 360,
     val entranceEasing: Easing = AzEasing.Wp7Decelerate,
     val entranceStartAngle: Float = 70f,
     val tiltOnPress: Boolean = false,
     val maxTiltDegrees: Float = 10f,
-    val itemExit: AzExit = AzExit.None
+    val itemExit: AzExit = AzExit.Turnstile
 )
 
 /** One declared entry, collected by the builder and rendered by the composable. */

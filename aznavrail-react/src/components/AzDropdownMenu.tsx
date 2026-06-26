@@ -70,10 +70,10 @@ export interface AzDropdownMenuProps {
   onNavigate?: (route: string) => void;
   /** Style applied to the trigger container (placement only). */
   style?: ViewStyle;
-  // — Kinetic typography (WP7). Opt-in on the dropdown; defaults keep the legacy static look. —
-  /** Entrance played by each item when the panel opens. Default `None`. */
+  // — Kinetic typography (WP7). On by default; pass `None` to opt a surface out. —
+  /** Entrance played by each item when the panel opens. Default `Turnstile`. */
   itemEntrance?: AzEntrance;
-  /** Exit played by each item when the panel dismisses. Default `None`. */
+  /** Exit played by each item when the panel dismisses. Default `Turnstile`. */
   itemExit?: AzExit;
   /** Style merged over each MENU-design item's label. */
   itemTextStyle?: object;
@@ -191,8 +191,8 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
   onExpandedChange,
   onNavigate,
   style,
-  itemEntrance = AzEntrance.None,
-  itemExit = AzExit.None,
+  itemEntrance = AzEntrance.Turnstile,
+  itemExit = AzExit.Turnstile,
   itemTextStyle,
   entranceStaggerMs = 55,
   entranceDurationMs = 360,

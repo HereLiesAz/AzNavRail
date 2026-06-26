@@ -505,9 +505,9 @@ Three surfaces animate:
 
 - **The big screen title** (`AzNavHost`) sweeps in each time the active screen changes.
 - **The expanded rail menu** items cascade in on open and out on collapse.
-- **`AzDropdownMenu`** items (opt-in) do the same.
+- **`AzDropdownMenu`** items do the same.
 
-The rail's kinetics are **on by default** (the library's signature look); opt a surface out with
+All of it is **on by default** (the library's signature look); opt a surface out with
 `AzEntrance.None` / `AzExit.None`.
 
 **Android** — the rail uses `azKinetics(...)`; the dropdown uses its own `azConfig(...)`:
