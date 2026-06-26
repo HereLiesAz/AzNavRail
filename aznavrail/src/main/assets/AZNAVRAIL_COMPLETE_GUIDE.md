@@ -116,7 +116,30 @@ const settings: AzNavRailSettings = {
 // Pass this object to the settings prop on AzNavRail
 ```
 
+### B2. Kinetic Typography (`azKinetics`)
 
+Windows-Phone-7-style motion for the menu words: a staggered **turnstile** entrance/exit on the
+expanded menu items, a 3D **tilt-on-press**, and the big **screen title's** sweep on navigation. It is
+config-driven (preset enums, no free-composable escape hatch). Defaults animate; pass `AzEntrance.None`
+/ `AzExit.None` to opt a surface out. In **FAB / floating** mode the cascade becomes a vertical up/down
+slide (no docked edge to hinge on).
+
+```kotlin
+azKinetics(
+    itemEntrance = AzEntrance.Turnstile,   // None | Fade | SlideUp | Turnstile  (default Turnstile)
+    itemExit = AzExit.Turnstile,           // None | Fade | Turnstile            (default Turnstile)
+    tiltOnPress = true,                    // off by default on the rail (drag-safe)
+    itemTextStyle = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Light),
+    titleEntrance = AzEntrance.Turnstile,  // the big AzNavHost screen title
+)
+```
+
+The standalone `AzDropdownMenu` exposes the same item knobs on its own `azConfig` (also on by
+default), and its app-icon trigger carries an automatic margin.
+
+**React Implementation:** the rail reads kinetics from `settings`
+(`itemEntrance`, `itemExit`, `titleEntrance`, `tiltOnPress`, `itemTextStyle`, …); `AzDropdownMenu`
+takes matching props. `AzEasing.Wp7Decelerate` is the signature easing.
 
 ### C. Advanced Features (`azAdvanced`)
 Enables complex behaviors like drag-and-drop and help overlays.
