@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.5.0
+
+### Added
+- **Arbitrary moving highlight targets.** Register a window-space shape with **`<AzGuidanceTarget id
+  shape={() => AzGuideShape | null} />`** and point an edge/step at it via `highlightTargetId`. The shape
+  (`{ type: 'Circle' | 'Rect' | 'Path', … }`, recomputed each frame) lets the spotlight track an
+  on-screen object drawn over a canvas; returning `null` degrades to text-only. New exports:
+  `AzGuidanceTarget`, `AzGuideShape`, `AzPathCmd`, `shapeBounds`, `resolveShape`.
+- **Paged steps & manual advance.** `<AzEdge steps={[…]} />` reveals one `AzInstructionStep` at a time:
+  an informational step (no `advanceWhen`) advances on tap; a step with `advanceWhen="<statusId>"`
+  auto-advances when that status flips (reactive wins). One goal can mix “read this” and “now do this”
+  steps. The controller gains `advance(stepKey)` / `next(stepKey)` / `back(stepKey)` and no-arg
+  `advance()`.
+- **Dynamic rail-item highlights.** The `AZ_ITEM_ACTIVE` (`'az.item.active'`) token and a
+  `highlightSelector={() => string | null}` prop resolve the highlight to the active or a runtime rail
+  item each frame.
+- **Observable current instruction.** The controller exposes `currentInstructions: AzGuidanceSnapshot[]`
+  and `current`, so a host can mirror what's showing (text/title/target/step) with bespoke rendering.
+- **Gesture-time suppression.** **`<AzSuppressGuide predicate settleMs />`** hides guidance while the
+  predicate is true and re-shows after a settle delay once it clears.
+- **Custom callout rendering.** **`<AzGuideRenderer render={(snapshot, bounds) => …} />`** replaces the
+  built-in callout body (the dim/ring still draw).
+
+### Fixed
+- The guidance docs incorrectly showed `autoStartWhen` as a function; it is a **status id** string.
+
+### Notes
+- All additions are backward-compatible: existing `<AzStatus>` / `<AzEdge>` / `<AzGoal>` usage is
+  unchanged. **Parity:** a `Path` target is ringed by its bounding box (RN can't multi-hole / path-mask).
+
 ## Unreleased
 
 ### Removed

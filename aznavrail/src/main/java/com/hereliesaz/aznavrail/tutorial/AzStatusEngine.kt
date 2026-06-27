@@ -6,9 +6,11 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
@@ -17,6 +19,46 @@ import kotlinx.coroutines.launch
 
 /** Poll interval for status predicates backed by non-Compose sources (StateFlow.value / a var). */
 private const val STATUS_POLL_MS = 300L
+
+/** True if any registered suppressor predicate is currently true (a throwing predicate counts false). */
+internal fun anySuppressorActive(suppressors: List<Pair<Long, () -> Boolean>>): Boolean =
+    suppressors.any { (_, predicate) -> runCatching { predicate() }.getOrDefault(false) }
+
+/**
+ * Observes the host's guidance [suppressors] (each a `settleMs to predicate` pair, registered via
+ * `azSuppressGuide`) and returns whether the guidance overlay should currently be **hidden**. While any
+ * predicate is true the result is `true` immediately; when all go false a settle delay (the largest
+ * registered `settleMs`) elapses before it flips back to `false`, so a callout never pops over the tail
+ * of an in-progress gesture. Predicates are observed with the same `snapshotFlow` + low-rate poll as
+ * [rememberActiveStatuses], so both Compose-state and plain-`var`/`StateFlow.value` sources resolve.
+ */
+@Composable
+internal fun rememberGuidanceSuppressed(suppressors: List<Pair<Long, () -> Boolean>>): State<Boolean> {
+    val suppressed = remember { mutableStateOf(false) }
+    val current = rememberUpdatedState(suppressors)
+    // Re-launch only when crossing the empty/non-empty boundary; fresh predicates are read via `current`.
+    LaunchedEffect(suppressors.isEmpty()) {
+        if (current.value.isEmpty()) { suppressed.value = false; return@LaunchedEffect }
+        val rawOf = { anySuppressorActive(current.value) }
+        val settleOf = { current.value.maxOfOrNull { it.first }?.coerceAtLeast(0L) ?: 0L }
+        var settleJob: Job? = null
+        merge(
+            snapshotFlow { rawOf() },
+            flow { while (true) { emit(rawOf()); delay(STATUS_POLL_MS) } },
+        ).distinctUntilChanged().collect { on ->
+            if (on) {
+                settleJob?.cancel(); settleJob = null
+                suppressed.value = true
+            } else {
+                // Falling edge: keep hidden for the settle window before re-showing (cancelable so a
+                // new suppression that arrives mid-settle re-hides immediately).
+                settleJob?.cancel()
+                settleJob = launch { delay(settleOf()); suppressed.value = false }
+            }
+        }
+    }
+    return suppressed
+}
 
 /**
  * Observes the app's full status set reactively and returns the ids currently **true**. Statuses come

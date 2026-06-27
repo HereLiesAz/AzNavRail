@@ -28,8 +28,8 @@ import { HelpOverlay } from './components/HelpOverlay';
 import { AboutOverlay } from './components/AboutOverlay';
 import { MoreFromAzOverlay } from './components/MoreFromAzOverlay';
 import { AzGuidanceProvider, useAzGuidanceContext } from './guidance/AzGuidanceController';
-import { useActiveStatuses, computeBuiltinStatuses } from './guidance/AzStatusEngine';
-import { routeInstructions, computeAutoEdges } from './guidance/AzGuidance';
+import { useActiveStatuses, computeBuiltinStatuses, useGuidanceSuppressed } from './guidance/AzStatusEngine';
+import { routeInstructions, computeAutoEdges, snapshotsOf, edgeStepKey } from './guidance/AzGuidance';
 import { AzInstructionOverlay } from './components/AzInstructionOverlay';
 
 /** Props for the `AzNavRail` component, extending all `AzNavRailSettings` options. */
@@ -963,8 +963,8 @@ const AzGuidanceLayer: React.FC<{
   const activeStatuses = useActiveStatuses(guidance.statusPredicates, activeClassifiers, builtins);
   const edges = useMemo(() => [...guidance.edges, ...computeAutoEdges(items)], [guidance.edges, items]);
   const frame = useMemo(
-    () => routeInstructions(edges, guidance.goals, guidance.activeGoals, activeStatuses),
-    [edges, guidance.goals, guidance.activeGoals, activeStatuses],
+    () => routeInstructions(edges, guidance.goals, guidance.activeGoals, activeStatuses, (k) => guidance.stepIndex(k)),
+    [edges, guidance.goals, guidance.activeGoals, activeStatuses, guidance.stepIndex],
   );
   // Self-arming onboarding goals: activate once their trigger status holds (unless already completed).
   useEffect(() => {
@@ -975,13 +975,42 @@ const AzGuidanceLayer: React.FC<{
       }
     });
   }, [activeStatuses, guidance]);
-  // Auto-advance: a goal whose target is now true is reached → deactivate it and persist.
+  // Auto-advance: a goal whose target is now true is reached → deactivate it and persist. Persist
+  // reactive step advances into the cursor so a later tap continues from the shown step.
   useEffect(() => {
+    if (!guidance.enabled) return;
     frame.reachedGoals.forEach((g) => guidance.markReached(g));
+    frame.resolved.forEach((r) => {
+      if (r.stepTotal > 1) {
+        const key = edgeStepKey(r.edge);
+        if (guidance.stepIndex(key) < r.stepIndex) guidance.setStep(key, r.stepIndex);
+      }
+    });
   }, [frame, guidance]);
+  // Publish the observable snapshot (while enabled) so a host can mirror it with bespoke rendering.
+  const snapshots = useMemo(
+    () => (guidance.enabled ? snapshotsOf(frame.resolved, itemBounds, activeItemId) : []),
+    [guidance.enabled, frame, itemBounds, activeItemId],
+  );
+  useEffect(() => {
+    guidance.publishCurrent(snapshots);
+  }, [snapshots, guidance]);
 
-  if (!guidance.enabled) return null;
-  return <AzInstructionOverlay instructions={frame.instructions} itemBounds={itemBounds} accent={accent} />;
+  // Host-driven suppression (observed even when hidden, so it can re-show after the settle).
+  const suppressed = useGuidanceSuppressed(guidance.suppressors);
+
+  if (!guidance.enabled || suppressed) return null;
+  return (
+    <AzInstructionOverlay
+      resolved={frame.resolved}
+      itemBounds={itemBounds}
+      accent={accent}
+      activeItemId={activeItemId}
+      targets={guidance.targets}
+      onAdvance={(k) => guidance.advance(k)}
+      renderSlot={guidance.renderer}
+    />
+  );
 };
 
 /**

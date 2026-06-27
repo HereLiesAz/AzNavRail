@@ -762,12 +762,13 @@ val controller = AzHostActivityLayout(
         highlightItemId = "feature-a"
     )
 
-    // 3. Declare goals. autoStartWhen self-activates the onboarding goal once.
+    // 3. Declare goals. autoStartWhen is a STATUS ID (not a lambda): the goal self-activates once that
+    //    status becomes true, and only if it hasn't already been completed (completion is tracked for you).
     azGoal(
         id = "onboarding",
         target = "profileComplete",
         label = "Finish onboarding",
-        autoStartWhen = { !guidance.isCompleted("onboarding") }
+        autoStartWhen = "az.app.ready"
     )
     azGoal(id = "find-features", target = "az.host.features.expanded", label = "Discover Features")
 }
@@ -833,12 +834,12 @@ function AppRail() {
                 highlightItemId="feature-a"
             />
 
-            {/* 3. Goals; autoStartWhen self-activates onboarding */}
+            {/* 3. Goals; autoStartWhen is a STATUS ID (not a function) that self-activates onboarding once */}
             <AzGoal
                 id="onboarding"
                 target="profileComplete"
                 label="Finish onboarding"
-                autoStartWhen={() => !done.includes('onboarding')}
+                autoStartWhen="az.app.ready"
             />
             <AzGoal id="find-features" target="az.host.features.expanded" label="Discover Features" />
         </AzNavRail>
@@ -872,7 +873,131 @@ a light dim — it does **not** punch a true spotlight hole out of the dim layer
 `BlendMode.Clear` punch-out). This is a minor visual difference; routing and advancement behave
 identically.
 
-### 9.6 Migration from the old scripted tutorial framework
+### 9.6 Highlighting arbitrary on-screen targets (`azGuidanceTarget`)
+
+`highlightItemId` points at a **rail item**. To spotlight **arbitrary on-screen content that is not a
+rail item** — a ball drawn over a camera/AR canvas, an aiming line, an on-screen slider — register a
+**guidance target**: an id mapped to a function returning the current shape in **window-space px**
+(circle, rounded-rect, or path), recomputed every frame so the spotlight tracks a moving object. Then
+reference it from an edge (or a step) with `highlightTargetId`. If the function returns `null` (target
+absent), the callout gracefully degrades to text-only.
+
+The library both **draws a default spotlight** for the shape (circle/rect/path punch-out) **and**
+publishes the resolved shape on the controller (see §9.8) so a host can draw its own highlight.
+
+```kotlin
+// Window-space shape, recomputed each frame (read Compose state inside for smooth tracking).
+azGuidanceTarget("target.ball") {
+    val b = ballBounds.value ?: return@azGuidanceTarget null   // null ⇒ text-only
+    AzGuideShape.Circle(b.center.x, b.center.y, b.minDimension / 2f, padding = 8f)
+}
+azEdge(from = "az.app.ready", to = "ball.aimed", text = "Aim at the ball", highlightTargetId = "target.ball")
+```
+
+`AzGuideShape` is `Circle(cx, cy, radius, padding)`, `Rect(left, top, width, height, cornerRadius,
+padding)`, or `Path(commands, padding)` where `commands` are absolute `AzPathCmd` (`MoveTo`/`LineTo`/
+`QuadTo`/`CubicTo`/`Close`). React mirrors this as `{ type: 'Circle' | 'Rect' | 'Path', … }`:
+
+```tsx
+<AzGuidanceTarget id="target.ball" shape={() => ball ? { type: 'Circle', cx: ball.x, cy: ball.y, radius: ball.r, padding: 8 } : null} />
+<AzEdge from="az.app.ready" to="ball.aimed" text="Aim at the ball" highlightTargetId="target.ball" />
+```
+
+You can also point at the **currently-active rail item** without naming a static id by passing the
+`az.item.active` token (`AZ_ITEM_ACTIVE`) as `highlightItemId`, or resolve a runtime item id every frame
+with `highlightSelector = { viewModel.activeLayerId }` (React: `highlightSelector={() => activeLayerId}`)
+— useful for dynamically-created rail items (e.g. `layer.<uuid>`).
+
+### 9.7 Paged steps & manual advance
+
+A single edge can carry an ordered list of **steps** — several sub-pointers under one milestone,
+revealed one at a time, moving the spotlight as the user reads. A step with no `advanceWhen` is
+**informational**: its callout shows a *“Tap to continue”* affordance and advances on tap. A step with
+`advanceWhen = "<statusId>"` is **actionable**: it auto-advances the instant that status becomes true
+(reactive advance always wins over the tap cursor). The whole edge still completes when its `to`
+status becomes true — so a single goal can mix “read this” steps with “now do this” steps.
+
+```kotlin
+azGuidanceTarget("target.ball") { ballShape() }
+azStatus("ball.dragged") { gesture.value.dragged }
+azEdge(
+    from = "az.app.ready",
+    to = "ball.dragged",
+    title = "Meet the coach",
+    steps = listOf(
+        AzInstructionStep("This is a protractor."),                                  // info: tap to advance
+        AzInstructionStep("This handle sets the angle.", highlightTargetId = "target.ball"), // info on a moving target
+        AzInstructionStep("Drag the handle to rotate.", highlightTargetId = "target.ball",
+                          advanceWhen = "ball.dragged"),                              // actionable: reactive
+    ),
+)
+azGoal(id = "learnProtractor", target = "ball.dragged", autoStartWhen = "az.app.ready")
+```
+
+```tsx
+<AzGuidanceTarget id="target.ball" shape={ballShape} />
+<AzStatus id="ball.dragged" predicate={() => gesture.dragged} />
+<AzEdge from="az.app.ready" to="ball.dragged" title="Meet the coach" steps={[
+    { text: 'This is a protractor.' },
+    { text: 'This handle sets the angle.', highlightTargetId: 'target.ball' },
+    { text: 'Drag the handle to rotate.', highlightTargetId: 'target.ball', advanceWhen: 'ball.dragged' },
+]} />
+<AzGoal id="learnProtractor" target="ball.dragged" autoStartWhen="az.app.ready" />
+```
+
+`AzInstructionStep(text, title?, highlightItemId?, highlightTargetId?, side?, highlightSelector?,
+advanceWhen?)` — each step can spotlight its own target. To drive paging yourself (e.g. a host “Next”
+button), the controller exposes `advance(stepKey)` / `next(stepKey)` / `back(stepKey)` (and a no-arg
+`advance()` that advances the first active paged instruction); read the `stepKey` from the snapshot
+(§9.8). Step cursors are transient — only **goal completion** persists.
+
+### 9.8 Observing the current instruction
+
+The controller publishes the callouts it is currently showing, so a host can mirror them with bespoke
+rendering (e.g. a pulsing highlight drawn over its own canvas) and analytics. The framework can show
+several at once (one per active goal), so it is a list with a singular convenience.
+
+```kotlin
+val snap = controller.current                  // AzGuidanceSnapshot? (the primary one)
+val all = controller.currentInstructions       // List<AzGuidanceSnapshot>
+// Or observe reactively (non-Compose): controller.currentFlow: StateFlow<List<AzGuidanceSnapshot>>
+// Inside composition: LocalAzGuidanceController.current?.currentInstructions
+```
+
+`AzGuidanceSnapshot` carries `text`, `title`, `goalId`, `highlight`, `targetId`, `resolvedShape` /
+`resolvedBounds` (window-space, when available), `stepIndex` / `stepTotal`, and `stepKey`. React mirrors
+this on the controller from `useAzGuidanceController()` (`current`, `currentInstructions`).
+
+### 9.9 Suppressing guidance during gestures
+
+Drive suppression from your own gesture state so a callout never pops over an in-progress pinch/drag.
+While the predicate is true the overlay hides; when it flips back to false, guidance re-shows after a
+configurable **settle delay** (default ~700 ms). Several suppressors compose (OR); the largest settle
+wins.
+
+```kotlin
+azSuppressGuide(settleMs = 700) { gesture.inProgress }
+```
+
+```tsx
+<AzSuppressGuide predicate={() => gesture.inProgress} settleMs={700} />
+```
+
+### 9.10 Custom callout rendering (optional)
+
+To draw the callout body yourself (over a camera/canvas), register a renderer; the dim + spotlight
+punch-out still draw, but the callout content is yours. It receives the current snapshot and the
+resolved target bounds.
+
+```kotlin
+azGuideRenderer { snapshot, bounds -> MyCallout(snapshot, bounds) }
+```
+
+```tsx
+<AzGuideRenderer render={(snapshot, bounds) => <MyCallout snapshot={snapshot} bounds={bounds} />} />
+```
+
+### 9.11 Migration from the old scripted tutorial framework
 
 The scripted scene/card framework was removed. Map old constructs to the new ones:
 

@@ -42,6 +42,45 @@ function setsEqual(a: Set<string>, b: Set<string>): boolean {
   return true;
 }
 
+/** True if any registered suppressor predicate is currently true (a throwing predicate counts false). */
+export function anySuppressorActive(suppressors: Array<[number, () => boolean]>): boolean {
+  return suppressors.some(([, predicate]) => {
+    try {
+      return predicate();
+    } catch {
+      return false;
+    }
+  });
+}
+
+/**
+ * Returns whether the guidance overlay should currently be hidden, given the host's `suppressors` (each
+ * `[settleMs, predicate]`, registered via `<AzSuppressGuide>`). True immediately while any predicate is
+ * true; when all go false, a settle delay (the largest registered `settleMs`) elapses before it flips
+ * back to false. Predicates are re-evaluated each render and on the same ~300 ms poll as
+ * {@link useActiveStatuses}. Mirrors Kotlin `rememberGuidanceSuppressed`.
+ */
+export function useGuidanceSuppressed(suppressors: Array<[number, () => boolean]>): boolean {
+  const rawNow = anySuppressorActive(suppressors);
+  const settleMs = suppressors.reduce((m, [s]) => Math.max(m, s), 0);
+  const [suppressed, setSuppressed] = useState(false);
+  // Poll so predicates backed by non-React sources resolve within the interval.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick((x) => x + 1), STATUS_POLL_MS);
+    return () => clearInterval(t);
+  }, []);
+  useEffect(() => {
+    if (rawNow) {
+      setSuppressed(true);
+      return;
+    }
+    const id = setTimeout(() => setSuppressed(false), settleMs);
+    return () => clearTimeout(id);
+  }, [rawNow, settleMs]);
+  return suppressed;
+}
+
 /**
  * Observes the app's full status set reactively and returns the ids currently **true**, unioned from
  * developer predicates, active classifiers, and the built-in `az.*` ids.
