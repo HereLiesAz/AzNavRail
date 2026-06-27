@@ -262,10 +262,27 @@ All four host-item builders (`azMenuHostItem`, `azRailHostItem`, `azMenuSubHostI
 
 `expandWhen` is a lambda — it cannot live on `AzNavItem` (a `@Parcelize` class). Instead it
 is stored in `AzNavRailScopeImpl.expandWhenMap` alongside the other callback maps
-(`onClickMap`, `onFocusMap`). Inside `AzNavRail`, a `LaunchedEffect` keyed on
-`scope.navItems` fans out one child coroutine per host item, each running
-`snapshotFlow { cond() }.collect { … }` so the runtime re-evaluates the condition whenever
-any Compose snapshot state it reads changes.
+(`onClickMap`, `onFocusMap`). Inside `AzNavRail`, a `LaunchedEffect` keyed on the **stable set of
+expandWhen host ids** fans out one child coroutine per host, each observing the condition through
+`snapshotFlow { cond() }` (instant when the lambda reads Compose snapshot state) **merged with a
+low-rate (~300 ms) poll**. Expansion is applied only on an actual transition, and the very first
+observation only ever *expands* (so it never clobbers an `initiallyExpanded` or manual state).
+
+> Keying on the host-id set rather than `scope.navItems` is deliberate: the item list's contents
+> change on any item-value update, which previously tore down and relaunched the collectors and
+> swallowed the rising edge — leaving the host stuck collapsed.
+
+**Capabilities & limitations**
+
+- ✅ Works whether or not the condition reads Compose state. A condition backed by `mutableStateOf`
+  reacts **instantly**; one backed by a non-Compose source (`StateFlow.value`, `LiveData.value`, a
+  plain `var`, an external store) still works via the poll — **with up to ~300 ms latency**.
+- ✅ A manual collapse while the condition stays `true` is preserved (the condition acts on
+  transitions, never continuously), so the user can override it until the next `false → true` edge.
+- ⚠️ Because of the poll, an `expandWhen` host keeps a tiny recurring timer alive while mounted. It is
+  one cheap boolean evaluation per host every ~300 ms — negligible, but not zero.
+- ⚠️ React parity: the same semantics are implemented in `aznavrail-react` (render-time evaluation
+  plus a 300 ms `setInterval` fallback); see *Capabilities & Limitations* doc.
 
 **Typical use — tutorial framework**
 

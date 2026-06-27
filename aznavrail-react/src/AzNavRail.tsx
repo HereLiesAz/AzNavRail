@@ -185,11 +185,62 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   const showFloatingButtonsRef = useRef(showFloatingButtons);
   const wasVisibleOnDragStartRef = useRef(false);
   const itemsRef = useRef(items);
+  // Edge-tracking for host auto-expansion (expandWhen / per-host initiallyExpanded).
+  const expandWhenSeenRef = useRef<Record<string, boolean>>({});
+  const initiallyExpandedSeenRef = useRef<Record<string, boolean>>({});
 
   useEffect(() => { isFloatingRef.current = isFloating; }, [isFloating]);
   useEffect(() => { enableRailDraggingRef.current = enableRailDragging; }, [enableRailDragging]);
   useEffect(() => { showFloatingButtonsRef.current = showFloatingButtons; }, [showFloatingButtons]);
   useEffect(() => { itemsRef.current = items; }, [items]);
+
+  // Host auto-expansion — parity with Android's `expandWhen` / per-host `initiallyExpanded`. A host
+  // expands on the rising edge of its `expandWhen` condition and collapses on the falling edge; a
+  // manual collapse while the condition stays true is preserved (we act only on a real transition).
+  // The first observation only auto-expands (never clobbering an initiallyExpanded/manual state).
+  //
+  // Evaluated after every render (so conditions backed by React state/props are picked up at once)
+  // AND on a low-rate interval, so conditions backed by NON-React sources (a mutable ref, an external
+  // store that doesn't trigger a re-render) still drive expansion — within the poll interval.
+  const applyAutoExpansions = useCallback(() => {
+    const updates: Record<string, boolean> = {};
+    let changed = false;
+    itemsRef.current.forEach((item) => {
+      if (!item.isHost) return;
+      // Per-host initiallyExpanded: rising-edge auto-expand, once.
+      if (item.initiallyExpanded && initiallyExpandedSeenRef.current[item.id] !== true) {
+        updates[item.id] = true;
+        changed = true;
+      }
+      initiallyExpandedSeenRef.current[item.id] = !!item.initiallyExpanded;
+      // expandWhen: transition-based.
+      if (typeof item.expandWhen === 'function') {
+        const now = !!item.expandWhen();
+        const before = expandWhenSeenRef.current[item.id];
+        if (before === undefined) {
+          if (now) { updates[item.id] = true; changed = true; }
+        } else if (before !== now) {
+          updates[item.id] = now;
+          changed = true;
+        }
+        expandWhenSeenRef.current[item.id] = now;
+      }
+    });
+    if (!changed) return;
+    setHostStates((prev) => {
+      let differs = false;
+      for (const k in updates) if (prev[k] !== updates[k]) { differs = true; break; }
+      return differs ? { ...prev, ...updates } : prev;
+    });
+  }, []);
+
+  // After every render: React-state/prop-driven conditions are caught here immediately.
+  useEffect(() => { applyAutoExpansions(); });
+  // Low-rate poll: the safety net for conditions that aren't React state.
+  useEffect(() => {
+    const t = setInterval(applyAutoExpansions, 300);
+    return () => clearInterval(t);
+  }, [applyAutoExpansions]);
 
   useEffect(() => {
       const id = pan.addListener((value) => { panValue.current = value; });
