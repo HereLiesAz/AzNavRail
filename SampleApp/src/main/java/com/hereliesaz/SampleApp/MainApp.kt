@@ -25,6 +25,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
+import com.hereliesaz.aznavrail.tutorial.AzGuideShape
+import com.hereliesaz.aznavrail.tutorial.AzInstructionStep
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
@@ -155,6 +158,12 @@ fun MainApp() {
     // Status-driven guidance demo: a custom status backed by app state (see the `azStatus`/`azEdge`
     // declarations below and the activate buttons in TutorialDemoScreen).
     var guideTaskDone by remember { mutableStateOf(false) }
+    // Worked example state: an arbitrary, MOVING on-screen highlight target (a draggable coach ball,
+    // reported in window-space) plus the status it flips when dragged.
+    var coachBallBounds by remember { mutableStateOf<Rect?>(null) }
+    var coachBallDragged by remember { mutableStateOf(false) }
+    // Host-driven guidance suppression (e.g. while a gesture is in progress).
+    var suppressGuidance by remember { mutableStateOf(false) }
 
     AzHostActivityLayout(
         navController = navController,
@@ -245,6 +254,29 @@ fun MainApp() {
         azGoal(id = "guide_onboarding", target = "az.screen.bottom-sheet", label = "See the Bottom Sheets demo", autoStartWhen = "az.screen.tutorial")
         azGoal(id = "guide_expand_host", target = "az.host.rail-host.expanded", label = "Expand the Rail Host")
         azGoal(id = "guide_custom_task", target = "guide_task_done", label = "Complete a custom task")
+
+        // ---------- Worked example: arbitrary moving target + a mixed manual/reactive paged goal ----------
+        // A host-registered target tracks the draggable "coach ball" the screen draws (window-space px),
+        // so the spotlight follows it every frame. The single paged edge mixes two tap-advanced info
+        // steps with one actionable step that auto-advances when the ball is dragged.
+        azGuidanceTarget("coach.ball") {
+            coachBallBounds?.let { b -> AzGuideShape.Circle(b.center.x, b.center.y, b.minDimension / 2f, padding = 8f) }
+        }
+        azStatus("coach_ball_dragged") { coachBallDragged }
+        azEdge(
+            from = "az.screen.tutorial",
+            to = "coach_ball_dragged",
+            title = "Meet the coach",
+            steps = listOf(
+                AzInstructionStep("This coach is status-driven. Tap to continue."),
+                AzInstructionStep("It can point at moving on-screen things, not just rail items.", highlightTargetId = "coach.ball"),
+                AzInstructionStep("Now drag the circle to finish.", highlightTargetId = "coach.ball", advanceWhen = "coach_ball_dragged"),
+            ),
+        )
+        azGoal(id = "guide_coach", target = "coach_ball_dragged", label = "Meet the moving-target coach")
+        // Host-driven suppression: while the toggle is on the overlay hides; when it flips off, guidance
+        // re-shows after the default ~700 ms settle.
+        azSuppressGuide { suppressGuidance }
 
         // ---------- Showcase navigation menu items ----------
         azMenuItem(id = "showcase-home", text = "Showcase Home", route = "showcase-home", screenTitle = "Showcase", info = "Index of every demo screen in this sample.")
@@ -662,6 +694,12 @@ fun MainApp() {
                         taskDone = guideTaskDone,
                         onMarkTaskDone = { guideTaskDone = true },
                         onResetTask = { guideTaskDone = false },
+                        coachBallDragged = coachBallDragged,
+                        onCoachBallBounds = { coachBallBounds = it },
+                        onCoachBallDrag = { coachBallDragged = true },
+                        onResetCoach = { coachBallDragged = false },
+                        suppressed = suppressGuidance,
+                        onToggleSuppress = { suppressGuidance = !suppressGuidance },
                     )
                 }
                 composable("fab-overlay") {

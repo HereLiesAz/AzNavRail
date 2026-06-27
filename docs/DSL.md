@@ -361,9 +361,28 @@ The three DSL functions are declared inside the `AzHostActivityLayout { ... }` c
 
 ~~~kotlin
 fun azStatus(id: String, predicate: () -> Boolean)
-fun azEdge(from: String, to: String? = null, text: String, title: String? = null, highlightItemId: String? = null)
+fun azEdge(
+    from: String, to: String? = null, text: String? = null, title: String? = null,
+    highlightItemId: String? = null,      // a rail item, or the AZ_ITEM_ACTIVE token
+    highlightTargetId: String? = null,    // a registered arbitrary shape (azGuidanceTarget)
+    highlightSelector: (() -> String?)? = null,   // a rail item id resolved each frame
+    steps: List<AzInstructionStep> = emptyList(), // paged sub-pointers (tap / advanceWhen)
+)
 fun azGoal(id: String, target: String, label: String? = null, autoStartWhen: String? = null)
+
+// Arbitrary on-screen highlight target (window-space px shape, recomputed each frame; null ⇒ text-only).
+fun azGuidanceTarget(id: String, shape: () -> AzGuideShape?)
+// Hide guidance while `predicate` is true; re-show after `settleMs` once it clears.
+fun azSuppressGuide(settleMs: Long = 700, predicate: () -> Boolean)
+// Draw the callout body yourself (the dim/spotlight still draw).
+fun azGuideRenderer(renderer: @Composable (AzGuidanceSnapshot, Rect?) -> Unit)
 ~~~
+
+`AzGuideShape` is `Circle` / `Rect` / `Path` in window-space px (see §9.6 of the Complete Guide); a step
+is `AzInstructionStep(text, title?, highlightItemId?, highlightTargetId?, side?, highlightSelector?,
+advanceWhen?)`. An informational step (no `advanceWhen`) advances on tap; an actionable one advances
+when its status flips. The React port mirrors these as `<AzGuidanceTarget>`, `<AzSuppressGuide>`,
+`<AzGuideRenderer>`, and `steps` / `highlightTargetId` props on `<AzEdge>`.
 
 ~~~kotlin
 import com.hereliesaz.aznavrail.tutorial.*
@@ -438,8 +457,10 @@ function Launcher() {
 
 `AzGuidanceController` (both platforms): `enabled`, `activeGoals`, `completedGoals`, `enable()`,
 `disable()`, `activate(goalId)`, `deactivate(goalId)`, `markReached(goalId)`, `isCompleted(goalId)`.
-Completed goals persist under key `az_navrail_completed_goals` (Android `SharedPreferences` file
-`az_tutorial_prefs`; React `localStorage` / RN `AsyncStorage`).
+For paged edges it also exposes `advance(stepKey)` / `next(stepKey)` / `back(stepKey)` and a no-arg
+`advance()`, and for observation `currentInstructions` / `current` (an `AzGuidanceSnapshot` list; Kotlin
+also has `currentFlow`). Completed goals persist under key `az_navrail_completed_goals` (Android
+`SharedPreferences` file `az_tutorial_prefs`; React `localStorage` / RN `AsyncStorage`).
 
 ---
 

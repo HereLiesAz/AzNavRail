@@ -55,6 +55,13 @@ each target over a light dim instead of a real punch-out. Routing, callouts, and
 identical; only the highlight rendering differs. There is no plan to emulate a pixel-perfect punch-out
 on web.
 
+The same applies to **arbitrary shape targets** (`AzGuidanceTarget` / `highlightTargetId`): Android
+punches the actual `Circle` / `Rect` / `Path` geometry out of the dim, while React rings the target's
+**bounding box** (a `Path` target is therefore approximated by its AABB, not its true outline). The
+resolved shape is still published on the controller (`currentInstructions[i].resolvedShape`), so a host
+that wants a pixel-accurate highlight can draw it itself via `<AzGuideRenderer>` or by observing the
+snapshot.
+
 ## `AzActivity` / `AzGraphInterface`
 
 The Android library exposes an `AzActivity` base class plus a KSP-generated

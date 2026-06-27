@@ -86,13 +86,18 @@ import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 import com.hereliesaz.aznavrail.model.AzOrientation
+import com.hereliesaz.aznavrail.tutorial.AzGuideHighlight
 import com.hereliesaz.aznavrail.tutorial.AzInstructionOverlay
 import com.hereliesaz.aznavrail.tutorial.LocalAzGuidanceController
 import com.hereliesaz.aznavrail.tutorial.computeAutoEdges
 import com.hereliesaz.aznavrail.tutorial.computeBuiltinStatuses
 import com.hereliesaz.aznavrail.tutorial.rememberActiveStatuses
 import com.hereliesaz.aznavrail.tutorial.rememberAzGuidanceController
+import com.hereliesaz.aznavrail.tutorial.rememberGuidanceSuppressed
+import com.hereliesaz.aznavrail.tutorial.resolveShape
 import com.hereliesaz.aznavrail.tutorial.routeInstructions
+import com.hereliesaz.aznavrail.tutorial.stepKey
+import com.hereliesaz.aznavrail.tutorial.toSnapshot
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
@@ -917,6 +922,10 @@ fun AzNavRail(
         }
     }
 
+    // Host-driven suppression (e.g. while a gesture is in progress); observed even when the overlay is
+    // hidden so it can re-show after the settle delay. Must be called unconditionally each recomposition.
+    val guidanceSuppressed by rememberGuidanceSuppressed(scope.guidanceSuppressors)
+
     if (guidanceController.enabled &&
         hostScope?.aboutVisible != true && hostScope?.moreFromAzVisible != true
     ) {
@@ -931,7 +940,8 @@ fun AzNavRail(
             )
         }
         // Cache the BFS routing: recompute only when the edges/goals/statuses change (or the reactive
-        // active-goal set, read inside derivedStateOf) — not on every recomposition from drag/animation.
+        // active-goal set / paged-step cursor, read inside derivedStateOf) — not on every recomposition
+        // from drag/animation.
         val frame = remember(guidanceEdges, guidanceGoalsMap, activeStatuses) {
             derivedStateOf {
                 routeInstructions(
@@ -939,6 +949,7 @@ fun AzNavRail(
                     goals = guidanceGoalsMap,
                     activeGoalIds = guidanceController.activeGoals,
                     activeStatuses = activeStatuses,
+                    stepIndexOf = { guidanceController.stepIndex(it) },
                 )
             }
         }.value
@@ -946,11 +957,42 @@ fun AzNavRail(
         LaunchedEffect(frame.reachedGoals, guidanceController) {
             frame.reachedGoals.forEach { guidanceController.markReached(it) }
         }
-        AzInstructionOverlay(
-            instructions = frame.instructions,
-            itemBoundsCache = scope.itemBoundsCache,
-            accent = if (scope.activeColor != Color.Unspecified) scope.activeColor else MaterialTheme.colorScheme.primary,
-        )
+        // Persist reactive step advances into the cursor so a later tap continues from the shown step.
+        LaunchedEffect(frame.resolved, guidanceController) {
+            frame.resolved.forEach { r ->
+                if (r.stepTotal > 1 && guidanceController.stepIndex(r.edge.stepKey()) < r.stepIndex) {
+                    guidanceController.setStep(r.edge.stepKey(), r.stepIndex)
+                }
+            }
+        }
+        // Publish the observable snapshot. Target shapes are NOT resolved here (that would subscribe the
+        // composition to a moving target's per-frame state); the host has its own shape and gets the
+        // `targetId`. Non-target highlights resolve cheaply from the stable bounds cache.
+        val activeItemId = guidanceActiveItemId
+        val snapshots = remember(frame.resolved, activeItemId, scope.itemBoundsCache.toMap()) {
+            frame.resolved.map { r ->
+                val h = r.instruction.highlight
+                val shape = if (h is AzGuideHighlight.Target) null
+                else h.resolveShape(scope.itemBoundsCache, activeItemId, emptyMap())
+                r.toSnapshot(shape, activeItemId)
+            }
+        }
+        LaunchedEffect(snapshots, guidanceController) { guidanceController.publishCurrent(snapshots) }
+
+        if (!guidanceSuppressed) {
+            AzInstructionOverlay(
+                resolved = frame.resolved,
+                itemBoundsCache = scope.itemBoundsCache,
+                accent = if (scope.activeColor != Color.Unspecified) scope.activeColor else MaterialTheme.colorScheme.primary,
+                activeItemId = activeItemId,
+                targets = scope.guidanceTargets,
+                controller = guidanceController,
+                renderSlot = scope.guidanceRenderer,
+            )
+        }
+    } else {
+        // Nothing showing: clear the published snapshot so observers see an empty state.
+        LaunchedEffect(guidanceController) { guidanceController.publishCurrent(emptyList()) }
     }
 }
 

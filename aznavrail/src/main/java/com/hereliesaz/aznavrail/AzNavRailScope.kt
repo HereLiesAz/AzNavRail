@@ -1,11 +1,16 @@
 package com.hereliesaz.aznavrail
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Rect
+import com.hereliesaz.aznavrail.tutorial.AzGuidanceSnapshot
+import com.hereliesaz.aznavrail.tutorial.AzGuideShape
+import com.hereliesaz.aznavrail.tutorial.AzInstructionStep
+import com.hereliesaz.aznavrail.tutorial.toHighlight
 import androidx.compose.animation.core.Easing
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -182,16 +187,53 @@ interface AzNavRailScope {
      * Registers a guidance **edge**: while status [from] is true, the shown instruction tells the user
      * how to make status [to] true (an interactive hop). A passive edge ([to] = `null`) just shows the
      * instruction while [from] holds. AzNavHost auto-generates edges for rail affordances; author edges
-     * here for transitions into your own custom statuses. [highlightItemId]/[highlightArea] choose what
-     * the callout is placed next to.
+     * here for transitions into your own custom statuses.
+     *
+     * Choose what the callout is placed next to, in precedence order:
+     *  - [highlightTargetId] — a host-registered arbitrary on-screen shape (see [azGuidanceTarget]);
+     *  - [highlightSelector] — a rail item id resolved every frame (for runtime/dynamic items);
+     *  - [highlightItemId] — a static rail item id, or the [AZ_ITEM_ACTIVE][com.hereliesaz.aznavrail.tutorial.AZ_ITEM_ACTIVE]
+     *    token to spotlight the currently-active item.
+     *
+     * Provide [steps] to make the edge **paged**: several sub-pointers under one milestone, revealed one
+     * at a time (informational steps advance on tap; a step with `advanceWhen` advances reactively). When
+     * [steps] is given, [text]/[highlight*] describe only the fallback first callout; the steps drive it.
      */
     fun azEdge(
         from: String,
         to: String? = null,
-        text: String,
+        text: String? = null,
         title: String? = null,
         highlightItemId: String? = null,
+        highlightTargetId: String? = null,
+        highlightSelector: (() -> String?)? = null,
+        steps: List<AzInstructionStep> = emptyList(),
     )
+
+    /**
+     * Registers a **moving on-screen highlight target** the guidance overlay can spotlight by id (via
+     * `azEdge(highlightTargetId = id)`). [shape] returns the current [AzGuideShape] in **window-space px**
+     * (circle / rounded-rect / path), recomputed every frame, so the spotlight can track an object drawn
+     * over a camera/AR canvas. Return `null` while the target is absent (the callout degrades to
+     * text-only). Read Compose snapshot state inside [shape] for smooth tracking.
+     */
+    fun azGuidanceTarget(id: String, shape: () -> AzGuideShape?)
+
+    /**
+     * Suppresses all guidance while [predicate] is true — drive it from your own gesture state so a
+     * callout never pops over an in-progress pinch/drag. When [predicate] flips back to false, guidance
+     * re-shows after a [settleMs] settle delay. Several suppressors compose (OR); the largest [settleMs]
+     * wins. Like a status predicate, [predicate] may read Compose state (instant) or a plain
+     * `var`/`StateFlow.value` (resolved within a poll).
+     */
+    fun azSuppressGuide(settleMs: Long = 700, predicate: () -> Boolean)
+
+    /**
+     * Replaces the built-in guidance callout body with host-drawn content (the dim + spotlight punch-out
+     * still draw). [renderer] receives the current [AzGuidanceSnapshot] and the resolved target bounds
+     * (window-space px, or `null` when text-only) — for apps drawing bespoke callouts over a canvas.
+     */
+    fun azGuideRenderer(renderer: @Composable (AzGuidanceSnapshot, Rect?) -> Unit)
 
     /**
      * Declares a guidance **goal** — a [target] status the framework routes toward when the developer
@@ -647,6 +689,12 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     val guidanceEdges = mutableListOf<com.hereliesaz.aznavrail.tutorial.AzEdge>()
     /** Developer-declared guidance goals authored via `azGoal`. */
     val guidanceGoals = mutableListOf<com.hereliesaz.aznavrail.tutorial.AzGoal>()
+    /** Moving on-screen highlight targets authored via `azGuidanceTarget`: id → shape lambda (window px). */
+    val guidanceTargets = mutableMapOf<String, () -> AzGuideShape?>()
+    /** Host guidance suppressors authored via `azSuppressGuide`: `settleMs to predicate`. */
+    val guidanceSuppressors = mutableListOf<Pair<Long, () -> Boolean>>()
+    /** Optional host callout renderer authored via `azGuideRenderer`. */
+    var guidanceRenderer: (@Composable (AzGuidanceSnapshot, Rect?) -> Unit)? = null
 
     /**
      * Persisted reloc-item ordering keyed by `hostId`. Survives [reset] so drag-and-drop
@@ -677,6 +725,9 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         statusPredicates.clear()
         guidanceEdges.clear()
         guidanceGoals.clear()
+        guidanceTargets.clear()
+        guidanceSuppressors.clear()
+        guidanceRenderer = null
         itemBoundsCache.clear()
         // Without this, IDs registered on pass N stay in the set on pass N+1 and
         // the next recomposition crashes the moment any ID re-registers.
@@ -827,17 +878,46 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         statusPredicates[id] = predicate
     }
 
-    override fun azEdge(from: String, to: String?, text: String, title: String?, highlightItemId: String?) {
-        val highlight = if (highlightItemId != null) {
-            com.hereliesaz.aznavrail.tutorial.AzGuideHighlight.Item(highlightItemId)
+    override fun azEdge(
+        from: String,
+        to: String?,
+        text: String?,
+        title: String?,
+        highlightItemId: String?,
+        highlightTargetId: String?,
+        highlightSelector: (() -> String?)?,
+        steps: List<AzInstructionStep>,
+    ) {
+        val instruction = if (steps.isNotEmpty()) {
+            // Paged edge: the fallback instruction mirrors the first step so a non-paged renderer still
+            // shows something; the `steps` list drives the paging.
+            val first = steps.first()
+            com.hereliesaz.aznavrail.tutorial.AzInstruction(
+                text = first.text,
+                title = first.title ?: title,
+                highlight = first.toHighlight(),
+                side = first.side,
+            )
         } else {
-            com.hereliesaz.aznavrail.tutorial.AzGuideHighlight.None
+            com.hereliesaz.aznavrail.tutorial.AzInstruction(
+                text = text ?: "",
+                title = title,
+                highlight = com.hereliesaz.aznavrail.tutorial.resolveAzHighlight(highlightItemId, highlightSelector, highlightTargetId),
+            )
         }
-        guidanceEdges += com.hereliesaz.aznavrail.tutorial.AzEdge(
-            from = from,
-            to = to,
-            instruction = com.hereliesaz.aznavrail.tutorial.AzInstruction(text = text, title = title, highlight = highlight),
-        )
+        guidanceEdges += com.hereliesaz.aznavrail.tutorial.AzEdge(from = from, to = to, instruction = instruction, steps = steps)
+    }
+
+    override fun azGuidanceTarget(id: String, shape: () -> AzGuideShape?) {
+        guidanceTargets[id] = shape
+    }
+
+    override fun azSuppressGuide(settleMs: Long, predicate: () -> Boolean) {
+        guidanceSuppressors += settleMs to predicate
+    }
+
+    override fun azGuideRenderer(renderer: @Composable (AzGuidanceSnapshot, Rect?) -> Unit) {
+        guidanceRenderer = renderer
     }
 
     override fun azGoal(id: String, target: String, label: String?, autoStartWhen: String?) {
