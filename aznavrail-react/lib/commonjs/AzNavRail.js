@@ -262,39 +262,9 @@ const AzNavRailInner = props => {
     return () => clearInterval(t);
   }, [applyAutoExpansions]);
 
-  // --- Status-driven guidance (the reactive replacement for the scripted tutorial) ---
-  // Observe which statuses are true, route from the live state toward each active goal, and render the
-  // next-hop instruction as a callout adjacent to its target. Auto-advances when a target becomes true.
-  const guidance = (0, _AzGuidanceController.useAzGuidanceContext)();
-  const guidanceActiveItemId = (0, _react.useMemo)(() => {
-    var _items$find;
-    return ((_items$find = items.find(it => it.route && it.route === currentDestination)) === null || _items$find === void 0 ? void 0 : _items$find.id) ?? null;
-  }, [items, currentDestination]);
-  const guidanceClassifiers = props.activeClassifiers;
-  const guidanceBuiltins = (0, _react.useCallback)(() => (0, _AzStatusEngine.computeBuiltinStatuses)({
-    railExpanded: isExpanded,
-    railFloating: isFloating,
-    hostStates,
-    currentRoute: currentDestination,
-    activeItemId: guidanceActiveItemId,
-    nestedRailOpenId: nestedRailVisible,
-    helpOpen: infoScreen
-  }), [isExpanded, isFloating, hostStates, currentDestination, guidanceActiveItemId, nestedRailVisible, infoScreen]);
-  const activeStatuses = (0, _AzStatusEngine.useActiveStatuses)(guidance.statusPredicates, guidanceClassifiers, guidanceBuiltins);
-  const guidanceEdges = (0, _react.useMemo)(() => [...guidance.edges, ...(0, _AzGuidance.computeAutoEdges)(items)], [guidance.edges, items]);
-  const guidanceFrame = (0, _react.useMemo)(() => (0, _AzGuidance.routeInstructions)(guidanceEdges, guidance.goals, guidance.activeGoals, activeStatuses), [guidanceEdges, guidance.goals, guidance.activeGoals, activeStatuses]);
-  // Self-arming onboarding goals: activate once their trigger status holds (unless already completed).
-  (0, _react.useEffect)(() => {
-    Object.values(guidance.goals).forEach(goal => {
-      if (goal.autoStartWhen && activeStatuses.has(goal.autoStartWhen) && !guidance.isCompleted(goal.id) && !guidance.activeGoals.includes(goal.id)) {
-        guidance.activate(goal.id);
-      }
-    });
-  }, [activeStatuses, guidance]);
-  // Auto-advance: a goal whose target is now true is reached → deactivate it and persist.
-  (0, _react.useEffect)(() => {
-    guidanceFrame.reachedGoals.forEach(g => guidance.markReached(g));
-  }, [guidanceFrame, guidance]);
+  // Status-driven guidance runs in its own isolated <AzGuidanceLayer> (rendered below) so its engine
+  // state never re-renders this host — keeping the rail's item-registry effect timing untouched.
+
   (0, _react.useEffect)(() => {
     const id = pan.addListener(value => {
       panValue.current = value;
@@ -953,11 +923,73 @@ const AzNavRailInner = props => {
       translucentBackground: config.translucentBackground
     },
     onDismiss: () => setShowMoreFromAz(false)
-  }), !showAbout && !showMoreFromAz && guidance.enabled && /*#__PURE__*/_react.default.createElement(_AzInstructionOverlay.AzInstructionOverlay, {
-    instructions: guidanceFrame.instructions,
+  }), !showAbout && !showMoreFromAz && /*#__PURE__*/_react.default.createElement(AzGuidanceLayer, {
+    items: items,
     itemBounds: itemBounds,
+    isExpanded: isExpanded,
+    isFloating: isFloating,
+    hostStates: hostStates,
+    currentDestination: currentDestination,
+    nestedRailVisible: nestedRailVisible,
+    infoScreen: infoScreen,
+    activeClassifiers: props.activeClassifiers,
     accent: typeof config.activeColor === 'string' ? config.activeColor : undefined
   })));
+};
+
+/**
+ * Isolated host for the status-driven guidance engine. Rendered as a sibling inside `AzNavRailInner`,
+ * it receives the live rail state as props and owns all guidance reactivity (status polling, routing,
+ * auto-advance, `autoStartWhen`) — so when those update, only this component re-renders, never the
+ * rail itself. That keeps the rail's fragile item-registry effect timing untouched.
+ */
+const AzGuidanceLayer = ({
+  items,
+  itemBounds,
+  isExpanded,
+  isFloating,
+  hostStates,
+  currentDestination,
+  nestedRailVisible,
+  infoScreen,
+  activeClassifiers,
+  accent
+}) => {
+  const guidance = (0, _AzGuidanceController.useAzGuidanceContext)();
+  const activeItemId = (0, _react.useMemo)(() => {
+    var _items$find;
+    return ((_items$find = items.find(it => it.route && it.route === currentDestination)) === null || _items$find === void 0 ? void 0 : _items$find.id) ?? null;
+  }, [items, currentDestination]);
+  const builtins = (0, _react.useCallback)(() => (0, _AzStatusEngine.computeBuiltinStatuses)({
+    railExpanded: isExpanded,
+    railFloating: isFloating,
+    hostStates,
+    currentRoute: currentDestination,
+    activeItemId,
+    nestedRailOpenId: nestedRailVisible,
+    helpOpen: infoScreen
+  }), [isExpanded, isFloating, hostStates, currentDestination, activeItemId, nestedRailVisible, infoScreen]);
+  const activeStatuses = (0, _AzStatusEngine.useActiveStatuses)(guidance.statusPredicates, activeClassifiers, builtins);
+  const edges = (0, _react.useMemo)(() => [...guidance.edges, ...(0, _AzGuidance.computeAutoEdges)(items)], [guidance.edges, items]);
+  const frame = (0, _react.useMemo)(() => (0, _AzGuidance.routeInstructions)(edges, guidance.goals, guidance.activeGoals, activeStatuses), [edges, guidance.goals, guidance.activeGoals, activeStatuses]);
+  // Self-arming onboarding goals: activate once their trigger status holds (unless already completed).
+  (0, _react.useEffect)(() => {
+    Object.values(guidance.goals).forEach(goal => {
+      if (goal.autoStartWhen && activeStatuses.has(goal.autoStartWhen) && !guidance.isCompleted(goal.id) && !guidance.activeGoals.includes(goal.id)) {
+        guidance.activate(goal.id);
+      }
+    });
+  }, [activeStatuses, guidance]);
+  // Auto-advance: a goal whose target is now true is reached → deactivate it and persist.
+  (0, _react.useEffect)(() => {
+    frame.reachedGoals.forEach(g => guidance.markReached(g));
+  }, [frame, guidance]);
+  if (!guidance.enabled) return null;
+  return /*#__PURE__*/_react.default.createElement(_AzInstructionOverlay.AzInstructionOverlay, {
+    instructions: frame.instructions,
+    itemBounds: itemBounds,
+    accent: accent
+  });
 };
 
 /**

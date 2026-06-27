@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { AzStatusPredicate } from './AzStatus';
 
 /** Poll interval for status predicates backed by non-React sources (a ref, an external store). */
@@ -55,40 +55,33 @@ export function useActiveStatuses(
   activeClassifiers: Set<string> | string[] | undefined,
   builtins: () => Set<string>,
 ): Set<string> {
-  const predicatesRef = useRef(predicates);
-  predicatesRef.current = predicates;
-  const builtinsRef = useRef(builtins);
-  builtinsRef.current = builtins;
-  const classifiersRef = useRef(activeClassifiers);
-  classifiersRef.current = activeClassifiers;
-
-  const [active, setActive] = useState<Set<string>>(() => new Set());
-
-  const recompute = useCallback(() => {
-    const out = new Set<string>();
-    builtinsRef.current().forEach((s) => out.add(s));
-    const cls = classifiersRef.current;
-    if (cls) (Array.isArray(cls) ? cls : Array.from(cls)).forEach((c) => out.add(c));
-    const preds = predicatesRef.current;
-    for (const id in preds) {
-      try {
-        if (preds[id]()) out.add(id);
-      } catch {
-        /* a throwing predicate is treated as false */
-      }
-    }
-    setActive((prev) => (setsEqual(prev, out) ? prev : out));
+  // A periodic tick re-evaluates predicates backed by non-React sources (a ref, an external store)
+  // within the poll interval. React-state/prop-driven inputs are caught for free because the host
+  // re-renders, which re-runs this hook. We compute the set DURING render (cheap, pure reads) and
+  // stabilize its identity via a ref — so there is NO render-coupled `setState`, which would otherwise
+  // risk a "maximum update depth" loop with the rail's own per-render effects.
+  const [, setPollTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setPollTick((x) => x + 1), STATUS_POLL_MS);
+    return () => clearInterval(t);
   }, []);
 
-  // After every render: React-state/prop-driven predicates and builtins are caught immediately.
-  useEffect(() => {
-    recompute();
-  });
-  // Low-rate poll: the safety net for predicates that aren't React state.
-  useEffect(() => {
-    const t = setInterval(recompute, STATUS_POLL_MS);
-    return () => clearInterval(t);
-  }, [recompute]);
+  const out = new Set<string>();
+  builtins().forEach((s) => out.add(s));
+  if (activeClassifiers) {
+    (Array.isArray(activeClassifiers) ? activeClassifiers : Array.from(activeClassifiers)).forEach((c) => out.add(c));
+  }
+  for (const id in predicates) {
+    try {
+      if (predicates[id]()) out.add(id);
+    } catch {
+      /* a throwing predicate is treated as false */
+    }
+  }
 
-  return active;
+  // Return a content-stable reference: identity only changes when the active set actually changes,
+  // so downstream memos/effects don't churn on every render.
+  const stable = useRef<Set<string>>(out);
+  if (!setsEqual(stable.current, out)) stable.current = out;
+  return stable.current;
 }
