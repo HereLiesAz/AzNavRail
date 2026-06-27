@@ -34,7 +34,9 @@ internal fun anySuppressorActive(suppressors: List<Pair<Long, () -> Boolean>>): 
  */
 @Composable
 internal fun rememberGuidanceSuppressed(suppressors: List<Pair<Long, () -> Boolean>>): State<Boolean> {
-    val suppressed = remember { mutableStateOf(false) }
+    // Seed from the live state (the combiner is pure) so the overlay starts hidden when it should —
+    // no one-frame flash of guidance over a gesture that is already in progress at first composition.
+    val suppressed = remember { mutableStateOf(anySuppressorActive(suppressors)) }
     val current = rememberUpdatedState(suppressors)
     // Re-launch only when crossing the empty/non-empty boundary; fresh predicates are read via `current`.
     LaunchedEffect(suppressors.isEmpty()) {

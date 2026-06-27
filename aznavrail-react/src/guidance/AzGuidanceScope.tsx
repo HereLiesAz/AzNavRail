@@ -77,18 +77,33 @@ export const AzEdge: React.FC<AzEdgeProps> = (props) => {
     props.highlightItemId ?? '',
     props.highlightTargetId ?? '',
     props.highlightSelector ? 'sel' : '',
-    JSON.stringify(props.steps ?? []),
+    // Serialize steps by value (functions are dropped by JSON.stringify), but encode each step's
+    // selector *presence* so toggling a step's highlightSelector on/off re-registers. Identity changes
+    // of an existing selector are handled live via propsRef in the effect below — not here.
+    JSON.stringify((props.steps ?? []).map((s) => ({
+      text: s.text, title: s.title, highlightItemId: s.highlightItemId,
+      highlightTargetId: s.highlightTargetId, side: s.side, advanceWhen: s.advanceWhen,
+      sel: s.highlightSelector ? 'sel' : '',
+    }))),
   ].join('|');
   useEffect(() => {
     const p = propsRef.current;
+    // `sig` deliberately ignores `highlightSelector` identity (and JSON.stringify drops the function
+    // fields of `steps`) so a fresh selector closure each render can't loop register→bump→render. The
+    // tradeoff is that the registered edge must resolve selectors LIVE from `propsRef` — otherwise it
+    // would freeze the first render's closure and the spotlight would point at a stale item.
+    const liveEdgeSelector = p.highlightSelector ? () => propsRef.current.highlightSelector?.() ?? null : undefined;
+    const liveSteps = p.steps?.map((s, idx) =>
+      s.highlightSelector ? { ...s, highlightSelector: () => propsRef.current.steps?.[idx]?.highlightSelector?.() ?? null } : s,
+    );
     let instruction: AzInstruction;
-    if (p.steps && p.steps.length > 0) {
-      const first = p.steps[0];
+    if (liveSteps && liveSteps.length > 0) {
+      const first = liveSteps[0];
       instruction = { text: first.text, title: first.title ?? p.title, highlight: stepHighlight(first), side: first.side };
     } else {
-      instruction = { text: p.text ?? '', title: p.title, highlight: resolveAzHighlight(p.highlightItemId, p.highlightSelector, p.highlightTargetId) };
+      instruction = { text: p.text ?? '', title: p.title, highlight: resolveAzHighlight(p.highlightItemId, liveEdgeSelector, p.highlightTargetId) };
     }
-    reg.registerEdge(keyRef.current!, { from, to: to ?? null, instruction, steps: p.steps });
+    reg.registerEdge(keyRef.current!, { from, to: to ?? null, instruction, steps: liveSteps });
     return () => reg.unregisterEdge(keyRef.current!);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reg, from, to, sig]);

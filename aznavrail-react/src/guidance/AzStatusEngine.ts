@@ -63,7 +63,8 @@ export function anySuppressorActive(suppressors: Array<[number, () => boolean]>)
 export function useGuidanceSuppressed(suppressors: Array<[number, () => boolean]>): boolean {
   const rawNow = anySuppressorActive(suppressors);
   const settleMs = suppressors.reduce((m, [s]) => Math.max(m, s), 0);
-  const [suppressed, setSuppressed] = useState(false);
+  // Seed from the live state so the overlay starts hidden when it should (no first-render flash).
+  const [suppressed, setSuppressed] = useState(rawNow);
   // Poll so predicates backed by non-React sources resolve within the interval.
   const [, setTick] = useState(0);
   useEffect(() => {

@@ -134,7 +134,11 @@ private fun PlacedCallout(
         // target never triggers a parent layout pass or recomposition.
         Box(
             modifier = Modifier.graphicsLayer {
-                val b = boundsProvider() ?: return@graphicsLayer
+                // A moving/dynamic target can be momentarily unmeasured; hide (alpha 0) rather than let
+                // the callout flash at (0,0) with the default translation for that frame.
+                val b = boundsProvider()
+                if (b == null) { alpha = 0f; return@graphicsLayer }
+                alpha = 1f
                 translationX = b.left.coerceIn(0f, (screenWidthPx - calloutWidthPx).coerceAtLeast(0f))
                 translationY = if (b.bottom + belowReservePx < screenHeightPx) b.bottom + gapPx
                 else (b.top - belowReservePx).coerceAtLeast(0f)
