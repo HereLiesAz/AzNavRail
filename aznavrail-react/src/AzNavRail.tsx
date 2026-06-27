@@ -194,6 +194,16 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   useEffect(() => { showFloatingButtonsRef.current = showFloatingButtons; }, [showFloatingButtons]);
   useEffect(() => { itemsRef.current = items; }, [items]);
 
+  // Harden against a host auto-expanding (or any reorder/add/remove) mid-shuffle: zero every
+  // sibling-displacement offset so a stale one can't leave an item rendered on top of its neighbour.
+  // Mirrors the Android RailItems structural-change guard. Keyed on item ids + expanded host set,
+  // since expansion changes the visible layout without changing the items array.
+  const expandedHostKey = Object.keys(hostStates).filter((k) => hostStates[k]).sort().join(',');
+  const structuralKey = items.map((i) => i.id).join(',') + '|' + expandedHostKey;
+  useEffect(() => {
+    Object.values(itemOffsets.current).forEach((anim) => anim.setValue(0));
+  }, [structuralKey]);
+
   // Host auto-expansion — parity with Android's `expandWhen` / per-host `initiallyExpanded`. A host
   // expands on the rising edge of its `expandWhen` condition and collapses on the falling edge; a
   // manual collapse while the condition stays true is preserved (we act only on a real transition).

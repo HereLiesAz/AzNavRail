@@ -174,8 +174,9 @@ export const AzWebTutorialOverlay: React.FC<AzWebTutorialOverlayProps> = ({
 
   return (
     <div style={styles.root}>
-      {/* 1. Scene content */}
-      <div style={styles.sceneContent}>{currentScene.content()}</div>
+      {/* 1. Scene content is intentionally NOT rendered — the overlay sits over the live screen, so
+            re-rendering scene.content() (often the whole app, including the rail) would draw a second,
+            state-divergent copy and double/offset the rail's labels. See AzScene.content (deprecated). */}
 
       {/* 2. Dim overlay (no bounds: full dim) */}
       {!isFullScreen && !bounds && (

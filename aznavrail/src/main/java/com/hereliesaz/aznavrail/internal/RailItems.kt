@@ -181,6 +181,25 @@ internal fun RailItems(
     val onDragDelta: (Float) -> Unit = { delta -> dragOffset += delta }
     val onDragTargetChange: (Int) -> Unit = { index -> currentDropTargetIndex = index }
     val onMenuOpen: (String) -> Unit = { id -> hiddenMenuOpenId = id }
+
+    // Any change to the *visible* item set — a host auto-expands via `expandWhen` (the
+    // AnimatedVisibility below reveals sub-items and shifts everything beneath it), a reorder, or
+    // items added/removed — must abort an in-flight drag/snap. Otherwise a leftover additive
+    // `Modifier.offset` (snap-back or drag reflow) keeps an item drawn at its OLD slot while its real
+    // slot has moved, rendering it on top of a neighbour (two labels overlap). Keyed on the item ids
+    // AND the set of expanded hosts, because expansion changes the visible layout without changing
+    // `scope.navItems` itself.
+    val expandedHostKey = hostStates.filterValues { it }.keys.sorted().joinToString(",")
+    val structuralKey = scope.navItems.joinToString(",") { it.id } + "|" + expandedHostKey
+    LaunchedEffect(structuralKey) {
+        if (snappingOffsets.isNotEmpty()) snappingOffsets.clear()
+        if (draggedItemId != null) {
+            draggedItemId = null
+            dragOffset = 0f
+            currentDropTargetIndex = null
+        }
+    }
+
     val onHeightReported: (String, Int) -> Unit = { id, height -> itemHeights = itemHeights + (id to height) }
     val onWidthReported: (String, Int) -> Unit = { id, width -> itemWidths = itemWidths + (id to width) }
     val onHiddenMenuDismiss: () -> Unit = { hiddenMenuOpenId = null }

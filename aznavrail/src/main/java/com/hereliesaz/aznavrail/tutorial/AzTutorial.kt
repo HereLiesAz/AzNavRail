@@ -73,8 +73,14 @@ data class AzCard(
 data class AzScene(
     /** Unique identifier for this scene, used for branching and navigation. */
     val id: String,
-    /** The composable content rendered as the scene background. */
-    val content: @Composable () -> Unit,
+    /**
+     * Deprecated and no longer rendered. The tutorial is an overlay drawn ON TOP of the live screen,
+     * so the live UI already is the backdrop. This used to be re-rendered as the "scene background",
+     * but when an app passed its own screen here it produced a second, state-divergent copy of the
+     * rail (doubled/offset item labels once a host expanded). Leave it unset; put any illustration on
+     * the card's `mediaContent` instead.
+     */
+    val content: @Composable () -> Unit = {},
     /** The ordered list of cards to display in this scene. */
     val cards: List<AzCard>,
     /** Optional callback invoked when this scene completes. */
@@ -113,13 +119,14 @@ class AzTutorialBuilder {
      *
      * @param id Unique identifier for the scene.
      * @param onComplete Optional callback invoked when this scene completes.
-     * @param content The composable rendered as the scene background.
+     * @param content Deprecated and ignored — the tutorial overlays the live screen, so leave it
+     *   unset. (Passing your screen here used to draw a divergent second rail; see [AzScene.content].)
      * @param block Lambda with [AzSceneBuilder] receiver for configuring cards and branches.
      */
     fun scene(
         id: String,
         onComplete: (() -> Unit)? = null,
-        content: @Composable () -> Unit,
+        content: @Composable () -> Unit = {},
         block: AzSceneBuilder.() -> Unit,
     ) {
         val builder = AzSceneBuilder()

@@ -173,10 +173,11 @@ export const AzTutorialOverlay: React.FC<AzTutorialOverlayProps> = ({
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      {/* 1. Scene content */}
-      <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-        {currentScene.content()}
-      </View>
+      {/* 1. Scene content is intentionally NOT rendered. This overlay sits OVER the live screen, so
+            the live UI is already the backdrop. Re-rendering scene.content() — which apps commonly set
+            to their whole screen — would draw a second, state-divergent copy of the rail (its own host
+            expansion state), so after an expandWhen host expands the two copies diverge and item labels
+            render doubled/offset. The dim + cutout + card below operate on the live rail's bounds. */}
 
       {/* 2. Dimmed overlay + cutout */}
       {!isFullScreen && (

@@ -248,8 +248,12 @@ export interface AzCard {
 export interface AzScene {
   /** Unique identifier for this scene; used as a branch target. */
   id: string;
-  /** Renders the demo UI shown behind the tutorial card overlay. */
-  content: () => React.ReactNode;
+  /**
+   * @deprecated No longer rendered. The tutorial overlays the live screen, so the live UI is already
+   * the backdrop. Passing your screen here drew a second, state-divergent copy of the rail (doubled/
+   * offset item labels once a host expanded). Leave it unset; put illustrations on the card instead.
+   */
+  content?: () => React.ReactNode;
   /** Sequence of instructional cards displayed during this scene. */
   cards: AzCard[];
   /** Called when all cards in this scene have been completed. */

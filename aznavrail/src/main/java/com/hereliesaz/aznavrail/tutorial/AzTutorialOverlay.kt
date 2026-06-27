@@ -171,8 +171,13 @@ fun AzTutorialOverlay(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // 1. Scene content
-        currentScene.content()
+        // NOTE: we intentionally do NOT render `currentScene.content()` here. This overlay is always
+        // composed OVER the live screen (the rail and its host content are already on screen beneath
+        // it), so the live UI *is* the scene backdrop. Re-rendering `scene.content()` — which apps
+        // commonly set to their whole screen — would draw a SECOND, state-divergent copy of the rail
+        // (its own `hostStates`), so after an `expandWhen` host expands in the live rail the two
+        // copies' layouts diverge and item labels render doubled/offset. The dim layer + spotlight +
+        // card below operate on the live rail via `itemBoundsCache`, so nothing here needs it.
 
         // 2. Dimmed overlay (with punch-out for non-fullscreen highlights)
         if (!isFullScreen) {
