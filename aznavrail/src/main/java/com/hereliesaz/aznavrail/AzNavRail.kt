@@ -88,6 +88,9 @@ import com.hereliesaz.aznavrail.model.AzOrientation
 import com.hereliesaz.aznavrail.tutorial.AzTutorialOverlay
 import com.hereliesaz.aznavrail.tutorial.LocalAzTutorialController
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -349,19 +352,30 @@ fun AzNavRail(
         }
     }
 
-    // Reactive expansion: watch each host's `expandWhen` condition via snapshotFlow so changes in
-    // Compose state captured by the lambda are detected automatically. Rising edge expands the host;
-    // falling edge collapses it. The user can still collapse a host while its condition is true
-    // (the condition only acts on transitions, not continuously).
-    LaunchedEffect(scope.navItems) {
-        scope.expandWhenMap.forEach { (id, cond) ->
+    // Reactive expansion: a host with `expandWhen` expands on the rising edge of its condition and
+    // collapses on the falling edge. A manual collapse while the condition stays true is preserved
+    // (the condition acts on transitions, never continuously), so we apply only on an actual change.
+    //
+    // Keyed on the STABLE set of expandWhen host ids — not `scope.navItems`, whose contents change on
+    // every item-value update, which used to tear down and relaunch the collectors and swallow the
+    // rising edge. Each host is observed via `snapshotFlow` (instant for Compose snapshot state) merged
+    // with a low-rate poll, so conditions backed by plain sources (`StateFlow.value`, `LiveData.value`,
+    // a `var`) — which `snapshotFlow` cannot see — still drive expansion (within the poll interval).
+    val expandWhenKeys = scope.expandWhenMap.keys.sorted().joinToString(",")
+    LaunchedEffect(expandWhenKeys) {
+        scope.expandWhenMap.toMap().forEach { (id, cond) ->
             launch {
-                snapshotFlow { cond() }.collect { conditionNow ->
-                    val conditionBefore = expandWhenSeen[id] ?: false
-                    if (conditionNow && !conditionBefore) {
-                        hostStates[id] = true
-                    } else if (!conditionNow && conditionBefore) {
-                        hostStates[id] = false
+                merge(
+                    snapshotFlow { cond() },
+                    flow { while (true) { emit(cond()); delay(300) } },
+                ).distinctUntilChanged().collect { conditionNow ->
+                    val before = expandWhenSeen[id]
+                    when {
+                        // First observation: only auto-expand on a true condition; never clobber an
+                        // initiallyExpanded/manual state with a collapse here.
+                        before == null -> if (conditionNow) hostStates[id] = true
+                        // A real transition: rising edge expands, falling edge collapses.
+                        before != conditionNow -> hostStates[id] = conditionNow
                     }
                     expandWhenSeen[id] = conditionNow
                 }
