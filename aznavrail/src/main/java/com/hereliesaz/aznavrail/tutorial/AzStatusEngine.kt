@@ -77,6 +77,7 @@ internal fun computeBuiltinStatuses(
     onscreenVisibleIds: Set<String> = emptySet(),
 ): Set<String> {
     val out = HashSet<String>()
+    out.add("az.app.ready") // always-true root, so navigation auto-edges have a reachable `from`.
     if (railExpanded) out.add("az.rail.expanded") else out.add("az.rail.collapsed")
     if (railFloating) out.add("az.rail.floating")
     hostStates.forEach { (id, expanded) -> if (expanded) out.add("az.host.$id.expanded") }

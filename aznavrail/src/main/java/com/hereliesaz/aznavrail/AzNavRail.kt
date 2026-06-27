@@ -85,8 +85,15 @@ import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 import com.hereliesaz.aznavrail.model.AzOrientation
+import com.hereliesaz.aznavrail.tutorial.AzInstructionOverlay
 import com.hereliesaz.aznavrail.tutorial.AzTutorialOverlay
+import com.hereliesaz.aznavrail.tutorial.LocalAzGuidanceController
 import com.hereliesaz.aznavrail.tutorial.LocalAzTutorialController
+import com.hereliesaz.aznavrail.tutorial.computeAutoEdges
+import com.hereliesaz.aznavrail.tutorial.computeBuiltinStatuses
+import com.hereliesaz.aznavrail.tutorial.rememberActiveStatuses
+import com.hereliesaz.aznavrail.tutorial.rememberAzGuidanceController
+import com.hereliesaz.aznavrail.tutorial.routeInstructions
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
@@ -885,6 +892,73 @@ fun AzNavRail(
                 )
             }
         }
+    }
+
+    // --- Status-driven guidance (the reactive replacement for the scripted tutorial) ---
+    // The engine observes which statuses are true, routes from the live state toward each active goal,
+    // and renders the next-hop instruction as a callout adjacent to its target — auto-advancing the
+    // instant a target status becomes true. The controller is host-provided (so the developer's handle,
+    // returned from AzHostActivityLayout, drives the same instance); standalone rails fall back locally.
+    val guidanceFallback = rememberAzGuidanceController()
+    val guidanceController = LocalAzGuidanceController.current ?: guidanceFallback
+
+    val guidanceActiveItemId = scope.navItems.firstOrNull { item ->
+        (item.route != null && item.route == actualCurrentDestination) ||
+            item.classifiers.any { scope.activeClassifiers.contains(it) }
+    }?.id
+
+    val activeStatuses by rememberActiveStatuses(
+        statusPredicates = scope.statusPredicates,
+        activeClassifiers = scope.activeClassifiers,
+        builtins = {
+            computeBuiltinStatuses(
+                railExpanded = isExpanded,
+                railFloating = isFloating,
+                hostStates = hostStates,
+                currentRoute = actualCurrentDestination,
+                activeItemId = guidanceActiveItemId,
+                nestedRailOpenId = scope.nestedRailOpenId,
+                helpOpen = showHelpOverlay,
+            )
+        },
+    )
+
+    val guidanceGoalsMap = remember(scope.guidanceGoals.toList()) {
+        scope.guidanceGoals.associateBy { it.id }
+    }
+    // Self-arming onboarding goals: activate once their trigger status holds (unless already completed).
+    LaunchedEffect(activeStatuses, guidanceGoalsMap) {
+        guidanceGoalsMap.values.forEach { goal ->
+            val trigger = goal.autoStartWhen
+            if (trigger != null && trigger in activeStatuses &&
+                !guidanceController.isCompleted(goal.id) && goal.id !in guidanceController.activeGoals
+            ) {
+                guidanceController.activate(goal.id)
+            }
+        }
+    }
+
+    if (guidanceController.enabled &&
+        hostScope?.aboutVisible != true && hostScope?.moreFromAzVisible != true
+    ) {
+        val guidanceEdges = remember(scope.guidanceEdges.toList(), scope.navItems.toList()) {
+            scope.guidanceEdges + computeAutoEdges(scope.navItems)
+        }
+        val frame = routeInstructions(
+            edges = guidanceEdges,
+            goals = guidanceGoalsMap,
+            activeGoalIds = guidanceController.activeGoals,
+            activeStatuses = activeStatuses,
+        )
+        // Auto-advance: a goal whose target is now true is reached → deactivate it and persist.
+        LaunchedEffect(frame.reachedGoals) {
+            frame.reachedGoals.forEach { guidanceController.markReached(it) }
+        }
+        AzInstructionOverlay(
+            instructions = frame.instructions,
+            itemBoundsCache = scope.itemBoundsCache,
+            accent = if (scope.activeColor != Color.Unspecified) scope.activeColor else MaterialTheme.colorScheme.primary,
+        )
     }
 }
 
