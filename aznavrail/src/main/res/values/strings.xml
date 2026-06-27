@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Default text for the auto-generated guidance instructions (the status-driven tutorial). These
+      are emitted by AzNavHost for the rail's own affordances; apps localize them by overriding these
+      ids in their own res/values-<locale>/strings.xml. %1$s is the tapped item's label.
+    -->
+    <string name="az_guide_open_menu">Open the menu</string>
+    <string name="az_guide_tap_item">Tap %1$s</string>
+</resources>

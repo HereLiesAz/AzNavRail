@@ -79,15 +79,17 @@ internal fun AzInstructionOverlay(
                 }
             } else {
                 // Place adjacent: below the target if there's room, otherwise above; clamp horizontally.
+                // Offset in the draw phase via graphicsLayer so re-positioning during rail
+                // animation/drag never triggers a parent layout pass or recomposition.
                 val belowHasRoom = r.bottom + with(density) { 96.dp.toPx() } < screenHeightPx
                 val xPx = r.left.coerceIn(0f, (screenWidthPx - with(density) { 240.dp.toPx() }).coerceAtLeast(0f))
                 val yPx = if (belowHasRoom) r.bottom + with(density) { 8.dp.toPx() }
                 else (r.top - with(density) { 96.dp.toPx() }).coerceAtLeast(0f)
                 Box(
-                    modifier = Modifier.padding(
-                        start = with(density) { xPx.toDp() },
-                        top = with(density) { yPx.toDp() },
-                    ),
+                    modifier = Modifier.graphicsLayer {
+                        translationX = xPx
+                        translationY = yPx
+                    },
                 ) { Callout(instruction, accent) }
             }
         }

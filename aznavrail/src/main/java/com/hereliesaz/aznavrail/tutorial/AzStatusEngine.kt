@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -35,14 +36,19 @@ internal fun rememberActiveStatuses(
     builtins: () -> Set<String>,
 ): State<Set<String>> {
     val customActive = remember { mutableStateMapOf<String, Boolean>() }
+    // Keyed on the stable id set so collectors aren't torn down on unrelated recompositions. The
+    // predicate lambdas are resolved fresh per evaluation through `currentPredicates`, so a developer
+    // re-passing a new lambda for the same id is honored without restarting the running collectors.
+    val currentPredicates by rememberUpdatedState(statusPredicates)
     val keysSignature = statusPredicates.keys.sorted().joinToString(",")
     LaunchedEffect(keysSignature) {
         customActive.clear()
-        statusPredicates.toMap().forEach { (id, predicate) ->
+        currentPredicates.keys.forEach { id ->
             launch {
+                val evaluate = { currentPredicates[id]?.invoke() ?: false }
                 merge(
-                    snapshotFlow { predicate() },
-                    flow { while (true) { emit(predicate()); delay(STATUS_POLL_MS) } },
+                    snapshotFlow { evaluate() },
+                    flow { while (true) { emit(evaluate()); delay(STATUS_POLL_MS) } },
                 ).distinctUntilChanged().collect { isOn -> customActive[id] = isOn }
             }
         }

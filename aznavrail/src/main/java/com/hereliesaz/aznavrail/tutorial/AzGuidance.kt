@@ -103,18 +103,26 @@ val LocalAzGuidanceController = staticCompositionLocalOf<AzGuidanceController?> 
  *
  * Rail items are tappable from anywhere (`az.app.ready`); menu-only items require the menu open
  * (`az.rail.expanded`). Each edge spotlights its own item.
+ *
+ * The instruction text is supplied by the caller ([openMenuLabel] and the [tapLabel] formatter) so it
+ * can be sourced from localized string resources; the English defaults keep this pure function usable
+ * from tests. Apps localize by overriding `R.string.az_guide_open_menu` / `R.string.az_guide_tap_item`.
  */
-internal fun computeAutoEdges(items: List<AzNavItem>): List<AzEdge> {
+internal fun computeAutoEdges(
+    items: List<AzNavItem>,
+    openMenuLabel: String = "Open the menu",
+    tapLabel: (String) -> String = { "Tap $it" },
+): List<AzEdge> {
     val edges = ArrayList<AzEdge>()
     edges += AzEdge(
         from = "az.rail.collapsed",
         to = "az.rail.expanded",
-        instruction = AzInstruction("Open the menu", highlight = AzGuideHighlight.None),
+        instruction = AzInstruction(openMenuLabel, highlight = AzGuideHighlight.None),
     )
     items.forEach { item ->
         val visibleFrom = if (item.isRailItem) "az.app.ready" else "az.rail.expanded"
         val highlight = AzGuideHighlight.Item(item.id)
-        val tap = "Tap ${item.text.ifBlank { item.id }}"
+        val tap = tapLabel(item.text.ifBlank { item.id })
         when {
             item.isHost -> edges += AzEdge(visibleFrom, "az.host.${item.id}.expanded", AzInstruction(tap, highlight = highlight))
             item.isNestedRail -> edges += AzEdge(visibleFrom, "az.nestedRail.${item.id}.open", AzInstruction(tap, highlight = highlight))

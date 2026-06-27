@@ -61,6 +61,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
@@ -927,7 +928,8 @@ fun AzNavRail(
         scope.guidanceGoals.associateBy { it.id }
     }
     // Self-arming onboarding goals: activate once their trigger status holds (unless already completed).
-    LaunchedEffect(activeStatuses, guidanceGoalsMap) {
+    // Keyed on the controller too, so it re-binds if the host-provided instance replaces the fallback.
+    LaunchedEffect(activeStatuses, guidanceGoalsMap, guidanceController) {
         guidanceGoalsMap.values.forEach { goal ->
             val trigger = goal.autoStartWhen
             if (trigger != null && trigger in activeStatuses &&
@@ -941,17 +943,30 @@ fun AzNavRail(
     if (guidanceController.enabled &&
         hostScope?.aboutVisible != true && hostScope?.moreFromAzVisible != true
     ) {
-        val guidanceEdges = remember(scope.guidanceEdges.toList(), scope.navItems.toList()) {
-            scope.guidanceEdges + computeAutoEdges(scope.navItems)
+        // Auto-edge instruction text comes from localizable string resources (apps override the ids).
+        val openMenuLabel = stringResource(R.string.az_guide_open_menu)
+        val tapTemplate = stringResource(R.string.az_guide_tap_item)
+        val guidanceEdges = remember(scope.guidanceEdges.toList(), scope.navItems.toList(), openMenuLabel, tapTemplate) {
+            scope.guidanceEdges + computeAutoEdges(
+                items = scope.navItems,
+                openMenuLabel = openMenuLabel,
+                tapLabel = { label -> String.format(tapTemplate, label) },
+            )
         }
-        val frame = routeInstructions(
-            edges = guidanceEdges,
-            goals = guidanceGoalsMap,
-            activeGoalIds = guidanceController.activeGoals,
-            activeStatuses = activeStatuses,
-        )
+        // Cache the BFS routing: recompute only when the edges/goals/statuses change (or the reactive
+        // active-goal set, read inside derivedStateOf) — not on every recomposition from drag/animation.
+        val frame = remember(guidanceEdges, guidanceGoalsMap, activeStatuses) {
+            derivedStateOf {
+                routeInstructions(
+                    edges = guidanceEdges,
+                    goals = guidanceGoalsMap,
+                    activeGoalIds = guidanceController.activeGoals,
+                    activeStatuses = activeStatuses,
+                )
+            }
+        }.value
         // Auto-advance: a goal whose target is now true is reached → deactivate it and persist.
-        LaunchedEffect(frame.reachedGoals) {
+        LaunchedEffect(frame.reachedGoals, guidanceController) {
             frame.reachedGoals.forEach { guidanceController.markReached(it) }
         }
         AzInstructionOverlay(
