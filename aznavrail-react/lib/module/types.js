@@ -31,6 +31,39 @@ export let AzHeaderIconShape = /*#__PURE__*/function (AzHeaderIconShape) {
   return AzHeaderIconShape;
 }({});
 
+/**
+ * Windows-Phone-7-style entrance for a menu/rail item or the screen title. Items animate in when
+ * their panel opens, cascaded by position via `entranceStaggerMs`.
+ */
+export let AzEntrance = /*#__PURE__*/function (AzEntrance) {
+  /** No animation — appears immediately. */
+  AzEntrance["None"] = "None";
+  /** Fades up from transparent. */
+  AzEntrance["Fade"] = "Fade";
+  /** Rises into place (vertical slide) while fading. */
+  AzEntrance["SlideUp"] = "SlideUp";
+  /** The signature WP7 sweep: swings in around the docked edge like a turnstile (rotateY). */
+  AzEntrance["Turnstile"] = "Turnstile";
+  return AzEntrance;
+}({});
+
+/** Optional exit for a menu/rail item when its panel dismisses or collapses. */
+export let AzExit = /*#__PURE__*/function (AzExit) {
+  /** No exit — the item just unmounts. */
+  AzExit["None"] = "None";
+  /** Fades out. */
+  AzExit["Fade"] = "Fade";
+  /** Swings out around the docked edge (rotateY). */
+  AzExit["Turnstile"] = "Turnstile";
+  return AzExit;
+}({});
+
+/** Reusable easings for AzNavRail's kinetic typography. */
+export const AzEasing = {
+  /** WP7's signature fast-out / gentle-settle bezier control points `[x1, y1, x2, y2]`. */
+  Wp7Decelerate: [0.1, 0.9, 0.2, 1]
+};
+
 /** Layout direction of a nested-rail popup relative to its host item. */
 export let AzNestedRailAlignment = /*#__PURE__*/function (AzNestedRailAlignment) {
   /** Items stack in a column next to the host. */
@@ -75,24 +108,6 @@ export let AzVisualSide = /*#__PURE__*/function (AzVisualSide) {
 }({});
 
 /** Configuration bag passed to `<AzNavRail>` to control appearance and behaviour. */
-
-/**
- * Describes what the tutorial overlay highlights during a card step.
- * Discriminated by the `type` field.
- */
-
-/**
- * Specifies what the user must do to advance past a tutorial card.
- * Discriminated by the `type` field.
- */
-
-/** A single instructional card shown within a tutorial scene. */
-
-/** A named step within an `AzTutorial`, consisting of UI content and one or more instructional cards. */
-
-/** A complete interactive tutorial composed of one or more scenes. */
-
-/** Runtime controller for the tutorial system, obtained via `useAzTutorialController()`. */
 
 /** A single entry in the long-press hidden menu of a draggable reloc item. */
 

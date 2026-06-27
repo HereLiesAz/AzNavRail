@@ -19,7 +19,8 @@ const RailMenuItem = ({
   isExpandedHost,
   onToggleHost,
   onItemClick,
-  renderSubItems
+  renderSubItems,
+  textStyle
 }) => {
   const [displayOption, setDisplayOption] = (0, _react.useState)(item.selectedOption);
   const timerRef = (0, _react.useRef)(null);
@@ -77,7 +78,7 @@ const RailMenuItem = ({
     style: [styles.menuItemText, {
       fontWeight: item.isHost ? 'bold' : 'normal',
       color: item.textColor ?? item.color ?? '#000000'
-    }]
+    }, textStyle]
   }, displayText), item.isHost && /*#__PURE__*/_react.default.createElement(_reactNative.Text, {
     style: {
       marginLeft: 8

@@ -25,6 +25,34 @@ export declare enum AzHeaderIconShape {
     /** Square icon container with softly rounded corners. */
     ROUNDED = "ROUNDED"
 }
+/**
+ * Windows-Phone-7-style entrance for a menu/rail item or the screen title. Items animate in when
+ * their panel opens, cascaded by position via `entranceStaggerMs`.
+ */
+export declare enum AzEntrance {
+    /** No animation — appears immediately. */
+    None = "None",
+    /** Fades up from transparent. */
+    Fade = "Fade",
+    /** Rises into place (vertical slide) while fading. */
+    SlideUp = "SlideUp",
+    /** The signature WP7 sweep: swings in around the docked edge like a turnstile (rotateY). */
+    Turnstile = "Turnstile"
+}
+/** Optional exit for a menu/rail item when its panel dismisses or collapses. */
+export declare enum AzExit {
+    /** No exit — the item just unmounts. */
+    None = "None",
+    /** Fades out. */
+    Fade = "Fade",
+    /** Swings out around the docked edge (rotateY). */
+    Turnstile = "Turnstile"
+}
+/** Reusable easings for AzNavRail's kinetic typography. */
+export declare const AzEasing: {
+    /** WP7's signature fast-out / gentle-settle bezier control points `[x1, y1, x2, y2]`. */
+    Wp7Decelerate: [number, number, number, number];
+};
 /** Layout direction of a nested-rail popup relative to its host item. */
 export declare enum AzNestedRailAlignment {
     /** Items stack in a column next to the host. */
@@ -100,7 +128,11 @@ export interface AzNavRailSettings {
     secLoc?: string;
     /** Port for the secret-location server (developer feature). */
     secLocPort?: number;
-    /** URL of the app's source repository, shown in the footer and used by the in-app About reader. */
+    /**
+     * URL of the app's source repository, shown in the footer and used by the in-app About reader.
+     * Required to surface "About": when unset or blank, the "About" entry is hidden entirely (the
+     * library never falls back to showing its own docs in a consuming app).
+     */
     appRepositoryUrl?: string;
     /**
      * When true (default), the footer "About" opens the in-app markdown reader (auto-generated from
@@ -123,129 +155,26 @@ export interface AzNavRailSettings {
     onItemGloballyPositioned?: (id: string, bounds: any) => void;
     /** Map of item id → help text shown in the info overlay (alternative to per-item `info` prop). */
     helpList?: Record<string, string>;
-    /** Map of tutorial id → `AzTutorial` definition; makes tutorials available to the help overlay. */
-    tutorials?: Record<string, AzTutorial>;
-}
-/**
- * Describes what the tutorial overlay highlights during a card step.
- * Discriminated by the `type` field.
- */
-export type AzHighlight = 
-/** Highlights an arbitrary rectangular region of the screen. */
-{
-    type: 'Area';
-    bounds: {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    };
-}
-/** Highlights the rail item with the given id, using its recorded layout bounds. */
- | {
-    type: 'Item';
-    id: string;
-}
-/** Darkens the entire screen with no spotlight cutout. */
- | {
-    type: 'FullScreen';
-}
-/** No highlight — card floats with no overlay darkening. */
- | {
-    type: 'None';
-};
-/**
- * Specifies what the user must do to advance past a tutorial card.
- * Discriminated by the `type` field.
- */
-export type AzAdvanceCondition = 
-/** A "Next" button is shown on the card; the user taps it to advance. */
-{
-    type: 'Button';
-}
-/** The user must tap the highlighted rail item to advance. */
- | {
-    type: 'TapTarget';
-}
-/** Any tap anywhere on the screen advances the card. */
- | {
-    type: 'TapAnywhere';
-}
-/** Advances when `fireEvent(name)` is called on the tutorial controller. */
- | {
-    type: 'Event';
-    name: string;
-};
-/** A single instructional card shown within a tutorial scene. */
-export interface AzCard {
-    /** Heading text rendered at the top of the card. */
-    title: string;
-    /** Body text explaining the step. */
-    text: string;
-    /** What the tutorial overlay highlights while this card is displayed. */
-    highlight?: AzHighlight;
-    /** What must happen for the tutorial to move past this card. Defaults to Button. */
-    advanceCondition?: AzAdvanceCondition;
-    /** Label for an optional secondary action button on the card. */
-    actionText?: string;
-    /** Callback invoked when the secondary action button is tapped. */
-    onAction?: () => void;
-    /**
-     * Branch map for `TapTarget` advance: maps tapped item id → scene id to jump to.
-     * Used when the card's `advanceCondition` is `TapTarget` and multiple items are valid targets.
-     */
-    branches?: Record<string, string>;
-    /** Renders optional media (image, animation, etc.) above the card text. */
-    mediaContent?: () => React.ReactNode;
-    /** Checklist items rendered as a bulleted list within the card. */
-    checklistItems?: string[];
-}
-/** A named step within an `AzTutorial`, consisting of UI content and one or more instructional cards. */
-export interface AzScene {
-    /** Unique identifier for this scene; used as a branch target. */
-    id: string;
-    /** Renders the demo UI shown behind the tutorial card overlay. */
-    content: () => React.ReactNode;
-    /** Sequence of instructional cards displayed during this scene. */
-    cards: AzCard[];
-    /** Called when all cards in this scene have been completed. */
-    onComplete?: () => void;
-    /** Name of the controller variable whose value is checked against `branches` to pick the next scene. */
-    branchVar?: string;
-    /** Map of variable-value → scene id; evaluated after this scene completes to determine the next scene. */
-    branches?: Record<string, string>;
-}
-/** A complete interactive tutorial composed of one or more scenes. */
-export interface AzTutorial {
-    /** Ordered list of scenes; playback starts from `scenes[0]` unless branched. */
-    scenes: AzScene[];
-    /** Called when the user finishes all scenes without skipping. */
-    onComplete?: () => void;
-    /** Called when the user skips the tutorial before it completes. */
-    onSkip?: () => void;
-}
-/** Runtime controller for the tutorial system, obtained via `useAzTutorialController()`. */
-export interface AzTutorialController {
-    /** Id of the tutorial currently playing, or `null` when no tutorial is active. */
-    activeTutorialId: string | null;
-    /** List of tutorial ids that have been marked as read (persisted via AsyncStorage). */
-    readTutorials: string[];
-    /** Arbitrary variables injected at `startTutorial` and used for scene branching. */
-    currentVariables: Record<string, any>;
-    /** Name of the most recently fired event waiting to be consumed, or `null`. */
-    pendingEvent: string | null;
-    /** Starts the tutorial with the given id, optionally seeding branch variables. */
-    startTutorial: (id: string, variables?: Record<string, any>) => void;
-    /** Immediately ends the active tutorial and clears all state. */
-    endTutorial: () => void;
-    /** Persists the tutorial id in AsyncStorage so `isTutorialRead` returns true. */
-    markTutorialRead: (id: string) => void;
-    /** Returns true if the tutorial with the given id has been previously read. */
-    isTutorialRead: (id: string) => boolean;
-    /** Sets `pendingEvent` so that an `Event`-type advance condition can resolve. */
-    fireEvent: (name: string) => void;
-    /** Clears `pendingEvent` after the overlay has consumed it. */
-    consumeEvent: () => void;
+    /** Entrance played by each expanded-menu item when the menu opens. Default `Turnstile`. */
+    itemEntrance?: AzEntrance;
+    /** Exit played by each item when the menu collapses. Default `Turnstile`. */
+    itemExit?: AzExit;
+    /** Style merged over each menu item's label (big/light/wide Metro type). */
+    itemTextStyle?: object;
+    /** Per-item cascade delay (ms), multiplied by position. Default 55. */
+    entranceStaggerMs?: number;
+    /** Duration (ms) of each item's entrance/exit. Default 360. */
+    entranceDurationMs?: number;
+    /** Starting rotateY (deg) for the turnstile sweep. Default 70. */
+    entranceStartAngle?: number;
+    /** When true, menu items tilt toward the press point (suppressed for draggable items). Default false. */
+    tiltOnPress?: boolean;
+    /** Maximum tilt angle (deg) for `tiltOnPress`. Default 10. */
+    maxTiltDegrees?: number;
+    /** Entrance for the big screen-boundary title, replayed when the active screen changes. Default `Turnstile`. */
+    titleEntrance?: AzEntrance;
+    /** Style merged over the big screen title's default. */
+    titleTextStyle?: object;
 }
 /** A single entry in the long-press hidden menu of a draggable reloc item. */
 export interface HiddenMenuItem {
@@ -330,10 +259,19 @@ export interface AzNavItem {
     hostId?: string;
     /** Whether this host item's sub-items are currently visible. */
     isExpanded: boolean;
+    /**
+     * Reactive condition: when the return value transitions false→true the host auto-expands;
+     * true→false auto-collapses. Not serialisable — lives only in the runtime item object.
+     */
+    expandWhen?: () => boolean;
+    /** When `true`, the host is expanded the first time it appears (one-shot). */
+    initiallyExpanded?: boolean;
     /** Called when the item is tapped. */
     onClick?: () => void;
     /** Called when the item gains focus. */
     onFocus?: () => void;
+    /** Called when this host item expands or collapses. Receives `true` on expand, `false` on collapse. Only fires on user-initiated toggles. */
+    onExpandedChange?: (expanded: boolean) => void;
     /** True when this item participates in drag-to-reorder within its host cluster. */
     isRelocItem?: boolean;
     /** Resolved hidden-menu entries shown on long-press for reloc items. */
@@ -430,6 +368,18 @@ export interface AzCyclerProps extends AzNavItemProps {
 }
 /** Props for host-type DSL items (`AzRailHostItem`, `AzMenuHostItem`) — a collapsible group header. */
 export interface AzHostItemProps extends AzNavItemProps {
+    /**
+     * Reactive condition evaluated on every render. When the value transitions from `false` to
+     * `true` the host auto-expands; when it transitions from `true` to `false` the host
+     * auto-collapses. A manual user collapse while the condition is `true` is respected — the
+     * condition acts again only on the next false→true edge. Omit (or pass `undefined`) to
+     * disable reactive expansion for this host.
+     */
+    expandWhen?: () => boolean;
+    /** When `true`, the host is expanded the first time it appears (one-shot; user can still collapse). */
+    initiallyExpanded?: boolean;
+    /** Called when this host item expands or collapses due to a user tap. Receives `true` on expand, `false` on collapse. */
+    onExpandedChange?: (expanded: boolean) => void;
 }
 /** Props for sub-item DSL components — an item nested under a host. */
 export interface AzSubItemProps extends AzNavItemProps {

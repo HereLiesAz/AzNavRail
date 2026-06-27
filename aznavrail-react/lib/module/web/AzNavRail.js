@@ -47,7 +47,7 @@ const AzNavRail = ({
     moreFromAzEnabled = true,
     moreFromAzJsonUrl = 'https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json',
     moreRailItem = false,
-    appRepositoryUrl = 'https://github.com/HereLiesAz/AzNavRail'
+    appRepositoryUrl
   } = settings;
 
   // If noMenu is true, we force expanded to false, unless infoScreen overrides (which it doesn't really)
@@ -134,6 +134,7 @@ const AzNavRail = ({
   const dragStartY = useRef(0);
   const longPressTimer = useRef(null);
   const itemsRef = useRef([]);
+  const expandWhenSeenRef = useRef({});
   useEffect(() => {
     setLocalNavItems(content || []);
   }, [content]);
@@ -178,6 +179,33 @@ const AzNavRail = ({
       Object.values(cyclerTimers.current).forEach(clearTimeout);
     };
   }, [navItems]);
+
+  // Evaluate expandWhen conditions after every render.
+  // Any parent state change causes re-render, re-evaluating conditions; edge detection then
+  // drives hostStates without requiring an external timer or subscription mechanism.
+  useEffect(() => {
+    let changed = false;
+    const updates = {};
+    const processItem = item => {
+      if (item.isHost && typeof item.expandWhen === 'function') {
+        const condNow = item.expandWhen();
+        const condBefore = expandWhenSeenRef.current[item.id] ?? false;
+        if (condNow !== condBefore) {
+          updates[item.id] = condNow;
+          expandWhenSeenRef.current[item.id] = condNow;
+          changed = true;
+        }
+      }
+      if (item.items) item.items.forEach(processItem);
+    };
+    navItems.forEach(processItem);
+    if (changed) {
+      setHostStates(prev => ({
+        ...prev,
+        ...updates
+      }));
+    }
+  });
   const handleCyclerClick = item => {
     var _cyclerStates$item$id;
     if (cyclerTimers.current[item.id]) {
@@ -604,7 +632,7 @@ const AzNavRail = ({
       padding: '8px 0',
       fontWeight: 'bold'
     }
-  }, appName), /*#__PURE__*/React.createElement("div", {
+  }, appName), !!appRepositoryUrl && /*#__PURE__*/React.createElement("div", {
     className: "az-menu-item-text",
     style: {
       padding: '4px 0',
@@ -614,7 +642,11 @@ const AzNavRail = ({
       if (inAppAbout) {
         setShowAbout(true);
         setIsExpanded(false);
-      } else window.open(appRepositoryUrl, '_blank', 'noopener');
+      }
+      // Only follow safe web URLs, never an injected scheme (e.g. javascript:).
+      else if (appRepositoryUrl.startsWith('http://') || appRepositoryUrl.startsWith('https://')) {
+        window.open(appRepositoryUrl, '_blank', 'noopener,noreferrer');
+      }
     }
   }, "About"), /*#__PURE__*/React.createElement("div", {
     className: "az-menu-item-text",
@@ -645,14 +677,19 @@ const AzNavRail = ({
     style: {
       marginTop: '8px'
     }
-  }, "Close"))), infoScreen && /*#__PURE__*/React.createElement(HelpOverlay, {
+  }, "Close"))), infoScreen && /*#__PURE__*/React.createElement("div", {
+    style: showAbout || showMoreFromAz ? {
+      opacity: 0,
+      pointerEvents: 'none'
+    } : undefined
+  }, /*#__PURE__*/React.createElement(HelpOverlay, {
     items: visibleItems,
     itemBounds: itemBounds,
     railWidth: collapsedRailWidth,
     onDismiss: onDismissInfoScreen,
     nestedRailVisibleId: nestedRailVisibleId,
     helpList: (settings === null || settings === void 0 ? void 0 : settings.helpList) || {}
-  }), showAbout && /*#__PURE__*/React.createElement(AboutOverlay, {
+  })), showAbout && !!appRepositoryUrl && /*#__PURE__*/React.createElement(AboutOverlay, {
     repoUrl: appRepositoryUrl,
     settings: settings,
     moreFromAzEnabled: moreFromAzEnabled,

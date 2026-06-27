@@ -44,6 +44,17 @@ has a meaningful web analog. The closest web primitive is `env(safe-area-inset-b
 applied by `AzBottomSheetInsetAware`, which is `0` on devices without a home indicator. No
 `drawBehindNavBar` flag is exposed on the React `AzSheetConfig`.
 
+## Guidance overlay: accent ring vs. punch-out spotlight
+
+The status-driven guidance framework reaches behavioural parity across platforms — the same
+`AzStatus` / `AzEdge` / `AzGoal` DSL, the same built-in `az.*` statuses and auto-edges, the same
+auto-advancing routing, and the same `az_navrail_completed_goals` persistence key. One **minor visual**
+difference remains: the Android instruction overlay punches a true spotlight hole out of the dim layer
+(`BlendMode.Clear`), while the **React/web** `AzInstructionOverlay` draws an **accent ring** around
+each target over a light dim instead of a real punch-out. Routing, callouts, and advancement are
+identical; only the highlight rendering differs. There is no plan to emulate a pixel-perfect punch-out
+on web.
+
 ## `AzActivity` / `AzGraphInterface`
 
 The Android library exposes an `AzActivity` base class plus a KSP-generated

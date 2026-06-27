@@ -2,13 +2,36 @@
 
 ## Unreleased
 
+### Removed
+- **The scripted scene/card tutorial framework.** `AzTutorial`, `AzTutorialProvider` /
+  `AzWebTutorialProvider`, `useAzTutorialController` / `useAzWebTutorialController`, the scene/card
+  model, the four advance conditions, variable/scene branching, checklist/media cards, and the
+  `AzTutorialOverlay` are all gone, along with the help-overlay "Start Tutorial" launch affordance.
+
+### Added
+- **The status-driven guidance framework** replaces it. Describe the userflow as a flowchart of
+  **statuses** (string-id nodes) joined by **edges** (transitions carrying an instruction), declare
+  **goals** (target statuses), and activate them on the controller. The engine shows the instruction
+  to reach the next status toward each active goal, **auto-advances the instant a target status
+  becomes true** (no Next button), re-routes live, and shows every active goal's callout next to its
+  control. New exports: **`AzStatus`**, **`AzEdge`**, **`AzGoal`**, **`AzGuidanceProvider`**,
+  **`useAzGuidanceController`**, **`AzInstructionOverlay`**, **`useActiveStatuses`**,
+  **`computeBuiltinStatuses`**, **`nextHop`**, **`routeInstructions`**, and **`computeAutoEdges`**.
+  The controller exposes `enabled`, `activeGoals`, `completedGoals`, `enable()`, `disable()`,
+  `activate(id)`, `deactivate(id)`, `markReached(id)`, `isCompleted(id)`. Built-in `az.*` statuses and
+  auto-edges for rail affordances are published automatically; you hand-author `<AzEdge>` only into
+  your own custom statuses. Completed goals persist to `localStorage` (and `AsyncStorage` on RN) under
+  key `az_navrail_completed_goals` (replacing `az_navrail_read_tutorials`). **Parity note:** the
+  React/web overlay draws an **accent ring** around each target over a light dim, rather than a true
+  punch-out spotlight; routing and advancement are identical to Android.
+
 ### Changed
 - **About reader docs clarified for the repo-resolution split.** Android auto-derives the repo from
   the app namespace (`com.<owner>.<repo>` → `github.com/<owner>/<repo>`), so `appRepositoryUrl` is an
   optional override there and never falls back to the AzNavRail library repo. On **web** there is no
   package namespace, so `appRepositoryUrl` remains **required** (no auto-derivation); when it is unset
   the About entry is hidden. Also documented: the standalone `AzDropdownMenu`'s full-screen in-app
-  About reader, and that visible Help cards and any in-progress tutorial hide while a footer screen
+  About reader, and that visible Help cards and any guidance callouts hide while a footer screen
   (About / More from Az) is open and restore exactly where they were on close. Behavior on web is
   unchanged — docs/migration notes only.
 
@@ -60,19 +83,19 @@
 - **`initiallyExpanded` prop on `AzHostItemProps`.** Previously absent from the TypeScript
   interface; now documented alongside `expandWhen` for completeness.
 
-### Typical use — `expandWhen` + tutorial framework
+### Typical use — `expandWhen` + the guidance framework
 
 ```tsx
 <AzRailHostItem
   id="features"
   text="Features"
-  expandWhen={useCallback(() => activeTutorialId === 'onboarding', [activeTutorialId])}
+  expandWhen={useCallback(() => guidance.activeGoals.includes('onboarding'), [guidance.activeGoals])}
 />
 ```
 
-A tutorial card that spotlights a sub-item of a collapsed host would silently degrade
-(sub-item not laid out → not in `itemBoundsCache` → no punch-out). `expandWhen` ensures
-the host is open whenever the tutorial needs it.
+A guidance edge whose callout anchors to (`highlightItemId`) a sub-item of a collapsed host would
+silently degrade (sub-item not laid out → bounds unknown → no callout anchor). `expandWhen` ensures
+the host is open whenever guidance needs to point at the item.
 
 ### Removed
 - **The rail-coupled drop-down mode.** `dropdownMenu` / `dropdownSource` / `dropdownAlignment` /

@@ -1,7 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { HelpOverlay } from '../components/HelpOverlay';
-import { AzTutorialProvider } from '../tutorial/AzTutorialController';
 import { AzNavItem, AzButtonShape } from '../types';
 
 /**
@@ -25,8 +24,7 @@ const makeItem = (overrides: Partial<AzNavItem> & Pick<AzNavItem, 'id' | 'text'>
   ...overrides,
 });
 
-const renderWithProvider = (ui: React.ReactElement) =>
-  render(<AzTutorialProvider>{ui}</AzTutorialProvider>);
+const renderWithProvider = (ui: React.ReactElement) => render(ui);
 
 describe('HelpOverlay smoke', () => {
   it('renders a card for an item that has `info` text (info content drives card visibility)', () => {
@@ -101,16 +99,6 @@ describe('HelpOverlay smoke', () => {
     expect(() =>
       renderWithProvider(
         <HelpOverlay items={[]} onDismiss={jest.fn()} helpList={{}} itemBounds={{}} />
-      )
-    ).not.toThrow();
-  });
-
-  it('mounts when tutorials prop is omitted (tutorials default to {} per the prop default)', () => {
-    // Failure: If this throws, the destructuring default `tutorials = {}` is missing.
-    const items = [makeItem({ id: 'home', text: 'Home', info: 'I' })];
-    expect(() =>
-      renderWithProvider(
-        <HelpOverlay items={items} onDismiss={jest.fn()} helpList={{}} itemBounds={{}} />
       )
     ).not.toThrow();
   });

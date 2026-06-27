@@ -26,6 +26,11 @@ export * from './types';
 // (an explicit re-export takes precedence over `export *`).
 
 export { AzHelpRailItem, AzHelpSubItem } from './AzNavRailScope';
-export { AzTutorialContext, AzTutorialProvider, useAzTutorialController } from './tutorial/AzTutorialController';
-// `AzTutorialController` is a type declared in `./types`, not in the controller module.
+
+// --- Status-driven guidance framework (replaces the scripted tutorial) ---
+export { AzStatus, AzEdge, AzGoal } from './guidance/AzGuidanceScope';
+export { AzGuidanceProvider, useAzGuidanceController } from './guidance/AzGuidanceController';
+export { AzInstructionOverlay } from './components/AzInstructionOverlay';
+export { useActiveStatuses, computeBuiltinStatuses } from './guidance/AzStatusEngine';
+export { nextHop, routeInstructions, computeAutoEdges } from './guidance/AzGuidance';
 //# sourceMappingURL=index.js.map

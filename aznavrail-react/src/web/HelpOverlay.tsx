@@ -1,7 +1,6 @@
 /// <reference lib="dom" />
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { AzNavItem, AzTutorial } from '../types';
-import { useAzWebTutorialController } from './AzTutorialController';
+import { AzNavItem } from '../types';
 import './HelpOverlay.css';
 
 /** Props for {@link HelpOverlay}. */
@@ -28,12 +27,6 @@ interface HelpOverlayProps {
    * the nested popup, so listing their help cards would be noise).
    */
   nestedRailVisibleId?: string | null;
-  /**
-   * Map of tutorial definitions keyed by the item ID they are associated with; presence of a key
-   * causes a "Tutorial available" hint on the collapsed card and a "Start Tutorial" button on the
-   * expanded card.
-   */
-  tutorials?: Record<string, AzTutorial>;
 }
 
 /**
@@ -41,20 +34,12 @@ interface HelpOverlayProps {
  * text — and draws elbow-arrow connectors via a full-screen `<canvas>` element pointing from each
  * card back to its corresponding nav item.
  *
- * When a tutorial is registered for an item (via `tutorials`), the collapsed card shows a
- * "Tutorial available" hint and the expanded card shows a "Start Tutorial" button that calls
- * `tutorialController.startTutorial(item.id)` and dismisses the overlay.
- *
- * Uses {@link useAzWebTutorialController} internally, falling back to the no-op controller if no
- * `AzWebTutorialProvider` wraps the tree.
- *
  * @param props.items - Nav items to render help cards for.
  * @param props.railWidth - Width of the rail, used to position the card panel.
- * @param props.onDismiss - Called when the close button is pressed or a tutorial is started.
+ * @param props.onDismiss - Called when the close button is pressed.
  * @param props.itemBounds - Optional pre-measured bounds used as arrow connector endpoints.
  * @param props.helpList - Supplemental help text keyed by item ID.
  * @param props.nestedRailVisibleId - Item ID whose nested rail is open; when set, only that nested rail's items are shown in the overlay.
- * @param props.tutorials - Tutorial definitions keyed by item ID that enable the tutorial hint/button.
  */
 const HelpOverlay: React.FC<HelpOverlayProps> = ({
   items,
@@ -63,12 +48,10 @@ const HelpOverlay: React.FC<HelpOverlayProps> = ({
   itemBounds = {},
   helpList = {},
   nestedRailVisibleId = null,
-  tutorials = {},
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const descriptionsRef = useRef<HTMLDivElement>(null);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
-  const tutorialController = useAzWebTutorialController();
 
   const allItems = React.useMemo(() => {
     if (nestedRailVisibleId) {
@@ -160,7 +143,6 @@ const HelpOverlay: React.FC<HelpOverlayProps> = ({
 
           const titleText = (item.text ?? '').trim() || `Item ${item.id}`;
           const isExpanded = expandedItemId === item.id;
-          const hasTutorial = !!tutorials[item.id];
 
           return (
             <div
@@ -181,24 +163,7 @@ const HelpOverlay: React.FC<HelpOverlayProps> = ({
                 </div>
               )}
 
-              {hasTutorial && !isExpanded && (
-                <div style={tutorialHintStyle}>Tutorial available</div>
-              )}
-
-              {hasTutorial && isExpanded && (
-                <button
-                  style={startTutorialButtonStyle}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    tutorialController.startTutorial(item.id);
-                    onDismiss();
-                  }}
-                >
-                  Start Tutorial
-                </button>
-              )}
-
-              {isExpanded && !hasTutorial && (
+              {isExpanded && (
                 <div style={{ marginTop: 8, fontSize: '0.8em', color: 'gray' }}>
                   Tap to collapse
                 </div>
@@ -225,25 +190,6 @@ const clampStyle: React.CSSProperties = {
   WebkitBoxOrient: 'vertical',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
-};
-
-const tutorialHintStyle: React.CSSProperties = {
-  marginTop: 6,
-  fontSize: '0.75em',
-  color: '#aaa',
-  fontStyle: 'italic',
-};
-
-const startTutorialButtonStyle: React.CSSProperties = {
-  marginTop: 12,
-  background: '#6200EE',
-  color: '#fff',
-  border: 'none',
-  borderRadius: 16,
-  padding: '8px 16px',
-  fontSize: 13,
-  fontWeight: 600,
-  cursor: 'pointer',
 };
 
 export default HelpOverlay;
