@@ -171,6 +171,38 @@ interface AzNavRailScope {
     fun azAbout(inAppAbout: Boolean = true, moreFromAzEnabled: Boolean = true, moreFromAzJsonUrl: String = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json", moreRailItem: Boolean = false)
 
     /**
+     * Registers a status-driven guidance **status** — a named boolean [predicate] that becomes a node
+     * in the app's flowchart (see `tutorial/AzStatus.kt`). The predicate may read Compose snapshot
+     * state (observed instantly) or a plain source like `StateFlow.value` (observed within a poll).
+     * Built-in `az.*` statuses (rail/host/item/route/onscreen/sheet) and active classifiers are also
+     * statuses — you only register the ones your app domain needs.
+     */
+    fun azStatus(id: String, predicate: () -> Boolean)
+
+    /**
+     * Registers a guidance **edge**: while status [from] is true, the shown instruction tells the user
+     * how to make status [to] true (an interactive hop). A passive edge ([to] = `null`) just shows the
+     * instruction while [from] holds. AzNavHost auto-generates edges for rail affordances; author edges
+     * here for transitions into your own custom statuses. [highlightItemId]/[highlightArea] choose what
+     * the callout is placed next to.
+     */
+    fun azEdge(
+        from: String,
+        to: String? = null,
+        text: String,
+        title: String? = null,
+        highlightItemId: String? = null,
+    )
+
+    /**
+     * Declares a guidance **goal** — a [target] status the framework routes toward when the developer
+     * activates it on the guidance controller. Several goals may be active at once; each active goal's
+     * next-hop instruction is shown simultaneously, placed next to its own target. [autoStartWhen]
+     * self-activates the goal once that status becomes true (onboarding-style).
+     */
+    fun azGoal(id: String, target: String, label: String? = null, autoStartWhen: String? = null)
+
+    /**
      * A comprehensive configuration method combining settings, theme, and advanced options.
      * This mirrors the structure used in the `AZNAVRAIL_COMPLETE_GUIDE.md`.
      */
@@ -609,6 +641,15 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
      * whenever the corresponding host's expansion state transitions.
      */
     val onExpandedChangeMap = mutableMapOf<String, (Boolean) -> Unit>()
+
+    // --- Status-driven guidance framework (see tutorial/AzStatus.kt). All cleared on each reset. ---
+    /** Developer status predicates: a status id → `() -> Boolean`, observed reactively by the engine. */
+    val statusPredicates = mutableMapOf<String, () -> Boolean>()
+    /** Flowchart edges authored via `azEdge` (AzNavHost adds auto-edges for rail affordances at render). */
+    val guidanceEdges = mutableListOf<com.hereliesaz.aznavrail.tutorial.AzEdge>()
+    /** Developer-declared guidance goals authored via `azGoal`. */
+    val guidanceGoals = mutableListOf<com.hereliesaz.aznavrail.tutorial.AzGoal>()
+
     /**
      * Persisted reloc-item ordering keyed by `hostId`. Survives [reset] so drag-and-drop
      * reorders stick across recomposition (the DSL is re-applied on every recomposition and
@@ -635,6 +676,9 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         onRelocateMap.clear()
         expandWhenMap.clear()
         onExpandedChangeMap.clear()
+        statusPredicates.clear()
+        guidanceEdges.clear()
+        guidanceGoals.clear()
         itemBoundsCache.clear()
         // Without this, IDs registered on pass N stay in the set on pass N+1 and
         // the next recomposition crashes the moment any ID re-registers.
@@ -779,6 +823,27 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
             moreFromAzJsonUrl = moreFromAzJsonUrl,
             moreFromAzRailItem = moreRailItem
         )
+    }
+
+    override fun azStatus(id: String, predicate: () -> Boolean) {
+        statusPredicates[id] = predicate
+    }
+
+    override fun azEdge(from: String, to: String?, text: String, title: String?, highlightItemId: String?) {
+        val highlight = if (highlightItemId != null) {
+            com.hereliesaz.aznavrail.tutorial.AzGuideHighlight.Item(highlightItemId)
+        } else {
+            com.hereliesaz.aznavrail.tutorial.AzGuideHighlight.None
+        }
+        guidanceEdges += com.hereliesaz.aznavrail.tutorial.AzEdge(
+            from = from,
+            to = to,
+            instruction = com.hereliesaz.aznavrail.tutorial.AzInstruction(text = text, title = title, highlight = highlight),
+        )
+    }
+
+    override fun azGoal(id: String, target: String, label: String?, autoStartWhen: String?) {
+        guidanceGoals += com.hereliesaz.aznavrail.tutorial.AzGoal(id = id, target = target, label = label, autoStartWhen = autoStartWhen)
     }
 
     override fun azTheme(activeColor: Color, defaultShape: AzButtonShape, headerIconShape: AzHeaderIconShape, translucentBackground: Color, helpLineColors: List<Color>, headerIconSize: Dp) {
