@@ -1,153 +1,41 @@
 package com.hereliesaz.SampleApp.screens
 
-import android.util.Log
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.AzButton
-import com.hereliesaz.aznavrail.tutorial.AzAdvanceCondition
-import com.hereliesaz.aznavrail.tutorial.AzHighlight
-import com.hereliesaz.aznavrail.tutorial.AzTutorial
-import com.hereliesaz.aznavrail.tutorial.LocalAzTutorialController
-import com.hereliesaz.aznavrail.tutorial.azTutorial
+import com.hereliesaz.aznavrail.tutorial.LocalAzGuidanceController
 
-private const val TAG = "TutorialDemoScreen"
-
-/** Tutorial that walks through every public AzAdvanceCondition and AzHighlight variant. */
-val SampleTutorials: Map<String, AzTutorial> = mapOf(
-    "showcase-tour" to azTutorial {
-        onComplete { Log.d(TAG, "Showcase tour completed") }
-        onSkip { Log.d(TAG, "Showcase tour skipped") }
-
-        scene(
-            id = "intro",
-            content = { TutorialBackdrop(label = "Scene: intro", tint = Color(0xFF1565C0)) },
-        ) {
-            card(
-                title = "Welcome",
-                text = "This card uses AzAdvanceCondition.Button — tap the action to continue.",
-                advanceCondition = AzAdvanceCondition.Button,
-                actionText = "Next",
-                highlight = AzHighlight.FullScreen,
-            )
-            card(
-                title = "Tap-anywhere",
-                text = "Tap anywhere on the screen to advance past this card.",
-                advanceCondition = AzAdvanceCondition.TapAnywhere,
-                highlight = AzHighlight.None,
-            )
-        }
-
-        scene(
-            id = "targeting",
-            content = { TutorialBackdrop(label = "Scene: targeting", tint = Color(0xFF2E7D32)) },
-        ) {
-            card(
-                title = "Highlight: Item",
-                text = "AzHighlight.Item points at a nav-rail item by ID. The 'home' rail item is currently highlighted.",
-                highlight = AzHighlight.Item(id = "home"),
-                advanceCondition = AzAdvanceCondition.Button,
-            )
-            card(
-                title = "Tap target",
-                text = "AzAdvanceCondition.TapTarget requires the user to tap the highlighted area.",
-                highlight = AzHighlight.Item(id = "showcase-home"),
-                advanceCondition = AzAdvanceCondition.TapTarget,
-            )
-        }
-
-        scene(
-            id = "events",
-            content = { TutorialBackdrop(label = "Scene: events", tint = Color(0xFFEF6C00)) },
-        ) {
-            card(
-                title = "Event-driven advance",
-                text = "This card waits for the named event \"tutorial-go\". Fire it from the screen below to advance.",
-                advanceCondition = AzAdvanceCondition.Event("tutorial-go"),
-                highlight = AzHighlight.FullScreen,
-            )
-            card(
-                title = "Checklist card",
-                text = "Cards can carry a checklist for users to tick off before moving on.",
-                checklistItems = listOf("Inspect the highlight", "Read the body text", "Press Next when ready"),
-                advanceCondition = AzAdvanceCondition.Button,
-            )
-            card(
-                title = "Media card",
-                text = "Cards can host arbitrary composable media — anything from images to live previews.",
-                mediaContent = {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp)
-                            .background(Color(0xFFFFD54F))
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text("Live media content", color = Color.Black, fontWeight = FontWeight.Bold)
-                    }
-                },
-                advanceCondition = AzAdvanceCondition.Button,
-                actionText = "Finish",
-            )
-        }
-    },
-    "branching-demo" to azTutorial {
-        scene(
-            id = "branch-root",
-            content = { TutorialBackdrop(label = "Scene: branch-root", tint = Color(0xFF6A1B9A)) },
-        ) {
-            branch(varName = "path", branches = mapOf("a" to "branch-a", "b" to "branch-b"))
-            card(
-                title = "Branching",
-                text = "When this tutorial is started with variables = mapOf(\"path\" to \"a\" or \"b\") the next scene is chosen at runtime.",
-                advanceCondition = AzAdvanceCondition.Button,
-            )
-        }
-        scene(id = "branch-a", content = { TutorialBackdrop("Branch A", Color(0xFFC2185B)) }) {
-            card(title = "Path A", text = "You started this tutorial with path=a.")
-        }
-        scene(id = "branch-b", content = { TutorialBackdrop("Branch B", Color(0xFF0277BD)) }) {
-            card(title = "Path B", text = "You started this tutorial with path=b.")
-        }
-    },
-)
-
+/**
+ * Demonstrates the status-driven **guidance** framework (the reactive replacement for the old
+ * scripted scene/card tutorial).
+ *
+ * The statuses, edges and goals are declared in the host DSL in `MainApp` (`azStatus`/`azEdge`/
+ * `azGoal`). This screen only drives the [com.hereliesaz.aznavrail.tutorial.AzGuidanceController]:
+ * it activates goals, and the framework figures out — live — which instruction to show next and
+ * places each as a callout next to the control you'd use. There is no Next button; performing the
+ * action flips a status and the callout advances on its own.
+ *
+ * @param taskDone Current value of the custom `guide_task_done` status (owned by `MainApp`).
+ * @param onMarkTaskDone Flips that status true, satisfying the `guide_custom_task` goal.
+ * @param onResetTask Flips it back so the custom goal can be demoed again.
+ */
 @Composable
-private fun TutorialBackdrop(label: String, tint: Color) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(tint.copy(alpha = 0.25f)),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(label, color = tint, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
-fun TutorialDemoScreen() {
-    val controller = LocalAzTutorialController.current
-    val activeId by controller.activeTutorialId
-    var branchChoice by remember { mutableStateOf("a") }
+fun TutorialDemoScreen(
+    taskDone: Boolean,
+    onMarkTaskDone: () -> Unit,
+    onResetTask: () -> Unit,
+) {
+    val guidance = LocalAzGuidanceController.current
 
     Column(
         modifier = Modifier
@@ -156,37 +44,63 @@ fun TutorialDemoScreen() {
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Interactive Tutorials", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text("Status-driven guidance", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Text(
-            "Tutorials are built from a DSL of scenes and cards. Each card declares its highlight target and advance condition. Read-state is persisted to SharedPreferences via AzTutorialController.",
+            "Guidance describes the app as a flowchart of statuses and edges. You activate goals " +
+                "(target statuses); the framework always shows the instruction to reach the next status " +
+                "on the way there, auto-advancing the instant a target status becomes true and routing " +
+                "around wherever you actually are. Several goals can guide at once — each callout sits " +
+                "next to its own control.",
             style = MaterialTheme.typography.bodyMedium,
         )
-        Text("Active tutorial: ${activeId ?: "(none)"}", fontWeight = FontWeight.SemiBold)
-        Text("Marked-read tutorials: ${controller.readTutorials.joinToString().ifEmpty { "(none)" }}")
 
-        AzButton(
-            onClick = { controller.startTutorial("showcase-tour") },
-            text = "Start showcase-tour",
+        if (guidance == null) {
+            Text(
+                "No AzGuidanceController in scope — this screen must run inside AzHostActivityLayout.",
+                color = MaterialTheme.colorScheme.error,
+            )
+            return@Column
+        }
+
+        Text("Guidance enabled: ${guidance.enabled}", fontWeight = FontWeight.SemiBold)
+        Text("Active goals: ${guidance.activeGoals.joinToString().ifEmpty { "(none)" }}")
+        Text("Completed goals: ${guidance.completedGoals.joinToString().ifEmpty { "(none)" }}")
+        Text("Custom status guide_task_done: $taskDone")
+
+        Text("Master switch", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        AzButton(onClick = { guidance.enable() }, text = "enable()")
+        AzButton(onClick = { guidance.disable() }, text = "disable()")
+
+        Text("Activate a single goal", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        // Built-in target reached by an auto-generated edge ("Tap Bottom Sheets").
+        AzButton(onClick = { guidance.activate("guide_onboarding") }, text = "Guide me to Bottom Sheets")
+        // Built-in host target ("Tap Rail Host").
+        AzButton(onClick = { guidance.activate("guide_expand_host") }, text = "Guide me to expand Rail Host")
+        // Custom status reached by a hand-authored edge.
+        AzButton(onClick = { guidance.activate("guide_custom_task") }, text = "Guide me through the custom task")
+
+        Text("Two goals at once", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(
+            "Activates both the host-expand goal and the custom-task goal. Both instructions show " +
+                "simultaneously, each as a callout next to its own control.",
+            style = MaterialTheme.typography.bodySmall,
         )
         AzButton(
-            onClick = { controller.fireEvent("tutorial-go") },
-            text = "fireEvent(\"tutorial-go\")",
+            onClick = {
+                guidance.activate("guide_expand_host")
+                guidance.activate("guide_custom_task")
+            },
+            text = "Activate both (host + task)",
         )
+
+        Text("Satisfy / reset the custom status", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        AzButton(onClick = onMarkTaskDone, text = "Mark task done (flip guide_task_done)")
+        AzButton(onClick = onResetTask, text = "Reset task")
+
+        Text("Stop guiding", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         AzButton(
-            onClick = { controller.startTutorial("branching-demo", variables = mapOf("path" to branchChoice)) },
-            text = "Start branching-demo (path=$branchChoice)",
-        )
-        AzButton(
-            onClick = { branchChoice = if (branchChoice == "a") "b" else "a" },
-            text = "Toggle branch path",
-        )
-        AzButton(
-            onClick = { controller.markTutorialRead("showcase-tour") },
-            text = "markTutorialRead(\"showcase-tour\")",
-        )
-        AzButton(
-            onClick = { controller.endTutorial() },
-            text = "endTutorial()",
+            onClick = { guidance.activeGoals.toList().forEach { guidance.deactivate(it) } },
+            text = "Deactivate all goals",
         )
     }
 }

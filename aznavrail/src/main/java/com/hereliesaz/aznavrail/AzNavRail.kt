@@ -87,9 +87,7 @@ import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 import com.hereliesaz.aznavrail.model.AzOrientation
 import com.hereliesaz.aznavrail.tutorial.AzInstructionOverlay
-import com.hereliesaz.aznavrail.tutorial.AzTutorialOverlay
 import com.hereliesaz.aznavrail.tutorial.LocalAzGuidanceController
-import com.hereliesaz.aznavrail.tutorial.LocalAzTutorialController
 import com.hereliesaz.aznavrail.tutorial.computeAutoEdges
 import com.hereliesaz.aznavrail.tutorial.computeBuiltinStatuses
 import com.hereliesaz.aznavrail.tutorial.rememberActiveStatuses
@@ -263,8 +261,6 @@ fun AzNavRail(
     val hostScope = LocalAzNavHostScope.current as? AzNavHostScopeImpl
     val showHelpOverlay = hostScope?.helpVisible == true
     var wasFloatingOpenBeforeDrag by remember { mutableStateOf(false) }
-    val tutorialController = LocalAzTutorialController.current
-    val activeTutorialId by tutorialController.activeTutorialId
     val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
     val onSecretClick = SecretScreens(secLoc = scope.advancedConfig.secLoc, secLocPort = scope.advancedConfig.secLocPort)
 
@@ -321,25 +317,20 @@ fun AzNavRail(
 
     val toggleHelpOverlay = remember(scope, hostScope) {
         { itemId: String? ->
-            if (itemId != null && scope.advancedConfig.tutorials.containsKey(itemId)) {
-                tutorialController.startTutorial(itemId)
-                hostScope?.hideHelp() // ensure help overlay is closed
+            if (hostScope?.helpVisible == true) {
+                hostScope.hideHelp()
+                scope.advancedConfig.onDismissHelp?.invoke()
             } else {
-                if (hostScope?.helpVisible == true) {
-                    hostScope.hideHelp()
-                    scope.advancedConfig.onDismissHelp?.invoke()
-                } else {
-                    // Locate the tapped help item's parent nested rail (if any) so the overlay
-                    // can scope its cards to that rail. A help item under a `azNestedRail { ... }`
-                    // block lives in some parent's `nestedRailItems`; a main-rail help item lives
-                    // directly in scope.navItems and resolves to scope=null.
-                    val scopeId = itemId?.let { id ->
-                        scope.navItems.firstOrNull { parent ->
-                            parent.isNestedRail && parent.nestedRailItems?.any { it.id == id } == true
-                        }?.id
-                    }
-                    hostScope?.showHelp(scopeId)
+                // Locate the tapped help item's parent nested rail (if any) so the overlay
+                // can scope its cards to that rail. A help item under a `azNestedRail { ... }`
+                // block lives in some parent's `nestedRailItems`; a main-rail help item lives
+                // directly in scope.navItems and resolves to scope=null.
+                val scopeId = itemId?.let { id ->
+                    scope.navItems.firstOrNull { parent ->
+                        parent.isNestedRail && parent.nestedRailItems?.any { it.id == id } == true
+                    }?.id
                 }
+                hostScope?.showHelp(scopeId)
             }
         }
     }
@@ -879,21 +870,7 @@ fun AzNavRail(
     // The About reader, Help overlay, and "More from Az" carousel are now rendered by
     // AzHostActivityLayout (About + More-from-Az flow through the onscreen() layout path; Help stays
     // full-screen). The rail only flips their visibility on the host scope via the trigger handlers
-    // above. The interactive tutorial spotlight stays here — it is a guided overlay, not a content
-    // screen. It must be fully CLEARED from the screen while a footer screen (About / More-from-Az)
-    // is open — not merely dimmed — so it is not composed at all then.
-    if (hostScope?.aboutVisible != true && hostScope?.moreFromAzVisible != true) {
-        activeTutorialId?.let { tutorialId ->
-            scope.advancedConfig.tutorials[tutorialId]?.let { tutorial ->
-                AzTutorialOverlay(
-                    tutorialId = tutorialId,
-                    tutorial = tutorial,
-                    onDismiss = { tutorialController.endTutorial() },
-                    itemBoundsCache = scope.itemBoundsCache
-                )
-            }
-        }
-    }
+    // above.
 
     // --- Status-driven guidance (the reactive replacement for the scripted tutorial) ---
     // The engine observes which statuses are true, routes from the live state toward each active goal,

@@ -143,9 +143,8 @@ interface AzNavRailScope {
      * @param secLoc Optional developer configuration key to enable the Secret Screens.
      * @param secLocPort The network port used for the location history sync server. Defaults to 10203.
      * @param helpList An optional map of Item ID to help text.
-     * @param tutorials An optional map of Item ID to interactive AzTutorials.
      */
-    fun azAdvanced(isLoading: Boolean = false, helpEnabled: Boolean = false, onDismissHelp: (() -> Unit)? = null, overlayService: Class<out android.app.Service>? = null, onUndock: (() -> Unit)? = null, enableRailDragging: Boolean = false, onRailDrag: ((Float, Float) -> Unit)? = null, onOverlayDrag: ((Float, Float) -> Unit)? = null, onItemGloballyPositioned: ((String, Rect) -> Unit)? = null, secLoc: String? = null, secLocPort: Int = 10203, helpList: Map<String, Any> = emptyMap(), tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap(), onInteraction: ((String, com.hereliesaz.aznavrail.model.AzNavItem) -> Unit)? = null)
+    fun azAdvanced(isLoading: Boolean = false, helpEnabled: Boolean = false, onDismissHelp: (() -> Unit)? = null, overlayService: Class<out android.app.Service>? = null, onUndock: (() -> Unit)? = null, enableRailDragging: Boolean = false, onRailDrag: ((Float, Float) -> Unit)? = null, onOverlayDrag: ((Float, Float) -> Unit)? = null, onItemGloballyPositioned: ((String, Rect) -> Unit)? = null, secLoc: String? = null, secLocPort: Int = 10203, helpList: Map<String, Any> = emptyMap(), onInteraction: ((String, com.hereliesaz.aznavrail.model.AzNavItem) -> Unit)? = null)
 
     /**
      * Configures the built-in **About** screen and the **"More from Az"** carousel.
@@ -231,7 +230,6 @@ interface AzNavRailScope {
         secLoc: String? = null,
         secLocPort: Int = 10203,
         helpList: Map<String, Any> = emptyMap(),
-        tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap(),
         helpLineColors: List<Color> = emptyList(),
         onInteraction: ((String, com.hereliesaz.aznavrail.model.AzNavItem) -> Unit)? = null
     )
@@ -881,7 +879,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         this.titleTextStyle = titleTextStyle
     }
 
-    override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, secLoc: String?, secLocPort: Int, helpList: Map<String, Any>, tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial>, onInteraction: ((String, AzNavItem) -> Unit)?) {
+    override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, secLoc: String?, secLocPort: Int, helpList: Map<String, Any>, onInteraction: ((String, AzNavItem) -> Unit)?) {
         this.advancedConfig = this.advancedConfig.copy(
             isLoading = isLoading,
             helpEnabled = helpEnabled,
@@ -895,7 +893,6 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
             secLoc = secLoc ?: this.advancedConfig.secLoc,
             secLocPort = secLocPort,
             helpList = if (helpList.isNotEmpty()) helpList else this.advancedConfig.helpList,
-            tutorials = if (tutorials.isNotEmpty()) tutorials else this.advancedConfig.tutorials,
             onInteraction = onInteraction ?: this.advancedConfig.onInteraction
         )
     }
@@ -925,7 +922,6 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         secLoc: String?,
         secLocPort: Int,
         helpList: Map<String, Any>,
-        tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial>,
         helpLineColors: List<Color>,
         onInteraction: ((String, AzNavItem) -> Unit)?
     ) {
@@ -957,7 +953,6 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
             secLoc = secLoc ?: this.advancedConfig.secLoc,
             secLocPort = secLocPort,
             helpList = if (helpList.isNotEmpty()) helpList else this.advancedConfig.helpList,
-            tutorials = if (tutorials.isNotEmpty()) tutorials else this.advancedConfig.tutorials,
             onInteraction = onInteraction ?: this.advancedConfig.onInteraction
         )
     }

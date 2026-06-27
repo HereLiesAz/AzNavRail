@@ -75,9 +75,7 @@ import com.hereliesaz.aznavrail.internal.azResolveSafeBottom
 import com.hereliesaz.aznavrail.internal.AzVisualSide
 import com.hereliesaz.aznavrail.tutorial.AzGuidanceController
 import com.hereliesaz.aznavrail.tutorial.LocalAzGuidanceController
-import com.hereliesaz.aznavrail.tutorial.LocalAzTutorialController
 import com.hereliesaz.aznavrail.tutorial.rememberAzGuidanceController
-import com.hereliesaz.aznavrail.tutorial.rememberAzTutorialController
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzSheetConfig
 import androidx.compose.foundation.layout.BoxScope
@@ -490,11 +488,8 @@ fun AzHostActivityLayout(
             }
         }
 
-        val tutorialController = rememberAzTutorialController()
-
         CompositionLocalProvider(
-            LocalAzNavHostScope provides scope,
-            LocalAzTutorialController provides tutorialController
+            LocalAzNavHostScope provides scope
         ) {
             AzHostFragmentLayout(
                 safeTop = safeTop,
@@ -512,7 +507,6 @@ fun AzHostActivityLayout(
             LocalAzNavHostPresent provides true,
             LocalAzNavHostScope provides scope,
             LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom),
-            LocalAzTutorialController provides tutorialController,
             LocalAzGuidanceController provides guidanceController
         ) {
             AzNavRail(
@@ -549,7 +543,6 @@ fun AzHostActivityLayout(
         CompositionLocalProvider(
             LocalAzNavHostScope provides scope,
             LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom),
-            LocalAzTutorialController provides tutorialController,
         ) {
             if (scope.aboutVisible || scope.moreFromAzVisible) {
                 // Pad only the rail offset; the overlays apply top/bottom safe-zone insets themselves
@@ -593,8 +586,6 @@ fun AzHostActivityLayout(
                     itemBoundsCache = railScope.itemBoundsCache,
                     helpList = railScope.advancedConfig.helpList,
                     nestedRailOpenId = scope.helpScopeId,
-                    tutorials = railScope.advancedConfig.tutorials,
-                    onTutorialLaunch = { id -> tutorialController.startTutorial(id); scope.hideHelp() },
                 )
             }
         }

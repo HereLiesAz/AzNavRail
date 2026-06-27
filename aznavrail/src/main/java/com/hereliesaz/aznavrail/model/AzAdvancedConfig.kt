@@ -21,7 +21,6 @@ import androidx.compose.ui.geometry.Rect
  *   Long-pressing the `@HereLiesAz` footer item prompts for this key.
  * @param secLocPort TCP port used by the location history sync server. Defaults to 10203.
  * @param helpList Map of item ID → help text (String or string resource Int) shown in the help overlay.
- * @param tutorials Map of item ID → [com.hereliesaz.aznavrail.tutorial.AzTutorial] for interactive step-by-step guides.
  * @param onInteraction Callback invoked whenever any rail item is interacted with (click, toggle,
  *   cycler advance, nested rail open, reloc drag). Receives the item's `id` and the [AzNavItem] itself.
  * @param inAppAbout When true (default), the footer "About" item opens the in-app About reader overlay
@@ -47,7 +46,6 @@ data class AzAdvancedConfig(
     val secLoc: String? = null,
     val secLocPort: Int = 10203,
     val helpList: Map<String, Any> = emptyMap(),
-    val tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap(),
     val onInteraction: ((String, AzNavItem) -> Unit)? = null,
     val inAppAbout: Boolean = true,
     val moreFromAzEnabled: Boolean = true,

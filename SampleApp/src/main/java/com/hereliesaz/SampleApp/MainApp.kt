@@ -43,7 +43,6 @@ import com.hereliesaz.SampleApp.screens.HelpSystemState
 import com.hereliesaz.SampleApp.screens.HiddenMenuDemoScreen
 import com.hereliesaz.SampleApp.screens.HiddenMenuDemoState
 import com.hereliesaz.SampleApp.screens.LegacyRailDemoScreen
-import com.hereliesaz.SampleApp.screens.SampleTutorials
 import com.hereliesaz.SampleApp.screens.ShowcaseHomeScreen
 import com.hereliesaz.SampleApp.screens.StandaloneWidgetsScreen
 import com.hereliesaz.SampleApp.screens.TutorialDemoScreen
@@ -153,6 +152,10 @@ fun MainApp() {
 
     val themeColor = MaterialTheme.colorScheme.primary
 
+    // Status-driven guidance demo: a custom status backed by app state (see the `azStatus`/`azEdge`
+    // declarations below and the activate buttons in TutorialDemoScreen).
+    var guideTaskDone by remember { mutableStateOf(false) }
+
     AzHostActivityLayout(
         navController = navController,
         modifier = Modifier.fillMaxSize(),
@@ -207,11 +210,10 @@ fun MainApp() {
                 fabState = fabState.copy(undockedCount = fabState.undockedCount + 1)
                 Log.d(TAG, "Rail undocked")
             },
-            tutorials = SampleTutorials,
             helpList = mapOf(
                 "showcase-home" to "Index of every demo screen.",
                 "bottom-sheet" to "AzBottomSheet + AzBottomSheetInsetAware demo.",
-                "tutorial" to "Interactive tutorial DSL demo — covers every AzAdvanceCondition.",
+                "tutorial" to "Status-driven guidance demo — activate goals, watch callouts route live.",
                 "fab-overlay" to "FAB-mode drag callbacks + SampleOverlayService.",
                 "customization" to "Live theme/config controls.",
                 "help-system" to "Demonstrates this very overlay.",
@@ -226,10 +228,28 @@ fun MainApp() {
             ),
         )
 
+        // ---------- Status-driven guidance demo (replaces the old scripted tutorial) ----------
+        // A custom status node backed by app state, plus a hand-authored edge that carries the
+        // instruction to reach it. Built-in `az.*` statuses (screen/host/rail) and their auto-edges
+        // come for free, so the goals below only need a custom edge for the custom status.
+        azStatus("guide_task_done") { guideTaskDone }
+        azEdge(
+            from = "az.screen.tutorial",
+            to = "guide_task_done",
+            text = "Press \"Mark task done\" on this screen",
+            highlightItemId = "tutorial",
+        )
+        // Goals the demo activates. `guide_onboarding` self-arms when you land on the Tutorials screen
+        // and routes to Bottom Sheets via the auto-generated "Tap Bottom Sheets" edge. The other two
+        // are activated together to show simultaneous, independently-placed callouts.
+        azGoal(id = "guide_onboarding", target = "az.screen.bottom-sheet", label = "See the Bottom Sheets demo", autoStartWhen = "az.screen.tutorial")
+        azGoal(id = "guide_expand_host", target = "az.host.rail-host.expanded", label = "Expand the Rail Host")
+        azGoal(id = "guide_custom_task", target = "guide_task_done", label = "Complete a custom task")
+
         // ---------- Showcase navigation menu items ----------
         azMenuItem(id = "showcase-home", text = "Showcase Home", route = "showcase-home", screenTitle = "Showcase", info = "Index of every demo screen in this sample.")
         azMenuItem(id = "bottom-sheet", text = "Bottom Sheets", route = "bottom-sheet", screenTitle = "Bottom Sheets", info = "AzBottomSheet detents, drag, scrim, swipe.")
-        azMenuItem(id = "tutorial", text = "Tutorials", route = "tutorial", screenTitle = "Tutorials", info = "AzTutorial DSL — every advance condition + highlight.", classifiers = setOf("advanced"))
+        azMenuItem(id = "tutorial", text = "Guidance", route = "tutorial", screenTitle = "Guidance", info = "Status-driven guidance — azStatus/azEdge/azGoal + live routing.", classifiers = setOf("advanced"))
         azMenuItem(id = "fab-overlay", text = "FAB / Overlay", route = "fab-overlay", screenTitle = "FAB & Overlay", info = "Rail drag callbacks + system overlay service.", classifiers = setOf("advanced", "danger"))
         azMenuItem(id = "customization", text = "Customization", route = "customization", screenTitle = "Theming", info = "Live theme/config controls.")
         azMenuItem(id = "help-system", text = "Help System", route = "help-system", screenTitle = "Help System", info = "screenTitle, info, classifiers, helpList.", classifiers = setOf("focus"))
@@ -637,7 +657,13 @@ fun MainApp() {
                         swipeLog = sheetSwipeLog,
                     )
                 }
-                composable("tutorial") { TutorialDemoScreen() }
+                composable("tutorial") {
+                    TutorialDemoScreen(
+                        taskDone = guideTaskDone,
+                        onMarkTaskDone = { guideTaskDone = true },
+                        onResetTask = { guideTaskDone = false },
+                    )
+                }
                 composable("fab-overlay") {
                     FabOverlayDemoScreen(
                         state = fabState,

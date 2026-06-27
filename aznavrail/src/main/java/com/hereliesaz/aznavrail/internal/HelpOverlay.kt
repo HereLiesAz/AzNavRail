@@ -40,14 +40,12 @@ import androidx.compose.foundation.BorderStroke
  *
  * @param items All items configured in the current rail scope.
  * @param helpLineColors Custom line colors cycling through per-item; defaults to rainbow palette.
- * @param onDismiss Invoked when the user taps the background or a tutorial card's close.
+ * @param onDismiss Invoked when the user taps the background or a card's close.
  * @param itemBoundsCache Window-space bounds of each item, used to draw connecting lines.
  * @param helpList Map of item ID → help text (String or string resource Int).
  * @param nestedRailOpenId Scope filter: when non-null, only cards for that nested rail's child items
  *   are shown (overlay triggered from inside a nested rail). When null, the overlay shows main-rail
  *   items (overlay triggered from the main rail).
- * @param tutorials Map of item ID → tutorial definition; enables "Start Tutorial" links in cards.
- * @param onTutorialLaunch Invoked with the item ID when the user taps "Start Tutorial".
  */
 @Composable
 internal fun HelpOverlay(
@@ -57,10 +55,8 @@ internal fun HelpOverlay(
     itemBoundsCache: Map<String, Rect> = emptyMap(),
     helpList: Map<String, Any> = emptyMap(),
     nestedRailOpenId: String? = null,
-    tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap(),
-    onTutorialLaunch: ((String) -> Unit)? = null
 ) {
-    val itemsWithInfo = remember(items, helpList, nestedRailOpenId, tutorials) {
+    val itemsWithInfo = remember(items, helpList, nestedRailOpenId) {
         val source = if (nestedRailOpenId != null) {
             items.find { it.id == nestedRailOpenId }?.nestedRailItems.orEmpty()
         } else {
@@ -74,7 +70,7 @@ internal fun HelpOverlay(
                 is Int -> listTextRaw != 0
                 else -> false
             }
-            !item.info.isNullOrBlank() || hasValidListText || tutorials.containsKey(item.id)
+            !item.info.isNullOrBlank() || hasValidListText
         }.toList()
     }
     val safeZones = LocalAzSafeZones.current
@@ -180,7 +176,6 @@ internal fun HelpOverlay(
             Spacer(modifier = Modifier.height(16.dp)) // Equivalent to top contentPadding
             visibleItemsWithInfo.forEachIndexed { index, item ->
                 val isExpanded = expandedItemId == item.id
-                val hasTutorial = tutorials.containsKey(item.id)
                 val cardColor = colorPalette[index % colorPalette.size]
 
                 androidx.compose.material3.Surface(
@@ -251,29 +246,10 @@ internal fun HelpOverlay(
                         )
                     }
                     if (isExpanded) {
-                        if (hasTutorial) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Start Tutorial",
-                                color = MaterialTheme.colorScheme.primary,
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier
-                                    .clickable { onTutorialLaunch?.invoke(item.id) }
-                                    .padding(vertical = 4.dp)
-                            )
-                        }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "Tap to collapse",
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                    } else if (hasTutorial) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Tutorial available (Tap to expand)",
-                            color = MaterialTheme.colorScheme.primary,
                             style = MaterialTheme.typography.labelSmall
                         )
                     }
