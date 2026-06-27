@@ -6,10 +6,36 @@ Object.defineProperty(exports, "__esModule", {
 var _exportNames = {
   AzHelpRailItem: true,
   AzHelpSubItem: true,
-  AzTutorialContext: true,
-  AzTutorialProvider: true,
-  useAzTutorialController: true
+  AzStatus: true,
+  AzEdge: true,
+  AzGoal: true,
+  AzGuidanceProvider: true,
+  useAzGuidanceController: true,
+  AzInstructionOverlay: true,
+  useActiveStatuses: true,
+  computeBuiltinStatuses: true,
+  nextHop: true,
+  routeInstructions: true,
+  computeAutoEdges: true
 };
+Object.defineProperty(exports, "AzEdge", {
+  enumerable: true,
+  get: function () {
+    return _AzGuidanceScope.AzEdge;
+  }
+});
+Object.defineProperty(exports, "AzGoal", {
+  enumerable: true,
+  get: function () {
+    return _AzGuidanceScope.AzGoal;
+  }
+});
+Object.defineProperty(exports, "AzGuidanceProvider", {
+  enumerable: true,
+  get: function () {
+    return _AzGuidanceController.AzGuidanceProvider;
+  }
+});
 Object.defineProperty(exports, "AzHelpRailItem", {
   enumerable: true,
   get: function () {
@@ -22,22 +48,52 @@ Object.defineProperty(exports, "AzHelpSubItem", {
     return _AzNavRailScope.AzHelpSubItem;
   }
 });
-Object.defineProperty(exports, "AzTutorialContext", {
+Object.defineProperty(exports, "AzInstructionOverlay", {
   enumerable: true,
   get: function () {
-    return _AzTutorialController.AzTutorialContext;
+    return _AzInstructionOverlay.AzInstructionOverlay;
   }
 });
-Object.defineProperty(exports, "AzTutorialProvider", {
+Object.defineProperty(exports, "AzStatus", {
   enumerable: true,
   get: function () {
-    return _AzTutorialController.AzTutorialProvider;
+    return _AzGuidanceScope.AzStatus;
   }
 });
-Object.defineProperty(exports, "useAzTutorialController", {
+Object.defineProperty(exports, "computeAutoEdges", {
   enumerable: true,
   get: function () {
-    return _AzTutorialController.useAzTutorialController;
+    return _AzGuidance.computeAutoEdges;
+  }
+});
+Object.defineProperty(exports, "computeBuiltinStatuses", {
+  enumerable: true,
+  get: function () {
+    return _AzStatusEngine.computeBuiltinStatuses;
+  }
+});
+Object.defineProperty(exports, "nextHop", {
+  enumerable: true,
+  get: function () {
+    return _AzGuidance.nextHop;
+  }
+});
+Object.defineProperty(exports, "routeInstructions", {
+  enumerable: true,
+  get: function () {
+    return _AzGuidance.routeInstructions;
+  }
+});
+Object.defineProperty(exports, "useActiveStatuses", {
+  enumerable: true,
+  get: function () {
+    return _AzStatusEngine.useActiveStatuses;
+  }
+});
+Object.defineProperty(exports, "useAzGuidanceController", {
+  enumerable: true,
+  get: function () {
+    return _AzGuidanceController.useAzGuidanceController;
   }
 });
 var _AzNavRail = require("./AzNavRail");
@@ -292,5 +348,9 @@ Object.keys(_types).forEach(function (key) {
     }
   });
 });
-var _AzTutorialController = require("./tutorial/AzTutorialController");
+var _AzGuidanceScope = require("./guidance/AzGuidanceScope");
+var _AzGuidanceController = require("./guidance/AzGuidanceController");
+var _AzInstructionOverlay = require("./components/AzInstructionOverlay");
+var _AzStatusEngine = require("./guidance/AzStatusEngine");
+var _AzGuidance = require("./guidance/AzGuidance");
 //# sourceMappingURL=index.js.map

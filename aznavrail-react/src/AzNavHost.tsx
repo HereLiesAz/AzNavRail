@@ -273,10 +273,10 @@ export const AzHostActivityLayout: React.FC<AzHostActivityLayoutProps> = (props)
                <AzKineticTitle
                    key={currentTitle}
                    title={currentTitle}
-                   entrance={(railProps?.settings as AzNavRailSettings | undefined)?.titleEntrance ?? AzEntrance.Turnstile}
+                   entrance={(railProps as AzNavRailSettings | undefined)?.titleEntrance ?? AzEntrance.Turnstile}
                    dockingSide={dockingSide}
                >
-                   <Text style={[styles.titleText, (railProps?.settings as AzNavRailSettings | undefined)?.titleTextStyle]}>{currentTitle}</Text>
+                   <Text style={[styles.titleText, (railProps as AzNavRailSettings | undefined)?.titleTextStyle]}>{currentTitle}</Text>
                </AzKineticTitle>
            </View>
         ) : null}

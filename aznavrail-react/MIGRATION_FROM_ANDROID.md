@@ -36,11 +36,11 @@ a manual collapse while the condition is `true` is respected; the condition acts
 on the next false→true edge.
 
 ```tsx
-// React example — expand the host while a tutorial is active
+// React example — expand the host while a guidance goal is active
 <AzRailHostItem
   id="features"
   text="Features"
-  expandWhen={() => tutorialController.activeTutorialId === 'onboarding'}
+  expandWhen={() => guidance.activeGoals.includes('onboarding')}
 />
 ```
 
@@ -95,7 +95,7 @@ so `appRepositoryUrl` is an optional override and never falls back to the AzNavR
 it is unset the About entry is hidden. The standalone `AzDropdownMenu` has no onscreen area, so its
 About is drawn as its own full-screen layer (Android); set `inAppAbout` false to open the repo in a
 browser instead. While a footer screen (About or More from Az) is open, visible Help cards and any
-in-progress tutorial are hidden and restore exactly where they were on close.
+guidance callouts are hidden and restore exactly where they were on close.
 
 "More from Az" is a carousel whose `more-from-az.json` you fill by
 pasting GitHub repo links (one per line); a GitHub Action resolves each repo and **bakes** the
@@ -140,13 +140,60 @@ function MyScreen() {
 | `AzSheetController.stepUp() / stepDown()` | `controller.stepUp() / controller.stepDown()` |
 | `AzSheetConfig(halfFraction = 0.6, ...)` | `{ halfFraction: 0.6, ... }` |
 
-## Tutorials
+## Guidance (status-driven)
+
+The scripted scene/card tutorial framework was removed and replaced by the reactive
+**status-driven guidance** framework. You describe the userflow as a flowchart of **statuses**
+(string-id nodes) joined by **edges** (transitions carrying an instruction), declare **goals**
+(target statuses), and activate them on the controller. The engine shows the instruction to reach the
+next status toward each active goal, auto-advances the instant a target status becomes true (no Next
+button), re-routes live, and shows every active goal's callout next to its control. The Android DSL
+lives inside `AzHostActivityLayout { ... }`; the React DSL is JSX children of the rail.
+
+### DSL
 
 | Android | React |
 | --- | --- |
-| `azTutorial { scene(id) { card(...) } }` | `{ scenes: [{ id, cards: [{ title, text, ... }] }] }` (plain objects) |
-| `LocalAzTutorialController.current.startTutorial(id)` | `const ctrl = useAzTutorialController(); ctrl.startTutorial(id)` |
-| `AzAdvanceCondition.Event("name")` | `{ kind: 'Event', name: 'name' }` |
+| `azStatus(id) { predicate }` | `<AzStatus id predicate={() => …} />` |
+| `azEdge(from, to = null, text, title = null, highlightItemId = null)` | `<AzEdge from to? text title? highlightItemId? />` |
+| `azGoal(id, target, label = null, autoStartWhen = null)` | `<AzGoal id target label? autoStartWhen? />` |
+
+### Controller
+
+`AzHostActivityLayout(...) { ... }` **returns** an `AzGuidanceController` on Android (also
+`LocalAzGuidanceController.current` / `rememberAzGuidanceController()`). React reads it with the
+`useAzGuidanceController()` hook. The surface is identical (Kotlin types ↔ `boolean` / `string[]`):
+
+| Android | React |
+| --- | --- |
+| `LocalAzGuidanceController.current` / `rememberAzGuidanceController()` | `useAzGuidanceController()` |
+| `controller.enabled: Boolean` | `ctrl.enabled: boolean` |
+| `controller.activeGoals: List<String>` | `ctrl.activeGoals: string[]` |
+| `controller.completedGoals: List<String>` | `ctrl.completedGoals: string[]` |
+| `controller.enable()` / `disable()` | `ctrl.enable()` / `disable()` |
+| `controller.activate(id)` / `deactivate(id)` | `ctrl.activate(id)` / `deactivate(id)` |
+| `controller.markReached(id)` | `ctrl.markReached(id)` |
+| `controller.isCompleted(id)` | `ctrl.isCompleted(id)` |
+
+### Built-in statuses & auto-edges
+
+Both platforms auto-publish the same `az.*` statuses (`az.app.ready`, `az.rail.expanded` /
+`az.rail.collapsed`, `az.rail.floating`, `az.host.<id>.expanded`, `az.screen.<route>`,
+`az.item.<id>.active`, `az.nestedRail.<id>.open`, `az.help.open`, `az.onscreen.<id>.visible`) and
+generate the same auto-edges for rail affordances ("Open the menu" for
+`az.rail.collapsed → az.rail.expanded`, tap host → `az.host.<id>.expanded`, tap nested-rail →
+`az.nestedRail.<id>.open`, tap routed item → `az.screen.<route>`). You hand-author `azEdge` /
+`<AzEdge>` only for transitions into your own custom statuses.
+
+### Persistence & exports
+
+Completed goals persist under key `az_navrail_completed_goals` — `SharedPreferences` on Android,
+`localStorage` (and `AsyncStorage` on RN) on React. React also exports `AzGuidanceProvider`,
+`AzInstructionOverlay`, `useActiveStatuses`, `computeBuiltinStatuses`, `nextHop`, `routeInstructions`,
+and `computeAutoEdges`.
+
+**Parity note:** the React/web overlay draws an **accent ring** around each target over a light dim,
+rather than a true punch-out spotlight. Routing and advancement are identical.
 
 The TypeScript interfaces in `src/types.ts` document the exact shapes.
 

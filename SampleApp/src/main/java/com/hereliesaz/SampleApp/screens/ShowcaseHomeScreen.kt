@@ -28,7 +28,7 @@ data class ShowcaseEntry(val route: String, val title: String, val blurb: String
 private val entries = listOf(
     ShowcaseEntry("legacy", "Rail Configuration Demo", "Toggles, cyclers, nested rails, reloc items, backgrounds, onscreen layers — the existing playground."),
     ShowcaseEntry("bottom-sheet", "Bottom Sheets", "AzBottomSheet + AzBottomSheetInsetAware. All four detents, drag handle, scrim, horizontal swipe, live AzSheetConfig."),
-    ShowcaseEntry("tutorial", "Interactive Tutorials", "AzTutorial DSL exercising every AzAdvanceCondition and AzHighlight variant, branching, checklist, media."),
+    ShowcaseEntry("tutorial", "Status-Driven Guidance", "azStatus / azEdge / azGoal — activate goals and watch instruction callouts route live to the right control."),
     ShowcaseEntry("fab-overlay", "FAB + Overlay Service", "Drag-to-detach rail, drag callbacks, and a real AzNavRailSimpleOverlayService launched via SYSTEM_ALERT_WINDOW."),
     ShowcaseEntry("customization", "Theming Customization", "Header icon shape, default shape, translucent background, expanded/collapsed width, app name, footer, repo URL, helpLineColors, haptics."),
     ShowcaseEntry("help-system", "Help System", "screenTitle, info, classifiers, helpList, azHelpRailItem, azHelpSubItem, activeClassifiers programmatic highlighting."),

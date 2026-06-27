@@ -8,6 +8,7 @@ var _react = _interopRequireWildcard(require("react"));
 var _reactNative = require("react-native");
 var _AzNavRailScope = require("./AzNavRailScope");
 var _types = require("./types");
+var _AzKinetics = require("./components/AzKinetics");
 var _AzNavRailDefaults = require("./AzNavRailDefaults");
 var _AzButton = require("./components/AzButton");
 var _AzToggle = require("./components/AzToggle");
@@ -20,8 +21,10 @@ var _AzNestedRailPopup = require("./components/AzNestedRailPopup");
 var _HelpOverlay = require("./components/HelpOverlay");
 var _AboutOverlay = require("./components/AboutOverlay");
 var _MoreFromAzOverlay = require("./components/MoreFromAzOverlay");
-var _AzTutorialController = require("./tutorial/AzTutorialController");
-var _AzTutorialOverlay = require("./components/AzTutorialOverlay");
+var _AzGuidanceController = require("./guidance/AzGuidanceController");
+var _AzStatusEngine = require("./guidance/AzStatusEngine");
+var _AzGuidance = require("./guidance/AzGuidance");
+var _AzInstructionOverlay = require("./components/AzInstructionOverlay");
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function (e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, default: e }; if (null === e || "object" != typeof e && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (const t in e) "default" !== t && {}.hasOwnProperty.call(e, t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, t)) && (i.get || i.set) ? o(f, t, i) : f[t] = e[t]); return f; })(e, t); }
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 /** Props for the `AzNavRail` component, extending all `AzNavRailSettings` options. */
@@ -51,7 +54,7 @@ const AzNavRailInner = props => {
     onExpandedChange,
     onInteraction,
     helpList = {},
-    appRepositoryUrl = 'https://github.com/HereLiesAz/AzNavRail',
+    appRepositoryUrl,
     inAppAbout = true,
     moreFromAzEnabled = true,
     moreFromAzJsonUrl = 'https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json',
@@ -174,6 +177,9 @@ const AzNavRailInner = props => {
   const showFloatingButtonsRef = (0, _react.useRef)(showFloatingButtons);
   const wasVisibleOnDragStartRef = (0, _react.useRef)(false);
   const itemsRef = (0, _react.useRef)(items);
+  // Edge-tracking for host auto-expansion (expandWhen / per-host initiallyExpanded).
+  const expandWhenSeenRef = (0, _react.useRef)({});
+  const initiallyExpandedSeenRef = (0, _react.useRef)({});
   (0, _react.useEffect)(() => {
     isFloatingRef.current = isFloating;
   }, [isFloating]);
@@ -186,6 +192,79 @@ const AzNavRailInner = props => {
   (0, _react.useEffect)(() => {
     itemsRef.current = items;
   }, [items]);
+
+  // Harden against a host auto-expanding (or any reorder/add/remove) mid-shuffle: zero every
+  // sibling-displacement offset so a stale one can't leave an item rendered on top of its neighbour.
+  // Mirrors the Android RailItems structural-change guard. Keyed on item ids + expanded host set,
+  // since expansion changes the visible layout without changing the items array.
+  const expandedHostKey = Object.keys(hostStates).filter(k => hostStates[k]).sort().join(',');
+  const structuralKey = items.map(i => i.id).join(',') + '|' + expandedHostKey;
+  (0, _react.useEffect)(() => {
+    Object.values(itemOffsets.current).forEach(anim => anim.setValue(0));
+  }, [structuralKey]);
+
+  // Host auto-expansion — parity with Android's `expandWhen` / per-host `initiallyExpanded`. A host
+  // expands on the rising edge of its `expandWhen` condition and collapses on the falling edge; a
+  // manual collapse while the condition stays true is preserved (we act only on a real transition).
+  // The first observation only auto-expands (never clobbering an initiallyExpanded/manual state).
+  //
+  // Evaluated after every render (so conditions backed by React state/props are picked up at once)
+  // AND on a low-rate interval, so conditions backed by NON-React sources (a mutable ref, an external
+  // store that doesn't trigger a re-render) still drive expansion — within the poll interval.
+  const applyAutoExpansions = (0, _react.useCallback)(() => {
+    const updates = {};
+    let changed = false;
+    itemsRef.current.forEach(item => {
+      if (!item.isHost) return;
+      // Per-host initiallyExpanded: rising-edge auto-expand, once.
+      if (item.initiallyExpanded && initiallyExpandedSeenRef.current[item.id] !== true) {
+        updates[item.id] = true;
+        changed = true;
+      }
+      initiallyExpandedSeenRef.current[item.id] = !!item.initiallyExpanded;
+      // expandWhen: transition-based.
+      if (typeof item.expandWhen === 'function') {
+        const now = !!item.expandWhen();
+        const before = expandWhenSeenRef.current[item.id];
+        if (before === undefined) {
+          if (now) {
+            updates[item.id] = true;
+            changed = true;
+          }
+        } else if (before !== now) {
+          updates[item.id] = now;
+          changed = true;
+        }
+        expandWhenSeenRef.current[item.id] = now;
+      }
+    });
+    if (!changed) return;
+    setHostStates(prev => {
+      let differs = false;
+      for (const k in updates) if (prev[k] !== updates[k]) {
+        differs = true;
+        break;
+      }
+      return differs ? {
+        ...prev,
+        ...updates
+      } : prev;
+    });
+  }, []);
+
+  // After every render: React-state/prop-driven conditions are caught here immediately.
+  (0, _react.useEffect)(() => {
+    applyAutoExpansions();
+  });
+  // Low-rate poll: the safety net for conditions that aren't React state.
+  (0, _react.useEffect)(() => {
+    const t = setInterval(applyAutoExpansions, 300);
+    return () => clearInterval(t);
+  }, [applyAutoExpansions]);
+
+  // Status-driven guidance runs in its own isolated <AzGuidanceLayer> (rendered below) so its engine
+  // state never re-renders this host — keeping the rail's item-registry effect timing untouched.
+
   (0, _react.useEffect)(() => {
     const id = pan.addListener(value => {
       panValue.current = value;
@@ -247,8 +326,10 @@ const AzNavRailInner = props => {
       duration: 300,
       useNativeDriver: false
     }).start();
-    if (onExpandedChange) onExpandedChange(isExpanded);
-  }, [isExpanded, config.expandedRailWidth, config.collapsedRailWidth, onExpandedChange]);
+  }, [isExpanded, config.expandedRailWidth, config.collapsedRailWidth]);
+  (0, _react.useEffect)(() => {
+    onExpandedChange === null || onExpandedChange === void 0 || onExpandedChange(isExpanded);
+  }, [isExpanded, onExpandedChange]);
   (0, _react.useEffect)(() => {
     items.forEach(item => {
       if (!itemOffsets.current[item.id]) {
@@ -489,11 +570,14 @@ const AzNavRailInner = props => {
         content: item.content,
         hasCustomContent: !!item.content,
         onClick: () => {
+          var _item$onExpandedChang;
+          const newHostState = !(hostStates[item.id] || false);
           setHostStates(prev => ({
             ...prev,
-            [item.id]: !prev[item.id]
+            [item.id]: newHostState
           }));
           logInteraction('Host toggled', item.text, item);
+          (_item$onExpandedChang = item.onExpandedChange) === null || _item$onExpandedChang === void 0 || _item$onExpandedChang.call(item, newHostState);
         }
       })), isExpandedHost && subItems.filter(sub => sub.isRailItem).map(sub => renderRailItem(sub, items.indexOf(sub), overrideConfig, new Set(ancestors).add(item.id))));
     }
@@ -550,30 +634,51 @@ const AzNavRailInner = props => {
       }
     })));
   };
-  const renderMenuItem = (item, depth = 0, ancestors = new Set()) => {
+  const renderMenuItem = (item, index = 0, count = 1, visible = true, depth = 0, ancestors = new Set()) => {
     // Cycle guard (see renderRailItem): stop before recursing into an ancestor so a cyclic or
     // self-referential `hostId` chain can't overflow the stack.
     if (ancestors.has(item.id)) return null;
     const isExpandedHost = hostStates[item.id] || false;
     const subItems = subItemsMap[item.id] || [];
-    return /*#__PURE__*/_react.default.createElement(_reactNative.View, {
+    return /*#__PURE__*/_react.default.createElement(_AzKinetics.AzKineticItem, {
       key: item.id,
+      index: index,
+      count: count,
+      visible: visible,
+      entrance: kItemEntrance,
+      exit: kItemExit,
+      staggerMs: kStaggerMs,
+      durationMs: kDurationMs,
+      startAngle: kStartAngle
+      // Suppress the press-tilt on draggable items so it never fights the drag gesture.
+      ,
+      tiltOnPress: kTiltOnPress && !item.isRelocItem,
+      maxTiltDegrees: kMaxTilt,
+      dockingSide: kDockingSide,
+      floating: isFloating
+    }, /*#__PURE__*/_react.default.createElement(_reactNative.View, {
       onLayout: config.infoScreen || item.isHost ? e => handleItemLayout(item.id, e) : undefined
     }, /*#__PURE__*/_react.default.createElement(_RailMenuItem.RailMenuItem, {
       item: item,
       depth: depth,
       isExpandedHost: isExpandedHost,
-      onToggleHost: () => setHostStates(prev => ({
-        ...prev,
-        [item.id]: !prev[item.id]
-      })),
+      textStyle: kItemTextStyle,
+      onToggleHost: () => {
+        var _item$onExpandedChang2;
+        const newHostState = !(hostStates[item.id] || false);
+        setHostStates(prev => ({
+          ...prev,
+          [item.id]: newHostState
+        }));
+        (_item$onExpandedChang2 = item.onExpandedChange) === null || _item$onExpandedChang2 === void 0 || _item$onExpandedChang2.call(item, newHostState);
+      },
       onItemClick: () => {
         logInteraction('Menu item clicked', item.text, item);
         if (item.onClick) item.onClick();
         if (item.collapseOnClick) setIsExpanded(false);
       },
-      renderSubItems: () => /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, subItems.map(subItem => renderMenuItem(subItem, depth + 1, new Set(ancestors).add(item.id))))
-    }));
+      renderSubItems: () => /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, subItems.map((subItem, i) => renderMenuItem(subItem, i, subItems.length, visible, depth + 1, new Set(ancestors).add(item.id))))
+    })));
   };
   const renderFooter = () => {
     const footerColor = activeColor || '#6200ee';
@@ -588,8 +693,12 @@ const AzNavRailInner = props => {
       if (config.inAppAbout) {
         setIsExpanded(false);
         setShowAbout(true);
-      } else {
-        _reactNative.Linking.openURL(config.appRepositoryUrl).catch(e => console.error("Could not open About", e));
+      } else if (config.appRepositoryUrl) {
+        // Only follow safe web URLs — on react-native-web a `javascript:` URL would otherwise execute.
+        const isSafe = config.appRepositoryUrl.startsWith('http://') || config.appRepositoryUrl.startsWith('https://');
+        if (isSafe) {
+          _reactNative.Linking.openURL(config.appRepositoryUrl).catch(e => console.error("Could not open About", e));
+        }
       }
     };
     const handleFeedback = () => {
@@ -624,7 +733,7 @@ const AzNavRailInner = props => {
         color: footerColor,
         fontWeight: 'bold'
       }]
-    }, `Undock`)), /*#__PURE__*/_react.default.createElement(_reactNative.TouchableOpacity, {
+    }, `Undock`)), !!config.appRepositoryUrl && /*#__PURE__*/_react.default.createElement(_reactNative.TouchableOpacity, {
       onPress: handleAbout,
       style: {
         paddingVertical: 4
@@ -665,6 +774,19 @@ const AzNavRailInner = props => {
   const menuItems = (0, _react.useMemo)(() => {
     return items.filter(i => !i.isSubItem);
   }, [items]);
+
+  // — Kinetic typography (WP7). Defaults animate; opt out via settings (itemEntrance: None, …). —
+  const kItemEntrance = config.itemEntrance ?? _types.AzEntrance.Turnstile;
+  const kItemExit = config.itemExit ?? _types.AzExit.Turnstile;
+  const kStaggerMs = config.entranceStaggerMs ?? 55;
+  const kDurationMs = config.entranceDurationMs ?? 360;
+  const kStartAngle = config.entranceStartAngle ?? 70;
+  const kTiltOnPress = config.tiltOnPress ?? false;
+  const kMaxTilt = config.maxTiltDegrees ?? 10;
+  const kItemTextStyle = config.itemTextStyle;
+  const kDockingSide = config.dockingSide ?? _types.AzDockingSide.LEFT;
+  // Keep the menu mounted through the staggered exit so items can turnstile out as the rail collapses.
+  const menuRendered = (0, _AzKinetics.useAzClosing)(isExpanded && !config.noMenu, kItemExit, menuItems.length, kStaggerMs, kDurationMs);
   const getHeaderBorderRadius = () => {
     if (config.headerIconShape === _types.AzHeaderIconShape.SQUARE) return 0;
     if (config.headerIconShape === _types.AzHeaderIconShape.ROUNDED) return 8;
@@ -731,16 +853,16 @@ const AzNavRailInner = props => {
       minWidth: 200
     }],
     numberOfLines: 1
-  }, "App Name")), isExpanded && !noMenu ? /*#__PURE__*/_react.default.createElement(_reactNative.ScrollView, {
+  }, "App Name")), menuRendered && !noMenu ? /*#__PURE__*/_react.default.createElement(_reactNative.ScrollView, {
     style: styles.menuContent
-  }, menuItems.map(item => {
+  }, menuItems.map((item, index) => {
     if (item.isDivider) {
       return /*#__PURE__*/_react.default.createElement(_reactNative.View, {
         key: item.id,
         style: styles.divider
       });
     }
-    return renderMenuItem(item);
+    return renderMenuItem(item, index, menuItems.length, isExpanded);
   }), showFooter && renderFooter()) : /*#__PURE__*/_react.default.createElement(_reactNative.ScrollView, {
     contentContainerStyle: styles.railContent
   }, isFloating && !showFloatingButtons ? null : effectiveRailItems.map((item, index) => renderRailItem(item, index)), !isFloating && config.moreRailItem && config.moreFromAzEnabled && /*#__PURE__*/_react.default.createElement(_AzButton.AzButton, {
@@ -777,14 +899,15 @@ const AzNavRailInner = props => {
     }
   }, children, secLocVisible && /*#__PURE__*/_react.default.createElement(_reactNative.View, null), " ", secLocClicks > 0 && /*#__PURE__*/_react.default.createElement(_reactNative.View, null), " "), isLoading && /*#__PURE__*/_react.default.createElement(_reactNative.View, {
     style: styles.loaderOverlay
-  }, /*#__PURE__*/_react.default.createElement(_AzLoad.AzLoad, null)), infoScreen && /*#__PURE__*/_react.default.createElement(_HelpOverlay.HelpOverlay, {
+  }, /*#__PURE__*/_react.default.createElement(_AzLoad.AzLoad, null)), infoScreen && !showAbout && !showMoreFromAz && /*#__PURE__*/_react.default.createElement(_reactNative.View, {
+    style: _reactNative.StyleSheet.absoluteFill
+  }, /*#__PURE__*/_react.default.createElement(_HelpOverlay.HelpOverlay, {
     items: items,
     helpList: config.helpList || {},
     onDismiss: onDismissInfoScreen,
     itemBounds: itemBounds,
-    nestedRailVisibleId: nestedRailVisible,
-    tutorials: config.tutorials
-  }), showAbout && /*#__PURE__*/_react.default.createElement(_AboutOverlay.AboutOverlay, {
+    nestedRailVisibleId: nestedRailVisible
+  })), showAbout && !showMoreFromAz && !!config.appRepositoryUrl && /*#__PURE__*/_react.default.createElement(_AboutOverlay.AboutOverlay, {
     repoUrl: config.appRepositoryUrl,
     settings: {
       activeColor: config.activeColor,
@@ -800,31 +923,78 @@ const AzNavRailInner = props => {
       translucentBackground: config.translucentBackground
     },
     onDismiss: () => setShowMoreFromAz(false)
-  }), /*#__PURE__*/_react.default.createElement(TutorialOverlayWrapper, {
-    tutorials: config.tutorials,
-    itemBounds: itemBounds
+  }), !showAbout && !showMoreFromAz && /*#__PURE__*/_react.default.createElement(AzGuidanceLayer, {
+    items: items,
+    itemBounds: itemBounds,
+    isExpanded: isExpanded,
+    isFloating: isFloating,
+    hostStates: hostStates,
+    currentDestination: currentDestination,
+    nestedRailVisible: nestedRailVisible,
+    infoScreen: infoScreen,
+    activeClassifiers: props.activeClassifiers,
+    accent: typeof config.activeColor === 'string' ? config.activeColor : undefined
   })));
 };
-const TutorialOverlayWrapper = ({
-  tutorials,
-  itemBounds
+
+/**
+ * Isolated host for the status-driven guidance engine. Rendered as a sibling inside `AzNavRailInner`,
+ * it receives the live rail state as props and owns all guidance reactivity (status polling, routing,
+ * auto-advance, `autoStartWhen`) — so when those update, only this component re-renders, never the
+ * rail itself. That keeps the rail's fragile item-registry effect timing untouched.
+ */
+const AzGuidanceLayer = ({
+  items,
+  itemBounds,
+  isExpanded,
+  isFloating,
+  hostStates,
+  currentDestination,
+  nestedRailVisible,
+  infoScreen,
+  activeClassifiers,
+  accent
 }) => {
-  const tutorialController = (0, _AzTutorialController.useAzTutorialController)();
-  const activeId = tutorialController.activeTutorialId;
-  if (!activeId || !tutorials || !tutorials[activeId]) {
-    return null;
-  }
-  return /*#__PURE__*/_react.default.createElement(_AzTutorialOverlay.AzTutorialOverlay, {
-    tutorialId: activeId,
-    tutorial: tutorials[activeId],
-    onDismiss: () => tutorialController.endTutorial(),
-    itemBoundsCache: itemBounds
+  const guidance = (0, _AzGuidanceController.useAzGuidanceContext)();
+  const activeItemId = (0, _react.useMemo)(() => {
+    var _items$find;
+    return ((_items$find = items.find(it => it.route && it.route === currentDestination)) === null || _items$find === void 0 ? void 0 : _items$find.id) ?? null;
+  }, [items, currentDestination]);
+  const builtins = (0, _react.useCallback)(() => (0, _AzStatusEngine.computeBuiltinStatuses)({
+    railExpanded: isExpanded,
+    railFloating: isFloating,
+    hostStates,
+    currentRoute: currentDestination,
+    activeItemId,
+    nestedRailOpenId: nestedRailVisible,
+    helpOpen: infoScreen
+  }), [isExpanded, isFloating, hostStates, currentDestination, activeItemId, nestedRailVisible, infoScreen]);
+  const activeStatuses = (0, _AzStatusEngine.useActiveStatuses)(guidance.statusPredicates, activeClassifiers, builtins);
+  const edges = (0, _react.useMemo)(() => [...guidance.edges, ...(0, _AzGuidance.computeAutoEdges)(items)], [guidance.edges, items]);
+  const frame = (0, _react.useMemo)(() => (0, _AzGuidance.routeInstructions)(edges, guidance.goals, guidance.activeGoals, activeStatuses), [edges, guidance.goals, guidance.activeGoals, activeStatuses]);
+  // Self-arming onboarding goals: activate once their trigger status holds (unless already completed).
+  (0, _react.useEffect)(() => {
+    Object.values(guidance.goals).forEach(goal => {
+      if (goal.autoStartWhen && activeStatuses.has(goal.autoStartWhen) && !guidance.isCompleted(goal.id) && !guidance.activeGoals.includes(goal.id)) {
+        guidance.activate(goal.id);
+      }
+    });
+  }, [activeStatuses, guidance]);
+  // Auto-advance: a goal whose target is now true is reached → deactivate it and persist.
+  (0, _react.useEffect)(() => {
+    frame.reachedGoals.forEach(g => guidance.markReached(g));
+  }, [frame, guidance]);
+  if (!guidance.enabled) return null;
+  return /*#__PURE__*/_react.default.createElement(_AzInstructionOverlay.AzInstructionOverlay, {
+    instructions: frame.instructions,
+    itemBounds: itemBounds,
+    accent: accent
   });
 };
 
 /**
  * Main navigation rail component for React Native.
- * Renders a collapsible side rail with icon buttons, an expandable menu, and optional tutorial/help overlay support.
+ * Renders a collapsible side rail with icon buttons, an expandable menu, and optional guidance/help overlay support.
  * Declare items as JSX children using the `AzNavRailScope` DSL helpers.
  *
  * @example
@@ -850,7 +1020,7 @@ const TutorialOverlayWrapper = ({
  * ```
  */
 const AzNavRail = props => {
-  return /*#__PURE__*/_react.default.createElement(_AzTutorialController.AzTutorialProvider, null, /*#__PURE__*/_react.default.createElement(AzNavRailInner, props));
+  return /*#__PURE__*/_react.default.createElement(_AzGuidanceController.AzGuidanceProvider, null, /*#__PURE__*/_react.default.createElement(AzNavRailInner, props));
 };
 exports.AzNavRail = AzNavRail;
 const styles = _reactNative.StyleSheet.create({

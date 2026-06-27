@@ -6,7 +6,7 @@ const entries: { route: string; title: string; blurb: string }[] = [
   { route: '/standalone', title: 'Standalone Widgets', blurb: 'AzButton/Toggle/Cycler at every shape, AzLoad, AzDivider, AzRoller.' },
   { route: '/customization', title: 'Theming Customization', blurb: 'Live header shape, default shape, rail widths, footer, classifiers.' },
   { route: '/forms', title: 'Forms & Text Inputs', blurb: 'AzForm + AzTextBox showcase.' },
-  { route: '/tutorial', title: 'Interactive Tutorials', blurb: 'Scripted scenes with every AzAdvanceCondition and AzHighlight.' },
+  { route: '/tutorial', title: 'Status-Driven Guidance', blurb: 'AzStatus / AzEdge / AzGoal — activate goals and watch callouts route live.' },
   { route: '/help-system', title: 'Help System', blurb: 'screenTitle, info, classifiers, helpList; rail-scoped help cards.' },
 ]
 

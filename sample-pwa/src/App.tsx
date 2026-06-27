@@ -26,6 +26,9 @@ import {
   AzRailSubCycler,
   AzRailRelocItem,
   AzNestedRail,
+  AzStatus,
+  AzEdge,
+  AzGoal,
 } from '@HereLiesAz/aznavrail-react'
 
 import ShowcaseHome from './screens/ShowcaseHome'
@@ -66,6 +69,10 @@ function App() {
 
   // onExpandedChange demo: tracks the current rail expansion state from outside the component.
   const [railExpanded, setRailExpanded] = useState(false)
+
+  // Status-driven guidance demo: a custom status backed by app state (see the <AzStatus>/<AzEdge>
+  // declarations below and the activate buttons in TutorialDemo).
+  const [guideTaskDone, setGuideTaskDone] = useState(false)
 
   // Per-host onExpandedChange demo: tracks individual host expansion states.
   const [hostExpanded, setHostExpanded] = useState<Record<string, boolean>>({})
@@ -138,9 +145,25 @@ function App() {
       <AzMenuItem id="customization" text="Customization" route="customization" info="Live theme controls." onClick={() => navigate('/customization')} />
       <AzMenuItem id="forms" text="Forms" route="forms" info="AzForm + AzTextBox showcase." onClick={() => navigate('/forms')} />
       <AzMenuItem id="help-system" text="Help System" route="help-system" info="screenTitle, info, classifiers, helpList." classifiers={new Set(['focus'])} onClick={() => navigate('/help-system')} />
-      <AzMenuItem id="tutorial" text="Tutorials" route="tutorial" info="AzTutorial DSL — every advance condition + highlight." classifiers={new Set(['advanced'])} onClick={() => navigate('/tutorial')} />
+      <AzMenuItem id="tutorial" text="Guidance" route="tutorial" info="Status-driven guidance — activate goals, watch callouts route live." classifiers={new Set(['advanced'])} onClick={() => navigate('/tutorial')} />
       <AzMenuItem id="legacy" text="Rail Playground" route="legacy" info="The original rail demos." onClick={() => navigate('/legacy')} />
       <AzMenuItem id="about-demo" text="About & More" route="about-demo" info="In-app About reader + More from Az carousel." onClick={() => navigate('/about-demo')} />
+
+      {/* ---------- Status-driven guidance demo (replaces the old scripted tutorial) ---------- */}
+      {/* A custom status node backed by app state + a hand-authored edge that carries the instruction
+          to reach it. Built-in az.* statuses (screen/host/rail) and their auto-edges come for free. */}
+      <AzStatus id="guide_task_done" predicate={() => guideTaskDone} />
+      <AzEdge
+        from="az.screen.tutorial"
+        to="guide_task_done"
+        text='Press "Mark task done" on this screen'
+        highlightItemId="tutorial"
+      />
+      {/* `guide_onboarding` self-arms when you land on the Guidance screen and routes to Bottom Sheets
+          via the auto-generated "Tap Bottom Sheets" edge. The other two are activated together. */}
+      <AzGoal id="guide_onboarding" target="az.screen.bottom-sheet" label="See the Bottom Sheets demo" autoStartWhen="az.screen.tutorial" />
+      <AzGoal id="guide_expand_host" target="az.host.rail-host.expanded" label="Expand the Rail Host" />
+      <AzGoal id="guide_custom_task" target="guide_task_done" label="Complete a custom task" />
 
       <AzDivider />
 
@@ -409,7 +432,16 @@ function App() {
                 />
               }
             />
-            <Route path="/tutorial" element={<TutorialDemo />} />
+            <Route
+              path="/tutorial"
+              element={
+                <TutorialDemo
+                  taskDone={guideTaskDone}
+                  onMarkTaskDone={() => setGuideTaskDone(true)}
+                  onResetTask={() => setGuideTaskDone(false)}
+                />
+              }
+            />
             <Route path="/about-demo" element={<AboutDemo />} />
             <Route path="/legacy" element={<LegacyPlayground />} />
             <Route path="*" element={<LegacyPlayground />} />

@@ -73,8 +73,9 @@ import com.hereliesaz.aznavrail.service.GithubDocsRepository
 import com.hereliesaz.aznavrail.internal.AzSafeZones
 import com.hereliesaz.aznavrail.internal.azResolveSafeBottom
 import com.hereliesaz.aznavrail.internal.AzVisualSide
-import com.hereliesaz.aznavrail.tutorial.LocalAzTutorialController
-import com.hereliesaz.aznavrail.tutorial.rememberAzTutorialController
+import com.hereliesaz.aznavrail.tutorial.AzGuidanceController
+import com.hereliesaz.aznavrail.tutorial.LocalAzGuidanceController
+import com.hereliesaz.aznavrail.tutorial.rememberAzGuidanceController
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzSheetConfig
 import androidx.compose.foundation.layout.BoxScope
@@ -311,7 +312,7 @@ fun AzHostActivityLayout(
     onExpandedChange: ((Boolean) -> Unit)? = null,
     pagesEnabled: Boolean = true,
     content: AzNavHostScope.() -> Unit
-) {
+): AzGuidanceController {
     val context = LocalContext.current
     val activity = remember(context) {
         var currentContext: android.content.Context = context
@@ -349,6 +350,10 @@ fun AzHostActivityLayout(
     scope.apply(content)
     // Re-apply persisted reloc-item reorders so drag-and-drop sticks across recomposition.
     scope.getRailScopeImpl().applyRelocReorders()
+
+    // The status-driven guidance controller. Created here, provided to the rail (which routes/renders
+    // it), and returned to the developer so they can `activate`/`deactivate` goals (see AzStatus.kt).
+    val guidanceController = rememberAzGuidanceController()
 
     val railScope = scope.getRailScopeImpl()
     val dockingSide = railScope.dockingSide
@@ -483,11 +488,8 @@ fun AzHostActivityLayout(
             }
         }
 
-        val tutorialController = rememberAzTutorialController()
-
         CompositionLocalProvider(
-            LocalAzNavHostScope provides scope,
-            LocalAzTutorialController provides tutorialController
+            LocalAzNavHostScope provides scope
         ) {
             AzHostFragmentLayout(
                 safeTop = safeTop,
@@ -505,7 +507,7 @@ fun AzHostActivityLayout(
             LocalAzNavHostPresent provides true,
             LocalAzNavHostScope provides scope,
             LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom),
-            LocalAzTutorialController provides tutorialController
+            LocalAzGuidanceController provides guidanceController
         ) {
             AzNavRail(
                 modifier = Modifier.fillMaxSize(),
@@ -541,7 +543,6 @@ fun AzHostActivityLayout(
         CompositionLocalProvider(
             LocalAzNavHostScope provides scope,
             LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom),
-            LocalAzTutorialController provides tutorialController,
         ) {
             if (scope.aboutVisible || scope.moreFromAzVisible) {
                 // Pad only the rail offset; the overlays apply top/bottom safe-zone insets themselves
@@ -585,8 +586,6 @@ fun AzHostActivityLayout(
                     itemBoundsCache = railScope.itemBoundsCache,
                     helpList = railScope.advancedConfig.helpList,
                     nestedRailOpenId = scope.helpScopeId,
-                    tutorials = railScope.advancedConfig.tutorials,
-                    onTutorialLaunch = { id -> tutorialController.startTutorial(id); scope.hideHelp() },
                 )
             }
         }
@@ -615,6 +614,8 @@ fun AzHostActivityLayout(
             )
         }
     }
+
+    return guidanceController
 }
 
 /**

@@ -22,6 +22,12 @@ export * from './services/moreFromAz';
 export * from './types';
 export type { AzToggleProps, AzCyclerProps } from './types';
 export { AzHelpRailItem, AzHelpSubItem } from './AzNavRailScope';
-export { AzTutorialContext, AzTutorialProvider, useAzTutorialController, } from './tutorial/AzTutorialController';
-export type { AzTutorialController } from './types';
+export { AzStatus, AzEdge, AzGoal } from './guidance/AzGuidanceScope';
+export type { AzStatusProps, AzEdgeProps, AzGoalProps } from './guidance/AzGuidanceScope';
+export { AzGuidanceProvider, useAzGuidanceController } from './guidance/AzGuidanceController';
+export type { AzGuidanceController } from './guidance/AzGuidanceController';
+export type { AzGuideHighlight, AzCalloutSide, AzInstruction, AzGoal as AzGoalDef, AzEdge as AzEdgeDef, AzStatusPredicate, } from './guidance/AzStatus';
+export { AzInstructionOverlay } from './components/AzInstructionOverlay';
+export { useActiveStatuses, computeBuiltinStatuses } from './guidance/AzStatusEngine';
+export { nextHop, routeInstructions, computeAutoEdges } from './guidance/AzGuidance';
 //# sourceMappingURL=index.d.ts.map

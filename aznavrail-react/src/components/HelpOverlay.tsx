@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { AzNavItem, AzTutorial } from '../types';
-import { useAzTutorialController } from '../tutorial/AzTutorialController';
+import { AzNavItem } from '../types';
 
-/** Props for the shared `HelpOverlay` component that includes tutorial launch support. */
+/** Props for the shared `HelpOverlay` component. */
 interface HelpOverlayProps {
     /** All registered nav items; items with `info` or a `helpList` entry are shown. */
     items: AzNavItem[];
@@ -15,15 +14,12 @@ interface HelpOverlayProps {
     itemBounds: Record<string, { x: number, y: number, width: number, height: number }>;
     /** Id of the currently open nested-rail; its sub-items are included in the overlay. */
     nestedRailVisibleId?: string | null;
-    /** Map of tutorial id → `AzTutorial`; when a tutorial matches an item id, a "Start Tutorial" button is shown. */
-    tutorials?: Record<string, AzTutorial>;
 }
 
-/** Shared full-screen dark overlay that shows connector-line help cards and offers "Start Tutorial" when tutorials are available. */
-export const HelpOverlay: React.FC<HelpOverlayProps> = ({ items, onDismiss, helpList, itemBounds, nestedRailVisibleId = null, tutorials = {} }) => {
+/** Shared full-screen dark overlay that shows connector-line help cards. */
+export const HelpOverlay: React.FC<HelpOverlayProps> = ({ items, onDismiss, helpList, itemBounds, nestedRailVisibleId = null }) => {
     const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
     const [cardBounds, setCardBounds] = useState<Record<string, { x: number, y: number, width: number, height: number }>>({});
-    const tutorialController = useAzTutorialController();
 
     const isNestedRailOpen = nestedRailVisibleId !== null;
     const paddingLeft = isNestedRailOpen ? 240 : 120;
@@ -113,8 +109,6 @@ export const HelpOverlay: React.FC<HelpOverlayProps> = ({ items, onDismiss, help
                     const titleText = i.text?.trim() || `Item ${i.id}`;
                     const isExpanded = expandedItemId === i.id;
 
-                    const hasTutorial = !!tutorials[i.id];
-
                     return (
                         <TouchableOpacity
                             key={i.id}
@@ -146,21 +140,7 @@ export const HelpOverlay: React.FC<HelpOverlayProps> = ({ items, onDismiss, help
                                     {listText}
                                 </Text>
                             )}
-                            {hasTutorial && !isExpanded && (
-                                <Text style={styles.tutorialHint}>Tutorial available</Text>
-                            )}
-                            {hasTutorial && isExpanded && (
-                                <TouchableOpacity
-                                    style={styles.startTutorialButton}
-                                    onPress={() => {
-                                        tutorialController.startTutorial(i.id);
-                                        onDismiss();
-                                    }}
-                                >
-                                    <Text style={styles.startTutorialText}>Start Tutorial</Text>
-                                </TouchableOpacity>
-                            )}
-                            {isExpanded && !hasTutorial && (
+                            {isExpanded && (
                                 <Text style={styles.tapToCollapse}>Tap to collapse</Text>
                             )}
                         </TouchableOpacity>
@@ -204,24 +184,5 @@ const styles = StyleSheet.create({
         color: 'gray',
         fontSize: 12,
         marginTop: 8,
-    },
-    tutorialHint: {
-        color: '#aaa',
-        fontSize: 11,
-        marginTop: 6,
-        fontStyle: 'italic',
-    },
-    startTutorialButton: {
-        marginTop: 12,
-        backgroundColor: '#6200EE',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 16,
-        alignSelf: 'flex-start',
-    },
-    startTutorialText: {
-        color: '#fff',
-        fontSize: 13,
-        fontWeight: '600',
     },
 });

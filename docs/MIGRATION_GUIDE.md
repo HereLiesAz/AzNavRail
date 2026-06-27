@@ -94,71 +94,88 @@ This fires whenever a user interacts with any rail item (tap, toggle, cycler adv
 
 ---
 
-## Migrating to the Expanded Tutorial Framework
+## Migrating from the scripted tutorial framework to status-driven guidance
 
-The tutorial framework now ships with four advance conditions, two branching mechanisms, checklist cards, media cards, cross-platform persistence, and a Web port.
+The scripted scene/card **tutorial** framework has been **removed** and replaced by the reactive
+**status-driven guidance** framework. Instead of authoring a linear script of scenes and cards, you
+describe the app's userflow as a flowchart of **statuses** (string-id nodes defined by reactive
+predicates) joined by **edges** (transitions that each carry an instruction). You declare **goals**
+(target statuses) and activate them on the `AzGuidanceController`; the engine shows the instruction to
+reach the next status toward each active goal, **auto-advances the instant a target status becomes
+true** (no Next button), re-routes live, and shows **every active goal's** callout next to its control.
 
-### Existing cards remain valid
+### Old → new mapping
 
-All new fields on `AzCard` — `advanceCondition`, `branches`, `mediaContent`, `checklistItems` — have safe defaults and are optional. Existing `card(title, text, highlight, actionText, onAction)` call sites continue to compile and behave identically. No changes are required unless you want to use the new features.
+| Old (scripted tutorial) | New (status-driven guidance) |
+| :--- | :--- |
+| `AzTutorial` / `scene(...)` / `card(...)` | `azStatus` / `azEdge` / `azGoal` + the guidance engine |
+| `AzTutorialController.startTutorial(id, …)` | `AzGuidanceController.activate(id)` |
+| `AzTutorialController.markTutorialRead(id)` | `AzGuidanceController.markReached(id)` |
+| `azAdvanced(tutorials = …)` config | **removed** — declare `azStatus` / `azEdge` / `azGoal` in the host content lambda |
+| Help-overlay **"Start Tutorial"** launch | **removed** — guidance is developer-activated, never launched from help |
+| Advance conditions (`Button` / `TapTarget` / `TapAnywhere` / `Event`), variable/scene branching, checklist/media cards, `AzTutorialOverlay` | subsumed by the status graph + auto-advancing engine |
+| Persistence key `az_navrail_read_tutorials` | `az_navrail_completed_goals` |
 
-### One breaking change: `AzTutorialController.Saver`
+### The new DSL
 
-Previously `AzTutorialController.Saver` could be referenced as a plain `val`. It is now a function that requires a `Context` argument:
+The guidance DSL lives inside `AzHostActivityLayout { ... }` on Android (which now **returns** an
+`AzGuidanceController`, also readable via `LocalAzGuidanceController.current` /
+`rememberAzGuidanceController()`); on React/web it is expressed as JSX children of the rail with the
+`useAzGuidanceController()` hook.
 
-**Old:**
+- `azStatus(id) { predicate }` / `<AzStatus id predicate />` — declare a custom flowchart node.
+- `azEdge(from, to = null, text, title = null, highlightItemId = null)` /
+  `<AzEdge from to? text title? highlightItemId? />` — a transition carrying instruction `text`. You
+  hand-author edges only into your **custom** statuses; rail affordances are auto-edged.
+- `azGoal(id, target, label = null, autoStartWhen = null)` /
+  `<AzGoal id target label? autoStartWhen? />` — a target status; inert until activated.
+  `autoStartWhen` self-activates onboarding goals.
+
+The controller surface (identical on both platforms): `enabled`, `activeGoals`, `completedGoals`,
+`enable()`, `disable()`, `activate(id)`, `deactivate(id)`, `markReached(id)`, `isCompleted(id)`.
+
 ~~~kotlin
-rememberSaveable(saver = AzTutorialController.Saver) { AzTutorialController() }
+// Android — AzHostActivityLayout returns the controller
+val controller = AzHostActivityLayout(navController = nav, currentDestination = route) {
+    azStatus("profileComplete") { viewModel.profile.isComplete }
+    azEdge(from = "az.screen.feature-a", to = "profileComplete",
+           text = "Finish setup.", highlightItemId = "feature-a")
+    azGoal(id = "onboarding", target = "profileComplete",
+           autoStartWhen = { !guidance.isCompleted("onboarding") })
+}
+controller.activate("onboarding")
 ~~~
 
-**New:**
-~~~kotlin
-rememberSaveable(saver = AzTutorialController.Saver(context)) { AzTutorialController(context) }
+~~~tsx
+// React Native / Web
+const ctrl = useAzGuidanceController();
+ctrl.activate('onboarding');
+// <AzStatus id="profileComplete" predicate={() => viewModel.profile.isComplete} />
+// <AzEdge from="az.screen.feature-a" to="profileComplete" text="Finish setup." highlightItemId="feature-a" />
+// <AzGoal id="onboarding" target="profileComplete" autoStartWhen={() => !done.includes('onboarding')} />
 ~~~
 
-**Who is affected:** Only callers who explicitly used `AzTutorialController.Saver` in their own `rememberSaveable` calls. The standard entrypoint `rememberAzTutorialController()` handles this internally and is unaffected.
+### Built-in statuses, auto-edges, and predicate timing
 
-### `startTutorial` now accepts variables
+The rail auto-publishes `az.*` statuses (`az.app.ready`, `az.rail.expanded` / `az.rail.collapsed`,
+`az.rail.floating`, `az.host.<id>.expanded`, `az.screen.<route>`, `az.item.<id>.active`,
+`az.nestedRail.<id>.open`, `az.help.open`, `az.onscreen.<id>.visible`) and generates auto-edges for
+rail affordances ("Open the menu" for `az.rail.collapsed → az.rail.expanded`, tap host →
+`az.host.<id>.expanded`, tap nested-rail → `az.nestedRail.<id>.open`, tap routed item →
+`az.screen.<route>`). Predicates over Compose/React state are observed instantly; predicates over
+non-reactive sources (a `StateFlow.value`, a plain `var`, a `ref`, an external store) are observed
+within a ~300 ms poll. Goal activation is developer-driven — there is no built-in end-user picker.
 
-The signature of `startTutorial` gains an optional second parameter:
+### Persistence
 
-~~~kotlin
-// Old (still valid — variables defaults to emptyMap())
-controller.startTutorial("tut-1")
+Completed goals persist under key `az_navrail_completed_goals` (`SharedPreferences` on Android,
+`localStorage` / `AsyncStorage` on React/RN), replacing the old `az_navrail_read_tutorials` read-state
+key.
 
-// New — pass variables to drive scene-level branching
-controller.startTutorial("tut-1", variables = mapOf("userLevel" to "advanced"))
-~~~
+### React/web overlay parity note
 
-TypeScript:
-~~~typescript
-// Old (still valid)
-controller.startTutorial('tut-1');
-
-// New
-controller.startTutorial('tut-1', { userLevel: 'advanced' });
-~~~
-
-### Help/Info Overlay behavior change
-
-The old behavior — any tap on a collapsed help card immediately started the tutorial — is removed. The new flow is:
-
-1. **Collapsed card:** Shows a "Tutorial available" hint when a tutorial exists for that item. No action on tap.
-2. **Expanded card:** Shows a "Start Tutorial" button. Tapping it calls `startTutorial` and dismisses the overlay.
-
-If your app relied on the old tap-to-launch behavior you will need to update any UI that expected tapping a collapsed card to start the tutorial.
-
-### New Web provider (distinct from React Native)
-
-The Web port introduces `AzWebTutorialProvider` and `useAzWebTutorialController` — separate exports from the React Native `AzTutorialProvider` / `useAzTutorialController`. Do not import the RN provider in a web build or vice versa.
-
-~~~typescript
-// React Native
-import { AzTutorialProvider, useAzTutorialController } from '@HereLiesAz/aznavrail-react';
-
-// Web
-import { AzWebTutorialProvider, useAzWebTutorialController } from '@HereLiesAz/aznavrail-web';
-~~~
+The React/web overlay draws an **accent ring** around each target over a light dim, rather than a true
+punch-out spotlight. Routing and advancement are identical to Android.
 
 ---
 

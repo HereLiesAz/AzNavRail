@@ -61,6 +61,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
@@ -85,8 +86,13 @@ import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 import com.hereliesaz.aznavrail.model.AzOrientation
-import com.hereliesaz.aznavrail.tutorial.AzTutorialOverlay
-import com.hereliesaz.aznavrail.tutorial.LocalAzTutorialController
+import com.hereliesaz.aznavrail.tutorial.AzInstructionOverlay
+import com.hereliesaz.aznavrail.tutorial.LocalAzGuidanceController
+import com.hereliesaz.aznavrail.tutorial.computeAutoEdges
+import com.hereliesaz.aznavrail.tutorial.computeBuiltinStatuses
+import com.hereliesaz.aznavrail.tutorial.rememberActiveStatuses
+import com.hereliesaz.aznavrail.tutorial.rememberAzGuidanceController
+import com.hereliesaz.aznavrail.tutorial.routeInstructions
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
@@ -255,8 +261,6 @@ fun AzNavRail(
     val hostScope = LocalAzNavHostScope.current as? AzNavHostScopeImpl
     val showHelpOverlay = hostScope?.helpVisible == true
     var wasFloatingOpenBeforeDrag by remember { mutableStateOf(false) }
-    val tutorialController = LocalAzTutorialController.current
-    val activeTutorialId by tutorialController.activeTutorialId
     val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
     val onSecretClick = SecretScreens(secLoc = scope.advancedConfig.secLoc, secLocPort = scope.advancedConfig.secLocPort)
 
@@ -313,25 +317,20 @@ fun AzNavRail(
 
     val toggleHelpOverlay = remember(scope, hostScope) {
         { itemId: String? ->
-            if (itemId != null && scope.advancedConfig.tutorials.containsKey(itemId)) {
-                tutorialController.startTutorial(itemId)
-                hostScope?.hideHelp() // ensure help overlay is closed
+            if (hostScope?.helpVisible == true) {
+                hostScope.hideHelp()
+                scope.advancedConfig.onDismissHelp?.invoke()
             } else {
-                if (hostScope?.helpVisible == true) {
-                    hostScope.hideHelp()
-                    scope.advancedConfig.onDismissHelp?.invoke()
-                } else {
-                    // Locate the tapped help item's parent nested rail (if any) so the overlay
-                    // can scope its cards to that rail. A help item under a `azNestedRail { ... }`
-                    // block lives in some parent's `nestedRailItems`; a main-rail help item lives
-                    // directly in scope.navItems and resolves to scope=null.
-                    val scopeId = itemId?.let { id ->
-                        scope.navItems.firstOrNull { parent ->
-                            parent.isNestedRail && parent.nestedRailItems?.any { it.id == id } == true
-                        }?.id
-                    }
-                    hostScope?.showHelp(scopeId)
+                // Locate the tapped help item's parent nested rail (if any) so the overlay
+                // can scope its cards to that rail. A help item under a `azNestedRail { ... }`
+                // block lives in some parent's `nestedRailItems`; a main-rail help item lives
+                // directly in scope.navItems and resolves to scope=null.
+                val scopeId = itemId?.let { id ->
+                    scope.navItems.firstOrNull { parent ->
+                        parent.isNestedRail && parent.nestedRailItems?.any { it.id == id } == true
+                    }?.id
                 }
+                hostScope?.showHelp(scopeId)
             }
         }
     }
@@ -871,20 +870,87 @@ fun AzNavRail(
     // The About reader, Help overlay, and "More from Az" carousel are now rendered by
     // AzHostActivityLayout (About + More-from-Az flow through the onscreen() layout path; Help stays
     // full-screen). The rail only flips their visibility on the host scope via the trigger handlers
-    // above. The interactive tutorial spotlight stays here — it is a guided overlay, not a content
-    // screen. It must be fully CLEARED from the screen while a footer screen (About / More-from-Az)
-    // is open — not merely dimmed — so it is not composed at all then.
-    if (hostScope?.aboutVisible != true && hostScope?.moreFromAzVisible != true) {
-        activeTutorialId?.let { tutorialId ->
-            scope.advancedConfig.tutorials[tutorialId]?.let { tutorial ->
-                AzTutorialOverlay(
-                    tutorialId = tutorialId,
-                    tutorial = tutorial,
-                    onDismiss = { tutorialController.endTutorial() },
-                    itemBoundsCache = scope.itemBoundsCache
-                )
+    // above.
+
+    // --- Status-driven guidance (the reactive replacement for the scripted tutorial) ---
+    // The engine observes which statuses are true, routes from the live state toward each active goal,
+    // and renders the next-hop instruction as a callout adjacent to its target — auto-advancing the
+    // instant a target status becomes true. The controller is host-provided (so the developer's handle,
+    // returned from AzHostActivityLayout, drives the same instance); standalone rails fall back locally.
+    val guidanceFallback = rememberAzGuidanceController()
+    val guidanceController = LocalAzGuidanceController.current ?: guidanceFallback
+
+    val guidanceActiveItemId = scope.navItems.firstOrNull { item ->
+        (item.route != null && item.route == actualCurrentDestination) ||
+            item.classifiers.any { scope.activeClassifiers.contains(it) }
+    }?.id
+
+    val activeStatuses by rememberActiveStatuses(
+        statusPredicates = scope.statusPredicates,
+        activeClassifiers = scope.activeClassifiers,
+        builtins = {
+            computeBuiltinStatuses(
+                railExpanded = isExpanded,
+                railFloating = isFloating,
+                hostStates = hostStates,
+                currentRoute = actualCurrentDestination,
+                activeItemId = guidanceActiveItemId,
+                nestedRailOpenId = scope.nestedRailOpenId,
+                helpOpen = showHelpOverlay,
+            )
+        },
+    )
+
+    val guidanceGoalsMap = remember(scope.guidanceGoals.toList()) {
+        scope.guidanceGoals.associateBy { it.id }
+    }
+    // Self-arming onboarding goals: activate once their trigger status holds (unless already completed).
+    // Keyed on the controller too, so it re-binds if the host-provided instance replaces the fallback.
+    LaunchedEffect(activeStatuses, guidanceGoalsMap, guidanceController) {
+        guidanceGoalsMap.values.forEach { goal ->
+            val trigger = goal.autoStartWhen
+            if (trigger != null && trigger in activeStatuses &&
+                !guidanceController.isCompleted(goal.id) && goal.id !in guidanceController.activeGoals
+            ) {
+                guidanceController.activate(goal.id)
             }
         }
+    }
+
+    if (guidanceController.enabled &&
+        hostScope?.aboutVisible != true && hostScope?.moreFromAzVisible != true
+    ) {
+        // Auto-edge instruction text comes from localizable string resources (apps override the ids).
+        val openMenuLabel = stringResource(R.string.az_guide_open_menu)
+        val tapTemplate = stringResource(R.string.az_guide_tap_item)
+        val guidanceEdges = remember(scope.guidanceEdges.toList(), scope.navItems.toList(), openMenuLabel, tapTemplate) {
+            scope.guidanceEdges + computeAutoEdges(
+                items = scope.navItems,
+                openMenuLabel = openMenuLabel,
+                tapLabel = { label -> String.format(tapTemplate, label) },
+            )
+        }
+        // Cache the BFS routing: recompute only when the edges/goals/statuses change (or the reactive
+        // active-goal set, read inside derivedStateOf) — not on every recomposition from drag/animation.
+        val frame = remember(guidanceEdges, guidanceGoalsMap, activeStatuses) {
+            derivedStateOf {
+                routeInstructions(
+                    edges = guidanceEdges,
+                    goals = guidanceGoalsMap,
+                    activeGoalIds = guidanceController.activeGoals,
+                    activeStatuses = activeStatuses,
+                )
+            }
+        }.value
+        // Auto-advance: a goal whose target is now true is reached → deactivate it and persist.
+        LaunchedEffect(frame.reachedGoals, guidanceController) {
+            frame.reachedGoals.forEach { guidanceController.markReached(it) }
+        }
+        AzInstructionOverlay(
+            instructions = frame.instructions,
+            itemBoundsCache = scope.itemBoundsCache,
+            accent = if (scope.activeColor != Color.Unspecified) scope.activeColor else MaterialTheme.colorScheme.primary,
+        )
     }
 }
 

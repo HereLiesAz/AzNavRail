@@ -27,8 +27,10 @@ import { AzNestedRailPopup } from './components/AzNestedRailPopup';
 import { HelpOverlay } from './components/HelpOverlay';
 import { AboutOverlay } from './components/AboutOverlay';
 import { MoreFromAzOverlay } from './components/MoreFromAzOverlay';
-import { AzTutorialProvider, useAzTutorialController } from './tutorial/AzTutorialController';
-import { AzTutorialOverlay } from './components/AzTutorialOverlay';
+import { AzGuidanceProvider, useAzGuidanceContext } from './guidance/AzGuidanceController';
+import { useActiveStatuses, computeBuiltinStatuses } from './guidance/AzStatusEngine';
+import { routeInstructions, computeAutoEdges } from './guidance/AzGuidance';
+import { AzInstructionOverlay } from './components/AzInstructionOverlay';
 
 /** Props for the `AzNavRail` component, extending all `AzNavRailSettings` options. */
 interface AzNavRailProps extends AzNavRailSettings {
@@ -251,6 +253,9 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     const t = setInterval(applyAutoExpansions, 300);
     return () => clearInterval(t);
   }, [applyAutoExpansions]);
+
+  // Status-driven guidance runs in its own isolated <AzGuidanceLayer> (rendered below) so its engine
+  // state never re-renders this host — keeping the rail's item-registry effect timing untouched.
 
   useEffect(() => {
       const id = pan.addListener((value) => { panValue.current = value; });
@@ -875,7 +880,6 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                         onDismiss={onDismissInfoScreen!}
                         itemBounds={itemBounds}
                         nestedRailVisibleId={nestedRailVisible}
-                        tutorials={(config as any).tutorials}
                     />
                 </View>
             )}
@@ -900,11 +904,20 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                 />
             )}
 
-            {/* Tutorial overlay is fully CLEARED while a footer screen is open. */}
+            {/* Guidance instruction callouts are fully CLEARED while a footer screen is open. The
+                engine lives in its own component so its state changes never re-render this host. */}
             {!showAbout && !showMoreFromAz && (
-              <TutorialOverlayWrapper
-                tutorials={(config as any).tutorials}
+              <AzGuidanceLayer
+                items={items}
                 itemBounds={itemBounds}
+                isExpanded={isExpanded}
+                isFloating={isFloating}
+                hostStates={hostStates}
+                currentDestination={currentDestination}
+                nestedRailVisible={nestedRailVisible}
+                infoScreen={infoScreen}
+                activeClassifiers={(props as any).activeClassifiers}
+                accent={typeof config.activeColor === 'string' ? config.activeColor : undefined}
               />
             )}
         </View>
@@ -912,40 +925,68 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   );
 };
 
-const TutorialOverlayWrapper: React.FC<{
-  tutorials?: Record<string, import('./types').AzTutorial>;
+/**
+ * Isolated host for the status-driven guidance engine. Rendered as a sibling inside `AzNavRailInner`,
+ * it receives the live rail state as props and owns all guidance reactivity (status polling, routing,
+ * auto-advance, `autoStartWhen`) — so when those update, only this component re-renders, never the
+ * rail itself. That keeps the rail's fragile item-registry effect timing untouched.
+ */
+const AzGuidanceLayer: React.FC<{
+  items: AzNavItem[];
   itemBounds: Record<string, any>;
-  /**
-   * When true, the in-progress tutorial overlay is hidden and input-disabled but kept MOUNTED
-   * (so its scene/card/checklist state is preserved) — used while a footer screen is open.
-   */
-  suppressed?: boolean;
-}> = ({ tutorials, itemBounds, suppressed = false }) => {
-  const tutorialController = useAzTutorialController();
-  const activeId = tutorialController.activeTutorialId;
-
-  if (!activeId || !tutorials || !tutorials[activeId]) {
-    return null;
-  }
-
-  return (
-    <View
-      style={[StyleSheet.absoluteFill, suppressed && { opacity: 0 }]}
-      pointerEvents={suppressed ? 'none' : 'auto'}
-    >
-      <AzTutorialOverlay
-        tutorialId={activeId}
-        tutorial={tutorials[activeId]}
-        onDismiss={() => tutorialController.endTutorial()}
-        itemBoundsCache={itemBounds}
-      />
-    </View>
+  isExpanded: boolean;
+  isFloating: boolean;
+  hostStates: Record<string, boolean>;
+  currentDestination?: string;
+  nestedRailVisible: string | null;
+  infoScreen: boolean;
+  activeClassifiers?: Set<string> | string[];
+  accent?: string;
+}> = ({ items, itemBounds, isExpanded, isFloating, hostStates, currentDestination, nestedRailVisible, infoScreen, activeClassifiers, accent }) => {
+  const guidance = useAzGuidanceContext();
+  const activeItemId = useMemo(
+    () => items.find((it) => it.route && it.route === currentDestination)?.id ?? null,
+    [items, currentDestination],
   );
+  const builtins = useCallback(
+    () => computeBuiltinStatuses({
+      railExpanded: isExpanded,
+      railFloating: isFloating,
+      hostStates,
+      currentRoute: currentDestination,
+      activeItemId,
+      nestedRailOpenId: nestedRailVisible,
+      helpOpen: infoScreen,
+    }),
+    [isExpanded, isFloating, hostStates, currentDestination, activeItemId, nestedRailVisible, infoScreen],
+  );
+  const activeStatuses = useActiveStatuses(guidance.statusPredicates, activeClassifiers, builtins);
+  const edges = useMemo(() => [...guidance.edges, ...computeAutoEdges(items)], [guidance.edges, items]);
+  const frame = useMemo(
+    () => routeInstructions(edges, guidance.goals, guidance.activeGoals, activeStatuses),
+    [edges, guidance.goals, guidance.activeGoals, activeStatuses],
+  );
+  // Self-arming onboarding goals: activate once their trigger status holds (unless already completed).
+  useEffect(() => {
+    Object.values(guidance.goals).forEach((goal) => {
+      if (goal.autoStartWhen && activeStatuses.has(goal.autoStartWhen) &&
+          !guidance.isCompleted(goal.id) && !guidance.activeGoals.includes(goal.id)) {
+        guidance.activate(goal.id);
+      }
+    });
+  }, [activeStatuses, guidance]);
+  // Auto-advance: a goal whose target is now true is reached → deactivate it and persist.
+  useEffect(() => {
+    frame.reachedGoals.forEach((g) => guidance.markReached(g));
+  }, [frame, guidance]);
+
+  if (!guidance.enabled) return null;
+  return <AzInstructionOverlay instructions={frame.instructions} itemBounds={itemBounds} accent={accent} />;
 };
 
 /**
  * Main navigation rail component for React Native.
- * Renders a collapsible side rail with icon buttons, an expandable menu, and optional tutorial/help overlay support.
+ * Renders a collapsible side rail with icon buttons, an expandable menu, and optional guidance/help overlay support.
  * Declare items as JSX children using the `AzNavRailScope` DSL helpers.
  *
  * @example
@@ -972,9 +1013,9 @@ const TutorialOverlayWrapper: React.FC<{
  */
 export const AzNavRail: React.FC<AzNavRailProps> = (props) => {
   return (
-    <AzTutorialProvider>
+    <AzGuidanceProvider>
       <AzNavRailInner {...props} />
-    </AzTutorialProvider>
+    </AzGuidanceProvider>
   );
 };
 

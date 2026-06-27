@@ -15,7 +15,11 @@ const useAzItem = item => {
     // Compare arrays
     JSON.stringify(prev.options) === JSON.stringify(item.options) && JSON.stringify(prev.menuOptions) === JSON.stringify(item.menuOptions) && prev.shape === item.shape && prev.color === item.color && prev.info === item.info && prev.isRelocItem === item.isRelocItem &&
     // Reloc props
-    JSON.stringify(prev.hiddenMenu) === JSON.stringify(item.hiddenMenu) && prev.onRelocate === item.onRelocate;
+    JSON.stringify(prev.hiddenMenu) === JSON.stringify(item.hiddenMenu) && prev.onRelocate === item.onRelocate &&
+    // Host reactive-expansion / callbacks: compare by reference so a new closure
+    // causes a re-registration and keeps the live item fresh.
+    // Callers should useCallback([dep]) to avoid re-registering on every render.
+    prev.expandWhen === item.expandWhen && prev.onExpandedChange === item.onExpandedChange;
     if (!isSame) {
       context.register(item);
       previousItem.current = item;

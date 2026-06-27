@@ -143,9 +143,8 @@ interface AzNavRailScope {
      * @param secLoc Optional developer configuration key to enable the Secret Screens.
      * @param secLocPort The network port used for the location history sync server. Defaults to 10203.
      * @param helpList An optional map of Item ID to help text.
-     * @param tutorials An optional map of Item ID to interactive AzTutorials.
      */
-    fun azAdvanced(isLoading: Boolean = false, helpEnabled: Boolean = false, onDismissHelp: (() -> Unit)? = null, overlayService: Class<out android.app.Service>? = null, onUndock: (() -> Unit)? = null, enableRailDragging: Boolean = false, onRailDrag: ((Float, Float) -> Unit)? = null, onOverlayDrag: ((Float, Float) -> Unit)? = null, onItemGloballyPositioned: ((String, Rect) -> Unit)? = null, secLoc: String? = null, secLocPort: Int = 10203, helpList: Map<String, Any> = emptyMap(), tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap(), onInteraction: ((String, com.hereliesaz.aznavrail.model.AzNavItem) -> Unit)? = null)
+    fun azAdvanced(isLoading: Boolean = false, helpEnabled: Boolean = false, onDismissHelp: (() -> Unit)? = null, overlayService: Class<out android.app.Service>? = null, onUndock: (() -> Unit)? = null, enableRailDragging: Boolean = false, onRailDrag: ((Float, Float) -> Unit)? = null, onOverlayDrag: ((Float, Float) -> Unit)? = null, onItemGloballyPositioned: ((String, Rect) -> Unit)? = null, secLoc: String? = null, secLocPort: Int = 10203, helpList: Map<String, Any> = emptyMap(), onInteraction: ((String, com.hereliesaz.aznavrail.model.AzNavItem) -> Unit)? = null)
 
     /**
      * Configures the built-in **About** screen and the **"More from Az"** carousel.
@@ -169,6 +168,38 @@ interface AzNavRailScope {
      *   opens the "More from Az" carousel directly.
      */
     fun azAbout(inAppAbout: Boolean = true, moreFromAzEnabled: Boolean = true, moreFromAzJsonUrl: String = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json", moreRailItem: Boolean = false)
+
+    /**
+     * Registers a status-driven guidance **status** — a named boolean [predicate] that becomes a node
+     * in the app's flowchart (see `tutorial/AzStatus.kt`). The predicate may read Compose snapshot
+     * state (observed instantly) or a plain source like `StateFlow.value` (observed within a poll).
+     * Built-in `az.*` statuses (rail/host/item/route/onscreen/sheet) and active classifiers are also
+     * statuses — you only register the ones your app domain needs.
+     */
+    fun azStatus(id: String, predicate: () -> Boolean)
+
+    /**
+     * Registers a guidance **edge**: while status [from] is true, the shown instruction tells the user
+     * how to make status [to] true (an interactive hop). A passive edge ([to] = `null`) just shows the
+     * instruction while [from] holds. AzNavHost auto-generates edges for rail affordances; author edges
+     * here for transitions into your own custom statuses. [highlightItemId]/[highlightArea] choose what
+     * the callout is placed next to.
+     */
+    fun azEdge(
+        from: String,
+        to: String? = null,
+        text: String,
+        title: String? = null,
+        highlightItemId: String? = null,
+    )
+
+    /**
+     * Declares a guidance **goal** — a [target] status the framework routes toward when the developer
+     * activates it on the guidance controller. Several goals may be active at once; each active goal's
+     * next-hop instruction is shown simultaneously, placed next to its own target. [autoStartWhen]
+     * self-activates the goal once that status becomes true (onboarding-style).
+     */
+    fun azGoal(id: String, target: String, label: String? = null, autoStartWhen: String? = null)
 
     /**
      * A comprehensive configuration method combining settings, theme, and advanced options.
@@ -199,7 +230,6 @@ interface AzNavRailScope {
         secLoc: String? = null,
         secLocPort: Int = 10203,
         helpList: Map<String, Any> = emptyMap(),
-        tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial> = emptyMap(),
         helpLineColors: List<Color> = emptyList(),
         onInteraction: ((String, com.hereliesaz.aznavrail.model.AzNavItem) -> Unit)? = null
     )
@@ -609,6 +639,15 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
      * whenever the corresponding host's expansion state transitions.
      */
     val onExpandedChangeMap = mutableMapOf<String, (Boolean) -> Unit>()
+
+    // --- Status-driven guidance framework (see tutorial/AzStatus.kt). All cleared on each reset. ---
+    /** Developer status predicates: a status id → `() -> Boolean`, observed reactively by the engine. */
+    val statusPredicates = mutableMapOf<String, () -> Boolean>()
+    /** Flowchart edges authored via `azEdge` (AzNavHost adds auto-edges for rail affordances at render). */
+    val guidanceEdges = mutableListOf<com.hereliesaz.aznavrail.tutorial.AzEdge>()
+    /** Developer-declared guidance goals authored via `azGoal`. */
+    val guidanceGoals = mutableListOf<com.hereliesaz.aznavrail.tutorial.AzGoal>()
+
     /**
      * Persisted reloc-item ordering keyed by `hostId`. Survives [reset] so drag-and-drop
      * reorders stick across recomposition (the DSL is re-applied on every recomposition and
@@ -635,6 +674,9 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         onRelocateMap.clear()
         expandWhenMap.clear()
         onExpandedChangeMap.clear()
+        statusPredicates.clear()
+        guidanceEdges.clear()
+        guidanceGoals.clear()
         itemBoundsCache.clear()
         // Without this, IDs registered on pass N stay in the set on pass N+1 and
         // the next recomposition crashes the moment any ID re-registers.
@@ -781,6 +823,27 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         )
     }
 
+    override fun azStatus(id: String, predicate: () -> Boolean) {
+        statusPredicates[id] = predicate
+    }
+
+    override fun azEdge(from: String, to: String?, text: String, title: String?, highlightItemId: String?) {
+        val highlight = if (highlightItemId != null) {
+            com.hereliesaz.aznavrail.tutorial.AzGuideHighlight.Item(highlightItemId)
+        } else {
+            com.hereliesaz.aznavrail.tutorial.AzGuideHighlight.None
+        }
+        guidanceEdges += com.hereliesaz.aznavrail.tutorial.AzEdge(
+            from = from,
+            to = to,
+            instruction = com.hereliesaz.aznavrail.tutorial.AzInstruction(text = text, title = title, highlight = highlight),
+        )
+    }
+
+    override fun azGoal(id: String, target: String, label: String?, autoStartWhen: String?) {
+        guidanceGoals += com.hereliesaz.aznavrail.tutorial.AzGoal(id = id, target = target, label = label, autoStartWhen = autoStartWhen)
+    }
+
     override fun azTheme(activeColor: Color, defaultShape: AzButtonShape, headerIconShape: AzHeaderIconShape, translucentBackground: Color, helpLineColors: List<Color>, headerIconSize: Dp) {
         this.activeColor = activeColor
         this.defaultShape = defaultShape
@@ -816,7 +879,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         this.titleTextStyle = titleTextStyle
     }
 
-    override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, secLoc: String?, secLocPort: Int, helpList: Map<String, Any>, tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial>, onInteraction: ((String, AzNavItem) -> Unit)?) {
+    override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, secLoc: String?, secLocPort: Int, helpList: Map<String, Any>, onInteraction: ((String, AzNavItem) -> Unit)?) {
         this.advancedConfig = this.advancedConfig.copy(
             isLoading = isLoading,
             helpEnabled = helpEnabled,
@@ -830,7 +893,6 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
             secLoc = secLoc ?: this.advancedConfig.secLoc,
             secLocPort = secLocPort,
             helpList = if (helpList.isNotEmpty()) helpList else this.advancedConfig.helpList,
-            tutorials = if (tutorials.isNotEmpty()) tutorials else this.advancedConfig.tutorials,
             onInteraction = onInteraction ?: this.advancedConfig.onInteraction
         )
     }
@@ -860,7 +922,6 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         secLoc: String?,
         secLocPort: Int,
         helpList: Map<String, Any>,
-        tutorials: Map<String, com.hereliesaz.aznavrail.tutorial.AzTutorial>,
         helpLineColors: List<Color>,
         onInteraction: ((String, AzNavItem) -> Unit)?
     ) {
@@ -892,7 +953,6 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
             secLoc = secLoc ?: this.advancedConfig.secLoc,
             secLocPort = secLocPort,
             helpList = if (helpList.isNotEmpty()) helpList else this.advancedConfig.helpList,
-            tutorials = if (tutorials.isNotEmpty()) tutorials else this.advancedConfig.tutorials,
             onInteraction = onInteraction ?: this.advancedConfig.onInteraction
         )
     }
