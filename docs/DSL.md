@@ -123,10 +123,10 @@ repo); on **web** `appRepositoryUrl` is required (the About entry is hidden when
 is a link-only, CI-versioned carousel — see the README's "In-App About Reader" and "More from Az"
 sections.
 
-While a footer screen (About or More from Az) is open, visible Help cards and any in-progress tutorial
+While a footer screen (About or More from Az) is open, visible Help cards and any guidance callouts
 are hidden, and they return exactly where they were when the footer screen closes (all platforms).
 
-`onInteraction` is called whenever any rail item is interacted with — click, toggle, cycler advance, nested rail open, reloc drag, or host expand/collapse. It fires for both leaf items (`azRailItem` / `azRailSubItem`) and host items (`azRailHostItem`), in both the compact rail and the expanded menu, so opening a host menu is observable just like tapping a leaf. It receives the item's `id` and the `AzNavItem` itself, enabling analytics, UI feedback, and tutorial advancement (pair it with `controller.fireEvent(...)` and an `AzAdvanceCondition.Event` card) without per-item callbacks.
+`onInteraction` is called whenever any rail item is interacted with — click, toggle, cycler advance, nested rail open, reloc drag, or host expand/collapse. It fires for both leaf items (`azRailItem` / `azRailSubItem`) and host items (`azRailHostItem`), in both the compact rail and the expanded menu, so opening a host menu is observable just like tapping a leaf. It receives the item's `id` and the `AzNavItem` itself, enabling analytics and UI feedback without per-item callbacks. (Guidance advancement no longer relies on this — the status-driven engine observes status predicates directly; see the Guidance DSL below.)
 
 ## `AzDropdownMenu` (standalone app-icon drop-down)
 
@@ -284,17 +284,17 @@ observation only ever *expands* (so it never clobbers an `initiallyExpanded` or 
 - ⚠️ React parity: the same semantics are implemented in `aznavrail-react` (render-time evaluation
   plus a 300 ms `setInterval` fallback); see *Capabilities & Limitations* doc.
 
-**Typical use — tutorial framework**
+**Typical use — guidance framework**
 
-A tutorial card that highlights a sub-item inside a collapsed host would fail because the
-sub-item is not laid out (and therefore not in `itemBoundsCache`). Declare `expandWhen` on
-the host to auto-expand it when the tutorial is active:
+A guidance edge that highlights a sub-item inside a collapsed host would fail because the
+sub-item is not laid out (and therefore has no measured bounds). Declare `expandWhen` on
+the host to auto-expand it while a guidance goal is active:
 
 ~~~kotlin
 azRailHostItem(
     id = "my-host",
     text = "Features",
-    expandWhen = { tutorialController.activeTutorialId.value == "onboarding" }
+    expandWhen = { guidance.activeGoals.contains("onboarding") }
 )
 ~~~
 
@@ -345,178 +345,101 @@ The callback covers all four builder types: `azMenuHostItem`, `azRailHostItem`, 
 
 ---
 
-## Tutorial DSL (`azTutorial`)
+## Guidance DSL (`azStatus` / `azEdge` / `azGoal`)
 
-Tutorials are defined with `azTutorial { ... }` and registered via `azAdvanced(tutorials = mapOf("id" to tutorial))`.
+The status-driven guidance framework replaces the old scripted `azTutorial` scene/card DSL. You declare
+the userflow as a flowchart of **statuses** (boolean nodes), **edges** (transitions carrying an
+instruction), and **goals** (target statuses), then activate goals on the `AzGuidanceController`. The
+engine watches which statuses are true and always shows the instruction to reach the next status toward
+each active goal, auto-advancing the moment a target becomes true. See
+[`TUTORIAL_FRAMEWORK_PROPOSAL.md`](TUTORIAL_FRAMEWORK_PROPOSAL.md) for the full reference.
 
 ### Kotlin
+
+The three DSL functions are declared inside the `AzHostActivityLayout { ... }` content lambda, which
+**returns** an `AzGuidanceController`.
+
+~~~kotlin
+fun azStatus(id: String, predicate: () -> Boolean)
+fun azEdge(from: String, to: String? = null, text: String, title: String? = null, highlightItemId: String? = null)
+fun azGoal(id: String, target: String, label: String? = null, autoStartWhen: String? = null)
+~~~
 
 ~~~kotlin
 import com.hereliesaz.aznavrail.tutorial.*
 
-val tutorial = azTutorial {
-    // Lifecycle callbacks (both optional)
-    onComplete { /* fired when last scene completes */ }
-    onSkip    { /* fired when Skip Tutorial tapped */ }
+val guidance = AzHostActivityLayout(navController = nav, currentDestination = route) {
+    azRailItem(id = "cart", text = "Cart", route = "cart")
+    azRailItem(id = "checkout", text = "Checkout", route = "checkout")
+    onscreen { AzNavHost(startDestination = "home") { /* … */ } }
 
-    // ── Variable branch gate (invisible redirect node) ──────────────────
-    scene(id = "gate", content = { /* empty or backdrop composable */ }) {
-        branch(varName = "plan", mapOf(
-            "pro"  to "scene-pro",
-            "free" to "scene-free"
-        ))
-    }
+    // A developer status: a predicate over your own state.
+    azStatus("cart_open") { cart.isOpen }
 
-    // ── Scene with all card types ────────────────────────────────────────
-    scene(id = "scene-pro", content = { ProScreen() }) {
+    // An interactive edge into a built-in status; highlight the control used to traverse it.
+    azEdge(from = "cart_open", to = "az.screen.checkout", text = "Tap Checkout", highlightItemId = "checkout")
 
-        // 1. Default advance condition: Button (Next button shown)
-        card(
-            title  = "Welcome",
-            text   = "This is the pro experience.",
-            highlight = AzHighlight.FullScreen
-        )
+    // A passive edge (to = null): an ambient hint shown while `from` holds.
+    azEdge(from = "cart_open", text = "Review your items before checking out.")
 
-        // 2. TapAnywhere
-        card(
-            title  = "Tap anywhere to continue",
-            text   = "Really, anywhere.",
-            highlight = AzHighlight.None,
-            advanceCondition = AzAdvanceCondition.TapAnywhere
-        )
+    // A goal: drive the user to the confirmation screen. Activate it later (developer-driven).
+    azGoal(id = "checkout", target = "az.screen.confirmation", label = "Check out")
 
-        // 3. TapTarget — with per-item branching
-        card(
-            title  = "Pick a path",
-            text   = "Tap the item you want to explore.",
-            highlight = AzHighlight.Item("nav-menu"),
-            advanceCondition = AzAdvanceCondition.TapTarget,
-            branches = mapOf(
-                "settings-btn" to "scene-settings",
-                "profile-btn"  to "scene-profile"
-            )
-        )
-
-        // 4. Event-driven advance
-        card(
-            title  = "Open the menu",
-            text   = "Swipe right or tap the rail header.",
-            highlight = AzHighlight.Item("rail-header"),
-            advanceCondition = AzAdvanceCondition.Event("menu_opened")
-        )
-
-        // 5. Checklist card — Next disabled until all items checked
-        card(
-            title  = "Before you continue",
-            text   = "Confirm the following:",
-            checklistItems = listOf("I read the docs", "I set up my account")
-        )
-
-        // 6. Media card — content shown between title and text
-        card(
-            title  = "The Rail",
-            text   = "Sits on the left or right edge.",
-            mediaContent = { Image(painterResource(R.drawable.rail), contentDescription = null) }
-        )
-    }
+    // Optional self-activating onboarding goal.
+    azGoal(id = "onboarding", target = "az.rail.expanded", label = "Take the tour", autoStartWhen = "az.app.ready")
 }
 
-// Register
-azAdvanced(
-    helpEnabled = true,
-    onItemGloballyPositioned = { id, rect -> boundsMap[id] = rect },
-    tutorials = mapOf("tut-1" to tutorial)
-)
-
-// Start with variables
-controller.startTutorial("tut-1", variables = mapOf("plan" to "pro"))
-
-// Fire an event from app logic
-controller.fireEvent("menu_opened")
+// Developer-driven activation.
+guidance.activate("checkout")
 ~~~
 
-### TypeScript (React Native / Web)
+You only hand-author edges **into your custom statuses**. The engine auto-generates edges for the rail's
+own affordances: "Open the menu" (`az.rail.collapsed → az.rail.expanded`), tapping a host item
+(→ `az.host.<id>.expanded`), tapping a nested-rail item (→ `az.nestedRail.<id>.open`), and tapping a
+routed item (→ `az.screen.<route>`). Instruction text is localizable via `az_guide_open_menu` /
+`az_guide_tap_item`.
 
-The TypeScript shape is a plain discriminated-union object — no builder DSL.
+### TypeScript (React)
 
-~~~typescript
-import { AzTutorial, AzScene, AzCard } from '@HereLiesAz/aznavrail-react'; // or aznavrail-web
+Declared as JSX children of the rail (under `AzHostActivityLayout` / `AzNavRail`). Get the controller
+anywhere under the rail with `useAzGuidanceController()`.
 
-const tutorial: AzTutorial = {
-    onComplete: () => {},
-    onSkip:     () => {},
-    scenes: [
-        // Variable branch gate
-        {
-            id: 'gate',
-            content: () => null,
-            cards: [],
-            branchVar: 'plan',
-            branches: { pro: 'scene-pro', free: 'scene-free' },
-        },
-        {
-            id: 'scene-pro',
-            content: () => <ProScreen />,
-            cards: [
-                // 1. Button (default)
-                {
-                    title: 'Welcome',
-                    text: 'This is the pro experience.',
-                    highlight: { type: 'FullScreen' },
-                },
-                // 2. TapAnywhere
-                {
-                    title: 'Tap anywhere to continue',
-                    text: 'Really, anywhere.',
-                    highlight: { type: 'None' },
-                    advanceCondition: { type: 'TapAnywhere' },
-                },
-                // 3. TapTarget with branching
-                {
-                    title: 'Pick a path',
-                    text: 'Tap the item you want to explore.',
-                    highlight: { type: 'Item', id: 'nav-menu' },
-                    advanceCondition: { type: 'TapTarget' },
-                    branches: {
-                        'settings-btn': 'scene-settings',
-                        'profile-btn':  'scene-profile',
-                    },
-                },
-                // 4. Event-driven
-                {
-                    title: 'Open the menu',
-                    text: 'Swipe right or tap the rail header.',
-                    highlight: { type: 'Item', id: 'rail-header' },
-                    advanceCondition: { type: 'Event', name: 'menu_opened' },
-                },
-                // 5. Checklist
-                {
-                    title: 'Before you continue',
-                    text: 'Confirm the following:',
-                    checklistItems: ['I read the docs', 'I set up my account'],
-                },
-                // 6. Media
-                {
-                    title: 'The Rail',
-                    text: 'Sits on the left or right edge.',
-                    mediaContent: () => <img src={railImg} style={{ maxHeight: 120 }} alt="" />,
-                },
-            ],
-        },
-    ],
-};
-
-// React Native provider + hook
-// <AzTutorialProvider tutorials={{ 'tut-1': tutorial }}><App /></AzTutorialProvider>
-// const controller = useAzTutorialController();
-
-// Web provider + hook
-// <AzWebTutorialProvider tutorials={{ 'tut-1': tutorial }}><App /></AzWebTutorialProvider>
-// const ctrl = useAzWebTutorialController();
-
-controller.startTutorial('tut-1', { plan: 'pro' });
-controller.fireEvent('menu_opened');
+~~~tsx
+<AzStatus id="cart_open" predicate={() => cart.isOpen} />
+<AzEdge from="cart_open" to="az.screen.checkout" text="Tap Checkout" highlightItemId="checkout" />
+<AzGoal id="checkout" target="az.screen.confirmation" label="Check out" autoStartWhen={null} />
 ~~~
+
+~~~tsx
+import {
+    AzHostActivityLayout, AzRailItem,
+    AzStatus, AzEdge, AzGoal, useAzGuidanceController,
+} from '@HereLiesAz/aznavrail-react';
+
+function Shell() {
+    return (
+        <AzHostActivityLayout dockingSide={AzDockingSide.LEFT}>
+            <AzRailItem id="cart" text="Cart" route="cart" />
+            <AzRailItem id="checkout" text="Checkout" route="checkout" />
+
+            <AzStatus id="cart_open" predicate={() => cart.isOpen} />
+            <AzEdge from="cart_open" to="az.screen.checkout" text="Tap Checkout" highlightItemId="checkout" />
+            <AzEdge from="cart_open" text="Review your items before checking out." />{/* passive: omit `to` */}
+            <AzGoal id="checkout" target="az.screen.confirmation" label="Check out" autoStartWhen={null} />
+        </AzHostActivityLayout>
+    );
+}
+
+function Launcher() {
+    const guidance = useAzGuidanceController();
+    return <button onClick={() => guidance.activate('checkout')}>Guide me</button>;
+}
+~~~
+
+`AzGuidanceController` (both platforms): `enabled`, `activeGoals`, `completedGoals`, `enable()`,
+`disable()`, `activate(goalId)`, `deactivate(goalId)`, `markReached(goalId)`, `isCompleted(goalId)`.
+Completed goals persist under key `az_navrail_completed_goals` (Android `SharedPreferences` file
+`az_tutorial_prefs`; React `localStorage` / RN `AsyncStorage`).
 
 ---
 

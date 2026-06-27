@@ -51,7 +51,7 @@ Add JitPack to your `settings.gradle.kts`:
 - **`AzForm`**: Group multiple text boxes into a single form with a shared submit button.
 - **`AzRoller`**: A dropdown menu that works like a roller or slot machine, cycling through options infinitely.
 - **Info Screen**: Interactive help mode for onboarding with visual guides and coordinate display.
-- **Tutorial Framework**: Scripted multi-scene tutorials with spotlights, 4 advance conditions (Button, TapTarget, TapAnywhere, Event), variable-driven branching, TapTarget branching, checklist cards, media cards, and cross-platform read-state persistence.
+- **Status-Driven Guidance Framework**: Describe your userflow as a flowchart of **statuses** (`azStatus`) and **edges** (`azEdge`) carrying instructions, declare **goals** (`azGoal`), and activate them on the `AzGuidanceController`. The reactive engine shows the instruction to reach the next status toward each active goal, auto-advances the instant a target status becomes true (no Next button), re-routes live, and shows every active goal's callout next to its control. Cross-platform (Android + React), with completed goals persisted.
 - **Left/Right Docking**: Position the rail on the left or right side of the screen.
 - **No Menu Mode**: Treat all items as rail items, removing the side drawer.
 - **`AzDropdownMenu`**: A standalone, app-icon drop-down declared with the rail's opinionated DSL (`azConfig` + `azItem`/`azToggle`/`azCycler`/`azDivider`). Its overlay panel is styled as the rail or menu (`design`), width-constrained to match, and pinned to the `dockingSide` screen edge. Items can carry a `route` to drive an `AzNavHost` via a `NavController`, exactly like the rail — and it accepts no styling the rest of the library doesn't.
@@ -392,7 +392,7 @@ import { AzRoller } from '@HereLiesAz/aznavrail-react';
 -   **Sub-Items**: These are nested items that are only visible when their host item is expanded. They can also be placed in the rail or the menu.
 -   **Sub-Hosts**: A sub-item can itself be a host (`azRailSubHostItem` / `azMenuSubHostItem`), so hosts nest to **any depth**. Opening a sub-host reveals its children inline while sibling sub-items stay visible. Children attach to their host by `hostId` reference, not by position.
 -   **Exclusive Expansion**: Only one host item can be expanded at a time. Expanding a host item automatically collapses any other open host items.
--   **Reactive Expansion (`expandWhen`)**: Pass `expandWhen = { condition }` to any host-item builder to auto-expand or auto-collapse based on a reactive condition. Rising edge (false→true) expands; falling edge (true→false) collapses. The user can still manually collapse a host while the condition is `true` — the condition re-fires only on the next false→true edge. Useful for tutorial frameworks that need sub-items to be laid out before they can be highlighted.
+-   **Reactive Expansion (`expandWhen`)**: Pass `expandWhen = { condition }` to any host-item builder to auto-expand or auto-collapse based on a reactive condition. Rising edge (false→true) expands; falling edge (true→false) collapses. The user can still manually collapse a host while the condition is `true` — the condition re-fires only on the next false→true edge. Useful for the guidance framework, whose callouts need sub-items to be laid out before they can be anchored/highlighted.
 
 
 **React Implementation:**
@@ -609,7 +609,7 @@ const settings: AzNavRailSettings = {
 - The system **back** button (Android) / back arrow returns from a doc to the table of contents, then
   dismisses.
 - **Guides hidden over footer screens (all platforms):** while a footer screen (About or More from Az)
-  is open, any visible Help cards and any in-progress tutorial are hidden, and they return **exactly**
+  is open, any visible Help cards and any guidance callouts are hidden, and they return **exactly**
   where they were when the footer screen closes.
 
 ### More from Az
@@ -751,163 +751,114 @@ const items: AzNavItem[] = [
 ];
 ```
 
-## Tutorial Framework
+## Status-Driven Guidance Framework
 
-AzNavRail ships a full interactive tutorial framework. Tutorials are scripted as sequences of scenes and cards, rendered over a dimmed overlay with optional item spotlights. The framework supports four advance conditions, variable-driven branching, event-driven advances, checklist cards, media cards, and cross-platform persistence of read state.
+AzNavRail ships a reactive **status-driven guidance** framework (it replaces the old scripted
+scene/card tutorial framework). Instead of authoring a linear walkthrough, you describe your app's
+userflow as a **flowchart of statuses** (string-id nodes) joined by **edges** (transitions that each
+carry an instruction). You declare **goals** (target statuses) and activate them; the engine then
+shows the instruction to reach the next status toward each active goal, **auto-advancing the instant a
+target status becomes true** (no Next button), re-routing live, and showing **every active goal's
+instruction at once** as a callout next to its control.
 
-### Features
+### Concepts
 
-- **4 advance conditions:** Next button (default), TapTarget (tap the highlighted item), TapAnywhere, Event (app calls `fireEvent(name)`).
-- **Variable branching:** Pass a variables map to `startTutorial`; scenes can act as invisible redirect nodes that route based on variable values.
-- **TapTarget branching:** A single card can route to different scenes depending on which highlighted item the user taps.
-- **Checklist cards:** Next is disabled until every item is checked.
-- **Media cards:** Inline media rendered between title and text (max height 120dp/120px).
-- **Persistence:** Read tutorials are stored per-platform (`SharedPreferences` on Android, `AsyncStorage` on React Native, `localStorage` on Web). Key: `az_navrail_read_tutorials`.
-- **Help/info overlay integration:** Collapsed cards show a "Tutorial available" hint. Expanding a card shows a "Start Tutorial" button — tapping it calls `startTutorial` and dismisses the overlay.
+- **`azStatus(id) { predicate }`** — a named flowchart node; true while its reactive predicate is true.
+- **`azEdge(from, to, text, ...)`** — a transition carrying the instruction `text` shown to make it. You hand-author edges only into your **custom** statuses; rail affordances are auto-edged.
+- **`azGoal(id, target, ...)`** — a target status; inert until activated. The moment its target becomes true the goal completes (and is recorded as completed).
+
+**Built-in `az.*` statuses** are auto-published: `az.app.ready` (always true), `az.rail.expanded` /
+`az.rail.collapsed`, `az.rail.floating`, `az.host.<id>.expanded`, `az.screen.<route>`,
+`az.item.<id>.active`, `az.nestedRail.<id>.open`, `az.help.open`, `az.onscreen.<id>.visible`.
+
+**Auto-edges** are generated for rail affordances (e.g. `az.rail.collapsed → az.rail.expanded` →
+"Open the menu", tap host → `az.host.<id>.expanded`, tap nested-rail → `az.nestedRail.<id>.open`, tap
+routed item → `az.screen.<route>`).
+
+**Predicate timing:** predicates reading Compose/React state are observed instantly; predicates over
+non-reactive sources (a `StateFlow.value`, a plain `var`, a `ref`, an external store) are observed
+within a ~300 ms poll. Goal activation is developer-driven (no built-in end-user picker);
+`autoStartWhen` self-activates onboarding goals.
 
 ### Android (Kotlin DSL)
 
+The guidance DSL sits inside `AzHostActivityLayout { ... }`, which returns an `AzGuidanceController`:
+
 ```kotlin
-import com.hereliesaz.aznavrail.tutorial.AzHighlight
-import com.hereliesaz.aznavrail.tutorial.AzAdvanceCondition
-import com.hereliesaz.aznavrail.tutorial.azTutorial
+import com.hereliesaz.aznavrail.tutorial.*
 
-val tutorial = azTutorial {
-    onComplete { /* fired when last scene finishes */ }
-    onSkip { /* fired when Skip Tutorial tapped */ }
+val controller = AzHostActivityLayout(navController = nav, currentDestination = route) {
+    azRailHostItem(id = "features", text = "Features")
+    azRailSubItem(id = "feature-a", hostId = "features", text = "Feature A", route = "feature-a")
 
-    // Variable branch gate (invisible redirect node)
-    scene(id = "gate", content = { /* empty backdrop */ }) {
-        branch(varName = "userLevel", mapOf(
-            "advanced" to "scene-advanced",
-            "basic"    to "scene-basic"
-        ))
-    }
+    // Custom status + an edge INTO it (rail affordances are auto-edged):
+    azStatus("profileComplete") { viewModel.profile.isComplete }
+    azEdge(
+        from = "az.screen.feature-a",
+        to = "profileComplete",
+        text = "Fill in your name and email to finish setup.",
+        title = "Complete your profile",
+        highlightItemId = "feature-a"
+    )
 
-    scene(id = "scene-advanced", content = { ScreenA() }) {
-        // TapTarget with per-item branching
-        card(
-            title = "Pick a path",
-            text = "Tap the item you want to learn about.",
-            highlight = AzHighlight.Item("nav-menu"),
-            advanceCondition = AzAdvanceCondition.TapTarget,
-            branches = mapOf(
-                "settings-btn" to "scene-settings",
-                "profile-btn"  to "scene-profile"
-            )
-        )
-
-        // Event-driven advance
-        card(
-            title = "Open the menu",
-            text = "Swipe right or tap the rail header.",
-            highlight = AzHighlight.Item("rail-header"),
-            advanceCondition = AzAdvanceCondition.Event("menu_opened")
-        )
-
-        // Checklist card
-        card(
-            title = "Before you continue",
-            text = "Confirm the following:",
-            checklistItems = listOf("I read the docs", "I set up my account")
-        )
-
-        // Media card
-        card(
-            title = "The Rail",
-            text = "Sits on the left or right edge.",
-            mediaContent = { Image(painterResource(R.drawable.rail), null) }
-        )
-    }
+    // Goals — autoStartWhen self-activates onboarding once:
+    azGoal(id = "onboarding", target = "profileComplete", label = "Finish onboarding",
+           autoStartWhen = { !guidance.isCompleted("onboarding") })
+    azGoal(id = "find-features", target = "az.host.features.expanded", label = "Discover Features")
 }
 
-// Wire up the controller
-val controller = rememberAzTutorialController()
-CompositionLocalProvider(LocalAzTutorialController provides controller) {
-    // ...
-    if (controller.activeTutorialId.value == "tut-1") {
-        AzTutorialOverlay(
-            tutorialId = "tut-1",
-            tutorial = tutorial,
-            onDismiss = { controller.endTutorial() },
-            itemBoundsCache = boundsMap, // collected via onItemGloballyPositioned
-        )
-    }
-}
-
-// Start with variables
-controller.startTutorial("tut-1", variables = mapOf("userLevel" to "advanced"))
-
-// Fire an event from app code
-controller.fireEvent("menu_opened")
+// Drive goals imperatively (also: LocalAzGuidanceController.current / rememberAzGuidanceController()):
+controller.activate("find-features")
+controller.deactivate("find-features")
+controller.markReached("profileComplete")
+val active: List<String> = controller.activeGoals
+val done: List<String> = controller.completedGoals
 ```
+
+`AzGuidanceController` (package `com.hereliesaz.aznavrail.tutorial`) exposes `enabled`, `activeGoals`,
+`completedGoals`, `enable()`, `disable()`, `activate(id)`, `deactivate(id)`, `markReached(id)`,
+`isCompleted(id)`. Completed goals persist in `SharedPreferences` under key
+`az_navrail_completed_goals`.
 
 ### React Native / Web (TypeScript)
 
-```typescript
-import { AzTutorial } from '@HereLiesAz/aznavrail-react'; // or aznavrail-web
+The DSL is expressed as JSX children of the rail; the controller is read with a hook:
 
-const tutorial: AzTutorial = {
-    onComplete: () => {},
-    onSkip: () => {},
-    scenes: [
-        {
-            id: 'gate',
-            content: () => null,
-            cards: [],
-            branchVar: 'userLevel',
-            branches: { advanced: 'scene-advanced', basic: 'scene-basic' },
-        },
-        {
-            id: 'scene-advanced',
-            content: () => <ScreenA />,
-            cards: [
-                {
-                    title: 'Pick a path',
-                    text: 'Tap the item you want to learn about.',
-                    highlight: { type: 'Item', id: 'nav-menu' },
-                    advanceCondition: { type: 'TapTarget' },
-                    branches: { 'settings-btn': 'scene-settings', 'profile-btn': 'scene-profile' },
-                },
-                {
-                    title: 'Open the menu',
-                    text: 'Swipe right or tap the rail header.',
-                    highlight: { type: 'Item', id: 'rail-header' },
-                    advanceCondition: { type: 'Event', name: 'menu_opened' },
-                },
-                {
-                    title: 'Before you continue',
-                    text: 'Confirm the following:',
-                    checklistItems: ['I read the docs', 'I set up my account'],
-                },
-            ],
-        },
-    ],
-};
+```tsx
+import {
+    AzGuidanceProvider, useAzGuidanceController,
+    AzStatus, AzEdge, AzGoal,
+} from '@HereLiesAz/aznavrail-react';
 
-// React Native
-import { AzTutorialProvider, useAzTutorialController } from '@HereLiesAz/aznavrail-react';
+<AzNavRail /* … */>
+    <AzRailHostItem id="features" text="Features" />
+    <AzRailSubItem id="feature-a" hostId="features" text="Feature A" route="feature-a" />
 
-<AzTutorialProvider>
-    <App />
-</AzTutorialProvider>
+    <AzStatus id="profileComplete" predicate={() => viewModel.profile.isComplete} />
+    <AzEdge from="az.screen.feature-a" to="profileComplete"
+            text="Fill in your name and email to finish setup."
+            title="Complete your profile" highlightItemId="feature-a" />
 
-const controller = useAzTutorialController();
-controller.startTutorial('tut-1', { userLevel: 'advanced' });
-controller.fireEvent('menu_opened');
+    <AzGoal id="onboarding" target="profileComplete" label="Finish onboarding"
+            autoStartWhen={() => !done.includes('onboarding')} />
+    <AzGoal id="find-features" target="az.host.features.expanded" label="Discover Features" />
+</AzNavRail>
 
-// Web
-import { AzWebTutorialProvider, useAzWebTutorialController } from '@HereLiesAz/aznavrail-web';
-
-<AzWebTutorialProvider>
-    <App />
-</AzWebTutorialProvider>
-
-const ctrl = useAzWebTutorialController();
-ctrl.startTutorial('tut-1', { userLevel: 'advanced' });
+// elsewhere:
+const ctrl = useAzGuidanceController();
+ctrl.activate('find-features');
+const active: string[] = ctrl.activeGoals;
+const done: string[] = ctrl.completedGoals;
 ```
 
-See [`docs/TUTORIAL_FRAMEWORK_REFERENCE.md`](docs/TUTORIAL_FRAMEWORK_PROPOSAL.md) for the complete API reference and [`docs/AZNAVRAIL_COMPLETE_GUIDE.md`](docs/AZNAVRAIL_COMPLETE_GUIDE.md) for end-to-end usage examples.
+The hook returns the same surface as Android (`enabled`, `activeGoals`, `completedGoals`, `enable`,
+`disable`, `activate`, `deactivate`, `markReached`, `isCompleted`). Also exported: `AzGuidanceProvider`,
+`AzInstructionOverlay`, `useActiveStatuses`, `computeBuiltinStatuses`, `nextHop`, `routeInstructions`,
+`computeAutoEdges`. Completed goals persist to `localStorage` (and `AsyncStorage` on RN) under
+`az_navrail_completed_goals`. (Parity note: the React/web overlay draws an accent ring around each
+target over a light dim, rather than a true punch-out spotlight.)
+
+See [`docs/TUTORIAL_FRAMEWORK_PROPOSAL.md`](docs/TUTORIAL_FRAMEWORK_PROPOSAL.md) for the complete API reference and [`docs/AZNAVRAIL_COMPLETE_GUIDE.md`](docs/AZNAVRAIL_COMPLETE_GUIDE.md) for end-to-end usage examples.
 
 ## Bottom Sheets
 
@@ -948,7 +899,7 @@ The interactive help overlay is **scoped to where it was triggered from**: tap `
 
 The repo ships two showcase apps:
 
-- **`SampleApp/`** — Android `MainActivity` that demonstrates every public capability: rail/menu items at every shape, both nested rail alignments, reloc items with `keepNestedRailOpen`, live theming, help overlay, tutorials, FAB-mode rail drag with `AzNavRailSimpleOverlayService`, bottom sheets, forms. See `SampleApp/COVERAGE.md` for the symbol-by-symbol audit.
+- **`SampleApp/`** — Android `MainActivity` that demonstrates every public capability: rail/menu items at every shape, both nested rail alignments, reloc items with `keepNestedRailOpen`, live theming, help overlay, status-driven guidance, FAB-mode rail drag with `AzNavRailSimpleOverlayService`, bottom sheets, forms. See `SampleApp/COVERAGE.md` for the symbol-by-symbol audit.
 - **`sample-pwa/`** — Vite + React + react-native-web showcase deployed to GitHub Pages at **<https://HereLiesAz.github.io/AzNavRail/>** via `.github/workflows/jekyll-gh-pages.yml`. Demonstrates the React port's bottom sheet, shape options, both nested alignments, and the help overlay.
 
 ## Documentation
