@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 
 private const val PREFS_NAME = "az_tutorial_prefs"
 private const val PREF_KEY = "az_navrail_completed_goals"
+private const val PREF_KEY_DISMISSED = "az_navrail_dismissed_goals"
 
 /**
  * Runtime for the status-driven guidance framework. The developer activates one or more goals; the
@@ -27,6 +28,7 @@ private const val PREF_KEY = "az_navrail_completed_goals"
 class AzGuidanceController(
     initialCompleted: List<String> = emptyList(),
     private val prefs: SharedPreferences? = null,
+    initialDismissed: List<String> = emptyList(),
 ) {
     /** Master switch — guidance only renders while enabled. */
     var enabled by mutableStateOf(false)
@@ -39,6 +41,19 @@ class AzGuidanceController(
     private val _completed = mutableStateListOf<String>().apply { addAll(initialCompleted) }
     /** Goal ids reached at least once (persisted), so onboarding-style goals don't auto-restart. */
     val completedGoals: List<String> get() = _completed
+
+    private val _dismissed = mutableStateListOf<String>().apply { addAll(initialDismissed) }
+    /** Goal ids the user skipped (persisted), so a skipped tutorial is never shown again until reset. */
+    val dismissedGoals: List<String> get() = _dismissed
+    fun isDismissed(goalId: String): Boolean = goalId in _dismissed
+
+    // Session-scoped de-dup: statuses that were a shown next-hop's target and have since been reached.
+    // Routing treats them as permanently traversed, so a step shown + acted on never re-appears.
+    private val _consumed = mutableStateListOf<String>()
+    /** Statuses consumed this session (a shown step whose action was taken). Reactive. */
+    val consumedStatuses: Set<String> get() = _consumed.toHashSet()
+    /** Mark [status] consumed (idempotent). Called by the rail when a shown hop's `to` becomes true. */
+    internal fun consume(status: String) { if (status !in _consumed) _consumed.add(status) }
 
     // --- Paged-edge step cursor (transient; only goal completion persists) ---
     private val _stepCursor = mutableStateMapOf<String, Int>()
@@ -78,16 +93,40 @@ class AzGuidanceController(
     }
 
     fun enable() { enabled = true }
-    fun disable() { enabled = false }
+    fun disable() { enabled = false; _consumed.clear() }
 
-    /** Begin guiding toward [goalId]. */
+    /**
+     * Begin guiding toward [goalId]. **No-op if the goal was already completed or skipped** — a finished
+     * or dismissed tutorial is never re-shown until the developer calls [resetGuidance]. (This is also why
+     * starting is always the developer's explicit decision.)
+     */
     fun activate(goalId: String) {
+        if (goalId in _completed || goalId in _dismissed) return
         enabled = true
         if (goalId !in _activeGoals) _activeGoals.add(goalId)
     }
 
-    /** Stop guiding toward [goalId]. */
+    /** Stop guiding toward [goalId] (without recording it as skipped). */
     fun deactivate(goalId: String) { _activeGoals.remove(goalId) }
+
+    /**
+     * The user **skipped** [goalId]: deactivate and persist the dismissal so it is never shown again
+     * until [resetGuidance]. Driven by the swipe-to-cancel gesture on a callout.
+     */
+    fun skip(goalId: String) {
+        _activeGoals.remove(goalId)
+        if (goalId !in _dismissed) {
+            _dismissed.add(goalId)
+            prefs?.edit()?.putStringSet(PREF_KEY_DISMISSED, _dismissed.toSet())?.apply()
+        }
+    }
+
+    /** Cancel tutorial mode entirely: skip every active goal (persisted) and turn guidance off. */
+    fun skip() {
+        _activeGoals.toList().forEach { skip(it) }
+        enabled = false
+        _consumed.clear()
+    }
 
     /** Mark a goal reached: deactivate it and persist completion. */
     fun markReached(goalId: String) {
@@ -100,14 +139,34 @@ class AzGuidanceController(
 
     fun isCompleted(goalId: String): Boolean = goalId in _completed
 
+    /** Clear [goalId]'s completion + dismissal (+ session de-dup) so it can be guided again. */
+    fun resetGuidance(goalId: String) {
+        val wasCompleted = _completed.remove(goalId)
+        val wasDismissed = _dismissed.remove(goalId)
+        prefs?.edit()?.apply {
+            if (wasCompleted) putStringSet(PREF_KEY, _completed.toSet())
+            if (wasDismissed) putStringSet(PREF_KEY_DISMISSED, _dismissed.toSet())
+        }?.apply()
+        _consumed.clear()
+    }
+
+    /** Clear all completion + dismissal (+ session de-dup). */
+    fun resetGuidance() {
+        _completed.clear()
+        _dismissed.clear()
+        _consumed.clear()
+        prefs?.edit()?.putStringSet(PREF_KEY, emptySet())?.putStringSet(PREF_KEY_DISMISSED, emptySet())?.apply()
+    }
+
     companion object {
         fun Saver(context: Context): Saver<AzGuidanceController, List<Any?>> = Saver(
-            save = { listOf(ArrayList(it._activeGoals), ArrayList(it._completed), it.enabled) },
+            save = { listOf(ArrayList(it._activeGoals), ArrayList(it._completed), it.enabled, ArrayList(it._dismissed)) },
             restore = { list ->
                 val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                 AzGuidanceController(
                     initialCompleted = (list[1] as List<*>).filterIsInstance<String>(),
                     prefs = prefs,
+                    initialDismissed = (list.getOrNull(3) as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
                 ).apply {
                     (list[0] as List<*>).filterIsInstance<String>().forEach { _activeGoals.add(it) }
                     if (list[2] as Boolean) enabled = true
@@ -123,7 +182,8 @@ fun rememberAzGuidanceController(): AzGuidanceController {
     return rememberSaveable(saver = AzGuidanceController.Saver(context)) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val done = prefs.getStringSet(PREF_KEY, emptySet())?.toList() ?: emptyList()
-        AzGuidanceController(initialCompleted = done, prefs = prefs)
+        val dismissed = prefs.getStringSet(PREF_KEY_DISMISSED, emptySet())?.toList() ?: emptyList()
+        AzGuidanceController(initialCompleted = done, prefs = prefs, initialDismissed = dismissed)
     }
 }
 
@@ -265,20 +325,24 @@ internal fun routeInstructions(
     activeGoalIds: Collection<String>,
     activeStatuses: Set<String>,
     stepIndexOf: (String) -> Int = { 0 },
+    consumedStatuses: Set<String> = emptySet(),
 ): GuidanceFrame {
+    // De-dup: a status that was a shown hop's target and has since been reached is treated as
+    // permanently true, so its hop is never routed to (or re-shown) again.
+    val effective = if (consumedStatuses.isEmpty()) activeStatuses else activeStatuses + consumedStatuses
     val out = LinkedHashMap<Pair<String, AzGuideHighlight>, ResolvedInstruction>()
     val reached = HashSet<String>()
     activeGoalIds.forEach { gid ->
         val goal = goals[gid] ?: return@forEach
-        if (goal.target in activeStatuses) { reached.add(gid); return@forEach }
-        nextHop(edges, activeStatuses, goal.target)?.let { e ->
-            val r = resolveEdge(e, gid, stepIndexOf, activeStatuses)
+        if (goal.target in effective) { reached.add(gid); return@forEach }
+        nextHop(edges, effective, goal.target)?.let { e ->
+            val r = resolveEdge(e, gid, stepIndexOf, effective)
             out[r.instruction.text to r.instruction.highlight] = r
         }
     }
     // Passive tips: shown while their `from` status holds.
-    edges.filter { it.to == null && it.from in activeStatuses }.forEach { e ->
-        val r = resolveEdge(e, null, stepIndexOf, activeStatuses)
+    edges.filter { it.to == null && it.from in effective }.forEach { e ->
+        val r = resolveEdge(e, null, stepIndexOf, effective)
         out[r.instruction.text to r.instruction.highlight] = r
     }
     return GuidanceFrame(out.values.toList(), reached)

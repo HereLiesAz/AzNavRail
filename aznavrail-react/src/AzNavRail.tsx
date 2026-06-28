@@ -963,30 +963,34 @@ const AzGuidanceLayer: React.FC<{
   const activeStatuses = useActiveStatuses(guidance.statusPredicates, activeClassifiers, builtins);
   const edges = useMemo(() => [...guidance.edges, ...computeAutoEdges(items)], [guidance.edges, items]);
   const frame = useMemo(
-    () => routeInstructions(edges, guidance.goals, guidance.activeGoals, activeStatuses, (k) => guidance.stepIndex(k)),
-    [edges, guidance.goals, guidance.activeGoals, activeStatuses, guidance.stepIndex],
+    () => routeInstructions(edges, guidance.goals, guidance.activeGoals, activeStatuses, (k) => guidance.stepIndex(k), guidance.consumedStatuses),
+    [edges, guidance.goals, guidance.activeGoals, activeStatuses, guidance.stepIndex, guidance.consumedStatuses],
   );
-  // Self-arming onboarding goals: activate once their trigger status holds (unless already completed).
+  // Self-arming onboarding goals: `autoStartWhen` is discouraged; it honours both completion and the
+  // user's skip, so a finished or dismissed tutorial never auto-restarts.
   useEffect(() => {
     Object.values(guidance.goals).forEach((goal) => {
       if (goal.autoStartWhen && activeStatuses.has(goal.autoStartWhen) &&
-          !guidance.isCompleted(goal.id) && !guidance.activeGoals.includes(goal.id)) {
+          !guidance.isCompleted(goal.id) && !guidance.isDismissed(goal.id) && !guidance.activeGoals.includes(goal.id)) {
         guidance.activate(goal.id);
       }
     });
   }, [activeStatuses, guidance]);
-  // Auto-advance: a goal whose target is now true is reached → deactivate it and persist. Persist
-  // reactive step advances into the cursor so a later tap continues from the shown step.
+  // Auto-advance + reactive step-cursor sync; and de-dup: once a shown hop's `to` is reached, consume it
+  // so that hop is never re-shown (even if the user later undoes the action).
+  const pendingConsume = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!guidance.enabled) return;
     frame.reachedGoals.forEach((g) => guidance.markReached(g));
     frame.resolved.forEach((r) => {
+      if (r.edge.to != null) pendingConsume.current.add(r.edge.to);
       if (r.stepTotal > 1) {
         const key = edgeStepKey(r.edge);
         if (guidance.stepIndex(key) < r.stepIndex) guidance.setStep(key, r.stepIndex);
       }
     });
-  }, [frame, guidance]);
+    pendingConsume.current.forEach((to) => { if (activeStatuses.has(to)) guidance.consume(to); });
+  }, [frame, activeStatuses, guidance]);
   // Publish the observable snapshot (while enabled) so a host can mirror it with bespoke rendering.
   const snapshots = useMemo(
     () => (guidance.enabled ? snapshotsOf(frame.resolved, itemBounds, activeItemId) : []),
@@ -1008,6 +1012,7 @@ const AzGuidanceLayer: React.FC<{
       activeItemId={activeItemId}
       targets={guidance.targets}
       onAdvance={(k) => guidance.advance(k)}
+      onSkip={() => guidance.skip()}
       renderSlot={guidance.renderer}
     />
   );

@@ -909,13 +909,15 @@ fun AzNavRail(
     val guidanceGoalsMap = remember(scope.guidanceGoals.toList()) {
         scope.guidanceGoals.associateBy { it.id }
     }
-    // Self-arming onboarding goals: activate once their trigger status holds (unless already completed).
-    // Keyed on the controller too, so it re-binds if the host-provided instance replaces the fallback.
+    // Self-arming onboarding goals: activate once their trigger status holds. `autoStartWhen` is
+    // discouraged (starting should be the developer's explicit `activate(...)` call); it honours both
+    // completion and the user's skip, so a finished or dismissed tutorial never auto-restarts.
     LaunchedEffect(activeStatuses, guidanceGoalsMap, guidanceController) {
         guidanceGoalsMap.values.forEach { goal ->
             val trigger = goal.autoStartWhen
             if (trigger != null && trigger in activeStatuses &&
-                !guidanceController.isCompleted(goal.id) && goal.id !in guidanceController.activeGoals
+                !guidanceController.isCompleted(goal.id) && !guidanceController.isDismissed(goal.id) &&
+                goal.id !in guidanceController.activeGoals
             ) {
                 guidanceController.activate(goal.id)
             }
@@ -950,12 +952,20 @@ fun AzNavRail(
                     activeGoalIds = guidanceController.activeGoals,
                     activeStatuses = activeStatuses,
                     stepIndexOf = { guidanceController.stepIndex(it) },
+                    consumedStatuses = guidanceController.consumedStatuses,
                 )
             }
         }.value
         // Auto-advance: a goal whose target is now true is reached → deactivate it and persist.
         LaunchedEffect(frame.reachedGoals, guidanceController) {
             frame.reachedGoals.forEach { guidanceController.markReached(it) }
+        }
+        // De-dup: once a status that was a shown hop's `to` is reached, consume it so that hop never
+        // re-shows (even if the user later undoes the action and the router would otherwise re-route to it).
+        val pendingConsume = remember(guidanceController) { mutableSetOf<String>() }
+        LaunchedEffect(frame.resolved, activeStatuses, guidanceController) {
+            frame.resolved.forEach { r -> r.edge.to?.let { if (it !in pendingConsume) pendingConsume.add(it) } }
+            pendingConsume.forEach { if (it in activeStatuses) guidanceController.consume(it) }
         }
         // Persist reactive step advances into the cursor so a later tap continues from the shown step.
         LaunchedEffect(frame.resolved, guidanceController) {

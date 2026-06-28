@@ -9,6 +9,7 @@ import type {
 } from './AzStatus';
 
 const STORAGE_KEY = 'az_navrail_completed_goals';
+const DISMISSED_KEY = 'az_navrail_dismissed_goals';
 
 // Optional AsyncStorage (React Native) — used if installed, no-op otherwise.
 let AsyncStorage: { setItem: (k: string, v: string) => Promise<void> } | null = null;
@@ -19,10 +20,10 @@ try {
   /* not installed — fall back to localStorage / no-op */
 }
 
-function loadCompleted(): string[] {
+function loadIds(key: string): string[] {
   try {
     if (typeof localStorage !== 'undefined') {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(key);
       if (raw) return JSON.parse(raw) as string[];
     }
   } catch {
@@ -31,14 +32,14 @@ function loadCompleted(): string[] {
   return [];
 }
 
-function saveCompleted(ids: string[]): void {
+function saveIds(key: string, ids: string[]): void {
   const json = JSON.stringify(ids);
   try {
-    if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEY, json);
+    if (typeof localStorage !== 'undefined') localStorage.setItem(key, json);
   } catch {
     /* ignore */
   }
-  AsyncStorage?.setItem(STORAGE_KEY, json).catch(() => {});
+  AsyncStorage?.setItem(key, json).catch(() => {});
 }
 
 /**
@@ -62,6 +63,13 @@ export interface AzGuidanceController {
   /** Mark a goal reached: deactivate it and persist completion. */
   markReached: (goalId: string) => void;
   isCompleted: (goalId: string) => boolean;
+  /** Goal ids the user skipped (persisted) — a skipped tutorial is never shown again until reset. */
+  dismissedGoals: string[];
+  isDismissed: (goalId: string) => boolean;
+  /** The user skipped a goal (omit `goalId` to cancel tutorial mode: skip all active goals + disable). */
+  skip: (goalId?: string) => void;
+  /** Clear completion + dismissal (+ de-dup) for `goalId` (or all) so a tutorial can be shown again. */
+  resetGuidance: (goalId?: string) => void;
   // --- Paged-edge step cursor (transient; only goal completion persists) ---
   /** Current step index for the paged edge identified by `key` (see `edgeStepKey`). */
   stepIndex: (key: string) => number;
@@ -101,6 +109,10 @@ interface AzGuidanceContextValue extends AzGuidanceController {
   setRenderer: (renderer: AzGuidanceRenderer | null) => void;
   /** Publish the latest routed snapshot list. Called by the rail; not for app use. */
   publishCurrent: (snapshots: AzGuidanceSnapshot[]) => void;
+  /** Statuses consumed this session (a shown step whose action was taken). */
+  consumedStatuses: Set<string>;
+  /** Mark a status consumed (a shown hop's `to` that became true). Called by the rail. */
+  consume: (status: string) => void;
 }
 
 const AzGuidanceContext = createContext<AzGuidanceContextValue | null>(null);
@@ -119,7 +131,9 @@ interface AzGuidanceProviderProps {
 export const AzGuidanceProvider: React.FC<AzGuidanceProviderProps> = ({ children, initialCompleted }) => {
   const [enabled, setEnabled] = useState(false);
   const [activeGoals, setActiveGoals] = useState<string[]>([]);
-  const [completedGoals, setCompletedGoals] = useState<string[]>(() => initialCompleted ?? loadCompleted());
+  const [completedGoals, setCompletedGoals] = useState<string[]>(() => initialCompleted ?? loadIds(STORAGE_KEY));
+  const [dismissedGoals, setDismissedGoals] = useState<string[]>(() => loadIds(DISMISSED_KEY));
+  const [consumed, setConsumed] = useState<string[]>([]);
 
   // Registry kept in refs (predicate identities churn every render); a version bump notifies consumers.
   const statusRef = useRef<Record<string, AzStatusPredicate>>({});
@@ -164,11 +178,13 @@ export const AzGuidanceProvider: React.FC<AzGuidanceProviderProps> = ({ children
   const next = advance;
 
   const enable = useCallback(() => setEnabled(true), []);
-  const disable = useCallback(() => setEnabled(false), []);
+  const disable = useCallback(() => { setEnabled(false); setConsumed([]); }, []);
   const activate = useCallback((goalId: string) => {
+    // No-op for a completed or skipped goal — it is never re-shown until resetGuidance.
+    if (completedGoals.includes(goalId) || dismissedGoals.includes(goalId)) return;
     setEnabled(true);
     setActiveGoals((prev) => (prev.includes(goalId) ? prev : [...prev, goalId]));
-  }, []);
+  }, [completedGoals, dismissedGoals]);
   const deactivate = useCallback((goalId: string) => {
     setActiveGoals((prev) => prev.filter((g) => g !== goalId));
   }, []);
@@ -177,11 +193,47 @@ export const AzGuidanceProvider: React.FC<AzGuidanceProviderProps> = ({ children
     setCompletedGoals((prev) => {
       if (prev.includes(goalId)) return prev;
       const next = [...prev, goalId];
-      saveCompleted(next);
+      saveIds(STORAGE_KEY, next);
       return next;
     });
   }, []);
   const isCompleted = useCallback((goalId: string) => completedGoals.includes(goalId), [completedGoals]);
+  const isDismissed = useCallback((goalId: string) => dismissedGoals.includes(goalId), [dismissedGoals]);
+  const skip = useCallback((goalId?: string) => {
+    if (goalId != null) {
+      setActiveGoals((prev) => prev.filter((g) => g !== goalId));
+      setDismissedGoals((prev) => {
+        if (prev.includes(goalId)) return prev;
+        const next = [...prev, goalId];
+        saveIds(DISMISSED_KEY, next);
+        return next;
+      });
+    } else {
+      // Cancel tutorial mode: skip every active goal (persisted), then turn guidance off.
+      setDismissedGoals((prev) => {
+        const next = Array.from(new Set([...prev, ...activeGoals]));
+        saveIds(DISMISSED_KEY, next);
+        return next;
+      });
+      setActiveGoals([]);
+      setEnabled(false);
+      setConsumed([]);
+    }
+  }, [activeGoals]);
+  const resetGuidance = useCallback((goalId?: string) => {
+    if (goalId != null) {
+      setCompletedGoals((prev) => { const next = prev.filter((g) => g !== goalId); saveIds(STORAGE_KEY, next); return next; });
+      setDismissedGoals((prev) => { const next = prev.filter((g) => g !== goalId); saveIds(DISMISSED_KEY, next); return next; });
+    } else {
+      setCompletedGoals(() => { saveIds(STORAGE_KEY, []); return []; });
+      setDismissedGoals(() => { saveIds(DISMISSED_KEY, []); return []; });
+    }
+    setConsumed([]);
+  }, []);
+  const consume = useCallback((status: string) => {
+    setConsumed((prev) => (prev.includes(status) ? prev : [...prev, status]));
+  }, []);
+  const consumedStatuses = useMemo(() => new Set(consumed), [consumed]);
 
   // Live registry views, recomputed when the registry version changes.
   const edges = useMemo(() => Object.values(edgeRef.current), [version]);
@@ -195,12 +247,14 @@ export const AzGuidanceProvider: React.FC<AzGuidanceProviderProps> = ({ children
   const value = useMemo<AzGuidanceContextValue>(
     () => ({
       enabled, activeGoals, completedGoals, enable, disable, activate, deactivate, markReached, isCompleted,
+      dismissedGoals, isDismissed, skip, resetGuidance, consumedStatuses, consume,
       stepIndex, setStep, advance, next, back, currentInstructions, current,
       statusPredicates, edges, goals, targets, suppressors, renderer,
       registerStatus, unregisterStatus, registerEdge, unregisterEdge, registerGoal, unregisterGoal,
       registerTarget, unregisterTarget, registerSuppressor, unregisterSuppressor, setRenderer, publishCurrent,
     }),
     [enabled, activeGoals, completedGoals, enable, disable, activate, deactivate, markReached, isCompleted,
+     dismissedGoals, isDismissed, skip, resetGuidance, consumedStatuses, consume,
      stepIndex, setStep, advance, next, back, currentInstructions, current,
      statusPredicates, edges, goals, targets, suppressors, renderer,
      registerStatus, unregisterStatus, registerEdge, unregisterEdge, registerGoal, unregisterGoal,
@@ -214,6 +268,7 @@ export const AzGuidanceProvider: React.FC<AzGuidanceProviderProps> = ({ children
 const NOOP: AzGuidanceContextValue = {
   enabled: false, activeGoals: [], completedGoals: [],
   enable: () => {}, disable: () => {}, activate: () => {}, deactivate: () => {}, markReached: () => {}, isCompleted: () => false,
+  dismissedGoals: [], isDismissed: () => false, skip: () => {}, resetGuidance: () => {}, consumedStatuses: new Set(), consume: () => {},
   stepIndex: () => 0, setStep: () => {}, advance: () => {}, next: () => {}, back: () => {},
   currentInstructions: [], current: null,
   statusPredicates: {}, edges: [], goals: {}, targets: {}, suppressors: [], renderer: null,

@@ -374,7 +374,7 @@ fun azGoal(id: String, target: String, label: String? = null, autoStartWhen: Str
 fun azGuidanceTarget(id: String, shape: () -> AzGuideShape?)
 // Hide guidance while `predicate` is true; re-show after `settleMs` once it clears.
 fun azSuppressGuide(settleMs: Long = 700, predicate: () -> Boolean)
-// Draw the callout body yourself (the dim/spotlight still draw).
+// Draw the callout body yourself (the non-blocking outline + connector still draw).
 fun azGuideRenderer(renderer: @Composable (AzGuidanceSnapshot, Rect?) -> Unit)
 ~~~
 
@@ -455,12 +455,20 @@ function Launcher() {
 }
 ~~~
 
-`AzGuidanceController` (both platforms): `enabled`, `activeGoals`, `completedGoals`, `enable()`,
-`disable()`, `activate(goalId)`, `deactivate(goalId)`, `markReached(goalId)`, `isCompleted(goalId)`.
-For paged edges it also exposes `advance(stepKey)` / `next(stepKey)` / `back(stepKey)` and a no-arg
-`advance()`, and for observation `currentInstructions` / `current` (an `AzGuidanceSnapshot` list; Kotlin
-also has `currentFlow`). Completed goals persist under key `az_navrail_completed_goals` (Android
-`SharedPreferences` file `az_tutorial_prefs`; React `localStorage` / RN `AsyncStorage`).
+Guidance is presented as a **non-blocking coach**: a thin outline around each step's target and a small
+callout placed near it (with a connector), never dimming the screen or intercepting input outside a
+callout. The user **swipes a callout away to cancel** (persisted); a step shown + acted on is never
+re-shown. **Starting is always developer-driven** — call `activate(...)` (the `autoStartWhen` status-id
+self-start still exists but is discouraged, and honours completion + skip).
+
+`AzGuidanceController` (both platforms): `enabled`, `activeGoals`, `completedGoals`, `dismissedGoals`,
+`enable()`, `disable()`, `activate(goalId)`, `deactivate(goalId)`, `markReached(goalId)`,
+`isCompleted(goalId)`, `isDismissed(goalId)`, `skip(goalId?)` (cancel one or, with no arg, all),
+`resetGuidance(goalId?)` (replay). For paged edges it also exposes `advance(stepKey)` / `next(stepKey)`
+/ `back(stepKey)` and a no-arg `advance()`, and for observation `currentInstructions` / `current` (an
+`AzGuidanceSnapshot` list; Kotlin also has `currentFlow`). Completion persists under
+`az_navrail_completed_goals` and skips under `az_navrail_dismissed_goals` (Android `SharedPreferences`
+file `az_tutorial_prefs`; React `localStorage` / RN `AsyncStorage`).
 
 ---
 

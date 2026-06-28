@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.6.0
+
+Guidance is now a **non-blocking coach** instead of a modal tutorial.
+
+### Changed
+- **No dimming, no blocking.** The overlay no longer draws a full-screen dim. It outlines each step's
+  target and places a small callout *near* (never on) it with a connector line; nothing outside a
+  callout consumes input, so the app stays fully interactive while guidance is up.
+- **Smart placement.** Callouts are positioned near their own target and kept off the target, other
+  known UI (rail items / registered targets), each other, and the screen edges — they no longer stack at
+  the bottom or clip. New exports: `placeCallout`, `overlapArea`.
+- **Developer-driven start.** `autoStartWhen` still works but is discouraged; it now also honours the
+  user's skip. Prefer `controller.activate(...)`.
+
+### Added
+- **Swipe-to-cancel.** Swiping a callout away cancels tutorial mode. New controller surface:
+  `skip(goalId?)`, `dismissedGoals`, `isDismissed(id)`, `resetGuidance(goalId?)`. Skips persist to
+  `localStorage` / `AsyncStorage` under `az_navrail_dismissed_goals`; a skipped or completed goal is not
+  shown again until `resetGuidance(...)`.
+- **No repeats.** A step that has been shown and acted on is consumed for the session and never re-shown,
+  even if the user undoes the action and the router would otherwise re-route to it.
+
+### Notes
+- Parity: React rings the target's bounding box and draws a plain connector (Android strokes the true
+  shape + an arrowhead) — see `KNOWN_GAPS.md`.
+
 ## 0.5.0
 
 ### Added

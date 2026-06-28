@@ -108,26 +108,30 @@ export function routeInstructions(
   activeGoalIds: string[],
   activeStatuses: Set<string>,
   stepIndexOf: (key: string) => number = () => 0,
+  consumedStatuses: Set<string> = new Set(),
 ): GuidanceFrame {
+  // De-dup: a status that was a shown hop's target and has since been reached is treated as
+  // permanently true, so its hop is never re-shown.
+  const effective = consumedStatuses.size === 0 ? activeStatuses : new Set([...activeStatuses, ...consumedStatuses]);
   const out = new Map<string, ResolvedInstruction>();
   const reached = new Set<string>();
   const keyOf = (ins: AzInstruction) => `${ins.text}|${highlightKey(ins.highlight)}`;
   for (const gid of activeGoalIds) {
     const goal = goals[gid];
     if (!goal) continue;
-    if (activeStatuses.has(goal.target)) {
+    if (effective.has(goal.target)) {
       reached.add(gid);
       continue;
     }
-    const e = nextHop(edges, activeStatuses, goal.target);
+    const e = nextHop(edges, effective, goal.target);
     if (e) {
-      const r = resolveEdge(e, gid, stepIndexOf, activeStatuses);
+      const r = resolveEdge(e, gid, stepIndexOf, effective);
       out.set(keyOf(r.instruction), r);
     }
   }
   for (const e of edges) {
-    if (e.to == null && activeStatuses.has(e.from)) {
-      const r = resolveEdge(e, null, stepIndexOf, activeStatuses);
+    if (e.to == null && effective.has(e.from)) {
+      const r = resolveEdge(e, null, stepIndexOf, effective);
       out.set(keyOf(r.instruction), r);
     }
   }
