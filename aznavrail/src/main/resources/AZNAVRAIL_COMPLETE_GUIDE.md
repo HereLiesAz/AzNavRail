@@ -706,6 +706,20 @@ taps at all. Instead it observes **status predicates** and reacts:
 - **Every active goal at once.** If several goals are active, each shows its own instruction
   simultaneously as a callout next to the control that satisfies its next hop.
 
+**Presentation is non-blocking and never dims.** Guidance draws a thin **outline** around the step's
+target and a small **callout placed near (never on) that target**, with a **pointer/arrow** connecting
+them. It **never darkens the screen** and **never intercepts input outside a callout** — the app stays
+fully usable while guidance is up, so the user can actually perform the action the step teaches.
+Callouts are positioned to avoid covering the target, other known UI (rail items / registered targets),
+each other, and the screen's safe-area edges; several callouts can share the screen, each by its own
+target. A step that has been shown and acted on is **never shown again**, even if the user later undoes
+the action and the router would otherwise re-route to it.
+
+**Skipping & replay.** The user can **swipe a callout away to cancel tutorial mode** — that skip is
+persisted (`SharedPreferences` / `localStorage`), so a skipped tutorial is **not** shown again. To let
+it run again, call `controller.resetGuidance(goalId)` (or `resetGuidance()` for all). Completed and
+skipped goals are both ignored by `activate()` until reset.
+
 **Predicate observation timing.** Predicates that read Compose/React state (a `mutableStateOf`,
 a React state value, a derived value) are observed **instantly**. Predicates that read
 **non-reactive** sources — a `StateFlow.value`, a plain `var`, a `ref`, an external store — are
@@ -716,9 +730,11 @@ control passes `highlightItemId`; the callout anchors next to that item's measur
 any item-anchored UI, the item must be laid out — if it lives inside a collapsed host, use the host's
 `expandWhen` (see §4) so the item's bounds are known when the callout needs to anchor.
 
-**Goal activation is developer-driven.** There is no built-in end-user picker. You activate goals
-imperatively through the `AzGuidanceController` (`activate(id)`), or declare `autoStartWhen` on a
-goal so it self-activates (typically for onboarding) when its condition becomes true.
+**Goal activation is developer-driven.** There is no built-in end-user picker — **starting is always
+your decision**. You activate goals imperatively through the `AzGuidanceController` (`activate(id)`).
+`autoStartWhen` (a status id that self-activates a goal) still exists but is **discouraged**; prefer an
+explicit `activate(...)`. Either way, a goal that the user has **completed or skipped never (re)starts**
+until you call `resetGuidance(...)`.
 
 ### 9.3 Help/Info Overlay Integration
 
@@ -788,6 +804,12 @@ val finished = controller.isCompleted("onboarding")
 // Mark a status reached manually (e.g. from an external success callback):
 controller.markReached("profileComplete")
 
+// Skip (usually driven by the swipe-to-cancel gesture) and replay:
+controller.skip("onboarding")      // dismiss one goal (persisted)
+controller.skip()                  // cancel tutorial mode: skip all active goals + disable
+controller.resetGuidance("onboarding") // clear completion + dismissal so it can run again
+controller.resetGuidance()         // clear all
+
 // Turn the whole framework on/off:
 controller.disable()
 controller.enable()
@@ -795,9 +817,10 @@ controller.enable()
 
 You can also obtain a controller via `rememberAzGuidanceController()` and read it through
 `LocalAzGuidanceController.current`. `AzGuidanceController` lives in package
-`com.hereliesaz.aznavrail.tutorial` and exposes: `enabled`, `activeGoals: List<String>`,
-`completedGoals: List<String>`, `enable()`, `disable()`, `activate(id)`, `deactivate(id)`,
-`markReached(id)`, `isCompleted(id)`.
+`com.hereliesaz.aznavrail.tutorial` and exposes: `enabled`, `activeGoals`, `completedGoals`,
+`dismissedGoals`, `enable()`, `disable()`, `activate(id)`, `deactivate(id)`, `markReached(id)`,
+`isCompleted(id)`, `isDismissed(id)`, `skip(id?)`, `resetGuidance(id?)`, and (for paged edges)
+`advance`/`next`/`back` plus the observable `currentInstructions`/`current`/`currentFlow`.
 
 Persistence: completed goals persist in `SharedPreferences` under key
 `az_navrail_completed_goals`.
@@ -868,10 +891,10 @@ Also exported for advanced use: `AzGuidanceProvider`, `AzInstructionOverlay`, `u
 Persistence: completed goals persist to `localStorage` (and `AsyncStorage` on React Native) under key
 `az_navrail_completed_goals`.
 
-**React overlay parity note:** the React/web overlay draws an **accent ring** around each target over
-a light dim — it does **not** punch a true spotlight hole out of the dim layer (no Android-style
-`BlendMode.Clear` punch-out). This is a minor visual difference; routing and advancement behave
-identically.
+**Platform parity note:** neither platform dims the screen. Android strokes the target's true geometry
+(circle/rect/path) and draws an arrowhead to the callout; React rings the target's bounding box and
+draws a plain connector line (per-shape masking / arrowheads aren't portable on React Native). Routing,
+placement, and advancement behave identically.
 
 ### 9.6 Highlighting arbitrary on-screen targets (`azGuidanceTarget`)
 
@@ -882,8 +905,9 @@ rail item** — a ball drawn over a camera/AR canvas, an aiming line, an on-scre
 reference it from an edge (or a step) with `highlightTargetId`. If the function returns `null` (target
 absent), the callout gracefully degrades to text-only.
 
-The library both **draws a default spotlight** for the shape (circle/rect/path punch-out) **and**
-publishes the resolved shape on the controller (see §9.8) so a host can draw its own highlight.
+The library both **draws a non-blocking outline** around the shape (circle/rect/path) **and** publishes
+the resolved shape on the controller (see §9.8) so a host can draw its own highlight. It never dims or
+covers the target.
 
 ```kotlin
 // Window-space shape, recomputed each frame (read Compose state inside for smooth tracking).
@@ -985,9 +1009,9 @@ azSuppressGuide(settleMs = 700) { gesture.inProgress }
 
 ### 9.10 Custom callout rendering (optional)
 
-To draw the callout body yourself (over a camera/canvas), register a renderer; the dim + spotlight
-punch-out still draw, but the callout content is yours. It receives the current snapshot and the
-resolved target bounds.
+To draw the callout body yourself (over a camera/canvas), register a renderer; the outline + connector
+still draw, but the callout content is yours. It receives the current snapshot and the resolved target
+bounds.
 
 ```kotlin
 azGuideRenderer { snapshot, bounds -> MyCallout(snapshot, bounds) }

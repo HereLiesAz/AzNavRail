@@ -69,3 +69,4 @@ export { AzInstructionOverlay } from './components/AzInstructionOverlay';
 export { useActiveStatuses, computeBuiltinStatuses, useGuidanceSuppressed, anySuppressorActive } from './guidance/AzStatusEngine';
 export { nextHop, routeInstructions, computeAutoEdges, resolveEdge, toSnapshot, snapshotsOf } from './guidance/AzGuidance';
 export type { ResolvedInstruction, GuidanceFrame } from './guidance/AzGuidance';
+export { placeCallout, overlapArea } from './guidance/AzCalloutPlacement';

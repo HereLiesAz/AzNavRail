@@ -44,23 +44,19 @@ has a meaningful web analog. The closest web primitive is `env(safe-area-inset-b
 applied by `AzBottomSheetInsetAware`, which is `0` on devices without a home indicator. No
 `drawBehindNavBar` flag is exposed on the React `AzSheetConfig`.
 
-## Guidance overlay: accent ring vs. punch-out spotlight
+## Guidance overlay: outline + connector (non-blocking)
 
 The status-driven guidance framework reaches behavioural parity across platforms — the same
 `AzStatus` / `AzEdge` / `AzGoal` DSL, the same built-in `az.*` statuses and auto-edges, the same
-auto-advancing routing, and the same `az_navrail_completed_goals` persistence key. One **minor visual**
-difference remains: the Android instruction overlay punches a true spotlight hole out of the dim layer
-(`BlendMode.Clear`), while the **React/web** `AzInstructionOverlay` draws an **accent ring** around
-each target over a light dim instead of a real punch-out. Routing, callouts, and advancement are
-identical; only the highlight rendering differs. There is no plan to emulate a pixel-perfect punch-out
-on web.
-
-The same applies to **arbitrary shape targets** (`AzGuidanceTarget` / `highlightTargetId`): Android
-punches the actual `Circle` / `Rect` / `Path` geometry out of the dim, while React rings the target's
-**bounding box** (a `Path` target is therefore approximated by its AABB, not its true outline). The
-resolved shape is still published on the controller (`currentInstructions[i].resolvedShape`), so a host
-that wants a pixel-accurate highlight can draw it itself via `<AzGuideRenderer>` or by observing the
-snapshot.
+auto-advancing routing, near-target collision-avoiding callout placement, swipe-to-cancel, the no-repeat
+rule, and the same persistence keys (`az_navrail_completed_goals`, `az_navrail_dismissed_goals`).
+**Neither platform dims the screen or blocks input.** One **minor visual** difference remains in how the
+target is outlined: **Android** strokes the target's true geometry (`Circle` / `Rect` / `Path`) and
+draws an **arrowhead** on the connector; **React/web** rings the target's **bounding box** and draws a
+plain **connector line** (so a `Path` target is approximated by its AABB, and there is no arrowhead —
+per-shape masking and arrowheads aren't portable on React Native). The resolved shape is still published
+on the controller (`currentInstructions[i].resolvedShape`), so a host that wants a pixel-accurate
+highlight can draw it itself via `<AzGuideRenderer>` or by observing the snapshot.
 
 ## `AzActivity` / `AzGraphInterface`
 

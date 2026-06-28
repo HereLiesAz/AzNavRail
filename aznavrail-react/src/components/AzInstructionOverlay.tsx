@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, Dimensions, Pressable } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { View, Text, StyleSheet, Dimensions, PanResponder, type LayoutChangeEvent, type ViewStyle } from 'react-native';
 import type {
   AzGuidanceRenderer,
   AzGuideShape,
@@ -10,6 +10,7 @@ import type {
 import { resolveShape, shapeBounds } from '../guidance/AzStatus';
 import type { ResolvedInstruction } from '../guidance/AzGuidance';
 import { edgeStepKey } from '../guidance/AzGuidance';
+import { placeCallout } from '../guidance/AzCalloutPlacement';
 
 interface Props {
   resolved: ResolvedInstruction[];
@@ -17,23 +18,27 @@ interface Props {
   accent?: string;
   activeItemId?: string | null;
   targets?: Record<string, () => AzGuideShape | null>;
-  /** Called when a tap-advanceable step's callout is pressed. */
+  /** Called when a tap-advanceable info-step callout is tapped. */
   onAdvance?: (key: string) => void;
+  /** Called when a callout is swiped away (cancels tutorial mode). */
+  onSkip?: () => void;
   /** Host renderer replacing the built-in callout body. */
   renderSlot?: AzGuidanceRenderer | null;
 }
 
 const CALLOUT_W = 240;
+const DEFAULT_H = 84;
+const SWIPE_PX = 48;
+const TAP_PX = 8;
 
 /**
- * Renders the current guidance instructions as callouts, **each placed next to its own highlight
- * target** (so the user sees, in place, how to accomplish each active goal). Targets may be rail items,
- * the active item, or host-registered arbitrary shapes (circle / rect / path). The overlay never blocks
- * input except on a tap-advanceable info-step callout, which advances the paged edge on press.
+ * Renders guidance as a **non-blocking coach**: a thin accent outline around each step's target and a
+ * small callout placed *near* (never on) that target, with a connector to it. It never dims the screen
+ * and never intercepts input outside a callout. **Swiping a callout cancels tutorial mode**; tapping an
+ * informational step advances it. Callouts avoid the target, other known UI, each other, and the edges.
  *
- * (Parity note: where the Android overlay punches a true spotlight hole per target, the React overlay
- * draws an accent ring around each target over a light dim. A `Path` target is ringed by its bounding
- * box — multi-hole / path masking isn't portable across React Native primitives.)
+ * (Parity note: Android strokes the true shape and draws an arrowhead; React rings the target's bounding
+ * box and draws a plain connector line — multi-shape masking / arrowheads aren't portable on RN.)
  */
 export const AzInstructionOverlay: React.FC<Props> = ({
   resolved,
@@ -42,45 +47,59 @@ export const AzInstructionOverlay: React.FC<Props> = ({
   activeItemId = null,
   targets = {},
   onAdvance,
+  onSkip,
   renderSlot,
 }) => {
+  const [sizes, setSizes] = useState<Record<number, { width: number; height: number }>>({});
   if (!resolved || resolved.length === 0) return null;
   const screen = Dimensions.get('window');
+  const safe: AzShapeBounds = { left: 8, top: 8, width: screen.width - 16, height: screen.height - 16 - 24 };
+
+  const shapes = resolved.map((r) => resolveShape(r.instruction.highlight ?? { type: 'None' }, itemBounds, activeItemId, targets));
+  const targetBounds = shapes.map((s) => (s ? shapeBounds(s) : null));
+  const itemObstacles: AzShapeBounds[] = Object.values(itemBounds).map((b) => ({ left: b.x, top: b.y, width: b.width, height: b.height }));
+
+  const placedRects: AzShapeBounds[] = [];
+  const placements = resolved.map((_, i) => {
+    const size = sizes[i] ?? { width: CALLOUT_W, height: DEFAULT_H };
+    const obstacles = [
+      ...itemObstacles,
+      ...(targetBounds.filter((b, j) => j !== i && b != null) as AzShapeBounds[]),
+      ...placedRects,
+    ];
+    const rect = placeCallout(targetBounds[i], size, obstacles, safe);
+    placedRects.push(rect);
+    return rect;
+  });
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      <View style={[StyleSheet.absoluteFill, styles.dim]} pointerEvents="none" />
       {resolved.map((r, i) => {
-        const ins = r.instruction;
-        const highlight = ins.highlight ?? { type: 'None' };
-        const shape = resolveShape(highlight, itemBounds, activeItemId, targets);
-        const b: AzShapeBounds | null = shape ? shapeBounds(shape) : null;
+        const shape = shapes[i];
+        const b = targetBounds[i];
+        const rect = placements[i];
+        const measured = sizes[i] != null;
         const stepKey = edgeStepKey(r.edge);
         const currentStep = r.edge.steps?.[r.stepIndex];
         const tappable = r.stepTotal > 1 && r.stepIndex < r.stepTotal - 1 && currentStep?.advanceWhen == null;
-        const onPress = tappable && onAdvance ? () => onAdvance(stepKey) : undefined;
-
         const body = renderSlot
           ? renderSlot(toSnapshotLite(r, shape, b), b)
-          : <Callout ins={ins} accent={accent} stepIndex={r.stepIndex} stepTotal={r.stepTotal} tappable={!!onPress} />;
-
-        if (!b) {
-          return (
-            <View key={i} style={styles.floatWrap} pointerEvents="box-none">
-              <Tappable onPress={onPress}>{body}</Tappable>
-            </View>
-          );
-        }
-        const ring = ringStyle(shape!, b, accent);
-        const belowHasRoom = b.top + b.height + 96 < screen.height;
-        const top = belowHasRoom ? b.top + b.height + 8 : Math.max(0, b.top - 96);
-        const left = Math.max(8, Math.min(b.left, screen.width - CALLOUT_W - 8));
+          : <Callout ins={r.instruction} accent={accent} stepIndex={r.stepIndex} stepTotal={r.stepTotal} tappable={tappable} />;
         return (
           <React.Fragment key={i}>
-            <View pointerEvents="none" style={ring} />
-            <View pointerEvents="box-none" style={[styles.calloutWrap, { left, top }]}>
-              <Tappable onPress={onPress}>{body}</Tappable>
-            </View>
+            {shape && b ? <View pointerEvents="none" style={ringStyle(shape, b, accent)} /> : null}
+            {b ? <Connector from={center(rect)} to={center(b)} color={accent} /> : null}
+            <CalloutGesture
+              onSwipe={() => onSkip?.()}
+              onTap={tappable && onAdvance ? () => onAdvance(stepKey) : undefined}
+              style={{ position: 'absolute', left: rect.left, top: rect.top, maxWidth: CALLOUT_W, opacity: measured ? 1 : 0 }}
+              onLayout={(e: LayoutChangeEvent) => {
+                const { width, height } = e.nativeEvent.layout;
+                setSizes((prev) => (prev[i] && prev[i].width === width && prev[i].height === height ? prev : { ...prev, [i]: { width, height } }));
+              }}
+            >
+              {body}
+            </CalloutGesture>
           </React.Fragment>
         );
       })}
@@ -88,16 +107,60 @@ export const AzInstructionOverlay: React.FC<Props> = ({
   );
 };
 
-const Tappable: React.FC<{ onPress?: () => void; children: React.ReactNode }> = ({ onPress, children }) => {
-  if (!onPress) return <View pointerEvents="none">{children}</View>;
-  return <Pressable onPress={onPress}>{children}</Pressable>;
+const center = (r: AzShapeBounds) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+
+/** A callout wrapper: a swipe past a threshold cancels guidance; a clean tap advances an info step. */
+const CalloutGesture: React.FC<{
+  onSwipe: () => void;
+  onTap?: () => void;
+  style: ViewStyle;
+  onLayout: (e: LayoutChangeEvent) => void;
+  children: React.ReactNode;
+}> = ({ onSwipe, onTap, style, onLayout, children }) => {
+  const onSwipeRef = useRef(onSwipe);
+  onSwipeRef.current = onSwipe;
+  const onTapRef = useRef(onTap);
+  onTapRef.current = onTap;
+  const handlers = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) + Math.abs(g.dy) > 4,
+      onPanResponderRelease: (_, g) => {
+        const dist = Math.hypot(g.dx, g.dy);
+        if (dist > SWIPE_PX) onSwipeRef.current();
+        else if (dist < TAP_PX) onTapRef.current?.();
+      },
+    }),
+  ).current;
+  return (
+    <View {...handlers.panHandlers} style={style} onLayout={onLayout}>
+      {children}
+    </View>
+  );
 };
 
-/** A bounding ring around the shape (circle gets a circular border; rect/path get a rounded box). */
-function ringStyle(shape: AzGuideShape, b: AzShapeBounds, accent: string) {
+/** A connector line from the callout to its target (no arrowhead — see the parity note). */
+const Connector: React.FC<{ from: { x: number; y: number }; to: { x: number; y: number }; color: string }> = ({ from, to, color }) => {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const len = Math.hypot(dx, dy);
+  if (len < 1) return null;
+  const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+  const mx = (from.x + to.x) / 2;
+  const my = (from.y + to.y) / 2;
+  return (
+    <View
+      pointerEvents="none"
+      style={{ position: 'absolute', left: mx - len / 2, top: my - 1, width: len, height: 2, backgroundColor: color, transform: [{ rotate: `${angle}deg` }] }}
+    />
+  );
+};
+
+/** A bounding ring around the shape (circle → circular border; rect/path → rounded box). */
+function ringStyle(shape: AzGuideShape, b: AzShapeBounds, accent: string): ViewStyle {
   const radius = shape.type === 'Circle' ? Math.min(b.width, b.height) / 2 : shape.type === 'Rect' ? (shape.cornerRadius ?? 12) : 12;
   return {
-    position: 'absolute' as const,
+    position: 'absolute',
     left: b.left - 4,
     top: b.top - 4,
     width: b.width + 8,
@@ -136,19 +199,14 @@ const Callout: React.FC<{ ins: AzInstruction; accent: string; stepIndex: number;
     {ins.title ? <Text style={[styles.title, { color: accent }]}>{ins.title}</Text> : null}
     <Text style={styles.text}>{ins.text}</Text>
     {ins.media ? <View style={styles.media}>{ins.media()}</View> : null}
-    {stepTotal > 1 ? (
-      <View style={styles.stepRow}>
-        <Text style={styles.stepCount}>{`${stepIndex + 1} / ${stepTotal}`}</Text>
-        {tappable ? <Text style={[styles.tapHint, { color: accent }]}>Tap to continue ▸</Text> : null}
-      </View>
-    ) : null}
+    <View style={styles.stepRow}>
+      <Text style={styles.stepCount}>{stepTotal > 1 ? `${stepIndex + 1} / ${stepTotal}` : 'swipe to dismiss'}</Text>
+      {tappable ? <Text style={[styles.tapHint, { color: accent }]}>Tap to continue ▸</Text> : null}
+    </View>
   </View>
 );
 
 const styles = StyleSheet.create({
-  dim: { backgroundColor: 'rgba(0,0,0,0.35)' },
-  calloutWrap: { position: 'absolute', maxWidth: CALLOUT_W },
-  floatWrap: { position: 'absolute', left: 0, right: 0, bottom: 24, alignItems: 'center' },
   callout: {
     maxWidth: CALLOUT_W,
     backgroundColor: '#ffffff',

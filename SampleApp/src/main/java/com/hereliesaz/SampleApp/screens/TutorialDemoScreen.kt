@@ -186,10 +186,17 @@ fun TutorialDemoScreen(
         )
         AzButton(onClick = onToggleSuppress, text = if (suppressed) "Suppression: ON (tap to clear)" else "Suppression: off (tap to suppress)")
 
-        Text("Stop guiding", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("Stop / skip / replay", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(
+            "Swipe any callout away to cancel tutorial mode (the skip is remembered). A skipped or " +
+                "completed goal won't re-activate until you reset.",
+            style = MaterialTheme.typography.bodySmall,
+        )
         AzButton(
             onClick = { guidance.activeGoals.toList().forEach { guidance.deactivate(it) } },
             text = "Deactivate all goals",
         )
+        AzButton(onClick = { guidance.skip() }, text = "Skip (cancel tutorial mode)")
+        AzButton(onClick = { guidance.resetGuidance() }, text = "Reset guidance (replay)")
     }
 }
