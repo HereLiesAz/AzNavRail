@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "apps": [
     {
       "name": "CueDetat",
@@ -104,9 +104,11 @@
     },
     {
       "name": "Guillotine",
-      "iconUrl": "",
+      "iconUrl": "guillotine_header.webp",
       "description": "An AI-Powered Non-Linear Video Editor",
-      "github": "https://github.com/HereLiesAz/Guillotine"
+      "github": "https://github.com/HereLiesAz/Guillotine",
+      "web": "https://hereliesaz.github.io/Guillotine/",
+      "isPwa": false
     },
     {
       "name": "MagNom",
