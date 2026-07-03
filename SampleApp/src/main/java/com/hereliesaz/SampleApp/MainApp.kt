@@ -185,6 +185,10 @@ fun MainApp() {
             collapsedWidth = customization.collapsedWidth,
             showFooter = customization.showFooter,
             appRepositoryUrl = customization.appRepositoryUrl,
+            // WP7 menu-drawer knobs.
+            dimBehindMenu = customization.dimBehindMenu,
+            menuItemAlignment = customization.menuItemAlignment,
+            justifyMenuItems = customization.justifyMenuItems,
         )
 
         azTheme(

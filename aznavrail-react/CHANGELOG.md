@@ -1,5 +1,54 @@
 # Changelog
 
+## Unreleased
+
+Windows-Phone-7 fidelity pass: the signature kinetic-typography entrance is redesigned end-to-end,
+the About page becomes a docs-TOC + focused-hero-carousel split, and three long-missing menu-drawer
+knobs (dim, side-alignment, kerning-justify) land as first-class options.
+
+### Added
+- **Menu-drawer look-and-feel options** on `AzNavRailSettings` (and mirrored on `AzDropdownMenu`):
+  - **`dimBehindMenu`** (default `false`) plus **`dimBehindMenuAlpha`** (default `0.4`) — draws a
+    dim scrim behind the expanded drawer; tap-to-collapse preserved.
+  - **`menuItemAlignment`** (`'center' | 'side'`, default **`'side'`**) — labels hug the docked
+    edge (`Start` when docked LEFT, `End` when RIGHT) instead of the legacy center-align.
+  - **`justifyMenuItems`** (default **`true`**) — measures the natural width of each label and
+    applies computed `letterSpacing` so the label fills the row edge-to-edge (Word-style justify).
+- **`AzMoreFromApp.bannerUrl`.** When the app's repo has `docs/banner.png` / `.webp` / `.jpg`
+  (or `docs/hero.*`), it is displayed at the top of that app's info panel under the About-page
+  hero carousel. Resolved both at CI-bake time and at runtime.
+
+### Changed
+- **Kinetic typography redesigned.** Item entrance/exit is now a pure 90° `rotateY` sweep hinged on
+  the docked edge — no fade, no vertical slide. New defaults:
+  `entranceStartAngle = 90` (was 70), `entranceDurationMs = 720` (was 360),
+  `entranceStaggerMs = 60` (was 55). Items now overlap heavily — the next item starts ~60 ms
+  after the previous begins while the previous is still animating.
+- **On native React Native**, `AzKineticItem` now applies a `translateX ±(width/2)` pivot correction
+  around the `rotateY` so the hinge visibly sits on the docked side (was center-pivoted because
+  React Native ignores `transformOrigin`). No change on web (CSS `transform-origin` was already
+  correct).
+- **Footer unfolds like an accordion.** The rail and dropdown footer (About/Feedback/@HereLiesAz)
+  now animate in with `scaleY 0→1` + `opacity 0→1` hinged at the top edge, starting when the
+  **last** menu item starts its own kinetic entrance (delay = `(count - 1) * staggerMs`). Same
+  Wp7Decelerate easing; the whole footer unfolds as one unit.
+- **About page split into two halves.** The top half is the existing docs TOC (unchanged internals),
+  and the bottom half is a **focused-hero More-from-Az carousel** with a size pattern
+  `small · medium · LARGE · medium · small` — the LARGE (center) item is the active one, and its
+  banner (when present), name, description, and link buttons render below the carousel. The old
+  pinned "More from Az" and "View on GitHub" buttons at the bottom of About are removed.
+- **`fetchMoreFromAz` now enriches missing icons at runtime.** When the manifest's `iconUrl` is
+  blank (or points at the owner's GH avatar), the runtime walks standard Android launcher-icon
+  paths on `raw.githubusercontent.com` (`mipmap-xxxhdpi/ic_launcher.webp` / `.png`, then xxhdpi,
+  xhdpi, hdpi) and falls back to the repo's OpenGraph social preview.
+
+### CI
+- **`.github/scripts/bake_more_from_az.py` walks the app's launcher icons and banner.** When
+  Play/website `og:image` resolvers leave `iconUrl` blank, the bake now looks for
+  `app/src/main/res/mipmap-*hdpi/ic_launcher.{png,webp}` (with a Contents-API tree walk fallback and
+  adaptive-icon XML parse) and fills the manifest. It also probes each repo for `docs/banner.*` /
+  `docs/hero.*` and stores it as `bannerUrl`.
+
 ## 0.6.0
 
 Guidance is now a **non-blocking coach** instead of a modal tutorial.

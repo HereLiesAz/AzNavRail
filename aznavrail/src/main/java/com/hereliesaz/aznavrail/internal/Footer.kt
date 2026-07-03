@@ -3,6 +3,9 @@ package com.hereliesaz.aznavrail.internal
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Column
@@ -13,15 +16,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hereliesaz.aznavrail.AzNavRailScopeImpl
+import com.hereliesaz.aznavrail.model.AzEasing
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * Renders the pinned footer strip shown at the bottom of the expanded menu.
@@ -50,14 +60,41 @@ internal fun Footer(
     scope: AzNavRailScopeImpl,
     repoUrl: String,
     footerColor: Color,
-    onAboutClick: (() -> Unit)? = null
+    onAboutClick: (() -> Unit)? = null,
+    // Accordion-unfold controls. `visible` drives the anim; the delay is `(menuItemCount-1)*staggerMs`
+    // so the footer begins the moment the LAST menu item begins its own kinetic entrance.
+    visible: Boolean = true,
+    menuItemCount: Int = 0,
+    staggerMs: Int = 60,
+    durationMs: Int = 720,
+    easing: Easing = AzEasing.Wp7Decelerate,
 ) {
     val context = LocalContext.current
+
+    // Accordion-unfold: scaleY 0→1 from the top edge + alpha 0→1, keyed off `visible`.
+    val scaleY = remember { Animatable(if (visible) 1f else 0f) }
+    val fade = remember { Animatable(if (visible) 1f else 0f) }
+    LaunchedEffect(visible) {
+        val spec = tween<Float>(durationMillis = durationMs, easing = easing)
+        if (visible) {
+            delay((menuItemCount - 1).coerceAtLeast(0).toLong() * staggerMs)
+            launch { scaleY.animateTo(1f, spec) }
+            launch { fade.animateTo(1f, spec) }
+        } else {
+            launch { scaleY.snapTo(0f) }
+            launch { fade.snapTo(0f) }
+        }
+    }
 
     // Footer items strictly on their own rows (Column) and center aligned
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .graphicsLayer {
+                this.scaleY = scaleY.value
+                this.alpha = fade.value
+                transformOrigin = TransformOrigin(0.5f, 0f)
+            }
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

@@ -15,6 +15,8 @@ import {
 import { AzNavRailContext } from './AzNavRailScope';
 import { AzNavItem, AzNavRailSettings, AzButtonShape, AzDockingSide, AzHeaderIconShape, AzNestedRailAlignment, AzEntrance, AzExit } from './types';
 import { AzKineticItem, useAzClosing } from './components/AzKinetics';
+import { Easing as RNEasing } from 'react-native';
+import { AzEasing } from './types';
 import { AzNavRailDefaults } from './AzNavRailDefaults';
 import { AzButton } from './components/AzButton';
 import { AzToggle } from './components/AzToggle';
@@ -51,6 +53,47 @@ interface AzNavRailProps extends AzNavRailSettings {
   /** Called whenever any rail item is interacted with. Receives the action name, an optional detail string, and the interacted item (if applicable). */
   onInteraction?: (action: string, details?: string, item?: AzNavItem) => void;
 }
+
+/**
+ * Unfolds children downward (scaleY 0→1 + fade) with an accordion motion. Kicks off when the LAST
+ * menu item starts its own kinetic entrance, i.e. after `(menuItemCount - 1) * staggerMs`.
+ */
+const FooterAccordion: React.FC<{
+  visible: boolean;
+  menuItemCount: number;
+  staggerMs: number;
+  durationMs: number;
+  children?: React.ReactNode;
+}> = ({ visible, menuItemCount, staggerMs, durationMs, children }) => {
+  const anim = useRef(new Animated.Value(visible ? 1 : 0)).current;
+  useEffect(() => {
+    if (visible) {
+      const a = Animated.timing(anim, {
+        toValue: 1,
+        duration: durationMs,
+        delay: Math.max(0, menuItemCount - 1) * staggerMs,
+        easing: RNEasing.bezier(...AzEasing.Wp7Decelerate),
+        useNativeDriver: true,
+      });
+      a.start();
+      return () => a.stop();
+    }
+    anim.setValue(0);
+    return undefined;
+  }, [visible, menuItemCount, staggerMs, durationMs, anim]);
+  return (
+    <Animated.View
+      style={{
+        opacity: anim,
+        transform: [{ scaleY: anim }],
+        // Web-only hinge from the top edge; native RN ignores transformOrigin.
+        ...( { transformOrigin: 'top center' } as any ),
+      }}
+    >
+      {children}
+    </Animated.View>
+  );
+};
 
 const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   const {
@@ -659,6 +702,9 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                       depth={depth}
                       isExpandedHost={isExpandedHost}
                       textStyle={kItemTextStyle}
+                      dockingSide={kDockingSide}
+                      menuItemAlignment={menuItemAlignment}
+                      justifyMenuItems={justifyMenuItems}
                       onToggleHost={() => {
                           const newHostState = !(hostStates[item.id] || false);
                           setHostStates(prev => ({ ...prev, [item.id]: newHostState }));
@@ -724,7 +770,13 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       };
 
       return (
-        <View style={[styles.footer, { alignItems: 'center' }]}>
+        <FooterAccordion
+          visible={isExpanded}
+          menuItemCount={menuItems.length}
+          staggerMs={kStaggerMs}
+          durationMs={kDurationMs}
+        >
+          <View style={[styles.footer, { alignItems: 'center' }]}>
              <View style={styles.divider} />
              {enableRailDragging && (
                  <TouchableOpacity onPress={handleUndock} style={{ paddingVertical: 8 }}><Text style={[styles.menuItemText, { color: footerColor, fontWeight: 'bold' }]}>{`Undock`}</Text></TouchableOpacity>
@@ -734,7 +786,8 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
              )}
              <TouchableOpacity onPress={handleFeedback} style={{ paddingVertical: 4 }}><Text style={[styles.menuItemText, { color: footerColor }]}>Feedback</Text></TouchableOpacity>
              <TouchableOpacity onPress={handleCredit} onLongPress={handleSecLocTrigger} delayLongPress={500} style={{ paddingVertical: 4 }}><Text style={[styles.menuItemText, { color: footerColor, opacity: 0.5 }]}>@HereLiesAz</Text></TouchableOpacity>
-        </View>
+          </View>
+        </FooterAccordion>
       );
   };
 
@@ -753,13 +806,18 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   // — Kinetic typography (WP7). Defaults animate; opt out via settings (itemEntrance: None, …). —
   const kItemEntrance = (config as AzNavRailSettings).itemEntrance ?? AzEntrance.Turnstile;
   const kItemExit = (config as AzNavRailSettings).itemExit ?? AzExit.Turnstile;
-  const kStaggerMs = (config as AzNavRailSettings).entranceStaggerMs ?? 55;
-  const kDurationMs = (config as AzNavRailSettings).entranceDurationMs ?? 360;
-  const kStartAngle = (config as AzNavRailSettings).entranceStartAngle ?? 70;
+  const kStaggerMs = (config as AzNavRailSettings).entranceStaggerMs ?? 60;
+  const kDurationMs = (config as AzNavRailSettings).entranceDurationMs ?? 720;
+  const kStartAngle = (config as AzNavRailSettings).entranceStartAngle ?? 90;
   const kTiltOnPress = (config as AzNavRailSettings).tiltOnPress ?? false;
   const kMaxTilt = (config as AzNavRailSettings).maxTiltDegrees ?? 10;
   const kItemTextStyle = (config as AzNavRailSettings).itemTextStyle;
   const kDockingSide = config.dockingSide ?? AzDockingSide.LEFT;
+  // Menu-drawer look/feel — new defaults (side-aligned + justified) preserve caller intent when unset.
+  const menuItemAlignment = (config as AzNavRailSettings).menuItemAlignment ?? 'side';
+  const justifyMenuItems = (config as AzNavRailSettings).justifyMenuItems ?? true;
+  const dimBehindMenu = (config as AzNavRailSettings).dimBehindMenu ?? false;
+  const dimBehindMenuAlpha = (config as AzNavRailSettings).dimBehindMenuAlpha ?? 0.4;
   // Keep the menu mounted through the staggered exit so items can turnstile out as the rail collapses.
   const menuRendered = useAzClosing(isExpanded && !config.noMenu, kItemExit, menuItems.length, kStaggerMs, kDurationMs);
 
@@ -775,6 +833,19 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   return (
     <AzNavRailContext.Provider value={{ register, unregister, updateSettings, getDividerId, hasItem }}>
         <View style={{ flexDirection: flexDirection, height: '100%', flex: 1 }}>
+            {/* Dim scrim behind the drawer: developer-opt-in via `dimBehindMenu`; alpha via
+                `dimBehindMenuAlpha`. Tapping the scrim collapses the menu. */}
+            {dimBehindMenu && isExpanded && !isFloating && (
+              <TouchableOpacity
+                onPress={() => setIsExpanded(false)}
+                activeOpacity={1}
+                style={{
+                  ...(StyleSheet.absoluteFillObject as object),
+                  backgroundColor: `rgba(0,0,0,${Math.max(0, Math.min(1, dimBehindMenuAlpha))})`,
+                  zIndex: 5,
+                }}
+              />
+            )}
             <Animated.View
                 style={[
                     styles.railContainer,
@@ -782,7 +853,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                     width: railWidthAnim,
                     position: isFloating ? 'absolute' : 'relative',
                     transform: isFloating ? [{ translateX: pan.x }, { translateY: pan.y }] : [],
-                    zIndex: isFloating ? 1000 : 1,
+                    zIndex: isFloating ? 1000 : 10,
                     height: isFloating ? 'auto' : '100%',
                     borderRightWidth: dockingSide === AzDockingSide.LEFT ? 1 : 0,
                     borderLeftWidth: dockingSide === AzDockingSide.RIGHT ? 1 : 0,

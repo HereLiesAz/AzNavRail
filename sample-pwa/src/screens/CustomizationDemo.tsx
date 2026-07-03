@@ -22,6 +22,10 @@ export interface CustomizationState {
   vibrate: boolean
   activeClassifiers: Set<string>
   headerIconSize: number
+  // WP7 menu-drawer knobs.
+  dimBehindMenu: boolean
+  menuItemAlignment: 'center' | 'side'
+  justifyMenuItems: boolean
 }
 
 const headerShapes = Object.values(AzHeaderIconShape) as AzHeaderIconShape[]
@@ -105,6 +109,27 @@ export default function CustomizationDemo({
         label="vibrate"
         value={state.vibrate}
         onChange={(v) => onChange({ ...state, vibrate: v })}
+      />
+
+      {/* WP7 menu-drawer knobs (new in this release). */}
+      <Toggle
+        label="dimBehindMenu — dim the rest of the app when the drawer expands (40% alpha)"
+        value={state.dimBehindMenu}
+        onChange={(v) => onChange({ ...state, dimBehindMenu: v })}
+      />
+      <Block label={`menuItemAlignment: ${state.menuItemAlignment}`}>
+        <select
+          value={state.menuItemAlignment}
+          onChange={(e) => onChange({ ...state, menuItemAlignment: e.target.value as 'center' | 'side' })}
+        >
+          <option value="side">side (docked-side aligned — default)</option>
+          <option value="center">center (legacy)</option>
+        </select>
+      </Block>
+      <Toggle
+        label="justifyMenuItems — full-justify labels via computed letter-spacing"
+        value={state.justifyMenuItems}
+        onChange={(v) => onChange({ ...state, justifyMenuItems: v })}
       />
 
       <Block label="appRepositoryUrl (required on web)">

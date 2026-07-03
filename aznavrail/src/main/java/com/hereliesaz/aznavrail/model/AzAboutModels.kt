@@ -35,5 +35,7 @@ data class AzMoreFromApp(
     val githubUrl: String? = null,
     val playStoreUrl: String? = null,
     val webUrl: String? = null,
-    val isPwa: Boolean = false
+    val isPwa: Boolean = false,
+    /** Optional banner (docs/banner.* in the app's repo) shown at the top of the app's info panel. */
+    val bannerUrl: String? = null,
 )

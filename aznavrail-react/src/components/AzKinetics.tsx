@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, ViewStyle, StyleProp } from 'react-native';
+import { Animated, Easing, Platform, ViewStyle, StyleProp, LayoutChangeEvent } from 'react-native';
 import { AzDockingSide, AzEasing, AzEntrance, AzExit } from '../types';
 
 const CASCADE_DIST = 20; // px vertical slide for FAB-mode / SlideUp cascade
@@ -120,11 +120,28 @@ export const AzKineticItem: React.FC<AzKineticItemProps> = ({
   const outAngle = useTurnstile ? startAngle : 0;
   const outDist = useSlide ? CASCADE_DIST : 0;
 
-  const opacity = animates ? vis : 1;
+  // Docked Turnstile is a pure rotation (no fade); Fade/SlideUp/floating-Turnstile still fade in.
+  const entranceUsesAlpha =
+    entrance === AzEntrance.Fade || entrance === AzEntrance.SlideUp ||
+    (entrance === AzEntrance.Turnstile && floating);
+  const exitUsesAlpha = exit === AzExit.Fade || (exit === AzExit.Turnstile && floating);
+  const usesAlpha = entranceUsesAlpha || exitUsesAlpha;
+  const opacity = animates && usesAlpha ? vis : 1;
   const rotateY = vis.interpolate({ inputRange: [0, 1], outputRange: [`${outAngle}deg`, '0deg'] });
   const translateY = vis.interpolate({ inputRange: [0, 1], outputRange: [outDist, 0] });
   const rotateXTilt = tiltX.interpolate({ inputRange: [-1, 1], outputRange: [`${-maxTiltDegrees}deg`, `${maxTiltDegrees}deg`] });
   const rotateYTilt = tiltY.interpolate({ inputRange: [-1, 1], outputRange: [`${-maxTiltDegrees}deg`, `${maxTiltDegrees}deg`] });
+
+  // Native RN silently ignores `transformOrigin`, so on iOS/Android we emulate the docked hinge by
+  // translating ±(width/2) before the rotate and back after. Web uses the CSS property instead.
+  const [measuredWidth, setMeasuredWidth] = useState(0);
+  const onLayout = (e: LayoutChangeEvent) => {
+    const w = e.nativeEvent.layout.width;
+    if (w && Math.abs(w - measuredWidth) > 0.5) setMeasuredWidth(w);
+  };
+  const nativePivot = Platform.OS !== 'web' && useTurnstile && measuredWidth > 0;
+  const half = measuredWidth / 2;
+  const pivotOffset = nativePivot ? (dockingSide === AzDockingSide.RIGHT ? half : -half) : 0;
 
   const springBack = () => {
     Animated.spring(tiltX, { toValue: 0, useNativeDriver: true }).start();
@@ -158,15 +175,18 @@ export const AzKineticItem: React.FC<AzKineticItemProps> = ({
   return (
     <Animated.View
       {...tiltHandlers}
+      onLayout={onLayout}
       style={[
         style,
         {
           opacity,
           transform: [
             { perspective: 600 },
+            ...(nativePivot ? [{ translateX: pivotOffset }] : []),
             { rotateY },
             { rotateX: rotateXTilt },
             { rotateY: rotateYTilt },
+            ...(nativePivot ? [{ translateX: -pivotOffset }] : []),
             { translateY },
           ],
           transformOrigin, // web-only; ignored on native

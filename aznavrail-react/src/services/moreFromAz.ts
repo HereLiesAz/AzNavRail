@@ -11,6 +11,8 @@ export interface AzMoreFromApp {
   webUrl?: string;
   /** When true, `webUrl` is a PWA (an "Open" button); otherwise it's a "Website". */
   isPwa?: boolean;
+  /** Optional banner (docs/banner.* in the app's repo) shown at the top of the app info. */
+  bannerUrl?: string;
 }
 
 /** Stable sort placing apps with a Play link first. */
@@ -38,6 +40,7 @@ function appFromObject(o: any): AzMoreFromApp | null {
       playStoreUrl: o.play || undefined,
       webUrl: o.web || undefined,
       isPwa: Boolean(o.isPwa),
+      bannerUrl: typeof o.bannerUrl === 'string' && o.bannerUrl ? o.bannerUrl : undefined,
     };
   }
   // Un-baked link object { github?, play?, web? } -> degraded card.
@@ -83,16 +86,92 @@ export function parse(json: string): MoreFromResult {
 }
 
 /**
- * Reads the **baked** "More from Az" manifest from [jsonUrl]. All resolution (Play link, website/PWA,
- * WIP filtering, sorting, name/icon/description) is done in CI, so this is a pure parse — which also
- * closes the previous web CORS gap (no client-side Play/website fetches).
+ * Reads the **baked** "More from Az" manifest from [jsonUrl]. Play/website/WIP resolution is done in
+ * CI so this is a pure parse.  After parsing, entries whose `iconUrl` is blank (or the owner's GH
+ * avatar) trigger a repo-level walk against raw.githubusercontent.com — standard mipmap paths first,
+ * then the OpenGraph social preview.  Entries without a `bannerUrl` also get a `docs/banner.*` walk
+ * so the About page can render a banner strip above the active app's info.
  */
 export async function fetchMoreFromAz(jsonUrl: string): Promise<MoreFromResult | null> {
   const res = await cachedGet(jsonUrl);
   if (!res) return null;
+  let parsed: MoreFromResult;
   try {
-    return parse(res.body);
+    parsed = parse(res.body);
   } catch {
     return null;
   }
+  const enriched = await enrichWithRepoAssets(parsed.apps);
+  return { version: parsed.version, apps: enriched };
+}
+
+const LAUNCHER_ICON_PATHS = [
+  'app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp',
+  'app/src/main/res/mipmap-xxxhdpi/ic_launcher.png',
+  'app/src/main/res/mipmap-xxhdpi/ic_launcher.webp',
+  'app/src/main/res/mipmap-xxhdpi/ic_launcher.png',
+  'app/src/main/res/mipmap-xhdpi/ic_launcher.webp',
+  'app/src/main/res/mipmap-xhdpi/ic_launcher.png',
+  'app/src/main/res/mipmap-hdpi/ic_launcher.png',
+];
+
+const BANNER_NAMES = [
+  'docs/banner.png', 'docs/banner.webp', 'docs/banner.jpg', 'docs/banner.jpeg',
+  'docs/Banner.png', 'docs/Banner.webp',
+  'docs/hero.png', 'docs/hero.webp',
+];
+
+const BRANCHES = ['main', 'master', 'HEAD'];
+
+async function headOk(url: string): Promise<boolean> {
+  try {
+    // HEAD would be ideal, but on the web CORS blocks preflight for many hosts. GET with cache: 'no-store'
+    // (and no-cors mode so we get an opaque response) is the safest cross-platform ping.
+    const r = await fetch(url, { method: 'GET', mode: 'no-cors', cache: 'no-store' as any } as any);
+    // In `no-cors` mode the status is 0 with type "opaque"; treat that as "reachable" so we don't
+    // gate on CORS misconfig. On native platforms (no CORS), we get the real status.
+    return (r.type === 'opaque') || (r.status >= 200 && r.status < 400);
+  } catch {
+    return false;
+  }
+}
+
+export async function resolveRepoIcon(owner: string, repo: string): Promise<string> {
+  for (const branch of BRANCHES) {
+    for (const path of LAUNCHER_ICON_PATHS) {
+      const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
+      if (await headOk(url)) return url;
+    }
+  }
+  return `https://opengraph.githubassets.com/1/${owner}/${repo}`;
+}
+
+export async function resolveRepoBanner(owner: string, repo: string): Promise<string | undefined> {
+  for (const branch of BRANCHES) {
+    for (const name of BANNER_NAMES) {
+      const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${name}`;
+      if (await headOk(url)) return url;
+    }
+  }
+  return undefined;
+}
+
+export async function enrichWithRepoAssets(apps: AzMoreFromApp[]): Promise<AzMoreFromApp[]> {
+  return Promise.all(
+    apps.map(async (app) => {
+      const gh = app.githubUrl;
+      if (!gh) return app;
+      const parsed = parseRepo(gh);
+      if (!parsed) return app;
+      const [owner, repo] = parsed;
+      const needsIcon = !app.iconUrl || app.iconUrl.includes('avatars.githubusercontent.com');
+      const needsBanner = !app.bannerUrl;
+      if (!needsIcon && !needsBanner) return app;
+      const [iconUrl, bannerUrl] = await Promise.all([
+        needsIcon ? resolveRepoIcon(owner, repo) : Promise.resolve(app.iconUrl),
+        needsBanner ? resolveRepoBanner(owner, repo) : Promise.resolve(app.bannerUrl),
+      ]);
+      return { ...app, iconUrl: iconUrl || app.iconUrl, bannerUrl };
+    }),
+  );
 }

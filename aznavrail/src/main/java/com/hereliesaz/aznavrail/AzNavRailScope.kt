@@ -26,6 +26,7 @@ import com.hereliesaz.aznavrail.model.AzEntrance
 import com.hereliesaz.aznavrail.model.AzExit
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzItemConfig
+import com.hereliesaz.aznavrail.model.AzMenuItemAlignment
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 import java.util.Collections.emptySet
@@ -80,7 +81,7 @@ interface AzNavRailScope {
      *   (`com.<owner>.<repo>` → `github.com/<owner>/<repo>`); set it only when the namespace doesn't
      *   match the repo. **Not required.**
      */
-    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 160.dp, collapsedWidth: Dp = 100.dp, showFooter: Boolean = true, appRepositoryUrl: String = "")
+    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 160.dp, collapsedWidth: Dp = 100.dp, showFooter: Boolean = true, appRepositoryUrl: String = "", dimBehindMenu: Boolean = false, dimBehindMenuAlpha: Float = 0.4f, menuItemAlignment: AzMenuItemAlignment = AzMenuItemAlignment.SIDE, justifyMenuItems: Boolean = true)
 
     /**
      * Configures the visual theme of the rail.
@@ -123,10 +124,10 @@ interface AzNavRailScope {
         itemEntrance: AzEntrance = AzEntrance.Turnstile,
         itemExit: AzExit = AzExit.Turnstile,
         itemTextStyle: TextStyle? = null,
-        entranceStaggerMs: Int = 55,
-        entranceDurationMs: Int = 360,
+        entranceStaggerMs: Int = 60,
+        entranceDurationMs: Int = 720,
         entranceEasing: Easing = AzEasing.Wp7Decelerate,
-        entranceStartAngle: Float = 70f,
+        entranceStartAngle: Float = 90f,
         tiltOnPress: Boolean = false,
         maxTiltDegrees: Float = 10f,
         titleEntrance: AzEntrance = AzEntrance.Turnstile,
@@ -805,6 +806,16 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     /** If true, the docking side tracks the physical device edge, adapting to rotation. */
     var usePhysicalDocking: Boolean = false
 
+    // -- Menu drawer look/feel (side-align, kerning-justify, dim scrim) --
+    /** When true, expanding the drawer draws a dim scrim over the rest of the app. */
+    var dimBehindMenu: Boolean = false
+    /** Alpha of the [dimBehindMenu] scrim (0..1). Default 0.4. Ignored when [dimBehindMenu] is false. */
+    var dimBehindMenuAlpha: Float = 0.4f
+    /** How menu-drawer labels are horizontally aligned within their rows. Default [AzMenuItemAlignment.SIDE]. */
+    var menuItemAlignment: AzMenuItemAlignment = AzMenuItemAlignment.SIDE
+    /** When true, menu-drawer labels are full-justified via computed letter-spacing. Default true. */
+    var justifyMenuItems: Boolean = true
+
     // Theme
     /** Color applied to selected/active items and connecting lines. [Color.Unspecified] falls back to [MaterialTheme.colorScheme.primary]. */
     var activeColor: Color = Color.Unspecified
@@ -830,13 +841,13 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     /** Optional style merged over each menu item's label. */
     var itemTextStyle: TextStyle? = null
     /** Per-item cascade delay (ms), multiplied by position. */
-    var entranceStaggerMs: Int = 55
+    var entranceStaggerMs: Int = 60
     /** Duration (ms) of each item's entrance/exit. */
-    var entranceDurationMs: Int = 360
+    var entranceDurationMs: Int = 720
     /** Easing for the entrance/exit. */
     var entranceEasing: Easing = AzEasing.Wp7Decelerate
     /** Starting `rotationY` (deg) for the turnstile sweep. */
-    var entranceStartAngle: Float = 70f
+    var entranceStartAngle: Float = 90f
     /** When true, menu items tilt toward the press point (suppressed for draggable items). */
     var tiltOnPress: Boolean = false
     /** Maximum tilt angle (deg) for [tiltOnPress]. */
@@ -851,7 +862,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     var advancedConfig: AzAdvancedConfig = AzAdvancedConfig()
 
 
-    override fun azConfig(dockingSide: AzDockingSide, packButtons: Boolean, noMenu: Boolean, vibrate: Boolean, displayAppName: Boolean, activeClassifiers: Set<String>, usePhysicalDocking: Boolean, expandedWidth: Dp, collapsedWidth: Dp, showFooter: Boolean, appRepositoryUrl: String) {
+    override fun azConfig(dockingSide: AzDockingSide, packButtons: Boolean, noMenu: Boolean, vibrate: Boolean, displayAppName: Boolean, activeClassifiers: Set<String>, usePhysicalDocking: Boolean, expandedWidth: Dp, collapsedWidth: Dp, showFooter: Boolean, appRepositoryUrl: String, dimBehindMenu: Boolean, dimBehindMenuAlpha: Float, menuItemAlignment: AzMenuItemAlignment, justifyMenuItems: Boolean) {
         this.dockingSide = dockingSide
         this.packButtons = packButtons
         this.noMenu = noMenu
@@ -863,6 +874,10 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         this.collapsedWidth = collapsedWidth
         this.showFooter = showFooter
         this.appRepositoryUrl = appRepositoryUrl
+        this.dimBehindMenu = dimBehindMenu
+        this.dimBehindMenuAlpha = dimBehindMenuAlpha
+        this.menuItemAlignment = menuItemAlignment
+        this.justifyMenuItems = justifyMenuItems
     }
 
     override fun azAbout(inAppAbout: Boolean, moreFromAzEnabled: Boolean, moreFromAzJsonUrl: String, moreRailItem: Boolean) {

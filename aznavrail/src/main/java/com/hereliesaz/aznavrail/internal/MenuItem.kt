@@ -25,9 +25,16 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.navigation.NavController
+import com.hereliesaz.aznavrail.model.AzDockingSide
+import com.hereliesaz.aznavrail.model.AzMenuItemAlignment
 import com.hereliesaz.aznavrail.model.AzNavItem
 
 /**
@@ -61,7 +68,10 @@ internal fun MenuItem(
     helpEnabled: Boolean = false,
     activeColor: androidx.compose.ui.graphics.Color? = null,
     kineticModifier: Modifier = Modifier,
-    textStyle: TextStyle? = null
+    textStyle: TextStyle? = null,
+    dockingSide: AzDockingSide = AzDockingSide.LEFT,
+    menuItemAlignment: AzMenuItemAlignment = AzMenuItemAlignment.SIDE,
+    justifyMenuItems: Boolean = true
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -187,6 +197,17 @@ internal fun MenuItem(
             }
             .background(backgroundColor)
     ) {
+        val textAlign = when (menuItemAlignment) {
+            AzMenuItemAlignment.CENTER -> TextAlign.Center
+            AzMenuItemAlignment.SIDE ->
+                if (dockingSide == AzDockingSide.RIGHT) TextAlign.End else TextAlign.Start
+        }
+        val columnAlignment = when (menuItemAlignment) {
+            AzMenuItemAlignment.CENTER -> Alignment.CenterHorizontally
+            AzMenuItemAlignment.SIDE ->
+                if (dockingSide == AzDockingSide.RIGHT) Alignment.End else Alignment.Start
+        }
+
         Row(
             modifier = modifier
                 .fillMaxWidth()
@@ -197,18 +218,39 @@ internal fun MenuItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             val lines = textToShow.split('\n')
+            val mergedStyle = MaterialTheme.typography.titleLarge.merge(textStyle)
+            // Measure natural width per line and compute a per-line letter-spacing that fills the row
+            // (kerning-justify). Single-character or overflowing lines are skipped.
+            val textMeasurer = rememberTextMeasurer()
+            val density = LocalDensity.current
+
             Column(
                 modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = columnAlignment
             ) {
-                lines.forEachIndexed { index, line ->
-                    Text(
-                        text = line,
-                        style = MaterialTheme.typography.titleLarge.merge(textStyle),
-                        color = textColor,
-                        modifier = Modifier,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
+                androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val availableWidthPx = with(density) { maxWidth.toPx() }
+                    Column(horizontalAlignment = columnAlignment) {
+                        lines.forEach { line ->
+                            val kerning = if (!justifyMenuItems || line.length < 2) 0.sp
+                            else {
+                                val naturalWidthPx = try {
+                                    textMeasurer.measure(text = line, style = mergedStyle).size.width.toFloat()
+                                } catch (_: Throwable) { availableWidthPx }
+                                val extraPx = availableWidthPx - naturalWidthPx
+                                if (extraPx <= 0f) 0.sp
+                                else with(density) { (extraPx / (line.length - 1)).toSp() }
+                            }
+                            Text(
+                                text = line,
+                                style = mergedStyle,
+                                color = textColor,
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = textAlign,
+                                letterSpacing = kerning,
+                            )
+                        }
+                    }
                 }
             }
         }

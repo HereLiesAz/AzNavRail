@@ -17,22 +17,77 @@ function useDropdownContext() {
  * expanded-drawer look); in a `rail`-design panel it renders as a compact AzButton. Navigates
  * `route` (if set, via the menu's `onNavigate`) then runs `onClick`, folding the menu by default.
  */
-export const AzDropdownItem = ({ text, onClick, route, shape = 'RECTANGLE', enabled = true, color, textColor, fillColor, closeOnClick = true }) => {
-  const { dismiss, design, onNavigate } = useDropdownContext();
+export const AzDropdownItem = ({
+  text,
+  onClick,
+  route,
+  shape = 'RECTANGLE',
+  enabled = true,
+  color,
+  textColor,
+  fillColor,
+  closeOnClick = true,
+  index = 0,
+}) => {
+  const {
+    dismiss,
+    design,
+    onNavigate,
+    dockingSide,
+    menuItemAlignment,
+    justifyMenuItems,
+    entranceStartAngle,
+    entranceStaggerMs,
+    entranceDurationMs,
+  } = useDropdownContext();
   const press = () => {
     if (route && onNavigate) onNavigate(route);
     onClick && onClick();
     if (closeOnClick) dismiss();
   };
+  const rowRef = useRef(null);
+  const measureRef = useRef(null);
+  const [letterSpacing, setLetterSpacing] = useState(0);
+  useEffect(() => {
+    if (!justifyMenuItems || !text || text.length < 2) { setLetterSpacing(0); return; }
+    const row = rowRef.current;
+    const meas = measureRef.current;
+    if (!row || !meas) return;
+    const w = row.getBoundingClientRect().width;
+    const nat = meas.getBoundingClientRect().width;
+    if (w > nat && nat > 0) setLetterSpacing((w - nat) / (text.length - 1));
+    else setLetterSpacing(0);
+  }, [text, justifyMenuItems]);
   if (design === 'menu') {
+    const hingeSide = dockingSide === 'RIGHT' ? 'right' : 'left';
+    const textAlign =
+      menuItemAlignment === 'center'
+        ? 'center'
+        : dockingSide === 'RIGHT'
+          ? 'right'
+          : 'left';
     return (
       <div
+        ref={rowRef}
         className={`az-dropdown-menu-item--menu${enabled ? '' : ' disabled'}`}
-        style={{ color: textColor || color || undefined }}
+        style={{
+          color: textColor || color || undefined,
+          textAlign,
+          letterSpacing: `${letterSpacing}px`,
+          animation: `azTurnstile ${entranceDurationMs}ms cubic-bezier(0.1, 0.9, 0.2, 1) ${index * entranceStaggerMs}ms both`,
+          transformOrigin: `${hingeSide} center`,
+          '--az-start-angle': `${dockingSide === 'RIGHT' ? -entranceStartAngle : entranceStartAngle}deg`,
+        }}
         role="menuitem"
         tabIndex={enabled ? 0 : -1}
         onClick={enabled ? press : undefined}
       >
+        <span
+          ref={measureRef}
+          style={{ position: 'absolute', visibility: 'hidden', whiteSpace: 'nowrap', left: -9999 }}
+        >
+          {text}
+        </span>
         {text}
       </div>
     );
@@ -91,6 +146,13 @@ const AzDropdownMenu = ({
   expanded,
   onExpandedChange,
   onNavigate,
+  entranceStaggerMs = 60,
+  entranceDurationMs = 720,
+  entranceStartAngle = 90,
+  dimBehindMenu = false,
+  dimBehindMenuAlpha = 0.4,
+  menuItemAlignment = 'side',
+  justifyMenuItems = true,
   children,
 }) => {
   const [internalOpen, setInternalOpen] = useState(false);
@@ -185,14 +247,42 @@ const AzDropdownMenu = ({
         {/* The app icon — drawn like the rail header, clipped to the configured shape/size. */}
         <img src="/app-icon.png" alt="App Icon" className="az-dropdown-menu-app-icon" style={{ borderRadius: triggerRadius }} />
       </button>
+      {isOpen && dimBehindMenu && (
+        <div
+          className="az-nav-rail__scrim"
+          style={{ '--az-scrim-alpha': String(Math.max(0, Math.min(1, dimBehindMenuAlpha))), position: 'fixed', inset: 0, zIndex: 999 }}
+          onClick={() => setOpen(false)}
+        />
+      )}
       {isOpen && (
-        <div className={`az-dropdown-menu-panel ${design === 'menu' ? 'menu' : 'rail'}`} style={panelStyle} role="menu">
-          <AzDropdownMenuContext.Provider value={{ dismiss: () => setOpen(false), design, onNavigate }}>
-            {children}
+        <div className={`az-dropdown-menu-panel ${design === 'menu' ? 'menu' : 'rail'}`} style={{ ...panelStyle, zIndex: 1000 }} role="menu">
+          <AzDropdownMenuContext.Provider
+            value={{
+              dismiss: () => setOpen(false),
+              design,
+              onNavigate,
+              dockingSide,
+              menuItemAlignment,
+              justifyMenuItems,
+              entranceStartAngle,
+              entranceStaggerMs,
+              entranceDurationMs,
+            }}
+          >
+            {React.Children.map(children, (child, i) =>
+              React.isValidElement(child) ? React.cloneElement(child, { index: i }) : child
+            )}
           </AzDropdownMenuContext.Provider>
-          {/* The expanded-menu design carries the rail's footer. */}
+          {/* The expanded-menu design carries the rail's footer. Its accordion unfold starts when
+              the LAST item starts its own kinetic entrance. */}
           {design === 'menu' && showFooter && (
-            <div className="az-dropdown-menu-footer">
+            <div
+              className="az-dropdown-menu-footer az-nav-rail__footer-accordion"
+              style={{
+                animationDelay: `${Math.max(0, React.Children.count(children) - 1) * entranceStaggerMs}ms`,
+                animationDuration: `${entranceDurationMs}ms`,
+              }}
+            >
               {/* About is hidden entirely when no repository URL is configured. */}
               {!!appRepositoryUrl && (
                 <div className="az-dropdown-menu-footer-item" onClick={() => {

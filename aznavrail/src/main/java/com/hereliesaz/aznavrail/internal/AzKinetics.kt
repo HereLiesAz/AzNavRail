@@ -67,13 +67,18 @@ internal fun rememberAzKineticModifier(
 
     // Hidden (pre-entrance) pose. In FAB mode, or for SlideUp, the cascade is a vertical slide.
     val hiddenRotY = if (!floating && entrance == AzEntrance.Turnstile) startAngle else 0f
-    val hiddenAlpha = if (entrance == AzEntrance.None) 1f else 0f
+    // Pure Turnstile (docked): rotation only, no fade — the item swings from edge-on to flat.
+    // Fade/SlideUp still fade in; None stays fully opaque.
+    val entranceUsesAlpha = entrance == AzEntrance.Fade || entrance == AzEntrance.SlideUp ||
+        (entrance == AzEntrance.Turnstile && floating)
+    val hiddenAlpha = if (entranceUsesAlpha) 0f else 1f
     val hiddenTransY =
         if (entrance != AzEntrance.None && (floating || entrance == AzEntrance.SlideUp)) cascadeDist else 0f
 
     // Exit pose. None means "do not animate out" (the parent just unmounts).
     val exitRotY = if (!floating && exit == AzExit.Turnstile) startAngle else 0f
-    val exitAlpha = if (exit == AzExit.None) 1f else 0f
+    val exitUsesAlpha = exit == AzExit.Fade || (exit == AzExit.Turnstile && floating)
+    val exitAlpha = if (exitUsesAlpha) 0f else 1f
     val exitTransY = if (exit != AzExit.None && floating) -cascadeDist else 0f
 
     val rotY = remember { Animatable(hiddenRotY) }

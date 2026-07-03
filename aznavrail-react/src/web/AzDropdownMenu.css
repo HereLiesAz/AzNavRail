@@ -59,15 +59,16 @@
   padding: 4px 0;
 }
 
-/* Matches the rail's menu item text: 16px / weight 500 / centred (see web MenuItem.css). */
+/* Matches the rail's menu item text: 16px / weight 500. Alignment is set inline by the JSX so the
+   docked-side default can flip left/right. */
 .az-dropdown-menu-item--menu {
   padding: 12px 16px;
-  text-align: center;
   font-size: 16px;
   font-weight: 500;
   cursor: pointer;
   user-select: none;
   color: #6750A4;
+  position: relative;
 }
 
 .az-dropdown-menu-item--menu:hover { background-color: rgba(103, 80, 164, 0.08); }

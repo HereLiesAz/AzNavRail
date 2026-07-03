@@ -17,7 +17,6 @@
 
 .az-menu-item-content {
   display: flex;
-  justify-content: center;
   align-items: center;
   width: 100%;
 }
@@ -25,7 +24,6 @@
 .az-menu-item-text {
   font-size: 16px;
   font-weight: 500;
-  text-align: center;
   flex: 1;
 }
 
@@ -38,4 +36,49 @@
   opacity: 0.7;
 }
 
-/* Indent for sub-items would be handled by parent logic or extra class */
+/* Off-screen label used only to measure the natural width for the kerning-justify pass. */
+.az-menu-item-measurer {
+  position: absolute;
+  visibility: hidden;
+  white-space: nowrap;
+  font-size: 16px;
+  font-weight: 500;
+  left: -9999px;
+  top: -9999px;
+}
+
+/* WP7 turnstile entrance — swings the row from edge-on (var(--az-start-angle)) to flat around the
+   docked side. `perspective` on the parent gives it depth without stacking-context weirdness. */
+@keyframes azTurnstile {
+  from {
+    transform: perspective(600px) rotateY(var(--az-start-angle, 90deg));
+  }
+  to {
+    transform: perspective(600px) rotateY(0deg);
+  }
+}
+
+/* Accordion unfold used by the footer — scales from 0 to full height, hinged at the top edge. */
+@keyframes azFooterAccordion {
+  from {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.az-nav-rail__footer-accordion {
+  transform-origin: top center;
+  animation: azFooterAccordion 720ms cubic-bezier(0.1, 0.9, 0.2, 1) both;
+}
+
+/* Dim scrim behind the drawer when the developer opts in via `dimBehindMenu`. */
+.az-nav-rail__scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, var(--az-scrim-alpha, 0.4));
+  z-index: 5;
+}

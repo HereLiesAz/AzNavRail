@@ -93,6 +93,20 @@ falls back to the AzNavRail library repo. On **web** there is no package namespa
 While a footer screen (About or More from Az) is open, visible Help cards and any guidance callouts
 are hidden and restore exactly where they were on close (all platforms).
 
+**About page layout.** The About screen is split into two vertically-stacked halves:
+
+- **Top half** — auto-generated table of contents of the app's markdown docs (`.md` files in the
+  repo root and `docs/`). Selecting a row swaps in an inline reader for that document.
+- **Bottom half** — a **focused-hero More-from-Az carousel** with a size pattern
+  `small · medium · LARGE · medium · small`. The LARGE (center) item is the currently active app;
+  its **banner** (when the repo has `docs/banner.png` / `.webp` / `.jpg` — or `docs/hero.*`),
+  name, description, and link buttons (Play / Website / GitHub) render below the carousel.
+
+**Icons & banners** are baked into `more-from-az.json` by CI (Play `og:image` → website `og:image` →
+Android launcher icons on `raw.githubusercontent.com` → repo social preview). If the manifest is
+stale or `iconUrl` is blank at runtime, the runtime performs the same launcher-icon walk itself so
+new apps show a proper icon before the next CI bake.
+
 
 ### B. Theming (`azTheme`)
 Controls visual style defaults.
@@ -124,10 +138,20 @@ config-driven (preset enums, no free-composable escape hatch). Defaults animate;
 / `AzExit.None` to opt a surface out. In **FAB / floating** mode the cascade becomes a vertical up/down
 slide (no docked edge to hinge on).
 
+The signature look is a **pure 90° `rotationY` sweep** hinged on the docked edge — no fade, no vertical
+slide. Items overlap heavily by default: `entranceDurationMs = 720` and `entranceStaggerMs = 60`
+means the next item begins ~60 ms after the previous one *begins* while the previous one is still
+animating. The footer (About / Feedback / @HereLiesAz) then **unfolds like an accordion** from the
+top edge, starting the moment the last item begins — so the whole rail-open motion completes in one
+continuous beat.
+
 ```kotlin
 azKinetics(
     itemEntrance = AzEntrance.Turnstile,   // None | Fade | SlideUp | Turnstile  (default Turnstile)
     itemExit = AzExit.Turnstile,           // None | Fade | Turnstile            (default Turnstile)
+    entranceStartAngle = 90f,              // pure edge-on → flat  (default 90)
+    entranceDurationMs = 720,              // per-item duration ms (default 720)
+    entranceStaggerMs = 60,                // per-item stagger ms  (default 60 → items overlap)
     tiltOnPress = true,                    // off by default on the rail (drag-safe)
     itemTextStyle = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Light),
     titleEntrance = AzEntrance.Turnstile,  // the big AzNavHost screen title
@@ -139,7 +163,33 @@ default), and its app-icon trigger carries an automatic margin.
 
 **React Implementation:** the rail reads kinetics from `settings`
 (`itemEntrance`, `itemExit`, `titleEntrance`, `tiltOnPress`, `itemTextStyle`, …); `AzDropdownMenu`
-takes matching props. `AzEasing.Wp7Decelerate` is the signature easing.
+takes matching props. `AzEasing.Wp7Decelerate` is the signature easing. On **native React Native**
+the hinge is emulated via a `translateX ±(width/2)` pivot correction around the rotation because
+`transformOrigin` is silently ignored there; on web the CSS `transform-origin: left/right center`
+does it natively.
+
+### B.1 Menu-drawer look-and-feel (dim, side-alignment, kerning-justify)
+
+Three developer knobs on `azConfig` shape the drawer itself. They only affect the **expanded-menu
+drawer** (and the standalone `AzDropdownMenu`'s panel) — small rail-button labels are unaffected.
+
+```kotlin
+azConfig(
+    dimBehindMenu = true,                              // opt-in dim scrim; default false
+    dimBehindMenuAlpha = 0.4f,                         // 0..1; default 0.4
+    menuItemAlignment = AzMenuItemAlignment.SIDE,      // SIDE (default) | CENTER
+    justifyMenuItems = true,                           // full-justify labels via letter-spacing; default true
+)
+```
+
+`SIDE` alignment: labels use `TextAlign.Start` when docked LEFT and `TextAlign.End` when docked
+RIGHT. `justifyMenuItems` measures each label's natural width, computes the extra pixels needed to
+fill the row, and applies it as `letterSpacing` — a Word-style full justification. Labels shorter
+than 2 characters, or already at/past the row width, are skipped.
+
+**React Implementation:** identical fields on `AzNavRailSettings` and on the `AzDropdownMenu` props:
+`dimBehindMenu`, `dimBehindMenuAlpha`, `menuItemAlignment: 'center' | 'side'`, `justifyMenuItems`.
+Same defaults (`side`, `true`, opt-in dim at `0.4`).
 
 ### C. Advanced Features (`azAdvanced`)
 Enables complex behaviors like drag-and-drop and help overlays.
