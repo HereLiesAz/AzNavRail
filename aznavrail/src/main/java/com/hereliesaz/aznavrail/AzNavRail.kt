@@ -484,10 +484,16 @@ fun AzNavRail(
                     Modifier.padding(bottom = railWidth)
                 else -> Modifier.padding(top = railWidth)
             }
+            val scrimColor = if (scope.dimBehindMenu) {
+                androidx.compose.ui.graphics.Color.Black.copy(
+                    alpha = scope.dimBehindMenuAlpha.coerceIn(0f, 1f),
+                )
+            } else androidx.compose.ui.graphics.Color.Transparent
             Box(
                 modifier = Modifier
                     .matchParentSize()
                     .then(scrimPadding)
+                    .background(scrimColor)
                     .pointerInput(Unit) {
                         detectTapGestures(onTap = { isExpanded = false })
                     }
@@ -846,6 +852,10 @@ fun AzNavRail(
 
                 // FIXED FOOTER (Does not scroll, pinned below menu)
                 if (scope.showFooter && isExpanded) {
+                    // Accordion delay tracks the LAST menu item's start: the footer begins the moment
+                    // the last item's own kinetic entrance kicks off. Use the same top-level count the
+                    // menu itself uses for its staggered entrance.
+                    val footerMenuCount = scope.navItems.count { !it.isSubItem }
                     Column {
                         AzDivider()
                         Footer(
@@ -863,7 +873,12 @@ fun AzNavRail(
                             footerColor = scope.activeColor,
                             onAboutClick = if (scope.advancedConfig.inAppAbout) {
                                 { isExpanded = false; hostScope?.showAbout() }
-                            } else null
+                            } else null,
+                            visible = isExpanded,
+                            menuItemCount = footerMenuCount,
+                            staggerMs = scope.entranceStaggerMs,
+                            durationMs = scope.entranceDurationMs,
+                            easing = scope.entranceEasing,
                         )
                     }
                 }
@@ -1082,7 +1097,10 @@ private fun MenuItemNode(
         helpEnabled = showHelpOverlay,
         activeColor = scope.activeColor,
         kineticModifier = kinetic,
-        textStyle = scope.itemTextStyle
+        textStyle = scope.itemTextStyle,
+        dockingSide = dockingSide,
+        menuItemAlignment = scope.menuItemAlignment,
+        justifyMenuItems = scope.justifyMenuItems
     )
 
     if (item.isHost && hostStates[item.id] == true) {

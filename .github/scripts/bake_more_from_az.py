@@ -166,6 +166,102 @@ def resolve_web(url):
     }
 
 
+def _head_ok(url):
+    """True if `url` is reachable with a 200-class status. Uses GET (some CDNs 405 on HEAD)."""
+    status, _ = http_get(url)
+    return status == 200
+
+
+# Standard Android launcher-icon paths, densities from highest to lowest, webp first for size.
+_LAUNCHER_ICON_PATHS = [
+    "app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
+    "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+    "app/src/main/res/mipmap-xxhdpi/ic_launcher.webp",
+    "app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+    "app/src/main/res/mipmap-xhdpi/ic_launcher.webp",
+    "app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+    "app/src/main/res/mipmap-hdpi/ic_launcher.png",
+]
+
+# Common banner names (either / or). Case-sensitive lookup — GitHub raw is case-sensitive.
+_BANNER_NAMES = [
+    "docs/banner.png", "docs/banner.webp", "docs/banner.jpg", "docs/banner.jpeg",
+    "docs/Banner.png", "docs/Banner.webp",
+    "docs/hero.png", "docs/hero.webp",
+]
+
+
+def resolve_repo_icon(owner, repo, branch):
+    """Try to find an app-launcher icon in a GitHub repo. Returns a raw.githubusercontent URL or None.
+
+    Order: standard mipmap paths → GitHub contents API tree walk for `ic_launcher*.{png,webp}` under
+    any `res/mipmap-*` dir → adaptive-icon xml parse → repo social preview as a last resort."""
+    raw_root = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}"
+    for path in _LAUNCHER_ICON_PATHS:
+        url = f"{raw_root}/{path}"
+        if _head_ok(url):
+            return url
+
+    # Tree-walk the contents API — cheap when the standard paths miss (Compose Multiplatform layouts,
+    # non-`app/` roots).  We ask for the whole tree once.
+    status, body = http_get(
+        f"https://api.github.com/repos/{owner}/{repo}/git/trees/{branch}?recursive=1", token=True,
+    )
+    if status == 200:
+        try:
+            tree = json.loads(body).get("tree") or []
+        except Exception:
+            tree = []
+        candidates = []
+        for entry in tree:
+            path = (entry.get("path") or "") if isinstance(entry, dict) else ""
+            if not path or entry.get("type") != "blob":
+                continue
+            lower = path.lower()
+            if "/mipmap-" in lower and lower.rsplit("/", 1)[-1].startswith("ic_launcher") and (
+                lower.endswith(".png") or lower.endswith(".webp")
+            ):
+                candidates.append(path)
+        # Prefer highest density.
+        def density_key(p):
+            for i, d in enumerate(("xxxhdpi", "xxhdpi", "xhdpi", "hdpi", "mdpi")):
+                if d in p:
+                    return i
+            return 99
+        candidates.sort(key=density_key)
+        if candidates:
+            return f"{raw_root}/{candidates[0]}"
+
+        # Adaptive-icon fallback: parse foreground drawable name from the XML.
+        for entry in tree:
+            path = (entry.get("path") or "") if isinstance(entry, dict) else ""
+            if path.endswith("mipmap-anydpi-v26/ic_launcher.xml"):
+                status2, xml = http_get(f"{raw_root}/{path}")
+                if status2 == 200:
+                    m = re.search(r'android:drawable="@(?:mipmap|drawable)/([^"]+)"', xml or "")
+                    if m:
+                        name = m.group(1)
+                        base = path.rsplit("mipmap-anydpi-v26", 1)[0]
+                        for ext in ("png", "webp"):
+                            for kind in ("drawable", "mipmap-xxxhdpi", "mipmap-xxhdpi"):
+                                candidate = f"{base}{kind}/{name}.{ext}"
+                                if _head_ok(f"{raw_root}/{candidate}"):
+                                    return f"{raw_root}/{candidate}"
+
+    # Last resort: repo social preview (always 200, but is the repo card, not the app icon).
+    return f"https://opengraph.githubassets.com/1/{owner}/{repo}"
+
+
+def resolve_repo_banner(owner, repo, branch):
+    """Return a URL for docs/banner.* (or docs/hero.*) if the repo has one, else None."""
+    raw_root = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}"
+    for name in _BANNER_NAMES:
+        url = f"{raw_root}/{name}"
+        if _head_ok(url):
+            return url
+    return None
+
+
 def resolve_github(github_url):
     parsed = parse_repo(github_url)
     if not parsed:
@@ -191,7 +287,8 @@ def resolve_github(github_url):
             break
 
     # Icon must be THAT APP's icon — never the owner's GitHub avatar. Sourced (in order) from the
-    # Play listing's og:image, else the app website's og:image; blank falls back to initials in-app.
+    # Play listing's og:image, else the app website's og:image, else the launcher icon shipped in the
+    # repo itself; blank falls back to initials in-app.
     app = {
         "name": meta.get("name") or repo,
         "iconUrl": "",
@@ -218,6 +315,19 @@ def resolve_github(github_url):
         app["isPwa"] = detect_pwa(whtml) if ws == 200 else False
         if not app["iconUrl"] and ws == 200:
             app["iconUrl"] = og(whtml, "image") or ""
+
+    # Repo fallback for the icon — walk the launcher-icon paths and adaptive-icon xml. Runs whenever
+    # Play/website resolvers left the iconUrl blank; also runs when the current value is the owner's
+    # avatar (which the runtime blocks) so we replace it with something usable.
+    if not app["iconUrl"] or "avatars.githubusercontent.com" in app["iconUrl"]:
+        repo_icon = resolve_repo_icon(owner, repo, branch)
+        if repo_icon:
+            app["iconUrl"] = repo_icon
+
+    # Banner from the repo's docs folder — displayed at the top of the app's info in the About page.
+    banner = resolve_repo_banner(owner, repo, branch)
+    if banner:
+        app["bannerUrl"] = banner
 
     return app
 

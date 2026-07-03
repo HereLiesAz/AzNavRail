@@ -173,11 +173,11 @@ export interface AzNavRailSettings {
   itemExit?: AzExit;
   /** Style merged over each menu item's label (big/light/wide Metro type). */
   itemTextStyle?: object;
-  /** Per-item cascade delay (ms), multiplied by position. Default 55. */
+  /** Per-item cascade delay (ms), multiplied by position. Default 60. */
   entranceStaggerMs?: number;
-  /** Duration (ms) of each item's entrance/exit. Default 360. */
+  /** Duration (ms) of each item's entrance/exit. Default 720. */
   entranceDurationMs?: number;
-  /** Starting rotateY (deg) for the turnstile sweep. Default 70. */
+  /** Starting rotateY (deg) for the turnstile sweep. Default 90 (pure edge-on → flat). */
   entranceStartAngle?: number;
   /** When true, menu items tilt toward the press point (suppressed for draggable items). Default false. */
   tiltOnPress?: boolean;
@@ -187,6 +187,16 @@ export interface AzNavRailSettings {
   titleEntrance?: AzEntrance;
   /** Style merged over the big screen title's default. */
   titleTextStyle?: object;
+
+  // — Menu-drawer look/feel —
+  /** When true, expanding the drawer draws a dim scrim over the rest of the app. Default false. */
+  dimBehindMenu?: boolean;
+  /** Alpha of the dim scrim (0..1). Default 0.4. Ignored when `dimBehindMenu` is false. */
+  dimBehindMenuAlpha?: number;
+  /** How menu-drawer labels are aligned within their rows. Default `'side'` (docked-side aligned). */
+  menuItemAlignment?: 'center' | 'side';
+  /** When true, menu-drawer labels are full-justified via computed letter-spacing. Default true. */
+  justifyMenuItems?: boolean;
 }
 
 /** A single entry in the long-press hidden menu of a draggable reloc item. */

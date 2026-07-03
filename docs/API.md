@@ -100,9 +100,23 @@ fun azConfig(
     expandedWidth: Dp = 160.dp,
     collapsedWidth: Dp = 100.dp,
     showFooter: Boolean = true,
-    appRepositoryUrl: String = ""
+    appRepositoryUrl: String = "",
+    // Menu-drawer look-and-feel:
+    dimBehindMenu: Boolean = false,
+    dimBehindMenuAlpha: Float = 0.4f,
+    menuItemAlignment: AzMenuItemAlignment = AzMenuItemAlignment.SIDE,
+    justifyMenuItems: Boolean = true,
 )
 ~~~
+
+* `dimBehindMenu` / `dimBehindMenuAlpha` — opt-in dim scrim behind the expanded drawer. When off,
+  the drawer's tap-catcher is still full-size but fully transparent (existing behaviour).
+* `menuItemAlignment: AzMenuItemAlignment` (`CENTER` | `SIDE`) — alignment of the drawer's labels
+  within their rows. Default `SIDE`: `TextAlign.Start` when docked LEFT, `TextAlign.End` when
+  docked RIGHT. Small rail-button labels are unaffected.
+* `justifyMenuItems: Boolean` — when true, each label is measured with a `TextMeasurer` and its
+  `letterSpacing` is set to the amount that fills the row edge-to-edge (Word-style justify).
+  Single-character labels and labels wider than the row are skipped. Default `true`.
 
 * `appRepositoryUrl` — **optional** override for the host app's GitHub repo used by the About reader.
   Blank (the default) auto-derives the repo from the app **namespace**: `com.<owner>.<repo>` →
@@ -144,10 +158,10 @@ fun azKinetics(
     itemEntrance: AzEntrance = AzEntrance.Turnstile,
     itemExit: AzExit = AzExit.Turnstile,
     itemTextStyle: TextStyle? = null,
-    entranceStaggerMs: Int = 55,
-    entranceDurationMs: Int = 360,
+    entranceStaggerMs: Int = 60,     // small stagger → items overlap heavily
+    entranceDurationMs: Int = 720,   // per-item duration
     entranceEasing: Easing = AzEasing.Wp7Decelerate,
-    entranceStartAngle: Float = 70f,
+    entranceStartAngle: Float = 90f, // pure edge-on → flat, no fade, no slide
     tiltOnPress: Boolean = false,
     maxTiltDegrees: Float = 10f,
     titleEntrance: AzEntrance = AzEntrance.Turnstile,

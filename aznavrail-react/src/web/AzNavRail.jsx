@@ -46,7 +46,17 @@ const AzNavRail = ({
     moreFromAzEnabled = true,
     moreFromAzJsonUrl = 'https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json',
     moreRailItem = false,
-    appRepositoryUrl
+    appRepositoryUrl,
+    // WP7 kinetic typography — same defaults as the RN build.
+    itemEntrance = 'Turnstile',
+    entranceStaggerMs = 60,
+    entranceDurationMs = 720,
+    entranceStartAngle = 90,
+    // Menu drawer look/feel.
+    dimBehindMenu = false,
+    dimBehindMenuAlpha = 0.4,
+    menuItemAlignment = 'side',
+    justifyMenuItems = true,
   } = settings;
 
   // If noMenu is true, we force expanded to false, unless infoScreen overrides (which it doesn't really)
@@ -322,7 +332,7 @@ const AzNavRail = ({
       }
   };
 
-  const renderMenuItem = (item, depth = 0) => {
+  const renderMenuItem = (item, depth = 0, index = 0, count = 1) => {
       if (item.isDivider) {
           return <AzDivider key={item.id} />;
       }
@@ -348,10 +358,22 @@ const AzNavRail = ({
                   isExpanded={isHostExpanded}
                   onHostClick={() => toggleHost(item)}
                   infoScreen={infoScreen}
+                  index={index}
+                  count={count}
+                  visible={isExpanded}
+                  entrance={itemEntrance}
+                  startAngle={entranceStartAngle}
+                  staggerMs={entranceStaggerMs}
+                  durationMs={entranceDurationMs}
+                  dockingSide={dockingSide}
+                  menuItemAlignment={menuItemAlignment}
+                  justifyMenuItems={justifyMenuItems}
               />
               {isHost && isHostExpanded && (
                   <div className="az-nav-rail-subitems">
-                      {effectiveSubItems.map(subItem => renderMenuItem(subItem, depth + 1))}
+                      {effectiveSubItems.map((subItem, subIdx) =>
+                        renderMenuItem(subItem, depth + 1, subIdx, effectiveSubItems.length)
+                      )}
                   </div>
               )}
           </React.Fragment>
@@ -396,9 +418,16 @@ const AzNavRail = ({
 
   return (
     <>
+    {dimBehindMenu && isExpanded && (
+      <div
+        className="az-nav-rail__scrim"
+        style={{ '--az-scrim-alpha': String(Math.max(0, Math.min(1, dimBehindMenuAlpha))) }}
+        onClick={() => setIsExpanded(false)}
+      />
+    )}
     <div
       className={`az-nav-rail ${isExpanded ? 'expanded' : 'collapsed'} ${dockingSide === 'RIGHT' ? 'right' : ''}`}
-      style={{ width: isExpanded ? expandedRailWidth : collapsedRailWidth, backgroundColor: translucentBackground || '#f0f0f0' }}
+      style={{ width: isExpanded ? expandedRailWidth : collapsedRailWidth, backgroundColor: translucentBackground || '#f0f0f0', position: 'relative', zIndex: 10 }}
     >
       <div className="header" onClick={onToggle}>
         {(!isExpanded || !displayAppNameInHeader) ? (
@@ -414,7 +443,7 @@ const AzNavRail = ({
         <div className="content">
           {isExpanded ? (
             <div className="menu">
-              {menuItems.map(item => renderMenuItem(item))}
+              {menuItems.map((item, i) => renderMenuItem(item, 0, i, menuItems.length))}
             </div>
           ) : (
             <div className={`rail ${packRailButtons ? 'packed' : ''}`} style={{overflowY: 'auto', maxHeight: '100%'}}>
@@ -601,7 +630,18 @@ const AzNavRail = ({
       )}
 
       {showFooter && isExpanded && (
-        <div className="footer" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px', color: activeColor || 'currentColor' }}>
+        <div
+          className="footer az-nav-rail__footer-accordion"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            padding: '16px',
+            color: activeColor || 'currentColor',
+            animationDelay: `${Math.max(0, menuItems.length - 1) * entranceStaggerMs}ms`,
+            animationDuration: `${entranceDurationMs}ms`,
+          }}
+        >
              <div className="az-menu-item-text" style={{ padding: '8px 0', fontWeight: 'bold' }}>{appName}</div>
              {!!appRepositoryUrl && (
                <div

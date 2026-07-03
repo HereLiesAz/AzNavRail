@@ -497,10 +497,16 @@ neighbouring widgets.
 ### Kinetic Typography (Windows-Phone-7 style)
 
 AzNavRail can animate its menu words natively — a staggered **turnstile** entrance/exit (each item
-swings in around the docked edge), a 3D **tilt-on-press**, and an **`itemTextStyle`** override so the
-words can be big/light/wide Metro type. It's config-driven (preset enums, no free-composable escape
-hatch). In **FAB / floating** mode, where there's no docked edge to hinge on, the cascade degrades to
-a vertical up/down slide.
+swings 90° around the docked edge, edge-on → flat, **no fade, no vertical slide**), a 3D
+**tilt-on-press**, and an **`itemTextStyle`** override so the words can be big/light/wide Metro
+type. It's config-driven (preset enums, no free-composable escape hatch). In **FAB / floating**
+mode, where there's no docked edge to hinge on, the cascade degrades to a vertical up/down slide.
+
+Default timing lets items **overlap heavily**: `entranceDurationMs = 720` and
+`entranceStaggerMs = 60` mean the next item begins ~60 ms after the previous begins *while* the
+previous is still animating. Once the last item begins, the **footer** (About / Feedback / @HereLiesAz)
+**unfolds like an accordion** from the top edge, so the whole rail-open motion completes in one
+continuous beat.
 
 Three surfaces animate:
 
@@ -550,6 +556,34 @@ AzDropdownMenu {
 `AzEntrance` is `None | Fade | SlideUp | Turnstile`; `AzExit` is `None | Fade | Turnstile`;
 `AzEasing.Wp7Decelerate` is the signature snappy curve (the default easing).
 
+### Menu-drawer look-and-feel (dim / side-alignment / kerning-justify)
+
+Three developer knobs on `azConfig` (and on the standalone `AzDropdownMenu`'s `azConfig`) shape the
+drawer itself. They only affect the **expanded-menu drawer** labels — small rail-button labels are
+unaffected.
+
+- **`dimBehindMenu`** (default `false`) plus **`dimBehindMenuAlpha`** (default `0.4`) — draws a
+  dim scrim over the rest of the app while the drawer is open. Tapping the scrim collapses it.
+- **`menuItemAlignment`** (`SIDE` default | `CENTER`) — labels hug the docked edge instead of
+  center-aligning. `SIDE` = `TextAlign.Start` when docked LEFT, `TextAlign.End` when RIGHT.
+- **`justifyMenuItems`** (default `true`) — measures each label's natural width and applies a
+  computed `letterSpacing` so it fills the row edge-to-edge (Word-style justify). Single-character
+  labels and labels wider than the row are skipped.
+
+```kotlin
+azConfig(
+    dimBehindMenu = true,
+    menuItemAlignment = AzMenuItemAlignment.SIDE, // default
+    justifyMenuItems = true,                       // default
+)
+```
+
+React:
+
+```tsx
+<AzNavRail settings={{ dimBehindMenu: true, menuItemAlignment: 'side', justifyMenuItems: true }} … />
+```
+
 ### Sizable Header Icon
 
 By default the app icon in the header sizes itself to the rail width. To pin it to an **exact
@@ -568,12 +602,16 @@ const settings: AzNavRailSettings = { headerIconSize: 48 };
 
 ### In-App About Reader
 
-The footer **About** item can open a built-in, themed **in-app documentation reader** instead of
-launching the browser. It **auto-discovers** your app's markdown docs — every `.md` file in the repo
-**root** and the **`docs/`** folder of the resolved repository — via the GitHub API, builds
-a table of contents, and renders each doc inline with a markdown renderer themed to the rail
-(`activeColor` links, `translucentBackground` surfaces). A **View on GitHub** button is pinned at the
-bottom with extra spacing.
+The footer **About** item opens a built-in, themed **in-app reader** split into two halves:
+
+- **Top half — docs TOC.** Auto-discovers every `.md` file in the resolved repo's root and `docs/`
+  folder via the GitHub API, builds a table of contents, and renders each doc inline with a markdown
+  renderer themed to the rail (`activeColor` links, `translucentBackground` surfaces).
+- **Bottom half — focused-hero More-from-Az carousel.** A horizontal carousel of the author's
+  other apps with a size pattern `small · medium · LARGE · medium · small`. The LARGE (center) item
+  is the currently active app; its **banner** (when the repo has `docs/banner.png` / `.webp` /
+  `.jpg`, or `docs/hero.*`), name, description, and link buttons (Play / Website / GitHub) render
+  below the carousel. Scroll the row to change the active app.
 
 **Repo resolution differs by platform:**
 

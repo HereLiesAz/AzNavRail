@@ -33,6 +33,7 @@ import com.hereliesaz.aznavrail.model.AzDropdownDesign
 import com.hereliesaz.aznavrail.model.AzEntrance
 import com.hereliesaz.aznavrail.model.AzExit
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
+import com.hereliesaz.aznavrail.model.AzMenuItemAlignment
 
 /** Live theme/config state surfaced from MainApp so the rail can re-key on each change. */
 data class CustomizationState(
@@ -47,6 +48,10 @@ data class CustomizationState(
     val helpLineColors: List<Color>,
     val vibrate: Boolean,
     val headerIconSize: Dp = Dp.Unspecified,
+    // New WP7 menu-drawer knobs.
+    val dimBehindMenu: Boolean = false,
+    val menuItemAlignment: AzMenuItemAlignment = AzMenuItemAlignment.SIDE,
+    val justifyMenuItems: Boolean = true,
 )
 
 private val headerIconShapes = AzHeaderIconShape.values().toList()
@@ -208,6 +213,37 @@ fun CustomizationDemoScreen(
             onToggle = { onChange(state.copy(vibrate = !state.vibrate)) },
             toggleOnText = "Haptics On",
             toggleOffText = "Haptics Off",
+            shape = AzButtonShape.RECTANGLE,
+        )
+
+        // --- WP7 menu-drawer knobs (new in this release) ---
+        SectionLabel("dimBehindMenu — dim the rest of the app when the drawer expands")
+        AzToggle(
+            isChecked = state.dimBehindMenu,
+            onToggle = { onChange(state.copy(dimBehindMenu = !state.dimBehindMenu)) },
+            toggleOnText = "Dim: On (40%)",
+            toggleOffText = "Dim: Off",
+            shape = AzButtonShape.RECTANGLE,
+        )
+
+        SectionLabel("menuItemAlignment — SIDE (default) hugs the docked edge; CENTER is legacy")
+        AzCycler(
+            options = AzMenuItemAlignment.values().map { it.name },
+            selectedOption = state.menuItemAlignment.name,
+            onCycle = {
+                val vals = AzMenuItemAlignment.values()
+                val next = vals[(state.menuItemAlignment.ordinal + 1) % vals.size]
+                onChange(state.copy(menuItemAlignment = next))
+            },
+            shape = AzButtonShape.RECTANGLE,
+        )
+
+        SectionLabel("justifyMenuItems — full-justify labels via computed letter-spacing")
+        AzToggle(
+            isChecked = state.justifyMenuItems,
+            onToggle = { onChange(state.copy(justifyMenuItems = !state.justifyMenuItems)) },
+            toggleOnText = "Justify: On",
+            toggleOffText = "Justify: Off",
             shape = AzButtonShape.RECTANGLE,
         )
 

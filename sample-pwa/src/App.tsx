@@ -94,6 +94,9 @@ function App() {
     vibrate: false,
     activeClassifiers: new Set<string>(),
     headerIconSize: 0,
+    dimBehindMenu: false,
+    menuItemAlignment: 'side',
+    justifyMenuItems: true,
   })
 
   const themeColor = '#6200EE'
@@ -123,6 +126,9 @@ function App() {
       inAppAbout
       moreFromAzEnabled
       moreRailItem
+      dimBehindMenu={customization.dimBehindMenu}
+      menuItemAlignment={customization.menuItemAlignment}
+      justifyMenuItems={customization.justifyMenuItems}
       onDismissInfoScreen={() => {
         setShowHelp(false)
         setDismissCount((n) => n + 1)

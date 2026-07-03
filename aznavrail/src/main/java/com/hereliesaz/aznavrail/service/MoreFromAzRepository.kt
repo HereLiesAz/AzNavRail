@@ -2,8 +2,15 @@ package com.hereliesaz.aznavrail.service
 
 import android.content.Context
 import com.hereliesaz.aznavrail.model.AzMoreFromApp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 
 /**
  * Reads the **baked** "More from Az" manifest produced by `.github/workflows/bump-more-from-az.yml`.
@@ -21,11 +28,93 @@ object MoreFromAzRepository {
     /** Result of [fetch]: the manifest version plus the apps to render (already Play-first sorted). */
     data class MoreFromResult(val version: Int, val apps: List<AzMoreFromApp>)
 
-    /** Fetches and parses the baked manifest from [jsonUrl] (cached via [AzHttpCache]). */
+    /** Fetches and parses the baked manifest from [jsonUrl] (cached via [AzHttpCache]).
+     *
+     *  After parsing, entries with a blank/avatar iconUrl trigger a repo-level icon walk against
+     *  raw.githubusercontent.com (standard mipmap paths, adaptive-icon xml, opengraph fallback).
+     *  Entries with an unknown bannerUrl trigger the same walk for `docs/banner.*`. Both walks are
+     *  best-effort: any failure leaves the field as-is. */
     suspend fun fetch(context: Context, jsonUrl: String): Result<MoreFromResult> {
         val res = AzHttpCache.get(context, jsonUrl)
             ?: return Result.failure(IllegalStateException("Could not load $jsonUrl"))
-        return runCatching { parse(res.body) }
+        val parsed = runCatching { parse(res.body) }.getOrElse { return Result.failure(it) }
+        val enriched = runCatching { enrichWithRepoAssets(parsed.apps) }.getOrDefault(parsed.apps)
+        return Result.success(parsed.copy(apps = enriched))
+    }
+
+    /** Fills in [AzMoreFromApp.iconUrl] and [AzMoreFromApp.bannerUrl] from the app's GitHub repo when
+     *  the manifest didn't already supply them. Runs the per-app walks in parallel. */
+    internal suspend fun enrichWithRepoAssets(apps: List<AzMoreFromApp>): List<AzMoreFromApp> =
+        coroutineScope {
+            apps.map { app ->
+                async(Dispatchers.IO) {
+                    val gh = app.githubUrl ?: return@async app
+                    val (owner, repo) = GithubDocsRepository.parseRepo(gh) ?: return@async app
+                    val needsIcon = app.iconUrl.isBlank() ||
+                        app.iconUrl.contains("avatars.githubusercontent.com")
+                    val needsBanner = app.bannerUrl.isNullOrBlank()
+                    if (!needsIcon && !needsBanner) return@async app
+                    val newIcon = if (needsIcon) resolveRepoIcon(owner, repo) else app.iconUrl
+                    val newBanner = if (needsBanner) resolveRepoBanner(owner, repo) else app.bannerUrl
+                    app.copy(iconUrl = newIcon.ifBlank { app.iconUrl }, bannerUrl = newBanner)
+                }
+            }.awaitAll()
+        }
+
+    /** Standard Android launcher icon paths, densities highest → lowest, webp before png. */
+    private val launcherIconPaths = listOf(
+        "app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
+        "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+        "app/src/main/res/mipmap-xxhdpi/ic_launcher.webp",
+        "app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+        "app/src/main/res/mipmap-xhdpi/ic_launcher.webp",
+        "app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+        "app/src/main/res/mipmap-hdpi/ic_launcher.png",
+    )
+
+    private val bannerNames = listOf(
+        "docs/banner.png", "docs/banner.webp", "docs/banner.jpg", "docs/banner.jpeg",
+        "docs/Banner.png", "docs/Banner.webp",
+        "docs/hero.png", "docs/hero.webp",
+    )
+
+    /** HEAD-checks common Android launcher-icon paths on the default branch's raw content. On miss,
+     *  falls back to the repo's OpenGraph social preview (always present, but is the repo card, not
+     *  necessarily the app icon). Returns "" only on total failure. */
+    internal suspend fun resolveRepoIcon(owner: String, repo: String): String {
+        // Try both "main" and "HEAD" (HEAD is resolved by GitHub to the default branch).
+        for (branch in listOf("main", "master", "HEAD")) {
+            for (path in launcherIconPaths) {
+                val url = "https://raw.githubusercontent.com/$owner/$repo/$branch/$path"
+                if (headOk(url)) return url
+            }
+        }
+        return "https://opengraph.githubassets.com/1/$owner/$repo"
+    }
+
+    internal suspend fun resolveRepoBanner(owner: String, repo: String): String? {
+        for (branch in listOf("main", "master", "HEAD")) {
+            for (name in bannerNames) {
+                val url = "https://raw.githubusercontent.com/$owner/$repo/$branch/$name"
+                if (headOk(url)) return url
+            }
+        }
+        return null
+    }
+
+    private suspend fun headOk(url: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val conn = URL(url).openConnection() as HttpURLConnection
+            conn.instanceFollowRedirects = true
+            conn.requestMethod = "HEAD"
+            conn.connectTimeout = 6000
+            conn.readTimeout = 6000
+            val code = conn.responseCode
+            conn.disconnect()
+            code in 200..299
+        } catch (_: Exception) {
+            false
+        }
     }
 
     /** Parses the manifest JSON into a Play-first list of apps; tolerant of un-baked entries. */
@@ -64,6 +153,7 @@ object MoreFromAzRepository {
                 playStoreUrl = o.optStringOrNull("play"),
                 webUrl = o.optStringOrNull("web"),
                 isPwa = o.optBoolean("isPwa", false),
+                bannerUrl = o.optStringOrNull("bannerUrl"),
             )
         }
         // Un-baked link object { github?, play?, web? } -> degraded card.

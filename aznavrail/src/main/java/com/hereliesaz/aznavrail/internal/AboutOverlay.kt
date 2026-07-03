@@ -1,22 +1,31 @@
 package com.hereliesaz.aznavrail.internal
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.border
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -27,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -34,18 +44,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.AzNavRailScopeImpl
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDocEntry
+import com.hereliesaz.aznavrail.model.AzMoreFromApp
 import com.hereliesaz.aznavrail.service.GithubDocsRepository
+import com.hereliesaz.aznavrail.service.MoreFromAzRepository
 import com.hereliesaz.aznavrail.AzButton
 import com.hereliesaz.aznavrail.AzDivider
 import com.hereliesaz.aznavrail.AzLoad
 import com.hereliesaz.aznavrail.LocalAzSafeZones
+import kotlin.math.abs
 
 /** UI state for the About reader's table-of-contents fetch. */
 private sealed interface DocsUi {
@@ -55,14 +73,14 @@ private sealed interface DocsUi {
 }
 
 /**
- * Full-screen, themed in-app About reader. Auto-discovers the consuming app's markdown docs (root +
- * `docs/`) from [repoUrl], lists them as a table of contents, and renders the selected doc inline via
- * [AzMarkdown]. A GitHub repo button sits at the bottom with extra spacing, and an optional
- * "More from Az" entry opens the author's other-apps carousel.
+ * Full-screen, themed in-app About reader.
  *
- * Built from the rail's own components ([AzButton], [AzLoad], [AzDivider]) and tokens
- * ([AzNavRailScopeImpl.activeColor], [AzNavRailScopeImpl.translucentBackground]) so it matches the
- * rail's aesthetic. Dismissed via the close button or the system back button.
+ * Layout is two vertically-stacked halves:
+ *  - **Top half** — auto-generated table of contents of the app's markdown docs (`.md` files in the
+ *    repo root and `docs/`). Selecting a row swaps in the [DocReader] inline.
+ *  - **Bottom half** — a **focus-based "More from Az" carousel** with a 5-item size pattern
+ *    (small · medium · LARGE · medium · small). The LARGE (center-most) item is the currently active
+ *    app; its banner (when present), name, description, and link buttons are rendered below the row.
  */
 @Composable
 internal fun AboutOverlay(
@@ -86,6 +104,19 @@ internal fun AboutOverlay(
             onSuccess = { DocsUi.Loaded(it.entries, it.rateLimitedOrOffline) },
             onFailure = { DocsUi.Error },
         )
+    }
+
+    // Fetch More-from-Az apps for the bottom-half carousel. We render eagerly so the developer can
+    // scroll the carousel while a doc is loading in the top half.
+    val moreApps by produceState<List<AzMoreFromApp>?>(
+        initialValue = null,
+        scope.advancedConfig.moreFromAzEnabled,
+        scope.advancedConfig.moreFromAzJsonUrl,
+    ) {
+        value = if (scope.advancedConfig.moreFromAzEnabled) {
+            MoreFromAzRepository.fetch(context, scope.advancedConfig.moreFromAzJsonUrl)
+                .getOrNull()?.apps ?: emptyList()
+        } else emptyList()
     }
 
     Box(
@@ -130,59 +161,53 @@ internal fun AboutOverlay(
                     DocReader(entry = selected!!, accent = accent)
                 }
             } else {
-                when (val state = docs) {
-                    is DocsUi.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { AzLoad() }
-                    is DocsUi.Error -> ErrorState(accent) { /* retry via recomposition key bump not needed */ onDismiss() }
-                    is DocsUi.Loaded -> {
-                        if (state.entries.isEmpty()) {
-                            Box(Modifier.fillMaxSize().weight(1f), Alignment.Center) {
-                                Text(
-                                    "No documentation found in this repository.",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                                )
-                            }
-                        } else {
-                            if (state.offline) {
-                                Text(
-                                    "Showing cached docs (offline or rate-limited).",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                )
-                                Spacer(Modifier.height(8.dp))
-                            }
-                            LazyColumn(
-                                modifier = Modifier.weight(1f).fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                items(state.entries, key = { it.path }) { entry ->
-                                    TocRow(entry.title, accent) { selected = entry }
+                // TOP HALF — docs TOC. Always occupies the top ~50% of the overlay.
+                Box(Modifier.weight(1f).fillMaxWidth()) {
+                    when (val state = docs) {
+                        is DocsUi.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { AzLoad() }
+                        is DocsUi.Error -> ErrorState(accent) { onDismiss() }
+                        is DocsUi.Loaded -> {
+                            Column(Modifier.fillMaxSize()) {
+                                if (state.offline) {
+                                    Text(
+                                        "Showing cached docs (offline or rate-limited).",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                    )
+                                    Spacer(Modifier.height(8.dp))
+                                }
+                                if (state.entries.isEmpty()) {
+                                    Box(Modifier.fillMaxSize(), Alignment.Center) {
+                                        Text(
+                                            "No documentation found in this repository.",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                        )
+                                    }
+                                } else {
+                                    LazyColumn(
+                                        modifier = Modifier.fillMaxSize(),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        items(state.entries, key = { it.path }) { entry ->
+                                            TocRow(entry.title, accent) { selected = entry }
+                                        }
+                                    }
                                 }
                             }
                         }
-                        // Pinned bottom: "More from Az" (persistent, never scrolls away) then the
-                        // GitHub link, both separated from the list.
-                        Spacer(Modifier.height(32.dp))
-                        AzDivider()
-                        Spacer(Modifier.height(16.dp))
-                        if (onOpenMoreFromAz != null) {
-                            AzButton(
-                                onClick = { onOpenMoreFromAz() },
-                                text = "More from Az",
-                                color = accent,
-                                activeColor = accent,
-                                shape = AzButtonShape.RECTANGLE,
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                            Spacer(Modifier.height(12.dp))
-                        }
-                        AzButton(
-                            onClick = { openUrl(context, repoUrl) },
-                            text = "View on GitHub",
-                            color = accent,
-                            activeColor = accent,
-                            shape = AzButtonShape.RECTANGLE,
-                            modifier = Modifier.fillMaxWidth(),
+                    }
+                }
+
+                // BOTTOM HALF — More-from-Az focused-hero carousel + active-app info panel.
+                if (scope.advancedConfig.moreFromAzEnabled) {
+                    Spacer(Modifier.height(12.dp))
+                    AzDivider()
+                    Spacer(Modifier.height(8.dp))
+                    Box(Modifier.weight(1f).fillMaxWidth()) {
+                        MoreFromAzHeroCarousel(
+                            apps = moreApps,
+                            accent = accent,
                         )
                     }
                 }
@@ -245,7 +270,206 @@ private fun ErrorState(accent: Color, onClose: () -> Unit) {
     }
 }
 
-private fun openUrl(context: android.content.Context, url: String) {
+// --- More-from-Az focused-hero carousel ---------------------------------------------------------
+
+private val HERO_LARGE = 132.dp
+private val HERO_MEDIUM = 96.dp
+private val HERO_SMALL = 64.dp
+private val HERO_SPACING = 12.dp
+
+/**
+ * Horizontal LazyRow with center-snap fling and per-item scaling. Sizes derive from each item's
+ * distance from the row's visual center:
+ *   0 tiles away  → LARGE (the active app)
+ *   1 tile away   → MEDIUM
+ *   2+ tiles away → SMALL
+ * The active app's banner (when present), name, description, and link buttons render below the row.
+ */
+@Composable
+private fun MoreFromAzHeroCarousel(
+    apps: List<AzMoreFromApp>?,
+    accent: Color,
+) {
+    when {
+        apps == null -> Box(Modifier.fillMaxSize(), Alignment.Center) { AzLoad() }
+        apps.isEmpty() -> Box(Modifier.fillMaxSize(), Alignment.Center) {
+            Text(
+                "No apps to show right now.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            )
+        }
+        else -> {
+            val listState = rememberLazyListState()
+            val fling = rememberSnapFlingBehavior(lazyListState = listState)
+            val context = LocalContext.current
+
+            // Active index = the item whose center is closest to the row's visual center.
+            val activeIndex by remember(apps) {
+                derivedStateOf {
+                    val info = listState.layoutInfo
+                    val viewportCenter = (info.viewportStartOffset + info.viewportEndOffset) / 2
+                    info.visibleItemsInfo.minByOrNull {
+                        abs((it.offset + it.size / 2) - viewportCenter)
+                    }?.index ?: listState.firstVisibleItemIndex
+                }
+            }
+            val activeApp = apps.getOrNull(activeIndex)
+
+            Column(Modifier.fillMaxSize()) {
+                BoxWithConstraints(Modifier.fillMaxWidth().height(HERO_LARGE + 24.dp)) {
+                    val density = LocalDensity.current
+                    val edgePadding = with(density) { ((maxWidth - HERO_LARGE) / 2).coerceAtLeast(0.dp) }
+                    LazyRow(
+                        state = listState,
+                        flingBehavior = fling,
+                        contentPadding = PaddingValues(horizontal = edgePadding),
+                        horizontalArrangement = Arrangement.spacedBy(HERO_SPACING),
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        items(apps.size, key = { it }) { index ->
+                            val distance = kotlin.math.abs(index - activeIndex)
+                            val target: Dp = when (distance) {
+                                0 -> HERO_LARGE
+                                1 -> HERO_MEDIUM
+                                else -> HERO_SMALL
+                            }
+                            val size by animateDpAsState(target, label = "heroSize")
+                            HeroCard(
+                                app = apps[index],
+                                size = size,
+                                accent = accent,
+                                active = index == activeIndex,
+                                onClick = {
+                                    if (index == activeIndex) {
+                                        apps[index].primaryUrl?.let { openUrl(context, it) }
+                                    } else {
+                                        // Tapping a non-center card would ideally scroll it to center; the
+                                        // snapping-fling behavior will pull it in on the next drag.
+                                    }
+                                },
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+                activeApp?.let { ActiveAppPanel(it, accent) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeroCard(
+    app: AzMoreFromApp,
+    size: Dp,
+    accent: Color,
+    active: Boolean,
+    onClick: () -> Unit,
+) {
+    val shape = RoundedCornerShape(20.dp)
+    Box(
+        modifier = Modifier
+            .size(size)
+            .clip(shape)
+            .border(
+                width = if (active) 2.dp else 1.dp,
+                color = if (active) accent else accent.copy(alpha = 0.4f),
+                shape = shape,
+            )
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center,
+    ) {
+        if (isAppIcon(app.iconUrl)) {
+            Image(
+                painter = rememberAsyncImagePainter(app.iconUrl),
+                contentDescription = app.name,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize().clip(shape),
+            )
+        } else {
+            Text(
+                app.name.take(2).uppercase(),
+                style = MaterialTheme.typography.headlineMedium,
+                color = accent,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActiveAppPanel(app: AzMoreFromApp, accent: Color) {
+    val context = LocalContext.current
+    Column(
+        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+    ) {
+        if (!app.bannerUrl.isNullOrBlank()) {
+            Image(
+                painter = rememberAsyncImagePainter(app.bannerUrl),
+                contentDescription = "${app.name} banner",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(96.dp)
+                    .clip(RoundedCornerShape(12.dp)),
+            )
+            Spacer(Modifier.height(12.dp))
+        }
+        Text(
+            app.name,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        if (app.description.isNotBlank()) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                app.description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            app.playStoreUrl?.let {
+                AzButton(
+                    onClick = { openUrl(context, it) },
+                    text = "Play",
+                    color = accent,
+                    activeColor = accent,
+                    shape = AzButtonShape.RECTANGLE,
+                )
+            }
+            if (!app.webUrl.isNullOrBlank()) {
+                AzButton(
+                    onClick = { openUrl(context, app.webUrl!!) },
+                    text = if (app.isPwa) "Open" else "Website",
+                    color = accent,
+                    activeColor = accent,
+                    shape = AzButtonShape.RECTANGLE,
+                )
+            }
+            app.githubUrl?.let {
+                AzButton(
+                    onClick = { openUrl(context, it) },
+                    text = "GitHub",
+                    color = accent,
+                    activeColor = accent,
+                    shape = AzButtonShape.RECTANGLE,
+                )
+            }
+        }
+    }
+}
+
+/** The URL a card opens when tapped: prefer the website/PWA, then Play, then the GitHub repo. */
+private val AzMoreFromApp.primaryUrl: String?
+    get() = webUrl ?: playStoreUrl ?: githubUrl
+
+/** True only for a genuine app icon — never the owner's GitHub avatar. */
+private fun isAppIcon(url: String): Boolean =
+    url.isNotBlank() && !url.contains("avatars.githubusercontent.com", ignoreCase = true)
+
+private fun openUrl(context: Context, url: String) {
     try {
         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     } catch (_: Exception) {

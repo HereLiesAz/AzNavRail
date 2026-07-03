@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -12,9 +12,11 @@ import {
   useWindowDimensions,
   ViewStyle,
   LayoutChangeEvent,
+  Animated,
+  Easing as RNEasing,
 } from 'react-native';
 import { AzButton } from './AzButton';
-import { AzButtonShape, AzDockingSide, AzDropdownDesign, AzEntrance, AzExit, AzHeaderIconShape } from '../types';
+import { AzButtonShape, AzDockingSide, AzDropdownDesign, AzEasing, AzEntrance, AzExit, AzHeaderIconShape } from '../types';
 import { AzNavRailDefaults } from '../AzNavRailDefaults';
 import { AboutOverlay } from './AboutOverlay';
 import { AzKineticItem, useAzClosing } from './AzKinetics';
@@ -28,6 +30,12 @@ interface AzDropdownMenuContextValue {
   onNavigate?: (route: string) => void;
   /** Optional style merged over each MENU-design item's label (big/light/wide Metro type). */
   itemTextStyle?: object;
+  /** Docking side propagated to the MENU-design items for side-alignment. */
+  dockingSide?: AzDockingSide;
+  /** Alignment of MENU-design labels within the row. */
+  menuItemAlignment?: 'center' | 'side';
+  /** When true, MENU-design labels are full-justified via computed letter-spacing. */
+  justifyMenuItems?: boolean;
 }
 const AzDropdownMenuContext = createContext<AzDropdownMenuContextValue | null>(null);
 
@@ -87,6 +95,14 @@ export interface AzDropdownMenuProps {
   tiltOnPress?: boolean;
   /** Maximum tilt angle (deg) for `tiltOnPress`. Default 10. */
   maxTiltDegrees?: number;
+  /** When true, opening the menu draws a dim scrim over the rest of the app. Default false. */
+  dimBehindMenu?: boolean;
+  /** Alpha of the dim scrim (0..1). Default 0.4. */
+  dimBehindMenuAlpha?: number;
+  /** How MENU-design labels are aligned. Default `'side'` (docked-side aligned). */
+  menuItemAlignment?: 'center' | 'side';
+  /** When true, MENU-design labels are full-justified via computed letter-spacing. Default true. */
+  justifyMenuItems?: boolean;
   /** The menu items — `AzDropdownItem`, `AzDivider`, etc. */
   children?: React.ReactNode;
 }
@@ -122,23 +138,70 @@ export const AzDropdownItem: React.FC<AzDropdownItemProps> = ({
   closeOnClick = true,
 }) => {
   const ctx = useContext(AzDropdownMenuContext);
+  // Hooks must run unconditionally. Guard reads via optional chaining below.
+  const [availableWidth, setAvailableWidth] = useState(0);
+  const [naturalWidth, setNaturalWidth] = useState(0);
   if (!ctx) throw new Error('AzDropdownItem must be used inside an <AzDropdownMenu>');
-  const { dismiss, design, onNavigate, itemTextStyle } = ctx;
+  const {
+    dismiss,
+    design,
+    onNavigate,
+    itemTextStyle,
+    dockingSide: ctxDockingSide,
+    menuItemAlignment: ctxMenuItemAlignment,
+    justifyMenuItems: ctxJustifyMenuItems,
+  } = ctx;
   const press = () => {
     if (route) onNavigate?.(route);
     onClick();
     if (closeOnClick) dismiss();
   };
   if (design === AzDropdownDesign.MENU) {
+    const alignment = ctxMenuItemAlignment ?? 'side';
+    const justify = ctxJustifyMenuItems ?? true;
+    const textAlign: 'left' | 'right' | 'center' =
+      alignment === 'center'
+        ? 'center'
+        : ctxDockingSide === AzDockingSide.RIGHT ? 'right' : 'left';
+    const onContainerLayout = (e: LayoutChangeEvent) => {
+      const w = e.nativeEvent.layout.width;
+      if (w && Math.abs(w - availableWidth) > 0.5) setAvailableWidth(w);
+    };
+    const onLabelLayout = (e: LayoutChangeEvent) => {
+      const w = e.nativeEvent.layout.width;
+      if (w && Math.abs(w - naturalWidth) > 0.5) setNaturalWidth(w);
+    };
+    let letterSpacing = 0;
+    if (justify && text.length >= 2 && availableWidth > naturalWidth && naturalWidth > 0) {
+      letterSpacing = (availableWidth - naturalWidth) / (text.length - 1);
+    }
     return (
       <TouchableOpacity
         style={styles.menuRow}
         onPress={enabled ? press : undefined}
+        onLayout={onContainerLayout}
         disabled={!enabled}
         accessibilityRole="button"
         accessibilityLabel={text}
       >
-        <Text style={[styles.menuRowText, { color: textColor || color || '#6750A4', opacity: enabled ? 1 : 0.5 }, itemTextStyle]}>
+        {/* Hidden off-screen measurer — natural width only, no layout impact. */}
+        <Text
+          onLayout={onLabelLayout}
+          style={[
+            styles.menuRowText,
+            { position: 'absolute', opacity: 0, left: -9999, top: -9999 } as any,
+            itemTextStyle,
+          ]}
+        >
+          {text}
+        </Text>
+        <Text
+          style={[
+            styles.menuRowText,
+            { color: textColor || color || '#6750A4', opacity: enabled ? 1 : 0.5, textAlign, letterSpacing },
+            itemTextStyle,
+          ]}
+        >
           {text}
         </Text>
       </TouchableOpacity>
@@ -194,11 +257,15 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
   itemEntrance = AzEntrance.Turnstile,
   itemExit = AzExit.Turnstile,
   itemTextStyle,
-  entranceStaggerMs = 55,
-  entranceDurationMs = 360,
-  entranceStartAngle = 70,
+  entranceStaggerMs = 60,
+  entranceDurationMs = 720,
+  entranceStartAngle = 90,
   tiltOnPress = false,
   maxTiltDegrees = 10,
+  dimBehindMenu = false,
+  dimBehindMenuAlpha = 0.4,
+  menuItemAlignment = 'side',
+  justifyMenuItems = true,
   children,
 }) => {
   const [internalOpen, setInternalOpen] = useState(false);
@@ -281,7 +348,15 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
 
       {rendered && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setOpen(false)}>
+          <Pressable
+            style={[
+              StyleSheet.absoluteFill,
+              dimBehindMenu
+                ? { backgroundColor: `rgba(0,0,0,${Math.max(0, Math.min(1, dimBehindMenuAlpha))})` }
+                : null,
+            ]}
+            onPress={() => setOpen(false)}
+          >
             <View
               testID="az-dropdown-panel"
               onLayout={onPanelLayout}
@@ -300,7 +375,7 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
                       : { alignItems: 'center', padding: 8 }
                   }
                 >
-                  <AzDropdownMenuContext.Provider value={{ dismiss: () => setOpen(false), design, onNavigate, itemTextStyle }}>
+                  <AzDropdownMenuContext.Provider value={{ dismiss: () => setOpen(false), design, onNavigate, itemTextStyle, dockingSide, menuItemAlignment, justifyMenuItems }}>
                     {items.map((child, i) => (
                       <AzKineticItem
                         key={i}
@@ -326,6 +401,10 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
                       appRepositoryUrl={appRepositoryUrl}
                       inAppAbout={inAppAbout}
                       onInAppAbout={() => setShowAbout(true)}
+                      visible={isOpen}
+                      menuItemCount={items.length}
+                      staggerMs={entranceStaggerMs}
+                      durationMs={entranceDurationMs}
                     />
                   )}
                 </ScrollView>
@@ -354,7 +433,19 @@ const AzDropdownFooter: React.FC<{
   appRepositoryUrl?: string;
   inAppAbout?: boolean;
   onInAppAbout?: () => void;
-}> = ({ appRepositoryUrl, inAppAbout = true, onInAppAbout }) => {
+  visible?: boolean;
+  menuItemCount?: number;
+  staggerMs?: number;
+  durationMs?: number;
+}> = ({
+  appRepositoryUrl,
+  inAppAbout = true,
+  onInAppAbout,
+  visible = true,
+  menuItemCount = 0,
+  staggerMs = 60,
+  durationMs = 720,
+}) => {
   const footerColor = '#6750A4';
   // Only open safe schemes — this also runs on the web via react-native-web, where a `javascript:`
   // URL would otherwise execute.
@@ -367,21 +458,48 @@ const AzDropdownFooter: React.FC<{
     if (inAppAbout) onInAppAbout?.();
     else open(appRepositoryUrl);
   };
+
+  // Accordion unfold from the top edge when the last dropdown item begins its own kinetic entrance.
+  const anim = useRef(new Animated.Value(visible ? 1 : 0)).current;
+  useEffect(() => {
+    if (visible) {
+      const a = Animated.timing(anim, {
+        toValue: 1,
+        duration: durationMs,
+        delay: Math.max(0, menuItemCount - 1) * staggerMs,
+        easing: RNEasing.bezier(...AzEasing.Wp7Decelerate),
+        useNativeDriver: true,
+      });
+      a.start();
+      return () => a.stop();
+    }
+    anim.setValue(0);
+    return undefined;
+  }, [visible, menuItemCount, staggerMs, durationMs, anim]);
+
   return (
-    <View style={styles.footer}>
-      {/* About is hidden entirely when no repository URL is configured. */}
-      {!!appRepositoryUrl && (
-        <TouchableOpacity onPress={onAbout} style={styles.footerRow} accessibilityRole="button">
-          <Text style={[styles.footerText, { color: footerColor }]}>About</Text>
+    <Animated.View
+      style={{
+        opacity: anim,
+        transform: [{ scaleY: anim }],
+        ...( { transformOrigin: 'top center' } as any ),
+      }}
+    >
+      <View style={styles.footer}>
+        {/* About is hidden entirely when no repository URL is configured. */}
+        {!!appRepositoryUrl && (
+          <TouchableOpacity onPress={onAbout} style={styles.footerRow} accessibilityRole="button">
+            <Text style={[styles.footerText, { color: footerColor }]}>About</Text>
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity onPress={() => open('mailto:hereliesaz@gmail.com?subject=Feedback')} style={styles.footerRow} accessibilityRole="button">
+          <Text style={[styles.footerText, { color: footerColor }]}>Feedback</Text>
         </TouchableOpacity>
-      )}
-      <TouchableOpacity onPress={() => open('mailto:hereliesaz@gmail.com?subject=Feedback')} style={styles.footerRow} accessibilityRole="button">
-        <Text style={[styles.footerText, { color: footerColor }]}>Feedback</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => open('https://instagram.com/HereLiesAz')} style={styles.footerRow} accessibilityRole="button">
-        <Text style={[styles.footerText, { color: footerColor, opacity: 0.5 }]}>@HereLiesAz</Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity onPress={() => open('https://instagram.com/HereLiesAz')} style={styles.footerRow} accessibilityRole="button">
+          <Text style={[styles.footerText, { color: footerColor, opacity: 0.5 }]}>@HereLiesAz</Text>
+        </TouchableOpacity>
+      </View>
+    </Animated.View>
   );
 };
 

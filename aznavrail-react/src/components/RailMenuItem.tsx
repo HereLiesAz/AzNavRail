@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { AzNavItem } from '../types';
+import { View, Text, TouchableOpacity, StyleSheet, LayoutChangeEvent } from 'react-native';
+import { AzDockingSide, AzNavItem } from '../types';
 
 /** Internal props for `RailMenuItem` — one row inside the expanded-menu scroll view. */
 interface RailMenuItemProps {
@@ -18,6 +18,12 @@ interface RailMenuItemProps {
     renderSubItems: () => React.ReactNode;
     /** Optional style merged over the row label (big/light/wide Metro type). */
     textStyle?: object;
+    /** Docking side of the rail — drives side-alignment when `menuItemAlignment === 'side'`. */
+    dockingSide?: AzDockingSide;
+    /** Alignment of the label within the row: `center` (legacy) or `side` (docked-side aligned). */
+    menuItemAlignment?: 'center' | 'side';
+    /** When true, labels are full-justified via computed letter-spacing. */
+    justifyMenuItems?: boolean;
 }
 
 /**
@@ -31,7 +37,10 @@ export const RailMenuItem: React.FC<RailMenuItemProps> = ({
     onToggleHost,
     onItemClick,
     renderSubItems,
-    textStyle
+    textStyle,
+    dockingSide = AzDockingSide.LEFT,
+    menuItemAlignment = 'side',
+    justifyMenuItems = true,
 }) => {
     const [displayOption, setDisplayOption] = useState(item.selectedOption);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -86,16 +95,56 @@ export const RailMenuItem: React.FC<RailMenuItemProps> = ({
     if (item.isToggle) accessibilityState.checked = item.isChecked;
     if (item.isHost || item.isNestedRail) accessibilityState.expanded = isExpandedHost;
 
+    // Alignment + kerning-justify computed per-row. We measure the label's natural width off-screen,
+    // then compute an equal letter-spacing that stretches it to fill the row.
+    const textAlign =
+        menuItemAlignment === 'center'
+            ? 'center'
+            : dockingSide === AzDockingSide.RIGHT ? 'right' : 'left';
+    const [availableWidth, setAvailableWidth] = useState(0);
+    const [naturalWidth, setNaturalWidth] = useState(0);
+    const onContainerLayout = (e: LayoutChangeEvent) => {
+        const w = e.nativeEvent.layout.width;
+        if (w && Math.abs(w - availableWidth) > 0.5) setAvailableWidth(w);
+    };
+    const onLabelLayout = (e: LayoutChangeEvent) => {
+        const w = e.nativeEvent.layout.width;
+        if (w && Math.abs(w - naturalWidth) > 0.5) setNaturalWidth(w);
+    };
+    let letterSpacing = 0;
+    if (justifyMenuItems && displayText && displayText.length >= 2 && availableWidth > naturalWidth && naturalWidth > 0) {
+        letterSpacing = (availableWidth - naturalWidth) / (displayText.length - 1);
+    }
+
     return (
         <View>
             <TouchableOpacity
                 onPress={handlePress}
+                onLayout={onContainerLayout}
                 style={[styles.menuItem, { paddingLeft: 16 + (depth * 16), backgroundColor: (!item.isHost) ? `${item.fillColor ?? item.color ?? '#000000'}1F` : 'transparent' }]}
                 accessibilityRole={item.isToggle ? "switch" : "menuitem"}
                 accessibilityLabel={displayText}
                 accessibilityState={accessibilityState}
             >
-                <Text style={[styles.menuItemText, { fontWeight: item.isHost ? 'bold' : 'normal', color: item.textColor ?? item.color ?? '#000000' }, textStyle]}>
+                {/* Off-screen "measurer" — same font/style as the visible label, absent from layout. */}
+                <Text
+                    onLayout={onLabelLayout}
+                    style={[styles.measurer, { fontWeight: item.isHost ? 'bold' : 'normal' }, textStyle]}
+                >
+                    {displayText}
+                </Text>
+                <Text
+                    style={[
+                        styles.menuItemText,
+                        {
+                            fontWeight: item.isHost ? 'bold' : 'normal',
+                            color: item.textColor ?? item.color ?? '#000000',
+                            textAlign,
+                            letterSpacing,
+                        },
+                        textStyle,
+                    ]}
+                >
                     {displayText}
                 </Text>
                 {item.isHost && (
@@ -112,12 +161,19 @@ const styles = StyleSheet.create({
   menuItem: {
       padding: 16,
       flexDirection: 'row',
-      justifyContent: 'center',
       alignItems: 'center',
   },
   menuItemText: {
       fontSize: 16,
-      textAlign: 'center',
       flex: 1,
+  },
+  // Rendered off-screen (position:absolute + opacity:0) so it doesn't affect layout, but its onLayout
+  // still fires with the label's natural width — which drives the letterSpacing calculation above.
+  measurer: {
+      fontSize: 16,
+      position: 'absolute',
+      opacity: 0,
+      left: -9999,
+      top: -9999,
   },
 });

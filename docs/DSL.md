@@ -25,9 +25,21 @@ fun azConfig(
     expandedWidth: Dp = 160.dp,
     collapsedWidth: Dp = 100.dp,
     showFooter: Boolean = true,
-    appRepositoryUrl: String = ""
+    appRepositoryUrl: String = "",
+    // Menu-drawer look-and-feel:
+    dimBehindMenu: Boolean = false,                              // opt-in dim scrim behind the drawer
+    dimBehindMenuAlpha: Float = 0.4f,                            // 0..1 alpha of the scrim
+    menuItemAlignment: AzMenuItemAlignment = AzMenuItemAlignment.SIDE, // SIDE (default) | CENTER
+    justifyMenuItems: Boolean = true,                            // full-justify labels via letter-spacing
 )
 ~~~
+
+The menu-drawer knobs only affect the **expanded-menu drawer** labels (the standalone
+`AzDropdownMenu` mirrors them on its own `azConfig`). Small rail-button labels are unaffected.
+`SIDE` alignment resolves to `TextAlign.Start` when docked LEFT and `TextAlign.End` when RIGHT.
+`justifyMenuItems` measures each label's natural width and computes an equal `letterSpacing` so it
+fills the row edge-to-edge (Word-style justify); single-character or already-wider-than-row labels
+are skipped.
 
 `appRepositoryUrl` is an **optional** override for the About reader's repo. Blank (the default)
 auto-derives the repo from the app **namespace** on Android: `com.<owner>.<repo>` →
@@ -68,11 +80,11 @@ fun azKinetics(
     itemEntrance: AzEntrance = AzEntrance.Turnstile,
     itemExit: AzExit = AzExit.Turnstile,
     itemTextStyle: TextStyle? = null,
-    entranceStaggerMs: Int = 55,
-    entranceDurationMs: Int = 360,
+    entranceStaggerMs: Int = 60,           // small stagger → items overlap heavily
+    entranceDurationMs: Int = 720,         // per-item duration
     entranceEasing: Easing = AzEasing.Wp7Decelerate,
-    entranceStartAngle: Float = 70f,
-    tiltOnPress: Boolean = false,   // off by default on the rail (drag-safe)
+    entranceStartAngle: Float = 90f,       // pure edge-on → flat, no fade, no slide
+    tiltOnPress: Boolean = false,          // off by default on the rail (drag-safe)
     maxTiltDegrees: Float = 10f,
     titleEntrance: AzEntrance = AzEntrance.Turnstile,
     titleTextStyle: TextStyle? = null
@@ -81,8 +93,16 @@ fun azKinetics(
 
 `AzEntrance` = `None | Fade | SlideUp | Turnstile`; `AzExit` = `None | Fade | Turnstile`;
 `AzEasing.Wp7Decelerate` is the signature snappy easing. `tiltOnPress` is automatically suppressed for
-draggable/relocatable items. In React, the rail reads these from `settings` (`itemEntrance`,
-`itemExit`, `titleEntrance`, …).
+draggable/relocatable items. The default **Turnstile** entrance is a pure 90° `rotationY` sweep
+hinged on the docked edge — no fade, no vertical slide. Because the stagger (60 ms) is much smaller
+than the duration (720 ms), items overlap heavily: the next item starts ~60 ms after the previous
+begins while the previous is still animating. The footer (About / Feedback / @HereLiesAz) then
+**unfolds like an accordion** from the top edge, starting the moment the last item begins
+(delay = `(count - 1) * staggerMs`).
+
+In React, the rail reads these from `settings` (`itemEntrance`, `itemExit`, `titleEntrance`, …).
+On **native React Native** the hinge is emulated via a `translateX ±(width/2)` correction around
+`rotateY` because RN ignores `transformOrigin`; on web the CSS property applies natively.
 
 ### `azAdvanced`
 Controls system overrides, loading states, and floating window bindings.

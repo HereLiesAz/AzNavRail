@@ -3,6 +3,7 @@ package com.hereliesaz.aznavrail
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,7 +48,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import com.hereliesaz.aznavrail.model.AzEasing
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -138,13 +147,18 @@ interface AzDropdownMenuScope {
         appRepositoryUrl: String = "",
         itemTextStyle: TextStyle? = null,
         itemEntrance: AzEntrance = AzEntrance.Turnstile,
-        entranceStaggerMs: Int = 55,
-        entranceDurationMs: Int = 360,
+        entranceStaggerMs: Int = 60,
+        entranceDurationMs: Int = 720,
         entranceEasing: Easing = AzEasing.Wp7Decelerate,
-        entranceStartAngle: Float = 70f,
+        entranceStartAngle: Float = 90f,
         tiltOnPress: Boolean = false,
         maxTiltDegrees: Float = 10f,
-        itemExit: AzExit = AzExit.Turnstile
+        itemExit: AzExit = AzExit.Turnstile,
+        dimBehindMenu: Boolean = false,
+        dimBehindMenuAlpha: Float = 0.4f,
+        menuItemAlignment: com.hereliesaz.aznavrail.model.AzMenuItemAlignment =
+            com.hereliesaz.aznavrail.model.AzMenuItemAlignment.SIDE,
+        justifyMenuItems: Boolean = true,
     )
 
     /**
@@ -210,13 +224,18 @@ internal data class AzDropdownConfig(
     val appRepositoryUrl: String = "",
     val itemTextStyle: TextStyle? = null,
     val itemEntrance: AzEntrance = AzEntrance.Turnstile,
-    val entranceStaggerMs: Int = 55,
-    val entranceDurationMs: Int = 360,
+    val entranceStaggerMs: Int = 60,
+    val entranceDurationMs: Int = 720,
     val entranceEasing: Easing = AzEasing.Wp7Decelerate,
-    val entranceStartAngle: Float = 70f,
+    val entranceStartAngle: Float = 90f,
     val tiltOnPress: Boolean = false,
     val maxTiltDegrees: Float = 10f,
-    val itemExit: AzExit = AzExit.Turnstile
+    val itemExit: AzExit = AzExit.Turnstile,
+    val dimBehindMenu: Boolean = false,
+    val dimBehindMenuAlpha: Float = 0.4f,
+    val menuItemAlignment: com.hereliesaz.aznavrail.model.AzMenuItemAlignment =
+        com.hereliesaz.aznavrail.model.AzMenuItemAlignment.SIDE,
+    val justifyMenuItems: Boolean = true,
 )
 
 /** One declared entry, collected by the builder and rendered by the composable. */
@@ -296,12 +315,17 @@ private class AzDropdownMenuScopeImpl : AzDropdownMenuScope {
         entranceStartAngle: Float,
         tiltOnPress: Boolean,
         maxTiltDegrees: Float,
-        itemExit: AzExit
+        itemExit: AzExit,
+        dimBehindMenu: Boolean,
+        dimBehindMenuAlpha: Float,
+        menuItemAlignment: com.hereliesaz.aznavrail.model.AzMenuItemAlignment,
+        justifyMenuItems: Boolean,
     ) {
         config = AzDropdownConfig(
             design, dockingSide, vibrate, expandedWidth, collapsedWidth, headerIconShape, headerIconSize,
             showFooter, inAppAbout, appRepositoryUrl, itemTextStyle, itemEntrance, entranceStaggerMs,
-            entranceDurationMs, entranceEasing, entranceStartAngle, tiltOnPress, maxTiltDegrees, itemExit
+            entranceDurationMs, entranceEasing, entranceStartAngle, tiltOnPress, maxTiltDegrees, itemExit,
+            dimBehindMenu, dimBehindMenuAlpha, menuItemAlignment, justifyMenuItems,
         )
     }
 
@@ -375,8 +399,26 @@ private fun AzDropdownMenuRow(
     textColor: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    textStyle: TextStyle? = null
+    textStyle: TextStyle? = null,
+    dockingSide: AzDockingSide = AzDockingSide.LEFT,
+    menuItemAlignment: com.hereliesaz.aznavrail.model.AzMenuItemAlignment =
+        com.hereliesaz.aznavrail.model.AzMenuItemAlignment.SIDE,
+    justifyMenuItems: Boolean = true,
 ) {
+    val textAlign = when (menuItemAlignment) {
+        com.hereliesaz.aznavrail.model.AzMenuItemAlignment.CENTER -> TextAlign.Center
+        com.hereliesaz.aznavrail.model.AzMenuItemAlignment.SIDE ->
+            if (dockingSide == AzDockingSide.RIGHT) TextAlign.End else TextAlign.Start
+    }
+    val columnAlignment = when (menuItemAlignment) {
+        com.hereliesaz.aznavrail.model.AzMenuItemAlignment.CENTER -> Alignment.CenterHorizontally
+        com.hereliesaz.aznavrail.model.AzMenuItemAlignment.SIDE ->
+            if (dockingSide == AzDockingSide.RIGHT) Alignment.End else Alignment.Start
+    }
+    val mergedStyle = MaterialTheme.typography.titleLarge.merge(textStyle)
+    val textMeasurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val density = androidx.compose.ui.platform.LocalDensity.current
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -387,17 +429,28 @@ private fun AzDropdownMenuRow(
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            modifier = Modifier.weight(1f),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            text.split('\n').forEach { line ->
-                Text(
-                    text = line,
-                    style = MaterialTheme.typography.titleLarge.merge(textStyle),
-                    color = if (enabled) textColor else textColor.copy(alpha = 0.5f),
-                    textAlign = TextAlign.Center
-                )
+        androidx.compose.foundation.layout.BoxWithConstraints(Modifier.weight(1f)) {
+            val availableWidthPx = with(density) { maxWidth.toPx() }
+            Column(horizontalAlignment = columnAlignment) {
+                text.split('\n').forEach { line ->
+                    val kerning = if (!justifyMenuItems || line.length < 2) androidx.compose.ui.unit.TextUnit.Unspecified
+                    else {
+                        val naturalWidthPx = try {
+                            textMeasurer.measure(text = line, style = mergedStyle).size.width.toFloat()
+                        } catch (_: Throwable) { availableWidthPx }
+                        val extraPx = availableWidthPx - naturalWidthPx
+                        if (extraPx <= 0f) androidx.compose.ui.unit.TextUnit.Unspecified
+                        else with(density) { (extraPx / (line.length - 1)).toSp() }
+                    }
+                    Text(
+                        text = line,
+                        style = mergedStyle,
+                        color = if (enabled) textColor else textColor.copy(alpha = 0.5f),
+                        textAlign = textAlign,
+                        letterSpacing = kerning,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         }
     }
@@ -414,7 +467,15 @@ private fun AzDropdownMenuRow(
  *   browser.
  */
 @Composable
-private fun AzDropdownFooter(repoUrl: String, onAboutClick: (() -> Unit)?) {
+private fun AzDropdownFooter(
+    repoUrl: String,
+    onAboutClick: (() -> Unit)?,
+    visible: Boolean = true,
+    menuItemCount: Int = 0,
+    staggerMs: Int = 60,
+    durationMs: Int = 720,
+    easing: Easing = AzEasing.Wp7Decelerate,
+) {
     val context = LocalContext.current
     val footerColor = MaterialTheme.colorScheme.primary
     val appName = remember(context.packageName) {
@@ -427,9 +488,29 @@ private fun AzDropdownFooter(repoUrl: String, onAboutClick: (() -> Unit)?) {
         }
     }
 
+    // Accordion-unfold from the top edge when the last dropdown item starts its own kinetic entrance.
+    val scaleY = remember { Animatable(if (visible) 1f else 0f) }
+    val fade = remember { Animatable(if (visible) 1f else 0f) }
+    LaunchedEffect(visible) {
+        val spec = tween<Float>(durationMillis = durationMs, easing = easing)
+        if (visible) {
+            delay((menuItemCount - 1).coerceAtLeast(0).toLong() * staggerMs)
+            launch { scaleY.animateTo(1f, spec) }
+            launch { fade.animateTo(1f, spec) }
+        } else {
+            scaleY.snapTo(0f)
+            fade.snapTo(0f)
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .graphicsLayer {
+                this.scaleY = scaleY.value
+                this.alpha = fade.value
+                transformOrigin = TransformOrigin(0.5f, 0f)
+            }
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -535,7 +616,10 @@ private fun AzDropdownEntryItem(
                     textColor = effectiveTextColor(entry.textColor, entry.color),
                     onClick = action,
                     modifier = kinetic,
-                    textStyle = config.itemTextStyle
+                    textStyle = config.itemTextStyle,
+                    dockingSide = config.dockingSide,
+                    menuItemAlignment = config.menuItemAlignment,
+                    justifyMenuItems = config.justifyMenuItems,
                 )
             } else {
                 Box(modifier = kinetic) {
@@ -564,7 +648,10 @@ private fun AzDropdownEntryItem(
                         if (entry.closeOnClick) dismiss()
                     },
                     modifier = kinetic,
-                    textStyle = config.itemTextStyle
+                    textStyle = config.itemTextStyle,
+                    dockingSide = config.dockingSide,
+                    menuItemAlignment = config.menuItemAlignment,
+                    justifyMenuItems = config.justifyMenuItems,
                 )
             } else {
                 Box(modifier = kinetic) {
@@ -602,7 +689,10 @@ private fun AzDropdownEntryItem(
                         if (entry.closeOnClick) dismiss()
                     },
                     modifier = kinetic,
-                    textStyle = config.itemTextStyle
+                    textStyle = config.itemTextStyle,
+                    dockingSide = config.dockingSide,
+                    menuItemAlignment = config.menuItemAlignment,
+                    justifyMenuItems = config.justifyMenuItems,
                 )
             } else {
                 Box(modifier = kinetic) {
@@ -776,6 +866,25 @@ fun AzDropdownMenu(
             durationMs = config.entranceDurationMs
         )
         if (rendered) {
+            // Full-screen dim scrim behind the popup, only when the developer opted in. Rendered as its
+            // own Popup so it covers everything the menu might sit above and dismisses the menu on tap.
+            if (config.dimBehindMenu) {
+                Popup(
+                    onDismissRequest = { setOpen(false) },
+                    properties = PopupProperties(focusable = false, dismissOnClickOutside = true),
+                ) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(
+                                androidx.compose.ui.graphics.Color.Black.copy(
+                                    alpha = config.dimBehindMenuAlpha.coerceIn(0f, 1f),
+                                )
+                            )
+                            .clickable { setOpen(false) }
+                    )
+                }
+            }
             Popup(
                 popupPositionProvider = positionProvider,
                 onDismissRequest = { setOpen(false) },
@@ -807,7 +916,12 @@ fun AzDropdownMenu(
                                 repoUrl = effectiveRepoUrl,
                                 onAboutClick = if (config.inAppAbout && effectiveRepoUrl.isNotBlank()) {
                                     { dismiss(); showAbout = true }
-                                } else null
+                                } else null,
+                                visible = isOpen,
+                                menuItemCount = entries.size,
+                                staggerMs = config.entranceStaggerMs,
+                                durationMs = config.entranceDurationMs,
+                                easing = config.entranceEasing,
                             )
                         }
                     }
