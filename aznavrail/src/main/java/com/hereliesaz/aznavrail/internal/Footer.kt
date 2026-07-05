@@ -77,7 +77,9 @@ internal fun Footer(
     LaunchedEffect(visible) {
         val spec = tween<Float>(durationMillis = durationMs, easing = easing)
         if (visible) {
-            delay((menuItemCount - 1).coerceAtLeast(0).toLong() * staggerMs)
+            // Footer starts AFTER the last menu item begins — one extra stagger tick so the footer
+            // is the natural next beat in the cascade rhythm (as if it were the (count+1)th item).
+            delay(menuItemCount.coerceAtLeast(0).toLong() * staggerMs)
             launch { scaleY.animateTo(1f, spec) }
             launch { fade.animateTo(1f, spec) }
         } else {

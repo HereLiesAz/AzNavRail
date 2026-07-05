@@ -141,9 +141,9 @@ slide (no docked edge to hinge on).
 The signature look is a **pure 90° `rotationY` sweep** hinged on the docked edge — no fade, no vertical
 slide. Items overlap heavily by default: `entranceDurationMs = 720` and `entranceStaggerMs = 60`
 means the next item begins ~60 ms after the previous one *begins* while the previous one is still
-animating. The footer (About / Feedback / @HereLiesAz) then **unfolds like an accordion** from the
-top edge, starting the moment the last item begins — so the whole rail-open motion completes in one
-continuous beat.
+animating. One stagger tick after the last item begins, the footer (About / Feedback / @HereLiesAz)
+**unfolds like an accordion** from the top edge — the natural next beat in the cascade rhythm — so
+the whole rail-open motion completes as one continuous phrase.
 
 ```kotlin
 azKinetics(

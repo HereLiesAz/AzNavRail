@@ -44,7 +44,8 @@ knobs (dim, side-alignment, kerning-justify) land as first-class options.
   correct).
 - **Footer unfolds like an accordion.** The rail and dropdown footer (About/Feedback/@HereLiesAz)
   now animate in with `scaleY 0→1` + `opacity 0→1` hinged at the top edge, starting when the
-  **last** menu item starts its own kinetic entrance (delay = `(count - 1) * staggerMs`). Same
+  **last** menu item starts its own kinetic entrance — one extra stagger tick past it (delay =
+  `count * staggerMs`), so the footer is the natural next beat in the cascade rhythm. Same
   Wp7Decelerate easing; the whole footer unfolds as one unit.
 - **About page split into two halves.** The top half is the existing docs TOC (unchanged internals),
   and the bottom half is a **focused-hero More-from-Az carousel** with a size pattern

@@ -638,7 +638,8 @@ const AzNavRail = ({
             alignItems: 'center',
             padding: '16px',
             color: activeColor || 'currentColor',
-            animationDelay: `${Math.max(0, menuItems.length - 1) * entranceStaggerMs}ms`,
+            // Footer arrives one stagger tick AFTER the last menu item begins — the next beat.
+            animationDelay: `${Math.max(0, menuItems.length) * entranceStaggerMs}ms`,
             animationDuration: `${entranceDurationMs}ms`,
           }}
         >

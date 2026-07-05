@@ -102,7 +102,8 @@ hinged on the docked edge — no fade, no vertical slide. Because the stagger (6
 than the duration (720 ms), items overlap heavily: the next item starts ~60 ms after the previous
 begins while the previous is still animating. The footer (About / Feedback / @HereLiesAz) then
 **unfolds like an accordion** from the top edge, starting the moment the last item begins
-(delay = `(count - 1) * staggerMs`).
+(delay = `count * staggerMs` — one tick past the last item's start, making the footer the natural
+next beat in the cascade).
 
 In React, the rail reads these from `settings` (`itemEntrance`, `itemExit`, `titleEntrance`, …).
 On **native React Native** the hinge is emulated via a `translateX ±(width/2)` correction around

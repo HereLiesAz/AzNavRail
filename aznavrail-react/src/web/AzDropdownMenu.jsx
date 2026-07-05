@@ -288,7 +288,8 @@ const AzDropdownMenu = ({
             <div
               className="az-dropdown-menu-footer az-nav-rail__footer-accordion"
               style={{
-                animationDelay: `${Math.max(0, React.Children.count(children) - 1) * entranceStaggerMs}ms`,
+                // Footer arrives one stagger tick AFTER the last item begins — the next beat.
+                animationDelay: `${Math.max(0, React.Children.count(children)) * entranceStaggerMs}ms`,
                 animationDuration: `${entranceDurationMs}ms`,
               }}
             >
