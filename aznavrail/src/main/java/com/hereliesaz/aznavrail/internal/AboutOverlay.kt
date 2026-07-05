@@ -202,7 +202,7 @@ internal fun AboutOverlay(
                 // BOTTOM HALF — More-from-Az focused-hero carousel + active-app info panel.
                 if (scope.advancedConfig.moreFromAzEnabled) {
                     Spacer(Modifier.height(12.dp))
-                    AzDivider()
+                    AzDivider(color = accent)
                     Spacer(Modifier.height(8.dp))
                     Box(Modifier.weight(1f).fillMaxWidth()) {
                         MoreFromAzHeroCarousel(

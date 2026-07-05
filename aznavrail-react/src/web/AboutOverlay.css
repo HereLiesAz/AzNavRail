@@ -62,7 +62,14 @@
 .az-about-tocrow.emphasized { border-width: 2px; font-weight: 700; opacity: 1; }
 
 .az-about-spacer { height: 32px; }
-.az-about-divider { width: 100%; opacity: 0.3; margin: 16px 0; }
+.az-about-divider {
+  /* Default border color inherits from `currentColor`; the JSX also sets it explicitly to the
+     accent so the divider belongs to the same visual family as the font next to it. */
+  width: 100%;
+  border: none;
+  border-top: 1px solid currentColor;
+  margin: 16px 0;
+}
 
 .az-about-repo {
   display: inline-block;

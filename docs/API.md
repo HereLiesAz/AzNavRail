@@ -114,9 +114,14 @@ fun azConfig(
 * `menuItemAlignment: AzMenuItemAlignment` (`CENTER` | `SIDE`) — alignment of the drawer's labels
   within their rows. Default `SIDE`: `TextAlign.Start` when docked LEFT, `TextAlign.End` when
   docked RIGHT. Small rail-button labels are unaffected.
-* `justifyMenuItems: Boolean` — when true, each label is measured with a `TextMeasurer` and its
-  `letterSpacing` is set to the amount that fills the row edge-to-edge (Word-style justify).
-  Single-character labels and labels wider than the row are skipped. Default `true`.
+* `justifyMenuItems: Boolean` — when true, each label runs through a **hybrid kerning + font-scale
+  solver** (`internal/AzJustify.kt`): fill the row with `letterSpacing` alone until tracking would
+  exceed `α · fontSize` (`α = 0.15`), then grow the font past that limit so both letter-spacing and
+  font-size converge on the mix that lands the label exactly on the row width. Font growth capped
+  at `1.5×`. Single-character labels and labels wider than the row are skipped. Default `true`.
+* `AzDivider` now defaults its color to `LocalContentColor.current` (Compose) / `currentColor`
+  (web) so the divider inherits the surrounding font color and belongs to the same visual family
+  as the labels next to it. The rail and dropdown call sites pass their accent explicitly.
 
 * `appRepositoryUrl` — **optional** override for the host app's GitHub repo used by the About reader.
   Blank (the default) auto-derives the repo from the app **namespace**: `com.<owner>.<repo>` →

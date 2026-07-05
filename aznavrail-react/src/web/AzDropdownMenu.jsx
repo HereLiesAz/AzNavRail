@@ -1,7 +1,10 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import AzButton from './AzButton';
 import AboutOverlay from './AboutOverlay';
+import { solveHybridJustify } from '../util/AzJustify';
 import './AzDropdownMenu.css';
+
+const DROPDOWN_WEB_BASE_FONT_PX = 16;
 
 const AzDropdownMenuContext = createContext(null);
 
@@ -47,16 +50,21 @@ export const AzDropdownItem = ({
   };
   const rowRef = useRef(null);
   const measureRef = useRef(null);
+  // Hybrid kerning + font-scale justify — see ../util/AzJustify.
   const [letterSpacing, setLetterSpacing] = useState(0);
+  const [fontScale, setFontScale] = useState(1);
   useEffect(() => {
-    if (!justifyMenuItems || !text || text.length < 2) { setLetterSpacing(0); return; }
+    if (!justifyMenuItems || !text || text.length < 2) {
+      setLetterSpacing(0); setFontScale(1); return;
+    }
     const row = rowRef.current;
     const meas = measureRef.current;
     if (!row || !meas) return;
     const w = row.getBoundingClientRect().width;
     const nat = meas.getBoundingClientRect().width;
-    if (w > nat && nat > 0) setLetterSpacing((w - nat) / (text.length - 1));
-    else setLetterSpacing(0);
+    const solved = solveHybridJustify(nat, w, text.length, DROPDOWN_WEB_BASE_FONT_PX);
+    setLetterSpacing(solved.letterSpacing);
+    setFontScale(solved.scale);
   }, [text, justifyMenuItems]);
   if (design === 'menu') {
     const hingeSide = dockingSide === 'RIGHT' ? 'right' : 'left';
@@ -74,6 +82,7 @@ export const AzDropdownItem = ({
           color: textColor || color || undefined,
           textAlign,
           letterSpacing: `${letterSpacing}px`,
+          fontSize: `${DROPDOWN_WEB_BASE_FONT_PX * fontScale}px`,
           animation: `azTurnstile ${entranceDurationMs}ms cubic-bezier(0.1, 0.9, 0.2, 1) ${index * entranceStaggerMs}ms both`,
           transformOrigin: `${hingeSide} center`,
           '--az-start-angle': `${dockingSide === 'RIGHT' ? -entranceStartAngle : entranceStartAngle}deg`,

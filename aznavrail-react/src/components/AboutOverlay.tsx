@@ -140,7 +140,7 @@ export const AboutOverlay: React.FC<AboutOverlayProps> = ({
           {/* BOTTOM HALF — focused-hero More-from-Az carousel + active-app info panel. */}
           {moreFromAzEnabled && (
             <View style={styles.half}>
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: accent }]} />
               <MoreFromAzHeroCarousel apps={moreApps} accent={accent} />
             </View>
           )}
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
   overlay: { ...StyleSheet.absoluteFillObject, zIndex: 3000, paddingTop: '6%', paddingBottom: '10%', paddingHorizontal: 20 },
   flex: { flex: 1 },
   half: { flex: 1 },
-  divider: { height: 1, backgroundColor: '#0000001A', marginVertical: 8 },
+  divider: { height: 1, marginVertical: 8 },
   header: { flexDirection: 'row', alignItems: 'center' },
   title: { flex: 1, fontSize: 30, fontWeight: 'bold', marginHorizontal: 8 },
   icon: { fontSize: 22, paddingHorizontal: 6 },

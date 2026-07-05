@@ -777,7 +777,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
           durationMs={kDurationMs}
         >
           <View style={[styles.footer, { alignItems: 'center' }]}>
-             <View style={styles.divider} />
+             <View style={[styles.divider, { backgroundColor: footerColor }]} />
              {enableRailDragging && (
                  <TouchableOpacity onPress={handleUndock} style={{ paddingVertical: 8 }}><Text style={[styles.menuItemText, { color: footerColor, fontWeight: 'bold' }]}>{`Undock`}</Text></TouchableOpacity>
              )}
@@ -883,7 +883,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                 <ScrollView style={styles.menuContent}>
                     {menuItems.map((item, index) => {
                          if (item.isDivider) {
-                             return <View key={item.id} style={styles.divider} />;
+                             return <View key={item.id} style={[styles.divider, { backgroundColor: activeColor || '#6200ee' }]} />;
                          }
                          return renderMenuItem(item, index, menuItems.length, isExpanded);
                     })}
@@ -1153,8 +1153,9 @@ const styles = StyleSheet.create({
       fontSize: 16,
   },
   divider: {
+      // backgroundColor is applied inline from `activeColor` (or the footer's accent) so the
+      // divider matches the font next to it — never a muted line.
       height: 1,
-      backgroundColor: '#ccc',
       marginVertical: 8,
   },
   footer: {

@@ -88,7 +88,7 @@ export default function AboutOverlay({ repoUrl, settings = {}, moreFromAzEnabled
           {/* BOTTOM HALF — More-from-Az focused-hero carousel + active-app info. */}
           {moreFromAzEnabled && (
             <div className="az-about-half">
-              <hr className="az-about-divider" />
+              <hr className="az-about-divider" style={{ borderTopColor: accent, color: accent }} />
               <MoreFromAzHeroCarousel apps={moreApps} accent={accent} />
             </div>
           )}

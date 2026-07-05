@@ -82,7 +82,9 @@
   align-items: center;
   padding: 16px;
   color: #6750A4;
-  border-top: 1px solid rgba(103, 80, 164, 0.12);
+  /* Border color matches the font (currentColor) instead of a muted outline, so the divider
+     belongs to the same visual family as the labels next to it. */
+  border-top: 1px solid currentColor;
 }
 
 .az-dropdown-menu-footer-item {

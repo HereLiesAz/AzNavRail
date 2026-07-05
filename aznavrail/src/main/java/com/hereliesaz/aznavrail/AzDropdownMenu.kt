@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
@@ -430,23 +431,33 @@ private fun AzDropdownMenuRow(
     ) {
         androidx.compose.foundation.layout.BoxWithConstraints(Modifier.weight(1f)) {
             val availableWidthPx = with(density) { maxWidth.toPx() }
+            val baseFontSizePx = with(density) {
+                val fs = mergedStyle.fontSize
+                if (fs.isSpecified) fs.toPx()
+                else MaterialTheme.typography.titleLarge.fontSize.toPx()
+            }
             Column(horizontalAlignment = columnAlignment) {
                 text.split('\n').forEach { line ->
-                    val kerning = if (!justifyMenuItems || line.length < 2) androidx.compose.ui.unit.TextUnit.Unspecified
+                    val (scale, kerningPx) = if (!justifyMenuItems || line.length < 2) 1f to 0f
                     else {
                         val naturalWidthPx = try {
                             textMeasurer.measure(text = line, style = mergedStyle).size.width.toFloat()
                         } catch (_: Throwable) { availableWidthPx }
-                        val extraPx = availableWidthPx - naturalWidthPx
-                        if (extraPx <= 0f) androidx.compose.ui.unit.TextUnit.Unspecified
-                        else with(density) { (extraPx / (line.length - 1)).toSp() }
+                        com.hereliesaz.aznavrail.internal.solveHybridJustify(
+                            naturalWidthPx = naturalWidthPx,
+                            rowWidthPx = availableWidthPx,
+                            charCount = line.length,
+                            baseFontSizePx = baseFontSizePx,
+                        )
                     }
+                    val scaledFontSize = if (scale == 1f) mergedStyle.fontSize
+                        else with(density) { (baseFontSizePx * scale).toSp() }
                     Text(
                         text = line,
-                        style = mergedStyle,
+                        style = mergedStyle.copy(fontSize = scaledFontSize),
                         color = if (enabled) textColor else textColor.copy(alpha = 0.5f),
                         textAlign = textAlign,
-                        letterSpacing = kerning,
+                        letterSpacing = with(density) { kerningPx.toSp() },
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -910,7 +921,7 @@ fun AzDropdownMenu(
                         }
                         // The expanded-menu design carries the rail's footer (About / Feedback / @HereLiesAz).
                         if (config.design == AzDropdownDesign.MENU && config.showFooter) {
-                            AzDivider()
+                            AzDivider(color = MaterialTheme.colorScheme.primary)
                             AzDropdownFooter(
                                 repoUrl = effectiveRepoUrl,
                                 onAboutClick = if (config.inAppAbout && effectiveRepoUrl.isNotBlank()) {
