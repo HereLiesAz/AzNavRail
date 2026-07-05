@@ -288,8 +288,11 @@ const AzDropdownMenu = ({
             <div
               className="az-dropdown-menu-footer az-nav-rail__footer-accordion"
               style={{
-                // Footer arrives one stagger tick AFTER the last item begins — the next beat.
-                animationDelay: `${Math.max(0, React.Children.count(children)) * entranceStaggerMs}ms`,
+                // Footer arrives one stagger tick AFTER the last item begins — the next beat. Use
+                // `React.Children.toArray(...).length` (not `React.Children.count`) so conditional
+                // `{cond && <Item/>}` children with a falsy `cond` don't inflate the delay by
+                // counting as 1 each.
+                animationDelay: `${Math.max(0, React.Children.toArray(children).length) * entranceStaggerMs}ms`,
                 animationDuration: `${entranceDurationMs}ms`,
               }}
             >

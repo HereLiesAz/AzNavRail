@@ -101,9 +101,8 @@ draggable/relocatable items. The default **Turnstile** entrance is a pure 90° `
 hinged on the docked edge — no fade, no vertical slide. Because the stagger (60 ms) is much smaller
 than the duration (720 ms), items overlap heavily: the next item starts ~60 ms after the previous
 begins while the previous is still animating. The footer (About / Feedback / @HereLiesAz) then
-**unfolds like an accordion** from the top edge, starting the moment the last item begins
-(delay = `count * staggerMs` — one tick past the last item's start, making the footer the natural
-next beat in the cascade).
+**unfolds like an accordion** from the top edge, starting one stagger tick after the last item
+begins (delay = `count * staggerMs` — the footer is the natural next beat in the cascade rhythm).
 
 In React, the rail reads these from `settings` (`itemEntrance`, `itemExit`, `titleEntrance`, …).
 On **native React Native** the hinge is emulated via a `translateX ±(width/2)` correction around
