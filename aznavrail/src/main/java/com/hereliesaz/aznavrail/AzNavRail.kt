@@ -856,8 +856,9 @@ fun AzNavRail(
                     // the last item's own kinetic entrance kicks off. Use the same top-level count the
                     // menu itself uses for its staggered entrance.
                     val footerMenuCount = scope.navItems.count { !it.isSubItem }
+                    val dividerColor = scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
                     Column {
-                        AzDivider()
+                        AzDivider(color = dividerColor)
                         Footer(
                             appName = appName,
                             onToggle = { toggleExpanded() },

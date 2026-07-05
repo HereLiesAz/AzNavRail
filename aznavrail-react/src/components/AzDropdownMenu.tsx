@@ -20,6 +20,9 @@ import { AzButtonShape, AzDockingSide, AzDropdownDesign, AzEasing, AzEntrance, A
 import { AzNavRailDefaults } from '../AzNavRailDefaults';
 import { AboutOverlay } from './AboutOverlay';
 import { AzKineticItem, useAzClosing } from './AzKinetics';
+import { solveHybridJustify } from '../util/AzJustify';
+
+const DROPDOWN_BASE_FONT_PX = 16;
 
 /** Context the menu provides so item components can navigate, fold the menu, and match its design. */
 interface AzDropdownMenuContextValue {
@@ -171,10 +174,15 @@ export const AzDropdownItem: React.FC<AzDropdownItemProps> = ({
       const w = e.nativeEvent.layout.width;
       if (w && Math.abs(w - naturalWidth) > 0.5) setNaturalWidth(w);
     };
+    // Hybrid kerning + font-scale justify — see src/util/AzJustify.
     let letterSpacing = 0;
-    if (justify && text.length >= 2 && availableWidth > naturalWidth && naturalWidth > 0) {
-      letterSpacing = (availableWidth - naturalWidth) / (text.length - 1);
+    let fontScale = 1;
+    if (justify && text.length >= 2 && availableWidth > 0 && naturalWidth > 0) {
+      const solved = solveHybridJustify(naturalWidth, availableWidth, text.length, DROPDOWN_BASE_FONT_PX);
+      fontScale = solved.scale;
+      letterSpacing = solved.letterSpacing;
     }
+    const scaledFontSize = DROPDOWN_BASE_FONT_PX * fontScale;
     return (
       <TouchableOpacity
         style={styles.menuRow}
@@ -198,7 +206,7 @@ export const AzDropdownItem: React.FC<AzDropdownItemProps> = ({
         <Text
           style={[
             styles.menuRowText,
-            { color: textColor || color || '#6750A4', opacity: enabled ? 1 : 0.5, textAlign, letterSpacing },
+            { color: textColor || color || '#6750A4', opacity: enabled ? 1 : 0.5, textAlign, letterSpacing, fontSize: scaledFontSize },
             itemTextStyle,
           ]}
         >

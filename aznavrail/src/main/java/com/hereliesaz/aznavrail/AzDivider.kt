@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -21,12 +21,14 @@ import androidx.compose.ui.unit.dp
  * This composable is designed to be a direct replacement for `HorizontalDivider` or
  * `VerticalDivider` when the orientation needs to be dynamic.
  *
- * The default styling matches the divider used in the `AzNavRail` footer.
+ * The default color follows the surrounding **font color** ([LocalContentColor]) so the divider
+ * belongs to the same visual family as the text next to it — not a muted outline. The rail and the
+ * standalone `AzDropdownMenu` override this to the accent color at their divider call sites.
  *
  * @param modifier The modifier to be applied to the divider.
  * @param thickness The thickness of the divider line. Defaults to `1.dp`.
- * @param color The color of the divider line. Defaults to a semi-transparent outline color
- * from the `MaterialTheme`.
+ * @param color The color of the divider line. Defaults to [LocalContentColor.current] — the
+ * ambient text/foreground color inherited from the enclosing composition.
  * @param horizontalPadding The padding applied to the left and right of the divider.
  * Defaults to `16.dp`.
  * @param verticalPadding The padding applied to the top and bottom of the divider.
@@ -36,7 +38,7 @@ import androidx.compose.ui.unit.dp
 fun AzDivider(
     modifier: Modifier = Modifier,
     thickness: Dp = 1.dp,
-    color: Color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+    color: Color = LocalContentColor.current,
     horizontalPadding: Dp = 16.dp,
     verticalPadding: Dp = 8.dp
 ) {

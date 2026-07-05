@@ -183,9 +183,14 @@ azConfig(
 ```
 
 `SIDE` alignment: labels use `TextAlign.Start` when docked LEFT and `TextAlign.End` when docked
-RIGHT. `justifyMenuItems` measures each label's natural width, computes the extra pixels needed to
-fill the row, and applies it as `letterSpacing` — a Word-style full justification. Labels shorter
-than 2 characters, or already at/past the row width, are skipped.
+RIGHT. `justifyMenuItems` runs a **hybrid kerning + font-scale solver**: it first tries to fill the
+row with `letterSpacing` alone, but never exceeds `α · fontSize` of tracking (default `α = 0.15`);
+once kerning saturates, the font itself scales up so both letter-spacing and font-scale converge on
+the mix that lands the label exactly on the row width. Font growth is capped at `1.5×`. Labels
+shorter than 2 characters, or already at/past the row width, are skipped. `AzDivider` also picks up
+the same font color as the surrounding text (via `LocalContentColor` on Compose and `currentColor`
+on the web), so the divider belongs to the same visual family as the labels next to it — not a
+muted outline.
 
 **React Implementation:** identical fields on `AzNavRailSettings` and on the `AzDropdownMenu` props:
 `dimBehindMenu`, `dimBehindMenuAlpha`, `menuItemAlignment: 'center' | 'side'`, `justifyMenuItems`.

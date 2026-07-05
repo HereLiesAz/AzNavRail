@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, LayoutChangeEvent } from 'react-native';
 import { AzDockingSide, AzNavItem } from '../types';
+import { solveHybridJustify } from '../util/AzJustify';
+
+const BASE_FONT_PX = 16;
 
 /** Internal props for `RailMenuItem` — one row inside the expanded-menu scroll view. */
 interface RailMenuItemProps {
@@ -111,10 +114,21 @@ export const RailMenuItem: React.FC<RailMenuItemProps> = ({
         const w = e.nativeEvent.layout.width;
         if (w && Math.abs(w - naturalWidth) > 0.5) setNaturalWidth(w);
     };
+    // Hybrid justify: try kerning up to α·fontSize, then grow the font past that limit so both
+    // letter-spacing and font-scale reach a stable mix that fills the row. See ../util/AzJustify.
     let letterSpacing = 0;
-    if (justifyMenuItems && displayText && displayText.length >= 2 && availableWidth > naturalWidth && naturalWidth > 0) {
-        letterSpacing = (availableWidth - naturalWidth) / (displayText.length - 1);
+    let fontScale = 1;
+    if (justifyMenuItems && displayText && displayText.length >= 2 && availableWidth > 0 && naturalWidth > 0) {
+        const { scale, letterSpacing: ls } = solveHybridJustify(
+            naturalWidth,
+            availableWidth,
+            displayText.length,
+            BASE_FONT_PX,
+        );
+        fontScale = scale;
+        letterSpacing = ls;
     }
+    const scaledFontSize = BASE_FONT_PX * fontScale;
 
     return (
         <View>
@@ -141,6 +155,7 @@ export const RailMenuItem: React.FC<RailMenuItemProps> = ({
                             color: item.textColor ?? item.color ?? '#000000',
                             textAlign,
                             letterSpacing,
+                            fontSize: scaledFontSize,
                         },
                         textStyle,
                     ]}

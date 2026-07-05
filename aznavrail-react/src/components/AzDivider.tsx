@@ -16,7 +16,12 @@ export interface AzDividerProps {
  */
 export const AzDivider: React.FC<AzDividerProps> = ({
   thickness = 1,
-  color = 'rgba(0, 0, 0, 0.12)', // Default Material outline copy(alpha = 0.5f) equivalent approx
+  // Default is `currentColor` on web (react-native-web forwards it to CSS, so the divider inherits
+  // the surrounding font color and belongs to the same visual family as the text next to it). On
+  // native iOS/Android, `View.backgroundColor` does NOT understand CSS keywords and would throw at
+  // runtime, so we fall back to a subtle outline color there. The rail's/dropdown's own call sites
+  // pass their accent explicitly, so this native fallback only affects standalone uses.
+  color = typeof document !== 'undefined' ? 'currentColor' : 'rgba(0, 0, 0, 0.12)',
   horizontalPadding = 16,
   verticalPadding = 8,
 }) => {

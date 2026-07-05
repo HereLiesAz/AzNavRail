@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased — follow-up (hybrid justify + AzDivider color)
+
+### Changed
+- **`justifyMenuItems` now uses a hybrid kerning + font-scale solver** (`src/util/AzJustify.ts` on
+  React; `internal/AzJustify.kt` on Compose). Kerning fills the row up to `α · fontSize` of
+  tracking (`α = 0.15`); when saturated, the font scales up so both letter-spacing and font-size
+  converge on the mix that lands the label exactly on the row width. Font growth capped at `1.5×`.
+  Fixes the previous pure-letter-spacing pass over-spreading short labels.
+- **`AzDivider` inherits the font color.** New default is `LocalContentColor.current` on Compose,
+  `currentColor` on the web (React and plain-JSX builds). The rail's expanded-menu divider, the
+  About-page split divider, and the standalone `AzDropdownMenu`'s footer divider all pass their
+  accent color explicitly so the divider belongs to the same visual family as the labels next to
+  it — never a muted outline.
+
 ## Unreleased
 
 Windows-Phone-7 fidelity pass: the signature kinetic-typography entrance is redesigned end-to-end,

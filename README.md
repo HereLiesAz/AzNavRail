@@ -566,9 +566,15 @@ unaffected.
   dim scrim over the rest of the app while the drawer is open. Tapping the scrim collapses it.
 - **`menuItemAlignment`** (`SIDE` default | `CENTER`) — labels hug the docked edge instead of
   center-aligning. `SIDE` = `TextAlign.Start` when docked LEFT, `TextAlign.End` when RIGHT.
-- **`justifyMenuItems`** (default `true`) — measures each label's natural width and applies a
-  computed `letterSpacing` so it fills the row edge-to-edge (Word-style justify). Single-character
-  labels and labels wider than the row are skipped.
+- **`justifyMenuItems`** (default `true`) — runs a **hybrid kerning + font-scale solver**: fills
+  the row with `letterSpacing` alone until tracking would exceed `α · fontSize` (`α = 0.15`); once
+  the cap hits, the font scales up so both letter-spacing and font-size converge on the mix that
+  lands the label exactly on the row width. Font growth is capped at `1.5×`. Short/overflowing
+  labels are skipped.
+- **`AzDivider`** now defaults its color to the surrounding **font** color
+  (`LocalContentColor.current` on Compose, `currentColor` on the web), and the rail/dropdown/About
+  call sites pass their accent explicitly — the divider belongs to the same visual family as the
+  labels next to it, never a muted outline.
 
 ```kotlin
 azConfig(

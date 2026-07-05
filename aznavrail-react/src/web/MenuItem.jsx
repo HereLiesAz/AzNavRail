@@ -1,5 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './MenuItem.css';
+import { solveHybridJustify } from '../util/AzJustify';
+
+const WEB_BASE_FONT_PX = 16;
 
 /**
  * A menu item component for the expanded navigation rail (plain-web build).
@@ -118,23 +121,31 @@ const MenuItem = ({
 
   const rowRef = useRef(null);
   const measureRef = useRef(null);
+  // Hybrid kerning + font-scale justify — see ../util/AzJustify.
   const [letterSpacing, setLetterSpacing] = useState(0);
+  const [fontScale, setFontScale] = useState(1);
   const label = (isToggle ? (isChecked ? toggleOnText : toggleOffText) : (isCycler ? selectedOption : text)) || '';
   useEffect(() => {
-    if (!justifyMenuItems || !label || label.length < 2) { setLetterSpacing(0); return; }
+    if (!justifyMenuItems || !label || label.length < 2) {
+      setLetterSpacing(0); setFontScale(1); return;
+    }
     const row = rowRef.current;
     const meas = measureRef.current;
     if (!row || !meas) return;
     const rowWidth = row.getBoundingClientRect().width - paddingLeft - 16;
     const natural = meas.getBoundingClientRect().width;
-    if (rowWidth > natural && natural > 0) {
-      setLetterSpacing((rowWidth - natural) / (label.length - 1));
-    } else {
-      setLetterSpacing(0);
-    }
+    const solved = solveHybridJustify(natural, rowWidth, label.length, WEB_BASE_FONT_PX);
+    setLetterSpacing(solved.letterSpacing);
+    setFontScale(solved.scale);
   }, [label, justifyMenuItems, paddingLeft]);
 
-  const labelStyle = { textAlign, letterSpacing: `${letterSpacing}px`, flex: 1, color: textColor || undefined };
+  const labelStyle = {
+    textAlign,
+    letterSpacing: `${letterSpacing}px`,
+    fontSize: `${WEB_BASE_FONT_PX * fontScale}px`,
+    flex: 1,
+    color: textColor || undefined,
+  };
 
   return (
     <div

@@ -30,6 +30,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.navigation.NavController
@@ -219,8 +220,8 @@ internal fun MenuItem(
         ) {
             val lines = textToShow.split('\n')
             val mergedStyle = MaterialTheme.typography.titleLarge.merge(textStyle)
-            // Measure natural width per line and compute a per-line letter-spacing that fills the row
-            // (kerning-justify). Single-character or overflowing lines are skipped.
+            // Hybrid justify: kerning up to `α·fontSize`, then grow the font past that limit so both
+            // letter-spacing and font-scale reach a stable mix that fills the row. See [solveHybridJustify].
             val textMeasurer = rememberTextMeasurer()
             val density = LocalDensity.current
 
@@ -230,24 +231,33 @@ internal fun MenuItem(
             ) {
                 androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth()) {
                     val availableWidthPx = with(density) { maxWidth.toPx() }
+                    val baseFontSizePx = with(density) {
+                        mergedStyle.fontSize.takeIf { it.isSpecified }?.toPx()
+                            ?: MaterialTheme.typography.titleLarge.fontSize.toPx()
+                    }
                     Column(horizontalAlignment = columnAlignment) {
                         lines.forEach { line ->
-                            val kerning = if (!justifyMenuItems || line.length < 2) 0.sp
+                            val (scale, kerningPx) = if (!justifyMenuItems || line.length < 2) 1f to 0f
                             else {
                                 val naturalWidthPx = try {
                                     textMeasurer.measure(text = line, style = mergedStyle).size.width.toFloat()
                                 } catch (_: Throwable) { availableWidthPx }
-                                val extraPx = availableWidthPx - naturalWidthPx
-                                if (extraPx <= 0f) 0.sp
-                                else with(density) { (extraPx / (line.length - 1)).toSp() }
+                                solveHybridJustify(
+                                    naturalWidthPx = naturalWidthPx,
+                                    rowWidthPx = availableWidthPx,
+                                    charCount = line.length,
+                                    baseFontSizePx = baseFontSizePx,
+                                )
                             }
+                            val scaledFontSize = if (scale == 1f) mergedStyle.fontSize
+                                else with(density) { (baseFontSizePx * scale).toSp() }
                             Text(
                                 text = line,
-                                style = mergedStyle,
+                                style = mergedStyle.copy(fontSize = scaledFontSize),
                                 color = textColor,
                                 modifier = Modifier.fillMaxWidth(),
                                 textAlign = textAlign,
-                                letterSpacing = kerning,
+                                letterSpacing = with(density) { kerningPx.toSp() },
                             )
                         }
                     }

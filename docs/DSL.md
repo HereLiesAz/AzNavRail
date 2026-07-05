@@ -37,9 +37,13 @@ fun azConfig(
 The menu-drawer knobs only affect the **expanded-menu drawer** labels (the standalone
 `AzDropdownMenu` mirrors them on its own `azConfig`). Small rail-button labels are unaffected.
 `SIDE` alignment resolves to `TextAlign.Start` when docked LEFT and `TextAlign.End` when RIGHT.
-`justifyMenuItems` measures each label's natural width and computes an equal `letterSpacing` so it
-fills the row edge-to-edge (Word-style justify); single-character or already-wider-than-row labels
-are skipped.
+`justifyMenuItems` runs a **hybrid kerning + font-scale solver**: it fills the row with
+`letterSpacing` alone until tracking would exceed `α · fontSize` (default `α = 0.15`); once the
+kerning cap is hit, the font scales up so both letter-spacing and font-size converge on the mix
+that lands the label exactly on the row width. Font growth is capped at `1.5×`. Labels shorter
+than 2 characters, or already at/past the row width, are skipped. `AzDivider`'s default color is
+now `LocalContentColor.current` on Compose and `currentColor` on the web, so the divider matches
+the surrounding font — never a muted outline.
 
 `appRepositoryUrl` is an **optional** override for the About reader's repo. Blank (the default)
 auto-derives the repo from the app **namespace** on Android: `com.<owner>.<repo>` →

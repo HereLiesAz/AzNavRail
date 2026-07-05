@@ -334,7 +334,7 @@ const AzNavRail = ({
 
   const renderMenuItem = (item, depth = 0, index = 0, count = 1) => {
       if (item.isDivider) {
-          return <AzDivider key={item.id} />;
+          return <AzDivider key={item.id} color={activeColor || 'currentColor'} />;
       }
 
       const finalItem = item.isCycler
@@ -449,7 +449,7 @@ const AzNavRail = ({
             <div className={`rail ${packRailButtons ? 'packed' : ''}`} style={{overflowY: 'auto', maxHeight: '100%'}}>
               {effectiveRailItems
                 .map(item => {
-                  if (item.isDivider) return <AzDivider key={item.id} />;
+                  if (item.isDivider) return <AzDivider key={item.id} color={activeColor || 'currentColor'} />;
 
                   const finalItem = item.isCycler
                     ? { ...item, selectedOption: cyclerStates[item.id]?.displayedOption }
