@@ -727,7 +727,9 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   };
 
   const renderFooter = () => {
-      const footerColor = activeColor || '#6200ee';
+      // Use `config.activeColor` so DSL overrides (via `dslOverrides.activeColor`) win over the raw
+      // prop — matches the pattern used everywhere else the rail reads its theming.
+      const footerColor = config.activeColor || '#6200ee';
 
       const handleUndock = () => {
         if (enableRailDragging) {
@@ -883,7 +885,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                 <ScrollView style={styles.menuContent}>
                     {menuItems.map((item, index) => {
                          if (item.isDivider) {
-                             return <View key={item.id} style={[styles.divider, { backgroundColor: activeColor || '#6200ee' }]} />;
+                             return <View key={item.id} style={[styles.divider, { backgroundColor: config.activeColor || '#6200ee' }]} />;
                          }
                          return renderMenuItem(item, index, menuItems.length, isExpanded);
                     })}
