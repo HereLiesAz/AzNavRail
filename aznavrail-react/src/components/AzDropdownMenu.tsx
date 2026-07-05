@@ -474,7 +474,7 @@ const AzDropdownFooter: React.FC<{
       const a = Animated.timing(anim, {
         toValue: 1,
         duration: durationMs,
-        delay: Math.max(0, menuItemCount - 1) * staggerMs,
+        delay: Math.max(0, menuItemCount) * staggerMs,
         easing: RNEasing.bezier(...AzEasing.Wp7Decelerate),
         useNativeDriver: true,
       });

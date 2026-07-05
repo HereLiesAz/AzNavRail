@@ -504,7 +504,8 @@ private fun AzDropdownFooter(
     LaunchedEffect(visible) {
         val spec = tween<Float>(durationMillis = durationMs, easing = easing)
         if (visible) {
-            delay((menuItemCount - 1).coerceAtLeast(0).toLong() * staggerMs)
+            // One extra stagger tick beyond the last item's start — the footer is the next beat.
+            delay(menuItemCount.coerceAtLeast(0).toLong() * staggerMs)
             launch { scaleY.animateTo(1f, spec) }
             launch { fade.animateTo(1f, spec) }
         } else {

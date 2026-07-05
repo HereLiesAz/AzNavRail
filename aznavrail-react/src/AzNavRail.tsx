@@ -55,8 +55,9 @@ interface AzNavRailProps extends AzNavRailSettings {
 }
 
 /**
- * Unfolds children downward (scaleY 0→1 + fade) with an accordion motion. Kicks off when the LAST
- * menu item starts its own kinetic entrance, i.e. after `(menuItemCount - 1) * staggerMs`.
+ * Unfolds children downward (scaleY 0→1 + fade) with an accordion motion. Kicks off one stagger
+ * tick AFTER the last menu item starts its own kinetic entrance — the footer is the natural next
+ * beat in the cascade, scheduled `menuItemCount * staggerMs` after the drawer opens.
  */
 const FooterAccordion: React.FC<{
   visible: boolean;
@@ -71,7 +72,7 @@ const FooterAccordion: React.FC<{
       const a = Animated.timing(anim, {
         toValue: 1,
         duration: durationMs,
-        delay: Math.max(0, menuItemCount - 1) * staggerMs,
+        delay: Math.max(0, menuItemCount) * staggerMs,
         easing: RNEasing.bezier(...AzEasing.Wp7Decelerate),
         useNativeDriver: true,
       });
