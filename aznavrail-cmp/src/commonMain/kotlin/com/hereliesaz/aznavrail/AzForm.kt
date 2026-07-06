@@ -1,0 +1,254 @@
+package com.hereliesaz.aznavrail
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.snapshots.SnapshotStateMap
+import androidx.compose.runtime.toMutableStateMap
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+
+/**
+ * Scope for defining the structure of an [AzForm].
+ */
+class AzFormScope {
+    internal val entries = mutableListOf<AzFormEntry>()
+
+    /**
+     * Adds a text entry field to the form.
+     *
+     * @param entryName The unique name key for this field, used in the result map.
+     * @param hint The hint text to display when the field is empty.
+     * @param multiline Whether the field supports multiple lines of text.
+     * @param secret Whether the field is for sensitive input (password), masking the text.
+     * @param leadingIcon An optional composable to display at the start of the field.
+     * @param isError Whether the field is in an error state.
+     * @param enabled Whether the field is enabled and interactive.
+     * @param keyboardOptions Custom keyboard configuration.
+     * @param keyboardActions Custom keyboard actions.
+     */
+    fun entry(
+        entryName: String,
+        hint: String,
+        multiline: Boolean = false,
+        secret: Boolean = false,
+        leadingIcon: @Composable (() -> Unit)? = null,
+        isError: Boolean = false,       
+        enabled: Boolean = true,
+        keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+        keyboardActions: KeyboardActions = KeyboardActions.Default,
+        initialValue: String = ""
+    ) {
+        entries.add(AzFormEntry(
+            entryName = entryName,
+            hint = hint,
+            multiline = multiline,
+            secret = secret,
+            leadingIcon = leadingIcon,
+            isError = isError,
+            keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions,
+            enabled = enabled,
+            initialValue = initialValue
+        ))
+    }
+}
+
+internal data class AzFormEntry(
+    val entryName: String,
+    val hint: String,
+    val multiline: Boolean,
+    val secret: Boolean,
+    val leadingIcon: @Composable (() -> Unit)?,
+    val isError: Boolean,
+    val keyboardOptions: KeyboardOptions,
+    val keyboardActions: KeyboardActions,
+    val enabled: Boolean,
+    val initialValue: String = ""
+)
+
+/**
+ * A container composable that groups multiple [AzTextBox] fields into a single form.
+ *
+ * The form manages the state of all its fields and provides a single submit action.
+ * It automatically handles focus traversal (Next) and submission (Send) for the last field.
+ *
+ * @param formName A unique name for the form, used as a context for autocomplete history.
+ * @param modifier The modifier to be applied to the form container.
+ * @param outlined Whether the text fields in the form should be outlined.
+ * @param outlineColor The color of the outlines and icons.
+ * @param trailingIcon An optional composable to display at the end of every text box in the form.
+ * @param keyboardOptions Default keyboard options for all fields in the form.
+ * @param keyboardActions Default keyboard actions for all fields in the form.
+ * @param onSubmit A callback invoked when the form is submitted, providing a map of [entryName] to value.
+ * @param submitButtonContent A composable for the submit button's content.
+ * @param content The DSL block to define form entries.
+ *
+ * @see AzTextBox
+ * @see AzFormScope
+ */
+@Composable
+fun AzForm(
+    formName: String,
+    modifier: Modifier = Modifier,
+    outlined: Boolean = true,
+    outlineColor: Color = MaterialTheme.colorScheme.primary,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    onSubmit: (Map<String, String>) -> Unit,
+    submitButtonContent: @Composable () -> Unit = { Text("Submit") },
+    content: AzFormScope.() -> Unit
+) {
+    val scope = remember(formName, content) { AzFormScope().apply(content) }
+    val focusManager = LocalFocusManager.current
+    val formData = rememberSaveable(
+        saver = listSaver<SnapshotStateMap<String, String>, Pair<String, String>>(
+            save = { it.toList() },
+            restore = { it.toMutableStateMap() }
+        )
+    ) {
+        mutableStateMapOf<String, String>().apply {
+            scope.entries.forEach { entry ->
+                this[entry.entryName] = entry.initialValue
+            }
+        }
+    }
+
+    Column(modifier = modifier) {
+        scope.entries.forEachIndexed { index, entry ->
+            // Determine ImeAction
+            val defaultImeAction = if (index == scope.entries.lastIndex) ImeAction.Send else ImeAction.Next
+            val imeAction = if (entry.keyboardOptions.imeAction == ImeAction.Default) {
+                if (keyboardOptions.imeAction == ImeAction.Default) defaultImeAction else keyboardOptions.imeAction
+            } else {
+                entry.keyboardOptions.imeAction
+            }
+
+            // Determine KeyboardActions
+            val finalKeyboardActions = if (entry.keyboardActions == KeyboardActions.Default && keyboardActions == KeyboardActions.Default) {
+                 if (imeAction == ImeAction.Next) {
+                     KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
+                 } else if (imeAction == ImeAction.Send) {
+                     KeyboardActions(onSend = { onSubmit(formData.toMap()) })
+                 } else {
+                     KeyboardActions.Default
+                 }
+            } else if (entry.keyboardActions != KeyboardActions.Default) {
+                entry.keyboardActions
+            } else {
+                keyboardActions
+            }
+
+            val finalKeyboardOptions = entry.keyboardOptions.copy(imeAction = imeAction)
+
+            if (index == scope.entries.lastIndex) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        FormEntryTextBox(
+                            entry = entry,
+                            value = formData[entry.entryName] ?: "",
+                            onValueChange = { formData[entry.entryName] = it },
+                            outlined = outlined,
+                            outlineColor = outlineColor,
+                            historyContext = formName,
+                            trailingIcon = trailingIcon,
+                            keyboardOptions = finalKeyboardOptions,
+                            keyboardActions = finalKeyboardActions
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    CompositionLocalProvider(LocalContentColor provides outlineColor) {
+                        // Restore 6.99 visual style (rounded) for submit button in form
+                        val shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                        Box(
+                            modifier = Modifier
+                                .clickable { onSubmit(formData.toMap()) }
+                                .background(AzTextBoxDefaults.getBackgroundColor().copy(alpha = AzTextBoxDefaults.getBackgroundOpacity()), shape)
+                                .then(
+                                    if (!outlined) {
+                                        Modifier.border(1.dp, outlineColor, shape)
+                                    } else {
+                                        Modifier
+                                    }
+                                )
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                        ) {
+                            submitButtonContent()
+                        }
+                    }
+                }
+            } else {
+                FormEntryTextBox(
+                    entry = entry,
+                    value = formData[entry.entryName] ?: "",
+                    onValueChange = { formData[entry.entryName] = it },
+                    outlined = outlined,
+                    outlineColor = outlineColor,
+                    historyContext = formName,
+                    trailingIcon = trailingIcon,
+                    keyboardOptions = finalKeyboardOptions,
+                    keyboardActions = finalKeyboardActions
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun FormEntryTextBox(
+    entry: AzFormEntry,
+    value: String,
+    onValueChange: (String) -> Unit,
+    outlined: Boolean,
+    outlineColor: Color,
+    historyContext: String,
+    trailingIcon: @Composable (() -> Unit)?,
+    keyboardOptions: KeyboardOptions,
+    keyboardActions: KeyboardActions
+) {
+    AzTextBox(
+        value = value,
+        onValueChange = onValueChange,
+        historyContext = historyContext,
+        hint = entry.hint,
+        outlined = outlined,
+        multiline = entry.multiline,
+        secret = entry.secret,
+        leadingIcon = entry.leadingIcon,
+        trailingIcon = trailingIcon,
+        isError = entry.isError,
+        keyboardOptions = keyboardOptions,
+        keyboardActions = keyboardActions,
+        enabled = entry.enabled,
+        outlineColor = outlineColor,
+        submitButtonContent = null,
+        onSubmit = { /* Individual onSubmit is not used in a form context */ }
+    )
+}
