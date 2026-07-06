@@ -30,3 +30,33 @@ jobs:
       with:
         name: sample-app-debug
         path: SampleApp/build/outputs/apk/debug/*.apk
+
+  # Compile the Compose Multiplatform sibling module across the target families a Linux runner can
+  # build. iOS targets are intentionally omitted — Kotlin/Native cannot produce Apple binaries on
+  # Linux (they require a macOS runner); they still *configure* fine here, they just aren't compiled.
+  cmp-compile:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Compile commonMain (metadata)
+      run: ./gradlew :aznavrail-cmp:compileCommonMainKotlinMetadata
+
+    - name: Compile Android target
+      run: ./gradlew :aznavrail-cmp:compileDebugKotlinAndroid
+
+    - name: Compile Desktop (JVM) target
+      run: ./gradlew :aznavrail-cmp:desktopMainClasses
+
+    - name: Compile wasmJs target
+      run: ./gradlew :aznavrail-cmp:compileKotlinWasmJs
