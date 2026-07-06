@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased — cosmetic (Compose only: dissolve overlay on close)
+
+### Added
+- **Compose drawer + dropdown**: tapping a menu item / dropdown entry whose click closes the panel
+  now spawns a `DissolveOverlay` — a full-screen `Popup` that renders the item's label at its
+  captured window-space bounds, slides toward the middle of the screen, and fades to zero — while
+  the OTHER items run their normal bottom-up exit turnstile. The tapped item is skipped from the
+  exit render so its label doesn't animate in two places at once. Overlay duration + easing match
+  the drawer's own kinetic config, so the effect reads as one instrument in the same phrase as
+  the rest of the exit.
+
 ## Unreleased — polish (footer animation, divider color, @HereLiesAz alpha)
 
 ### Fixed
