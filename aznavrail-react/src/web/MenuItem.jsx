@@ -145,6 +145,12 @@ const MenuItem = ({
     fontSize: `${WEB_BASE_FONT_PX * fontScale}px`,
     flex: 1,
     color: textColor || undefined,
+    // Line breaks in menu labels are explicit-only. The solver's shrink branch scales oversized
+    // labels down; `whiteSpace: nowrap` locks the row to one visual line so the browser can't
+    // wrap "Generate" into "Generat / e".
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'clip',
   };
 
   return (

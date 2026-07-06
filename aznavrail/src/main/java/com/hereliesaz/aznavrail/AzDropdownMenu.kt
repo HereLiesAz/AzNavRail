@@ -58,6 +58,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
@@ -459,6 +460,11 @@ private fun AzDropdownMenuRow(
                         textAlign = textAlign,
                         letterSpacing = with(density) { kerningPx.toSp() },
                         modifier = Modifier.fillMaxWidth(),
+                        // Explicit-only line breaks; the solver's shrink branch handles oversized
+                        // labels by scaling the font down instead of wrapping mid-word.
+                        softWrap = false,
+                        maxLines = 1,
+                        overflow = TextOverflow.Clip,
                     )
                 }
             }

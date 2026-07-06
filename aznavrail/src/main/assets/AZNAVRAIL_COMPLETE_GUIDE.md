@@ -186,8 +186,10 @@ azConfig(
 RIGHT. `justifyMenuItems` runs a **hybrid kerning + font-scale solver**: it first tries to fill the
 row with `letterSpacing` alone, but never exceeds `α · fontSize` of tracking (default `α = 0.15`);
 once kerning saturates, the font itself scales up so both letter-spacing and font-scale converge on
-the mix that lands the label exactly on the row width. Font growth is capped at `1.5×`. Labels
-shorter than 2 characters, or already at/past the row width, are skipped. `AzDivider` also picks up
+the mix that lands the label exactly on the row width. Font growth is capped at `1.5×`. When the
+natural width **overflows** the row, the solver instead **shrinks** the font (`scale = rowWidth /
+naturalWidth`, clamped to `≥ 0.5×`) so the label fits on one line without breaking mid-word — line
+breaks are explicit-only (soft-wrap is disabled on drawer labels). `AzDivider` also picks up
 the same font color as the surrounding text (via `LocalContentColor` on Compose and `currentColor`
 on the web), so the divider belongs to the same visual family as the labels next to it — not a
 muted outline.

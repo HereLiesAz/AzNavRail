@@ -83,6 +83,10 @@ export const AzDropdownItem = ({
           textAlign,
           letterSpacing: `${letterSpacing}px`,
           fontSize: `${DROPDOWN_WEB_BASE_FONT_PX * fontScale}px`,
+          // Explicit-only line breaks — the solver's shrink branch handles overflow.
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'clip',
           animation: `azTurnstile ${entranceDurationMs}ms cubic-bezier(0.1, 0.9, 0.2, 1) ${index * entranceStaggerMs}ms both`,
           transformOrigin: `${hingeSide} center`,
           '--az-start-angle': `${dockingSide === 'RIGHT' ? -entranceStartAngle : entranceStartAngle}deg`,

@@ -29,6 +29,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.sp
@@ -258,6 +259,14 @@ internal fun MenuItem(
                                 modifier = Modifier.fillMaxWidth(),
                                 textAlign = textAlign,
                                 letterSpacing = with(density) { kerningPx.toSp() },
+                                // Line breaks in menu labels are explicit-only. Auto-wrap here
+                                // used to push a single character onto a new line ("Generat\ne"
+                                // for "Generate") when the natural width overflowed the row —
+                                // the solver's shrink branch now handles overflow by scaling the
+                                // font down, so we can safely lock the render to one line.
+                                softWrap = false,
+                                maxLines = 1,
+                                overflow = TextOverflow.Clip,
                             )
                         }
                     }

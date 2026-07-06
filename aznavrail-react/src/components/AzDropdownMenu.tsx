@@ -204,6 +204,7 @@ export const AzDropdownItem: React.FC<AzDropdownItemProps> = ({
           {text}
         </Text>
         <Text
+          numberOfLines={1}
           style={[
             styles.menuRowText,
             { color: textColor || color || '#6750A4', opacity: enabled ? 1 : 0.5, textAlign, letterSpacing, fontSize: scaledFontSize },

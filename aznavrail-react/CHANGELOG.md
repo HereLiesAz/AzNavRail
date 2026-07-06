@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased — bug fix (shrink oversized drawer labels; explicit-only line breaks)
+
+### Fixed
+- **Menu-drawer labels no longer auto-wrap mid-word.** The previous hybrid-justify solver bailed
+  out (returning `{scale: 1, letterSpacing: 0}`) whenever the label's natural width already met
+  or exceeded the row width, and the `Text`/`<Text>`/`<span>` then wrapped — producing ugly
+  "Generat / e", "Projec / t", "Setting / s" overhangs on narrow rails. The solver now has a
+  **shrink** branch: `scale = rowWidth / naturalWidth` (clamped `≥ 0.5×`) so oversized labels scale
+  down to fit on one line. Combined with `softWrap = false` + `maxLines = 1` on Compose,
+  `numberOfLines={1}` on React Native, and `white-space: nowrap` + `overflow: hidden` on the plain
+  web, **line breaks in drawer labels are now explicit-only** (a literal `\n` still splits into
+  multiple rows, but the browser/text engine will never insert one on its own).
+
 ## Unreleased — follow-up (hybrid justify + AzDivider color)
 
 ### Changed

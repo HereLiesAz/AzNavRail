@@ -148,6 +148,10 @@ export const RailMenuItem: React.FC<RailMenuItemProps> = ({
                     {displayText}
                 </Text>
                 <Text
+                    numberOfLines={1}
+                    // Line breaks in menu labels are explicit-only; the solver shrinks oversized
+                    // labels via `fontScale`, so `numberOfLines={1}` locks the row to one line
+                    // and clips only when even the min-scale doesn't fit.
                     style={[
                         styles.menuItemText,
                         {
