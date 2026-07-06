@@ -19,6 +19,7 @@ robolectric = "4.16.1"
 ksp = "2.3.8"
 kotlinpoet = "2.3.0"
 composeMultiplatform = "1.11.1"
+activityComposeCmp = "1.11.0"
 
 [libraries]
 aznavrail = { group = "com.github.HereLiesAz", name = "AzNavRail", version.ref = "aznavrail" }

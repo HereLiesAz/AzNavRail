@@ -16,6 +16,7 @@ version = System.getenv("JITPACK_VERSION") ?: libs.versions.aznavrail.get()
 // warnings as script errors, so declaring the coordinates explicitly avoids the whole class of
 // script-compilation failures.
 val cmpVersion = libs.versions.composeMultiplatform.get()
+val activityComposeCmpVersion = libs.versions.activityComposeCmp.get()
 
 kotlin {
     jvmToolchain(17)
@@ -41,6 +42,9 @@ kotlin {
                 implementation("org.jetbrains.compose.material3:material3:$cmpVersion")
                 implementation("org.jetbrains.compose.ui:ui:$cmpVersion")
                 implementation("org.jetbrains.compose.components:components-resources:$cmpVersion")
+                // JetBrains multiplatform fork of androidx.activity — provides BackHandler in
+                // commonMain across every target.
+                implementation("org.jetbrains.androidx.activity:activity-compose:$activityComposeCmpVersion")
             }
         }
     }
