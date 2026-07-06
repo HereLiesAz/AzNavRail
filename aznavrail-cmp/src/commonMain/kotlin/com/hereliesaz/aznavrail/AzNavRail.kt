@@ -340,8 +340,13 @@ fun AzNavRail(
     LaunchedEffect(scope.navItems) {
         scope.navItems.forEach { item ->
             if (item.isCycler) {
-                cyclerStates.putIfAbsent(item.id, CyclerTransientState(item.selectedOption ?: ""))
-                scope.transientCyclerOptions.putIfAbsent(item.id, item.selectedOption ?: "")
+                // putIfAbsent is a JVM-only Map default method; use containsKey guards for KMP.
+                if (!cyclerStates.containsKey(item.id)) {
+                    cyclerStates[item.id] = CyclerTransientState(item.selectedOption ?: "")
+                }
+                if (!scope.transientCyclerOptions.containsKey(item.id)) {
+                    scope.transientCyclerOptions[item.id] = item.selectedOption ?: ""
+                }
             }
             if (item.isHost) {
                 // Rising-edge auto-expand: expand when initiallyExpanded becomes true, then leave it alone.

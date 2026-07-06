@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.navigation.NavHostController
 
 /**
  * CompositionLocal that signals whether [AzNavRail] is correctly nested inside `AzHostActivityLayout`.
@@ -34,6 +35,13 @@ val LocalAzNavHostScope = staticCompositionLocalOf<AzNavHostScopeImpl?> { null }
  * that the rail's composables read directly; consumers who want the full DSL host it themselves.
  */
 class AzNavHostScopeImpl {
+    /**
+     * The active [NavHostController], if the consumer wires one. The Android sibling's host always
+     * supplies this; on CMP it's optional — the dropdown and rail tolerate a null controller (they
+     * simply skip route-based navigation). Consumers set it after `rememberNavController()`.
+     */
+    var navController: NavHostController? = null
+
     var helpVisible: Boolean by mutableStateOf(false)
         private set
     var aboutVisible: Boolean by mutableStateOf(false)
@@ -45,7 +53,7 @@ class AzNavHostScopeImpl {
     var helpOwnerId: String? by mutableStateOf(null)
         private set
 
-    fun showHelp(id: String) {
+    fun showHelp(id: String?) {
         helpOwnerId = id
         helpVisible = true
     }

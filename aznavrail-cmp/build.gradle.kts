@@ -30,11 +30,14 @@ kotlin {
 
     jvm("desktop")
 
-    // iosX64 (the Intel-Mac iOS simulator) is intentionally omitted — Coil 3 no longer publishes an
-    // iosX64 variant, and modern iOS dev uses Apple-Silicon simulators (iosSimulatorArm64) + real
-    // devices (iosArm64). Both of those resolve every dependency in use.
-    iosArm64()
-    iosSimulatorArm64()
+    // iOS targets are intentionally omitted for now. The ported UI uses Material icons
+    // (`androidx.compose.material.icons.*`) pervasively — hamburger, password-visibility toggle,
+    // dropdown arrow, back, check — and `org.jetbrains.compose.material:material-icons-extended`
+    // publishes android/desktop/wasmJs but NOT iOS (the androidx material-icons libraries are
+    // deprecated and frozen without iOS support). Supporting iOS would require replacing every
+    // `Icons.*` usage with an inlined `ImageVector` or adopting a maintained multiplatform icon
+    // library — a dedicated follow-up. Android + Desktop + wasmJs all resolve every dependency and
+    // share the same source, which is the multiplatform win this port delivers today.
 
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
@@ -47,6 +50,7 @@ kotlin {
                 implementation(compose.runtime)
                 implementation(compose.foundation)
                 implementation(compose.material3)
+                implementation(compose.materialIconsExtended)
                 implementation(compose.ui)
                 implementation(compose.components.resources)
                 // Coil 3 — multiplatform image loader (replaces Android-only Coil 2 in the CMP
