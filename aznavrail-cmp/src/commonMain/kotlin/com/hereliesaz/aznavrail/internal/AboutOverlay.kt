@@ -1,6 +1,5 @@
 package com.hereliesaz.aznavrail.internal
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -94,7 +93,7 @@ internal fun AboutOverlay(
     val safe = LocalAzSafeZones.current
     var selected by remember { mutableStateOf<AzDocEntry?>(null) }
 
-    BackHandler(enabled = true) { if (selected != null) selected = null else onDismiss() }
+    AzBackHandler(enabled = true) { if (selected != null) selected = null else onDismiss() }
 
     val docs by produceState<DocsUi>(initialValue = DocsUi.Loading, repoUrl) {
         value = GithubDocsRepository.listDocs(repoUrl).fold(

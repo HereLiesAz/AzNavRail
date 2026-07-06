@@ -22,8 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.boundsInWindow
@@ -69,9 +69,11 @@ internal fun NestedRail(
     rotationDegrees: Float = 0f,
     onHostExpandedChange: ((String, Boolean) -> Unit)? = null
 ) {
-    val configuration = LocalConfiguration.current
-    val maxH = (configuration.screenHeightDp * 0.8f).dp
-    val maxW = (configuration.screenWidthDp * 0.8f).dp
+    // Window size in px → 80% caps in Dp (LocalConfiguration is Android-only).
+    val density = LocalDensity.current
+    val containerSize = LocalWindowInfo.current.containerSize
+    val maxH = with(density) { (containerSize.height * 0.8f).toDp() }
+    val maxW = with(density) { (containerSize.width * 0.8f).toDp() }
     val hostStates = remember { mutableStateMapOf<String, Boolean>() }
 
     val surfaceShape = RoundedCornerShape(16.dp)

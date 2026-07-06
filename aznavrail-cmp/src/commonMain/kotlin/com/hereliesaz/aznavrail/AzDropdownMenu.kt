@@ -45,7 +45,8 @@ import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -554,7 +555,12 @@ private fun AzDropdownFooter(
             modifier = Modifier
                 .clickable {
                     runCatching {
-                        uriHandler.openUri("mailto:hereliesaz@gmail.com?subject=$appName")
+                        // Minimal URL-encoding of the subject so app names with spaces / query
+                        // separators don't produce a malformed mailto: URI on strict handlers.
+                        val subject = appName
+                            .replace("%", "%25").replace(" ", "%20")
+                            .replace("&", "%26").replace("#", "%23").replace("?", "%3F")
+                        uriHandler.openUri("mailto:hereliesaz@gmail.com?subject=$subject")
                     }
                 }
                 .padding(vertical = 4.dp)
@@ -873,7 +879,9 @@ fun AzDropdownMenu(
             appMeta.packageId?.let { GithubDocsRepository.repoUrlFromPackage(it) } ?: config.appRepositoryUrl
         }
     }
-    val maxPanelHeight = (LocalConfiguration.current.screenHeightDp * 0.8f).dp
+    // Window height in px (LocalConfiguration is Android-only; use the multiplatform WindowInfo).
+    val density = LocalDensity.current
+    val maxPanelHeight = with(density) { (LocalWindowInfo.current.containerSize.height * 0.8f).toDp() }
     val panelWidth = if (config.design == AzDropdownDesign.RAIL) config.collapsedWidth else config.expandedWidth
 
     val positionProvider = remember(config.dockingSide) {

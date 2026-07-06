@@ -1,6 +1,5 @@
 package com.hereliesaz.aznavrail.internal
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -60,7 +59,7 @@ internal fun MoreFromAzOverlay(
     val surface = scope.translucentBackground.takeIf { it != Color.Unspecified } ?: MaterialTheme.colorScheme.surface
     val safe = LocalAzSafeZones.current
 
-    BackHandler(enabled = true) { onDismiss() }
+    AzBackHandler(enabled = true) { onDismiss() }
 
     val apps by produceState<List<AzMoreFromApp>?>(initialValue = null, jsonUrl) {
         value = MoreFromAzRepository.fetch(jsonUrl).getOrNull()?.apps ?: emptyList()

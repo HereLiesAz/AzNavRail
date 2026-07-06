@@ -1,3 +1,12 @@
+// The compose plugin's `compose.runtime` / `compose.material3` / etc. accessors are marked
+// deprecated ("Specify dependency directly") but remain the ONLY correct way to reference the CMP
+// artifacts: each artifact (material3, runtime, ui…) versions independently of the compose plugin
+// version, so hardcoding a coordinate + a single version guesses wrong (e.g.
+// `org.jetbrains.compose.material3:material3` tops out at a different version than the plugin). The
+// accessors resolve the right per-artifact version automatically. `@file:Suppress("DEPRECATION")`
+// keeps that deprecation from being promoted to a script-compilation error.
+@file:Suppress("DEPRECATION")
+
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
@@ -10,15 +19,9 @@ plugins {
 group = "com.github.HereLiesAz.AzNavRail"
 version = System.getenv("JITPACK_VERSION") ?: libs.versions.aznavrail.get()
 
-// Direct Maven coordinates for the JetBrains Compose Multiplatform artifacts. The `compose.runtime`
-// / `compose.foundation` / etc. plugin accessors are deprecated in CMP 1.11+ ("Specify dependency
-// directly") and Gradle Kotlin DSL script compilation on the KMP variant treats deprecation
-// warnings as script errors, so declaring the coordinates explicitly avoids the whole class of
-// script-compilation failures.
-val cmpVersion = libs.versions.composeMultiplatform.get()
-val activityComposeCmpVersion = libs.versions.activityComposeCmp.get()
 val coil3Version = libs.versions.coil3.get()
 val navigationComposeCmpVersion = libs.versions.navigationComposeCmp.get()
+val activityComposeVersion = libs.versions.activityCompose.get()
 
 kotlin {
     jvmToolchain(17)
@@ -27,7 +30,9 @@ kotlin {
 
     jvm("desktop")
 
-    iosX64()
+    // iosX64 (the Intel-Mac iOS simulator) is intentionally omitted — Coil 3 no longer publishes an
+    // iosX64 variant, and modern iOS dev uses Apple-Silicon simulators (iosSimulatorArm64) + real
+    // devices (iosArm64). Both of those resolve every dependency in use.
     iosArm64()
     iosSimulatorArm64()
 
@@ -39,14 +44,11 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.compose.runtime:runtime:$cmpVersion")
-                implementation("org.jetbrains.compose.foundation:foundation:$cmpVersion")
-                implementation("org.jetbrains.compose.material3:material3:$cmpVersion")
-                implementation("org.jetbrains.compose.ui:ui:$cmpVersion")
-                implementation("org.jetbrains.compose.components:components-resources:$cmpVersion")
-                // JetBrains multiplatform fork of androidx.activity — provides BackHandler in
-                // commonMain across every target.
-                implementation("org.jetbrains.androidx.activity:activity-compose:$activityComposeCmpVersion")
+                implementation(compose.runtime)
+                implementation(compose.foundation)
+                implementation(compose.material3)
+                implementation(compose.ui)
+                implementation(compose.components.resources)
                 // Coil 3 — multiplatform image loader (replaces Android-only Coil 2 in the CMP
                 // port). Consumers can add `coil-network-ktor3`/`coil-network-okhttp` for URL
                 // loading; the base `coil-compose` handles model→painter without an engine.
@@ -55,6 +57,14 @@ kotlin {
                 // package-compatible with `androidx.navigation`, so files ported from the Android
                 // sibling generally need no import changes.
                 implementation("org.jetbrains.androidx.navigation:navigation-compose:$navigationComposeCmpVersion")
+            }
+        }
+        val androidMain by getting {
+            dependencies {
+                // BackHandler's `actual` on Android delegates to androidx.activity's BackHandler.
+                // This is the standard Android artifact (not the JetBrains multiplatform fork,
+                // which doesn't publish a common BackHandler) so it only belongs in androidMain.
+                implementation("androidx.activity:activity-compose:$activityComposeVersion")
             }
         }
     }

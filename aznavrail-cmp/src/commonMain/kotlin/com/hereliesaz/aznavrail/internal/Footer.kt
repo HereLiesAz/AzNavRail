@@ -122,7 +122,12 @@ internal fun Footer(
             modifier = Modifier
                 .clickable {
                     runCatching {
-                        uriHandler.openUri("mailto:hereliesaz@gmail.com?subject=$appName")
+                        // Minimal URL-encoding of the subject so app names with spaces / query
+                        // separators don't produce a malformed mailto: URI on strict handlers.
+                        val subject = appName
+                            .replace("%", "%25").replace(" ", "%20")
+                            .replace("&", "%26").replace("#", "%23").replace("?", "%3F")
+                        uriHandler.openUri("mailto:hereliesaz@gmail.com?subject=$subject")
                     }
                 }
                 .padding(vertical = 4.dp),

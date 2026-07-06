@@ -58,7 +58,7 @@ import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
@@ -221,8 +221,11 @@ fun AzNavRail(
     val appMeta = LocalAzAppMeta.current
     val haptic = LocalHapticFeedback.current
     val density = LocalDensity.current
-    val configuration = LocalConfiguration.current
-    val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
+    // Window size in px + a Dp height, both multiplatform-safe (LocalConfiguration is Android-only).
+    val containerSize = LocalWindowInfo.current.containerSize
+    val screenWidthPx = containerSize.width.toFloat()
+    val screenHeightPx = containerSize.height.toFloat()
+    val screenHeightDp = with(density) { containerSize.height.toDp() }
     val coroutineScope = rememberCoroutineScope()
 
     val scope = providedScope ?: remember { AzNavRailScopeImpl() }
@@ -419,7 +422,7 @@ fun AzNavRail(
 
     val sizeModifier = if (isFloating) {
         // Enforce max height/width in FAB mode to ensure it fits within 10-90% safe zone
-        val maxFabSize = (configuration.screenHeightDp * 0.8f).dp
+        val maxFabSize = screenHeightDp * 0.8f
         if (orientation == AzOrientation.Vertical) Modifier
             .width(railWidth)
             .heightIn(max = maxFabSize)
@@ -438,8 +441,8 @@ fun AzNavRail(
     }
 
     // Top 10% to Bottom 10% bounds rule enforced.
-    val safeTopDp = (configuration.screenHeightDp * 0.1f).dp
-    val safeBottomDp = (configuration.screenHeightDp * 0.1f).dp
+    val safeTopDp = screenHeightDp * 0.1f
+    val safeBottomDp = screenHeightDp * 0.1f
     val safeZoneModifier = if (!isFloating && orientation == AzOrientation.Vertical) {
         Modifier.padding(top = safeTopDp, bottom = safeBottomDp)
     } else { Modifier }
@@ -517,8 +520,7 @@ fun AzNavRail(
                                 offsetY = offsetY.coerceIn(minY, maxY)
 
                                 val minX = 0f
-                                val maxX =
-                                    (configuration.screenWidthDp * density.density) - railWidth.toPx()
+                                val maxX = screenWidthPx - with(density) { railWidth.toPx() }
                                 offsetX = offsetX.coerceIn(minX, maxX)
                             } else {
                                 val absX = kotlin.math.abs(dragAmount.x)
