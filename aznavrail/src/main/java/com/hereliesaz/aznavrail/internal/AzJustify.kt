@@ -41,9 +41,23 @@ internal fun solveHybridJustify(
     baseFontSizePx: Float,
     maxTrackingRatio: Float = 0.15f,
     maxFontScale: Float = 1.5f,
+    minFontScale: Float = 0.5f,
 ): Pair<Float, Float> {
-    if (charCount < 2 || naturalWidthPx <= 0f || rowWidthPx <= 0f) return 1f to 0f
-    if (naturalWidthPx >= rowWidthPx) return 1f to 0f
+    if (charCount < 1 || naturalWidthPx <= 0f || rowWidthPx <= 0f) return 1f to 0f
+
+    // Shrink branch — natural width overflows the row. Scale the font DOWN just enough to fit on
+    // one line (no kerning). This replaces the old bail-out that let the label auto-wrap into
+    // ugly single-letter overhangs ("Generat\ne", "Projec\nt"). Clamped to `minFontScale` so we
+    // never render the label at a fraction so small it becomes unreadable — beyond that the caller
+    // is expected to have disabled soft-wrap and let the text clip on its own.
+    if (naturalWidthPx >= rowWidthPx) {
+        val s = (rowWidthPx / naturalWidthPx).coerceIn(minFontScale, 1f)
+        return s to 0f
+    }
+
+    // Single-character labels can't be kerned (no inter-character gap). No fill, no scale — the
+    // label sits at its natural size with `TextAlign` handling positioning.
+    if (charCount < 2) return 1f to 0f
 
     val n = charCount
     val gaps = (n - 1).toFloat()

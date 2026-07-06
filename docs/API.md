@@ -118,7 +118,10 @@ fun azConfig(
   solver** (`internal/AzJustify.kt`): fill the row with `letterSpacing` alone until tracking would
   exceed `α · fontSize` (`α = 0.15`), then grow the font past that limit so both letter-spacing and
   font-size converge on the mix that lands the label exactly on the row width. Font growth capped
-  at `1.5×`. Single-character labels and labels wider than the row are skipped. Default `true`.
+  at `1.5×`. When the natural width **overflows** the row the solver **shrinks** the font
+  (`scale = rowWidth / naturalWidth`, clamped to `≥ 0.5×`); combined with `softWrap = false` +
+  `maxLines = 1` on the drawer's `Text`, line breaks are explicit-only. Single-character labels
+  are skipped. Default `true`.
 * `AzDivider` now defaults its color to `LocalContentColor.current` (Compose) / `currentColor`
   (web) so the divider inherits the surrounding font color and belongs to the same visual family
   as the labels next to it. The rail and dropdown call sites pass their accent explicitly.

@@ -40,10 +40,12 @@ The menu-drawer knobs only affect the **expanded-menu drawer** labels (the stand
 `justifyMenuItems` runs a **hybrid kerning + font-scale solver**: it fills the row with
 `letterSpacing` alone until tracking would exceed `α · fontSize` (default `α = 0.15`); once the
 kerning cap is hit, the font scales up so both letter-spacing and font-size converge on the mix
-that lands the label exactly on the row width. Font growth is capped at `1.5×`. Labels shorter
-than 2 characters, or already at/past the row width, are skipped. `AzDivider`'s default color is
-now `LocalContentColor.current` on Compose and `currentColor` on the web, so the divider matches
-the surrounding font — never a muted outline.
+that lands the label exactly on the row width. Font growth is capped at `1.5×`. When the natural
+width **overflows** the row, the solver **shrinks** the font (`scale = rowWidth / naturalWidth`,
+clamped to `≥ 0.5×`) so the label fits on one line without breaking mid-word — line breaks in
+drawer labels are **explicit-only** (soft-wrap is disabled). Labels shorter than 2 characters are
+skipped. `AzDivider`'s default color is now `LocalContentColor.current` on Compose and
+`currentColor` on the web, so the divider matches the surrounding font — never a muted outline.
 
 `appRepositoryUrl` is an **optional** override for the About reader's repo. Blank (the default)
 auto-derives the repo from the app **namespace** on Android: `com.<owner>.<repo>` →

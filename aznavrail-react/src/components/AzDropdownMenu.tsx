@@ -125,6 +125,67 @@ export interface AzDropdownItemProps {
 }
 
 /**
+ * One logical line of a MENU-design dropdown label. Split the label on `\n` and render one of
+ * these per line: each line owns its own natural-width measurer, its own `charCount` fed to the
+ * solver, and its own resolved `letterSpacing` + font scale. Prevents newline characters from
+ * skewing the hybrid-justify math and keeps auto-wrap disabled without eating explicit breaks.
+ */
+const JustifiedDropdownLine: React.FC<{
+  line: string;
+  justify: boolean;
+  containerWidth: number;
+  textAlign: 'left' | 'right' | 'center';
+  color: string;
+  enabled: boolean;
+  itemTextStyle?: object;
+}> = ({ line, justify, containerWidth, textAlign, color, enabled, itemTextStyle }) => {
+  const [naturalWidth, setNaturalWidth] = useState(0);
+  const onLabelLayout = (e: LayoutChangeEvent) => {
+    const w = e.nativeEvent.layout.width;
+    if (w && Math.abs(w - naturalWidth) > 0.5) setNaturalWidth(w);
+  };
+  let letterSpacing = 0;
+  let fontScale = 1;
+  if (justify && line.length >= 1 && containerWidth > 0 && naturalWidth > 0) {
+    const solved = solveHybridJustify(naturalWidth, containerWidth, line.length, DROPDOWN_BASE_FONT_PX);
+    fontScale = solved.scale;
+    letterSpacing = solved.letterSpacing;
+  }
+  const scaledFontSize = DROPDOWN_BASE_FONT_PX * fontScale;
+  return (
+    <>
+      <Text
+        onLayout={onLabelLayout}
+        style={[
+          styles.menuRowText,
+          { position: 'absolute', opacity: 0, left: -9999, top: -9999 } as any,
+          itemTextStyle,
+        ]}
+      >
+        {line}
+      </Text>
+      <Text
+        numberOfLines={1}
+        style={[
+          styles.menuRowText,
+          {
+            color,
+            opacity: enabled ? 1 : 0.5,
+            textAlign,
+            letterSpacing,
+            fontSize: scaledFontSize,
+            alignSelf: 'stretch',
+          },
+          itemTextStyle,
+        ]}
+      >
+        {line}
+      </Text>
+    </>
+  );
+};
+
+/**
  * A tappable menu entry. In a {@link AzDropdownDesign.MENU} panel it renders as a full-width labeled
  * row (the expanded-drawer look); in a {@link AzDropdownDesign.RAIL} panel it renders as a compact
  * {@link AzButton}. Navigates `route` (if set) then runs `onClick`, folding the menu by default.
@@ -143,7 +204,6 @@ export const AzDropdownItem: React.FC<AzDropdownItemProps> = ({
   const ctx = useContext(AzDropdownMenuContext);
   // Hooks must run unconditionally. Guard reads via optional chaining below.
   const [availableWidth, setAvailableWidth] = useState(0);
-  const [naturalWidth, setNaturalWidth] = useState(0);
   if (!ctx) throw new Error('AzDropdownItem must be used inside an <AzDropdownMenu>');
   const {
     dismiss,
@@ -170,19 +230,10 @@ export const AzDropdownItem: React.FC<AzDropdownItemProps> = ({
       const w = e.nativeEvent.layout.width;
       if (w && Math.abs(w - availableWidth) > 0.5) setAvailableWidth(w);
     };
-    const onLabelLayout = (e: LayoutChangeEvent) => {
-      const w = e.nativeEvent.layout.width;
-      if (w && Math.abs(w - naturalWidth) > 0.5) setNaturalWidth(w);
-    };
-    // Hybrid kerning + font-scale justify — see src/util/AzJustify.
-    let letterSpacing = 0;
-    let fontScale = 1;
-    if (justify && text.length >= 2 && availableWidth > 0 && naturalWidth > 0) {
-      const solved = solveHybridJustify(naturalWidth, availableWidth, text.length, DROPDOWN_BASE_FONT_PX);
-      fontScale = solved.scale;
-      letterSpacing = solved.letterSpacing;
-    }
-    const scaledFontSize = DROPDOWN_BASE_FONT_PX * fontScale;
+    // Split up-front on `\n` so each line gets its own measurement + solve — the newline count
+    // would otherwise skew both `naturalWidth` and `charCount` for multi-line labels.
+    const lines = text.split('\n');
+    const rowColor = textColor || color || '#6750A4';
     return (
       <TouchableOpacity
         style={styles.menuRow}
@@ -192,26 +243,20 @@ export const AzDropdownItem: React.FC<AzDropdownItemProps> = ({
         accessibilityRole="button"
         accessibilityLabel={text}
       >
-        {/* Hidden off-screen measurer — natural width only, no layout impact. */}
-        <Text
-          onLayout={onLabelLayout}
-          style={[
-            styles.menuRowText,
-            { position: 'absolute', opacity: 0, left: -9999, top: -9999 } as any,
-            itemTextStyle,
-          ]}
-        >
-          {text}
-        </Text>
-        <Text
-          style={[
-            styles.menuRowText,
-            { color: textColor || color || '#6750A4', opacity: enabled ? 1 : 0.5, textAlign, letterSpacing, fontSize: scaledFontSize },
-            itemTextStyle,
-          ]}
-        >
-          {text}
-        </Text>
+        <View style={{ flex: 1, flexDirection: 'column' }}>
+          {lines.map((line, i) => (
+            <JustifiedDropdownLine
+              key={i}
+              line={line}
+              justify={justify}
+              containerWidth={availableWidth}
+              textAlign={textAlign}
+              color={rowColor}
+              enabled={enabled}
+              itemTextStyle={itemTextStyle}
+            />
+          ))}
+        </View>
       </TouchableOpacity>
     );
   }

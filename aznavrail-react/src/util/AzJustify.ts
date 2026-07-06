@@ -29,15 +29,19 @@ export function solveHybridJustify(
   baseFontSize: number,
   maxTrackingRatio = 0.15,
   maxFontScale = 1.5,
+  minFontScale = 0.5,
 ): { scale: number; letterSpacing: number } {
-  if (
-    charCount < 2 ||
-    naturalWidth <= 0 ||
-    rowWidth <= 0 ||
-    naturalWidth >= rowWidth
-  ) {
+  if (charCount < 1 || naturalWidth <= 0 || rowWidth <= 0) {
     return { scale: 1, letterSpacing: 0 };
   }
+  // Shrink branch — natural width overflows the row. Scale DOWN so the label fits on one line
+  // (no kerning). Callers should also disable auto-wrap so an imperfect fit clips instead of
+  // pushing a single letter onto a new line ("Generat\ne", "Projec\nt").
+  if (naturalWidth >= rowWidth) {
+    const scale = Math.max(minFontScale, Math.min(1, rowWidth / naturalWidth));
+    return { scale, letterSpacing: 0 };
+  }
+  if (charCount < 2) return { scale: 1, letterSpacing: 0 };
   const gaps = charCount - 1;
   const kAtScale1 = (rowWidth - naturalWidth) / gaps;
   if (kAtScale1 <= maxTrackingRatio * baseFontSize) {

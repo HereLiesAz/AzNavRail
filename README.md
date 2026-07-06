@@ -569,8 +569,10 @@ unaffected.
 - **`justifyMenuItems`** (default `true`) — runs a **hybrid kerning + font-scale solver**: fills
   the row with `letterSpacing` alone until tracking would exceed `α · fontSize` (`α = 0.15`); once
   the cap hits, the font scales up so both letter-spacing and font-size converge on the mix that
-  lands the label exactly on the row width. Font growth is capped at `1.5×`. Short/overflowing
-  labels are skipped.
+  lands the label exactly on the row width. Font growth is capped at `1.5×`. When the natural
+  width **overflows** the row, the solver shrinks the font instead (`scale = rowWidth /
+  naturalWidth`, clamped to `≥ 0.5×`) so the label fits on one line without breaking mid-word —
+  line breaks in drawer labels are explicit-only.
 - **`AzDivider`** now defaults its color to the surrounding **font** color
   (`LocalContentColor.current` on Compose, `currentColor` on the web), and the rail/dropdown/About
   call sites pass their accent explicitly — the divider belongs to the same visual family as the
