@@ -13,7 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Notes
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -79,7 +79,7 @@ fun FormShowcaseScreen() {
             entry(entryName = "username", hint = "Username", leadingIcon = { Icon(Icons.Default.AccountCircle, null) })
             entry(entryName = "email", hint = "Email", initialValue = "you@example.com", keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email))
             entry(entryName = "password", hint = "Password", secret = true, leadingIcon = { Icon(Icons.Default.Lock, null) })
-            entry(entryName = "bio", hint = "Biography (multiline)", multiline = true, leadingIcon = { Icon(Icons.Default.Notes, null) })
+            entry(entryName = "bio", hint = "Biography (multiline)", multiline = true, leadingIcon = { Icon(Icons.AutoMirrored.Filled.Notes, null) })
             entry(entryName = "broken", hint = "Always in error state", isError = true)
             entry(entryName = "frozen", hint = "Disabled entry", enabled = false, initialValue = "read only")
         }
