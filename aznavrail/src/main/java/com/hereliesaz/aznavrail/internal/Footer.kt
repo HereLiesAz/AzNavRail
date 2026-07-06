@@ -71,20 +71,24 @@ internal fun Footer(
 ) {
     val context = LocalContext.current
 
-    // Accordion-unfold: scaleY 0→1 from the top edge + alpha 0→1, keyed off `visible`.
-    val scaleY = remember { Animatable(if (visible) 1f else 0f) }
-    val fade = remember { Animatable(if (visible) 1f else 0f) }
+    // Accordion state — ALWAYS start collapsed (0f) so the very first composition also plays the
+    // fold-in animation. Previously this initialized to `visible ? 1f : 0f`, which meant the
+    // footer was already fully open on first mount when the drawer opened — no animation played.
+    val scaleY = remember { Animatable(0f) }
+    val fade = remember { Animatable(0f) }
     LaunchedEffect(visible) {
         val spec = tween<Float>(durationMillis = durationMs, easing = easing)
         if (visible) {
-            // Footer starts AFTER the last menu item begins — one extra stagger tick so the footer
-            // is the natural next beat in the cascade rhythm (as if it were the (count+1)th item).
+            // Footer unfolds one stagger tick AFTER the last menu item begins its own kinetic
+            // entrance — the natural next beat in the cascade rhythm.
             delay(menuItemCount.coerceAtLeast(0).toLong() * staggerMs)
             launch { scaleY.animateTo(1f, spec) }
             launch { fade.animateTo(1f, spec) }
         } else {
-            launch { scaleY.snapTo(0f) }
-            launch { fade.snapTo(0f) }
+            // On close the footer is the FIRST thing to go — folds up immediately, without any
+            // delay, while the menu items are still preparing their bottom-up exit cascade.
+            launch { scaleY.animateTo(0f, spec) }
+            launch { fade.animateTo(0f, spec) }
         }
     }
 
@@ -143,7 +147,9 @@ internal fun Footer(
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "@HereLiesAz",
-            style = MaterialTheme.typography.titleLarge.copy(color = footerColor.copy(alpha = 0.5f)),
+            // Same accent as the rest of the footer — the muted 0.5 alpha used to make this row
+            // read as a second-class link visually inconsistent with About / Feedback.
+            style = MaterialTheme.typography.titleLarge.copy(color = footerColor),
             modifier = Modifier
                 .pointerInput(Unit) {
                     detectTapGestures(

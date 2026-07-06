@@ -77,6 +77,25 @@ const AzNavRail = ({
   const [showAbout, setShowAbout] = useState(false);
   const [showMoreFromAz, setShowMoreFromAz] = useState(false);
 
+  // Keep the footer in the DOM for `entranceDurationMs` after `isExpanded` flips false so its
+  // fold-up CSS animation can play. `footerMounted` gates the render; `footerClosing` swaps the
+  // class from unfold → fold. The rail items themselves stay mounted a bit longer for their own
+  // exit cascade, but the footer is the FIRST thing to start collapsing on close.
+  const [footerMounted, setFooterMounted] = useState(isExpanded);
+  const [footerClosing, setFooterClosing] = useState(false);
+  useEffect(() => {
+    if (isExpanded) {
+      setFooterMounted(true);
+      setFooterClosing(false);
+      return undefined;
+    }
+    if (!footerMounted) return undefined;
+    setFooterClosing(true);
+    const t = setTimeout(() => setFooterMounted(false), entranceDurationMs);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isExpanded]);
+
   const onToggle = () => {
       if (infoScreen) return;
       if (effectiveNoMenu) {
@@ -629,17 +648,18 @@ const AzNavRail = ({
         </div>
       )}
 
-      {showFooter && isExpanded && (
+      {showFooter && footerMounted && (
         <div
-          className="footer az-nav-rail__footer-accordion"
+          className={`footer ${footerClosing ? 'az-nav-rail__footer-accordion--closing' : 'az-nav-rail__footer-accordion'}`}
           style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             padding: '16px',
             color: activeColor || 'currentColor',
-            // Footer arrives one stagger tick AFTER the last menu item begins — the next beat.
-            animationDelay: `${Math.max(0, menuItems.length) * entranceStaggerMs}ms`,
+            // Open: footer arrives one stagger tick AFTER the last menu item begins.
+            // Close: no delay — footer is the FIRST thing to go.
+            animationDelay: footerClosing ? '0ms' : `${Math.max(0, menuItems.length) * entranceStaggerMs}ms`,
             animationDuration: `${entranceDurationMs}ms`,
           }}
         >
@@ -658,7 +678,7 @@ const AzNavRail = ({
                >About</div>
              )}
              <div className="az-menu-item-text" style={{ padding: '4px 0' }}>Feedback</div>
-             <div className="az-menu-item-text" style={{ padding: '4px 0', opacity: 0.5 }}>@HereLiesAz</div>
+             <div className="az-menu-item-text" style={{ padding: '4px 0' }}>@HereLiesAz</div>
         </div>
       )}
 

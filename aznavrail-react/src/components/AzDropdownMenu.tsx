@@ -512,8 +512,8 @@ const AzDropdownFooter: React.FC<{
     else open(appRepositoryUrl);
   };
 
-  // Accordion unfold from the top edge when the last dropdown item begins its own kinetic entrance.
-  const anim = useRef(new Animated.Value(visible ? 1 : 0)).current;
+  // Always start collapsed so the first mount plays the fold-in animation.
+  const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     if (visible) {
       const a = Animated.timing(anim, {
@@ -526,8 +526,15 @@ const AzDropdownFooter: React.FC<{
       a.start();
       return () => a.stop();
     }
-    anim.setValue(0);
-    return undefined;
+    // Fold-up on close — no delay; the footer is the FIRST thing to go before items exit.
+    const a = Animated.timing(anim, {
+      toValue: 0,
+      duration: durationMs,
+      easing: RNEasing.bezier(...AzEasing.Wp7Decelerate),
+      useNativeDriver: true,
+    });
+    a.start();
+    return () => a.stop();
   }, [visible, menuItemCount, staggerMs, durationMs, anim]);
 
   return (
@@ -549,7 +556,7 @@ const AzDropdownFooter: React.FC<{
           <Text style={[styles.footerText, { color: footerColor }]}>Feedback</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => open('https://instagram.com/HereLiesAz')} style={styles.footerRow} accessibilityRole="button">
-          <Text style={[styles.footerText, { color: footerColor, opacity: 0.5 }]}>@HereLiesAz</Text>
+          <Text style={[styles.footerText, { color: footerColor }]}>@HereLiesAz</Text>
         </TouchableOpacity>
       </View>
     </Animated.View>

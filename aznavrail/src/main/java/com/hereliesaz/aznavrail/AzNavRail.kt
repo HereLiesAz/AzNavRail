@@ -79,6 +79,7 @@ import com.hereliesaz.aznavrail.internal.MenuItem
 import com.hereliesaz.aznavrail.internal.rememberAzKineticModifier
 import com.hereliesaz.aznavrail.internal.rememberAzClosingState
 import com.hereliesaz.aznavrail.internal.RailItems
+import com.hereliesaz.aznavrail.model.AzExit
 import com.hereliesaz.aznavrail.internal.SecretScreens
 import com.hereliesaz.aznavrail.service.GithubDocsRepository
 import com.hereliesaz.aznavrail.model.AzDockingSide
@@ -254,6 +255,10 @@ fun AzNavRail(
     }
 
     var isExpanded by remember { mutableStateOf(if (scope.noMenu) false else initiallyExpanded) }
+    // Dissolve-overlay state: set on tap when the tapped item collapses the drawer. The label
+    // freezes in place at its captured bounds while the actual menu row is skipped from render,
+    // then slides toward the middle of the screen and fades out. Cleared once the anim finishes.
+    var dissolving: com.hereliesaz.aznavrail.internal.DissolveState? by remember { mutableStateOf(null) }
     var isFloating by remember { mutableStateOf(false) }
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
@@ -727,6 +732,12 @@ fun AzNavRail(
                                 .verticalScroll(scrollState)
                         ) {
                             topLevelItems.forEachIndexed { index, item ->
+                                // If this item was the one tapped-to-close, skip its render — the
+                                // dissolve overlay is drawing its label at the captured bounds and
+                                // sliding it away. Skipping avoids animating the label in two
+                                // places at once (once here as it exit-turnstiles, once in the
+                                // overlay).
+                                if (dissolving?.itemId == item.id) return@forEachIndexed
                                 MenuItemNode(
                                     item = item,
                                     allItems = displayItems,
@@ -737,6 +748,16 @@ fun AzNavRail(
                                     showHelpOverlay = showHelpOverlay,
                                     onToggleHelp = { toggleHelpOverlay(it) },
                                     onCollapseMenu = { isExpanded = false },
+                                    onDissolveTap = { itemId, text ->
+                                        val bounds = scope.itemBoundsCache[itemId]
+                                        if (bounds != null) {
+                                            dissolving = com.hereliesaz.aznavrail.internal.DissolveState(
+                                                itemId = itemId,
+                                                text = text,
+                                                bounds = bounds,
+                                            )
+                                        }
+                                    },
                                     index = index,
                                     count = topLevelItems.size,
                                     visible = isExpanded,
@@ -851,10 +872,17 @@ fun AzNavRail(
                 }
 
                 // FIXED FOOTER (Does not scroll, pinned below menu)
-                if (scope.showFooter && isExpanded) {
-                    // Accordion delay tracks the LAST menu item's start: the footer begins the moment
-                    // the last item's own kinetic entrance kicks off. Use the same top-level count the
-                    // menu itself uses for its staggered entrance.
+                // Keep the footer composed for `entranceDurationMs` after `isExpanded` flips false
+                // so its accordion fold-UP animation actually plays. Without this the footer would
+                // leave composition instantly and never animate out.
+                val footerRendered = rememberAzClosingState(
+                    open = isExpanded,
+                    exit = AzExit.Turnstile,
+                    count = 1,
+                    staggerMs = scope.entranceStaggerMs,
+                    durationMs = scope.entranceDurationMs,
+                )
+                if (scope.showFooter && footerRendered) {
                     val footerMenuCount = scope.navItems.count { !it.isSubItem }
                     val dividerColor = scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
                     Column {
@@ -885,6 +913,24 @@ fun AzNavRail(
                 }
             }
         }
+    }
+
+    // Dissolve overlay for a tapped menu item that collapses the drawer. Renders as a full-screen
+    // `Popup` outside every clipping ancestor, so the label can slide across the docked-edge as it
+    // fades. Cleared once its animation completes.
+    dissolving?.let { snapshot ->
+        val accent = scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
+        val style = MaterialTheme.typography.titleLarge.let { base ->
+            scope.itemTextStyle?.let { base.merge(it) } ?: base
+        }
+        com.hereliesaz.aznavrail.internal.DissolveOverlay(
+            state = snapshot,
+            textStyle = style,
+            color = accent,
+            durationMs = scope.entranceDurationMs,
+            easing = scope.entranceEasing,
+            onFinished = { dissolving = null },
+        )
     }
 }
 
@@ -1040,12 +1086,23 @@ private fun MenuItemNode(
     showHelpOverlay: Boolean,
     onToggleHelp: (String?) -> Unit,
     onCollapseMenu: () -> Unit,
+    // Called just before `onCollapseMenu` fires, when the tapped item has `collapseOnClick = true`.
+    // The caller uses this to spawn a `DissolveOverlay` for that item's label.
+    onDissolveTap: (itemId: String, text: String) -> Unit = { _, _ -> },
     index: Int,
     count: Int,
     visible: Boolean,
     floating: Boolean,
     dockingSide: AzDockingSide
 ) {
+    // DSL `azDivider()` calls declare a synthetic item with `isDivider = true`. Render it as an
+    // actual AzDivider — same accent color as the surrounding labels — instead of falling through
+    // to the empty-MenuItem code path (which used to render as a blank clickable row).
+    if (item.isDivider) {
+        val dividerAccent = scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
+        AzDivider(color = dividerAccent)
+        return
+    }
     val kinetic = rememberAzKineticModifier(
         index = index,
         count = count,
@@ -1084,7 +1141,15 @@ private fun MenuItemNode(
             scope.advancedConfig.onInteraction?.invoke(item.id, item)
             if (item.collapseOnClick) onCollapseMenu()
         },
-        onItemClick = { if (item.collapseOnClick) onCollapseMenu() },
+        // MenuItem invokes `onItemClick` last for both standard and toggle items — the single
+        // place where the tap becomes a menu-close decision — so triggering the dissolve here
+        // guarantees exactly one overlay spawn per tap.
+        onItemClick = {
+            if (item.collapseOnClick) {
+                onDissolveTap(item.id, item.menuText ?: item.text)
+                onCollapseMenu()
+            }
+        },
         onHostClick = {
             val newHostState = !(hostStates[item.id] ?: false)
             hostStates[item.id] = newHostState

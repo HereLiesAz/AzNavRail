@@ -344,7 +344,7 @@ const AzDropdownMenu = ({
                 }}>About</div>
               )}
               <div className="az-dropdown-menu-footer-item" onClick={() => window.open('mailto:hereliesaz@gmail.com?subject=Feedback', '_self')}>Feedback</div>
-              <div className="az-dropdown-menu-footer-item" style={{ opacity: 0.5 }} onClick={() => window.open('https://instagram.com/HereLiesAz', '_blank', 'noopener,noreferrer')}>@HereLiesAz</div>
+              <div className="az-dropdown-menu-footer-item" onClick={() => window.open('https://instagram.com/HereLiesAz', '_blank', 'noopener,noreferrer')}>@HereLiesAz</div>
             </div>
           )}
         </div>
