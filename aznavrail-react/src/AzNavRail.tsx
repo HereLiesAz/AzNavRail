@@ -66,7 +66,10 @@ const FooterAccordion: React.FC<{
   durationMs: number;
   children?: React.ReactNode;
 }> = ({ visible, menuItemCount, staggerMs, durationMs, children }) => {
-  const anim = useRef(new Animated.Value(visible ? 1 : 0)).current;
+  // Always start collapsed so the first mount plays the fold-in. Previously we initialized to
+  // `visible ? 1 : 0`, which meant the very first render on drawer-open showed the footer already
+  // in place instead of unfolding.
+  const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     if (visible) {
       const a = Animated.timing(anim, {
@@ -79,8 +82,16 @@ const FooterAccordion: React.FC<{
       a.start();
       return () => a.stop();
     }
-    anim.setValue(0);
-    return undefined;
+    // Fold-up on close: animate to 0 (no delay — the footer is the FIRST thing to leave, before
+    // the items begin their bottom-up exit cascade).
+    const a = Animated.timing(anim, {
+      toValue: 0,
+      duration: durationMs,
+      easing: RNEasing.bezier(...AzEasing.Wp7Decelerate),
+      useNativeDriver: true,
+    });
+    a.start();
+    return () => a.stop();
   }, [visible, menuItemCount, staggerMs, durationMs, anim]);
   return (
     <Animated.View
@@ -788,7 +799,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                  <TouchableOpacity onPress={handleAbout} style={{ paddingVertical: 4 }}><Text style={[styles.menuItemText, { color: footerColor }]}>About</Text></TouchableOpacity>
              )}
              <TouchableOpacity onPress={handleFeedback} style={{ paddingVertical: 4 }}><Text style={[styles.menuItemText, { color: footerColor }]}>Feedback</Text></TouchableOpacity>
-             <TouchableOpacity onPress={handleCredit} onLongPress={handleSecLocTrigger} delayLongPress={500} style={{ paddingVertical: 4 }}><Text style={[styles.menuItemText, { color: footerColor, opacity: 0.5 }]}>@HereLiesAz</Text></TouchableOpacity>
+             <TouchableOpacity onPress={handleCredit} onLongPress={handleSecLocTrigger} delayLongPress={500} style={{ paddingVertical: 4 }}><Text style={[styles.menuItemText, { color: footerColor }]}>@HereLiesAz</Text></TouchableOpacity>
           </View>
         </FooterAccordion>
       );

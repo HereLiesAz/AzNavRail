@@ -79,6 +79,7 @@ import com.hereliesaz.aznavrail.internal.MenuItem
 import com.hereliesaz.aznavrail.internal.rememberAzKineticModifier
 import com.hereliesaz.aznavrail.internal.rememberAzClosingState
 import com.hereliesaz.aznavrail.internal.RailItems
+import com.hereliesaz.aznavrail.model.AzExit
 import com.hereliesaz.aznavrail.internal.SecretScreens
 import com.hereliesaz.aznavrail.service.GithubDocsRepository
 import com.hereliesaz.aznavrail.model.AzDockingSide
@@ -851,10 +852,17 @@ fun AzNavRail(
                 }
 
                 // FIXED FOOTER (Does not scroll, pinned below menu)
-                if (scope.showFooter && isExpanded) {
-                    // Accordion delay tracks the LAST menu item's start: the footer begins the moment
-                    // the last item's own kinetic entrance kicks off. Use the same top-level count the
-                    // menu itself uses for its staggered entrance.
+                // Keep the footer composed for `entranceDurationMs` after `isExpanded` flips false
+                // so its accordion fold-UP animation actually plays. Without this the footer would
+                // leave composition instantly and never animate out.
+                val footerRendered = rememberAzClosingState(
+                    open = isExpanded,
+                    exit = AzExit.Turnstile,
+                    count = 1,
+                    staggerMs = scope.entranceStaggerMs,
+                    durationMs = scope.entranceDurationMs,
+                )
+                if (scope.showFooter && footerRendered) {
                     val footerMenuCount = scope.navItems.count { !it.isSubItem }
                     val dividerColor = scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
                     Column {
@@ -1046,6 +1054,14 @@ private fun MenuItemNode(
     floating: Boolean,
     dockingSide: AzDockingSide
 ) {
+    // DSL `azDivider()` calls declare a synthetic item with `isDivider = true`. Render it as an
+    // actual AzDivider — same accent color as the surrounding labels — instead of falling through
+    // to the empty-MenuItem code path (which used to render as a blank clickable row).
+    if (item.isDivider) {
+        val dividerAccent = scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
+        AzDivider(color = dividerAccent)
+        return
+    }
     val kinetic = rememberAzKineticModifier(
         index = index,
         count = count,

@@ -100,7 +100,12 @@ internal fun rememberAzKineticModifier(
             launch { transY.animateTo(0f, spec) }
         } else {
             if (exit == AzExit.None) return@LaunchedEffect
-            delay((count - 1 - index).coerceAtLeast(0).toLong() * staggerMs)
+            // Exit cascade is a symmetric mirror of the entrance: on open, item[0] starts at t=0
+            // and the footer arrives at t = count·stagger; on close, the footer folds at t=0 and
+            // item[count-1] starts one stagger tick later, so the eye reads "footer goes first,
+            // then items swing away from the bottom up". The `(count - index)` offset shifts the
+            // whole reverse-cascade by one tick to make room for the footer's fold.
+            delay((count - index).coerceAtLeast(0).toLong() * staggerMs)
             launch { alpha.animateTo(exitAlpha, spec) }
             launch { rotY.animateTo(exitRotY, spec) }
             launch { transY.animateTo(exitTransY, spec) }
@@ -150,8 +155,11 @@ internal fun rememberAzKineticModifier(
 /**
  * Drives the "closing state" for a panel that wants an [AzExit]: returns whether the items should be
  * **rendered** (kept composed) given the [open] target. When [open] flips false it stays true for the
- * length of the staggered exit ([durationMs] + ([count]-1)·[staggerMs]) so the items can animate out,
- * then flips false to let the caller tear the panel down. With [exit] == [AzExit.None] it tracks
+ * length of the staggered exit ([durationMs] + [count]·[staggerMs]) so the items can animate out,
+ * then flips false to let the caller tear the panel down. The `count·staggerMs` (rather than
+ * `(count-1)·staggerMs`) matches the exit-cascade shift in [rememberAzKineticModifier]: on close
+ * the footer folds first at t=0 and item[count-1] doesn't start until t=staggerMs, so the last
+ * item finishes at t = count·staggerMs + durationMs. With [exit] == [AzExit.None] it tracks
  * [open] exactly (immediate teardown, the legacy behavior).
  */
 @Composable
@@ -168,7 +176,7 @@ internal fun rememberAzClosingState(
             rendered = true
         } else if (rendered) {
             if (exit != AzExit.None) {
-                delay(durationMs.toLong() + (count - 1).coerceAtLeast(0).toLong() * staggerMs)
+                delay(durationMs.toLong() + count.coerceAtLeast(0).toLong() * staggerMs)
             }
             rendered = false
         }

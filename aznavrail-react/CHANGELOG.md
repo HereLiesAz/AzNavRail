@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased — polish (footer animation, divider color, @HereLiesAz alpha)
+
+### Fixed
+- **Footer accordion now actually plays on open.** The initial `Animatable`/`Animated.Value` seeded
+  itself from `visible ? 1 : 0`, so first-mount always started at "already open" and no animation
+  played. Always start collapsed and let the `LaunchedEffect`/`useEffect` run the fold-in.
+- **Footer fold-UP on close.** The `visible=false` branch used to call `snapTo(0)` / `setValue(0)`,
+  hiding the footer instantly. Animate to 0 with the same duration/easing so the footer visibly
+  collapses first. The rail keeps it composed via `rememberAzClosingState(count=1)` (Compose) /
+  same lifetime as the item cascade (RN), and the plain web tracks a `footerClosing` flag with a
+  matching `--closing` CSS keyframe. The footer is now visibly the FIRST thing to go on close.
+- **Item exit cascade shifted one stagger tick.** Previous `(count - 1 - index) * staggerMs` had
+  the last item exit at t=0 simultaneously with the footer. New `(count - index) * staggerMs`
+  puts the last item at t=staggerMs, so the footer folds first and the items follow bottom-up —
+  a symmetric mirror of the open sequence (item[0] at t=0, footer at t=count·staggerMs).
+  `rememberAzClosingState` / `useAzClosing` bumped by the same tick so nothing tears down early.
+- **`@HereLiesAz` footer link no longer 50%-alpha.** Renders in the same accent color as
+  About / Feedback so the whole footer looks like one visual family. Applied across all four
+  surfaces (Compose rail + dropdown, RN rail + dropdown, plain web rail + dropdown).
+- **In-drawer `azDivider()` items now render as real dividers.** `MenuItemNode` used to fall
+  through to the empty-text `MenuItem` for `isDivider = true` items, producing a blank clickable
+  row. Short-circuit and render `AzDivider(color = accent)` instead — same accent as every
+  other divider (footer, About-page split, dropdown-menu footer top).
+
 ## Unreleased — bug fix (shrink oversized drawer labels; explicit-only line breaks)
 
 ### Fixed

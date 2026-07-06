@@ -27,7 +27,9 @@ export function useAzClosing(
       setRendered(false);
       return;
     }
-    const total = durationMs + Math.max(0, count - 1) * staggerMs;
+    // `count · staggerMs` (not `(count - 1) · staggerMs`) matches the exit-cascade shift below:
+    // on close the footer folds first and item[count-1] doesn't start until t = staggerMs.
+    const total = durationMs + Math.max(0, count) * staggerMs;
     const t = setTimeout(() => setRendered(false), total);
     return () => clearTimeout(t);
   }, [open, exit, count, staggerMs, durationMs]);
@@ -104,7 +106,10 @@ export const AzKineticItem: React.FC<AzKineticItemProps> = ({
       const anim = Animated.timing(vis, {
         toValue: 0,
         duration: durationMs,
-        delay: Math.max(0, count - 1 - index) * staggerMs,
+        // `count - index` (not `count - 1 - index`) shifts every exit by one stagger tick so the
+        // footer can fold first at t=0 and the last item begins at t=staggerMs. Symmetric mirror
+        // of the entrance cascade.
+        delay: Math.max(0, count - index) * staggerMs,
         easing,
         useNativeDriver: true,
       });

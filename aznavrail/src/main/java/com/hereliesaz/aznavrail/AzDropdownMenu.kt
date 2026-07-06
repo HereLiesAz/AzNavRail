@@ -504,19 +504,23 @@ private fun AzDropdownFooter(
         }
     }
 
-    // Accordion-unfold from the top edge when the last dropdown item starts its own kinetic entrance.
-    val scaleY = remember { Animatable(if (visible) 1f else 0f) }
-    val fade = remember { Animatable(if (visible) 1f else 0f) }
+    // Always start collapsed so the first composition plays the fold-in animation. Previous
+    // `if (visible) 1f else 0f` meant the footer was already visible on first mount and no
+    // animation ever played.
+    val scaleY = remember { Animatable(0f) }
+    val fade = remember { Animatable(0f) }
     LaunchedEffect(visible) {
         val spec = tween<Float>(durationMillis = durationMs, easing = easing)
         if (visible) {
-            // One extra stagger tick beyond the last item's start — the footer is the next beat.
+            // One stagger tick beyond the last item's start — the footer is the next beat.
             delay(menuItemCount.coerceAtLeast(0).toLong() * staggerMs)
             launch { scaleY.animateTo(1f, spec) }
             launch { fade.animateTo(1f, spec) }
         } else {
-            scaleY.snapTo(0f)
-            fade.snapTo(0f)
+            // On close the footer is the FIRST to go — fold up immediately so the items can begin
+            // their bottom-up exit cascade in its wake.
+            launch { scaleY.animateTo(0f, spec) }
+            launch { fade.animateTo(0f, spec) }
         }
     }
 
@@ -570,7 +574,8 @@ private fun AzDropdownFooter(
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "@HereLiesAz",
-            style = MaterialTheme.typography.titleLarge.copy(color = footerColor.copy(alpha = 0.5f)),
+            // Same accent as the other footer rows.
+            style = MaterialTheme.typography.titleLarge.copy(color = footerColor),
             modifier = Modifier
                 .clickable {
                     try {
