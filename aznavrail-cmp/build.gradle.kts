@@ -46,11 +46,11 @@ kotlin {
     }
 }
 
-// AGP 9 exposes the LibraryExtension via the `androidLibrary` name (new DSL) instead of the
-// deprecated `android` extension. Under `-Werror`/strict-deprecation script compilation used by the
-// KMP plugin, referencing `android { ... }` becomes an error; `androidLibrary { ... }` is the
-// clean path.
-androidLibrary {
+// This project pins `android.newDsl=false` in `gradle.properties`, so the AGP 9 `androidLibrary`
+// extension isn't registered — only the deprecated `android { }` DSL is available. The DSL
+// generates a `w:` deprecation warning; with no `e:` errors left in this script that warning is
+// tolerated and the script compiles.
+android {
     namespace = "com.hereliesaz.aznavrail.cmp"
     compileSdk = 36
 
