@@ -21,6 +21,7 @@ kotlinpoet = "2.3.0"
 composeMultiplatform = "1.11.1"
 activityComposeCmp = "1.11.0"
 coil3 = "3.5.0"
+navigationComposeCmp = "2.9.2"
 
 [libraries]
 aznavrail = { group = "com.github.HereLiesAz", name = "AzNavRail", version.ref = "aznavrail" }

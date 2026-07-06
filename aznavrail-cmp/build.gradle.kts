@@ -18,6 +18,7 @@ version = System.getenv("JITPACK_VERSION") ?: libs.versions.aznavrail.get()
 val cmpVersion = libs.versions.composeMultiplatform.get()
 val activityComposeCmpVersion = libs.versions.activityComposeCmp.get()
 val coil3Version = libs.versions.coil3.get()
+val navigationComposeCmpVersion = libs.versions.navigationComposeCmp.get()
 
 kotlin {
     jvmToolchain(17)
@@ -50,6 +51,10 @@ kotlin {
                 // port). Consumers can add `coil-network-ktor3`/`coil-network-okhttp` for URL
                 // loading; the base `coil-compose` handles model→painter without an engine.
                 implementation("io.coil-kt.coil3:coil-compose:$coil3Version")
+                // JetBrains multiplatform fork of AndroidX Navigation — the API is
+                // package-compatible with `androidx.navigation`, so files ported from the Android
+                // sibling generally need no import changes.
+                implementation("org.jetbrains.androidx.navigation:navigation-compose:$navigationComposeCmpVersion")
             }
         }
     }
