@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "apps": [
     {
       "name": "CueDetat",
@@ -28,7 +28,7 @@
     },
     {
       "name": "BarBacker",
-      "iconUrl": "",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/BarBacker/main/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
       "description": "A digital paging system for bartenders and barbacks in high-volume (and loud, too) environments.",
       "github": "https://github.com/HereLiesAz/BarBacker",
       "web": "https://hereliesaz.github.io/BarBacker/",
@@ -36,7 +36,7 @@
     },
     {
       "name": "IDEaz",
-      "iconUrl": "",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/IDEaz/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
       "description": "Mobile development that feels like it's just you and your IDEaz -- The Post-Code IDE for Android.",
       "github": "https://github.com/HereLiesAz/IDEaz",
       "web": "https://hereliesaz.github.io/IDEaz/",
@@ -44,7 +44,7 @@
     },
     {
       "name": "TheLexorcist",
-      "iconUrl": "",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/TheLexorcist/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
       "description": "The Lexorcist is an Android app for legalitarians to parse, track, and manage case evidence.",
       "github": "https://github.com/HereLiesAz/TheLexorcist",
       "web": "https://hereliesaz.github.io/TheLexorcist/",
@@ -52,25 +52,25 @@
     },
     {
       "name": "BluSnu",
-      "iconUrl": "",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/BluSnu/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
       "description": "",
       "github": "https://github.com/HereLiesAz/BluSnu"
     },
     {
       "name": "Liperty",
-      "iconUrl": "",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/Liperty/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
       "description": "On-device lip reading, fine-tuned to the user. ",
       "github": "https://github.com/HereLiesAz/Liperty"
     },
     {
       "name": "LogKitty",
-      "iconUrl": "",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/LogKitty/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
       "description": "",
       "github": "https://github.com/HereLiesAz/LogKitty"
     },
     {
       "name": "RedBlightDistrict",
-      "iconUrl": "",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/RedBlightDistrict/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
       "description": "",
       "github": "https://github.com/HereLiesAz/RedBlightDistrict",
       "web": "https://nhenia.github.io/blight/",
@@ -78,19 +78,19 @@
     },
     {
       "name": "HalfHashedKitty",
-      "iconUrl": "",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/HalfHashedKitty/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png",
       "description": "GUI for hashcat and related tools",
       "github": "https://github.com/HereLiesAz/HalfHashedKitty"
     },
     {
       "name": "BarCodeNcrypt",
-      "iconUrl": "",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/BarCodeNcrypt/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
       "description": "I had this dream where, in the middle of our conversation, Dwayne \"The Rock\" Johnson pulled out his keys and scanned the barcode on a coupon club key fob.     \"What was that?\" I asked.     \"Oh,\" The Rock showed me his fob.     \"This is my password.\"",
       "github": "https://github.com/HereLiesAz/BarCodeNcrypt"
     },
     {
       "name": "CleanUnderwear",
-      "iconUrl": "",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/CleanUnderwear/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
       "description": "",
       "github": "https://github.com/HereLiesAz/CleanUnderwear",
       "web": "https://hereliesaz.github.io/CleanUnderwear/",
@@ -98,7 +98,7 @@
     },
     {
       "name": "QuicLoc",
-      "iconUrl": "",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/QuicLoc/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
       "description": "Location sharing without the battery drain nor other creepinesses, for Android.",
       "github": "https://github.com/HereLiesAz/QuicLoc"
     },
@@ -112,49 +112,49 @@
     },
     {
       "name": "MagNom",
-      "iconUrl": "",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/MagNom/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
       "description": "An Android app to interface with Magspoof v4 and similar hardware, integrating  magstrip reading and recording tools like AudioSpoof. ",
       "github": "https://github.com/HereLiesAz/MagNom"
     },
     {
       "name": "pwnagotchiOnAndroid",
-      "iconUrl": "",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/pwnagotchiOnAndroid/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
       "description": "",
       "github": "https://github.com/HereLiesAz/pwnagotchiOnAndroid"
     },
     {
       "name": "ReUp",
-      "iconUrl": "",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/ReUp/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
       "description": "A gentle cognitive behavioral helper in Android app form.",
       "github": "https://github.com/HereLiesAz/ReUp"
     },
     {
       "name": "Et2Brutus",
-      "iconUrl": "",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/Et2Brutus/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
       "description": "",
       "github": "https://github.com/HereLiesAz/Et2Brutus"
     },
     {
       "name": "LeFauxPass",
-      "iconUrl": "",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/LeFauxPass/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
       "description": "Unlimited free streetcar, ferry, and bus passes in New Orleans. ",
       "github": "https://github.com/HereLiesAz/LeFauxPass"
     },
     {
       "name": "MadeMeDance",
-      "iconUrl": "",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/MadeMeDance/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
       "description": "",
       "github": "https://github.com/HereLiesAz/MadeMeDance"
     },
     {
       "name": "Click",
-      "iconUrl": "",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/Click/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
       "description": "A simple android app that allows the user to choose a button to press, tap the fingerprint scanner not located on the screen, or tap the camera lens itself to be able to take a picture.",
       "github": "https://github.com/HereLiesAz/Click"
     },
     {
       "name": "WifiHaqueur",
-      "iconUrl": "",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/WifiHaqueur/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
       "description": "Wifi Haqueur is a blunt instrument you can whack a router with using the force of a brute.",
       "github": "https://github.com/HereLiesAz/WifiHaqueur"
     }
