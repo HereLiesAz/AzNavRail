@@ -982,10 +982,22 @@ fun AzDropdownMenu(
                             .then(if (config.design == AzDropdownDesign.RAIL) Modifier.padding(8.dp) else Modifier),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        val entryDensity = androidx.compose.ui.platform.LocalDensity.current
                         entries.forEachIndexed { index, entry ->
-                            // Skip the tapped-to-close entry — the DissolveOverlay is animating
-                            // its label instead. Prevents animating the label in two places.
-                            if (dissolving?.itemId == "azdd:$index") return@forEachIndexed
+                            // If this entry was the one tapped-to-close, render an invisible
+                            // placeholder the same height as the captured entry so the panel
+                            // stays occupied while the dissolve overlay animates its label. A bare
+                            // `Spacer` doesn't draw or hit-test — it just holds the layout so the
+                            // rows below don't snap upward during the dissolve.
+                            val dissolvingHere = dissolving?.takeIf { it.itemId == "azdd:$index" }
+                            if (dissolvingHere != null) {
+                                Spacer(
+                                    Modifier.height(
+                                        with(entryDensity) { dissolvingHere.bounds.height.toDp() }
+                                    )
+                                )
+                                return@forEachIndexed
+                            }
                             AzDropdownEntryItem(
                                 index = index,
                                 count = entries.size,

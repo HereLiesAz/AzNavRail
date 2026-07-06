@@ -1,0 +1,391 @@
+package com.hereliesaz.aznavrail
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
+import com.hereliesaz.aznavrail.util.HistoryStore
+
+/**
+ * Object holding global defaults for [AzTextBox].
+ */
+object AzTextBoxDefaults {
+    private var suggestionLimit: Int = 5
+    private var backgroundColor: Color = Color.Transparent
+    private var backgroundOpacity: Float = 1.0f
+
+    /**
+     * Sets the maximum number of autocomplete suggestions to display.
+     *
+     * @param limit The limit (0-5).
+     */
+    fun setSuggestionLimit(limit: Int) {
+        suggestionLimit = limit.coerceIn(0, 5)
+    }
+
+    /**
+     * Sets the global background color for all text boxes.
+     */
+    fun setBackgroundColor(color: Color) {
+        backgroundColor = color
+    }
+
+    /**
+     * Sets the global background opacity for all text boxes.
+     *
+     * @param opacity The opacity (0.0 - 1.0).
+     */
+    fun setBackgroundOpacity(opacity: Float) {
+        backgroundOpacity = opacity.coerceIn(0f, 1f)
+    }
+
+    internal fun getSuggestionLimit(): Int = suggestionLimit
+    internal fun getBackgroundColor(): Color = backgroundColor
+    internal fun getBackgroundOpacity(): Float = backgroundOpacity
+}
+
+/**
+ * A highly customizable text input box with integrated features like autocomplete, history,
+ * password visibility toggling, and multi-line support.
+ *
+ * It is designed to work seamlessly with [AzForm] but can also be used as a standalone component.
+ *
+ * @param modifier The modifier to be applied to the text box.
+ * @param value The input text to be shown in the text field. If null, the component manages its own state.
+ * @param onValueChange The callback that is triggered when the input value updates.
+ * @param historyContext A context string used to namespace autocomplete history.
+ * @param hint The hint text to display when the input is empty.
+ * @param outlined Whether the text box has a border outline.
+ * @param multiline Whether the text box supports multiple lines and expands vertically.
+ * @param secret Whether the text box is a password field (masked input).
+ * @param isError Whether the input is in an error state.
+ * @param keyboardOptions Custom keyboard configuration.
+ * @param keyboardActions Custom keyboard actions.
+ * @param leadingIcon An optional composable to display at the start of the text box.
+ * @param trailingIcon An optional composable to display at the end of the text box (before system icons).
+ * @param enabled Whether the text box is enabled and interactive.
+ * @param outlineColor The color for the outline, text, and icons.
+ * @param textColor The color for the text (overrides outlineColor).
+ * @param fillColor The background fill color of the text box (overrides AzTextBoxDefaults.backgroundColor).
+ * @param showClearButton Whether to show the clear/reveal button.
+ * @param focusRequester An optional [androidx.compose.ui.focus.FocusRequester] to control focus programmatically.
+ * @param submitButtonContent Optional content for a built-in submit button.
+ * @param onSubmit A callback invoked when the submit button is clicked or "Done" is pressed on the keyboard.
+ *
+ * @see AzForm
+ * @see AzTextBoxDefaults
+ */
+@Composable
+fun AzTextBox(
+    modifier: Modifier = Modifier,
+    value: String? = null,
+    onValueChange: ((String) -> Unit)? = null,
+    historyContext: String = "default",
+    hint: String = "",
+    outlined: Boolean = true,
+    multiline: Boolean = false,
+    secret: Boolean = false,
+    isError: Boolean = false,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    enabled: Boolean = true,
+    outlineColor: Color = MaterialTheme.colorScheme.primary,
+    textColor: Color? = null,
+    fillColor: Color? = null,
+    showClearButton: Boolean = true,
+    focusRequester: androidx.compose.ui.focus.FocusRequester? = null,
+    submitButtonContent: (@Composable () -> Unit)? = null,
+    onSubmit: (String) -> Unit
+) {
+    require(!multiline || !secret) {
+        "AzTextBox cannot be both `multiline = true` and `secret = true` at the same time — " +
+            "a masked password field by definition fits on a single line and would render the " +
+            "expansion behaviour incoherent. Pick one: set `multiline = false` for a password " +
+            "field, or set `secret = false` for a multi-line free-text field."
+    }
+
+    var internalText by remember { mutableStateOf("") }
+
+    // Determine effective text
+    val text = value ?: internalText
+
+    val onTextChange: (String) -> Unit = { newText ->
+        if (value == null) {
+            internalText = newText
+        }
+        onValueChange?.invoke(newText)
+    }
+
+    var suggestions by remember { mutableStateOf<List<String>>(emptyList()) }
+    val suggestionLimit = AzTextBoxDefaults.getSuggestionLimit()
+    val backgroundColor = fillColor ?: AzTextBoxDefaults.getBackgroundColor().copy(alpha = AzTextBoxDefaults.getBackgroundOpacity())
+    var isPasswordVisible by remember { mutableStateOf(false) }
+    var componentHeight by remember { mutableIntStateOf(0) }
+    var componentWidth by remember { mutableIntStateOf(0) }
+
+    val effectiveColor = if (isError) {
+        MaterialTheme.colorScheme.error
+    } else if (!enabled) {
+        outlineColor.copy(alpha = 0.5f)
+    } else {
+        outlineColor
+    }
+
+    val effectiveTextColor = if (isError) {
+        MaterialTheme.colorScheme.error
+    } else if (!enabled) {
+        (textColor ?: outlineColor).copy(alpha = 0.5f)
+    } else {
+        textColor ?: outlineColor
+    }
+
+    LaunchedEffect(suggestionLimit) {
+        HistoryStore.updateSettings(suggestionLimit)
+    }
+
+    LaunchedEffect(text) {
+        suggestions = if (text.isNotBlank() && enabled) {
+            HistoryStore.getSuggestions(text, historyContext)
+        } else {
+            emptyList()
+        }
+    }
+
+    Box(modifier = modifier) {
+        Row(
+            modifier = Modifier
+                .background(backgroundColor)
+                .onSizeChanged {
+                    componentHeight = it.height
+                    componentWidth = it.width
+                },
+            verticalAlignment = if (multiline) Alignment.Bottom else Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .then(if (!multiline) Modifier.height(36.dp) else Modifier)
+                    .then(
+                        if (outlined) {
+                            Modifier.border(1.dp, effectiveColor, RectangleShape)
+                        } else {
+                            Modifier
+                        }
+                    ),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                BasicTextField(
+                    value = text,
+                    onValueChange = onTextChange,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                        .testTag(hint)
+                        .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier),
+                    textStyle = TextStyle(fontSize = 10.sp, color = effectiveTextColor),
+                    singleLine = !multiline,
+                    cursorBrush = SolidColor(effectiveColor),
+                    visualTransformation = if (secret && !isPasswordVisible) PasswordVisualTransformation() else VisualTransformation.None,
+                    keyboardOptions = keyboardOptions,
+                    keyboardActions = keyboardActions,
+                    enabled = enabled
+                ) { innerTextField ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (leadingIcon != null) {
+                            CompositionLocalProvider(LocalContentColor provides effectiveColor) {
+                                leadingIcon()
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
+                        }
+                        Box(modifier = Modifier.weight(1f)) {
+                            if (text.isEmpty()) {
+                                Text(text = hint, fontSize = 10.sp, color = if(enabled) effectiveTextColor.copy(alpha = 0.5f) else effectiveTextColor.copy(alpha = 0.3f))
+                            }
+                            innerTextField()
+                        }
+                        if (trailingIcon != null) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            CompositionLocalProvider(LocalContentColor provides effectiveColor) {
+                                trailingIcon()
+                            }
+                        }
+                        if (isError) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = "Error",
+                                modifier = Modifier.size(16.dp),
+                                tint = effectiveColor
+                            )
+                        }
+                        if (text.isNotEmpty() && enabled && showClearButton) {
+                            val icon = when {
+                                secret && isPasswordVisible -> Icons.Default.VisibilityOff
+                                secret && !isPasswordVisible -> Icons.Default.Visibility
+                                else -> Icons.Default.Clear
+                            }
+                            val contentDescription = when {
+                                secret && isPasswordVisible -> "Hide password"
+                                secret && !isPasswordVisible -> "Show password"
+                                else -> "Clear text"
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = contentDescription,
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .clickable {
+                                        if (secret) {
+                                            isPasswordVisible = !isPasswordVisible
+                                        } else {
+                                            onTextChange("")
+                                        }
+                                    },
+                                tint = effectiveColor
+                            )
+                        }
+                    }
+                }
+            }
+            if (submitButtonContent != null) {
+                Spacer(modifier = Modifier.width(8.dp))
+                CompositionLocalProvider(LocalContentColor provides effectiveTextColor) {
+                    Box(
+                        modifier = Modifier
+                            .then(if (enabled) Modifier.clickable {
+                                onSubmit(text)
+                                if (!secret) {
+                                    HistoryStore.addEntry(text, historyContext)
+                                }
+                                if (onValueChange == null) {
+                                    onTextChange("")
+                                }
+                            } else Modifier)
+                            .then(
+                                if (!outlined) {
+                                    Modifier.border(1.dp, effectiveColor, RectangleShape)
+                                } else {
+                                    Modifier
+                                }
+                            )
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        submitButtonContent()
+                    }
+                }
+            }
+        }
+
+        if (suggestions.isNotEmpty() && enabled) {
+            val density = LocalDensity.current
+
+            Popup(
+                alignment = Alignment.TopStart,
+                offset = IntOffset(0, componentHeight),
+                properties = PopupProperties(focusable = false, dismissOnBackPress = true, dismissOnClickOutside = true),
+                onDismissRequest = { suggestions = emptyList() }
+            ) {
+                val surfaceColor = MaterialTheme.colorScheme.surface
+                Column(
+                    modifier = Modifier
+                        .width(with(density) { componentWidth.toDp() })
+                        .background(surfaceColor)
+                        .border(1.dp, effectiveColor.copy(alpha = 0.5f), RectangleShape)
+                ) {
+                    suggestions.forEachIndexed { index, suggestion ->
+                        val suggestionBgColor = if (index % 2 == 0) {
+                            surfaceColor.copy(alpha = 0.9f)
+                        } else {
+                            surfaceColor.copy(alpha = 0.8f)
+                        }
+                        Text(
+                            text = suggestion,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(suggestionBgColor)
+                                .clickable {
+                                    onTextChange(suggestion)
+                                    suggestions = emptyList()
+                                }
+                                .padding(vertical = 8.dp, horizontal = 12.dp)
+                                .fadeRight(),
+                            maxLines = 1,
+                            overflow = TextOverflow.Clip,
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun Modifier.fadeRight(): Modifier = this.drawWithContent {
+    drawContent()
+    val safeStartX = maxOf(0f, size.width - 50f)
+    drawRect(
+        brush = Brush.horizontalGradient(
+            colors = listOf(Color.Transparent, Color.Black),
+            startX = safeStartX,
+            endX = size.width
+        ),
+        blendMode = BlendMode.DstIn
+    )
+}
