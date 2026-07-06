@@ -731,13 +731,23 @@ fun AzNavRail(
                                 .fillMaxSize()
                                 .verticalScroll(scrollState)
                         ) {
+                            val density = LocalDensity.current
                             topLevelItems.forEachIndexed { index, item ->
-                                // If this item was the one tapped-to-close, skip its render — the
-                                // dissolve overlay is drawing its label at the captured bounds and
-                                // sliding it away. Skipping avoids animating the label in two
-                                // places at once (once here as it exit-turnstiles, once in the
-                                // overlay).
-                                if (dissolving?.itemId == item.id) return@forEachIndexed
+                                // If this item was the one tapped-to-close, render an invisible
+                                // placeholder the same height as the captured item so the row
+                                // stays occupied while the dissolve overlay animates its label.
+                                // A bare `Spacer` doesn't draw or hit-test, so it holds the layout
+                                // without duplicating the label — the overlay draws the label at
+                                // the item's captured bounds and slides it toward centre.
+                                val dissolvingHere = dissolving?.takeIf { it.itemId == item.id }
+                                if (dissolvingHere != null) {
+                                    Spacer(
+                                        Modifier.height(
+                                            with(density) { dissolvingHere.bounds.height.toDp() }
+                                        )
+                                    )
+                                    return@forEachIndexed
+                                }
                                 MenuItemNode(
                                     item = item,
                                     allItems = displayItems,
@@ -915,23 +925,11 @@ fun AzNavRail(
         }
     }
 
-    // Dissolve overlay for a tapped menu item that collapses the drawer. Renders as a full-screen
-    // `Popup` outside every clipping ancestor, so the label can slide across the docked-edge as it
-    // fades. Cleared once its animation completes.
-    dissolving?.let { snapshot ->
-        val accent = scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
-        val style = MaterialTheme.typography.titleLarge.let { base ->
-            scope.itemTextStyle?.let { base.merge(it) } ?: base
-        }
-        com.hereliesaz.aznavrail.internal.DissolveOverlay(
-            state = snapshot,
-            textStyle = style,
-            color = accent,
-            durationMs = scope.entranceDurationMs,
-            easing = scope.entranceEasing,
-            onFinished = { dissolving = null },
-        )
-    }
+    // Dissolve overlay moved to the end of the composable so it composes AFTER every other
+    // overlay (guidance/instruction callouts). Last-composed wins draw order within the same
+    // Popup layer; combined with `zIndex(Float.MAX_VALUE)` inside DissolveOverlay itself, the
+    // dissolving label is guaranteed to sit above the rail and every other overlay it stacks
+    // against.
 }
 
     // The About reader, Help overlay, and "More from Az" carousel are now rendered by
@@ -1065,6 +1063,25 @@ fun AzNavRail(
     } else {
         // Nothing showing: clear the published snapshot so observers see an empty state.
         LaunchedEffect(guidanceController) { guidanceController.publishCurrent(emptyList()) }
+    }
+
+    // Dissolve overlay for a tapped menu item that collapses the drawer. Rendered as the LAST
+    // child of the composable so its Popup composes after every other overlay (guidance/help/etc.)
+    // in the same overlay layer, and its inner `zIndex(Float.MAX_VALUE)` guarantees ordering even
+    // if it ever ends up sharing a layer. Cleared once its animation completes.
+    dissolving?.let { snapshot ->
+        val accent = scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
+        val style = MaterialTheme.typography.titleLarge.let { base ->
+            scope.itemTextStyle?.let { base.merge(it) } ?: base
+        }
+        com.hereliesaz.aznavrail.internal.DissolveOverlay(
+            state = snapshot,
+            textStyle = style,
+            color = accent,
+            durationMs = scope.entranceDurationMs,
+            easing = scope.entranceEasing,
+            onFinished = { dissolving = null },
+        )
     }
 }
 

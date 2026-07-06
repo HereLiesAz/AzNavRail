@@ -28,6 +28,7 @@ import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.zIndex
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -75,7 +76,14 @@ internal fun DissolveOverlay(
         // is positioned by an `.offset(x, y)` inside that Box, so we don't need any anchor here.
         popupPositionProvider = TopLeftPositionProvider,
     ) {
-        Box(Modifier.fillMaxSize()) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                // Belt-and-braces above the rail. Popup already renders in a separate window layer
+                // above sibling Compose content, but max-z inside the Popup's own container guards
+                // the ordering even if the overlay ever ends up sharing a layer with another node.
+                .zIndex(Float.MAX_VALUE),
+        ) {
             // Screen center X in px — the label's `translationX` targets this from its captured
             // left edge, minus half the label's width so its centre lands on the screen centre.
             val screenWidthPx = androidx.compose.ui.platform.LocalWindowInfo.current.containerSize.width.toFloat()
