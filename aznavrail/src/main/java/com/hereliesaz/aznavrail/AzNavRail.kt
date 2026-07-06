@@ -731,7 +731,6 @@ fun AzNavRail(
                                 .fillMaxSize()
                                 .verticalScroll(scrollState)
                         ) {
-                            val density = LocalDensity.current
                             topLevelItems.forEachIndexed { index, item ->
                                 // If this item was the one tapped-to-close, render an invisible
                                 // placeholder the same height as the captured item so the row
