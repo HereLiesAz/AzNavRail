@@ -17,6 +17,7 @@ version = System.getenv("JITPACK_VERSION") ?: libs.versions.aznavrail.get()
 // script-compilation failures.
 val cmpVersion = libs.versions.composeMultiplatform.get()
 val activityComposeCmpVersion = libs.versions.activityComposeCmp.get()
+val coil3Version = libs.versions.coil3.get()
 
 kotlin {
     jvmToolchain(17)
@@ -45,6 +46,10 @@ kotlin {
                 // JetBrains multiplatform fork of androidx.activity — provides BackHandler in
                 // commonMain across every target.
                 implementation("org.jetbrains.androidx.activity:activity-compose:$activityComposeCmpVersion")
+                // Coil 3 — multiplatform image loader (replaces Android-only Coil 2 in the CMP
+                // port). Consumers can add `coil-network-ktor3`/`coil-network-okhttp` for URL
+                // loading; the base `coil-compose` handles model→painter without an engine.
+                implementation("io.coil-kt.coil3:coil-compose:$coil3Version")
             }
         }
     }
