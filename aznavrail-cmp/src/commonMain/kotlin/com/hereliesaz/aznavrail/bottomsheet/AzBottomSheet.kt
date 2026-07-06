@@ -1,7 +1,7 @@
 // FILE: ./aznavrail/src/main/java/com/hereliesaz/aznavrail/bottomsheet/AzBottomSheet.kt
 package com.hereliesaz.aznavrail.bottomsheet
 
-import androidx.activity.compose.BackHandler
+import com.hereliesaz.aznavrail.internal.AzBackHandler
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.WindowInsets
@@ -45,7 +45,7 @@ fun AzBottomSheet(
     content: @Composable BoxScope.() -> Unit,
 ) {
     if (config.collapseOnBack) {
-        BackHandler(enabled = controller.detent != AzSheetDetent.HIDDEN) {
+        AzBackHandler(enabled = controller.detent != AzSheetDetent.HIDDEN) {
             controller.stepDown()
         }
     }

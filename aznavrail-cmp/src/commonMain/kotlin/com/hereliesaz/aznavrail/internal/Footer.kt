@@ -1,0 +1,151 @@
+package com.hereliesaz.aznavrail.internal
+
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.hereliesaz.aznavrail.AzNavRailScopeImpl
+import com.hereliesaz.aznavrail.model.AzEasing
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+/**
+ * Renders the pinned footer strip shown at the bottom of the expanded menu.
+ *
+ * Port note vs the Android sibling: every `context.startActivity(Intent(ACTION_VIEW,
+ * Uri.parse(...)))` collapses to `LocalUriHandler.current.openUri(...)`. `LocalUriHandler` is a
+ * Compose-provided abstraction that routes to the platform's native URL opener (Intent on Android,
+ * `Desktop.getDesktop().browse` on JVM desktop, `UIApplication.openURL` on iOS, `window.open` on
+ * wasmJs). The feedback email drops the `Intent.createChooser` step — that ceremony is
+ * Android-specific — and issues a `mailto:` URI directly.
+ */
+@Composable
+internal fun Footer(
+    appName: String,
+    onToggle: () -> Unit,
+    onUndock: () -> Unit,
+    onSecretClick: (() -> Unit)?,
+    scope: AzNavRailScopeImpl,
+    repoUrl: String,
+    footerColor: Color,
+    onAboutClick: (() -> Unit)? = null,
+    // Accordion-unfold controls. `visible` drives the anim; the delay is `(menuItemCount-1)*staggerMs`
+    // so the footer begins the moment the LAST menu item begins its own kinetic entrance.
+    visible: Boolean = true,
+    menuItemCount: Int = 0,
+    staggerMs: Int = 60,
+    durationMs: Int = 720,
+    easing: Easing = AzEasing.Wp7Decelerate,
+) {
+    val uriHandler = LocalUriHandler.current
+
+    // Accordion state — ALWAYS start collapsed (0f) so the very first composition also plays the
+    // fold-in animation. Previously this initialized to `visible ? 1f : 0f`, which meant the
+    // footer was already fully open on first mount when the drawer opened — no animation played.
+    val scaleY = remember { Animatable(0f) }
+    val fade = remember { Animatable(0f) }
+    LaunchedEffect(visible) {
+        val spec = tween<Float>(durationMillis = durationMs, easing = easing)
+        if (visible) {
+            // Footer unfolds one stagger tick AFTER the last menu item begins its own kinetic
+            // entrance — the natural next beat in the cascade rhythm.
+            delay(menuItemCount.coerceAtLeast(0).toLong() * staggerMs)
+            launch { scaleY.animateTo(1f, spec) }
+            launch { fade.animateTo(1f, spec) }
+        } else {
+            // On close the footer is the FIRST thing to go — folds up immediately, without any
+            // delay, while the menu items are still preparing their bottom-up exit cascade.
+            launch { scaleY.animateTo(0f, spec) }
+            launch { fade.animateTo(0f, spec) }
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                this.scaleY = scaleY.value
+                this.alpha = fade.value
+                transformOrigin = TransformOrigin(0.5f, 0f)
+            }
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        if (scope.advancedConfig.enableRailDragging || scope.advancedConfig.onUndock != null) {
+            Text(
+                text = "Undock",
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, color = footerColor),
+                modifier = Modifier
+                    .clickable { onUndock() }
+                    .padding(vertical = 8.dp),
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        Text(
+            text = "About",
+            style = MaterialTheme.typography.titleLarge.copy(color = footerColor),
+            modifier = Modifier
+                .clickable {
+                    if (onAboutClick != null) {
+                        onAboutClick()
+                    } else {
+                        if (repoUrl.isNotBlank()) runCatching { uriHandler.openUri(repoUrl) }
+                    }
+                }
+                .padding(vertical = 4.dp),
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Feedback",
+            style = MaterialTheme.typography.titleLarge.copy(color = footerColor),
+            modifier = Modifier
+                .clickable {
+                    runCatching {
+                        // Minimal URL-encoding of the subject so app names with spaces / query
+                        // separators don't produce a malformed mailto: URI on strict handlers.
+                        val subject = appName
+                            .replace("%", "%25").replace(" ", "%20")
+                            .replace("&", "%26").replace("#", "%23").replace("?", "%3F")
+                        uriHandler.openUri("mailto:hereliesaz@gmail.com?subject=$subject")
+                    }
+                }
+                .padding(vertical = 4.dp),
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "@HereLiesAz",
+            style = MaterialTheme.typography.titleLarge.copy(color = footerColor),
+            modifier = Modifier
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onTap = {
+                            runCatching { uriHandler.openUri("https://instagram.com/HereLiesAz") }
+                        },
+                        onLongPress = { onSecretClick?.invoke() },
+                    )
+                }
+                .padding(vertical = 4.dp),
+        )
+    }
+}

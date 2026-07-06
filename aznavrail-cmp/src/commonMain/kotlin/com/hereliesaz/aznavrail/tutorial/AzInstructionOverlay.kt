@@ -31,7 +31,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -63,8 +63,10 @@ internal fun AzInstructionOverlay(
     if (resolved.isEmpty()) return
     val density = LocalDensity.current
     val safeZones = LocalAzSafeZones.current
-    val screenWidthPx = with(density) { LocalConfiguration.current.screenWidthDp.dp.toPx() }
-    val screenHeightPx = with(density) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
+    // Window size in px (multiplatform-safe: LocalConfiguration is Android-only).
+    val containerSize = LocalWindowInfo.current.containerSize
+    val screenWidthPx = containerSize.width.toFloat()
+    val screenHeightPx = containerSize.height.toFloat()
     val marginPx = with(density) { 8.dp.toPx() }
     val safe = Rect(
         left = marginPx,

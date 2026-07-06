@@ -9,8 +9,9 @@ import androidx.compose.ui.geometry.Rect
  * @param isLoading When true, the rail content is replaced by a full-screen [com.hereliesaz.aznavrail.AzLoad] spinner.
  * @param helpEnabled Whether the interactive help/info overlay is enabled.
  * @param onDismissHelp Callback invoked when the help overlay is dismissed.
- * @param overlayService Service class used to launch a system overlay (FAB mode). Automatically
- *   sets [enableRailDragging] to true when non-null.
+ * @param overlayService Service class used to launch a system overlay (FAB mode) on Android.
+ *   Automatically sets [enableRailDragging] to true when non-null. Typed `Any?` in the CMP port —
+ *   foreground-service overlays are Android-only, so on non-Android targets this is an inert handle.
  * @param onUndock Callback invoked when the rail is undocked to FAB mode.
  * @param enableRailDragging Whether the user can drag the rail to detach it (FAB mode).
  * @param onRailDrag Callback reporting `(dx, dy)` during in-app drag events.
@@ -37,7 +38,7 @@ data class AzAdvancedConfig(
     val isLoading: Boolean = false,
     val helpEnabled: Boolean = false,
     val onDismissHelp: (() -> Unit)? = null,
-    val overlayService: Class<out android.app.Service>? = null,
+    val overlayService: Any? = null,
     val onUndock: (() -> Unit)? = null,
     val enableRailDragging: Boolean = false,
     val onRailDrag: ((Float, Float) -> Unit)? = null,
