@@ -49,23 +49,9 @@ export const AzDropdownItem = ({
     if (closeOnClick) dismiss();
   };
   const rowRef = useRef(null);
-  const measureRef = useRef(null);
-  // Hybrid kerning + font-scale justify — see ../util/AzJustify.
-  const [letterSpacing, setLetterSpacing] = useState(0);
-  const [fontScale, setFontScale] = useState(1);
-  useEffect(() => {
-    if (!justifyMenuItems || !text || text.length < 2) {
-      setLetterSpacing(0); setFontScale(1); return;
-    }
-    const row = rowRef.current;
-    const meas = measureRef.current;
-    if (!row || !meas) return;
-    const w = row.getBoundingClientRect().width;
-    const nat = meas.getBoundingClientRect().width;
-    const solved = solveHybridJustify(nat, w, text.length, DROPDOWN_WEB_BASE_FONT_PX);
-    setLetterSpacing(solved.letterSpacing);
-    setFontScale(solved.scale);
-  }, [text, justifyMenuItems]);
+  // Split up-front on `\n` so each line owns its own measurement + solve — the newline character
+  // otherwise inflates `charCount` and folds line widths together in the solver.
+  const lines = (text || '').split('\n');
   if (design === 'menu') {
     const hingeSide = dockingSide === 'RIGHT' ? 'right' : 'left';
     const textAlign =
@@ -80,13 +66,9 @@ export const AzDropdownItem = ({
         className={`az-dropdown-menu-item--menu${enabled ? '' : ' disabled'}`}
         style={{
           color: textColor || color || undefined,
-          textAlign,
-          letterSpacing: `${letterSpacing}px`,
-          fontSize: `${DROPDOWN_WEB_BASE_FONT_PX * fontScale}px`,
-          // Explicit-only line breaks — the solver's shrink branch handles overflow.
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'clip',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: textAlign === 'right' ? 'flex-end' : textAlign === 'center' ? 'center' : 'flex-start',
           animation: `azTurnstile ${entranceDurationMs}ms cubic-bezier(0.1, 0.9, 0.2, 1) ${index * entranceStaggerMs}ms both`,
           transformOrigin: `${hingeSide} center`,
           '--az-start-angle': `${dockingSide === 'RIGHT' ? -entranceStartAngle : entranceStartAngle}deg`,
@@ -95,13 +77,15 @@ export const AzDropdownItem = ({
         tabIndex={enabled ? 0 : -1}
         onClick={enabled ? press : undefined}
       >
-        <span
-          ref={measureRef}
-          style={{ position: 'absolute', visibility: 'hidden', whiteSpace: 'nowrap', left: -9999 }}
-        >
-          {text}
-        </span>
-        {text}
+        {lines.map((line, i) => (
+          <JustifiedWebDropdownLine
+            key={i}
+            line={line}
+            justify={justifyMenuItems}
+            rowRef={rowRef}
+            textAlign={textAlign}
+          />
+        ))}
       </div>
     );
   }
@@ -115,6 +99,54 @@ export const AzDropdownItem = ({
       fillColor={fillColor}
       onClick={press}
     />
+  );
+};
+
+/**
+ * One logical line of a MENU-design dropdown label (plain web). Mirrors the RN + Compose per-line
+ * rendering: measure this line's natural width in isolation, run the hybrid solver against it, and
+ * apply the resolved `letterSpacing` + font-scale to just this line. Splitting on `\n` in the
+ * parent means an explicit break becomes two of these; the solver never sees the newline character.
+ */
+const JustifiedWebDropdownLine = ({ line, justify, rowRef, textAlign }) => {
+  const measureRef = useRef(null);
+  const [letterSpacing, setLetterSpacing] = useState(0);
+  const [fontScale, setFontScale] = useState(1);
+  useEffect(() => {
+    if (!justify || !line || line.length < 1) {
+      setLetterSpacing(0); setFontScale(1); return;
+    }
+    const row = rowRef.current;
+    const meas = measureRef.current;
+    if (!row || !meas) return;
+    const rowWidth = row.getBoundingClientRect().width;
+    const natural = meas.getBoundingClientRect().width;
+    const solved = solveHybridJustify(natural, rowWidth, line.length, DROPDOWN_WEB_BASE_FONT_PX);
+    setLetterSpacing(solved.letterSpacing);
+    setFontScale(solved.scale);
+  }, [line, justify, rowRef]);
+  return (
+    <>
+      <span
+        ref={measureRef}
+        style={{ position: 'absolute', visibility: 'hidden', whiteSpace: 'nowrap', left: -9999 }}
+      >
+        {line}
+      </span>
+      <span
+        style={{
+          alignSelf: 'stretch',
+          textAlign,
+          letterSpacing: `${letterSpacing}px`,
+          fontSize: `${DROPDOWN_WEB_BASE_FONT_PX * fontScale}px`,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'clip',
+        }}
+      >
+        {line}
+      </span>
+    </>
   );
 };
 

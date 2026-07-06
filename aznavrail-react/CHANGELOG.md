@@ -8,10 +8,16 @@
   or exceeded the row width, and the `Text`/`<Text>`/`<span>` then wrapped — producing ugly
   "Generat / e", "Projec / t", "Setting / s" overhangs on narrow rails. The solver now has a
   **shrink** branch: `scale = rowWidth / naturalWidth` (clamped `≥ 0.5×`) so oversized labels scale
-  down to fit on one line. Combined with `softWrap = false` + `maxLines = 1` on Compose,
-  `numberOfLines={1}` on React Native, and `white-space: nowrap` + `overflow: hidden` on the plain
-  web, **line breaks in drawer labels are now explicit-only** (a literal `\n` still splits into
-  multiple rows, but the browser/text engine will never insert one on its own).
+  down to fit on one line.
+- **Explicit `\n` line breaks now survive on React Native and web.** Drawer labels are split on
+  `\n` up-front and each line is rendered by its own inner component (`JustifiedRNLine`,
+  `JustifiedDropdownLine`, `JustifiedWebLine`, `JustifiedWebDropdownLine`) with its own
+  natural-width measurement and its own solver call. Otherwise the newline character would inflate
+  `charCount` and fold both lines' widths into one `naturalWidth`, skewing the per-line justify
+  math — matches Compose's `internal/MenuItem.kt` `lines.forEach { line -> Text(line, …) }`.
+  Combined with `softWrap = false` + `maxLines = 1` on Compose, `numberOfLines={1}` on the RN
+  per-line `<Text>`, and `white-space: nowrap` + `overflow: hidden` on the web per-line `<span>`,
+  **line breaks in drawer labels are now explicit-only**.
 
 ## Unreleased — follow-up (hybrid justify + AzDivider color)
 

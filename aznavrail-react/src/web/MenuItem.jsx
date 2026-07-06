@@ -120,38 +120,35 @@ const MenuItem = ({
         : 'left';
 
   const rowRef = useRef(null);
-  const measureRef = useRef(null);
-  // Hybrid kerning + font-scale justify — see ../util/AzJustify.
-  const [letterSpacing, setLetterSpacing] = useState(0);
-  const [fontScale, setFontScale] = useState(1);
   const label = (isToggle ? (isChecked ? toggleOnText : toggleOffText) : (isCycler ? selectedOption : text)) || '';
-  useEffect(() => {
-    if (!justifyMenuItems || !label || label.length < 2) {
-      setLetterSpacing(0); setFontScale(1); return;
-    }
-    const row = rowRef.current;
-    const meas = measureRef.current;
-    if (!row || !meas) return;
-    const rowWidth = row.getBoundingClientRect().width - paddingLeft - 16;
-    const natural = meas.getBoundingClientRect().width;
-    const solved = solveHybridJustify(natural, rowWidth, label.length, WEB_BASE_FONT_PX);
-    setLetterSpacing(solved.letterSpacing);
-    setFontScale(solved.scale);
-  }, [label, justifyMenuItems, paddingLeft]);
+  // Split up-front on `\n` so each line owns its own measurement + solve. Compose does this too;
+  // measuring the whole label at once folds newline width into `naturalWidth` and inflates the
+  // solver's `charCount`, so per-line justification would drift for any multi-line label.
+  const lines = label.split('\n');
 
-  const labelStyle = {
-    textAlign,
-    letterSpacing: `${letterSpacing}px`,
-    fontSize: `${WEB_BASE_FONT_PX * fontScale}px`,
-    flex: 1,
-    color: textColor || undefined,
-    // Line breaks in menu labels are explicit-only. The solver's shrink branch scales oversized
-    // labels down; `whiteSpace: nowrap` locks the row to one visual line so the browser can't
-    // wrap "Generate" into "Generat / e".
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'clip',
-  };
+  const renderLabelBlock = (visibleText) => (
+    <span className="az-menu-item-text" style={{
+      flex: 1,
+      color: textColor || undefined,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: textAlign === 'right' ? 'flex-end' : textAlign === 'center' ? 'center' : 'flex-start',
+    }}>
+      {lines.map((line, i) => (
+        <JustifiedWebLine
+          key={i}
+          line={line}
+          justify={justifyMenuItems}
+          rowRef={rowRef}
+          paddingLeft={paddingLeft}
+          textAlign={textAlign}
+        />
+      ))}
+      {/* When called from toggle/cycler, `visibleText` may differ from `label` (e.g. cycler value);
+          this branch only matters for the cycler's supplementary value, which is rendered outside. */}
+      {visibleText && visibleText !== label ? null : null}
+    </span>
+  );
 
   return (
     <div
@@ -162,23 +159,16 @@ const MenuItem = ({
       data-az-nav-id={item.id}
       {...ariaProps}
     >
-      {/* Off-screen measurer — same font-size as the visible label. */}
-      <span ref={measureRef} className="az-menu-item-measurer">{label}</span>
-
       {isToggle ? (
-        <div className="az-menu-item-content toggle">
-          <span className="az-menu-item-text" style={labelStyle}>
-            {isChecked ? toggleOnText : toggleOffText}
-          </span>
-        </div>
+        <div className="az-menu-item-content toggle">{renderLabelBlock(isChecked ? toggleOnText : toggleOffText)}</div>
       ) : isCycler ? (
         <div className="az-menu-item-content cycler">
-          <span className="az-menu-item-text" style={labelStyle}>{text}</span>
+          {renderLabelBlock(text)}
           <span className="az-menu-item-value">{selectedOption}</span>
         </div>
       ) : (
         <div className="az-menu-item-content button">
-          <span className="az-menu-item-text" style={labelStyle}>{text}</span>
+          {renderLabelBlock(text)}
           {isHost && (
             <span className="az-menu-item-arrow">
               {isExpanded ? '▼' : '▶'}
@@ -187,6 +177,47 @@ const MenuItem = ({
         </div>
       )}
     </div>
+  );
+};
+
+/**
+ * One logical line of a plain-web menu label. Splits the label up-front on `\n` in the parent, then
+ * renders this per line so each has its own `naturalWidth` measurement and its own solver call.
+ * `whiteSpace: nowrap` prevents auto-wrap; explicit line breaks come from the `.map` in the parent.
+ */
+const JustifiedWebLine = ({ line, justify, rowRef, paddingLeft, textAlign }) => {
+  const measureRef = useRef(null);
+  const [letterSpacing, setLetterSpacing] = useState(0);
+  const [fontScale, setFontScale] = useState(1);
+  useEffect(() => {
+    if (!justify || !line || line.length < 1) {
+      setLetterSpacing(0); setFontScale(1); return;
+    }
+    const row = rowRef.current;
+    const meas = measureRef.current;
+    if (!row || !meas) return;
+    const rowWidth = row.getBoundingClientRect().width - paddingLeft - 16;
+    const natural = meas.getBoundingClientRect().width;
+    const solved = solveHybridJustify(natural, rowWidth, line.length, WEB_BASE_FONT_PX);
+    setLetterSpacing(solved.letterSpacing);
+    setFontScale(solved.scale);
+  }, [line, justify, paddingLeft, rowRef]);
+
+  const style = {
+    textAlign,
+    letterSpacing: `${letterSpacing}px`,
+    fontSize: `${WEB_BASE_FONT_PX * fontScale}px`,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'clip',
+    alignSelf: 'stretch',
+  };
+
+  return (
+    <>
+      <span ref={measureRef} className="az-menu-item-measurer">{line}</span>
+      <span style={style}>{line}</span>
+    </>
   );
 };
 

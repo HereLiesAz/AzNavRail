@@ -30,6 +30,72 @@ interface RailMenuItemProps {
 }
 
 /**
+ * Renders one logical line of a menu label with an independent measurement + hybrid-justify solve.
+ * Splitting up-front on `\n` and rendering one of these per line mirrors the Compose implementation:
+ * each line gets its own `charCount`, its own natural width, and its own `letterSpacing` + font
+ * `scale`, so a two-line label doesn't skew the solve by counting the newline into the char count.
+ */
+const JustifiedRNLine: React.FC<{
+    line: string;
+    justify: boolean;
+    containerWidth: number;
+    textAlign: 'left' | 'right' | 'center';
+    color: string;
+    bold: boolean;
+    textStyle?: object;
+}> = ({ line, justify, containerWidth, textAlign, color, bold, textStyle }) => {
+    const [naturalWidth, setNaturalWidth] = useState(0);
+    const onLabelLayout = (e: LayoutChangeEvent) => {
+        const w = e.nativeEvent.layout.width;
+        if (w && Math.abs(w - naturalWidth) > 0.5) setNaturalWidth(w);
+    };
+    let letterSpacing = 0;
+    let fontScale = 1;
+    if (justify && line.length >= 1 && containerWidth > 0 && naturalWidth > 0) {
+        const { scale, letterSpacing: ls } = solveHybridJustify(
+            naturalWidth,
+            containerWidth,
+            line.length,
+            BASE_FONT_PX,
+        );
+        fontScale = scale;
+        letterSpacing = ls;
+    }
+    const scaledFontSize = BASE_FONT_PX * fontScale;
+    return (
+        <>
+            {/* Off-screen measurer — same font as the visible line, one text-run so we measure the
+                line's natural width. Rendered absolute so it doesn't affect layout. */}
+            <Text
+                onLayout={onLabelLayout}
+                style={[styles.measurer, { fontWeight: bold ? 'bold' : 'normal' }, textStyle]}
+            >
+                {line}
+            </Text>
+            {/* Visible line — `numberOfLines={1}` prevents width-based wrapping now that we've
+                split explicit `\n` breaks up-front. The solver's shrink branch (fontScale < 1) keeps
+                oversized lines from ever overflowing in the first place. */}
+            <Text
+                numberOfLines={1}
+                style={[
+                    styles.menuItemText,
+                    {
+                        fontWeight: bold ? 'bold' : 'normal',
+                        color,
+                        textAlign,
+                        letterSpacing,
+                        fontSize: scaledFontSize,
+                    },
+                    textStyle,
+                ]}
+            >
+                {line}
+            </Text>
+        </>
+    );
+};
+
+/**
  * Internal renderer for a single row in the expanded menu, handling toggle, cycler, and host item modes.
  * Used by `AzNavRail` when the menu is open.
  */
@@ -98,37 +164,20 @@ export const RailMenuItem: React.FC<RailMenuItemProps> = ({
     if (item.isToggle) accessibilityState.checked = item.isChecked;
     if (item.isHost || item.isNestedRail) accessibilityState.expanded = isExpandedHost;
 
-    // Alignment + kerning-justify computed per-row. We measure the label's natural width off-screen,
-    // then compute an equal letter-spacing that stretches it to fill the row.
-    const textAlign =
+    const textAlign: 'left' | 'right' | 'center' =
         menuItemAlignment === 'center'
             ? 'center'
             : dockingSide === AzDockingSide.RIGHT ? 'right' : 'left';
     const [availableWidth, setAvailableWidth] = useState(0);
-    const [naturalWidth, setNaturalWidth] = useState(0);
     const onContainerLayout = (e: LayoutChangeEvent) => {
         const w = e.nativeEvent.layout.width;
         if (w && Math.abs(w - availableWidth) > 0.5) setAvailableWidth(w);
     };
-    const onLabelLayout = (e: LayoutChangeEvent) => {
-        const w = e.nativeEvent.layout.width;
-        if (w && Math.abs(w - naturalWidth) > 0.5) setNaturalWidth(w);
-    };
-    // Hybrid justify: try kerning up to α·fontSize, then grow the font past that limit so both
-    // letter-spacing and font-scale reach a stable mix that fills the row. See ../util/AzJustify.
-    let letterSpacing = 0;
-    let fontScale = 1;
-    if (justifyMenuItems && displayText && displayText.length >= 2 && availableWidth > 0 && naturalWidth > 0) {
-        const { scale, letterSpacing: ls } = solveHybridJustify(
-            naturalWidth,
-            availableWidth,
-            displayText.length,
-            BASE_FONT_PX,
-        );
-        fontScale = scale;
-        letterSpacing = ls;
-    }
-    const scaledFontSize = BASE_FONT_PX * fontScale;
+
+    // Split up-front on `\n` and render each line independently — the newline count skews
+    // per-line justify math otherwise. Compose's `internal/MenuItem.kt` uses the same pattern.
+    const lines = (displayText ?? '').split('\n');
+    const labelColor = item.textColor ?? item.color ?? '#000000';
 
     return (
         <View>
@@ -140,32 +189,20 @@ export const RailMenuItem: React.FC<RailMenuItemProps> = ({
                 accessibilityLabel={displayText}
                 accessibilityState={accessibilityState}
             >
-                {/* Off-screen "measurer" — same font/style as the visible label, absent from layout. */}
-                <Text
-                    onLayout={onLabelLayout}
-                    style={[styles.measurer, { fontWeight: item.isHost ? 'bold' : 'normal' }, textStyle]}
-                >
-                    {displayText}
-                </Text>
-                <Text
-                    numberOfLines={1}
-                    // Line breaks in menu labels are explicit-only; the solver shrinks oversized
-                    // labels via `fontScale`, so `numberOfLines={1}` locks the row to one line
-                    // and clips only when even the min-scale doesn't fit.
-                    style={[
-                        styles.menuItemText,
-                        {
-                            fontWeight: item.isHost ? 'bold' : 'normal',
-                            color: item.textColor ?? item.color ?? '#000000',
-                            textAlign,
-                            letterSpacing,
-                            fontSize: scaledFontSize,
-                        },
-                        textStyle,
-                    ]}
-                >
-                    {displayText}
-                </Text>
+                <View style={styles.labelColumn}>
+                    {lines.map((line, i) => (
+                        <JustifiedRNLine
+                            key={i}
+                            line={line}
+                            justify={!!justifyMenuItems}
+                            containerWidth={availableWidth}
+                            textAlign={textAlign}
+                            color={labelColor}
+                            bold={!!item.isHost}
+                            textStyle={textStyle}
+                        />
+                    ))}
+                </View>
                 {item.isHost && (
                     <Text style={{ marginLeft: 8 }}>{isExpandedHost ? '▲' : '▼'}</Text>
                 )}
@@ -182,9 +219,13 @@ const styles = StyleSheet.create({
       flexDirection: 'row',
       alignItems: 'center',
   },
+  labelColumn: {
+      flex: 1,
+      flexDirection: 'column',
+  },
   menuItemText: {
       fontSize: 16,
-      flex: 1,
+      alignSelf: 'stretch',
   },
   // Rendered off-screen (position:absolute + opacity:0) so it doesn't affect layout, but its onLayout
   // still fires with the label's natural width — which drives the letterSpacing calculation above.
