@@ -25,6 +25,7 @@ val navigationComposeCmpVersion = libs.versions.navigationComposeCmp.get()
 val activityComposeVersion = libs.versions.activityCompose.get()
 val ktorVersion = libs.versions.ktor.get()
 val kotlinxSerializationVersion = libs.versions.kotlinxSerialization.get()
+val multiplatformSettingsVersion = libs.versions.multiplatformSettings.get()
 
 kotlin {
     jvmToolchain(17)
@@ -75,6 +76,9 @@ kotlin {
                 // needed.
                 implementation("io.ktor:ktor-client-core:$ktorVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
+                // Cross-platform key-value store (SharedPreferences / java.util.prefs / localStorage
+                // / NSUserDefaults) backing AzHttpCache's persistence layer.
+                implementation("com.russhwolf:multiplatform-settings:$multiplatformSettingsVersion")
             }
         }
         val androidMain by getting {
