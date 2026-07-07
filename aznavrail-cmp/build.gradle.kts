@@ -14,6 +14,7 @@ plugins {
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.android.library)
+    id("maven-publish")
 }
 
 group = "com.github.HereLiesAz.AzNavRail"
@@ -28,7 +29,10 @@ val kotlinxSerializationVersion = libs.versions.kotlinxSerialization.get()
 kotlin {
     jvmToolchain(17)
 
-    androidTarget()
+    androidTarget {
+        // Publish the release variant so the JitPack/Maven `android` publication resolves.
+        publishLibraryVariants("release")
+    }
 
     jvm("desktop")
 
@@ -113,5 +117,28 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+// Publishing. The KMP plugin auto-registers a MavenPublication per target
+// (`kotlinMultiplatform`, `android`, `desktop`, `wasmJs`, and the iOS targets once added), so unlike
+// the Android module's single `register<MavenPublication>("release")` we attach shared POM metadata
+// across all of them. JitPack picks these up on the next release tag; consumers depend on
+// `com.github.HereLiesAz.AzNavRail:aznavrail-cmp:<version>`. Sources jars are emitted by the KMP
+// plugin by default.
+publishing {
+    publications.withType<MavenPublication>().configureEach {
+        pom {
+            name.set("AzNavRail (Compose Multiplatform)")
+            description.set("Compose Multiplatform port of the DSL-driven AzNavRail navigation rail.")
+            url.set("https://github.com/HereLiesAz/AzNavRail")
+            licenses {
+                license {
+                    name.set("Apache-2.0")
+                    url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                    distribution.set("repo")
+                }
+            }
+        }
     }
 }
