@@ -1,17 +1,12 @@
 package com.hereliesaz.aznavrail
 
+import androidx.compose.animation.core.Easing
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Rect
-import com.hereliesaz.aznavrail.tutorial.AzGuidanceSnapshot
-import com.hereliesaz.aznavrail.tutorial.AzGuideShape
-import com.hereliesaz.aznavrail.tutorial.AzInstructionStep
-import com.hereliesaz.aznavrail.tutorial.toHighlight
-import androidx.compose.animation.core.Easing
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
@@ -29,6 +24,11 @@ import com.hereliesaz.aznavrail.model.AzItemConfig
 import com.hereliesaz.aznavrail.model.AzMenuItemAlignment
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
+import com.hereliesaz.aznavrail.tutorial.AzGuidanceSnapshot
+import com.hereliesaz.aznavrail.tutorial.AzGuideShape
+import com.hereliesaz.aznavrail.tutorial.AzInstructionStep
+import com.hereliesaz.aznavrail.tutorial.toHighlight
+
 // (Removed `import java.util.Collections.emptySet` — java.util.Collections isn't multiplatform.
 // The file uses `emptySet()` which resolves to `kotlin.collections.emptySet` without the import.)
 
@@ -660,7 +660,7 @@ internal class HiddenMenuScopeImpl(
  */
 class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSetOf()) : AzNavRailScope {
     /** Live list of all [AzNavItem] entries configured via the DSL. */
-    val navItems = mutableStateListOf<AzNavItem>()
+    val navItems = mutableListOf<AzNavItem>()
     /** Maps item IDs to their click callbacks. */
     val onClickMap = mutableMapOf<String, () -> Unit>()
     /** Maps item IDs to their focus callbacks. */

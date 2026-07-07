@@ -7,8 +7,14 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
-/** Pure-logic tests for the About reader + More-from-Az parsing/ordering (no network). */
+/**
+ * Pure-logic tests for the About reader + More-from-Az parsing/ordering
+ * (no network).
+ */
+@RunWith(RobolectricTestRunner::class)
 class AboutServiceTest {
 
     @Test

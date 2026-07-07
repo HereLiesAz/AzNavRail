@@ -11,7 +11,6 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -41,6 +40,8 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -121,9 +122,13 @@ internal fun AzNavRailButton(
             .aspectRatio(1f)
         AzButtonShape.RECTANGLE, AzButtonShape.NONE -> {
             if (isRotated) {
-                modifier.width(40.dp).height(size)
+                modifier
+                    .width(40.dp)
+                    .height(size)
             } else {
-                modifier.width(size).height(40.dp)
+                modifier
+                    .width(size)
+                    .height(40.dp)
             }
         }
     }
@@ -173,6 +178,7 @@ internal fun AzNavRailButton(
             .onGloballyPositioned { coordinates ->
                 onGloballyPositioned?.invoke(coordinates.boundsInWindow())
             }
+            .semantics { contentDescription = text }
             .then(clickableModifier)
     ) {
         Box(
@@ -211,7 +217,10 @@ private fun ItemContentRenderer(itemContent: Any, color: Color, enabled: Boolean
     val context = LocalContext.current
     when (itemContent) {
         // Zero padding, completely fills shape
-        is Color -> Box(modifier = Modifier.fillMaxSize().alpha(if (enabled) 1f else 0.5f).background(itemContent))
+        is Color -> Box(modifier = Modifier
+            .fillMaxSize()
+            .alpha(if (enabled) 1f else 0.5f)
+            .background(itemContent))
         is AzComposableContent -> itemContent.content(enabled)
         is Int -> {
             val isResource = try { context.resources.getResourceName(itemContent) != null } catch (e: Exception) { false }
@@ -236,13 +245,17 @@ private fun ItemContentRenderer(itemContent: Any, color: Color, enabled: Boolean
             contentDescription = null,
             colorFilter = ColorFilter.tint(color),
             contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize().alpha(if (enabled) 1f else 0.5f)
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(if (enabled) 1f else 0.5f)
         )
         is Painter -> Image(
             painter = itemContent,
             contentDescription = null,
             contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize().alpha(if (enabled) 1f else 0.5f)
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(if (enabled) 1f else 0.5f)
         )
         else -> {
             Image(

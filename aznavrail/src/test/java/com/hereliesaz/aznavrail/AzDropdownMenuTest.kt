@@ -5,14 +5,14 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import com.hereliesaz.aznavrail.model.AzDropdownDesign
 import com.hereliesaz.aznavrail.model.AzEntrance
 import org.junit.Assert.assertEquals
@@ -101,8 +101,8 @@ class AzDropdownMenuTest {
         }
 
         composeTestRule.onNodeWithContentDescription("Menu").performClick()
-        composeTestRule.onNodeWithText("Home").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Home").performClick()
+        composeTestRule.onNodeWithContentDescription("Home").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Home").performClick()
         assertTrue(clicked)
     }
 

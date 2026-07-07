@@ -12,16 +12,15 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,9 +29,8 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -65,20 +63,19 @@ import com.hereliesaz.aznavrail.internal.AzLayoutConfig
 import com.hereliesaz.aznavrail.internal.AzNavMode
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.internal.AzRailLayoutHelper
-import com.hereliesaz.aznavrail.internal.rememberAzKineticModifier
-import com.hereliesaz.aznavrail.model.AzExit
+import com.hereliesaz.aznavrail.internal.AzSafeZones
+import com.hereliesaz.aznavrail.internal.AzVisualSide
 import com.hereliesaz.aznavrail.internal.HelpOverlay
 import com.hereliesaz.aznavrail.internal.MoreFromAzOverlay
-import com.hereliesaz.aznavrail.service.GithubDocsRepository
-import com.hereliesaz.aznavrail.internal.AzSafeZones
 import com.hereliesaz.aznavrail.internal.azResolveSafeBottom
-import com.hereliesaz.aznavrail.internal.AzVisualSide
+import com.hereliesaz.aznavrail.internal.rememberAzKineticModifier
+import com.hereliesaz.aznavrail.model.AzDockingSide
+import com.hereliesaz.aznavrail.model.AzExit
+import com.hereliesaz.aznavrail.model.AzSheetConfig
+import com.hereliesaz.aznavrail.service.GithubDocsRepository
 import com.hereliesaz.aznavrail.tutorial.AzGuidanceController
 import com.hereliesaz.aznavrail.tutorial.LocalAzGuidanceController
 import com.hereliesaz.aznavrail.tutorial.rememberAzGuidanceController
-import com.hereliesaz.aznavrail.model.AzDockingSide
-import com.hereliesaz.aznavrail.model.AzSheetConfig
-import androidx.compose.foundation.layout.BoxScope
 
 /** CompositionLocal that signals whether [AzNavRail] is correctly nested inside [AzHostActivityLayout]. */
 val LocalAzNavHostPresent = compositionLocalOf { false }
@@ -215,9 +212,9 @@ class AzNavHostScopeImpl(
     override val navController: NavHostController get() = _navController ?: error("AzNavHostScope.navController was read before the host's NavController was attached. This getter is only safe inside composables that run AFTER `AzHostActivityLayout` has built its `NavHost` (eg. inside `onscreen { ... }`, `background { ... }`, or button `onClick` lambdas). Fix: do not access `navController` from inside the `azRailContent { ... }` declaration block itself, nor from `init`/eager code -- defer the call into a composable body or an `onClick`; or, if you are writing a custom host, call `setController(yourNavController)` on this scope before reading `navController`.")
     override val dockingSide: AzDockingSide get() = railScope.dockingSide
 
-    val backgrounds = mutableStateListOf<AzBackgroundItem>()
-    val onscreenItems = mutableStateListOf<AzOnscreenItem>()
-    internal val bottomSheets = mutableStateListOf<AzBottomSheetItem>()
+    val backgrounds = mutableListOf<AzBackgroundItem>()
+    val onscreenItems = mutableListOf<AzOnscreenItem>()
+    internal val bottomSheets = mutableListOf<AzBottomSheetItem>()
 
     // --- Built-in overlay visibility ---
     // The rail (which always runs inside this host) flips these on user action; the host renders the
@@ -551,7 +548,12 @@ fun AzHostActivityLayout(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = topPadding, bottom = bottomPadding, start = startPadding, end = endPadding)
+                        .padding(
+                            top = topPadding,
+                            bottom = bottomPadding,
+                            start = startPadding,
+                            end = endPadding
+                        )
                 ) {
                     // Only one reader at a time: when More-from-Az is open it fully replaces About, so
                     // a translucent surface can't let the About doc links bleed through its cards.
@@ -647,7 +649,12 @@ fun AzHostFragmentLayout(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(top = safeTop + topPadding, bottom = safeBottom + bottomPadding, start = startPadding, end = endPadding)
+            .padding(
+                top = safeTop + topPadding,
+                bottom = safeBottom + bottomPadding,
+                start = startPadding,
+                end = endPadding
+            )
     ) {
         items.forEach { item ->
             val finalAlignment = if (dockingSide == AzDockingSide.RIGHT && item.alignment is BiasAlignment) {

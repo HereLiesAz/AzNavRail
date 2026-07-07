@@ -29,8 +29,10 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [33])
 class AzBottomSheetWindowHostTest {
 
     private class TestOwner : LifecycleOwner, ViewModelStoreOwner, SavedStateRegistryOwner {
@@ -211,6 +213,10 @@ class AzBottomSheetWindowHostTest {
     @Test
     fun drawBehindNavBar_growsHiddenWindow_byNavBarInset_underButtonNav() {
         val ctx = newContext()
+        // Force button navigation mode for this test so navBarExtensionPx resolves to the inset.
+        // We use the SECURE setting "navigation_mode" = 0 (3-button).
+        android.provider.Settings.Secure.putInt(ctx.contentResolver, "navigation_mode", 0)
+
         val owner = TestOwner().also { it.registry.currentState = Lifecycle.State.RESUMED }
         val controller = AzSheetController(initial = AzSheetDetent.HIDDEN)
         val host = AzBottomSheetWindowHost(
@@ -220,7 +226,7 @@ class AzBottomSheetWindowHostTest {
             lifecycleOwner = owner,
             viewModelStoreOwner = owner,
             savedStateRegistryOwner = owner,
-            navBarHeightPx = 0,
+            navBarHeightPx = 60,
         ) { Box(modifier = androidx.compose.ui.Modifier) {} }
 
         host.attach()
@@ -231,6 +237,13 @@ class AzBottomSheetWindowHostTest {
         // Deliver a button-nav-sized inset; the window must grow downward by exactly that inset
         // while the exposed (above-bar) strip height is unchanged.
         val navBar = 60
+
+        // Sanity check: ensure Robolectric sees button navigation.
+        assertTrue(
+            "Robolectric must report button nav for this test.",
+            com.hereliesaz.aznavrail.internal.AzNavMode.isButtonNav(ctx)
+        )
+
         val view = host.sheetViewForTest()!!
         val insets = WindowInsetsCompat.Builder()
             .setInsets(WindowInsetsCompat.Type.navigationBars(), Insets.of(0, 0, 0, navBar))

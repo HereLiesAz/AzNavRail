@@ -2,6 +2,7 @@ package com.hereliesaz.aznavrail.service
 
 import android.content.Context
 import com.hereliesaz.aznavrail.model.AzDocEntry
+import com.hereliesaz.aznavrail.service.GithubDocsRepository.listDocs
 import org.json.JSONArray
 
 /**
@@ -54,9 +55,15 @@ object GithubDocsRepository {
         fileName.removeSuffix(".md").removeSuffix(".MD")
             .replace('-', ' ').replace('_', ' ')
             .split(' ').filter { it.isNotBlank() }
-            .joinToString(" ") { w -> w.replaceFirstChar { it.uppercase() } }
+            .joinToString(" ") { w ->
+                if (w.equals("README", ignoreCase = true)) "README"
+                else w.lowercase().replaceFirstChar { it.uppercase() }
+            }
 
-    /** Parses a GitHub contents-API JSON array into the `.md` [AzDocEntry] list it contains. */
+    /**
+     * Parses a GitHub contents-API JSON array into the `.md` [AzDocEntry] list
+     * it contains.
+     */
     internal fun parseContents(json: String): List<AzDocEntry> {
         val out = mutableListOf<AzDocEntry>()
         val arr = JSONArray(json)
