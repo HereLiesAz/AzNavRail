@@ -1348,7 +1348,11 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         onClickMap[id] = onClick
         navItems.add(
             AzNavItem(
-                id = id, text = "", route = config.route, screenTitle = finalScreenTitle, isRailItem = config.isRailItem,
+                id = id,
+                text = selectedOption,
+                route = config.route,
+                screenTitle = finalScreenTitle,
+                isRailItem = config.isRailItem,
                 classifiers = config.classifiers, isCycler = true, options = options, menuOptions = menuOptions, selectedOption = selectedOption,
                 disabled = config.disabled, disabledOptions = disabledOptions, isSubItem = config.isSubItem,
                 hostId = config.hostId, info = config.info, color = config.color, textColor = config.textColor,
@@ -1367,7 +1371,11 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         onClickMap[id] = onClick
         navItems.add(
             AzNavItem(
-                id = id, text = "", route = config.route, screenTitle = finalScreenTitle, isRailItem = config.isRailItem,
+                id = id,
+                text = text,
+                route = config.route,
+                screenTitle = finalScreenTitle,
+                isRailItem = config.isRailItem,
                 classifiers = config.classifiers, isToggle = true, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText,
                 menuToggleOnText = menuToggleOnText, menuToggleOffText = menuToggleOffText, disabled = config.disabled,
                 isSubItem = config.isSubItem, hostId = config.hostId, info = config.info, color = config.color,

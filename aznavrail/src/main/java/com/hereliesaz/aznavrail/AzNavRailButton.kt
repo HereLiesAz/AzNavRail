@@ -113,23 +113,15 @@ internal fun AzNavRailButton(
         AzButtonShape.NONE -> RectangleShape
     }
 
-    val isRotated = rotationDegrees != 0f && (rotationDegrees % 180 != 0f)
-
-    // STRICT WIDTH COMPLIANCE for all shapes. Swapped in landscape to maintain "physical" size.
+    // STRICT WIDTH COMPLIANCE for all shapes.
     val buttonModifier = when (shape) {
         AzButtonShape.CIRCLE, AzButtonShape.SQUARE -> modifier
             .size(size)
             .aspectRatio(1f)
         AzButtonShape.RECTANGLE, AzButtonShape.NONE -> {
-            if (isRotated) {
-                modifier
-                    .width(40.dp)
-                    .height(size)
-            } else {
-                modifier
-                    .width(size)
-                    .height(40.dp)
-            }
+            modifier
+                .width(size)
+                .height(40.dp)
         }
     }
 

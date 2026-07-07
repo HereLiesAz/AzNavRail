@@ -434,10 +434,24 @@ fun AzHostActivityLayout(
         }
 
         val currentTitle = currentActiveItem?.let { item ->
-            when {
-                item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
-                item.isCycler -> railScopeImpl.transientCyclerOptions[item.id] ?: item.selectedOption ?: item.text
-                else -> if (item.screenTitle != null && item.screenTitle != AzNavRailDefaults.NO_TITLE) item.screenTitle else item.text
+            val explicitTitle =
+                if (item.screenTitle != null && item.screenTitle != AzNavRailDefaults.NO_TITLE) item.screenTitle else null
+            explicitTitle ?: when {
+                item.isToggle -> if (item.isChecked == true) (item.menuToggleOnText
+                    ?: item.toggleOnText) else (item.menuToggleOffText ?: item.toggleOffText)
+
+                item.isCycler -> {
+                    val currentOption =
+                        railScopeImpl.transientCyclerOptions[item.id] ?: item.selectedOption
+                    val index = item.options?.indexOf(currentOption) ?: -1
+                    if (index != -1 && item.menuOptions != null && index in item.menuOptions.indices) {
+                        item.menuOptions[index]
+                    } else {
+                        currentOption ?: item.text
+                    }
+                }
+
+                else -> item.text
             }
         }
 

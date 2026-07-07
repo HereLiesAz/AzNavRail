@@ -47,16 +47,17 @@ internal object AzRailLayoutHelper {
             when (dockingSide) {
                 AzDockingSide.LEFT -> when (rotation) {
                     Surface.ROTATION_0 -> AzVisualSide.LEFT
-                    Surface.ROTATION_90 -> AzVisualSide.BOTTOM
-                    Surface.ROTATION_180 -> AzVisualSide.RIGHT
-                    Surface.ROTATION_270 -> AzVisualSide.TOP
-                    else -> AzVisualSide.LEFT
-                }
-                AzDockingSide.RIGHT -> when (rotation) {
-                    Surface.ROTATION_0 -> AzVisualSide.RIGHT
                     Surface.ROTATION_90 -> AzVisualSide.TOP
                     Surface.ROTATION_180 -> AzVisualSide.LEFT
                     Surface.ROTATION_270 -> AzVisualSide.BOTTOM
+                    else -> AzVisualSide.LEFT
+                }
+
+                AzDockingSide.RIGHT -> when (rotation) {
+                    Surface.ROTATION_0 -> AzVisualSide.RIGHT
+                    Surface.ROTATION_90 -> AzVisualSide.BOTTOM
+                    Surface.ROTATION_180 -> AzVisualSide.RIGHT
+                    Surface.ROTATION_270 -> AzVisualSide.TOP
                     else -> AzVisualSide.RIGHT
                 }
             }
@@ -72,8 +73,8 @@ internal object AzRailLayoutHelper {
 
         val reverseLayout = if (usePhysicalDocking) {
             when (dockingSide) {
-                AzDockingSide.LEFT -> (rotation == Surface.ROTATION_180 || rotation == Surface.ROTATION_270)
-                AzDockingSide.RIGHT -> (rotation == Surface.ROTATION_180 || rotation == Surface.ROTATION_90)
+                AzDockingSide.LEFT -> (rotation == Surface.ROTATION_270)
+                AzDockingSide.RIGHT -> (rotation == Surface.ROTATION_90)
             }
         } else {
             false
