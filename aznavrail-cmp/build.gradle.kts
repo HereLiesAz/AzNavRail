@@ -104,12 +104,13 @@ kotlin {
                 implementation("io.ktor:ktor-client-js:$ktorVersion")
             }
         }
-        // `iosMain` is created by the default hierarchy template (2+ iOS targets share it).
-        val iosMain by getting {
-            dependencies {
-                // Ktor Darwin engine (NSURLSession) for the iOS targets.
-                implementation("io.ktor:ktor-client-darwin:$ktorVersion")
-            }
+        // `iosMain` is the intermediate source set the default hierarchy template creates for the
+        // two iOS targets. It's materialized lazily, so `val iosMain by getting` (which resolves an
+        // already-created source set) fails at configuration time with "KotlinSourceSet with name
+        // 'iosMain' not found". The generated `iosMain` accessor triggers creation, so use it.
+        iosMain.dependencies {
+            // Ktor Darwin engine (NSURLSession) for the iOS targets.
+            implementation("io.ktor:ktor-client-darwin:$ktorVersion")
         }
     }
 }

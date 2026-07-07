@@ -87,6 +87,22 @@ dependencies {
 }
 ~~~
 
+### Compose Multiplatform
+
+Targeting more than Android? The [`aznavrail-cmp`](aznavrail-cmp/README.md) module is a Compose
+Multiplatform port of the same rail — one `commonMain` source set across **Android, Desktop (JVM),
+Web (wasmJs), and iOS**:
+
+~~~kotlin
+commonMain.dependencies {
+    implementation("com.github.HereLiesAz.AzNavRail:aznavrail-cmp:VERSION")
+}
+~~~
+
+See the [module README](aznavrail-cmp/README.md) for the CompositionLocal wiring (there's no
+`AzHostActivityLayout` off-Android) and the [`aznavrail-cmp-demo`](aznavrail-cmp-demo) runnable
+desktop + web sample.
+
 ---
 
 ## 🛠️ The Golden Sample
