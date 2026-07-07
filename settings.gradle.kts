@@ -21,3 +21,4 @@ rootProject.name = "AzNavRail"
 include(":SampleApp")
 include(":aznavrail")
 include(":aznavrail-cmp")
+include(":aznavrail-cmp-demo")

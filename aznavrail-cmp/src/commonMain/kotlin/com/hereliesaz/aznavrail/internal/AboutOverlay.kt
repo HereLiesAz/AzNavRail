@@ -25,9 +25,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -130,7 +127,7 @@ internal fun AboutOverlay(
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 if (selected != null) {
                     Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
+                        AzIcons.ArrowBack,
                         contentDescription = "Back to contents",
                         tint = accent,
                         modifier = Modifier.clickable { selected = null }.padding(end = 12.dp)
@@ -144,7 +141,7 @@ internal fun AboutOverlay(
                     modifier = Modifier.weight(1f)
                 )
                 Icon(
-                    Icons.Filled.Close,
+                    AzIcons.Close,
                     contentDescription = "Close",
                     tint = accent,
                     modifier = Modifier.clickable { onDismiss() }

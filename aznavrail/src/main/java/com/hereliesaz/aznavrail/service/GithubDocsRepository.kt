@@ -146,17 +146,25 @@ object GithubDocsRepository {
             .map { it.removePrefix("./") }
             .toList()
 
-    /** True if [path] (a repo-relative doc path) matches any `.azignore` [patterns]. */
+    /**
+     * True if [path] (a repo-relative doc path) matches any `.azignore` [patterns].
+     *
+     * A bare directory name (`docs`, no trailing slash) also excludes everything under it —
+     * `path.startsWith("$pat/")` — aligning with `.gitignore` semantics. `*` globs still compile to
+     * a regex matched against both the full path and the file name. (Kept in sync with the CMP
+     * sibling's `isIgnored`.)
+     */
     internal fun isIgnored(path: String, patterns: List<String>): Boolean {
         if (patterns.isEmpty()) return false
         val fileName = path.substringAfterLast('/')
         return patterns.any { pat ->
             when {
                 pat.endsWith("/") -> path == pat.dropLast(1) || path.startsWith(pat)
-                else -> {
+                pat.contains("*") -> {
                     val regex = "^" + pat.split("*").joinToString(".*") { Regex.escape(it) } + "$"
                     Regex(regex).matches(path) || Regex(regex).matches(fileName)
                 }
+                else -> path == pat || path.startsWith("$pat/") || fileName == pat
             }
         }
     }

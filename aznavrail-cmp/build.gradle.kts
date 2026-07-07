@@ -14,6 +14,7 @@ plugins {
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.android.library)
+    id("maven-publish")
 }
 
 group = "com.github.HereLiesAz.AzNavRail"
@@ -22,22 +23,26 @@ version = System.getenv("JITPACK_VERSION") ?: libs.versions.aznavrail.get()
 val coil3Version = libs.versions.coil3.get()
 val navigationComposeCmpVersion = libs.versions.navigationComposeCmp.get()
 val activityComposeVersion = libs.versions.activityCompose.get()
+val ktorVersion = libs.versions.ktor.get()
+val kotlinxSerializationVersion = libs.versions.kotlinxSerialization.get()
+val multiplatformSettingsVersion = libs.versions.multiplatformSettings.get()
 
 kotlin {
     jvmToolchain(17)
 
-    androidTarget()
+    androidTarget {
+        // Publish the release variant so the JitPack/Maven `android` publication resolves.
+        publishLibraryVariants("release")
+    }
 
     jvm("desktop")
 
-    // iOS targets are intentionally omitted for now. The ported UI uses Material icons
-    // (`androidx.compose.material.icons.*`) pervasively — hamburger, password-visibility toggle,
-    // dropdown arrow, back, check — and `org.jetbrains.compose.material:material-icons-extended`
-    // publishes android/desktop/wasmJs but NOT iOS (the androidx material-icons libraries are
-    // deprecated and frozen without iOS support). Supporting iOS would require replacing every
-    // `Icons.*` usage with an inlined `ImageVector` or adopting a maintained multiplatform icon
-    // library — a dedicated follow-up. Android + Desktop + wasmJs all resolve every dependency and
-    // share the same source, which is the multiplatform win this port delivers today.
+    // iOS: real devices (arm64) + Apple-Silicon simulators (simulatorArm64). iosX64 (the Intel
+    // simulator) is omitted — every dependency ships arm64/sim variants and Intel simulators are
+    // legacy. The Material icons the UI needs are inlined (see internal/AzIcons.kt) so no
+    // iOS-incompatible `material-icons-extended` dependency is required.
+    iosArm64()
+    iosSimulatorArm64()
 
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
@@ -61,6 +66,20 @@ kotlin {
                 // package-compatible with `androidx.navigation`, so files ported from the Android
                 // sibling generally need no import changes.
                 implementation("org.jetbrains.androidx.navigation:navigation-compose:$navigationComposeCmpVersion")
+                // Network layer (About docs + More-from-Az carousel). Ktor's no-arg `HttpClient()`
+                // auto-selects whichever engine artifact is on each target's classpath, so
+                // commonMain needs only the core + the JSON runtime; the per-target engines live in
+                // the platform source sets below. JSON is parsed via the `JsonElement` runtime API
+                // (no `@Serializable` DTOs), so the kotlinx-serialization compiler plugin isn't
+                // needed.
+                implementation("io.ktor:ktor-client-core:$ktorVersion")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
+                // Cross-platform key-value store backing AzHttpCache's persistence layer. The
+                // `-no-arg` variant provides a commonMain `Settings()` factory that resolves each
+                // platform's store automatically (java.util.prefs on Desktop, SharedPreferences via
+                // androidx-startup auto-context on Android, localStorage on wasmJs, NSUserDefaults on
+                // iOS) — so no `Context` and no per-platform factory are needed.
+                implementation("com.russhwolf:multiplatform-settings-no-arg:$multiplatformSettingsVersion")
             }
         }
         val androidMain by getting {
@@ -69,7 +88,29 @@ kotlin {
                 // This is the standard Android artifact (not the JetBrains multiplatform fork,
                 // which doesn't publish a common BackHandler) so it only belongs in androidMain.
                 implementation("androidx.activity:activity-compose:$activityComposeVersion")
+                // Ktor engine for Android (wraps HttpURLConnection; no extra transitive deps).
+                implementation("io.ktor:ktor-client-android:$ktorVersion")
             }
+        }
+        val desktopMain by getting {
+            dependencies {
+                // Ktor CIO engine — pure-Kotlin, works on the JVM desktop target.
+                implementation("io.ktor:ktor-client-cio:$ktorVersion")
+            }
+        }
+        val wasmJsMain by getting {
+            dependencies {
+                // Ktor JS engine (publishes a wasm-js variant) — routes through the browser fetch API.
+                implementation("io.ktor:ktor-client-js:$ktorVersion")
+            }
+        }
+        // `iosMain` is the intermediate source set the default hierarchy template creates for the
+        // two iOS targets. It's materialized lazily, so `val iosMain by getting` (which resolves an
+        // already-created source set) fails at configuration time with "KotlinSourceSet with name
+        // 'iosMain' not found". The generated `iosMain` accessor triggers creation, so use it.
+        iosMain.dependencies {
+            // Ktor Darwin engine (NSURLSession) for the iOS targets.
+            implementation("io.ktor:ktor-client-darwin:$ktorVersion")
         }
     }
 }
@@ -89,5 +130,28 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+// Publishing. The KMP plugin auto-registers a MavenPublication per target
+// (`kotlinMultiplatform`, `android`, `desktop`, `wasmJs`, and the iOS targets once added), so unlike
+// the Android module's single `register<MavenPublication>("release")` we attach shared POM metadata
+// across all of them. JitPack picks these up on the next release tag; consumers depend on
+// `com.github.HereLiesAz.AzNavRail:aznavrail-cmp:<version>`. Sources jars are emitted by the KMP
+// plugin by default.
+publishing {
+    publications.withType<MavenPublication>().configureEach {
+        pom {
+            name.set("AzNavRail (Compose Multiplatform)")
+            description.set("Compose Multiplatform port of the DSL-driven AzNavRail navigation rail.")
+            url.set("https://github.com/HereLiesAz/AzNavRail")
+            licenses {
+                license {
+                    name.set("Apache-2.0")
+                    url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                    distribution.set("repo")
+                }
+            }
+        }
     }
 }

@@ -29,8 +29,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -103,6 +101,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import com.hereliesaz.aznavrail.internal.AzIcons
 
 /**
  * Annotation marking that the [AzNavRail] composable must be used within an [AzHostActivityLayout].
@@ -690,7 +689,7 @@ fun AzNavRail(
                                 }
                                 Image(painter = rememberAsyncImagePainter(appIcon), contentDescription = "App Icon", modifier = clipModifier)
                             } else {
-                                Icon(Icons.Default.Menu, "Menu")
+                                Icon(AzIcons.Menu, "Menu")
                             }
                         }
                     }
