@@ -22,6 +22,8 @@ version = System.getenv("JITPACK_VERSION") ?: libs.versions.aznavrail.get()
 val coil3Version = libs.versions.coil3.get()
 val navigationComposeCmpVersion = libs.versions.navigationComposeCmp.get()
 val activityComposeVersion = libs.versions.activityCompose.get()
+val ktorVersion = libs.versions.ktor.get()
+val kotlinxSerializationVersion = libs.versions.kotlinxSerialization.get()
 
 kotlin {
     jvmToolchain(17)
@@ -61,6 +63,14 @@ kotlin {
                 // package-compatible with `androidx.navigation`, so files ported from the Android
                 // sibling generally need no import changes.
                 implementation("org.jetbrains.androidx.navigation:navigation-compose:$navigationComposeCmpVersion")
+                // Network layer (About docs + More-from-Az carousel). Ktor's no-arg `HttpClient()`
+                // auto-selects whichever engine artifact is on each target's classpath, so
+                // commonMain needs only the core + the JSON runtime; the per-target engines live in
+                // the platform source sets below. JSON is parsed via the `JsonElement` runtime API
+                // (no `@Serializable` DTOs), so the kotlinx-serialization compiler plugin isn't
+                // needed.
+                implementation("io.ktor:ktor-client-core:$ktorVersion")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
             }
         }
         val androidMain by getting {
@@ -69,6 +79,20 @@ kotlin {
                 // This is the standard Android artifact (not the JetBrains multiplatform fork,
                 // which doesn't publish a common BackHandler) so it only belongs in androidMain.
                 implementation("androidx.activity:activity-compose:$activityComposeVersion")
+                // Ktor engine for Android (wraps HttpURLConnection; no extra transitive deps).
+                implementation("io.ktor:ktor-client-android:$ktorVersion")
+            }
+        }
+        val desktopMain by getting {
+            dependencies {
+                // Ktor CIO engine — pure-Kotlin, works on the JVM desktop target.
+                implementation("io.ktor:ktor-client-cio:$ktorVersion")
+            }
+        }
+        val wasmJsMain by getting {
+            dependencies {
+                // Ktor JS engine (publishes a wasm-js variant) — routes through the browser fetch API.
+                implementation("io.ktor:ktor-client-js:$ktorVersion")
             }
         }
     }
