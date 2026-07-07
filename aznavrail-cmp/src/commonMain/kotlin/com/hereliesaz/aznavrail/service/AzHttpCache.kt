@@ -71,15 +71,24 @@ internal object AzHttpCache {
 
             when {
                 response.status == HttpStatusCode.NotModified && cached != null -> {
-                    // Refresh the freshness mark, keep the body + etag.
+                    // Refresh the freshness mark, keep the body + etag — but ONLY if the cache still
+                    // holds the entry this request was conditioned on. A concurrent call may have
+                    // stored a newer 200 body/etag while this request was in flight; refreshing
+                    // blindly would clobber it with the older snapshot.
                     mutex.withLock {
-                        entries[url] = cachedEntry.copy(mark = TimeSource.Monotonic.markNow())
+                        val current = entries[url]
+                        if (current != null && current.etag == cachedEntry?.etag) {
+                            entries[url] = current.copy(mark = TimeSource.Monotonic.markNow())
+                        }
                     }
                     Result(cached, fromCache = true, rateLimited = false)
                 }
                 code in 200..299 -> {
                     val body = response.bodyAsText()
-                    val newEtag = response.headers["ETag"] ?: cachedEntry?.etag
+                    // Store ONLY the etag the server sent for THIS body. Don't fall back to the old
+                    // etag — it describes the previous representation, so pairing it with a fresh
+                    // body could later trigger a bogus 304 that serves stale content.
+                    val newEtag = response.headers["ETag"]
                     mutex.withLock {
                         entries[url] = Entry(body, newEtag, TimeSource.Monotonic.markNow())
                     }
