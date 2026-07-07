@@ -34,7 +34,7 @@ val multiplatformSettingsVersion = libs.versions.multiplatformSettings.get()
 // publishes Android + Desktop + Web + metadata, and iOS is built when compiling on a Mac. Publishing
 // iOS artifacts to a repository needs a macOS-based pipeline, which is out of scope for the JitPack
 // (Linux) release.
-val hostIsMac = System.getProperty("os.name").startsWith("Mac", ignoreCase = true)
+val hostIsMac = System.getProperty("os.name")?.startsWith("Mac", ignoreCase = true) == true
 
 kotlin {
     jvmToolchain(17)
