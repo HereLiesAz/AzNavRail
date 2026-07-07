@@ -21,8 +21,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -87,6 +85,7 @@ import com.hereliesaz.aznavrail.model.AzExit
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.internal.rememberAzKineticModifier
 import com.hereliesaz.aznavrail.internal.rememberAzClosingState
+import com.hereliesaz.aznavrail.internal.AzIcons
 
 /**
  * DSL builder scope for an [AzDropdownMenu] — declared the same way as the rail
@@ -923,7 +922,7 @@ fun AzDropdownMenu(
                     modifier = Modifier.fillMaxSize().then(clipModifier)
                 )
             } else {
-                Icon(imageVector = Icons.Default.Menu, contentDescription = null)
+                Icon(imageVector = AzIcons.Menu, contentDescription = null)
             }
         }
 

@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,6 +24,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import com.hereliesaz.aznavrail.internal.AzIcons
 
 /**
  * A versatile dropdown component that combines a text filter with a list of options.
@@ -98,7 +97,7 @@ fun AzRoller(
             isError = isError,
             trailingIcon = {
                 Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
+                    imageVector = AzIcons.ArrowDropDown,
                     contentDescription = "Dropdown",
                     modifier = Modifier
                         .testTag("AzRollerRight")

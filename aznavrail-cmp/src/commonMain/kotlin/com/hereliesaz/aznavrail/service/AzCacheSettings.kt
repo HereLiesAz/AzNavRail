@@ -3,11 +3,11 @@ package com.hereliesaz.aznavrail.service
 import com.russhwolf.settings.Settings
 
 /**
- * Platform key-value store backing [AzHttpCache]'s persistence layer. `multiplatform-settings`
- * abstracts the per-platform storage (java.util.prefs on JVM/Android, localStorage on wasmJs,
- * NSUserDefaults on iOS), but its construction is platform-specific — hence this `expect`/`actual`.
+ * Shared process-lifetime key-value store backing [AzHttpCache]'s persistence tier.
+ *
+ * `multiplatform-settings-no-arg` supplies the commonMain `Settings()` factory, which resolves the
+ * right platform store on its own: java.util.prefs on Desktop, `SharedPreferences` on Android (its
+ * `Context` obtained via an androidx-startup initializer — no `Context` param needed here),
+ * localStorage on wasmJs, and `NSUserDefaults` on iOS.
  */
-internal expect fun createAzCacheSettings(): Settings
-
-/** Shared process-lifetime settings store for the HTTP cache. */
-internal val azCacheSettings: Settings by lazy { createAzCacheSettings() }
+internal val azCacheSettings: Settings by lazy { Settings() }

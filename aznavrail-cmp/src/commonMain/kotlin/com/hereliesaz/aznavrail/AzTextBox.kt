@@ -15,11 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -55,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.hereliesaz.aznavrail.util.HistoryStore
+import com.hereliesaz.aznavrail.internal.AzIcons
 
 /**
  * Object holding global defaults for [AzTextBox].
@@ -267,7 +263,7 @@ fun AzTextBox(
                         if (isError) {
                             Spacer(modifier = Modifier.width(8.dp))
                             Icon(
-                                imageVector = Icons.Default.Warning,
+                                imageVector = AzIcons.Warning,
                                 contentDescription = "Error",
                                 modifier = Modifier.size(16.dp),
                                 tint = effectiveColor
@@ -275,9 +271,9 @@ fun AzTextBox(
                         }
                         if (text.isNotEmpty() && enabled && showClearButton) {
                             val icon = when {
-                                secret && isPasswordVisible -> Icons.Default.VisibilityOff
-                                secret && !isPasswordVisible -> Icons.Default.Visibility
-                                else -> Icons.Default.Clear
+                                secret && isPasswordVisible -> AzIcons.VisibilityOff
+                                secret && !isPasswordVisible -> AzIcons.Visibility
+                                else -> AzIcons.Clear
                             }
                             val contentDescription = when {
                                 secret && isPasswordVisible -> "Hide password"

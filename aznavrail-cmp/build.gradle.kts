@@ -37,14 +37,12 @@ kotlin {
 
     jvm("desktop")
 
-    // iOS targets are intentionally omitted for now. The ported UI uses Material icons
-    // (`androidx.compose.material.icons.*`) pervasively — hamburger, password-visibility toggle,
-    // dropdown arrow, back, check — and `org.jetbrains.compose.material:material-icons-extended`
-    // publishes android/desktop/wasmJs but NOT iOS (the androidx material-icons libraries are
-    // deprecated and frozen without iOS support). Supporting iOS would require replacing every
-    // `Icons.*` usage with an inlined `ImageVector` or adopting a maintained multiplatform icon
-    // library — a dedicated follow-up. Android + Desktop + wasmJs all resolve every dependency and
-    // share the same source, which is the multiplatform win this port delivers today.
+    // iOS: real devices (arm64) + Apple-Silicon simulators (simulatorArm64). iosX64 (the Intel
+    // simulator) is omitted — every dependency ships arm64/sim variants and Intel simulators are
+    // legacy. The Material icons the UI needs are inlined (see internal/AzIcons.kt) so no
+    // iOS-incompatible `material-icons-extended` dependency is required.
+    iosArm64()
+    iosSimulatorArm64()
 
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
@@ -76,9 +74,12 @@ kotlin {
                 // needed.
                 implementation("io.ktor:ktor-client-core:$ktorVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
-                // Cross-platform key-value store (SharedPreferences / java.util.prefs / localStorage
-                // / NSUserDefaults) backing AzHttpCache's persistence layer.
-                implementation("com.russhwolf:multiplatform-settings:$multiplatformSettingsVersion")
+                // Cross-platform key-value store backing AzHttpCache's persistence layer. The
+                // `-no-arg` variant provides a commonMain `Settings()` factory that resolves each
+                // platform's store automatically (java.util.prefs on Desktop, SharedPreferences via
+                // androidx-startup auto-context on Android, localStorage on wasmJs, NSUserDefaults on
+                // iOS) — so no `Context` and no per-platform factory are needed.
+                implementation("com.russhwolf:multiplatform-settings-no-arg:$multiplatformSettingsVersion")
             }
         }
         val androidMain by getting {
@@ -101,6 +102,13 @@ kotlin {
             dependencies {
                 // Ktor JS engine (publishes a wasm-js variant) — routes through the browser fetch API.
                 implementation("io.ktor:ktor-client-js:$ktorVersion")
+            }
+        }
+        // `iosMain` is created by the default hierarchy template (2+ iOS targets share it).
+        val iosMain by getting {
+            dependencies {
+                // Ktor Darwin engine (NSURLSession) for the iOS targets.
+                implementation("io.ktor:ktor-client-darwin:$ktorVersion")
             }
         }
     }
