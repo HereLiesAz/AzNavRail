@@ -40,8 +40,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.navigation.NavController
@@ -853,7 +851,7 @@ private fun HiddenMenuPopup(
                         onSubmit = { value -> onInputSubmit(menuItem, value) },
                         submitButtonContent = {
                             Icon(
-                                imageVector = Icons.Default.Check,
+                                imageVector = AzIcons.Check,
                                 contentDescription = "Submit",
                                 modifier = Modifier.size(16.dp),
                                 tint = MaterialTheme.colorScheme.onSurface
