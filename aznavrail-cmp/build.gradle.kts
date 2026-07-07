@@ -27,6 +27,15 @@ val ktorVersion = libs.versions.ktor.get()
 val kotlinxSerializationVersion = libs.versions.kotlinxSerialization.get()
 val multiplatformSettingsVersion = libs.versions.multiplatformSettings.get()
 
+// Apple/iOS Kotlin/Native targets can only be COMPILED on a macOS host (they need the Xcode
+// toolchain). Linux CI runners and JitPack (which builds on Linux) therefore can't build or publish
+// them — `publishToMavenLocal` would fail trying to compile the iOS klibs. So the iOS targets (and
+// their `iosMain` source set) are declared only on macOS: off-Mac, the module still builds and
+// publishes Android + Desktop + Web + metadata, and iOS is built when compiling on a Mac. Publishing
+// iOS artifacts to a repository needs a macOS-based pipeline, which is out of scope for the JitPack
+// (Linux) release.
+val hostIsMac = System.getProperty("os.name")?.startsWith("Mac", ignoreCase = true) == true
+
 kotlin {
     jvmToolchain(17)
 
@@ -40,9 +49,12 @@ kotlin {
     // iOS: real devices (arm64) + Apple-Silicon simulators (simulatorArm64). iosX64 (the Intel
     // simulator) is omitted — every dependency ships arm64/sim variants and Intel simulators are
     // legacy. The Material icons the UI needs are inlined (see internal/AzIcons.kt) so no
-    // iOS-incompatible `material-icons-extended` dependency is required.
-    iosArm64()
-    iosSimulatorArm64()
+    // iOS-incompatible `material-icons-extended` dependency is required. Declared only on macOS
+    // (see `hostIsMac` above) so the Linux JitPack/CI publish doesn't try to compile Apple klibs.
+    if (hostIsMac) {
+        iosArm64()
+        iosSimulatorArm64()
+    }
 
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
@@ -105,12 +117,15 @@ kotlin {
             }
         }
         // `iosMain` is the intermediate source set the default hierarchy template creates for the
-        // two iOS targets. It's materialized lazily, so `val iosMain by getting` (which resolves an
-        // already-created source set) fails at configuration time with "KotlinSourceSet with name
-        // 'iosMain' not found". The generated `iosMain` accessor triggers creation, so use it.
-        iosMain.dependencies {
-            // Ktor Darwin engine (NSURLSession) for the iOS targets.
-            implementation("io.ktor:ktor-client-darwin:$ktorVersion")
+        // two iOS targets. It only exists when those targets are declared (macOS only, above), and
+        // it's materialized lazily — so `val iosMain by getting` fails with "KotlinSourceSet with
+        // name 'iosMain' not found". Gate on `hostIsMac` (matching the target declaration) and use
+        // the generated `iosMain` accessor, which triggers creation.
+        if (hostIsMac) {
+            iosMain.dependencies {
+                // Ktor Darwin engine (NSURLSession) for the iOS targets.
+                implementation("io.ktor:ktor-client-darwin:$ktorVersion")
+            }
         }
     }
 }

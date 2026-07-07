@@ -37,12 +37,18 @@ kotlin {
 
 | Target | Status |
 |---|---|
-| Android | ✅ |
-| Desktop / JVM | ✅ |
-| Web / `wasmJs` | ✅ |
-| iOS (`iosArm64`, `iosSimulatorArm64`) | ✅ (compiled on macOS; CI configures it on Linux) |
+| Android | ✅ published |
+| Desktop / JVM | ✅ published |
+| Web / `wasmJs` | ✅ published |
+| iOS (`iosArm64`, `iosSimulatorArm64`) | ⚠️ source-only (build on macOS) |
 
 `iosX64` (the Intel iOS simulator) is intentionally omitted.
+
+> **iOS note:** the iOS targets are declared only on macOS hosts. Kotlin/Native can't compile
+> Apple targets on Linux, and the release artifacts are built on JitPack (Linux) — so the
+> **published `aznavrail-cmp` does not contain iOS klibs**. To use the rail on iOS, build the module
+> from source on a Mac (where the `iosArm64` / `iosSimulatorArm64` targets are enabled), or publish
+> iOS artifacts yourself from a macOS pipeline. Android / Desktop / Web consumers are unaffected.
 
 ## Minimal usage
 
