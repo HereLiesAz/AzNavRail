@@ -60,3 +60,11 @@ jobs:
 
     - name: Compile wasmJs target
       run: ./gradlew :aznavrail-cmp:compileKotlinWasmJs
+
+    # Type-check the runnable demo against the published library API (Desktop + Web). Running the
+    # demo (window / dev server) stays manual — see aznavrail-cmp-demo/README.md.
+    - name: Compile demo (Desktop)
+      run: ./gradlew :aznavrail-cmp-demo:desktopMainClasses
+
+    - name: Compile demo (wasmJs)
+      run: ./gradlew :aznavrail-cmp-demo:compileKotlinWasmJs
