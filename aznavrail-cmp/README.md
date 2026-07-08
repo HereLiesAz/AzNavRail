@@ -33,6 +33,15 @@ kotlin {
 }
 ```
 
+> **Pure-Android (non-KMP) project?** Don't depend on this multiplatform module — its root artifact
+> is Gradle Module Metadata with per-platform variants, and a plain Android project can't select a
+> variant through JitPack, so you'll get `No matching variant of …:aznavrail-cmp:… was found`. Use
+> the dedicated Android library
+> [`com.github.HereLiesAz.AzNavRail:aznavrail`](../README.md#aznavrail-for-android-jetpack-compose)
+> instead (it includes `AzHostActivityLayout` / `AzNavHost`, which this module intentionally omits).
+> If you truly need *this* module in an Android-only build, depend on the Android variant directly:
+> `com.github.HereLiesAz.AzNavRail:aznavrail-cmp-android:VERSION`.
+
 ## Supported targets
 
 | Target | Status |
