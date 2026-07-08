@@ -83,7 +83,7 @@ Add the dependency to your app's `build.gradle.kts`:
 
 ~~~kotlin
 dependencies {
-    implementation("com.github.HereLiesAz:AzNavRail:VERSION") // Replace VERSION with the latest release
+    implementation("com.github.HereLiesAz.AzNavRail:aznavrail:VERSION") // Replace VERSION with the latest release
 }
 ~~~
 
@@ -102,6 +102,39 @@ commonMain.dependencies {
 See the [module README](aznavrail-cmp/README.md) for the CompositionLocal wiring (there's no
 `AzHostActivityLayout` off-Android) and the [`aznavrail-cmp-demo`](aznavrail-cmp-demo) runnable
 desktop + web sample.
+
+### Troubleshooting: `No matching variant … was found`
+
+If your Gradle sync fails with something like:
+
+~~~
+Could not resolve com.github.HereLiesAz.AzNavRail:aznavrail-cmp:VERSION.
+  Required by: project :app
+   > No matching variant of com.github.HereLiesAz.AzNavRail:aznavrail-cmp:VERSION was found.
+~~~
+
+…you're pulling a **Kotlin Multiplatform** artifact into a plain Android/JVM project. The
+multiplatform module (`aznavrail-cmp`) publishes Gradle Module Metadata with a variant per platform,
+and a non-KMP consumer can't select one through JitPack's metadata redirect. **Switch to the Android
+artifact directly:**
+
+- **Android app — use the dedicated Android library (recommended):**
+  ~~~kotlin
+  implementation("com.github.HereLiesAz.AzNavRail:aznavrail:VERSION")
+  ~~~
+  A plain AAR, full-featured — this is the one the setup section above uses, and it includes
+  `AzHostActivityLayout` / `AzNavHost`.
+
+- **Only if you specifically need the multiplatform module inside an Android-only project:**
+  ~~~kotlin
+  implementation("com.github.HereLiesAz.AzNavRail:aznavrail-cmp-android:VERSION")
+  ~~~
+  The Android variant of the CMP module. Note it has **no** `AzHostActivityLayout` / `AzNavHost`, so
+  Golden-Sample code won't compile against it unmodified.
+
+Also make sure you're **not** using the old single-module coordinate
+`com.github.HereLiesAz:AzNavRail:VERSION` — it predates the multi-module split and no longer
+resolves. The module lives under group `com.github.HereLiesAz.AzNavRail`.
 
 ---
 
