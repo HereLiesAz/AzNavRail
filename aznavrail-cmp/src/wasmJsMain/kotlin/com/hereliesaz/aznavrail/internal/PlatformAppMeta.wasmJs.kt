@@ -13,8 +13,14 @@ import org.w3c.dom.HTMLLinkElement
  */
 @Composable
 internal actual fun rememberPlatformAppMeta(): AzAppMeta = remember {
-    val title = document.title.ifBlank { AzAppMeta().name }
-    val faviconEl = document.querySelector("link[rel~='icon']") as? HTMLLinkElement
-    val favicon = faviconEl?.href?.ifBlank { null }
-    AzAppMeta(name = title, icon = favicon, packageId = null)
+    // Guard DOM access: if `document` isn't available (SSR / headless test harness), fall back to
+    // defaults instead of crashing.
+    try {
+        val title = document.title.ifBlank { AzAppMeta().name }
+        val faviconEl = document.querySelector("link[rel~='icon']") as? HTMLLinkElement
+        val favicon = faviconEl?.href?.ifBlank { null }
+        AzAppMeta(name = title, icon = favicon, packageId = null)
+    } catch (e: Throwable) {
+        AzAppMeta()
+    }
 }
