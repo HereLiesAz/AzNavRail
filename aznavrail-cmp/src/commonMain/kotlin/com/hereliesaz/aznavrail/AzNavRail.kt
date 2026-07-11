@@ -48,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import com.hereliesaz.aznavrail.internal.AzNavRailLogger
 import com.hereliesaz.aznavrail.internal.rememberDeviceRotationDegrees
+import com.hereliesaz.aznavrail.internal.rememberEffectiveAppMeta
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -217,7 +218,10 @@ fun AzNavRail(
     }
 
     val uriHandler = LocalUriHandler.current
-    val appMeta = LocalAzAppMeta.current
+    // Effective app metadata: consumer-provided LocalAzAppMeta merged over the platform-resolved
+    // name/icon/packageId, so the launcher icon shows automatically (Android/web) without manual
+    // wiring — matching the Android library — while still honoring explicit overrides.
+    val appMeta = rememberEffectiveAppMeta()
     val haptic = LocalHapticFeedback.current
     val density = LocalDensity.current
     // Window size in px + a Dp height, both multiplatform-safe (LocalConfiguration is Android-only).

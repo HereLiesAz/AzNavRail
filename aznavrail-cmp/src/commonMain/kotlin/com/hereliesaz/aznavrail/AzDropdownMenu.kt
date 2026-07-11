@@ -35,7 +35,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
-import com.hereliesaz.aznavrail.LocalAzAppMeta
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -73,6 +72,7 @@ import androidx.navigation.NavController
 import coil3.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.internal.AboutOverlay
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
+import com.hereliesaz.aznavrail.internal.rememberEffectiveAppMeta
 import com.hereliesaz.aznavrail.internal.AzSafeZones
 import com.hereliesaz.aznavrail.internal.MoreFromAzOverlay
 import com.hereliesaz.aznavrail.service.GithubDocsRepository
@@ -494,7 +494,7 @@ private fun AzDropdownFooter(
     easing: Easing = AzEasing.Wp7Decelerate,
 ) {
     val uriHandler = LocalUriHandler.current
-    val appMeta = LocalAzAppMeta.current
+    val appMeta = rememberEffectiveAppMeta()
     val footerColor = MaterialTheme.colorScheme.primary
     val appName = appMeta.name
 
@@ -870,7 +870,9 @@ fun AzDropdownMenu(
     val overlayScope = remember { AzNavRailScopeImpl() }
 
     val haptic = LocalHapticFeedback.current
-    val appMeta = LocalAzAppMeta.current
+    // Effective app metadata (consumer LocalAzAppMeta merged over platform-resolved values) so the
+    // trigger shows the real launcher icon automatically, matching the Android library.
+    val appMeta = rememberEffectiveAppMeta()
     // The repo backing the About reader: explicit override if set, else derived from the app
     // namespace. Never the AzNavRail library repo.
     val effectiveRepoUrl = remember(config.appRepositoryUrl, appMeta.packageId) {
