@@ -84,6 +84,9 @@ interface AzNavRailScope {
      */
     fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 160.dp, collapsedWidth: Dp = 100.dp, showFooter: Boolean = true, appRepositoryUrl: String = "", dimBehindMenu: Boolean = false, dimBehindMenuAlpha: Float = 0.4f, menuItemAlignment: AzMenuItemAlignment = AzMenuItemAlignment.SIDE, justifyMenuItems: Boolean = true)
 
+    /** When [noMenu] is true, indicates whether the stationary rail is folded up into the app icon. */
+    var isFoldedUp: Boolean
+
     /**
      * Configures the visual theme of the rail.
      *
@@ -816,6 +819,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     var menuItemAlignment: AzMenuItemAlignment = AzMenuItemAlignment.SIDE
     /** When true, menu-drawer labels are full-justified via computed letter-spacing. Default true. */
     var justifyMenuItems: Boolean = true
+    override var isFoldedUp: Boolean by mutableStateOf(false)
 
     // Theme
     /** Color applied to selected/active items and connecting lines. [Color.Unspecified] falls back to [MaterialTheme.colorScheme.primary]. */

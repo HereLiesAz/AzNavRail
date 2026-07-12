@@ -303,15 +303,20 @@ fun AzNavRail(
 
     fun toggleExpanded() {
         if (!showHelpOverlay) {
-            if (isFloating) showFloatingButtons = !showFloatingButtons
-            else if (!scope.noMenu) isExpanded = !isExpanded
+            if (isFloating) {
+                showFloatingButtons = !showFloatingButtons
+            } else if (scope.noMenu) {
+                scope.isFoldedUp = !scope.isFoldedUp
+            } else {
+                isExpanded = !isExpanded
+            }
             if (scope.vibrate) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         }
     }
 
     val isHorizontal = orientation == AzOrientation.Horizontal
 
-    val sizeModifier = if (isFloating) {
+    val sizeModifier = if (isFloating || (scope.noMenu && scope.isFoldedUp)) {
         val maxFabSize = (configuration.screenHeightDp * 0.8f).dp
         if (!isHorizontal) Modifier
             .width(railWidth)
@@ -738,7 +743,7 @@ fun AzNavRail(
                 if (isHorizontal) {
                     Row(modifier = Modifier.fillMaxSize()) {
                         Header()
-                        if (!(isFloating && !showFloatingButtons)) {
+                        if (!(isFloating && !showFloatingButtons) && !(scope.noMenu && scope.isFoldedUp)) {
                             Box(modifier = Modifier.weight(1f)) { MainContent() }
                             Foot()
                         }
@@ -746,7 +751,7 @@ fun AzNavRail(
                 } else {
                     Column(modifier = Modifier.fillMaxSize()) {
                         Header()
-                        if (!(isFloating && !showFloatingButtons)) {
+                        if (!(isFloating && !showFloatingButtons) && !(scope.noMenu && scope.isFoldedUp)) {
                             Box(modifier = Modifier.weight(1f)) { MainContent() }
                             Foot()
                         }

@@ -421,14 +421,16 @@ fun AzNavRail(
         if (!showHelpOverlay) {
             if (isFloating) {
                 showFloatingButtons = !showFloatingButtons
-            } else if (!scope.noMenu) {
+            } else if (scope.noMenu) {
+                scope.isFoldedUp = !scope.isFoldedUp
+            } else {
                 isExpanded = !isExpanded
             }
             if (scope.vibrate) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         }
     }
 
-    val sizeModifier = if (isFloating) {
+    val sizeModifier = if (isFloating || (scope.noMenu && scope.isFoldedUp)) {
         // Enforce max height/width in FAB mode to ensure it fits within 10-90% safe zone
         val maxFabSize = screenHeightDp * 0.8f
         if (orientation == AzOrientation.Vertical) Modifier
@@ -699,7 +701,7 @@ fun AzNavRail(
                     }
                 }
 
-                if (isFloating && !showFloatingButtons) return@Column
+                if ((isFloating && !showFloatingButtons) || (scope.noMenu && scope.isFoldedUp)) return@Column
 
                 // MAIN CONTENT and MENU separation
                 BoxWithConstraints(modifier = Modifier.weight(1f)) {

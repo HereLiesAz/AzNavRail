@@ -275,12 +275,14 @@ fun AzHostActivityLayout(
             Box(modifier = Modifier.fillMaxSize()) { item.content() }
         }
 
-        val startPadding = if (visualSide == AzVisualSide.LEFT) railWidth else 0.dp
-        val endPadding = if (visualSide == AzVisualSide.RIGHT) railWidth else 0.dp
-        val topPadding = if (visualSide == AzVisualSide.TOP) railWidth else 0.dp
-        val bottomPadding = if (visualSide == AzVisualSide.BOTTOM) railWidth else 0.dp
-
         val railScopeImpl = scope.getRailScopeImpl()
+        val isStationaryFolded = railScopeImpl.noMenu && railScopeImpl.isFoldedUp
+
+        val startPadding = if (visualSide == AzVisualSide.LEFT && !isStationaryFolded) railWidth else 0.dp
+        val endPadding = if (visualSide == AzVisualSide.RIGHT && !isStationaryFolded) railWidth else 0.dp
+        val topPadding = if (visualSide == AzVisualSide.TOP && !isStationaryFolded) railWidth else 0.dp
+        val bottomPadding = if (visualSide == AzVisualSide.BOTTOM && !isStationaryFolded) railWidth else 0.dp
+
         val currentActiveItem = railScopeImpl.navItems.find { item ->
             (item.route != null && item.route == effectiveCurrentDestination) ||
                 item.classifiers.any { railScopeImpl.activeClassifiers.contains(it) }
