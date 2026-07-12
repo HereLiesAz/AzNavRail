@@ -8,17 +8,21 @@ import kotlinx.coroutines.sync.withLock
  *
  * The Android sibling ([com.hereliesaz.aznavrail.util.HistoryManager]) persists history to per-
  * context files under `Context.filesDir`. Because commonMain has no `Context` and no cross-platform
- * file-system API in scope for this phase, the CMP port keeps the same public shape
- * (`updateSettings` / `addEntry` / `getSuggestions`) but drops persistence — entries live only for
- * the current process. A follow-up phase can add real persistence via `multiplatform-settings` or
- * Okio without changing this call surface.
+ * file-system API in scope for this phase, the CMP port persists via `multiplatform-settings`
+ * backed by `azCacheSettings`, maintaining the same call surface.
  */
+import com.hereliesaz.aznavrail.service.azCacheSettings
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 internal object HistoryStore {
 
     private const val DEFAULT_HISTORY_CONTEXT = "default"
 
     private var maxSuggestions = 5
     private val histories = mutableMapOf<String, MutableList<String>>()
+    private val loadedContexts = mutableSetOf<String>()
     private val mutex = Mutex()
 
     /**
@@ -35,9 +39,27 @@ internal object HistoryStore {
     fun addEntry(text: String, historyContext: String?) {
         val ctx = historyContext ?: DEFAULT_HISTORY_CONTEXT
         if (text.isBlank() || maxSuggestions == 0) return
-        val list = histories.getOrPut(ctx) { mutableListOf() }
-        list.remove(text)
-        list.add(0, text)
+        GlobalScope.launch {
+            mutex.withLock {
+                ensureLoaded(ctx)
+                val list = histories.getOrPut(ctx) { mutableListOf() }
+                list.remove(text)
+                list.add(0, text)
+                azCacheSettings.putString("az_history_$ctx", Json.encodeToString(list))
+            }
+        }
+    }
+
+    private fun ensureLoaded(ctx: String) {
+        if (loadedContexts.add(ctx)) {
+            val saved = azCacheSettings.getString("az_history_$ctx", "")
+            if (saved.isNotBlank()) {
+                val list = histories.getOrPut(ctx) { mutableListOf() }
+                val parsed = try { Json.decodeFromString<List<String>>(saved) } catch (e: Exception) { emptyList() }
+                list.clear()
+                list.addAll(parsed)
+            }
+        }
     }
 
     /**
@@ -49,6 +71,7 @@ internal object HistoryStore {
         val ctx = historyContext ?: DEFAULT_HISTORY_CONTEXT
         if (maxSuggestions == 0) return emptyList()
         return mutex.withLock {
+            ensureLoaded(ctx)
             val history = histories[ctx] ?: return@withLock emptyList()
             if (query.isBlank()) {
                 history.take(maxSuggestions)

@@ -10,17 +10,22 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.hereliesaz.aznavrail.model.AzNavItem
+import com.hereliesaz.aznavrail.service.azCacheSettings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+
+private const val PREF_KEY = "az_navrail_completed_goals"
+private const val PREF_KEY_DISMISSED = "az_navrail_dismissed_goals"
 
 /**
  * Runtime for the status-driven guidance framework. The developer activates one or more goals; the
  * engine (which provides the reactive `activeStatuses`) plus [routeInstructions] decide what to show.
  *
- * Port note vs the Android sibling: the CMP variant drops SharedPreferences-backed persistence.
- * Completed/dismissed goals live only for the current process — restart clears them. A follow-up
- * PR can re-add persistence via multiplatform-settings without changing this call surface.
+ * Port note vs the Android sibling: The CMP variant uses `azCacheSettings` (multiplatform-settings)
+ * for persistence instead of SharedPreferences, maintaining the same behavior across all platforms.
  */
 class AzGuidanceController(
     initialCompleted: List<String> = emptyList(),
@@ -108,7 +113,10 @@ class AzGuidanceController(
      */
     fun skip(goalId: String) {
         _activeGoals.remove(goalId)
-        if (goalId !in _dismissed) _dismissed.add(goalId)
+        if (goalId !in _dismissed) {
+            _dismissed.add(goalId)
+            azCacheSettings.putString(PREF_KEY_DISMISSED, Json.encodeToString(_dismissed.toList()))
+        }
     }
 
     /** Cancel tutorial mode entirely: skip every active goal and turn guidance off. */
@@ -121,15 +129,20 @@ class AzGuidanceController(
     /** Mark a goal reached: deactivate it and record completion for this session. */
     fun markReached(goalId: String) {
         _activeGoals.remove(goalId)
-        if (goalId !in _completed) _completed.add(goalId)
+        if (goalId !in _completed) {
+            _completed.add(goalId)
+            azCacheSettings.putString(PREF_KEY, Json.encodeToString(_completed.toList()))
+        }
     }
 
     fun isCompleted(goalId: String): Boolean = goalId in _completed
 
     /** Clear [goalId]'s completion + dismissal (+ session de-dup) so it can be guided again. */
     fun resetGuidance(goalId: String) {
-        _completed.remove(goalId)
-        _dismissed.remove(goalId)
+        val wasCompleted = _completed.remove(goalId)
+        val wasDismissed = _dismissed.remove(goalId)
+        if (wasCompleted) azCacheSettings.putString(PREF_KEY, Json.encodeToString(_completed.toList()))
+        if (wasDismissed) azCacheSettings.putString(PREF_KEY_DISMISSED, Json.encodeToString(_dismissed.toList()))
         _consumed.clear()
     }
 
@@ -138,6 +151,8 @@ class AzGuidanceController(
         _completed.clear()
         _dismissed.clear()
         _consumed.clear()
+        azCacheSettings.remove(PREF_KEY)
+        azCacheSettings.remove(PREF_KEY_DISMISSED)
     }
 
     companion object {
@@ -159,7 +174,11 @@ class AzGuidanceController(
 @Composable
 fun rememberAzGuidanceController(): AzGuidanceController {
     return rememberSaveable(saver = AzGuidanceController.Saver) {
-        AzGuidanceController()
+        val doneStr = azCacheSettings.getString(PREF_KEY, "")
+        val dismissedStr = azCacheSettings.getString(PREF_KEY_DISMISSED, "")
+        val done = if (doneStr.isNotBlank()) Json.decodeFromString<List<String>>(doneStr) else emptyList()
+        val dismissed = if (dismissedStr.isNotBlank()) Json.decodeFromString<List<String>>(dismissedStr) else emptyList()
+        AzGuidanceController(initialCompleted = done, initialDismissed = dismissed)
     }
 }
 
