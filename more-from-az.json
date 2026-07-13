@@ -1,5 +1,5 @@
 {
-  "version": 7,
+  "version": 8,
   "apps": [
     {
       "name": "CueDetat",
@@ -22,9 +22,20 @@
     {
       "name": "QaRd",
       "iconUrl": "https://play-lh.googleusercontent.com/04aUgd7tScnByYnTOaDzowe2Pry3lkQwa_YYdB1CjpR28qQrfs78vz7IebW7utZ8nOZS9umEx5JNtH8LiaV5",
-      "description": "QaRd: Design your QR code widget, shared like a digital business card or contact.",
+      "description": "QaRd: Design your QR code widget, share it like a digital business card from your home screen.",
       "github": "https://github.com/HereLiesAz/QaRd",
-      "play": "https://play.google.com/store/apps/details?id=com.hereliesaz.qard"
+      "play": "https://play.google.com/store/apps/details?id=com.hereliesaz.qard",
+      "web": "https://hereliesaz.com/qard/",
+      "isPwa": false
+    },
+    {
+      "name": "LogKitty",
+      "iconUrl": "https://play-lh.googleusercontent.com/4GN-BXPqpVQLMmDPIpiodsZMlY1G8Bp8AefuXuRJx8xBKs4Tpx2Zps7NtFOru5FaHOkKofFcWLUGalaNp7UFpw",
+      "description": "",
+      "github": "https://github.com/HereLiesAz/LogKitty",
+      "play": "https://play.google.com/store/apps/details?id=com.hereliesaz.logkitty",
+      "web": "https://hereliesaz.com/logkitty/",
+      "isPwa": false
     },
     {
       "name": "BarBacker",
@@ -63,12 +74,6 @@
       "github": "https://github.com/HereLiesAz/Liperty"
     },
     {
-      "name": "LogKitty",
-      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/LogKitty/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
-      "description": "",
-      "github": "https://github.com/HereLiesAz/LogKitty"
-    },
-    {
       "name": "RedBlightDistrict",
       "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/RedBlightDistrict/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
       "description": "",
@@ -104,7 +109,7 @@
     },
     {
       "name": "Guillotine",
-      "iconUrl": "guillotine_header.webp",
+      "iconUrl": "guillotine_banner.png",
       "description": "An AI-Powered Non-Linear Video Editor",
       "github": "https://github.com/HereLiesAz/Guillotine",
       "web": "https://hereliesaz.github.io/Guillotine/",
