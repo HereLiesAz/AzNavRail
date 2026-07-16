@@ -7,7 +7,7 @@ figma.ui.onmessage = async (msg) => {
     await figma.loadFontAsync({ family: "Inter", style: "Bold" });
 
     let currentX = 0;
-    const spacingX = 400;
+    const spacingX = 500;
 
     // Helper to create a text node
     function createText(text: string, size: number, weight: "Regular" | "Medium" | "Bold" = "Regular") {
@@ -29,130 +29,204 @@ figma.ui.onmessage = async (msg) => {
       return frame;
     }
 
-    // --- Generate AzButton ---
-    const azButton = figma.createComponent();
-    azButton.name = "AzButton";
-    azButton.layoutMode = "HORIZONTAL";
-    azButton.primaryAxisSizingMode = "AUTO";
-    azButton.counterAxisSizingMode = "AUTO";
-    azButton.paddingLeft = 16;
-    azButton.paddingRight = 16;
-    azButton.paddingTop = 12;
-    azButton.paddingBottom = 12;
-    azButton.cornerRadius = 8;
-    azButton.fills = [{ type: 'SOLID', color: { r: 0.2, g: 0.5, b: 0.9 } }]; // Primary color
-    
-    const btnText = createText("AzButton", 14, "Medium");
-    btnText.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1 } }];
-    azButton.appendChild(btnText);
-    
-    azButton.x = currentX;
-    azButton.y = 0;
-    currentX += spacingX;
+    // --- Generate AzNavRailButton Component ---
+    const azRailBtnDefault = figma.createComponent();
+    azRailBtnDefault.name = "AzNavRailButton / Default";
+    azRailBtnDefault.layoutMode = "VERTICAL";
+    azRailBtnDefault.primaryAxisSizingMode = "FIXED";
+    azRailBtnDefault.counterAxisSizingMode = "FIXED";
+    azRailBtnDefault.resize(80, 80);
+    azRailBtnDefault.primaryAxisAlignItems = "CENTER";
+    azRailBtnDefault.counterAxisAlignItems = "CENTER";
+    azRailBtnDefault.itemSpacing = 4;
+    azRailBtnDefault.cornerRadius = 16;
+    azRailBtnDefault.fills = [{ type: 'SOLID', color: { r: 0.95, g: 0.95, b: 0.95 } }];
 
-    // --- Generate AzNavRailButton ---
-    const azRailButton = figma.createComponent();
-    azRailButton.name = "AzNavRailButton";
-    azRailButton.layoutMode = "VERTICAL";
-    azRailButton.primaryAxisSizingMode = "FIXED";
-    azRailButton.counterAxisSizingMode = "FIXED";
-    azRailButton.resize(80, 80);
-    azRailButton.primaryAxisAlignItems = "CENTER";
-    azRailButton.counterAxisAlignItems = "CENTER";
-    azRailButton.itemSpacing = 4;
-    azRailButton.cornerRadius = 16;
-    azRailButton.fills = [{ type: 'SOLID', color: { r: 0.95, g: 0.95, b: 0.95 } }];
-
-    // Fake an icon placeholder
     const iconPlaceholder = figma.createEllipse();
     iconPlaceholder.resize(24, 24);
     iconPlaceholder.fills = [{ type: 'SOLID', color: { r: 0.4, g: 0.4, b: 0.4 } }];
-    azRailButton.appendChild(iconPlaceholder);
+    azRailBtnDefault.appendChild(iconPlaceholder);
 
     const railBtnText = createText("Item", 12, "Medium");
     railBtnText.fills = [{ type: 'SOLID', color: { r: 0.2, g: 0.2, b: 0.2 } }];
-    azRailButton.appendChild(railBtnText);
+    azRailBtnDefault.appendChild(railBtnText);
 
-    azRailButton.x = currentX;
-    azRailButton.y = 0;
+    const azRailBtnHover = azRailBtnDefault.clone() as ComponentNode;
+    azRailBtnHover.name = "AzNavRailButton / Hover";
+    azRailBtnHover.fills = [{ type: 'SOLID', color: { r: 0.85, g: 0.85, b: 0.85 } }];
+
+    // Combine into Component Set for variants
+    const railBtnSet = figma.combineAsVariants([azRailBtnDefault, azRailBtnHover], figma.currentPage);
+    railBtnSet.name = "AzNavRailButton";
+    railBtnSet.x = currentX;
+    railBtnSet.y = 0;
+
+    // Add Hover Interaction (Automatic Import)
+    azRailBtnDefault.reactions = [
+      {
+        trigger: { type: "ON_HOVER" },
+        action: {
+          type: "NODE",
+          destinationId: azRailBtnHover.id,
+          navigation: "CHANGE_TO",
+          transition: {
+            type: "SMART_ANIMATE",
+            easing: { type: "CUSTOM_CUBIC_BEZIER", easingFunctionCubicBezier: { x1: 0.2, y1: 0, x2: 0, y2: 1 } },
+            duration: 300
+          }
+        }
+      }
+    ];
+
     currentX += spacingX;
 
-    // --- Generate AzNavRail (Docked) ---
-    const azNavRail = figma.createComponent();
-    azNavRail.name = "AzNavRail (Docked)";
-    azNavRail.layoutMode = "VERTICAL";
-    azNavRail.primaryAxisSizingMode = "FIXED";
-    azNavRail.counterAxisSizingMode = "FIXED";
-    azNavRail.resize(100, 800); // Typical rail size
-    azNavRail.primaryAxisAlignItems = "MIN";
-    azNavRail.counterAxisAlignItems = "CENTER";
-    azNavRail.paddingTop = 24;
-    azNavRail.paddingBottom = 24;
-    azNavRail.itemSpacing = 16;
-    azNavRail.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1 } }];
+    // --- Generate Interactive Demonstration Frames ---
+    // Frame A: Docked Mode
+    const frameA = figma.createFrame();
+    frameA.name = "Demo: Docked Mode";
+    frameA.resize(360, 800);
+    frameA.x = currentX;
+    frameA.y = 0;
+    frameA.fills = [{ type: 'SOLID', color: { r: 0.98, g: 0.98, b: 0.98 } }];
+
+    const dockedRail = figma.createFrame();
+    dockedRail.name = "Docked Rail";
+    dockedRail.layoutMode = "VERTICAL";
+    dockedRail.primaryAxisSizingMode = "FIXED";
+    dockedRail.counterAxisSizingMode = "FIXED";
+    dockedRail.resize(100, 800);
+    dockedRail.primaryAxisAlignItems = "MIN";
+    dockedRail.counterAxisAlignItems = "CENTER";
+    dockedRail.paddingTop = 24;
+    dockedRail.itemSpacing = 16;
+    dockedRail.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1 } }];
     
-    // Header icon
-    const headerIcon = figma.createEllipse();
-    headerIcon.resize(48, 48);
-    headerIcon.fills = [{ type: 'SOLID', color: { r: 0.8, g: 0.2, b: 0.2 } }];
-    azNavRail.appendChild(headerIcon);
+    const headerIconA = figma.createEllipse();
+    headerIconA.name = "App Icon (Trigger)";
+    headerIconA.resize(48, 48);
+    headerIconA.fills = [{ type: 'SOLID', color: { r: 0.8, g: 0.2, b: 0.2 } }];
+    dockedRail.appendChild(headerIconA);
 
-    // Add some rail buttons
-    for(let i=0; i<3; i++) {
-        const instance = azRailButton.createInstance();
-        azNavRail.appendChild(instance);
+    for(let i=0; i<4; i++) {
+        dockedRail.appendChild(azRailBtnDefault.createInstance());
     }
-
-    azNavRail.x = currentX;
-    azNavRail.y = 0;
+    frameA.appendChild(dockedRail);
     currentX += spacingX;
 
-    // --- Generate AzDropdownMenu ---
-    const azDropdown = figma.createComponent();
-    azDropdown.name = "AzDropdownMenu";
-    azDropdown.layoutMode = "VERTICAL";
-    azDropdown.primaryAxisSizingMode = "AUTO";
-    azDropdown.counterAxisSizingMode = "FIXED";
-    azDropdown.resize(200, 100); // Height will auto-grow
-    azDropdown.paddingLeft = 8;
-    azDropdown.paddingRight = 8;
-    azDropdown.paddingTop = 8;
-    azDropdown.paddingBottom = 8;
-    azDropdown.cornerRadius = 12;
-    azDropdown.itemSpacing = 4;
-    azDropdown.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1 } }];
-    azDropdown.effects = [{
-      type: "DROP_SHADOW",
-      color: { r: 0, g: 0, b: 0, a: 0.15 },
-      offset: { x: 0, y: 4 },
-      radius: 12,
-      spread: 0,
-      visible: true,
-      blendMode: "NORMAL"
-    }];
+    // Frame B: FAB Mode (Folded Up)
+    const frameB = figma.createFrame();
+    frameB.name = "Demo: FAB Mode (Folded)";
+    frameB.resize(360, 800);
+    frameB.x = currentX;
+    frameB.y = 0;
+    frameB.fills = [{ type: 'SOLID', color: { r: 0.98, g: 0.98, b: 0.98 } }];
 
-    for(let i=1; i<=3; i++) {
-      const menuItem = createAutoLayout(`MenuItem ${i}`, "HORIZONTAL");
-      menuItem.primaryAxisSizingMode = "FIXED";
-      menuItem.layoutAlign = "STRETCH";
-      menuItem.resize(184, 40); // 200 - 16 padding
-      menuItem.paddingLeft = 12;
-      menuItem.paddingRight = 12;
-      menuItem.counterAxisAlignItems = "CENTER";
-      menuItem.cornerRadius = 6;
-      menuItem.fills = []; // Transparent background
-      
-      const itemText = createText(`Menu Option ${i}`, 14);
-      itemText.fills = [{ type: 'SOLID', color: { r: 0.1, g: 0.1, b: 0.1 } }];
-      menuItem.appendChild(itemText);
-      azDropdown.appendChild(menuItem);
-    }
+    const fabRail = figma.createFrame();
+    fabRail.name = "FAB Rail Container";
+    fabRail.layoutMode = "VERTICAL";
+    fabRail.primaryAxisSizingMode = "AUTO";
+    fabRail.counterAxisSizingMode = "AUTO";
+    fabRail.itemSpacing = 16;
+    fabRail.fills = [];
+    fabRail.x = 280; // Moved to bottom right corner
+    fabRail.y = 700;
 
-    azDropdown.x = currentX;
-    azDropdown.y = 0;
+    const headerIconB = figma.createEllipse();
+    headerIconB.name = "App Icon (FAB)";
+    headerIconB.resize(48, 48);
+    headerIconB.fills = [{ type: 'SOLID', color: { r: 0.8, g: 0.2, b: 0.2 } }];
+    fabRail.appendChild(headerIconB);
+    frameB.appendChild(fabRail);
     currentX += spacingX;
+
+    // Frame C: FAB Mode (Unfolded)
+    const frameC = figma.createFrame();
+    frameC.name = "Demo: FAB Mode (Unfolded)";
+    frameC.resize(360, 800);
+    frameC.x = currentX;
+    frameC.y = 0;
+    frameC.fills = [{ type: 'SOLID', color: { r: 0.98, g: 0.98, b: 0.98 } }];
+
+    const fabRailUnfolded = figma.createFrame();
+    fabRailUnfolded.name = "FAB Rail Container Unfolded";
+    fabRailUnfolded.layoutMode = "VERTICAL";
+    fabRailUnfolded.primaryAxisSizingMode = "AUTO";
+    fabRailUnfolded.counterAxisSizingMode = "AUTO";
+    fabRailUnfolded.itemSpacing = 16;
+    fabRailUnfolded.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1 } }];
+    fabRailUnfolded.cornerRadius = 24;
+    fabRailUnfolded.paddingTop = 16;
+    fabRailUnfolded.paddingBottom = 16;
+    fabRailUnfolded.paddingLeft = 8;
+    fabRailUnfolded.paddingRight = 8;
+    fabRailUnfolded.x = 260; // Slightly shifted to fit items
+    fabRailUnfolded.y = 400; // Expanded upwards/downwards
+
+    const headerIconC = figma.createEllipse();
+    headerIconC.name = "App Icon (FAB Unfolded)";
+    headerIconC.resize(48, 48);
+    headerIconC.fills = [{ type: 'SOLID', color: { r: 0.8, g: 0.2, b: 0.2 } }];
+    fabRailUnfolded.appendChild(headerIconC);
+
+    for(let i=0; i<4; i++) {
+        fabRailUnfolded.appendChild(azRailBtnDefault.createInstance());
+    }
+    frameC.appendChild(fabRailUnfolded);
+
+    // Wire up prototyping interactions for the demo frames (Manual Animations constructed programmatically)
+    
+    // Docked (Swipe Down/Click) -> FAB Mode Folded
+    headerIconA.reactions = [
+      {
+        trigger: { type: "ON_CLICK" },
+        action: {
+          type: "NODE",
+          destinationId: frameB.id,
+          navigation: "NAVIGATE",
+          transition: {
+            type: "SMART_ANIMATE",
+            easing: { type: "CUSTOM_CUBIC_BEZIER", easingFunctionCubicBezier: { x1: 0.42, y1: 0, x2: 0.21, y2: 0.9 } }, // M3 Expressive
+            duration: 500
+          }
+        }
+      }
+    ];
+
+    // FAB Folded (Click) -> FAB Unfolded
+    headerIconB.reactions = [
+      {
+        trigger: { type: "ON_CLICK" },
+        action: {
+          type: "NODE",
+          destinationId: frameC.id,
+          navigation: "NAVIGATE",
+          transition: {
+            type: "SMART_ANIMATE",
+            easing: { type: "CUSTOM_CUBIC_BEZIER", easingFunctionCubicBezier: { x1: 0.42, y1: 0, x2: 0.21, y2: 0.9 } },
+            duration: 400
+          }
+        }
+      }
+    ];
+
+    // FAB Unfolded (Click) -> FAB Folded
+    headerIconC.reactions = [
+      {
+        trigger: { type: "ON_CLICK" },
+        action: {
+          type: "NODE",
+          destinationId: frameB.id,
+          navigation: "NAVIGATE",
+          transition: {
+            type: "SMART_ANIMATE",
+            easing: { type: "CUSTOM_CUBIC_BEZIER", easingFunctionCubicBezier: { x1: 0.42, y1: 0, x2: 0.21, y2: 0.9 } },
+            duration: 400
+          }
+        }
+      }
+    ];
 
     // Notify user
-    figma.notify("AzNavRail Compose UI Kit generated!");
+    figma.notify("AzNavRail Compose UI Kit & Animations generated!");
   }
 };
