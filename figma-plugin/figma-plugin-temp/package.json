@@ -1,0 +1,17 @@
+{
+  "name": "aznavrail-figma-plugin",
+  "version": "1.0.0",
+  "description": "Figma plugin to generate the AzNavRail UI kit.",
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@figma/plugin-typings": "^1.88.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "vite": "^5.1.4",
+    "vite-plugin-singlefile": "^2.0.1"
+  }
+}
