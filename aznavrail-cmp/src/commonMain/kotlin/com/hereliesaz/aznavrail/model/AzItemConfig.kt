@@ -44,5 +44,7 @@ data class AzItemConfig(
      * Host items only: auto-expand the first time the host appears (user can
      * still collapse).
      */
-    val initiallyExpanded: Boolean = false
+    val initiallyExpanded: Boolean = false,
+    /** Optional short badge text drawn in a small circle on the item's button corner. */
+    val badge: String? = null
 )

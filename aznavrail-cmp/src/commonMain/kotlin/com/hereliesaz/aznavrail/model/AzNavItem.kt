@@ -57,6 +57,12 @@ data class AzNavItem(
     val nestedRailItems: List<AzNavItem>? = null,
     val isHelpItem: Boolean = false,
     val keepNestedRailOpen: Boolean = false,
+    /**
+     * Optional short badge text (a few characters) drawn in a small circle on the corner of the
+     * item's button. Recomputed from the DSL on every recomposition, so passing a state-backed
+     * value updates the badge dynamically. Null/blank hides the badge.
+     */
+    val badge: String? = null,
 ) {
     companion object {
         /**
