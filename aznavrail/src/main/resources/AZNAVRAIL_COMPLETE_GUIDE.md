@@ -1067,13 +1067,4 @@ The overlay also **delivers real window insets to the content**: an `OnApplyWind
 
 **Pages (Z-ordering).** `onscreen(alignment, page = 0f)` and `background(weight, page = 0f)` take a `page: Float`. Items sharing a page render on one co-planar layer (positioned with standard Compose `alignment`, so distinct alignments — or your own `Row`/`Column` inside the content — tile without overlapping). Items on *different* pages are stacked in Z and may overlap: a **higher** page number draws **further back**, the lowest page on top. Decimal pages (`1.5f`) insert a layer between existing ones without renumbering. `background()` items form their own book of pages beneath the entire `onscreen` book (itself beneath the rail and nav bar); `weight` breaks ties within a background page, and onscreen pages still respect the safe zones. The system is gated by `AzHostActivityLayout(pagesEnabled = true)` (the default); when on it is forced — items with no explicit page share page `0f`. Set `pagesEnabled = false` to fall back to plain declaration-order rendering (backgrounds by `weight`) with `page` ignored. The React port mirrors this on `<AzOnscreen page={…}>` / `<AzBackground page={…}>` and `pagesEnabled`.
 
-### 10.7 LogKitty migration
 
-LogKitty currently maintains its own `SheetController`, `LogBottomSheet`, and nav-bar-decoration code inside `LogKittyOverlayService`. To replace them with AzNavRail's shell:
-
-1. Add the `aznavrail` dependency.
-2. Replace `SheetController` and `LogBottomSheet` with `AzSheetController` and `AzBottomSheetWindowHost` (see snippet above).
-3. Pass LogKitty's existing tabs / log-list composable as the `content` slot.
-4. Delete `LogBottomSheet.kt`, `SheetController.kt`, and the inline nav-bar decoration block.
-
-Visual behavior — detent heights, drag feel, scrim, animation timing, and nav-bar color sync — is preserved frame-for-frame because `AzBottomSheetWindowHost` ports the same `WindowManager` flag set, the same accumulated-delta gesture, and the same nav-bar decoration window verbatim.
