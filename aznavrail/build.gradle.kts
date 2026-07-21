@@ -1,5 +1,3 @@
-import java.util.Random
-
 plugins {
     id("com.android.library")
     alias(libs.plugins.kotlin.android)
@@ -14,7 +12,7 @@ version = System.getenv("JITPACK_VERSION") ?: libs.versions.aznavrail.get()
 
 android {
     namespace = "com.hereliesaz.aznavrail"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 26
@@ -28,8 +26,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     buildFeatures {
@@ -51,7 +49,7 @@ android {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 }
 
 dependencies {
