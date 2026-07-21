@@ -11,6 +11,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -45,6 +46,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.model.AzButtonShape
@@ -201,6 +203,41 @@ internal fun AzNavRailButton(
             }
             if (isLoading) AzLoad()
         }
+    }
+}
+
+/**
+ * A small circular badge drawn on the top-end corner of a rail/menu button. Renders [text] (a few
+ * characters — e.g. an unread count or short status) centered in a filled circle. Blank text renders
+ * nothing. [containerColor] fills the circle; [contentColor] is the text.
+ */
+@Composable
+internal fun AzBadge(
+    text: String,
+    modifier: Modifier = Modifier,
+    containerColor: Color = MaterialTheme.colorScheme.primary,
+    contentColor: Color = MaterialTheme.colorScheme.onPrimary,
+) {
+    if (text.isBlank()) return
+    Box(
+        modifier = modifier
+            .defaultMinSize(minWidth = 18.dp, minHeight = 18.dp)
+            .clip(CircleShape)
+            .background(containerColor)
+            .padding(horizontal = 4.dp, vertical = 1.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        androidx.compose.material3.Text(
+            text = text,
+            color = contentColor,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 10.sp,
+                lineHeight = 10.sp,
+                textAlign = TextAlign.Center
+            ),
+            maxLines = 1,
+            softWrap = false
+        )
     }
 }
 

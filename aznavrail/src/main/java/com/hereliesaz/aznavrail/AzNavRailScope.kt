@@ -80,7 +80,7 @@ interface AzNavRailScope {
      *   (`com.<owner>.<repo>` → `github.com/<owner>/<repo>`); set it only when the namespace doesn't
      *   match the repo. **Not required.**
      */
-    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 160.dp, collapsedWidth: Dp = 100.dp, showFooter: Boolean = true, appRepositoryUrl: String = "", dimBehindMenu: Boolean = false, dimBehindMenuAlpha: Float = 0.4f, menuItemAlignment: AzMenuItemAlignment = AzMenuItemAlignment.SIDE, justifyMenuItems: Boolean = true)
+    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 160.dp, collapsedWidth: Dp = 100.dp, railItemWidth: Dp = Dp.Unspecified, showFooter: Boolean = true, appRepositoryUrl: String = "", dimBehindMenu: Boolean = false, dimBehindMenuAlpha: Float = 0.4f, menuItemAlignment: AzMenuItemAlignment = AzMenuItemAlignment.SIDE, justifyMenuItems: Boolean = true)
 
     /** When [noMenu] is true, indicates whether the stationary rail is folded up into the app icon. */
     var isFoldedUp: Boolean
@@ -783,6 +783,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     // Config
     /** Width of the rail panel when expanded (menu visible). */
     var expandedWidth: Dp = 160.dp
+    var railItemWidth: Dp = Dp.Unspecified
     /** Width of the collapsed rail (icon-only strip). */
     var collapsedWidth: Dp = 100.dp
     /** Whether the footer (About, Feedback, @HereLiesAz) is shown when the menu is expanded. */
@@ -865,7 +866,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     var advancedConfig: AzAdvancedConfig = AzAdvancedConfig()
 
 
-    override fun azConfig(dockingSide: AzDockingSide, packButtons: Boolean, noMenu: Boolean, vibrate: Boolean, displayAppName: Boolean, activeClassifiers: Set<String>, usePhysicalDocking: Boolean, expandedWidth: Dp, collapsedWidth: Dp, showFooter: Boolean, appRepositoryUrl: String, dimBehindMenu: Boolean, dimBehindMenuAlpha: Float, menuItemAlignment: AzMenuItemAlignment, justifyMenuItems: Boolean) {
+    override fun azConfig(dockingSide: AzDockingSide, packButtons: Boolean, noMenu: Boolean, vibrate: Boolean, displayAppName: Boolean, activeClassifiers: Set<String>, usePhysicalDocking: Boolean, expandedWidth: Dp, collapsedWidth: Dp, railItemWidth: Dp, showFooter: Boolean, appRepositoryUrl: String, dimBehindMenu: Boolean, dimBehindMenuAlpha: Float, menuItemAlignment: AzMenuItemAlignment, justifyMenuItems: Boolean) {
         this.dockingSide = dockingSide
         this.packButtons = packButtons
         this.noMenu = noMenu
@@ -875,6 +876,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         this.usePhysicalDocking = usePhysicalDocking
         this.expandedWidth = expandedWidth
         this.collapsedWidth = collapsedWidth
+        this.railItemWidth = railItemWidth
         this.showFooter = showFooter
         this.appRepositoryUrl = appRepositoryUrl
         this.dimBehindMenu = dimBehindMenu
@@ -1114,7 +1116,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     override fun azNestedRail(id: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, alignment: AzNestedRailAlignment, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, onFocus: (() -> Unit)?, keepNestedRailOpen: Boolean, nestedContent: AzNavRailScope.() -> Unit) {
         checkId(id)
         val nestedScope = AzNavRailScopeImpl(this.globalIdSet)
-        nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, showFooter = this.showFooter, appRepositoryUrl = this.appRepositoryUrl)
+        nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, railItemWidth = this.railItemWidth, showFooter = this.showFooter, appRepositoryUrl = this.appRepositoryUrl)
         nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape, translucentBackground = this.translucentBackground)
         nestedScope.nestedContent()
 
@@ -1313,7 +1315,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
 
         val nestedItems = if (nestedContent != null) {
             val nestedScope = AzNavRailScopeImpl(this.globalIdSet)
-            nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, showFooter = this.showFooter)
+            nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, railItemWidth = this.railItemWidth, showFooter = this.showFooter)
             nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape, translucentBackground = this.translucentBackground)
             nestedScope.nestedContent()
 
