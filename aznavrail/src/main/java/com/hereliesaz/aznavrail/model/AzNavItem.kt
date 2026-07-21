@@ -110,7 +110,9 @@ data class AzNavItem(
             color: Color? = null,
             textColor: Color? = null,
             fillColor: Color? = null,
-            shape: AzButtonShape? = null
+            shape: AzButtonShape? = null,
+            badge: String? = null,
+            persistentBadge: Boolean = false,
         ): AzNavItem = AzNavItem(
             id = id,
             text = text,
@@ -121,7 +123,9 @@ data class AzNavItem(
             color = color,
             textColor = textColor,
             fillColor = fillColor,
-            shape = shape
+            shape = shape,
+            badge = badge,
+            persistentBadge = persistentBadge,
         )
     }
 }
