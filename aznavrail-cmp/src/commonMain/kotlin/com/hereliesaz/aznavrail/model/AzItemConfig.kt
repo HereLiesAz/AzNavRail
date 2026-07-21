@@ -46,5 +46,7 @@ data class AzItemConfig(
      */
     val initiallyExpanded: Boolean = false,
     /** Optional short badge text drawn in a small circle on the item's button corner. */
-    val badge: String? = null
+    val badge: String? = null,
+    /** Whether the badge should remain permanently visible (true) or dissolve after 1 second (false). */
+    val persistentBadge: Boolean = false
 )
