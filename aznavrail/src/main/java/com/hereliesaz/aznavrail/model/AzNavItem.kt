@@ -51,6 +51,9 @@ data class AzNavItem(
     val id: String,
     val text: String,
     val menuText: String? = null,
+    val badge: String? = null,
+    /** Whether the badge should remain permanently visible (true) or dissolve after 1 second (false). */
+    val persistentBadge: Boolean = false,
     val route: String? = null,
     val screenTitle: String? = null,
     val isRailItem: Boolean,

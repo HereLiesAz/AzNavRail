@@ -161,6 +161,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       packRailButtons: dslOverrides.packRailButtons ?? props.packRailButtons,
       expandedRailWidth: dslOverrides.expandedRailWidth ?? expandedRailWidth,
       collapsedRailWidth: dslOverrides.collapsedRailWidth ?? collapsedRailWidth,
+      railItemWidth: dslOverrides.railItemWidth ?? props.railItemWidth,
       showFooter: dslOverrides.showFooter ?? showFooter,
       isLoading: dslOverrides.isLoading ?? isLoading,
       defaultShape: dslOverrides.defaultShape ?? defaultShape,
@@ -559,6 +560,19 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       }
   };
 
+  const isVerticalNestedRailOpen = useMemo(() => {
+    if (!nestedRailVisible) return false;
+    const openItem = items.find(i => i.id === nestedRailVisible);
+    return openItem?.nestedRailAlignment === AzNestedRailAlignment.VERTICAL;
+  }, [nestedRailVisible, items]);
+
+  const baseButtonSize = config.railItemWidth || AzNavRailDefaults.ButtonWidth;
+  const calculatedShrunkSize = baseButtonSize * 0.75;
+  const actualShrunkSize = Math.max(calculatedShrunkSize, 35);
+  const targetShrunkSize = Math.min(baseButtonSize, actualShrunkSize);
+  const activeButtonSize = isVerticalNestedRailOpen ? targetShrunkSize : baseButtonSize;
+  const sizeRatio = activeButtonSize / baseButtonSize;
+
   const renderRailItem = (item: AzNavItem, _index: number, overrideConfig: any = config, ancestors: Set<string> = new Set()): React.ReactNode => {
       // Cycle guard: unlike the Kotlin DSL (which requires a host be declared before its sub-items,
       // forming a DAG), the React DSL has no ordering guarantee, so a cyclic `hostId` chain
@@ -573,7 +587,10 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
           color: overrideConfig.activeColor && (item.isChecked || item.id === currentDestination) ? overrideConfig.activeColor : item.color,
           shape: item.shape || overrideConfig.defaultShape,
           enabled: !item.disabled,
-          style: { marginBottom: isRect ? 2 : AzNavRailDefaults.RailContentVerticalArrangement }
+          style: { marginBottom: isRect ? 2 : (config.packRailButtons ? 0 : AzNavRailDefaults.RailContentVerticalArrangement) * sizeRatio },
+          size: activeButtonSize,
+          badge: item.badge,
+          persistentBadge: item.persistentBadge
       };
 
       if (item.isRelocItem) {
@@ -938,6 +955,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                         anchorPosition={anchorPosition}
                         dockingSide={effectiveConfig.dockingSide}
                         helpList={effectiveConfig.helpList}
+                        activeButtonSize={activeButtonSize}
                     />
                 );
             })}

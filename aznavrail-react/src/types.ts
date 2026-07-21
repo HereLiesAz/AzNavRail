@@ -108,6 +108,8 @@ export interface AzNavRailSettings {
   expandedRailWidth?: number;
   /** Width of the rail in its collapsed (icon-only) state, in dp. */
   collapsedRailWidth?: number;
+  /** Width of the rail items (buttons) in the collapsed state, in dp. */
+  railItemWidth?: number;
   /** Whether the footer with About/Feedback links is shown in the expanded menu. */
   showFooter?: boolean;
   /** When true, a full-screen loading spinner overlay is displayed over the content area. */
@@ -233,6 +235,10 @@ export interface AzNavItem {
   text: string;
   /** Alternative label used in the expanded menu; falls back to `text`. */
   menuText?: string;
+  /** Badge text to display on the item. */
+  badge?: string;
+  /** Whether the badge should remain permanently visible (true) or dissolve after 1 second (false). */
+  persistentBadge?: boolean;
   /** Navigation route string associated with this item. */
   route?: string;
   /** Screen title displayed in the host layout header when this item is active. */
@@ -341,6 +347,10 @@ export interface AzNavItemProps {
   text: string;
   /** Alternative label shown only in the expanded menu. */
   menuText?: string;
+  /** Badge text to display on the item. */
+  badge?: string;
+  /** Whether the badge should remain permanently visible (true) or dissolve after 1 second (false). */
+  persistentBadge?: boolean;
   /** Navigation route string for this item. */
   route?: string;
   /** Screen title displayed in the host header when this item is active. */

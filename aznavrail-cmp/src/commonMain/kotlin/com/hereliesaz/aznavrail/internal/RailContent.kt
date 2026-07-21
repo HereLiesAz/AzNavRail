@@ -143,11 +143,24 @@ internal fun RailContent(
             rotationDegrees = rotationDegrees
         )
 
-        item.badge?.takeIf { it.isNotBlank() }?.let { badgeText ->
+        var showBadge by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+        androidx.compose.runtime.LaunchedEffect(item.badge) {
+            if (!item.badge.isNullOrBlank()) {
+                showBadge = true
+                if (!item.persistentBadge) {
+                    kotlinx.coroutines.delay(1000)
+                    showBadge = false
+                }
+            } else {
+                showBadge = false
+            }
+        }
+
+        if (showBadge && !item.badge.isNullOrBlank()) {
             com.hereliesaz.aznavrail.AzBadge(
-                text = badgeText,
+                text = item.badge,
                 modifier = Modifier.align(Alignment.TopEnd),
-                containerColor = activeColor ?: item.color ?: MaterialTheme.colorScheme.primary,
+                containerColor = item.color ?: activeColor ?: MaterialTheme.colorScheme.primary,
             )
         }
     }

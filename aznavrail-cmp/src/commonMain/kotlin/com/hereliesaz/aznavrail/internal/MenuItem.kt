@@ -272,11 +272,24 @@ internal fun MenuItem(
                 }
             }
 
-            item.badge?.takeIf { it.isNotBlank() }?.let { badgeText ->
+            var showBadge by remember { mutableStateOf(false) }
+            LaunchedEffect(item.badge) {
+                if (!item.badge.isNullOrBlank()) {
+                    showBadge = true
+                    if (!item.persistentBadge) {
+                        kotlinx.coroutines.delay(1000)
+                        showBadge = false
+                    }
+                } else {
+                    showBadge = false
+                }
+            }
+
+            if (showBadge && !item.badge.isNullOrBlank()) {
                 com.hereliesaz.aznavrail.AzBadge(
-                    text = badgeText,
+                    text = item.badge,
                     modifier = Modifier.padding(start = 8.dp),
-                    containerColor = effectiveActiveColor,
+                    containerColor = item.color ?: effectiveActiveColor,
                 )
             }
         }

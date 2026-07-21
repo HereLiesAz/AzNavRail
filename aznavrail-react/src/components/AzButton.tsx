@@ -33,11 +33,13 @@ export interface AzButtonProps {
    * node (including an `<Image>` or a `react-native-svg` `<Svg>`) or an image source
    * (`require()` id / `{ uri }`). Graphics fill the shape (cover) and are clipped to it.
    */
-  content?: React.ReactNode | ImageSourcePropType;
+  /** Optional size in dp, defaults to 72. */
+  size?: number;
+  /** Badge text to display. */
+  badge?: string;
+  /** Whether the badge is persistent. */
+  persistentBadge?: boolean;
 }
-
-// Default size for circle/square
-const BUTTON_SIZE = 72; // dp equivalent
 
 /** Shared touchable button with configurable shape, fill, text-color override, and optional custom content. */
 export const AzButton: React.FC<AzButtonProps> = ({
@@ -53,11 +55,28 @@ export const AzButton: React.FC<AzButtonProps> = ({
   testID,
   hasCustomContent = false,
   content: customContentNode,
+  size = 72,
+  badge,
+  persistentBadge = false,
 }) => {
   const isCircle = shape === AzButtonShape.CIRCLE;
   const isSquare = shape === AzButtonShape.SQUARE;
   const isRectangle = shape === AzButtonShape.RECTANGLE;
   const isNone = shape === AzButtonShape.NONE;
+
+  const [showBadge, setShowBadge] = React.useState(!!badge);
+
+  React.useEffect(() => {
+    if (badge) {
+      setShowBadge(true);
+      if (!persistentBadge) {
+        const timer = setTimeout(() => setShowBadge(false), 1000);
+        return () => clearTimeout(timer);
+      }
+    } else {
+      setShowBadge(false);
+    }
+  }, [badge, persistentBadge]);
 
   const containerStyle: ViewStyle = {
     borderColor: isNone ? 'transparent' : color,
@@ -78,26 +97,26 @@ export const AzButton: React.FC<AzButtonProps> = ({
   const isCustomContent = hasCustomContent || !!customContentNode;
 
   if (isCustomContent) {
-    containerStyle.width = BUTTON_SIZE;
-    containerStyle.height = isRectangle || isNone ? 40 : BUTTON_SIZE;
-    if (isCircle) containerStyle.borderRadius = BUTTON_SIZE / 2;
+    containerStyle.width = size;
+    containerStyle.height = isRectangle || isNone ? 40 : size;
+    if (isCircle) containerStyle.borderRadius = size / 2;
     else containerStyle.borderRadius = 0;
   } else {
     if (isCircle) {
-      containerStyle.width = BUTTON_SIZE;
-      containerStyle.height = BUTTON_SIZE;
-      containerStyle.borderRadius = BUTTON_SIZE / 2;
+      containerStyle.width = size;
+      containerStyle.height = size;
+      containerStyle.borderRadius = size / 2;
     } else if (isSquare) {
-      containerStyle.width = BUTTON_SIZE;
-      containerStyle.height = BUTTON_SIZE;
+      containerStyle.width = size;
+      containerStyle.height = size;
       containerStyle.borderRadius = 0;
     } else if (isRectangle) {
-      containerStyle.width = BUTTON_SIZE;
+      containerStyle.width = size;
       containerStyle.height = 40;
       containerStyle.borderRadius = 0;
     } else if (isNone) {
        // Invisible rectangle
-       containerStyle.width = BUTTON_SIZE;
+       containerStyle.width = size;
        containerStyle.height = 40;
     }
   }
@@ -130,17 +149,35 @@ export const AzButton: React.FC<AzButtonProps> = ({
   );
 
   return (
-    <TouchableOpacity
-      onPress={onClick}
-      disabled={!enabled || isLoading}
-      style={containerStyle}
-      testID={testID}
-      accessibilityRole="button"
-      accessibilityLabel={text}
-      accessibilityState={{ disabled: !enabled || isLoading }}
-    >
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: actualFillColor, zIndex: -1, borderRadius: containerStyle.borderRadius }]} pointerEvents="none" />
-      {content}
-    </TouchableOpacity>
+    <View style={containerStyle}>
+      <TouchableOpacity
+        onPress={onClick}
+        disabled={!enabled || isLoading}
+        style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}
+        testID={testID}
+        accessibilityRole="button"
+        accessibilityLabel={text}
+        accessibilityState={{ disabled: !enabled || isLoading }}
+      >
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: actualFillColor, zIndex: -1, borderRadius: containerStyle.borderRadius }]} pointerEvents="none" />
+        {content}
+      </TouchableOpacity>
+      {showBadge && (
+        <View style={{
+          position: 'absolute',
+          top: -4,
+          right: -4,
+          backgroundColor: color,
+          borderRadius: 12,
+          paddingHorizontal: 6,
+          paddingVertical: 2,
+          justifyContent: 'center',
+          alignItems: 'center',
+          minWidth: 20,
+        }} pointerEvents="none">
+          <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>{badge}</Text>
+        </View>
+      )}
+    </View>
   );
 };

@@ -63,6 +63,8 @@ data class AzNavItem(
      * value updates the badge dynamically. Null/blank hides the badge.
      */
     val badge: String? = null,
+    /** Whether the badge should remain permanently visible (true) or dissolve after 1 second (false). */
+    val persistentBadge: Boolean = false,
 ) {
     companion object {
         /**

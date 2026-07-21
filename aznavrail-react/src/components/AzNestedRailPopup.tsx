@@ -20,7 +20,8 @@ interface AzNestedRailPopupProps {
     /** Which side the parent rail is docked to, used to position the popup correctly. */
     dockingSide: 'LEFT' | 'RIGHT';
     /** Per-item help text map forwarded to the help overlay for items inside the popup. */
-    helpList?: Record<string, string>;
+    /** Optional active button size for dynamic shrinking logic. */
+    activeButtonSize?: number;
 }
 
 /** Shared Modal panel that floats next to a nested-rail host item and displays its sub-items. */
@@ -31,12 +32,14 @@ export const AzNestedRailPopup: React.FC<AzNestedRailPopupProps> = ({
     alignment,
     renderItem,
     anchorPosition,
-    dockingSide = 'LEFT'
+    dockingSide = 'LEFT',
+    activeButtonSize
 }) => {
     if (!visible) return null;
 
     const isHorizontal = alignment === AzNestedRailAlignment.HORIZONTAL;
     const window = Dimensions.get('window');
+    const buttonSize = activeButtonSize ?? AzNavRailDefaults.ButtonWidth;
 
     const popupStyle: any = {
         position: 'absolute',
@@ -59,7 +62,7 @@ export const AzNestedRailPopup: React.FC<AzNestedRailPopupProps> = ({
                 popupStyle.right = (window.width - anchorPosition.x) + 8;
             }
             popupStyle.maxWidth = window.width * 0.8;
-            popupStyle.maxHeight = AzNavRailDefaults.ButtonWidth + 16;
+            popupStyle.maxHeight = buttonSize + 16;
         } else {
             // Vertical popup centered on screen as per Android spec if possible,
             // but usually anchored next to parent
@@ -70,7 +73,7 @@ export const AzNestedRailPopup: React.FC<AzNestedRailPopupProps> = ({
                 popupStyle.right = (window.width - anchorPosition.x) + 8;
             }
             popupStyle.maxHeight = window.height * 0.8;
-            popupStyle.width = AzNavRailDefaults.ButtonWidth + 16;
+            popupStyle.width = buttonSize + 16;
         }
     }
 

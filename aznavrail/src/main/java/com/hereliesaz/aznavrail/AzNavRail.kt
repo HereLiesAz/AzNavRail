@@ -218,7 +218,11 @@ fun AzNavRail(
         }
     }
 
-    val activeButtonSize = if (isVerticalNestedRailOpen) AzNavRailDefaults.ShrunkButtonWidth else AzNavRailDefaults.ButtonWidth
+    val baseButtonSize = if (scope.railItemWidth.isSpecified) scope.railItemWidth else AzNavRailDefaults.ButtonWidth
+    val calculatedShrunkSize = baseButtonSize * 0.75f
+    val actualShrunkSize = maxOf(calculatedShrunkSize, 35.dp)
+    val targetShrunkSize = minOf(baseButtonSize, actualShrunkSize)
+    val activeButtonSize = if (isVerticalNestedRailOpen) targetShrunkSize else baseButtonSize
 
     val targetRailWidth = if (isExpanded) scope.expandedWidth
     else if (isVerticalNestedRailOpen) 60.dp

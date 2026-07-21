@@ -113,10 +113,23 @@ export const RailMenuItem: React.FC<RailMenuItemProps> = ({
 }) => {
     const [displayOption, setDisplayOption] = useState(item.selectedOption);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [showBadge, setShowBadge] = useState(!!item.badge);
 
     useEffect(() => {
         setDisplayOption(item.selectedOption);
     }, [item.selectedOption]);
+
+    useEffect(() => {
+        if (item.badge) {
+            setShowBadge(true);
+            if (!item.persistentBadge) {
+                const badgeTimer = setTimeout(() => setShowBadge(false), 1000);
+                return () => clearTimeout(badgeTimer);
+            }
+        } else {
+            setShowBadge(false);
+        }
+    }, [item.badge, item.persistentBadge]);
 
     const handlePress = () => {
         if (item.isHost) {
@@ -203,6 +216,20 @@ export const RailMenuItem: React.FC<RailMenuItemProps> = ({
                         />
                     ))}
                 </View>
+                {showBadge && (
+                    <View style={{
+                        backgroundColor: item.color || '#6200ee',
+                        borderRadius: 12,
+                        paddingHorizontal: 6,
+                        paddingVertical: 2,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        minWidth: 20,
+                        marginLeft: 8,
+                    }} pointerEvents="none">
+                        <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>{item.badge}</Text>
+                    </View>
+                )}
                 {item.isHost && (
                     <Text style={{ marginLeft: 8 }}>{isExpandedHost ? '▲' : '▼'}</Text>
                 )}

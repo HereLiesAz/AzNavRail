@@ -42,6 +42,7 @@ data class CustomizationState(
     val translucentBackground: Color,
     val expandedWidth: Dp,
     val collapsedWidth: Dp,
+    val railItemWidth: Dp,
     val displayAppName: Boolean,
     val showFooter: Boolean,
     val appRepositoryUrl: String,
@@ -142,6 +143,13 @@ fun CustomizationDemoScreen(
             value = state.collapsedWidth.value,
             onValueChange = { onChange(state.copy(collapsedWidth = it.dp)) },
             valueRange = 60f..160f,
+        )
+
+        SectionLabel("railItemWidth: ${if (state.railItemWidth == Dp.Unspecified) "auto" else "${state.railItemWidth.value.toInt()} dp"}")
+        Slider(
+            value = if (state.railItemWidth == Dp.Unspecified) 0f else state.railItemWidth.value,
+            onValueChange = { onChange(state.copy(railItemWidth = if (it < 10f) Dp.Unspecified else it.dp)) },
+            valueRange = 0f..120f,
         )
 
         SectionLabel("headerIconSize: ${if (state.headerIconSize == Dp.Unspecified) "auto (rail width)" else "${state.headerIconSize.value.toInt()} dp"}")
@@ -256,6 +264,7 @@ fun CustomizationDemoScreen(
                         translucentBackground = Color.Unspecified,
                         expandedWidth = 160.dp,
                         collapsedWidth = 100.dp,
+                        railItemWidth = Dp.Unspecified,
                         displayAppName = false,
                         showFooter = true,
                         appRepositoryUrl = "",

@@ -296,7 +296,10 @@ fun AzNavRail(
     // Shrink button size and rail width further when a vertical nested rail is open. Otherwise honor
     // a developer-defined uniform rail-item size (scope.railItemWidth), falling back to the default.
     val baseButtonSize = if (scope.railItemWidth.isSpecified) scope.railItemWidth else AzNavRailDefaults.ButtonWidth
-    val activeButtonSize = if (isVerticalNestedRailOpen) AzNavRailDefaults.ShrunkButtonWidth else baseButtonSize
+    val calculatedShrunkSize = baseButtonSize * 0.75f
+    val actualShrunkSize = maxOf(calculatedShrunkSize, 35.dp)
+    val targetShrunkSize = minOf(baseButtonSize, actualShrunkSize)
+    val activeButtonSize = if (isVerticalNestedRailOpen) targetShrunkSize else baseButtonSize
 
     val targetRailWidth = if (isExpanded) {
         scope.expandedWidth

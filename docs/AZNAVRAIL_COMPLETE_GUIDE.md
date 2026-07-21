@@ -80,7 +80,8 @@ azConfig(
     packButtons = packRailButtons,       // Boolean: Pack items tightly vs spaced
     dockingSide = AzDockingSide.LEFT,    // Enum: LEFT or RIGHT
     noMenu = noMenu,                     // Boolean: Disable the side drawer entirely
-    usePhysicalDocking = usePhysicalDocking // Boolean: Anchor to physical hardware edge vs visual left
+    usePhysicalDocking = usePhysicalDocking, // Boolean: Anchor to physical hardware edge vs visual left
+    railItemWidth = 64.dp                // Dp: Configure the base width of all rail items
     // appRepositoryUrl = ""                // Optional override for the About reader's repo (see below)
 )
 ```
@@ -222,6 +223,11 @@ AzDropdownMenu(navController = navController) {
 
 ## 3. Navigation Items (DSL)
 
+All items inherit base styling from the `azTheme` block (which scopes properties like text colour and shape to `Rail`, `Menu`, or `Both`).
+
+- `badge`: A text value to show as a badge on the item. By default, this badge is transient and will disappear after 1 second of being changed.
+- `persistentBadge`: Set to true to make the badge visible permanently.
+
 Items are added sequentially. The order in the DSL determines the order in the rail/menu.
 
 ### Standard Items
@@ -244,6 +250,8 @@ azMenuItem(
     text = "Home",
     route = "home",
     info = "Navigate to the Home screen",
+    badge = "New",
+    persistentBadge = true,
     onClick = { /* log click */ }
 )
 

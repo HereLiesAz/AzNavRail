@@ -33,6 +33,8 @@ interface DraggableRailItemWrapperProps {
   style?: any;
   /** Optional background color applied to the long-press hidden menu. */
   translucentBackground?: string;
+  /** Optional size for the button. */
+  size?: number;
 }
 
 /**
@@ -48,6 +50,7 @@ export const DraggableRailItemWrapper: React.FC<DraggableRailItemWrapperProps> =
   offsetY,
   style,
   translucentBackground,
+  size,
 }) => {
   const pan = useRef(new Animated.ValueXY()).current;
   const [isDragging, setIsDragging] = useState(false);
@@ -194,6 +197,7 @@ export const DraggableRailItemWrapper: React.FC<DraggableRailItemWrapperProps> =
                     color={item.color}
                     shape={item.shape}
                     enabled={!item.disabled}
+                    size={size}
                     // Pass a dummy click handler since we handle clicks on the wrapper for gesture conflict resolution
                     onClick={() => {}}
                 />

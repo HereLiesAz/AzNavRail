@@ -25,6 +25,12 @@ export interface AzToggleProps {
   disabled?: boolean;
   /** Test identifier forwarded to the underlying touchable. */
   testID?: string;
+  /** Badge text to display. */
+  badge?: string;
+  /** Whether the badge is persistent. */
+  persistentBadge?: boolean;
+  /** Size of the button. */
+  size?: number;
 }
 
 /** Two-state toggle button — internally an `AzButton` whose label is driven by `isChecked`. */
@@ -39,6 +45,9 @@ export const AzToggle: React.FC<AzToggleProps> = ({
   style,
   disabled,
   testID,
+  badge,
+  persistentBadge,
+  size,
 }) => {
   return (
     <AzButton
@@ -50,6 +59,9 @@ export const AzToggle: React.FC<AzToggleProps> = ({
       style={style}
       enabled={!disabled}
       testID={testID}
+      badge={badge}
+      persistentBadge={persistentBadge}
+      size={size}
     />
   );
 };

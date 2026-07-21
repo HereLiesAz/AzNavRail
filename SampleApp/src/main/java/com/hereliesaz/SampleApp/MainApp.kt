@@ -100,6 +100,7 @@ fun MainApp() {
                 translucentBackground = Color.Unspecified,
                 expandedWidth = 160.dp,
                 collapsedWidth = 100.dp,
+                railItemWidth = Dp.Unspecified,
                 displayAppName = false,
                 showFooter = true,
                 // Blank → the About page auto-derives the repo from this app's namespace
@@ -183,6 +184,7 @@ fun MainApp() {
             activeClassifiers = helpSystem.activeClassifiers,
             expandedWidth = customization.expandedWidth,
             collapsedWidth = customization.collapsedWidth,
+            railItemWidth = customization.railItemWidth,
             showFooter = customization.showFooter,
             appRepositoryUrl = customization.appRepositoryUrl,
             // WP7 menu-drawer knobs.
@@ -283,7 +285,7 @@ fun MainApp() {
         azSuppressGuide { suppressGuidance }
 
         // ---------- Showcase navigation menu items ----------
-        azMenuItem(id = "showcase-home", text = "Showcase Home", route = "showcase-home", screenTitle = "Showcase", info = "Index of every demo screen in this sample.")
+        azMenuItem(id = "showcase-home", text = "Showcase Home", route = "showcase-home", screenTitle = "Showcase", info = "Index of every demo screen in this sample.", badge = "New!", persistentBadge = true)
         azMenuItem(id = "bottom-sheet", text = "Bottom Sheets", route = "bottom-sheet", screenTitle = "Bottom Sheets", info = "AzBottomSheet detents, drag, scrim, swipe.")
         azMenuItem(id = "tutorial", text = "Guidance", route = "tutorial", screenTitle = "Guidance", info = "Status-driven guidance — azStatus/azEdge/azGoal + live routing.", classifiers = setOf("advanced"))
         azMenuItem(id = "fab-overlay", text = "FAB / Overlay", route = "fab-overlay", screenTitle = "FAB & Overlay", info = "Rail drag callbacks + system overlay service.", classifiers = setOf("advanced", "danger"))
@@ -322,6 +324,7 @@ fun MainApp() {
             text = "Icon",
             content = android.R.drawable.ic_menu_agenda,
             info = "Demonstrates dynamic content with Resource ID",
+            badge = "5",
             onClick = { Log.d(TAG, "Icon item clicked") },
         )
 

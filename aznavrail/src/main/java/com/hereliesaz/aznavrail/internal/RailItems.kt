@@ -125,7 +125,9 @@ internal fun RailItems(
     var lastTappedId by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
-    val spacingDp = if (packRailButtons) 0.dp else AzNavRailDefaults.RailContentVerticalArrangement
+    val baseButtonSize = if (scope.railItemWidth.isSpecified) scope.railItemWidth else AzNavRailDefaults.ButtonWidth
+    val sizeRatio = buttonSize / baseButtonSize
+    val spacingDp = if (packRailButtons) 0.dp else AzNavRailDefaults.RailContentVerticalArrangement * sizeRatio
     val spacingPx = with(density) { spacingDp.roundToPx() }
 
     val prefixSums by remember(scope.navItems, spacingPx) {

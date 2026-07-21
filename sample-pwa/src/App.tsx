@@ -117,6 +117,7 @@ function App() {
       headerIconShape={customization.headerIconShape}
       expandedRailWidth={customization.expandedRailWidth}
       collapsedRailWidth={customization.collapsedRailWidth}
+      railItemWidth={customization.railItemWidth}
       displayAppNameInHeader={customization.displayAppNameInHeader}
       showFooter={customization.showFooter}
       appRepositoryUrl={customization.appRepositoryUrl}
@@ -145,7 +146,7 @@ function App() {
       }}
     >
       {/* ---------- Showcase navigation ---------- */}
-      <AzMenuItem id="home" text="Showcase Home" route="home" info="Index of every demo screen." onClick={() => navigate('/')} />
+      <AzMenuItem id="home" text="Showcase Home" route="home" info="Index of every demo screen." badge="New!" persistentBadge onClick={() => navigate('/')} />
       <AzMenuItem id="bottom-sheet" text="Bottom Sheets" route="bottom-sheet" info="AzBottomSheet detents, drag, scrim, swipe." onClick={() => navigate('/bottom-sheet')} />
       <AzMenuItem id="standalone" text="Standalone Widgets" route="standalone" info="AzButton/Toggle/Cycler at every shape, AzLoad, AzRoller." onClick={() => navigate('/standalone')} />
       <AzMenuItem id="customization" text="Customization" route="customization" info="Live theme controls." onClick={() => navigate('/customization')} />

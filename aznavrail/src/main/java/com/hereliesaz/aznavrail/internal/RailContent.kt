@@ -126,6 +126,26 @@ internal fun RailContent(
             }
             .then(dragModifier)
     ) {
+        var showBadge by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+        androidx.compose.runtime.LaunchedEffect(item.badge) {
+            if (!item.badge.isNullOrBlank()) {
+                showBadge = true
+                if (!item.persistentBadge) {
+                    kotlinx.coroutines.delay(1000)
+                    showBadge = false
+                }
+            } else {
+                showBadge = false
+            }
+        }
+
+        if (showBadge && !item.badge.isNullOrBlank()) {
+            com.hereliesaz.aznavrail.AzBadge(
+                text = item.badge,
+                modifier = Modifier.align(Alignment.TopEnd),
+                containerColor = item.color ?: activeColor ?: MaterialTheme.colorScheme.primary,
+            )
+        }
         AzNavRailButton(
             onClick = finalOnClick,
             text = textToShow,

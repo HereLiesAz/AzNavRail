@@ -28,6 +28,12 @@ export interface AzCyclerProps {
   disabledOptions?: string[];
   /** Test identifier forwarded to the underlying touchable. */
   testID?: string;
+  /** Badge text to display. */
+  badge?: string;
+  /** Whether the badge is persistent. */
+  persistentBadge?: boolean;
+  /** Size of the button. */
+  size?: number;
 }
 
 /**
@@ -45,6 +51,9 @@ export const AzCycler: React.FC<AzCyclerProps> = ({
   disabled,
   disabledOptions = [],
   testID,
+  badge,
+  persistentBadge,
+  size,
 }) => {
   // Local state to show the currently "previewed" option
   const [displayOption, setDisplayOption] = useState(selectedOption);
@@ -103,6 +112,9 @@ export const AzCycler: React.FC<AzCyclerProps> = ({
       style={style}
       enabled={!disabled}
       testID={testID}
+      badge={badge}
+      persistentBadge={persistentBadge}
+      size={size}
     />
   );
 };

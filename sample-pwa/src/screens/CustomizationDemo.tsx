@@ -16,6 +16,7 @@ export interface CustomizationState {
   defaultShape: AzButtonShape
   expandedRailWidth: number
   collapsedRailWidth: number
+  railItemWidth?: number
   displayAppNameInHeader: boolean
   showFooter: boolean
   appRepositoryUrl: string
@@ -81,6 +82,13 @@ export default function CustomizationDemo({
         <input
           type="range" min={80} max={200} value={state.collapsedRailWidth}
           onChange={(e) => onChange({ ...state, collapsedRailWidth: Number(e.target.value) })}
+        />
+      </Block>
+
+      <Block label={`railItemWidth: ${state.railItemWidth || 'auto (default)'}`}>
+        <input
+          type="range" min={0} max={120} value={state.railItemWidth || 0}
+          onChange={(e) => onChange({ ...state, railItemWidth: Number(e.target.value) || undefined })}
         />
       </Block>
 

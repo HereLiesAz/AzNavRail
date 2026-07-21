@@ -33,7 +33,8 @@ fun App() {
             LocalAzNavHostScope provides rememberAzNavHostScope(),
         ) {
             AzNavRail {
-                azRailItem(id = "home", text = "Home", onClick = {})
+                azConfig(railItemWidth = androidx.compose.ui.unit.Dp.Unspecified) // Demo config
+                azRailItem(id = "home", text = "Home", badge = "1", onClick = {})
                 azRailItem(id = "docs", text = "Docs", onClick = {})
                 azMenuItem(id = "about", text = "About", onClick = {})
                 azMenuItem(id = "settings", text = "Settings", onClick = {})
