@@ -590,12 +590,6 @@ private fun AzDropdownEntryItem(
     config: AzDropdownConfig,
     navController: NavController?,
     dismiss: () -> Unit,
-    // Captures each entry's true window-space bounds so the dissolve overlay can render at the
-    // right screen position after the panel Popup tears down. Called from `.onGloballyPositioned`.
-    onBoundsCapture: (Int, androidx.compose.ui.geometry.Rect) -> Unit = { _, _ -> },
-    // Fires just before `dismiss()` when the tapped entry closes the panel — the outer composable
-    // uses it to spawn a `DissolveOverlay` with the entry's captured bounds.
-    onDissolveTap: (Int, String) -> Unit = { _, _ -> },
 ) {
     val design = config.design
     fun navigate(route: String?) {
@@ -623,30 +617,13 @@ private fun AzDropdownEntryItem(
         dockingSide = config.dockingSide
     )
 
-    // Capture the entry's true window-space bounds so the dissolve overlay can render at the
-    // right screen position after the panel Popup tears down.
-    val boundsModifier = Modifier.onGloballyPositioned { coordinates ->
-        val pos = coordinates.positionInWindow()
-        val size = coordinates.size
-        onBoundsCapture(
-            index,
-            androidx.compose.ui.geometry.Rect(
-                left = pos.x,
-                top = pos.y,
-                right = pos.x + size.width,
-                bottom = pos.y + size.height,
-            ),
-        )
-    }
-
-    Box(modifier = boundsModifier) {
+    Box {
     when (entry) {
         is AzDropdownEntry.Item -> {
             val action = {
                 navigate(entry.route)
                 entry.onClick()
                 if (entry.closeOnClick) {
-                    onDissolveTap(index, entry.text)
                     dismiss()
                 }
             }
@@ -687,7 +664,6 @@ private fun AzDropdownEntryItem(
                         navigate(entry.route)
                         entry.onToggle(!entry.isChecked)
                         if (entry.closeOnClick) {
-                            onDissolveTap(index, entryLabel(entry))
                             dismiss()
                         }
                     },
@@ -705,7 +681,6 @@ private fun AzDropdownEntryItem(
                             navigate(entry.route)
                             entry.onToggle(it)
                             if (entry.closeOnClick) {
-                                onDissolveTap(index, entryLabel(entry))
                                 dismiss()
                             }
                         },
@@ -734,7 +709,6 @@ private fun AzDropdownEntryItem(
                             entry.onCycle(next)
                         }
                         if (entry.closeOnClick) {
-                            onDissolveTap(index, entryLabel(entry))
                             dismiss()
                         }
                     },
@@ -753,7 +727,6 @@ private fun AzDropdownEntryItem(
                             navigate(entry.route)
                             entry.onCycle(it)
                             if (entry.closeOnClick) {
-                                onDissolveTap(index, entryLabel(entry))
                                 dismiss()
                             }
                         },
@@ -860,11 +833,6 @@ fun AzDropdownMenu(
     // About page is drawn as its own full-screen layer (above everything) rather than inline.
     var showAbout by rememberSaveable { mutableStateOf(false) }
     var showMoreFromAz by rememberSaveable { mutableStateOf(false) }
-    // Per-entry window-space bounds, captured on each entry's globallyPositioned so the dissolve
-    // overlay can render the label at its true screen position after the panel Popup tears down.
-    val entryBounds = remember { androidx.compose.runtime.mutableStateMapOf<Int, androidx.compose.ui.geometry.Rect>() }
-    // Dissolve overlay for the tapped entry that closes the panel (see AzNavRail's counterpart).
-    var dissolving: com.hereliesaz.aznavrail.internal.DissolveState? by remember { mutableStateOf(null) }
     // A throwaway rail scope only supplies default theme tokens (accent/surface) to the reused
     // overlays; the dropdown declares no rail theme of its own.
     val overlayScope = remember { AzNavRailScopeImpl() }
@@ -977,22 +945,7 @@ fun AzDropdownMenu(
                             .then(if (config.design == AzDropdownDesign.RAIL) Modifier.padding(8.dp) else Modifier),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        val entryDensity = androidx.compose.ui.platform.LocalDensity.current
                         entries.forEachIndexed { index, entry ->
-                            // If this entry was the one tapped-to-close, render an invisible
-                            // placeholder the same height as the captured entry so the panel
-                            // stays occupied while the dissolve overlay animates its label. A bare
-                            // `Spacer` doesn't draw or hit-test — it just holds the layout so the
-                            // rows below don't snap upward during the dissolve.
-                            val dissolvingHere = dissolving?.takeIf { it.itemId == "azdd:$index" }
-                            if (dissolvingHere != null) {
-                                Spacer(
-                                    Modifier.height(
-                                        with(entryDensity) { dissolvingHere.bounds.height.toDp() }
-                                    )
-                                )
-                                return@forEachIndexed
-                            }
                             AzDropdownEntryItem(
                                 index = index,
                                 count = entries.size,
@@ -1001,17 +954,6 @@ fun AzDropdownMenu(
                                 config = config,
                                 navController = navController,
                                 dismiss = dismiss,
-                                onBoundsCapture = { idx, rect -> entryBounds[idx] = rect },
-                                onDissolveTap = { idx, text ->
-                                    val bounds = entryBounds[idx]
-                                    if (bounds != null) {
-                                        dissolving = com.hereliesaz.aznavrail.internal.DissolveState(
-                                            itemId = "azdd:$idx",
-                                            text = text,
-                                            bounds = bounds,
-                                        )
-                                    }
-                                },
                             )
                         }
                         // The expanded-menu design carries the rail's footer (About / Feedback / @HereLiesAz).
@@ -1073,21 +1015,6 @@ fun AzDropdownMenu(
             }
         }
 
-        // Dissolve overlay for a tapped dropdown entry — see AzNavRail's counterpart.
-        dissolving?.let { snapshot ->
-            val accent = MaterialTheme.colorScheme.primary
-            val style = MaterialTheme.typography.titleLarge.let { base ->
-                config.itemTextStyle?.let { base.merge(it) } ?: base
-            }
-            com.hereliesaz.aznavrail.internal.DissolveOverlay(
-                state = snapshot,
-                textStyle = style,
-                color = accent,
-                durationMs = config.entranceDurationMs,
-                easing = config.entranceEasing,
-                onFinished = { dissolving = null },
-            )
-        }
     }
 }
 

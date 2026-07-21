@@ -64,6 +64,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -254,10 +255,6 @@ fun AzNavRail(
     }
 
     var isExpanded by remember { mutableStateOf(if (scope.noMenu) false else initiallyExpanded) }
-    // Dissolve-overlay state: set on tap when the tapped item collapses the drawer. The label
-    // freezes in place at its captured bounds while the actual menu row is skipped from render,
-    // then slides toward the middle of the screen and fades out. Cleared once the anim finishes.
-    var dissolving: com.hereliesaz.aznavrail.internal.DissolveState? by remember { mutableStateOf(null) }
     var isFloating by remember { mutableStateOf(false) }
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
@@ -296,8 +293,10 @@ fun AzNavRail(
         }
     }
 
-    // Shrink button size and rail width further when a vertical nested rail is open
-    val activeButtonSize = if (isVerticalNestedRailOpen) AzNavRailDefaults.ShrunkButtonWidth else AzNavRailDefaults.ButtonWidth
+    // Shrink button size and rail width further when a vertical nested rail is open. Otherwise honor
+    // a developer-defined uniform rail-item size (scope.railItemWidth), falling back to the default.
+    val baseButtonSize = if (scope.railItemWidth.isSpecified) scope.railItemWidth else AzNavRailDefaults.ButtonWidth
+    val activeButtonSize = if (isVerticalNestedRailOpen) AzNavRailDefaults.ShrunkButtonWidth else baseButtonSize
 
     val targetRailWidth = if (isExpanded) {
         scope.expandedWidth
@@ -733,21 +732,6 @@ fun AzNavRail(
                                 .verticalScroll(scrollState)
                         ) {
                             topLevelItems.forEachIndexed { index, item ->
-                                // If this item was the one tapped-to-close, render an invisible
-                                // placeholder the same height as the captured item so the row
-                                // stays occupied while the dissolve overlay animates its label.
-                                // A bare `Spacer` doesn't draw or hit-test, so it holds the layout
-                                // without duplicating the label — the overlay draws the label at
-                                // the item's captured bounds and slides it toward centre.
-                                val dissolvingHere = dissolving?.takeIf { it.itemId == item.id }
-                                if (dissolvingHere != null) {
-                                    Spacer(
-                                        Modifier.height(
-                                            with(density) { dissolvingHere.bounds.height.toDp() }
-                                        )
-                                    )
-                                    return@forEachIndexed
-                                }
                                 MenuItemNode(
                                     item = item,
                                     allItems = displayItems,
@@ -758,16 +742,6 @@ fun AzNavRail(
                                     showHelpOverlay = showHelpOverlay,
                                     onToggleHelp = { toggleHelpOverlay(it) },
                                     onCollapseMenu = { isExpanded = false },
-                                    onDissolveTap = { itemId, text ->
-                                        val bounds = scope.itemBoundsCache[itemId]
-                                        if (bounds != null) {
-                                            dissolving = com.hereliesaz.aznavrail.internal.DissolveState(
-                                                itemId = itemId,
-                                                text = text,
-                                                bounds = bounds,
-                                            )
-                                        }
-                                    },
                                     index = index,
                                     count = topLevelItems.size,
                                     visible = isExpanded,
@@ -924,12 +898,6 @@ fun AzNavRail(
             }
         }
     }
-
-    // Dissolve overlay moved to the end of the composable so it composes AFTER every other
-    // overlay (guidance/instruction callouts). Last-composed wins draw order within the same
-    // Popup layer; combined with `zIndex(Float.MAX_VALUE)` inside DissolveOverlay itself, the
-    // dissolving label is guaranteed to sit above the rail and every other overlay it stacks
-    // against.
 }
 
     // The About reader, Help overlay, and "More from Az" carousel are now rendered by
@@ -1067,24 +1035,6 @@ fun AzNavRail(
         LaunchedEffect(guidanceController) { guidanceController.publishCurrent(emptyList()) }
     }
 
-    // Dissolve overlay for a tapped menu item that collapses the drawer. Rendered as the LAST
-    // child of the composable so its Popup composes after every other overlay (guidance/help/etc.)
-    // in the same overlay layer, and its inner `zIndex(Float.MAX_VALUE)` guarantees ordering even
-    // if it ever ends up sharing a layer. Cleared once its animation completes.
-    dissolving?.let { snapshot ->
-        val accent = scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
-        val style = MaterialTheme.typography.titleLarge.let { base ->
-            scope.itemTextStyle?.let { base.merge(it) } ?: base
-        }
-        com.hereliesaz.aznavrail.internal.DissolveOverlay(
-            state = snapshot,
-            textStyle = style,
-            color = accent,
-            durationMs = scope.entranceDurationMs,
-            easing = scope.entranceEasing,
-            onFinished = { dissolving = null },
-        )
-    }
 }
 
 /**
@@ -1105,9 +1055,6 @@ private fun MenuItemNode(
     showHelpOverlay: Boolean,
     onToggleHelp: (String?) -> Unit,
     onCollapseMenu: () -> Unit,
-    // Called just before `onCollapseMenu` fires, when the tapped item has `collapseOnClick = true`.
-    // The caller uses this to spawn a `DissolveOverlay` for that item's label.
-    onDissolveTap: (itemId: String, text: String) -> Unit = { _, _ -> },
     index: Int,
     count: Int,
     visible: Boolean,
@@ -1161,11 +1108,9 @@ private fun MenuItemNode(
             if (item.collapseOnClick) onCollapseMenu()
         },
         // MenuItem invokes `onItemClick` last for both standard and toggle items — the single
-        // place where the tap becomes a menu-close decision — so triggering the dissolve here
-        // guarantees exactly one overlay spawn per tap.
+        // place where the tap becomes a menu-close decision.
         onItemClick = {
             if (item.collapseOnClick) {
-                onDissolveTap(item.id, item.menuText ?: item.text)
                 onCollapseMenu()
             }
         },

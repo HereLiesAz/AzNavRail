@@ -271,6 +271,14 @@ internal fun MenuItem(
                     }
                 }
             }
+
+            item.badge?.takeIf { it.isNotBlank() }?.let { badgeText ->
+                com.hereliesaz.aznavrail.AzBadge(
+                    text = badgeText,
+                    modifier = Modifier.padding(start = 8.dp),
+                    containerColor = effectiveActiveColor,
+                )
+            }
         }
     }
 }
