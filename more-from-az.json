@@ -1,15 +1,7 @@
 {
-  "version": 8,
+  "version": 11.0,
   "apps": [
-    {
-      "name": "CueDetat",
-      "iconUrl": "https://play-lh.googleusercontent.com/E1DyZ-mqnDUiXM0hC_A4CcYqnBI9HeoAwAH6S5If8IGNhRcljRvlifIgAUXps4dYuTtX36RPqZYU2zDTK-KjKVA",
-      "description": "The sort of IRL pool shot visualization billiards app you've always thought should just... fucking... exist already.",
-      "github": "https://github.com/HereLiesAz/CueDetat",
-      "play": "https://play.google.com/store/apps/details?id=com.hereliesaz.cuedetat",
-      "web": "https://hereliesaz.github.io/CueDetat/",
-      "isPwa": false
-    },
+
     {
       "name": "GraffitiXR",
       "iconUrl": "https://play-lh.googleusercontent.com/DjggsG5dq9gadBczm3L7sfiyxviCrjKnP5_AYGC4mBHxD1nU5Ssx-yTrLk7ptoWT2_PoyUeLMgUnYh2OuxNujA",
@@ -20,12 +12,11 @@
       "isPwa": false
     },
     {
-      "name": "QaRd",
-      "iconUrl": "https://play-lh.googleusercontent.com/04aUgd7tScnByYnTOaDzowe2Pry3lkQwa_YYdB1CjpR28qQrfs78vz7IebW7utZ8nOZS9umEx5JNtH8LiaV5",
-      "description": "QaRd: Design your QR code widget, share it like a digital business card from your home screen.",
-      "github": "https://github.com/HereLiesAz/QaRd",
-      "play": "https://play.google.com/store/apps/details?id=com.hereliesaz.qard",
-      "web": "https://hereliesaz.com/qard/",
+      "name": "Guillotine",
+      "iconUrl": "guillotine_banner.png",
+      "description": "An AI-Powered Non-Linear Video Editor",
+      "github": "https://github.com/HereLiesAz/Guillotine",
+      "web": "https://hereliesaz.github.io/Guillotine/",
       "isPwa": false
     },
     {
@@ -46,12 +37,50 @@
       "isPwa": true
     },
     {
+      "name": "QaRd",
+      "iconUrl": "https://play-lh.googleusercontent.com/04aUgd7tScnByYnTOaDzowe2Pry3lkQwa_YYdB1CjpR28qQrfs78vz7IebW7utZ8nOZS9umEx5JNtH8LiaV5",
+      "description": "QaRd: Design your QR code widget, share it like a digital business card from your home screen.",
+      "github": "https://github.com/HereLiesAz/QaRd",
+      "play": "https://play.google.com/store/apps/details?id=com.hereliesaz.qard",
+      "web": "https://hereliesaz.com/qard/",
+      "isPwa": false
+    },
+    {
+      "name": "CleanUnderwear",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/CleanUnderwear/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
+      "description": "",
+      "github": "https://github.com/HereLiesAz/CleanUnderwear",
+      "web": "https://hereliesaz.github.io/CleanUnderwear/",
+      "isPwa": false
+    },
+    {
+      "name": "CueDetat",
+      "iconUrl": "https://play-lh.googleusercontent.com/E1DyZ-mqnDUiXM0hC_A4CcYqnBI9HeoAwAH6S5If8IGNhRcljRvlifIgAUXps4dYuTtX36RPqZYU2zDTK-KjKVA",
+      "description": "The sort of IRL pool shot visualization billiards app you've always thought should just... fucking... exist already.",
+      "github": "https://github.com/HereLiesAz/CueDetat",
+      "play": "https://play.google.com/store/apps/details?id=com.hereliesaz.cuedetat",
+      "web": "https://hereliesaz.github.io/CueDetat/",
+      "isPwa": false
+    },
+    {
       "name": "IDEaz",
       "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/IDEaz/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
       "description": "Mobile development that feels like it's just you and your IDEaz -- The Post-Code IDE for Android.",
       "github": "https://github.com/HereLiesAz/IDEaz",
       "web": "https://hereliesaz.github.io/IDEaz/",
       "isPwa": false
+    },
+    {
+      "name": "QuicLoc",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/QuicLoc/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
+      "description": "Location sharing without the battery drain nor other creepinesses, for Android.",
+      "github": "https://github.com/HereLiesAz/QuicLoc"
+    },
+    {
+      "name": "WifiHaqueur",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/WifiHaqueur/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
+      "description": "Wifi Haqueur is a blunt instrument you can whack a router with using the force of a brute.",
+      "github": "https://github.com/HereLiesAz/WifiHaqueur"
     },
     {
       "name": "TheLexorcist",
@@ -70,7 +99,7 @@
     {
       "name": "Liperty",
       "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/Liperty/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
-      "description": "On-device lip reading, fine-tuned to the user. ",
+      "description": "On-device lip-reading, fine-tuned to the user. ",
       "github": "https://github.com/HereLiesAz/Liperty"
     },
     {
@@ -94,28 +123,6 @@
       "github": "https://github.com/HereLiesAz/BarCodeNcrypt"
     },
     {
-      "name": "CleanUnderwear",
-      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/CleanUnderwear/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
-      "description": "",
-      "github": "https://github.com/HereLiesAz/CleanUnderwear",
-      "web": "https://hereliesaz.github.io/CleanUnderwear/",
-      "isPwa": false
-    },
-    {
-      "name": "QuicLoc",
-      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/QuicLoc/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
-      "description": "Location sharing without the battery drain nor other creepinesses, for Android.",
-      "github": "https://github.com/HereLiesAz/QuicLoc"
-    },
-    {
-      "name": "Guillotine",
-      "iconUrl": "guillotine_banner.png",
-      "description": "An AI-Powered Non-Linear Video Editor",
-      "github": "https://github.com/HereLiesAz/Guillotine",
-      "web": "https://hereliesaz.github.io/Guillotine/",
-      "isPwa": false
-    },
-    {
       "name": "MagNom",
       "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/MagNom/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
       "description": "An Android app to interface with Magspoof v4 and similar hardware, integrating  magstrip reading and recording tools like AudioSpoof. ",
@@ -126,12 +133,6 @@
       "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/pwnagotchiOnAndroid/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
       "description": "",
       "github": "https://github.com/HereLiesAz/pwnagotchiOnAndroid"
-    },
-    {
-      "name": "ReUp",
-      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/ReUp/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
-      "description": "A gentle cognitive behavioral helper in Android app form.",
-      "github": "https://github.com/HereLiesAz/ReUp"
     },
     {
       "name": "Et2Brutus",
@@ -158,10 +159,10 @@
       "github": "https://github.com/HereLiesAz/Click"
     },
     {
-      "name": "WifiHaqueur",
-      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/WifiHaqueur/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
-      "description": "Wifi Haqueur is a blunt instrument you can whack a router with using the force of a brute.",
-      "github": "https://github.com/HereLiesAz/WifiHaqueur"
+      "name": "ReUp",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/ReUp/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
+      "description": "A gentle cognitive behavioral helper in Android app form.",
+      "github": "https://github.com/HereLiesAz/ReUp"
     }
   ]
 }

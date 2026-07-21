@@ -1182,6 +1182,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         addItem(id = id, text = text, menuText = menuText, config = AzItemConfig(classifiers = classifiers, route = route, screenTitle = screenTitle, info = info, isRailItem = false, disabled = disabled, isHost = true, content = content, color = color, textColor = textColor, fillColor = fillColor, shape = shape, badge = badge, persistentBadge = persistentBadge), onClick = onClick ?: {})
     }
 
+
     override fun azRailHostItem(
         id: String,
         text: String,
@@ -1197,6 +1198,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         textColor: Color?,
         fillColor: Color?,
         badge: String?,
+        persistentBadge: Boolean,
         initiallyExpanded: Boolean,
         expandWhen: (() -> Boolean)?,
         onExpandedChange: ((Boolean) -> Unit)?,

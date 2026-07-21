@@ -1186,6 +1186,8 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         menuText: String?,
         textColor: Color?,
         fillColor: Color?,
+        badge: String?,
+        persistentBadge: Boolean,
         initiallyExpanded: Boolean,
         expandWhen: (() -> Boolean)?,
         onExpandedChange: ((Boolean) -> Unit)?,
@@ -1223,7 +1225,27 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         addItem(id = id, text = text, menuText = menuText, config = AzItemConfig(classifiers = classifiers, route = route, screenTitle = screenTitle, info = info, isRailItem = true, disabled = disabled, isSubItem = true, hostId = hostId, onFocus = onFocus, content = content, color = color, textColor = textColor, fillColor = fillColor, shape = shape, badge = badge, persistentBadge = persistentBadge), onClick = onClick ?: {})
     }
 
-    override fun azMenuSubHostItem(id: String, hostId: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, expandWhen: (() -> Boolean)?, onExpandedChange: ((Boolean) -> Unit)?, onClick: (() -> Unit)?) {
+    override fun azMenuSubHostItem(
+        id: String,
+        hostId: String,
+        text: String,
+        route: String?,
+        content: Any?,
+        color: Color?,
+        shape: AzButtonShape?,
+        disabled: Boolean,
+        screenTitle: String?,
+        info: String?,
+        classifiers: Set<String>,
+        menuText: String?,
+        textColor: Color?,
+        fillColor: Color?,
+        badge: String?,
+        persistentBadge: Boolean,
+        expandWhen: (() -> Boolean)?,
+        onExpandedChange: ((Boolean) -> Unit)?,
+        onClick: (() -> Unit)?
+    ) {
         checkSubHost(id, hostId, "azMenuSubHostItem")
         if (expandWhen != null) expandWhenMap[id] = expandWhen
         if (onExpandedChange != null) onExpandedChangeMap[id] = onExpandedChange
@@ -1245,6 +1267,8 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         menuText: String?,
         textColor: Color?,
         fillColor: Color?,
+        badge: String?,
+        persistentBadge: Boolean,
         initiallyExpanded: Boolean,
         expandWhen: (() -> Boolean)?,
         onExpandedChange: ((Boolean) -> Unit)?,
