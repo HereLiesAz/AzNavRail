@@ -1,7 +1,6 @@
 {
-  "version": 11.0,
+  "version": 12,
   "apps": [
-
     {
       "name": "GraffitiXR",
       "iconUrl": "https://play-lh.googleusercontent.com/DjggsG5dq9gadBczm3L7sfiyxviCrjKnP5_AYGC4mBHxD1nU5Ssx-yTrLk7ptoWT2_PoyUeLMgUnYh2OuxNujA",
@@ -9,14 +8,6 @@
       "github": "https://github.com/HereLiesAz/GraffitiXR",
       "play": "https://play.google.com/store/apps/details?id=com.hereliesaz.graffitixr",
       "web": "https://hereliesaz.github.io/GraffitiXR/",
-      "isPwa": false
-    },
-    {
-      "name": "Guillotine",
-      "iconUrl": "guillotine_banner.png",
-      "description": "An AI-Powered Non-Linear Video Editor",
-      "github": "https://github.com/HereLiesAz/Guillotine",
-      "web": "https://hereliesaz.github.io/Guillotine/",
       "isPwa": false
     },
     {
@@ -29,14 +20,6 @@
       "isPwa": false
     },
     {
-      "name": "BarBacker",
-      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/BarBacker/main/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
-      "description": "A digital paging system for bartenders and barbacks in high-volume (and loud, too) environments.",
-      "github": "https://github.com/HereLiesAz/BarBacker",
-      "web": "https://hereliesaz.github.io/BarBacker/",
-      "isPwa": true
-    },
-    {
       "name": "QaRd",
       "iconUrl": "https://play-lh.googleusercontent.com/04aUgd7tScnByYnTOaDzowe2Pry3lkQwa_YYdB1CjpR28qQrfs78vz7IebW7utZ8nOZS9umEx5JNtH8LiaV5",
       "description": "QaRd: Design your QR code widget, share it like a digital business card from your home screen.",
@@ -46,20 +29,36 @@
       "isPwa": false
     },
     {
-      "name": "CleanUnderwear",
-      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/CleanUnderwear/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
-      "description": "",
-      "github": "https://github.com/HereLiesAz/CleanUnderwear",
-      "web": "https://hereliesaz.github.io/CleanUnderwear/",
-      "isPwa": false
-    },
-    {
       "name": "CueDetat",
       "iconUrl": "https://play-lh.googleusercontent.com/E1DyZ-mqnDUiXM0hC_A4CcYqnBI9HeoAwAH6S5If8IGNhRcljRvlifIgAUXps4dYuTtX36RPqZYU2zDTK-KjKVA",
       "description": "The sort of IRL pool shot visualization billiards app you've always thought should just... fucking... exist already.",
       "github": "https://github.com/HereLiesAz/CueDetat",
       "play": "https://play.google.com/store/apps/details?id=com.hereliesaz.cuedetat",
       "web": "https://hereliesaz.github.io/CueDetat/",
+      "isPwa": false
+    },
+    {
+      "name": "Guillotine",
+      "iconUrl": "guillotine_banner.png",
+      "description": "An AI-Powered Non-Linear Video Editor",
+      "github": "https://github.com/HereLiesAz/Guillotine",
+      "web": "https://hereliesaz.github.io/Guillotine/",
+      "isPwa": false
+    },
+    {
+      "name": "BarBacker",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/BarBacker/main/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "description": "A digital paging system for bartenders and barbacks in high-volume (and loud, too) environments.",
+      "github": "https://github.com/HereLiesAz/BarBacker",
+      "web": "https://hereliesaz.github.io/BarBacker/",
+      "isPwa": true
+    },
+    {
+      "name": "CleanUnderwear",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/CleanUnderwear/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
+      "description": "",
+      "github": "https://github.com/HereLiesAz/CleanUnderwear",
+      "web": "https://hereliesaz.github.io/CleanUnderwear/",
       "isPwa": false
     },
     {
@@ -99,7 +98,7 @@
     {
       "name": "Liperty",
       "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/Liperty/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
-      "description": "On-device lip-reading, fine-tuned to the user. ",
+      "description": "On-device lip reading, fine-tuned to the user. ",
       "github": "https://github.com/HereLiesAz/Liperty"
     },
     {
