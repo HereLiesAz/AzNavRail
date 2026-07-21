@@ -136,7 +136,7 @@ kotlin {
 // tolerated and the script compiles.
 android {
     namespace = "com.hereliesaz.aznavrail.cmp"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 26
