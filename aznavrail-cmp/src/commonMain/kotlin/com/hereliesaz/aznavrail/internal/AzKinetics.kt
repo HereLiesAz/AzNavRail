@@ -183,3 +183,40 @@ internal fun rememberAzClosingState(
     }
     return rendered
 }
+
+@Composable
+internal fun rememberAzAccordionModifier(
+    index: Int,
+    count: Int,
+    visible: Boolean,
+    isHorizontal: Boolean,
+    staggerMs: Int,
+    durationMs: Int,
+    baseRotationZ: Float = 0f,
+): Modifier {
+    val progress = remember { Animatable(0f) }
+    val density = LocalDensity.current.density
+    LaunchedEffect(visible) {
+        val spec = tween<Float>(durationMillis = durationMs, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+        if (visible) {
+            delay(index.toLong() * staggerMs)
+            progress.animateTo(1f, spec)
+        } else {
+            delay((count - 1 - index).coerceAtLeast(0).toLong() * staggerMs)
+            progress.animateTo(0f, spec)
+        }
+    }
+    return Modifier.graphicsLayer {
+        rotationZ = baseRotationZ
+        if (isHorizontal) {
+            transformOrigin = TransformOrigin(0f, 0.5f)
+            rotationY = -90f * (1f - progress.value)
+        } else {
+            transformOrigin = TransformOrigin(0.5f, 0f)
+            rotationX = -90f * (1f - progress.value)
+        }
+        alpha = progress.value
+        cameraDistance = 12f * density
+    }
+}
+

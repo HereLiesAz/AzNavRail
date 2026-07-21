@@ -101,7 +101,9 @@ internal fun RailItems(
     onClickOverride: ((AzNavItem) -> Unit)? = null,
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
     helpEnabled: Boolean = false,
-    rotationDegrees: Float = 0f
+    rotationDegrees: Float = 0f,
+    isRailOpen: Boolean = true,
+    railItemsCount: Int = items.size
 ) {
     val density = LocalDensity.current
     val topLevelItems = items.filter { !it.isSubItem }
@@ -217,7 +219,7 @@ internal fun RailItems(
         })
     }) {
         Column {
-            itemsToRender.forEach { item ->
+            itemsToRender.forEachIndexed { index, item ->
                 key(item.id) {
                     if (item.isRailItem) {
                         RailItemNode(
@@ -251,7 +253,10 @@ internal fun RailItems(
                             onUpdateLastTappedId = onUpdateLastTappedId,
                             snappingOffsets = snappingOffsets,
                             visualDockingSide = visualDockingSide,
-                            rotationDegrees = rotationDegrees
+                            rotationDegrees = rotationDegrees,
+                            index = index,
+                            count = railItemsCount,
+                            isRailOpen = isRailOpen
                         )
                     } else {
                         Spacer(modifier = Modifier.height(AzNavRailDefaults.RailContentSpacerHeight))
@@ -301,7 +306,10 @@ private fun RailItemNode(
     onUpdateLastTappedId: (String) -> Unit,
     snappingOffsets: Map<String, Animatable<Float, androidx.compose.animation.core.AnimationVector1D>>,
     visualDockingSide: AzDockingSide,
-    rotationDegrees: Float = 0f
+    rotationDegrees: Float = 0f,
+    index: Int = 0,
+    count: Int = 0,
+    isRailOpen: Boolean = true
 ) {
     DraggableRailItemWrapper(
         item = item,
@@ -336,7 +344,10 @@ private fun RailItemNode(
         visualDockingSide = visualDockingSide,
         nestedRailOpenId = scope.nestedRailOpenId,
         onNestedRailToggle = { scope.nestedRailOpenId = it },
-        rotationDegrees = rotationDegrees
+        rotationDegrees = rotationDegrees,
+        index = index,
+        count = count,
+        isRailOpen = isRailOpen
     )
 
     AnimatedVisibility(visible = item.isHost && (hostStates[item.id] ?: false)) {
@@ -375,7 +386,10 @@ private fun RailItemNode(
                         onUpdateLastTappedId = onUpdateLastTappedId,
                         snappingOffsets = snappingOffsets,
                         visualDockingSide = visualDockingSide,
-                        rotationDegrees = rotationDegrees
+                        rotationDegrees = rotationDegrees,
+                        index = index,
+                        count = count,
+                        isRailOpen = isRailOpen
                     )
                 }
             }
@@ -417,7 +431,10 @@ private fun DraggableRailItemWrapper(
     visualDockingSide: AzDockingSide,
     nestedRailOpenId: String?,
     onNestedRailToggle: (String?) -> Unit,
-    rotationDegrees: Float = 0f
+    rotationDegrees: Float = 0f,
+    index: Int = 0,
+    count: Int = 0,
+    isRailOpen: Boolean = true
 ) {
     val isDragging = draggedItemId == item.id
     var visualOffsetY by remember { mutableStateOf(0.dp) }
@@ -616,7 +633,20 @@ private fun DraggableRailItemWrapper(
     val isClassifierActive = item.classifiers.any { scope.activeClassifiers.contains(it) }
     val isVisuallyActive = isSelected || isClassifierActive
 
-    Box(modifier = Modifier.zIndex(if (isDragging) 1f else 0f)) {
+    val accordionModifier = rememberAzAccordionModifier(
+        index = index,
+        count = count,
+        visible = isRailOpen,
+        isHorizontal = false,
+        staggerMs = scope.entranceStaggerMs,
+        durationMs = scope.entranceDurationMs,
+        baseRotationZ = rotationDegrees
+    )
+
+    Box(modifier = Modifier
+        .then(accordionModifier)
+        .zIndex(if (isDragging) 1f else 0f)
+    ) {
         Box(modifier = Modifier
             .offset(y = finalOffsetY)
             .alpha(alpha)

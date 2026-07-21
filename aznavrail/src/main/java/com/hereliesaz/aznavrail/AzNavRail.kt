@@ -522,7 +522,7 @@ fun AzNavRail(
                 }
 
                 @Composable
-                fun MainContent() {
+                fun MainContent(isRailOpen: Boolean, railItemsCount: Int) {
                     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                         val hasExplicitHelpItem =
                             scope.navItems.any { it.isHelpItem || it.id == AzNavRailDefaults.AUTO_HELP_ID }
@@ -637,7 +637,9 @@ fun AzNavRail(
                                         onItemGloballyPositioned = scope.advancedConfig.onItemGloballyPositioned,
                                         helpEnabled = showHelpOverlay,
                                         rotationDegrees = rotationDegrees,
-                                        orientation = orientation
+                                        orientation = orientation,
+                                        isRailOpen = isRailOpen,
+                                        railItemsCount = railItemsCount
                                     )
                                 }
                             } else {
@@ -671,7 +673,9 @@ fun AzNavRail(
                                         onItemGloballyPositioned = scope.advancedConfig.onItemGloballyPositioned,
                                         helpEnabled = showHelpOverlay,
                                         rotationDegrees = rotationDegrees,
-                                        orientation = orientation
+                                        orientation = orientation,
+                                        isRailOpen = isRailOpen,
+                                        railItemsCount = railItemsCount
                                     )
                                 }
                             }
@@ -680,88 +684,155 @@ fun AzNavRail(
                 }
 
                 @Composable
-                fun Foot() {
-                    val footerRendered = rememberAzClosingState(
-                        open = isExpanded,
-                        exit = AzExit.Turnstile,
-                        count = 1,
-                        staggerMs = scope.entranceStaggerMs,
-                        durationMs = scope.entranceDurationMs
-                    )
-                    if (scope.showFooter && footerRendered) {
-                        val footerMenuCount = scope.navItems.count { !it.isSubItem }
-                        val divColor =
-                            scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
-                        if (isHorizontal) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier
-                                    .width(1.dp)
-                                    .fillMaxHeight()
-                                    .background(divColor))
-                                Footer(
-                                    appName = appName,
-                                    onToggle = { toggleExpanded() },
-                                    onUndock = {
-                                        isFloating = true; isExpanded = false; offsetY =
-                                        screenHeightPx * 0.1f; scope.advancedConfig.onUndock?.invoke()
-                                    },
-                                    onSecretClick = onSecretClick,
-                                    scope = scope,
-                                    repoUrl = effectiveRepoUrl,
-                                    footerColor = scope.activeColor,
-                                    onAboutClick = if (scope.advancedConfig.inAppAbout) {
-                                        { isExpanded = false; hostScope?.showAbout() }
-                                    } else null,
-                                    visible = isExpanded,
-                                    menuItemCount = footerMenuCount,
-                                    staggerMs = scope.entranceStaggerMs,
-                                    durationMs = scope.entranceDurationMs,
-                                    easing = scope.entranceEasing)
+                fun Foot(isRailOpen: Boolean, railItemsCount: Int) {
+                    if (scope.noMenu) {
+                        val accordionModifier = com.hereliesaz.aznavrail.internal.rememberAzAccordionModifier(
+                            index = railItemsCount,
+                            count = railItemsCount + 1,
+                            visible = isRailOpen,
+                            isHorizontal = isHorizontal,
+                            staggerMs = scope.entranceStaggerMs,
+                            durationMs = scope.entranceDurationMs,
+                            baseRotationZ = rotationDegrees
+                        )
+                        Box(
+                            modifier = Modifier
+                                .then(accordionModifier)
+                                .padding(8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val buttonShape = scope.defaultShape
+                            val transparentShapeModifier = Modifier
+                                .size(activeButtonSize.value)
+                                .border(
+                                    width = 2.dp,
+                                    color = scope.activeColor,
+                                    shape = buttonShape
+                                )
+                                .background(Color.Transparent, buttonShape)
+                                .clickable {
+                                    if (scope.advancedConfig.inAppAbout) {
+                                        hostScope?.showAbout()
+                                    } else {
+                                        try {
+                                            if (effectiveRepoUrl.isNotBlank()) {
+                                                context.startActivity(
+                                                    Intent(
+                                                        Intent.ACTION_VIEW,
+                                                        Uri.parse(effectiveRepoUrl)
+                                                    )
+                                                )
+                                            }
+                                        } catch (e: Exception) {
+                                        }
+                                    }
+                                }
+
+                            Box(
+                                modifier = transparentShapeModifier,
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "?",
+                                    color = scope.activeColor,
+                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                                )
                             }
-                        } else {
-                            Column {
-                                com.hereliesaz.aznavrail.AzDivider(color = divColor)
-                                Footer(
-                                    appName = appName,
-                                    onToggle = { toggleExpanded() },
-                                    onUndock = {
-                                        isFloating = true; isExpanded = false; offsetY =
-                                        screenHeightPx * 0.1f; scope.advancedConfig.onUndock?.invoke()
-                                    },
-                                    onSecretClick = onSecretClick,
-                                    scope = scope,
-                                    repoUrl = effectiveRepoUrl,
-                                    footerColor = scope.activeColor,
-                                    onAboutClick = if (scope.advancedConfig.inAppAbout) {
-                                        { isExpanded = false; hostScope?.showAbout() }
-                                    } else null,
-                                    visible = isExpanded,
-                                    menuItemCount = footerMenuCount,
-                                    staggerMs = scope.entranceStaggerMs,
-                                    durationMs = scope.entranceDurationMs,
-                                    easing = scope.entranceEasing)
+                        }
+                    } else {
+                        val footerRendered = rememberAzClosingState(
+                            open = isExpanded,
+                            exit = AzExit.Turnstile,
+                            count = 1,
+                            staggerMs = scope.entranceStaggerMs,
+                            durationMs = scope.entranceDurationMs
+                        )
+                        if (scope.showFooter && footerRendered) {
+                            val footerMenuCount = scope.navItems.count { !it.isSubItem }
+                            val divColor =
+                                scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
+                            if (isHorizontal) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(Modifier
+                                        .width(1.dp)
+                                        .fillMaxHeight()
+                                        .background(divColor))
+                                    Footer(
+                                        appName = appName,
+                                        onToggle = { toggleExpanded() },
+                                        onUndock = {
+                                            isFloating = true; isExpanded = false; offsetY =
+                                            screenHeightPx * 0.1f; scope.advancedConfig.onUndock?.invoke()
+                                        },
+                                        onSecretClick = onSecretClick,
+                                        scope = scope,
+                                        repoUrl = effectiveRepoUrl,
+                                        footerColor = scope.activeColor,
+                                        onAboutClick = if (scope.advancedConfig.inAppAbout) {
+                                            { isExpanded = false; hostScope?.showAbout() }
+                                        } else null,
+                                        visible = isExpanded,
+                                        menuItemCount = footerMenuCount,
+                                        staggerMs = scope.entranceStaggerMs,
+                                        durationMs = scope.entranceDurationMs,
+                                        easing = scope.entranceEasing)
+                                }
+                            } else {
+                                Column {
+                                    com.hereliesaz.aznavrail.AzDivider(color = divColor)
+                                    Footer(
+                                        appName = appName,
+                                        onToggle = { toggleExpanded() },
+                                        onUndock = {
+                                            isFloating = true; isExpanded = false; offsetY =
+                                            screenHeightPx * 0.1f; scope.advancedConfig.onUndock?.invoke()
+                                        },
+                                        onSecretClick = onSecretClick,
+                                        scope = scope,
+                                        repoUrl = effectiveRepoUrl,
+                                        footerColor = scope.activeColor,
+                                        onAboutClick = if (scope.advancedConfig.inAppAbout) {
+                                            { isExpanded = false; hostScope?.showAbout() }
+                                        } else null,
+                                        visible = isExpanded,
+                                        menuItemCount = footerMenuCount,
+                                        staggerMs = scope.entranceStaggerMs,
+                                        durationMs = scope.entranceDurationMs,
+                                        easing = scope.entranceEasing)
+                                }
                             }
                         }
                     }
                 }
 
+                val isRailOpen = !(isFloating && !showFloatingButtons) && !(scope.noMenu && scope.isFoldedUp)
+                val railItemsCount = scope.navItems.filter { it.isRailItem && !it.isSubItem }.size
+                val railItemsRendered = rememberAzClosingState(
+                    open = isRailOpen,
+                    exit = AzExit.Turnstile,
+                    count = railItemsCount + (if (scope.noMenu) 1 else 0),
+                    staggerMs = scope.entranceStaggerMs,
+                    durationMs = scope.entranceDurationMs
+                )
+
                 if (isHorizontal) {
                     Row(modifier = Modifier.fillMaxSize()) {
                         Header()
-                        if (!(isFloating && !showFloatingButtons) && !(scope.noMenu && scope.isFoldedUp)) {
-                            Box(modifier = Modifier.weight(1f)) { MainContent() }
-                            Foot()
+                        if (railItemsRendered) {
+                            Box(modifier = Modifier.weight(1f)) { MainContent(isRailOpen, railItemsCount) }
+                            Foot(isRailOpen, railItemsCount)
                         }
                     }
                 } else {
                     Column(modifier = Modifier.fillMaxSize()) {
                         Header()
-                        if (!(isFloating && !showFloatingButtons) && !(scope.noMenu && scope.isFoldedUp)) {
-                            Box(modifier = Modifier.weight(1f)) { MainContent() }
-                            Foot()
+                        if (railItemsRendered) {
+                            Box(modifier = Modifier.weight(1f)) { MainContent(isRailOpen, railItemsCount) }
+                            Foot(isRailOpen, railItemsCount)
                         }
                     }
                 }
+
             }
         }
     }

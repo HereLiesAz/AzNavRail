@@ -104,7 +104,9 @@ internal fun RailItems(
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
     helpEnabled: Boolean = false,
     rotationDegrees: Float = 0f,
-    orientation: com.hereliesaz.aznavrail.model.AzOrientation = com.hereliesaz.aznavrail.model.AzOrientation.Vertical
+    orientation: com.hereliesaz.aznavrail.model.AzOrientation = com.hereliesaz.aznavrail.model.AzOrientation.Vertical,
+    isRailOpen: Boolean = true,
+    railItemsCount: Int = items.size
 ) {
     val isHorizontal = orientation == com.hereliesaz.aznavrail.model.AzOrientation.Horizontal
     val density = LocalDensity.current
@@ -222,7 +224,7 @@ internal fun RailItems(
     }) {
         if (isHorizontal) {
             Row {
-                itemsToRender.forEach { item ->
+                itemsToRender.forEachIndexed { index, item ->
                     key(item.id) {
                         if (item.isRailItem) {
                             RailItemNode(
@@ -257,7 +259,10 @@ internal fun RailItems(
                                 snappingOffsets = snappingOffsets,
                                 visualDockingSide = visualDockingSide,
                                 rotationDegrees = rotationDegrees,
-                                orientation = orientation
+                                orientation = orientation,
+                                index = index,
+                                count = railItemsCount,
+                                isRailOpen = isRailOpen
                             )
                         } else {
                             Spacer(modifier = Modifier.width(AzNavRailDefaults.RailContentSpacerHeight))
@@ -267,7 +272,7 @@ internal fun RailItems(
             }
         } else {
             Column {
-                itemsToRender.forEach { item ->
+                itemsToRender.forEachIndexed { index, item ->
                     key(item.id) {
                         if (item.isRailItem) {
                             RailItemNode(
@@ -302,7 +307,10 @@ internal fun RailItems(
                                 snappingOffsets = snappingOffsets,
                                 visualDockingSide = visualDockingSide,
                                 rotationDegrees = rotationDegrees,
-                                orientation = orientation
+                                orientation = orientation,
+                                index = index,
+                                count = railItemsCount,
+                                isRailOpen = isRailOpen
                             )
                         } else {
                             Spacer(modifier = Modifier.height(AzNavRailDefaults.RailContentSpacerHeight))
@@ -354,7 +362,10 @@ private fun RailItemNode(
     snappingOffsets: Map<String, Animatable<Float, androidx.compose.animation.core.AnimationVector1D>>,
     visualDockingSide: AzDockingSide,
     rotationDegrees: Float = 0f,
-    orientation: com.hereliesaz.aznavrail.model.AzOrientation = com.hereliesaz.aznavrail.model.AzOrientation.Vertical
+    orientation: com.hereliesaz.aznavrail.model.AzOrientation = com.hereliesaz.aznavrail.model.AzOrientation.Vertical,
+    index: Int = 0,
+    count: Int = 0,
+    isRailOpen: Boolean = true
 ) {
     DraggableRailItemWrapper(
         item = item,
@@ -390,7 +401,10 @@ private fun RailItemNode(
         nestedRailOpenId = scope.nestedRailOpenId,
         onNestedRailToggle = { scope.nestedRailOpenId = it },
         rotationDegrees = rotationDegrees,
-        orientation = orientation
+        orientation = orientation,
+        index = index,
+        count = count,
+        isRailOpen = isRailOpen
     )
 
     AnimatedVisibility(visible = item.isHost && (hostStates[item.id] ?: false)) {
@@ -430,7 +444,10 @@ private fun RailItemNode(
                         snappingOffsets = snappingOffsets,
                         visualDockingSide = visualDockingSide,
                         rotationDegrees = rotationDegrees,
-                        orientation = orientation
+                        orientation = orientation,
+                        index = index,
+                        count = count,
+                        isRailOpen = isRailOpen
                     )
                 }
             }
@@ -475,7 +492,10 @@ private fun DraggableRailItemWrapper(
     nestedRailOpenId: String?,
     onNestedRailToggle: (String?) -> Unit,
     rotationDegrees: Float = 0f,
-    orientation: com.hereliesaz.aznavrail.model.AzOrientation = com.hereliesaz.aznavrail.model.AzOrientation.Vertical
+    orientation: com.hereliesaz.aznavrail.model.AzOrientation = com.hereliesaz.aznavrail.model.AzOrientation.Vertical,
+    index: Int = 0,
+    count: Int = 0,
+    isRailOpen: Boolean = true
 ) {
     val isHorizontal = orientation == com.hereliesaz.aznavrail.model.AzOrientation.Horizontal
     val isDragging = draggedItemId == item.id
@@ -678,7 +698,20 @@ private fun DraggableRailItemWrapper(
     val isClassifierActive = item.classifiers.any { scope.activeClassifiers.contains(it) }
     val isVisuallyActive = isSelected || isClassifierActive
 
-    Box(modifier = Modifier.zIndex(if (isDragging) 1f else 0f)) {
+    val accordionModifier = rememberAzAccordionModifier(
+        index = index,
+        count = count,
+        visible = isRailOpen,
+        isHorizontal = isHorizontal,
+        staggerMs = scope.entranceStaggerMs,
+        durationMs = scope.entranceDurationMs,
+        baseRotationZ = rotationDegrees
+    )
+
+    Box(modifier = Modifier
+        .then(accordionModifier)
+        .zIndex(if (isDragging) 1f else 0f)
+    ) {
         Box(modifier = Modifier
             .offset(y = finalOffsetY)
             .alpha(alpha)

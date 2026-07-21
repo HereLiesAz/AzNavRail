@@ -702,200 +702,256 @@ fun AzNavRail(
                         }
                     }
                 }
+                val isRailOpen = !(isFloating && !showFloatingButtons) && !(scope.noMenu && scope.isFoldedUp)
+                val railItemsCount = scope.navItems.filter { it.isRailItem && !it.isSubItem }.size
+                val railItemsRendered = rememberAzClosingState(
+                    open = isRailOpen,
+                    exit = AzExit.Turnstile,
+                    count = railItemsCount + (if (scope.noMenu) 1 else 0),
+                    staggerMs = scope.entranceStaggerMs,
+                    durationMs = scope.entranceDurationMs
+                )
 
-                if ((isFloating && !showFloatingButtons) || (scope.noMenu && scope.isFoldedUp)) return@Column
-
-                // MAIN CONTENT and MENU separation
-                BoxWithConstraints(modifier = Modifier.weight(1f)) {
-                    val hasExplicitHelpItem = scope.navItems.any { it.isHelpItem || it.id == AzNavRailDefaults.AUTO_HELP_ID }
-                    val displayItems = if (scope.advancedConfig.helpEnabled && !hasExplicitHelpItem) {
-                        scope.navItems + AzNavItem.Help(
-                            id = AzNavRailDefaults.AUTO_HELP_ID,
-                            isRailItem = false
+                if (railItemsRendered) {
+                    // MAIN CONTENT and MENU separation
+                    BoxWithConstraints(modifier = Modifier.weight(1f)) {
+                        val hasExplicitHelpItem = scope.navItems.any { it.isHelpItem || it.id == AzNavRailDefaults.AUTO_HELP_ID }
+                        val displayItems = if (scope.advancedConfig.helpEnabled && !hasExplicitHelpItem) {
+                            scope.navItems + AzNavItem.Help(
+                                id = AzNavRailDefaults.AUTO_HELP_ID,
+                                isRailItem = false
+                            )
+                        } else {
+                            scope.navItems
+                        }
+                        val topLevelItems = displayItems.filter { !it.isSubItem }
+                        // Keep the menu composed through the staggered exit so items can turnstile out as the
+                        // rail collapses (mirrors the entrance overlapping the expand). itemExit=None => the
+                        // legacy instant teardown.
+                        val menuRendered = rememberAzClosingState(
+                            open = isExpanded,
+                            exit = scope.itemExit,
+                            count = topLevelItems.size,
+                            staggerMs = scope.entranceStaggerMs,
+                            durationMs = scope.entranceDurationMs
                         )
-                    } else {
-                        scope.navItems
-                    }
-                    val topLevelItems = displayItems.filter { !it.isSubItem }
-                    // Keep the menu composed through the staggered exit so items can turnstile out as the
-                    // rail collapses (mirrors the entrance overlapping the expand). itemExit=None => the
-                    // legacy instant teardown.
-                    val menuRendered = rememberAzClosingState(
-                        open = isExpanded,
-                        exit = scope.itemExit,
-                        count = topLevelItems.size,
-                        staggerMs = scope.entranceStaggerMs,
-                        durationMs = scope.entranceDurationMs
-                    )
-                    if (menuRendered) {
-                        val scrollState = rememberScrollState()
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .verticalScroll(scrollState)
-                        ) {
-                            topLevelItems.forEachIndexed { index, item ->
-                                MenuItemNode(
-                                    item = item,
-                                    allItems = displayItems,
+                        if (menuRendered) {
+                            val scrollState = rememberScrollState()
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .verticalScroll(scrollState)
+                            ) {
+                                topLevelItems.forEachIndexed { index, item ->
+                                    // Custom layout-stretching logic: if an item is currently dissolving,
+                                    // we draw a spacer of exactly its reported bounds rather than the item
+                                    // composable itself so the layout height matches perfectly.
+                                    dissolving?.takeIf { it.itemId == item.id }?.let {
+                                        Spacer(Modifier.height(with(LocalDensity.current) { it.bounds.height.toDp() }))
+                                    } ?: MenuItemNode(
+                                        item = item,
+                                        allItems = displayItems,
+                                        navController = effectiveNavController,
+                                        currentDestination = actualCurrentDestination,
+                                        scope = scope,
+                                        hostStates = hostStates,
+                                        showHelpOverlay = showHelpOverlay,
+                                        onToggleHelp = { toggleHelpOverlay(it) },
+                                        onCollapseMenu = { isExpanded = false },
+                                        onDissolveTap = { itemId, text ->
+                                            scope.itemBoundsCache[itemId]?.let {
+                                                dissolving = com.hereliesaz.aznavrail.internal.DissolveState(itemId, text, it)
+                                            }
+                                        },
+                                        index = index,
+                                        count = topLevelItems.size,
+                                        visible = isExpanded,
+                                        floating = isFloating,
+                                        dockingSide = scope.dockingSide,
+                                    )
+                                }
+                            }
+                        } else {
+                            // COLLAPSED (Rail) view.
+                            val isItemVisible = { item: AzNavItem ->
+                                if (!item.isRailItem) false else if (!item.isSubItem) true else {
+                                    var visible = true
+                                    var hId: String? = item.hostId
+                                    val seen = HashSet<String>()
+                                    while (hId != null && seen.add(hId)) {
+                                        val host = scope.navItems.find { it.id == hId }
+                                        if (host == null || hostStates[hId] != true || host.isNestedRail) {
+                                            visible = false
+                                            break
+                                        }
+                                        hId = host.hostId
+                                    }
+                                    visible
+                                }
+                            }
+                            val totalItemSize = displayItems.filter(isItemVisible)
+                                .sumOf { (activeButtonSize.value + (if (scope.packButtons || isFloating) 0f else AzNavRailDefaults.RailContentVerticalArrangement.value)).toDouble() }.dp
+                            val availableSize = maxHeight
+                            val isScrollable = totalItemSize > (availableSize * 0.65f)
+                            val scrollModifier = if (isScrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .then(scrollModifier),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                RailItems(
+                                    items = scope.navItems,
+                                    scope = scope,
                                     navController = effectiveNavController,
                                     currentDestination = actualCurrentDestination,
-                                    scope = scope,
+                                    buttonSize = activeButtonSize,
+                                    onRailCyclerClick = { item ->
+                                        val state = cyclerStates[item.id]
+                                        if (state != null && !item.disabled) {
+                                            state.job?.cancel()
+                                            val options = item.options ?: emptyList()
+                                            val enabledOptions = options.filterNot { it in (item.disabledOptions ?: emptyList()) }
+                                            if (enabledOptions.isNotEmpty()) {
+                                                val currentIndex = enabledOptions.indexOf(state.displayedOption)
+                                                val nextOption = enabledOptions[(currentIndex + 1) % enabledOptions.size]
+
+                                                scope.transientCyclerOptions[item.id] = nextOption
+                                                cyclerStates[item.id] = state.copy(
+                                                    displayedOption = nextOption,
+                                                    job = coroutineScope.launch {
+                                                        delay(1000L)
+                                                        scope.onClickMap[item.id]?.invoke()
+                                                        cyclerStates[item.id] = cyclerStates[item.id]?.copy(job = null) ?: state
+                                                    }
+                                                )
+                                            }
+                                            scope.advancedConfig.onInteraction?.invoke(item.id, item)
+                                        }
+                                    },
+                                    onItemSelected = { item ->
+                                        if (item.isHelpItem) {
+                                            toggleHelpOverlay(item.id)
+                                        }
+                                        if (item.collapseOnClick && !scope.noMenu) isExpanded = false
+                                    },
                                     hostStates = hostStates,
-                                    showHelpOverlay = showHelpOverlay,
-                                    onToggleHelp = { toggleHelpOverlay(it) },
-                                    onCollapseMenu = { isExpanded = false },
-                                    index = index,
-                                    count = topLevelItems.size,
-                                    visible = isExpanded,
-                                    floating = isFloating,
-                                    dockingSide = scope.dockingSide
+                                    packRailButtons = isFloating || scope.packButtons, // Forced pack in FAB mode
+                                    visualDockingSide = visualDockingSide,
+                                    onItemGloballyPositioned = scope.advancedConfig.onItemGloballyPositioned,
+                                    helpEnabled = showHelpOverlay,
+                                    rotationDegrees = rotationDegrees,
+                                    isRailOpen = isRailOpen,
+                                    railItemsCount = railItemsCount
+                                )
+
+                                // Optional pinned "More" rail item that opens the More-from-Az carousel.
+                                if (scope.advancedConfig.moreFromAzRailItem &&
+                                    scope.advancedConfig.moreFromAzEnabled && !isFloating
+                                ) {
+                                    val moreColor = scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
+                                    AzButton(
+                                        onClick = { hostScope?.showMoreFromAz() },
+                                        text = "More",
+                                        color = moreColor,
+                                        activeColor = moreColor,
+                                        shape = scope.defaultShape
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // FIXED FOOTER (Does not scroll, pinned below menu)
+                    if (scope.noMenu) {
+                        val accordionModifier = com.hereliesaz.aznavrail.internal.rememberAzAccordionModifier(
+                            index = railItemsCount,
+                            count = railItemsCount + 1,
+                            visible = isRailOpen,
+                            isHorizontal = false,
+                            staggerMs = scope.entranceStaggerMs,
+                            durationMs = scope.entranceDurationMs,
+                            baseRotationZ = rotationDegrees
+                        )
+                        Box(
+                            modifier = Modifier
+                                .then(accordionModifier)
+                                .padding(8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val buttonShape = scope.defaultShape
+                            val transparentShapeModifier = Modifier
+                                .size(activeButtonSize)
+                                .border(
+                                    width = 2.dp,
+                                    color = scope.activeColor,
+                                    shape = buttonShape
+                                )
+                                .background(Color.Transparent, buttonShape)
+                                .clickable {
+                                    if (scope.advancedConfig.inAppAbout) {
+                                        hostScope?.showAbout()
+                                    } else {
+                                        try {
+                                            if (effectiveRepoUrl.isNotBlank()) {
+                                                uriHandler.openUri(effectiveRepoUrl)
+                                            }
+                                        } catch (e: Exception) {
+                                        }
+                                    }
+                                }
+
+                            Box(
+                                modifier = transparentShapeModifier,
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "?",
+                                    color = scope.activeColor,
+                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                                 )
                             }
                         }
                     } else {
-                        // Calculate total height of items
-                        // We only include sub-items if they belong to a standard HostItem that expands inline.
-                        // Sub-items belonging to a NestedRail (which is a popup) should NOT be included in the main rail's height.
-                        val isItemVisible = { item: AzNavItem ->
-                            if (!item.isRailItem) false
-                            else if (!item.isSubItem) true
-                            else {
-                                // A nested sub-item is visible only when EVERY ancestor host in its
-                                // hostId chain is expanded (and none is a nested-rail popup). Walk up
-                                // the chain and bail on the first collapsed/nested-rail ancestor so
-                                // deep host nesting reports the correct height.
-                                var visible = true
-                                var hostId: String? = item.hostId
-                                val seen = HashSet<String>()
-                                while (hostId != null && seen.add(hostId)) {
-                                    val host = scope.navItems.find { it.id == hostId }
-                                    // A dangling hostId (no matching host), a collapsed ancestor, or a
-                                    // nested-rail ancestor all make this sub-item non-visible. The
-                                    // explicit null check also lets Kotlin smart-cast `host` below.
-                                    if (host == null || hostStates[hostId] != true || host.isNestedRail) {
-                                        visible = false
-                                        break
-                                    }
-                                    hostId = host.hostId
-                                }
-                                visible
-                            }
-                        }
-
-                        val totalItemHeight = scope.navItems.filter(isItemVisible).sumOf {
-                            (activeButtonSize.value + (if(scope.packButtons || isFloating) 0f else AzNavRailDefaults.RailContentVerticalArrangement.value)).toDouble()
-                        }.dp
-
-                        val availableHeight = maxHeight
-                        val isScrollable = totalItemHeight > (availableHeight * 0.65f)
-
-                        val scrollModifier = if (isScrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier
-
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth() // Ensure column takes full width for centering
-                                .then(scrollModifier),
-                            horizontalAlignment = Alignment.CenterHorizontally // Center buttons horizontally
-                        ) {
-                            RailItems(
-                                items = scope.navItems,
-                                scope = scope,
-                                navController = effectiveNavController,
-                                currentDestination = actualCurrentDestination,
-                                buttonSize = activeButtonSize,
-                                onRailCyclerClick = { item ->
-                                    val state = cyclerStates[item.id]
-                                    if (state != null && !item.disabled) {
-                                        state.job?.cancel()
-                                        val options = item.options ?: emptyList()
-                                        val enabledOptions = options.filterNot { it in (item.disabledOptions ?: emptyList()) }
-                                        if (enabledOptions.isNotEmpty()) {
-                                            val currentIndex = enabledOptions.indexOf(state.displayedOption)
-                                            val nextOption = enabledOptions[(currentIndex + 1) % enabledOptions.size]
-
-                                            scope.transientCyclerOptions[item.id] = nextOption
-                                            cyclerStates[item.id] = state.copy(
-                                                displayedOption = nextOption,
-                                                job = coroutineScope.launch {
-                                                    delay(1000L)
-                                                    scope.onClickMap[item.id]?.invoke()
-                                                    cyclerStates[item.id] = cyclerStates[item.id]?.copy(job = null) ?: state
-                                                }
-                                            )
-                                        }
-                                        scope.advancedConfig.onInteraction?.invoke(item.id, item)
-                                    }
-                                },
-                                onItemSelected = { item ->
-                                    if (item.isHelpItem) {
-                                        toggleHelpOverlay(item.id)
-                                    }
-                                    if (item.collapseOnClick && !scope.noMenu) isExpanded = false
-                                },
-                                hostStates = hostStates,
-                                packRailButtons = isFloating || scope.packButtons, // Forced pack in FAB mode
-                                visualDockingSide = visualDockingSide,
-                                onItemGloballyPositioned = scope.advancedConfig.onItemGloballyPositioned,
-                                helpEnabled = showHelpOverlay,
-                                rotationDegrees = rotationDegrees
-                            )
-
-                            // Optional pinned "More" rail item that opens the More-from-Az carousel.
-                            if (scope.advancedConfig.moreFromAzRailItem &&
-                                scope.advancedConfig.moreFromAzEnabled && !isFloating
-                            ) {
-                                val moreColor = scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
-                                AzButton(
-                                    onClick = { hostScope?.showMoreFromAz() },
-                                    text = "More",
-                                    color = moreColor,
-                                    activeColor = moreColor,
-                                    shape = scope.defaultShape
+                        // Keep the footer composed for `entranceDurationMs` after `isExpanded` flips false
+                        // so its accordion fold-UP animation actually plays. Without this the footer would
+                        // leave composition instantly and never animate out.
+                        val footerRendered = rememberAzClosingState(
+                            open = isExpanded,
+                            exit = AzExit.Turnstile,
+                            count = 1,
+                            staggerMs = scope.entranceStaggerMs,
+                            durationMs = scope.entranceDurationMs,
+                        )
+                        if (scope.showFooter && footerRendered) {
+                            val footerMenuCount = scope.navItems.count { !it.isSubItem }
+                            val dividerColor = scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
+                            Column {
+                                AzDivider(color = dividerColor)
+                                Footer(
+                                    appName = appName,
+                                    onToggle = { toggleExpanded() },
+                                    onUndock = {
+                                        isFloating = true
+                                        isExpanded = false
+                                        offsetY = screenHeightPx * 0.1f
+                                        scope.advancedConfig.onUndock?.invoke()
+                                    },
+                                    onSecretClick = onSecretClick,
+                                    scope = scope,
+                                    repoUrl = effectiveRepoUrl,
+                                    footerColor = scope.activeColor,
+                                    onAboutClick = if (scope.advancedConfig.inAppAbout) {
+                                        { isExpanded = false; hostScope?.showAbout() }
+                                    } else null,
+                                    visible = isExpanded,
+                                    menuItemCount = footerMenuCount,
+                                    staggerMs = scope.entranceStaggerMs,
+                                    durationMs = scope.entranceDurationMs,
+                                    easing = scope.entranceEasing,
                                 )
                             }
                         }
-                    }
-                }
-
-                // FIXED FOOTER (Does not scroll, pinned below menu)
-                // Keep the footer composed for `entranceDurationMs` after `isExpanded` flips false
-                // so its accordion fold-UP animation actually plays. Without this the footer would
-                // leave composition instantly and never animate out.
-                val footerRendered = rememberAzClosingState(
-                    open = isExpanded,
-                    exit = AzExit.Turnstile,
-                    count = 1,
-                    staggerMs = scope.entranceStaggerMs,
-                    durationMs = scope.entranceDurationMs,
-                )
-                if (scope.showFooter && footerRendered) {
-                    val footerMenuCount = scope.navItems.count { !it.isSubItem }
-                    val dividerColor = scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
-                    Column {
-                        AzDivider(color = dividerColor)
-                        Footer(
-                            appName = appName,
-                            onToggle = { toggleExpanded() },
-                            onUndock = {
-                                isFloating = true
-                                isExpanded = false
-                                offsetY = screenHeightPx * 0.1f
-                                scope.advancedConfig.onUndock?.invoke()
-                            },
-                            onSecretClick = onSecretClick,
-                            scope = scope,
-                            repoUrl = effectiveRepoUrl,
-                            footerColor = scope.activeColor,
-                            onAboutClick = if (scope.advancedConfig.inAppAbout) {
-                                { isExpanded = false; hostScope?.showAbout() }
-                            } else null,
-                            visible = isExpanded,
-                            menuItemCount = footerMenuCount,
-                            staggerMs = scope.entranceStaggerMs,
-                            durationMs = scope.entranceDurationMs,
-                            easing = scope.entranceEasing,
-                        )
                     }
                 }
             }
