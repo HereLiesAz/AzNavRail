@@ -47,7 +47,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.LocalAzSafeZones
 import kotlin.math.abs
@@ -80,10 +82,16 @@ internal fun AzInstructionOverlay(
     val screenWidthPx = with(density) { LocalConfiguration.current.screenWidthDp.dp.toPx() }
     val screenHeightPx = with(density) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
     val marginPx = with(density) { 8.dp.toPx() }
+    // safeZones' start/end are direction-relative; this Rect is physical, so map them. They are
+    // non-zero only where the system says something occludes that edge — a landscape button
+    // navigation bar, or a display cutout (which Android 15 lets under the window unconditionally).
+    val ltr = LocalLayoutDirection.current == LayoutDirection.Ltr
+    val safeLeftDp = if (ltr) safeZones.start else safeZones.end
+    val safeRightDp = if (ltr) safeZones.end else safeZones.start
     val safe = Rect(
-        left = marginPx,
+        left = with(density) { safeLeftDp.toPx() } + marginPx,
         top = with(density) { safeZones.top.toPx() } + marginPx,
-        right = screenWidthPx - marginPx,
+        right = screenWidthPx - with(density) { safeRightDp.toPx() } - marginPx,
         bottom = screenHeightPx - with(density) { safeZones.bottom.toPx() } - marginPx,
     )
     val maxCalloutWidthPx = with(density) { 240.dp.toPx() }

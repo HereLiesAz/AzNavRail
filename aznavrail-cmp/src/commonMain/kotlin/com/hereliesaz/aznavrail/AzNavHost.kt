@@ -12,13 +12,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -64,6 +61,7 @@ import com.hereliesaz.aznavrail.internal.HelpOverlay
 import com.hereliesaz.aznavrail.internal.MoreFromAzOverlay
 import com.hereliesaz.aznavrail.internal.PlatformHostChrome
 import com.hereliesaz.aznavrail.internal.azResolveSafeBottom
+import com.hereliesaz.aznavrail.internal.azWindowSafeInsets
 import com.hereliesaz.aznavrail.internal.rememberAzKineticModifier
 import com.hereliesaz.aznavrail.internal.rememberDeviceRotationDegrees
 import com.hereliesaz.aznavrail.internal.rememberEffectiveAppMeta
@@ -328,14 +326,21 @@ fun AzHostActivityLayout(
     val visualDockingSideProxy =
         if (visualSide == AzVisualSide.BOTTOM || visualSide == AzVisualSide.RIGHT) AzDockingSide.RIGHT else AzDockingSide.LEFT
 
-    val systemBars = WindowInsets.systemBars.asPaddingValues()
+    // System bars *and* display cutout — see azWindowSafeInsets. Under Android 15's enforced
+    // edge-to-edge a camera cutout can occlude an edge with no system bar on it, so the bars alone
+    // are no longer the whole story.
+    val windowInsets = azWindowSafeInsets()
 
     val calculatedTop = with(density) { (screenHeightPx * AzLayoutConfig.ContentSafeTopPercent).toDp() }
     val calculatedBottom = with(density) { (screenHeightPx * AzLayoutConfig.ContentSafeBottomPercent).toDp() }
 
     val gestureNav = rememberIsGestureNav()
-    val safeTop = max(calculatedTop, systemBars.calculateTopPadding())
-    val safeBottom = azResolveSafeBottom(gestureNav, calculatedBottom, systemBars.calculateBottomPadding())
+    val safeTop = max(calculatedTop, windowInsets.top)
+    val safeBottom = azResolveSafeBottom(gestureNav, calculatedBottom, windowInsets.bottom)
+    // Horizontal safe zones have no percentage rule — there is only ever the system inset to clear
+    // (a landscape button navigation bar, or a cutout on the short edge), so they are 0 in portrait.
+    val safeStart = windowInsets.start
+    val safeEnd = windowInsets.end
 
     // Android window chrome: edge-to-edge + optional see-through nav bar for drawBehindNavBar sheets.
     val wantDrawBehindNavBar = scope.bottomSheets.any { it.config.drawBehindNavBar }
@@ -396,7 +401,7 @@ fun AzHostActivityLayout(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = titleTop)
+                    .padding(top = titleTop, start = safeStart, end = safeEnd)
                     .height(titleHeight)
                     .then(titlePaddingSide),
                 contentAlignment = titleAlignment,
@@ -456,6 +461,8 @@ fun AzHostActivityLayout(
                 bottomPadding = bottomPadding,
                 items = azOrderOnscreen(scope.onscreenItems, pagesEnabled),
                 dockingSide = dockingSide,
+                safeStart = safeStart,
+                safeEnd = safeEnd,
             )
         }
 
@@ -463,7 +470,7 @@ fun AzHostActivityLayout(
             LocalAzNavHostPresent provides true,
             LocalAzNavHostScope provides scope,
             LocalAzAppMeta provides appMeta,
-            LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom),
+            LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom, safeStart, safeEnd),
             LocalAzGuidanceController provides guidanceController,
         ) {
             AzNavRail(
@@ -488,7 +495,7 @@ fun AzHostActivityLayout(
         // Help / More-from-Az still cover everything.
         CompositionLocalProvider(
             LocalAzNavHostScope provides scope,
-            LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom),
+            LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom, safeStart, safeEnd),
         ) {
             AzUnattachedRail(
                 scope = railScope,
@@ -509,7 +516,7 @@ fun AzHostActivityLayout(
 
         CompositionLocalProvider(
             LocalAzNavHostScope provides scope,
-            LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom),
+            LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom, safeStart, safeEnd),
         ) {
             if (scope.aboutVisible || scope.moreFromAzVisible) {
                 Box(
@@ -635,11 +642,20 @@ fun AzHostFragmentLayout(
     bottomPadding: Dp,
     items: List<AzOnscreenItem>,
     dockingSide: AzDockingSide,
+    safeStart: Dp = 0.dp,
+    safeEnd: Dp = 0.dp,
 ) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(top = safeTop + topPadding, bottom = safeBottom + bottomPadding, start = startPadding, end = endPadding),
+            .padding(
+                top = safeTop + topPadding,
+                bottom = safeBottom + bottomPadding,
+                // max, not +: the rail hugs the same physical edge, so a rail gutter wider than
+                // the system inset already clears it — adding both would leave a dead strip.
+                start = max(safeStart, startPadding),
+                end = max(safeEnd, endPadding),
+            ),
     ) {
         items.forEach { item ->
             val finalAlignment = if (dockingSide == AzDockingSide.RIGHT && item.alignment is BiasAlignment) {

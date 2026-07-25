@@ -163,7 +163,7 @@ internal fun HelpOverlay(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(start = dynamicStartPadding, end = 16.dp) // Leave space for rail + nested rail
-                .padding(top = safeZones.top, bottom = safeZones.bottom)
+                .padding(top = safeZones.top, bottom = safeZones.bottom, start = safeZones.start, end = safeZones.end)
                 .onGloballyPositioned { coords ->
                     // Capture the post-padding window-space rect of the scrollable cards Column
                     // so the connector lines in the outer drawBehind can clip against it.

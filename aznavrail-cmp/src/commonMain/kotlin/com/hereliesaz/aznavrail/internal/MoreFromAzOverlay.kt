@@ -68,7 +68,7 @@ internal fun MoreFromAzOverlay(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = safe.top, bottom = safe.bottom)
+                .padding(top = safe.top, bottom = safe.bottom, start = safe.start, end = safe.end)
                 .padding(horizontal = 20.dp, vertical = 12.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {

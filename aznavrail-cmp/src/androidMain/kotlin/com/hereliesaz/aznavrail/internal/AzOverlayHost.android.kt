@@ -53,7 +53,7 @@ private class AndroidOverlayHost(
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
-        ).apply {
+        ).azAllowDisplayCutout().apply {
             gravity = Gravity.TOP or Gravity.START
         }
     }

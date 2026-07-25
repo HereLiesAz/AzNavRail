@@ -99,7 +99,7 @@ internal class AzNavBarDecorWindow(
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT,
-        ).apply { gravity = Gravity.BOTTOM }
+        ).azAllowDisplayCutout().apply { gravity = Gravity.BOTTOM }
         wm.addView(composeView, params)
         view = composeView
     }

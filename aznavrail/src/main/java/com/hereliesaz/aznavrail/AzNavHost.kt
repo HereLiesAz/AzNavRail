@@ -4,6 +4,8 @@ package com.hereliesaz.aznavrail
 import android.app.Activity
 import android.content.ContextWrapper
 import android.view.Surface
+import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -15,14 +17,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -73,6 +72,8 @@ import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.internal.AzRailLayoutHelper
 import com.hereliesaz.aznavrail.internal.AzSafeZones
 import com.hereliesaz.aznavrail.internal.AzVisualSide
+import com.hereliesaz.aznavrail.internal.azForceTransparentNavBar
+import com.hereliesaz.aznavrail.internal.azWindowSafeInsets
 import com.hereliesaz.aznavrail.internal.HelpOverlay
 import com.hereliesaz.aznavrail.internal.MoreFromAzOverlay
 import com.hereliesaz.aznavrail.internal.azResolveSafeBottom
@@ -395,11 +396,16 @@ fun AzHostActivityLayout(
         found
     }
     LaunchedEffect(activity) {
-        activity?.let {
-            WindowCompat.setDecorFitsSystemWindows(it.window, false)
-            // Deprecated direct property access replaced with WindowCompat or ignored if handled by themes/edge-to-edge
-            // it.window.statusBarColor = android.graphics.Color.TRANSPARENT
-            // it.window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        // Edge-to-edge. `enableEdgeToEdge()` is the forward-looking call (it also sets up the system
+        // bar icon appearance, and matches what Android 15 enforces for apps targeting SDK 35);
+        // `setDecorFitsSystemWindows` is the fallback for a host that isn't a ComponentActivity.
+        // Neither touches the deprecated statusBarColor/navigationBarColor properties — the bars stay
+        // transparent and the content below clears them via the safe zones computed further down.
+        val host = activity
+        if (host is ComponentActivity) {
+            host.enableEdgeToEdge()
+        } else if (host != null) {
+            WindowCompat.setDecorFitsSystemWindows(host.window, false)
         }
     }
 
@@ -443,7 +449,10 @@ fun AzHostActivityLayout(
 
     val visualDockingSideProxy = if (visualSide == AzVisualSide.BOTTOM || visualSide == AzVisualSide.RIGHT) AzDockingSide.RIGHT else AzDockingSide.LEFT
 
-    val systemBars = WindowInsets.systemBars.asPaddingValues()
+    // System bars *and* display cutout — see azWindowSafeInsets. Under Android 15's enforced
+    // edge-to-edge a camera cutout can occlude an edge with no system bar on it, so the bars alone
+    // are no longer the whole story.
+    val windowInsets = azWindowSafeInsets()
     val screenHeight = configuration.screenHeightDp
 
     val calculatedTop = with(density) { (screenHeight * AzLayoutConfig.ContentSafeTopPercent).toDp() }
@@ -453,36 +462,25 @@ fun AzHostActivityLayout(
     // edge-to-edge at the bottom (there is no button bar to clear). In button navigation we keep
     // the larger of the 10% content safe-zone and the system navigation-bar inset.
     val gestureNav = AzNavMode.isGestureNav(context)
-    val safeTop = max(calculatedTop, systemBars.calculateTopPadding())
-    val safeBottom = azResolveSafeBottom(gestureNav, calculatedBottom, systemBars.calculateBottomPadding())
+    val safeTop = max(calculatedTop, windowInsets.top)
+    val safeBottom = azResolveSafeBottom(gestureNav, calculatedBottom, windowInsets.bottom)
+    // Horizontal safe zones have no percentage rule — there is only ever the system inset to clear
+    // (a landscape button nav bar, or a cutout on the short edge), so they are 0 in portrait.
+    val safeStart = windowInsets.start
+    val safeEnd = windowInsets.end
 
     // Feature 1 (in-tree): when any registered sheet opts into `drawBehindNavBar` and the device
     // uses button navigation, force the Activity's navigation bar see-through so the sheet — which
     // already draws to the bottom edge — is visible behind it. The exposed height above the bar is
     // unchanged. No-op in gesture navigation. Prior window values are restored on dispose.
+    // No-op on Android 15+, where the properties this leans on are deprecated and the bar is already
+    // transparent under enforced edge-to-edge — see azForceTransparentNavBar.
     val wantDrawBehindNavBar = scope.bottomSheets.any { it.config.drawBehindNavBar }
     DisposableEffect(activity, wantDrawBehindNavBar, gestureNav) {
         val window = activity?.window
         if (window != null && wantDrawBehindNavBar && !gestureNav) {
-            @Suppress("DEPRECATION")
-            val previousColor = window.navigationBarColor
-            val previousContrast = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                window.isNavigationBarContrastEnforced
-            } else {
-                null
-            }
-            @Suppress("DEPRECATION")
-            window.navigationBarColor = android.graphics.Color.TRANSPARENT
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                window.isNavigationBarContrastEnforced = false
-            }
-            onDispose {
-                @Suppress("DEPRECATION")
-                window.navigationBarColor = previousColor
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q && previousContrast != null) {
-                    window.isNavigationBarContrastEnforced = previousContrast
-                }
-            }
+            val restore = azForceTransparentNavBar(window)
+            onDispose { restore() }
         } else {
             onDispose { }
         }
@@ -542,7 +540,7 @@ fun AzHostActivityLayout(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = titleTop)
+                    .padding(top = titleTop, start = safeStart, end = safeEnd)
                     .height(titleHeight)
                     .then(titlePaddingSide),
                 contentAlignment = titleAlignment
@@ -603,14 +601,16 @@ fun AzHostActivityLayout(
                 topPadding = topPadding,
                 bottomPadding = bottomPadding,
                 items = azOrderOnscreen(scope.onscreenItems, pagesEnabled),
-                dockingSide = dockingSide
+                dockingSide = dockingSide,
+                safeStart = safeStart,
+                safeEnd = safeEnd
             )
         }
 
         CompositionLocalProvider(
             LocalAzNavHostPresent provides true,
             LocalAzNavHostScope provides scope,
-            LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom),
+            LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom, safeStart, safeEnd),
             LocalAzGuidanceController provides guidanceController
         ) {
             AzNavRail(
@@ -635,7 +635,7 @@ fun AzHostActivityLayout(
         // Help / More-from-Az still cover everything.
         CompositionLocalProvider(
             LocalAzNavHostScope provides scope,
-            LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom)
+            LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom, safeStart, safeEnd)
         ) {
             AzUnattachedRail(
                 scope = railScope,
@@ -661,7 +661,7 @@ fun AzHostActivityLayout(
 
         CompositionLocalProvider(
             LocalAzNavHostScope provides scope,
-            LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom),
+            LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom, safeStart, safeEnd),
         ) {
             if (scope.aboutVisible || scope.moreFromAzVisible) {
                 // Pad only the rail offset; the overlays apply top/bottom safe-zone insets themselves
@@ -810,6 +810,11 @@ private fun railScopeDissolve(scope: AzNavHostScopeImpl, railScope: AzNavRailSco
  * @param bottomPadding Padding added at the bottom when the rail is docked horizontally.
  * @param items The onscreen content items to render.
  * @param dockingSide Used to mirror [BiasAlignment] for right-docked layouts.
+ * @param safeStart Start-edge system inset to clear — a landscape button navigation bar or a display
+ *   cutout on that edge. `0.dp` in portrait, and on any device with nothing to clear there. Combined
+ *   with [startPadding] by `max`, not by addition: the rail hugs that same physical edge, so a rail
+ *   gutter wider than the system inset already clears it and adding both would leave a dead strip.
+ * @param safeEnd End-edge system inset to clear, resolved the same way as [safeStart].
  */
 @Composable
 fun AzHostFragmentLayout(
@@ -820,7 +825,9 @@ fun AzHostFragmentLayout(
     topPadding: Dp,
     bottomPadding: Dp,
     items: List<AzOnscreenItem>,
-    dockingSide: AzDockingSide
+    dockingSide: AzDockingSide,
+    safeStart: Dp = 0.dp,
+    safeEnd: Dp = 0.dp
 ) {
     Box(
         modifier = Modifier
@@ -828,8 +835,8 @@ fun AzHostFragmentLayout(
             .padding(
                 top = safeTop + topPadding,
                 bottom = safeBottom + bottomPadding,
-                start = startPadding,
-                end = endPadding
+                start = max(safeStart, startPadding),
+                end = max(safeEnd, endPadding)
             )
     ) {
         items.forEach { item ->

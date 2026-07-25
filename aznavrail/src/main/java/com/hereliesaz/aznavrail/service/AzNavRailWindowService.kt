@@ -27,6 +27,7 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.hereliesaz.aznavrail.internal.azAllowDisplayCutout
 import kotlin.math.roundToInt
 
 /**
@@ -93,7 +94,12 @@ abstract class AzNavRailWindowService : Service(), LifecycleOwner, SavedStateReg
      * The [WindowManager.LayoutParams] used when adding the overlay view.
      *
      * Override to customise gravity, initial position, flags, or pixel format.
-     * The default is `WRAP_CONTENT` with `FLAG_NOT_FOCUSABLE` anchored to the top-start corner.
+     * The default is `WRAP_CONTENT` with `FLAG_NOT_FOCUSABLE` anchored to the top-start corner, laid
+     * out edge-to-edge (`FLAG_LAYOUT_NO_LIMITS` plus
+     * [WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS]) so a dragged overlay can
+     * reach every corner of the display. If you override this, keep
+     * `azAllowDisplayCutout()`'s effect — leaving `layoutInDisplayCutoutMode` unset inherits the
+     * value Android 15 deprecated.
      */
     protected open val windowParams: WindowManager.LayoutParams by lazy {
         WindowManager.LayoutParams(
@@ -107,7 +113,7 @@ abstract class AzNavRailWindowService : Service(), LifecycleOwner, SavedStateReg
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
-        ).apply {
+        ).azAllowDisplayCutout().apply {
             gravity = Gravity.TOP or Gravity.START
         }
     }
