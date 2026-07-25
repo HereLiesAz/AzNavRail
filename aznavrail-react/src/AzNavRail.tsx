@@ -32,12 +32,13 @@ import {
 import { AzKineticItem, useAzClosing } from './components/AzKinetics';
 import { Easing as RNEasing } from 'react-native';
 import { AzEasing } from './types';
-import { AzNavRailDefaults } from './AzNavRailDefaults';
+import { AzNavRailDefaults, AzMotion } from './AzNavRailDefaults';
 import { AzButton } from './components/AzButton';
 import { AzToggle } from './components/AzToggle';
 import { AzCycler } from './components/AzCycler';
 import { RailMenuItem } from './components/RailMenuItem';
 import { AzLoad } from './components/AzLoad';
+import { AzRailSliderItem } from './components/AzRailSliderItem';
 import { DraggableRailItemWrapper } from './components/DraggableRailItemWrapper';
 import { RelocItemHandler } from './util/RelocItemHandler';
 import { AzNestedRailPopup } from './components/AzNestedRailPopup';
@@ -752,6 +753,25 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       persistentBadge: item.persistentBadge,
     };
 
+    // A slider item unfolds where it stands. Nothing opens over the rail and nothing moves the
+    // user elsewhere: the slot the item occupies grows into the track, and folds back when the
+    // value is set. The control ends up exactly where the user's attention already was.
+    if (item.isSlider) {
+      return (
+        <AzRailSliderItem
+          key={item.id}
+          item={item}
+          buttonSize={activeButtonSize}
+          enabled={!item.disabled}
+          color={
+            item.color ??
+            overrideConfig.activeColor ??
+            AzNavRailDefaults.AccentFallback
+          }
+        />
+      );
+    }
+
     if (item.isRelocItem) {
       return (
         <DraggableRailItemWrapper
@@ -1072,7 +1092,8 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     (config as AzNavRailSettings).itemEntrance ?? AzEntrance.Turnstile;
   const kItemExit = (config as AzNavRailSettings).itemExit ?? AzExit.Turnstile;
   const kStaggerMs = (config as AzNavRailSettings).entranceStaggerMs ?? 60;
-  const kDurationMs = (config as AzNavRailSettings).entranceDurationMs ?? 720;
+  const kDurationMs =
+    (config as AzNavRailSettings).entranceDurationMs ?? AzMotion.ItemDurationMs;
   const kStartAngle = (config as AzNavRailSettings).entranceStartAngle ?? 90;
   const kTiltOnPress = (config as AzNavRailSettings).tiltOnPress ?? false;
   const kMaxTilt = (config as AzNavRailSettings).maxTiltDegrees ?? 10;

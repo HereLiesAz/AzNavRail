@@ -77,6 +77,7 @@ import com.hereliesaz.aznavrail.internal.rememberEffectiveAppMeta
 import com.hereliesaz.aznavrail.internal.AzSafeZones
 import com.hereliesaz.aznavrail.internal.MoreFromAzOverlay
 import com.hereliesaz.aznavrail.service.GithubDocsRepository
+import com.hereliesaz.aznavrail.model.AzMotion
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzDropdownDesign
@@ -166,8 +167,8 @@ interface AzDropdownMenuScope {
         appRepositoryUrl: String = "",
         itemTextStyle: TextStyle? = null,
         itemEntrance: AzEntrance = AzEntrance.Turnstile,
-        entranceStaggerMs: Int = 60,
-        entranceDurationMs: Int = 720,
+        entranceStaggerMs: Int = AzMotion.ItemStaggerMs,
+        entranceDurationMs: Int = AzMotion.ItemDurationMs,
         entranceEasing: Easing = AzEasing.Wp7Decelerate,
         entranceStartAngle: Float = 90f,
         tiltOnPress: Boolean = false,
@@ -245,8 +246,8 @@ internal data class AzDropdownConfig(
     val appRepositoryUrl: String = "",
     val itemTextStyle: TextStyle? = null,
     val itemEntrance: AzEntrance = AzEntrance.Turnstile,
-    val entranceStaggerMs: Int = 60,
-    val entranceDurationMs: Int = 720,
+    val entranceStaggerMs: Int = AzMotion.ItemStaggerMs,
+    val entranceDurationMs: Int = AzMotion.ItemDurationMs,
     val entranceEasing: Easing = AzEasing.Wp7Decelerate,
     val entranceStartAngle: Float = 90f,
     val tiltOnPress: Boolean = false,
@@ -512,8 +513,8 @@ private fun AzDropdownFooter(
     onAboutClick: (() -> Unit)?,
     visible: Boolean = true,
     menuItemCount: Int = 0,
-    staggerMs: Int = 60,
-    durationMs: Int = 720,
+    staggerMs: Int = AzMotion.ItemStaggerMs,
+    durationMs: Int = AzMotion.ItemDurationMs,
     easing: Easing = AzEasing.Wp7Decelerate,
 ) {
     val uriHandler = LocalUriHandler.current

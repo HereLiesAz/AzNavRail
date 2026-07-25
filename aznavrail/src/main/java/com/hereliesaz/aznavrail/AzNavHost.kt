@@ -77,6 +77,7 @@ import com.hereliesaz.aznavrail.internal.HelpOverlay
 import com.hereliesaz.aznavrail.internal.MoreFromAzOverlay
 import com.hereliesaz.aznavrail.internal.azResolveSafeBottom
 import com.hereliesaz.aznavrail.internal.rememberAzKineticModifier
+import com.hereliesaz.aznavrail.model.AzMotion
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzExit
 import com.hereliesaz.aznavrail.model.AzSheetConfig
@@ -567,7 +568,7 @@ fun AzHostActivityLayout(
                                 entrance = railScopeImpl.titleEntrance,
                                 exit = AzExit.None,
                                 staggerMs = 0,
-                                durationMs = 420,
+                                durationMs = AzMotion.SettleDurationMs,
                                 easing = com.hereliesaz.aznavrail.model.AzEasing.Wp7Decelerate,
                                 startAngle = 70f,
                                 tiltOnPress = false,

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { AzMotion } from '../AzNavRailDefaults';
 import './MenuItem.css';
 import { solveHybridJustify } from '../util/AzJustify';
 
@@ -30,8 +31,8 @@ const MenuItem = ({
   visible = true,
   entrance = 'Turnstile',
   startAngle = 90,
-  staggerMs = 60,
-  durationMs = 720,
+  staggerMs = AzMotion.ItemStaggerMs,
+  durationMs = AzMotion.ItemDurationMs,
   dockingSide = 'LEFT',
   // Menu-drawer look
   menuItemAlignment = 'side',

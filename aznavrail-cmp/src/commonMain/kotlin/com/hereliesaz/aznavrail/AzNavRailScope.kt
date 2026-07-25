@@ -13,6 +13,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
+import com.hereliesaz.aznavrail.model.AzMotion
+import com.hereliesaz.aznavrail.model.AzSliderConfig
 import com.hereliesaz.aznavrail.model.AzAdvancedConfig
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
@@ -133,8 +135,8 @@ interface AzNavRailScope {
         itemEntrance: AzEntrance = AzEntrance.Turnstile,
         itemExit: AzExit = AzExit.Turnstile,
         itemTextStyle: TextStyle? = null,
-        entranceStaggerMs: Int = 60,
-        entranceDurationMs: Int = 720,
+        entranceStaggerMs: Int = AzMotion.ItemStaggerMs,
+        entranceDurationMs: Int = AzMotion.ItemDurationMs,
         entranceEasing: Easing = AzEasing.Wp7Decelerate,
         entranceStartAngle: Float = 90f,
         tiltOnPress: Boolean = false,
@@ -391,6 +393,50 @@ interface AzNavRailScope {
      * @param onClick Click callback.
      */
     fun azRailToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuToggleOnText: String? = null, menuToggleOffText: String? = null, textColor: Color? = null, fillColor: Color? = null, badge: String? = null, persistentBadge: Boolean = false, isLoading: Boolean = false, onClick: (() -> Unit)? = null)
+
+    /**
+     * Adds a slider to the always-visible rail.
+     *
+     * Tapping the item unfolds an [com.hereliesaz.aznavrail.AzSlider] **in the item's own slot** —
+     * the slot grows along the rail and the button becomes the track, with the value underneath.
+     * Tapping the value folds it back. Nothing opens over the rail and nothing moves the user
+     * elsewhere, so the control appears where their attention already is.
+     *
+     * The track supports every [com.hereliesaz.aznavrail.model.AzSliderVariant] — continuous,
+     * stepped, centred, and range — via [config]. The rail forces it vertical, because the rail is.
+     *
+     * ```
+     * azRailSlider(
+     *     id = "volume",
+     *     text = "Vol",
+     *     value = volume,
+     *     config = AzSliderConfig(variant = AzSliderVariant.STEPPED, steps = 4),
+     *     onValueChange = { volume = it },
+     * )
+     * ```
+     *
+     * @param value The live value, for every variant except `RANGE`.
+     * @param rangeValue The live span, for the `RANGE` variant only.
+     * @param valueFormatter Renders the value as the label under the track. Null prints the value
+     *   to two decimals (or `index/slots` on a stepped track, or both ends of a range).
+     */
+    fun azRailSlider(
+        id: String,
+        text: String,
+        value: Float = 0f,
+        config: AzSliderConfig = AzSliderConfig(),
+        rangeValue: ClosedFloatingPointRange<Float> = 0f..1f,
+        color: Color? = null,
+        shape: AzButtonShape? = null,
+        disabled: Boolean = false,
+        info: String? = null,
+        classifiers: Set<String> = emptySet(),
+        textColor: Color? = null,
+        fillColor: Color? = null,
+        valueFormatter: ((Float) -> String)? = null,
+        onValueChange: ((Float) -> Unit)? = null,
+        onRangeChange: ((ClosedFloatingPointRange<Float>) -> Unit)? = null,
+    )
 
     /**
      * Adds a cycler item (multi-state button) to the menu.
@@ -771,6 +817,12 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
      */
     val onExpandedChangeMap = mutableMapOf<String, (Boolean) -> Unit>()
 
+    /** Value callbacks for `azRailSlider` items, keyed by item id. */
+    val onSliderChangeMap = mutableMapOf<String, (Float) -> Unit>()
+
+    /** Span callbacks for `azRailSlider` items using the `RANGE` variant. */
+    val onSliderRangeChangeMap = mutableMapOf<String, (ClosedFloatingPointRange<Float>) -> Unit>()
+
     // --- Status-driven guidance framework (see tutorial/AzStatus.kt). All cleared on each reset. ---
     /** Developer status predicates: a status id → `() -> Boolean`, observed reactively by the engine. */
     val statusPredicates = mutableMapOf<String, () -> Boolean>()
@@ -832,6 +884,8 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         onRelocateMap.clear()
         expandWhenMap.clear()
         onExpandedChangeMap.clear()
+        onSliderChangeMap.clear()
+        onSliderRangeChangeMap.clear()
         declaredItemStates.clear()
         statusPredicates.clear()
         guidanceEdges.clear()
@@ -995,9 +1049,9 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     /** Optional style merged over each menu item's label. */
     var itemTextStyle: TextStyle? = null
     /** Per-item cascade delay (ms), multiplied by position. */
-    var entranceStaggerMs: Int = 60
+    var entranceStaggerMs: Int = AzMotion.ItemStaggerMs
     /** Duration (ms) of each item's entrance/exit. */
-    var entranceDurationMs: Int = 720
+    var entranceDurationMs: Int = AzMotion.ItemDurationMs
     /** Easing for the entrance/exit. */
     var entranceEasing: Easing = AzEasing.Wp7Decelerate
     /** Starting `rotationY` (deg) for the turnstile sweep. */
@@ -1301,6 +1355,51 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
 
     override fun azRailToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuToggleOnText: String?, menuToggleOffText: String?, textColor: Color?, fillColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean, onClick: (() -> Unit)?) {
         addToggle(id = id, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, menuToggleOnText = menuToggleOnText, menuToggleOffText = menuToggleOffText, config = AzItemConfig(isLoading = isLoading, classifiers = classifiers, route = route, disabled = disabled, screenTitle = screenTitle, info = info, isRailItem = true, isSubItem = false, color = color, textColor = textColor, fillColor = fillColor, shape = shape, badge = badge, persistentBadge = persistentBadge), onClick = onClick ?: {})
+    }
+
+    override fun azRailSlider(
+        id: String,
+        text: String,
+        value: Float,
+        config: AzSliderConfig,
+        rangeValue: ClosedFloatingPointRange<Float>,
+        color: Color?,
+        shape: AzButtonShape?,
+        disabled: Boolean,
+        info: String?,
+        classifiers: Set<String>,
+        textColor: Color?,
+        fillColor: Color?,
+        valueFormatter: ((Float) -> String)?,
+        onValueChange: ((Float) -> Unit)?,
+        onRangeChange: ((ClosedFloatingPointRange<Float>) -> Unit)?,
+    ) {
+        checkId(id)
+        if (onValueChange != null) onSliderChangeMap[id] = onValueChange
+        if (onRangeChange != null) onSliderRangeChangeMap[id] = onRangeChange
+        navItems.add(
+            AzNavItem(
+                id = id,
+                text = text,
+                isRailItem = true,
+                isSlider = true,
+                sliderConfig = config,
+                sliderValue = value,
+                sliderRangeStart = rangeValue.start,
+                sliderRangeEnd = rangeValue.endInclusive,
+                sliderValueFormatter = valueFormatter,
+                info = info,
+                classifiers = classifiers,
+                disabled = disabled,
+                color = color,
+                textColor = textColor,
+                fillColor = fillColor,
+                shape = shape ?: defaultShape,
+                // A slider is set, not chosen — folding the drawer out from under the user's finger
+                // mid-drag would take the control away exactly when they are using it.
+                collapseOnClick = false,
+            )
+        )
     }
 
     override fun azMenuCycler(id: String, options: List<String>, selectedOption: String, route: String?, color: Color?, shape: AzButtonShape?, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, info: String?, classifiers: Set<String>, menuOptions: List<String>?, textColor: Color?, fillColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean, onClick: (() -> Unit)?) {

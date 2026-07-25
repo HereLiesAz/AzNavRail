@@ -20,6 +20,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableFloatStateOf
+import com.hereliesaz.aznavrail.model.AzSliderConfig
+import com.hereliesaz.aznavrail.model.AzSliderSize
+import com.hereliesaz.aznavrail.model.AzSliderVariant
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -85,6 +89,10 @@ fun MainApp() {
     var isDarkMode by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var packRailButtons by remember { mutableStateOf(false) }
+    // Three of the four slider variants, driven from the rail without leaving it.
+    var volume by remember { mutableFloatStateOf(0.4f) }
+    var quality by remember { mutableFloatStateOf(2f) }
+    var trim by remember { mutableFloatStateOf(0f) }
     var isDockingRight by remember { mutableStateOf(false) }
     var noMenu by remember { mutableStateOf(false) }
     var usePhysicalDocking by remember { mutableStateOf(false) }
@@ -316,6 +324,44 @@ fun MainApp() {
             toggleOffText = "Unpacked",
             info = "Toggle to pack items together or space them out.",
             onClick = { packRailButtons = !packRailButtons },
+        )
+
+        // A slider that unfolds in its own slot on the rail. Tap it, drag, tap the value to fold.
+        azRailSlider(
+            id = "volume",
+            text = "Vol",
+            value = volume,
+            config = AzSliderConfig(size = AzSliderSize.SMALL),
+            info = "azRailSlider — a continuous track that unfolds where the item stands.",
+            valueFormatter = { "${(it * 100).toInt()}%" },
+            onValueChange = { volume = it },
+        )
+
+        azRailSlider(
+            id = "quality",
+            text = "Qual",
+            value = quality,
+            config = AzSliderConfig(
+                variant = AzSliderVariant.STEPPED,
+                steps = 3,
+                valueFrom = 0f,
+                valueTo = 4f,
+            ),
+            info = "azRailSlider(variant = STEPPED) — stop indicators mark every landing point.",
+            onValueChange = { quality = it },
+        )
+
+        azRailSlider(
+            id = "trim",
+            text = "Trim",
+            value = trim,
+            config = AzSliderConfig(
+                variant = AzSliderVariant.CENTERED,
+                valueFrom = -1f,
+                valueTo = 1f,
+            ),
+            info = "azRailSlider(variant = CENTERED) — the track grows out of zero, so the sign reads without the number.",
+            onValueChange = { trim = it },
         )
 
         azRailItem(

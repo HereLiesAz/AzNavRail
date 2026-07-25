@@ -915,11 +915,16 @@ fun AzNavRail(
                             // `defaultShape` is an AzButtonShape; border/background need the real
                             // Compose Shape it maps to.
                             val buttonShape = scope.defaultShape.toComposeShape()
+                            // The same colour an ordinary, unselected rail item resolves to (`item.color ?: primary`
+                            // — see RailContent). This used to draw in `scope.activeColor`, which is the
+                            // *selected* accent, so the help affordance stood out from the rail it belongs
+                            // to — and rendered as Unspecified whenever the host had not set one at all.
+                            val railItemColor = MaterialTheme.colorScheme.primary
                             val transparentShapeModifier = Modifier
                                 .size(activeButtonSize)
                                 .border(
                                     width = 2.dp,
-                                    color = scope.activeColor,
+                                    color = railItemColor,
                                     shape = buttonShape
                                 )
                                 .background(Color.Transparent, buttonShape)
@@ -942,7 +947,7 @@ fun AzNavRail(
                             ) {
                                 Text(
                                     text = "?",
-                                    color = scope.activeColor,
+                                    color = railItemColor,
                                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                                 )
                             }

@@ -13,6 +13,8 @@ import {
   AzNestedRailProps,
   AzNestedRailAlignment,
   HiddenMenuScope,
+  AzSliderConfig,
+  AzSliderVariant,
 } from './types';
 
 /** Internal React context that connects DSL item declarations to the parent `AzNavRail` registry. */
@@ -252,6 +254,84 @@ export const AzRailCycler: React.FC<AzCyclerProps> = (props) => {
     toggleOnText: '',
     toggleOffText: '',
   });
+  return null;
+};
+
+/** Props for {@link AzRailSlider}. */
+export interface AzRailSliderProps {
+  id: string;
+  text: string;
+  /** The live value, for every variant except `RANGE`. */
+  value?: number;
+  /** The live span, for the `RANGE` variant only. */
+  rangeValue?: [number, number];
+  config?: Partial<AzSliderConfig>;
+  color?: string;
+  textColor?: string;
+  fillColor?: string;
+  shape?: AzButtonShape;
+  disabled?: boolean;
+  info?: string;
+  classifiers?: string[];
+  /** Renders the value as the label under the track. */
+  valueFormatter?: (value: number) => string;
+  onValueChange?: (value: number) => void;
+  onRangeChange?: (range: [number, number]) => void;
+}
+
+/**
+ * Declares a slider on the always-visible rail.
+ *
+ * Tapping the item unfolds an `AzSlider` **in the item's own slot** — the slot grows along the rail
+ * and the button becomes the track, with the value underneath. Tapping the value folds it back.
+ * Nothing opens over the rail and nothing moves the user elsewhere, so the control appears where
+ * their attention already is.
+ *
+ * The track supports every {@link AzSliderVariant} — continuous, stepped, centred and range — via
+ * `config`. The rail forces it vertical, because the rail is.
+ *
+ * @example
+ * ```tsx
+ * <AzRailSlider
+ *   id="volume"
+ *   text="Vol"
+ *   value={volume}
+ *   config={{ variant: AzSliderVariant.STEPPED, steps: 4 }}
+ *   onValueChange={setVolume}
+ * />
+ * ```
+ */
+export const AzRailSlider: React.FC<AzRailSliderProps> = (props) => {
+  useAzItem({
+    id: props.id,
+    text: props.text,
+    info: props.info,
+    classifiers: props.classifiers,
+    color: props.color,
+    textColor: props.textColor,
+    fillColor: props.fillColor,
+    shape: props.shape || AzButtonShape.CIRCLE,
+    disabled: props.disabled || false,
+    isRailItem: true,
+    isSlider: true,
+    sliderConfig: props.config,
+    sliderValue: props.value ?? 0,
+    sliderRange: props.rangeValue ?? [0, 1],
+    sliderValueFormatter: props.valueFormatter,
+    onSliderChange: props.onValueChange,
+    onSliderRangeChange: props.onRangeChange,
+    isToggle: false,
+    isCycler: false,
+    isDivider: false,
+    // A slider is set, not chosen — folding the drawer out from under the user's finger mid-drag
+    // would take the control away exactly when they are using it.
+    collapseOnClick: false,
+    isHost: false,
+    isSubItem: false,
+    isExpanded: false,
+    toggleOnText: '',
+    toggleOffText: '',
+  } as any);
   return null;
 };
 

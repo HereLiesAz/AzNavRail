@@ -9,6 +9,7 @@ import AzButton from './AzButton';
 import AboutOverlay from './AboutOverlay';
 import { solveHybridJustify } from '../util/AzJustify';
 import './AzDropdownMenu.css';
+import { AzMotion } from '../AzNavRailDefaults';
 
 const DROPDOWN_WEB_BASE_FONT_PX = 16;
 
@@ -215,8 +216,8 @@ const AzDropdownMenu = ({
   expanded,
   onExpandedChange,
   onNavigate,
-  entranceStaggerMs = 60,
-  entranceDurationMs = 720,
+  entranceStaggerMs = AzMotion.ItemStaggerMs,
+  entranceDurationMs = AzMotion.ItemDurationMs,
   entranceStartAngle = 90,
   dimBehindMenu = false,
   dimBehindMenuAlpha = 0.4,

@@ -4,6 +4,7 @@ package com.hereliesaz.aznavrail.internal
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.graphics.lerp
+import com.hereliesaz.aznavrail.model.AzMotion
 import com.hereliesaz.aznavrail.model.AzEasing
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -67,7 +68,11 @@ internal fun RailContent(
     helpEnabled: Boolean = false,
     dragModifier: Modifier = Modifier,
     activeColor: androidx.compose.ui.graphics.Color? = null,
-    rotationDegrees: Float = 0f
+    rotationDegrees: Float = 0f,
+    /** Reports a slider item's new value. Null for every rail that declares no slider. */
+    onSliderChange: ((String, Float) -> Unit)? = null,
+    /** Reports a `RANGE` slider item's new span. */
+    onSliderRangeChange: ((String, ClosedFloatingPointRange<Float>) -> Unit)? = null,
 ) {
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
@@ -157,6 +162,21 @@ internal fun RailContent(
                 containerColor = item.color ?: activeColor ?: MaterialTheme.colorScheme.primary,
             )
         }
+        // A slider item unfolds where it stands. Nothing opens over the rail and nothing moves the
+        // user elsewhere: the slot the item occupies grows into the track, and folds back when the
+        // value is set. The control ends up exactly where the user's attention already was.
+        if (item.isSlider) {
+            AzRailSliderItem(
+                item = item,
+                buttonSize = buttonSize,
+                enabled = isEnabled,
+                color = item.color ?: activeColor ?: MaterialTheme.colorScheme.primary,
+                onValueChange = { onSliderChange?.invoke(item.id, it) },
+                onRangeChange = { onSliderRangeChange?.invoke(item.id, it) },
+            )
+            return@Box
+        }
+
         // While an item owns a notice/warning popup it stops being itself and becomes the alert
         // glyph: a yellow, rounded-corner triangle outline. Everything else about it is untouched,
         // and it reverts the instant the popup is dismissed.
@@ -166,7 +186,7 @@ internal fun RailContent(
         // way. The morph is the conveyance; a hard swap is just a different picture.
         val alertProgress by animateFloatAsState(
             targetValue = if (alert != null) 1f else 0f,
-            animationSpec = tween(durationMillis = 420, easing = AzEasing.Wp7Decelerate),
+            animationSpec = tween(durationMillis = AzMotion.SettleDurationMs, easing = AzEasing.Wp7Decelerate),
             label = "az-alert-morph",
         )
         val baseColor = item.color ?: MaterialTheme.colorScheme.primary

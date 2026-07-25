@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.graphicsLayer
+import com.hereliesaz.aznavrail.model.AzMotion
 import com.hereliesaz.aznavrail.model.AzEasing
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -281,7 +282,7 @@ internal fun AzPopupHost(
     // The panel arrives rather than appearing: the scrim fades and the card rises and settles.
     // An interrupt that cuts in gives the user no sense of where it came from.
     val entrance = remember { Animatable(0f) }
-    LaunchedEffect(request) { entrance.animateTo(1f, tween(320, easing = AzEasing.Wp7Decelerate)) }
+    LaunchedEffect(request) { entrance.animateTo(1f, tween(AzMotion.PanelDurationMs, easing = AzEasing.Wp7Decelerate)) }
 
     Box(
         modifier = modifier

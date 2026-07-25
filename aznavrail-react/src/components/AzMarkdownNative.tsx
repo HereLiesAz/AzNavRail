@@ -1,5 +1,6 @@
 import React from 'react';
 import { Text, View, Linking, StyleSheet } from 'react-native';
+import { AzAboutColors } from './AboutOverlay';
 
 /**
  * A tiny dependency-free Markdown renderer for the React Native About reader, themed to AzNavRail.
@@ -69,9 +70,15 @@ function renderInline(text: string, accent: string): React.ReactNode[] {
 export default function AzMarkdownNative({
   markdown,
   accent,
+  ink = AzAboutColors.Ink,
 }: {
   markdown: string;
   accent: string;
+  /**
+   * Body-text colour. Rendered prose carries no colour of its own, so without this it inherits
+   * React Native's default near-black — invisible on the About reader's dark ground.
+   */
+  ink?: string;
 }) {
   const lines = (markdown || '').replace(/\r\n/g, '\n').split('\n');
   const blocks: React.ReactNode[] = [];
@@ -84,7 +91,7 @@ export default function AzMarkdownNative({
       const text = para.join(' ').trim();
       if (text)
         blocks.push(
-          <Text key={key++} style={styles.p}>
+          <Text key={key++} style={[styles.p, { color: ink }]}>
             {renderInline(text, accent)}
           </Text>
         );
@@ -104,7 +111,9 @@ export default function AzMarkdownNative({
       }
       blocks.push(
         <View key={key++} style={styles.pre}>
-          <Text style={styles.preText}>{code.join('\n')}</Text>
+          <Text style={[styles.preText, { color: ink }]}>
+            {code.join('\n')}
+          </Text>
         </View>
       );
     } else if (/^(---|\*\*\*|___)\s*$/.test(line.trim())) {
@@ -121,7 +130,7 @@ export default function AzMarkdownNative({
           style={[
             styles.heading,
             headingSize(level),
-            level <= 2 ? { color: accent } : null,
+            level <= 2 ? { color: accent } : { color: ink },
           ]}
         >
           {renderInline(line.replace(/^#+\s/, ''), accent)}
@@ -131,7 +140,7 @@ export default function AzMarkdownNative({
       flushPara();
       blocks.push(
         <View key={key++} style={[styles.quote, { borderLeftColor: accent }]}>
-          <Text style={styles.p}>
+          <Text style={[styles.p, { color: ink }]}>
             {renderInline(line.trimStart().replace(/^>\s?/, ''), accent)}
           </Text>
         </View>
@@ -146,7 +155,7 @@ export default function AzMarkdownNative({
         blocks.push(
           <View key={key++} style={styles.li}>
             <Text style={[styles.p, { color: accent }]}>{marker}</Text>
-            <Text style={[styles.p, styles.liText]}>
+            <Text style={[styles.p, styles.liText, { color: ink }]}>
               {renderInline(content, accent)}
             </Text>
           </View>

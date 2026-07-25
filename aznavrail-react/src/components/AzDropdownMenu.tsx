@@ -31,7 +31,7 @@ import {
   AzExit,
   AzHeaderIconShape,
 } from '../types';
-import { AzNavRailDefaults } from '../AzNavRailDefaults';
+import { AzNavRailDefaults, AzMotion } from '../AzNavRailDefaults';
 import { AboutOverlay } from './AboutOverlay';
 import { AzKineticItem, useAzClosing } from './AzKinetics';
 import { solveHybridJustify } from '../util/AzJustify';
@@ -352,8 +352,8 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
   itemEntrance = AzEntrance.Turnstile,
   itemExit = AzExit.Turnstile,
   itemTextStyle,
-  entranceStaggerMs = 60,
-  entranceDurationMs = 720,
+  entranceStaggerMs = AzMotion.ItemStaggerMs,
+  entranceDurationMs = AzMotion.ItemDurationMs,
   entranceStartAngle = 90,
   tiltOnPress = false,
   maxTiltDegrees = 10,
@@ -574,8 +574,8 @@ const AzDropdownFooter: React.FC<{
   onInAppAbout,
   visible = true,
   menuItemCount = 0,
-  staggerMs = 60,
-  durationMs = 720,
+  staggerMs = AzMotion.ItemStaggerMs,
+  durationMs = AzMotion.ItemDurationMs,
 }) => {
   const footerColor = '#6750A4';
   // Only open safe schemes — this also runs on the web via react-native-web, where a `javascript:`

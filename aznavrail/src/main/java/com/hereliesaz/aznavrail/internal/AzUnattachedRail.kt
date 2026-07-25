@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.AzNavRailScopeImpl
+import com.hereliesaz.aznavrail.model.AzMotion
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzUnattachedAnchor
@@ -346,6 +347,8 @@ private fun UnattachedNode(
         onBoundsCalculated = { id, bounds -> scope.itemBoundsCache[id] = bounds },
         onBoundsCleared = { id -> scope.itemBoundsCache.remove(id) },
         activeColor = scope.activeColor,
+        onSliderChange = { id, v -> scope.onSliderChangeMap[id]?.invoke(v) },
+        onSliderRangeChange = { id, r -> scope.onSliderRangeChangeMap[id]?.invoke(r) },
     )
 
     if (item.isHost && hostStates[item.id] == true) {
@@ -362,8 +365,8 @@ private fun UnattachedNode(
                     count = children.size,
                     visible = true,
                     isHorizontal = false,
-                    staggerMs = 40,
-                    durationMs = 260,
+                    staggerMs = AzMotion.ItemStaggerMs,
+                    durationMs = AzMotion.ItemDurationMs,
                 )
             ) {
                 UnattachedNode(

@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hereliesaz.aznavrail.AzNavRailScopeImpl
+import com.hereliesaz.aznavrail.model.AzMotion
 import com.hereliesaz.aznavrail.model.AzEasing
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -65,8 +66,8 @@ internal fun Footer(
     // so the footer begins the moment the LAST menu item begins its own kinetic entrance.
     visible: Boolean = true,
     menuItemCount: Int = 0,
-    staggerMs: Int = 60,
-    durationMs: Int = 720,
+    staggerMs: Int = AzMotion.ItemStaggerMs,
+    durationMs: Int = AzMotion.ItemDurationMs,
     easing: Easing = AzEasing.Wp7Decelerate,
 ) {
     val context = LocalContext.current
