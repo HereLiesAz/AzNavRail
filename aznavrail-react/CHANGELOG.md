@@ -1,5 +1,39 @@
 # Changelog
 
+## Unreleased — motion, the rail slider, the help item, and the About reader
+
+### Changed
+- **One motion scale (`AzMotion`), and everything got faster.** Every transition in the library now
+  reads its timing from one object. The values it replaced — a 60 ms stagger and a 720 ms item
+  duration, copy-pasted as literals into six places — meant an eight-item drawer took **1.2 seconds**
+  to finish arriving, and because the turnstile entrance starts each item edge-on (and therefore
+  invisible) the panel sat there empty for the first stretch of it. Items are now 280 ms with a 22 ms
+  stagger, containers 200 ms, layout settles 240 ms. `AzMotionTest` holds a budget so they cannot
+  drift back: a twelve-item cascade must settle inside 650 ms, and a panel must never outlast its own
+  contents.
+- **The About reader is dark in every theme**, with light ink. It is a full-screen surface the user
+  stepped aside into for long-form reading; taking `MaterialTheme.colorScheme.surface` meant a
+  screenful of white in a light-themed host. The host's accent still carries headings, links, and the
+  close affordance, and a host-supplied `translucentBackground` still wins.
+- **The About reader has three ways out** instead of one 24 dp icon: drag down anywhere (with a grab
+  handle announcing it), a 48 dp close target, and system back. The in-reader back arrow got the same
+  48 dp target.
+- **The help `?` uses the ordinary rail-item colour.** It drew in `scope.activeColor` — the
+  *selected* accent — so it stood out from the rail it belongs to, and rendered as `Unspecified`
+  whenever the host had not set an active colour at all.
+
+### Added
+- **`AzSlider`** — the rail's slider, drawn on Material 3 Expressive lines: a thick track with fully
+  rounded ends, an inset gap where the thumb sits, a pill thumb standing across the track, and stop
+  indicators wherever the value is quantised. One composable covers all four variants — `CONTINUOUS`,
+  `STEPPED`, `CENTERED`, `RANGE` — across five sizes and both orientations, because they differ only
+  in where the active track begins and how many thumbs ride it.
+- **`azRailSlider(...)`** — a rail item that unfolds into that slider **in its own slot**. Folded it
+  is an ordinary rail button; tapped, the slot grows along the rail and the button becomes the track,
+  with the value underneath as the way back. Nothing opens over the rail, so the control arrives
+  where the user was already looking.
+
+
 ## Unreleased — toolchain: React Native 0.86 / React 19
 
 ### Changed

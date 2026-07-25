@@ -667,7 +667,9 @@ private fun DraggableRailItemWrapper(
                     helpEnabled = helpEnabled,
                     dragModifier = dragModifier,
                     activeColor = scope.activeColor,
-                    rotationDegrees = rotationDegrees
+                    rotationDegrees = rotationDegrees,
+                    onSliderChange = { id, v -> scope.onSliderChangeMap[id]?.invoke(v) },
+                    onSliderRangeChange = { id, r -> scope.onSliderRangeChangeMap[id]?.invoke(r) },
                 )
             } else {
                 RailContent(
@@ -714,7 +716,9 @@ private fun DraggableRailItemWrapper(
                     helpEnabled = helpEnabled,
                     dragModifier = dragModifier,
                     activeColor = scope.activeColor,
-                    rotationDegrees = rotationDegrees
+                    rotationDegrees = rotationDegrees,
+                    onSliderChange = { id, v -> scope.onSliderChangeMap[id]?.invoke(v) },
+                    onSliderRangeChange = { id, r -> scope.onSliderRangeChangeMap[id]?.invoke(r) },
                 )
             }
         }
@@ -836,7 +840,9 @@ private fun DraggableRailItemWrapper(
                     onItemClick = {},
                     helpEnabled = helpEnabled,
                     activeColor = scope.activeColor,
-                    rotationDegrees = rotationDegrees
+                    rotationDegrees = rotationDegrees,
+                    onSliderChange = { id, v -> scope.onSliderChangeMap[id]?.invoke(v) },
+                    onSliderRangeChange = { id, r -> scope.onSliderRangeChangeMap[id]?.invoke(r) },
                 )
             }
         }

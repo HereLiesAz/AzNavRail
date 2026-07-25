@@ -68,6 +68,7 @@ import com.hereliesaz.aznavrail.internal.rememberAzKineticModifier
 import com.hereliesaz.aznavrail.internal.rememberDeviceRotationDegrees
 import com.hereliesaz.aznavrail.internal.rememberEffectiveAppMeta
 import com.hereliesaz.aznavrail.internal.rememberIsGestureNav
+import com.hereliesaz.aznavrail.model.AzMotion
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzEasing
 import com.hereliesaz.aznavrail.model.AzExit
@@ -421,7 +422,7 @@ fun AzHostActivityLayout(
                                 entrance = railScopeImpl.titleEntrance,
                                 exit = AzExit.None,
                                 staggerMs = 0,
-                                durationMs = 420,
+                                durationMs = AzMotion.SettleDurationMs,
                                 easing = AzEasing.Wp7Decelerate,
                                 startAngle = 70f,
                                 tiltOnPress = false,

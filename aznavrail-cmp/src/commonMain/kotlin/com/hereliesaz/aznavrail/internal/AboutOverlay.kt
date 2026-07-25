@@ -57,12 +57,45 @@ import com.hereliesaz.aznavrail.AzDivider
 import com.hereliesaz.aznavrail.AzLoad
 import com.hereliesaz.aznavrail.LocalAzSafeZones
 import kotlin.math.abs
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import com.hereliesaz.aznavrail.model.AzMotion
+import kotlinx.coroutines.launch
 
 /** UI state for the About reader's table-of-contents fetch. */
 private sealed interface DocsUi {
     data object Loading : DocsUi
     data class Loaded(val entries: List<AzDocEntry>, val offline: Boolean) : DocsUi
     data object Error : DocsUi
+}
+
+/**
+ * The About reader's own palette: dark ground, light ink, in every theme.
+ *
+ * This is one of the few places in the library that does not follow the host's colour scheme. The
+ * reader is a full-screen surface the user has stepped *aside* into — long-form prose, a document
+ * list, a carousel — and long-form reading on a bright white field is the wrong call regardless of
+ * what the surrounding app is doing. It used to take `MaterialTheme.colorScheme.surface`, which in
+ * a light-themed host meant a full screen of white.
+ *
+ * The host's accent still comes through: headings, links, and the close affordance all use it.
+ */
+private object AzAboutColors {
+    /** Near-black, very slightly cool, so the accent reads warm against it. */
+    val Ground = Color(0xFF101014)
+
+    /** Primary ink. Not pure white — pure white on near-black glares. */
+    val Ink = Color(0xFFECECF0)
+
+    /** Secondary ink for supporting lines. */
+    val InkMuted = Color(0xFFB4B4BE)
+
+    /** The grab handle and hairline rules. */
+    val Hairline = Color(0xFF3A3A44)
 }
 
 /**
@@ -84,7 +117,7 @@ internal fun AboutOverlay(
 ) {
     val uriHandler = LocalUriHandler.current
     val accent = scope.activeColor.takeIf { it != Color.Unspecified } ?: MaterialTheme.colorScheme.primary
-    val surface = scope.translucentBackground.takeIf { it != Color.Unspecified } ?: MaterialTheme.colorScheme.surface
+    val surface = scope.translucentBackground.takeIf { it != Color.Unspecified } ?: AzAboutColors.Ground
     // Safe-zone insets come from the host (rail) or a dropdown-supplied default; rail-offset padding,
     // when present, is applied by the caller's wrapper.
     val safe = LocalAzSafeZones.current
@@ -112,10 +145,36 @@ internal fun AboutOverlay(
         } else emptyList()
     }
 
+    // Drag-down-to-dismiss. A full-screen reader that can only be left through one 24dp icon is a
+    // room with a keyhole for a door; this gives the whole surface a way out. The sheet follows the
+    // finger, springs back if the pull was not committed, and leaves if it was.
+    val dismissDrag = remember { Animatable(0f) }
+    val dismissScope = rememberCoroutineScope()
+    val dismissThresholdPx = with(LocalDensity.current) { 140.dp.toPx() }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .graphicsLayer {
+                translationY = dismissDrag.value
+                alpha = 1f - (dismissDrag.value / (dismissThresholdPx * 3f)).coerceIn(0f, 0.4f)
+            }
             .background(surface)
+            .pointerInput(selected) {
+                detectVerticalDragGestures(
+                    onDragEnd = {
+                        if (dismissDrag.value > dismissThresholdPx) onDismiss()
+                        else dismissScope.launch { dismissDrag.animateTo(0f, tween(AzMotion.PanelDurationMs)) }
+                    },
+                    onDragCancel = {
+                        dismissScope.launch { dismissDrag.animateTo(0f, tween(AzMotion.PanelDurationMs)) }
+                    },
+                ) { _, dragAmount ->
+                    dismissScope.launch {
+                        dismissDrag.snapTo((dismissDrag.value + dragAmount).coerceAtLeast(0f))
+                    }
+                }
+            }
     ) {
         Column(
             modifier = Modifier
@@ -123,6 +182,17 @@ internal fun AboutOverlay(
                 .padding(top = safe.top, bottom = safe.bottom)
                 .padding(horizontal = 20.dp, vertical = 12.dp)
         ) {
+            // The grab handle — the visible half of the drag-to-dismiss gesture. Without it the
+            // gesture exists but nothing announces it.
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(bottom = 10.dp)
+                    .size(width = 36.dp, height = 4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(AzAboutColors.Hairline)
+            )
+
             // Header: back (in reader) / title / close
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 if (selected != null) {
@@ -130,7 +200,12 @@ internal fun AboutOverlay(
                         AzIcons.ArrowBack,
                         contentDescription = "Back to contents",
                         tint = accent,
-                        modifier = Modifier.clickable { selected = null }.padding(end = 12.dp)
+                        // A 48dp target, not a bare 24dp glyph.
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(24.dp))
+                            .clickable { selected = null }
+                            .size(48.dp)
+                            .padding(12.dp)
                     )
                 }
                 Text(
@@ -144,7 +219,11 @@ internal fun AboutOverlay(
                     AzIcons.Close,
                     contentDescription = "Close",
                     tint = accent,
-                    modifier = Modifier.clickable { onDismiss() }
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(24.dp))
+                        .clickable { onDismiss() }
+                        .size(48.dp)
+                        .padding(12.dp)
                 )
             }
             Spacer(Modifier.height(12.dp))
@@ -165,7 +244,7 @@ internal fun AboutOverlay(
                                     Text(
                                         "Showing cached docs (offline or rate-limited).",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                        color = AzAboutColors.InkMuted.copy(alpha = 0.6f),
                                     )
                                     Spacer(Modifier.height(8.dp))
                                 }
@@ -174,7 +253,7 @@ internal fun AboutOverlay(
                                         Text(
                                             "No documentation found in this repository.",
                                             style = MaterialTheme.typography.bodyLarge,
-                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                            color = AzAboutColors.InkMuted.copy(alpha = 0.7f),
                                         )
                                     }
                                 } else {
@@ -255,7 +334,7 @@ private fun ErrorState(accent: Color, onClose: () -> Unit) {
             Text(
                 "Couldn't load documentation.",
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                color = AzAboutColors.InkMuted.copy(alpha = 0.8f),
             )
             Spacer(Modifier.height(16.dp))
             AzButton(onClick = onClose, text = "Close", color = accent, activeColor = accent, shape = AzButtonShape.RECTANGLE)
@@ -289,7 +368,7 @@ private fun MoreFromAzHeroCarousel(
             Text(
                 "No apps to show right now.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                color = AzAboutColors.InkMuted.copy(alpha = 0.6f),
             )
         }
         else -> {
@@ -411,14 +490,14 @@ private fun ActiveAppPanel(app: AzMoreFromApp, accent: Color) {
         Text(
             app.name,
             style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = AzAboutColors.Ink,
         )
         if (app.description.isNotBlank()) {
             Spacer(Modifier.height(4.dp))
             Text(
                 app.description,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
+                color = AzAboutColors.InkMuted.copy(alpha = 0.75f),
             )
         }
         Spacer(Modifier.height(8.dp))

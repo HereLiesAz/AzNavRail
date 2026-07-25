@@ -263,6 +263,7 @@ The following functions are used to define the rail structure.
 * `azRailToggle(id, isChecked, toggleOnText, toggleOffText, route, color, shape, disabled, screenTitle, info, onClick)`
 * `azMenuCycler(id, options, selectedOption, route, color, shape, disabled, disabledOptions, screenTitle, info, onClick)`
 * `azRailCycler(id, options, selectedOption, route, color, shape, disabled, disabledOptions, screenTitle, info, onClick)`
+* `azRailSlider(id, text, value, config, rangeValue, color, shape, disabled, info, classifiers, textColor, fillColor, valueFormatter, onValueChange, onRangeChange)` — a rail item that **unfolds into a slider in its own slot**. Folded it is an ordinary rail button; tapped, the slot grows along the rail and the button becomes the track, with the value underneath. Tapping the value folds it back. Nothing opens over the rail, so the control arrives where the user was already looking.
 * `azDivider()`
 * `azMenuHostItem(id, text, route, content, color, shape, disabled, screenTitle, info, classifiers, menuText, textColor, fillColor, initiallyExpanded, expandWhen, onExpandedChange, onClick)`
 * `azRailHostItem(id, text, route, content, color, shape, disabled, screenTitle, info, classifiers, menuText, textColor, fillColor, initiallyExpanded, expandWhen, onExpandedChange, onClick)`

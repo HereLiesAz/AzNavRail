@@ -114,7 +114,26 @@ data class AzNavItem(
      */
     val isUnattached: Boolean = false,
     /** Where an [isUnattached] host parks. Null (and ignored) for every other item. */
-    val unattachedAnchor: AzUnattachedAnchor? = null
+    val unattachedAnchor: AzUnattachedAnchor? = null,
+    /**
+     * True for an item declared with `azRailSlider`: tapping it unfolds an
+     * [com.hereliesaz.aznavrail.AzSlider] **in the item's own slot on the rail**, rather than
+     * opening a panel somewhere else. The value stays where the user was already looking.
+     */
+    val isSlider: Boolean = false,
+    /** How an [isSlider] item's slider is shaped. Null for every other item. */
+    val sliderConfig: AzSliderConfig? = null,
+    /** The live value of an [isSlider] item, for every variant except `RANGE`. */
+    val sliderValue: Float = 0f,
+    /** The low end of an [isSlider] item's span, for the `RANGE` variant only. */
+    val sliderRangeStart: Float = 0f,
+    /** The high end of an [isSlider] item's span, for the `RANGE` variant only. */
+    val sliderRangeEnd: Float = 1f,
+    /**
+     * How an [isSlider] item renders its value as the label under the track. Null prints the value
+     * rounded to two decimals.
+     */
+    val sliderValueFormatter: @RawValue ((Float) -> String)? = null
 ) : Parcelable {
     companion object {
         /**

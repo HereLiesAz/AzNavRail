@@ -1,5 +1,6 @@
 package com.hereliesaz.aznavrail
 
+import com.hereliesaz.aznavrail.model.AzMotion
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -54,7 +55,7 @@ fun AzLoad(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1400, easing = LinearEasing),
+            animation = tween(durationMillis = AzMotion.IndicatorStepMs * 3, easing = LinearEasing),
             repeatMode = RepeatMode.Restart,
         ),
         label = "az-load-angle",
@@ -67,7 +68,7 @@ fun AzLoad(
         initialValue = 0f,
         targetValue = steps.toFloat(),
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 700 * steps, easing = FastOutSlowInEasing),
+            animation = tween(durationMillis = AzMotion.IndicatorStepMs * steps, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Restart,
         ),
         label = "az-load-morph",

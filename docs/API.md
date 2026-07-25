@@ -174,8 +174,8 @@ fun azKinetics(
     itemEntrance: AzEntrance = AzEntrance.Turnstile,
     itemExit: AzExit = AzExit.Turnstile,
     itemTextStyle: TextStyle? = null,
-    entranceStaggerMs: Int = 60,     // small stagger → items overlap heavily
-    entranceDurationMs: Int = 720,   // per-item duration
+    entranceStaggerMs: Int = AzMotion.ItemStaggerMs,   // 22ms — items overlap heavily
+    entranceDurationMs: Int = AzMotion.ItemDurationMs, // 280ms per item
     entranceEasing: Easing = AzEasing.Wp7Decelerate,
     entranceStartAngle: Float = 90f, // pure edge-on → flat, no fade, no slide
     tiltOnPress: Boolean = false,
@@ -184,6 +184,30 @@ fun azKinetics(
     titleTextStyle: TextStyle? = null
 )
 ~~~
+
+#### The motion scale (`AzMotion`)
+
+Every transition in the library reads its timing from one object, `AzMotion`. Nothing hard-codes a
+duration any more.
+
+| Constant | Value | What it times |
+| --- | ---: | --- |
+| `ItemDurationMs` | 280 ms | One item's own entrance or exit |
+| `ItemStaggerMs` | 22 ms | The gap between one item starting and the next |
+| `PanelDurationMs` | 200 ms | A container arriving or leaving — panel, scrim, popup |
+| `SettleDurationMs` | 240 ms | A layout settling into a new size |
+| `IndicatorStepMs` | 420 ms | One step of a continuous indicator (`AzLoad`'s morph) |
+
+These replaced a 60 ms stagger and a 720 ms item duration that had been copy-pasted as literals into
+six places. At those values an eight-item drawer took **1.2 seconds** to finish arriving, and because
+the turnstile entrance starts each item edge-on — and therefore invisible — the panel sat there empty
+for the first stretch of it. Motion is a guide, not a toll: it should say where a thing came from and
+then get out of the way.
+
+The scale is proportional, so a host wanting a different tempo scales the whole thing through
+`azKinetics(entranceDurationMs = …, entranceStaggerMs = …)` rather than hunting literals. A unit test
+(`AzMotionTest`) holds the budget: a twelve-item cascade must settle inside 650 ms, the stagger must
+stay well under the duration it offsets, and a panel must never outlast its own contents.
 
 * `AzEntrance`: `None | Fade | SlideUp | Turnstile`. `AzExit`: `None | Fade | Turnstile`.
 * `AzEasing.Wp7Decelerate`: the signature fast-out/gentle-settle bezier (the default easing).
@@ -215,6 +239,21 @@ fun azAbout(
 > is open, visible Help cards and any guidance callouts are hidden, and they return exactly where
 > they were when the footer screen closes.
 
+**The reader is dark, in every theme.** It is a full-screen surface the user has stepped aside into —
+long-form prose, a document list, a carousel — and long-form reading on a bright white field is the
+wrong call regardless of what the surrounding app is doing. It used to take
+`MaterialTheme.colorScheme.surface`, which in a light-themed host meant a screenful of white. The
+host's accent still comes through on headings, links, and the close affordance, and a host-supplied
+`translucentBackground` still wins outright.
+
+**Three ways out**, because a full-screen reader that can only be left through one 24 dp icon is a
+room with a keyhole for a door:
+
+* **Drag down anywhere.** The sheet follows the finger, springs back if the pull was not committed,
+  and leaves if it was. A grab handle at the top announces the gesture.
+* **The close icon**, now a 48 dp target rather than a bare glyph. So is the in-reader back arrow.
+* **System back**, which steps out of an open document first and closes the reader from the contents.
+
 ---
 
 ## 3. UI Components
@@ -229,6 +268,50 @@ A form builder component for managing and grouping multiple `AzTextBox` fields t
 
 ### `AzToggle`
 A standalone toggle switch matching the rail's aesthetic.
+
+### `AzSlider`
+The rail's slider, drawn on Material 3 Expressive lines. One instrument in four shapes — they differ
+only in where the active track begins and how many thumbs ride it, which is why they are one
+composable and not four.
+
+~~~kotlin
+@Composable
+fun AzSlider(
+    value: Float = 0f,
+    onValueChange: (Float) -> Unit = {},
+    modifier: Modifier = Modifier,
+    config: AzSliderConfig = AzSliderConfig(),
+    color: Color = Color.Unspecified,
+    trackColor: Color = Color.Unspecified,
+    enabled: Boolean = true,
+    rangeValue: ClosedFloatingPointRange<Float> = 0f..1f,
+    onRangeChange: (ClosedFloatingPointRange<Float>) -> Unit = {},
+    length: Dp? = null,
+    label: String? = null,
+)
+~~~
+
+* `AzSliderVariant`: `CONTINUOUS | STEPPED | CENTERED | RANGE`.
+  * `STEPPED` snaps to evenly-spaced stops and always draws stop indicators — they are the only cue
+    a user gets that the value is quantised, so they are not optional.
+  * `CENTERED` grows the active track *out of* its origin (the middle of the range unless `origin`
+    says otherwise), so the sign of the value is legible without reading the number.
+  * `RANGE` carries two thumbs; the one nearest the touch takes the drag and keeps it for the whole
+    gesture, so the thumbs cannot swap under the finger mid-drag.
+* `AzSliderSize`: `XSMALL | SMALL | MEDIUM | LARGE | XLARGE`. The track thickens faster than the
+  thumb grows, so a large slider reads as a substantial control rather than a magnified small one.
+* `AzSliderOrientation`: `HORIZONTAL | VERTICAL`. A vertical track runs bottom-up — down is less,
+  the direction every physical fader moves.
+
+It is drawn rather than composed out of Material's own `Slider` because the rail has to render
+identically on Android and in Compose Multiplatform, and has to stand in an 80 dp-wide rail slot
+running vertically — which Material's slider will not do.
+
+**In the rail:** `azRailSlider(...)` puts the same control in a rail item that unfolds *in its own
+slot*. Folded it is an ordinary rail button; tapped, the slot grows along the rail and the button
+becomes the track, with the value underneath as the way back. Nothing opens over the rail and nothing
+moves the user elsewhere — the control arrives where their attention already was. The rail forces the
+orientation vertical, because the rail is; everything else the host asked for is honoured.
 
 ### `AzButton`
 A circular or shaped button that automatically resizes text to fit.
