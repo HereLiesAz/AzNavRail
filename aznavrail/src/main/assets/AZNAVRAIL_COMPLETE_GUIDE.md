@@ -1167,6 +1167,20 @@ The overlay also **delivers real window insets to the content**: an `OnApplyWind
 
 ---
 
+### Global loading (`azAdvanced(isLoading = …)`)
+
+Distinct from per-item loading: this draws a screen-centred `AzLoad` **above everything** — rail,
+onscreen content, sheets — and swallows input while it is up, because a screen that is loading is
+not a screen you can act on. Use `azItemState(id, isLoading = …)` when only one item is busy.
+
+### System overlay (`azSettings(overlayService = …)`)
+
+Supplying an `overlayService` implies `enableRailDragging = true` and makes **undocking hand off to
+that service**: the library requests `SYSTEM_ALERT_WINDOW` if needed, then starts it (as a
+foreground service when it extends `AzNavRailOverlayService`). `onOverlayDrag` reports `(dx, dy)`
+while the overlay is dragged; `onRailDrag` reports the same for in-app FAB dragging. Android only —
+on Desktop, Web and iOS undocking stays an in-app floating rail.
+
 ## 11. Popups (`AzPopup`)
 
 An `AzPopup` is a window that is **bound to a rail item**, and the two share state in both
