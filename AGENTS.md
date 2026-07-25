@@ -273,9 +273,18 @@ BOTTOM (mirrored for RIGHT). `AzRailLayoutHelperTest` encodes exactly that. Note
 deliberate product choice, not a physical consequence — a device turned upside down puts its
 physical-left edge on the screen's right, but the spec says the rail stays LEFT.
 
-The `@Az` annotation / KSP code-generation system described in older docs **does not exist** — there
-is no annotation package and no processor module. `AzActivity`/`AzGraphInterface` remain for anyone
-implementing the interface by hand. Do not document the annotations as available.
+The `@Az` annotation / KSP code-generation system **exists** and lives in two modules:
+`:aznavrail-annotations` (a plain JVM jar — no Android or Compose types, so anything can depend on
+it) and `:aznavrail-processor` (KSP + KotlinPoet), registered via `META-INF/services`. It generates
+`<ActivityName>AzGraph : AzGraphInterface`, which `AzActivity.graph` points at.
+
+INVARIANT — the generator emits **plain DSL**, the same calls a developer would write by hand, and
+carries no runtime of its own. Keep it that way: the generated file has to stay readable and
+debuggable, and every annotation must map onto an existing DSL call rather than a private hook.
+Anything the annotations can't express belongs in `AzActivity.configureRail()` (called inside the
+same DSL block) or `azGraphDestinations` (the generated `AzNavHost`'s destinations). The end-to-end
+proof is `SampleApp`'s `AzGraphDemoActivity` — it compiles the generator on every SampleApp build, so
+a broken generator breaks CI rather than rotting quietly.
 
 CONVEYANCE — the library is measured against the Conveyance manifesto
 (github.com/HereLiesAz/Conveyance): guide by example, resourceful minimalism, compassionate design.

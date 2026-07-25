@@ -140,10 +140,11 @@ A host item can auto-expand its sub-items reactively.
 - **The React port lags the Kotlin modules.** The four features added in this cycle are Kotlin-only.
   `aznavrail-react` is versioned separately (`package.json`) from the Gradle artifact, so the two do
   not move together.
-- **No `@Az` annotations / KSP processor.** Older revisions of `docs/API.md` documented an
-  annotation-driven "High-Inference API" that generates an `AzGraph`. No such annotation package or
-  processor exists in this repository. `AzActivity`/`AzGraphInterface` remain for anyone who
-  implements the interface by hand; nothing generates one for you. Use the DSL.
+- **The `@Az` annotations and KSP processor now exist** (`:aznavrail-annotations`,
+  `:aznavrail-processor`) and generate a working `AzGraph`; see `docs/API.md` §1 and
+  `SampleApp/.../AzGraphDemoActivity.kt`. They are Android-only — the generated graph calls
+  `setContent` on a `ComponentActivity`, which has no Compose Multiplatform analogue. CMP consumers
+  use the DSL directly.
 - **CMP test coverage is DSL-level only.** The common test source set exercises the scope/DSL logic
   (unattached subtrees, per-item state). Compose rendering — placement, drag, the triangle glyph —
   is not covered by an automated test on any platform.

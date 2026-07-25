@@ -1,30 +1,92 @@
 # AzNavRail API Reference
 
-This document serves as the technical reference for the AzNavRail library. The library is driven by a **Kotlin DSL** declared inside `AzHostActivityLayout`; the DSL block is re-applied on every recomposition, so items simply read your state and stay in sync.
+This document serves as the technical reference for the AzNavRail library. The library is driven by a **Kotlin DSL** declared inside `AzHostActivityLayout`; the DSL block is re-applied on every recomposition, so items simply read your state and stay in sync. The `@Az` annotations in section 1 are sugar that generates exactly that DSL.
 
-* **[1. High-Inference API](#1-high-inference-api-az--not-shipped)**: *(not shipped — see the note)*
+* **[1. High-Inference API](#1-high-inference-api-az)**: The `@Az` annotation system and its KSP processor.
 * **[2. The Configuration Duality (Scope API)](#2-the-configuration-duality-scope-api)**: The DSL — the primary way to configure the rail.
 * **[3. UI Components](#3-ui-components)**: Standalone components (`AzTextBox`, `AzRoller`, etc.) for building screens.
 * **[4. Low-Level API](#4-low-level-api-manual)**: The underlying layout engine (`AzHostActivityLayout`).
 
 ---
 
-## 1. High-Inference API (`@Az`) — not shipped
+## 1. High-Inference API (`@Az`)
 
-> **This annotation system does not exist in the library.** There is no
-> `com.hereliesaz.aznavrail.annotation` package, no KSP processor module, and nothing that generates
-> an `AzGraph`. The reference that used to live here described `@Az`, `RailItem`, `Toggle`,
-> `Cycler`, `isLoadingProperty` and the rest of the `*Property` reactive bindings as though they were
-> available; none of them are. It has been removed rather than left to send people looking for an
-> API they cannot import.
->
-> **Use [the DSL](#2-the-configuration-duality-scope-api) instead** — `azRailItem`, `azRailToggle`,
-> `azRailCycler`, `azMenuItem`, `azItemState`, and friends, declared inside `AzHostActivityLayout`.
-> It covers everything the annotations claimed to, and it is what every sample in this repository
-> uses.
->
-> `AzActivity` and `AzGraphInterface` are still present in the Android module for anyone who
-> implements `AzGraphInterface` by hand, but nothing generates an implementation for you.
+Declare the rail with annotations and let a KSP processor generate the graph. This is **sugar over
+the DSL**, not a replacement: the generated file is the same DSL you would have written by hand, so
+it is readable and debuggable, and anything the annotations cannot express goes in
+`AzActivity.configureRail()`, which the generated graph calls inside the same block.
+
+### Setup
+
+```kotlin
+plugins { id("com.google.devtools.ksp") }
+
+dependencies {
+    implementation("com.github.HereLiesAz.AzNavRail:aznavrail-annotations:<version>")
+    ksp("com.github.HereLiesAz.AzNavRail:aznavrail-processor:<version>")
+}
+```
+
+### Usage
+
+Annotate the Activity to configure the rail, and its **functions and properties** to declare items.
+The processor emits `<ActivityName>AzGraph`; point `AzActivity.graph` at it.
+
+```kotlin
+@Az(
+    app = App(displayAppName = true, vibrate = true, startDestination = "home"),
+    advanced = Advanced(enableRailDragging = true),
+)
+class MainActivity : AzActivity() {
+    override val graph = MainActivityAzGraph
+
+    var unread by mutableIntStateOf(2)
+    var dark by mutableStateOf(true)
+
+    @Az(rail = RailItem(id = "home", text = "Home", route = "home", badgeProperty = "unread"))
+    fun goHome() { unread = 0 }
+
+    @Az(toggle = Toggle(id = "theme", toggleOnText = "Dark", toggleOffText = "Light", isCheckedProperty = "dark"))
+    fun toggleTheme() = Unit
+
+    override fun azGraphDestinations(builder: NavGraphBuilder) {
+        builder.composable("home") { HomeScreen() }
+    }
+}
+```
+
+A working example lives in `SampleApp/src/main/java/com/hereliesaz/SampleApp/AzGraphDemoActivity.kt`.
+
+### Members of `@Az`
+
+Each is "declared" when its `id` is non-blank (or, for `Divider`, when `enabled` is true), so one
+`@Az` carries exactly the one kind of thing you filled in.
+
+| Member | Declares |
+| :--- | :--- |
+| `app` | `App(displayAppName, packRailButtons, vibrate, dockingSide, startDestination)` — class level. |
+| `advanced` | `Advanced(isLoadingProperty, helpEnabled, enableRailDragging, autoGuidanceEdges)` — class level. |
+| `rail` / `menu` | `RailItem` / `MenuItem` — an item on the rail, or in the drawer only. |
+| `host` / `sub` | `RailHost` and the `SubItem`s that name its `id` as their `hostId`. |
+| `toggle` | `Toggle(isCheckedProperty)` — the generated `onClick` flips that property. |
+| `cycler` | `Cycler(options` or `optionsProperty`, `selectedOptionProperty)` — the generated `onClick` advances it. |
+| `divider` | `Divider(enabled = true)`. |
+
+### Reactive bindings
+
+The `*Property` parameters name a property on the Activity. The DSL block re-runs on every
+recomposition, so a `mutableStateOf` property keeps the item in sync with no further wiring:
+
+* `textProperty` — the item's label.
+* `badgeProperty` — its badge (emitted as `azItemState`).
+* `loadingProperty` — its own loading animation (also `azItemState`).
+* `disabledProperty` — whether it is inert.
+* `isCheckedProperty` — **required** on `Toggle`.
+* `selectedOptionProperty` / `optionsProperty` — **`selectedOptionProperty` required** on `Cycler`.
+* `isLoadingProperty` on `Advanced` — the global overlay. Prefer per-item `loadingProperty`.
+
+On a **function**, the function is the item's `onClick`. On a **property**, the property supplies the
+item's text when no `text`/`textProperty` is given.
 
 
 ## 2. The Configuration Duality (Scope API)

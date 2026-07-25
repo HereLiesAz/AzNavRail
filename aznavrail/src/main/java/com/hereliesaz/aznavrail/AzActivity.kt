@@ -53,4 +53,16 @@ abstract class AzActivity : ComponentActivity() {
     open fun AzNavRailScope.configureRail() {
         // Optional override for dynamic configuration
     }
+
+    /**
+     * Declares the destinations for the `AzNavHost` the generated graph builds when `@Az`'s
+     * `App(startDestination = …)` is set.
+     *
+     * Override it and call `composable("route") { … }` on [builder] for each screen. Leave it alone
+     * (or leave `startDestination` blank) to lay out your own onscreen content in [configureRail]
+     * instead.
+     */
+    open fun azGraphDestinations(builder: androidx.navigation.NavGraphBuilder) {
+        // Optional override; no destinations by default.
+    }
 }
