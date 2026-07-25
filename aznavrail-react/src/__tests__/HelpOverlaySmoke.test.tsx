@@ -27,45 +27,45 @@ const makeItem = (overrides: Partial<AzNavItem> & Pick<AzNavItem, 'id' | 'text'>
 const renderWithProvider = (ui: React.ReactElement) => render(ui);
 
 describe('HelpOverlay smoke', () => {
-  it('renders a card for an item that has `info` text (info content drives card visibility)', () => {
+  it('renders a card for an item that has `info` text (info content drives card visibility)', async () => {
     // Failure: If "Home" is not in the tree, the itemsWithInfo filter is rejecting
     // items with valid `info`.
     const items = [
       makeItem({ id: 'home', text: 'Home', info: 'Home button info text.' }),
     ];
-    const { getByText } = renderWithProvider(
+    const { getByText } = await renderWithProvider(
       <HelpOverlay items={items} onDismiss={jest.fn()} helpList={{}} itemBounds={{}} />
     );
     expect(getByText('Home')).toBeTruthy();
     expect(getByText('Home button info text.')).toBeTruthy();
   });
 
-  it('renders a card for an item that has only a helpList entry (helpList drives visibility too)', () => {
+  it('renders a card for an item that has only a helpList entry (helpList drives visibility too)', async () => {
     // Failure: If the card is missing, the itemsWithInfo filter is not checking
     // helpList[item.id]?.trim().
     const items = [makeItem({ id: 'search', text: 'Search' })];
     const helpList = { search: 'Search functionality help.' };
-    const { getByText } = renderWithProvider(
+    const { getByText } = await renderWithProvider(
       <HelpOverlay items={items} onDismiss={jest.fn()} helpList={helpList} itemBounds={{}} />
     );
     expect(getByText('Search')).toBeTruthy();
     expect(getByText('Search functionality help.')).toBeTruthy();
   });
 
-  it('skips items that have neither info nor helpList entry (silent items render nothing)', () => {
+  it('skips items that have neither info nor helpList entry (silent items render nothing)', async () => {
     // Failure: If "Empty" appears, the filter is letting through items with no help text.
     const items = [
       makeItem({ id: 'empty', text: 'Empty' }),
       makeItem({ id: 'visible', text: 'Visible', info: 'Has info.' }),
     ];
-    const { queryByText, getByText } = renderWithProvider(
+    const { queryByText, getByText } = await renderWithProvider(
       <HelpOverlay items={items} onDismiss={jest.fn()} helpList={{}} itemBounds={{}} />
     );
     expect(queryByText('Empty')).toBeNull();
     expect(getByText('Visible')).toBeTruthy();
   });
 
-  it('renders multiple cards (each item with info produces its own card)', () => {
+  it('renders multiple cards (each item with info produces its own card)', async () => {
     // Failure: If only one card renders, the .map(i => ...) is being short-circuited
     // by a stray break or filter.
     const items = [
@@ -73,7 +73,7 @@ describe('HelpOverlay smoke', () => {
       makeItem({ id: 'b', text: 'Bravo', info: 'B info' }),
       makeItem({ id: 'c', text: 'Charlie', info: 'C info' }),
     ];
-    const { getByText } = renderWithProvider(
+    const { getByText } = await renderWithProvider(
       <HelpOverlay items={items} onDismiss={jest.fn()} helpList={{}} itemBounds={{}} />
     );
     expect(getByText('Alpha')).toBeTruthy();
@@ -81,29 +81,29 @@ describe('HelpOverlay smoke', () => {
     expect(getByText('Charlie')).toBeTruthy();
   });
 
-  it('mounts cleanly with sample itemBounds (bounds drive connector-line geometry)', () => {
+  it('mounts cleanly with sample itemBounds (bounds drive connector-line geometry)', async () => {
     // Failure: If this throws, the line-drawing block is dereferencing navBounds
     // without checking it exists.
     const items = [makeItem({ id: 'home', text: 'Home', info: 'Info.' })];
     const itemBounds = { home: { x: 0, y: 50, width: 56, height: 56 } };
-    expect(() =>
+    await expect(
       renderWithProvider(
         <HelpOverlay items={items} onDismiss={jest.fn()} helpList={{}} itemBounds={itemBounds} />
       )
-    ).not.toThrow();
+    ).resolves.toBeTruthy();
   });
 
-  it('mounts with no items at all (empty list is a valid input)', () => {
+  it('mounts with no items at all (empty list is a valid input)', async () => {
     // Failure: If this throws, the empty-array path through itemsWithInfo is hitting
     // a method on undefined.
-    expect(() =>
+    await expect(
       renderWithProvider(
         <HelpOverlay items={[]} onDismiss={jest.fn()} helpList={{}} itemBounds={{}} />
       )
-    ).not.toThrow();
+    ).resolves.toBeTruthy();
   });
 
-  it('renders only nested sub-items when nestedRailVisibleId is set (overlay scopes to nested host)', () => {
+  it('renders only nested sub-items when nestedRailVisibleId is set (overlay scopes to nested host)', async () => {
     // Failure: If the top-level item appears while a nested rail is visible, the
     // allItems memo is not switching to nestedHost.nestedRailItems.
     const items = [
@@ -116,7 +116,7 @@ describe('HelpOverlay smoke', () => {
         ],
       } as any),
     ];
-    const { getByText, queryByText } = renderWithProvider(
+    const { getByText, queryByText } = await renderWithProvider(
       <HelpOverlay
         items={items}
         onDismiss={jest.fn()}

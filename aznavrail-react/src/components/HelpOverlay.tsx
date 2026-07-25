@@ -153,7 +153,7 @@ export const HelpOverlay: React.FC<HelpOverlayProps> = ({ items, onDismiss, help
 
 const styles = StyleSheet.create({
     overlay: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor: 'rgba(0,0,0,0.7)',
         zIndex: 9999,
     },

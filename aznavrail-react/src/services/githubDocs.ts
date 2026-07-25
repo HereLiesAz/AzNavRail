@@ -19,15 +19,23 @@ export function parseRepo(repoUrl: string): [string, string] | null {
   return [owner, repo];
 }
 
-/** Turns `MIGRATION_GUIDE.md` into "Migration Guide". */
+/**
+ * Turns `MIGRATION_GUIDE.md` into "Migration Guide", and leaves `README.md` / `API.md` alone.
+ *
+ * A single all-caps token is a name (README, API, DSL) and is left as it was written. Anything
+ * that separates into words is a SHOUTED sentence, and a SHOUTED sentence is not a title, so it
+ * gets title-cased.
+ */
 export function humanize(fileName: string): string {
-  return fileName
+  const words = fileName
     .replace(/\.md$/i, '')
     .replace(/[-_]/g, ' ')
     .split(' ')
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
+    .filter(Boolean);
+
+  if (words.length === 1 && words[0] === words[0].toUpperCase()) return words[0];
+
+  return words.map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 }
 
 /** Parses a GitHub contents-API JSON array into the `.md` entries it contains. */

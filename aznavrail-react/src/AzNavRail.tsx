@@ -193,8 +193,13 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   const [nestedRailVisible, setNestedRailVisible] = useState<string | null>(null);
   const [anchorPosition, setAnchorPosition] = useState<{ x: number, y: number, width: number, height: number } | undefined>(undefined);
   const [itemBounds, setItemBounds] = useState<Record<string, any>>({});
-  const [secLocClicks, setSecLocClicks] = useState(0);
-  const [secLocVisible, setSecLocVisible] = useState(false);
+  // The secret-location easter egg (nine long-presses on the credit line) is wired but has no
+  // payoff yet. These two reads keep the state honest without rendering anything: they used to be
+  // `{flag && <View />} {/* Silence unused var */}` inside the content View, and the stray space
+  // before the comment rendered a bare " " text node — an invariant violation that crashes a real
+  // React Native app, and which a hand-rolled `react-native` test mock had been hiding.
+  const [, setSecLocClicks] = useState(0);
+  const [, setSecLocVisible] = useState(false);
 
   const handleItemLayout = useCallback((id: string, e: any) => {
       const target = e.target as any;
@@ -583,7 +588,10 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       const subItems = subItemsMap[item.id] || [];
       const isRect = item.shape === AzButtonShape.RECTANGLE;
       const commonProps = {
-          key: item.id,
+          // A rail item's declared id is its identity everywhere else in this library, so it is its
+          // identity on screen too: consumers (and these tests) can address any item by the id they
+          // gave it, without knowing what it renders as.
+          testID: item.id,
           color: overrideConfig.activeColor && (item.isChecked || item.id === currentDestination) ? overrideConfig.activeColor : item.color,
           shape: item.shape || overrideConfig.defaultShape,
           enabled: !item.disabled,
@@ -634,6 +642,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       if (item.isCycler) {
           return (
               <AzCycler
+                  key={item.id}
                   {...commonProps}
                   fillColor={item.fillColor}
                   options={item.options || []}
@@ -648,6 +657,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       if (item.isToggle) {
           return (
               <AzToggle
+                  key={item.id}
                   {...commonProps}
                   fillColor={item.fillColor}
                   isChecked={item.isChecked || false}
@@ -871,7 +881,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                 onPress={() => setIsExpanded(false)}
                 activeOpacity={1}
                 style={{
-                  ...(StyleSheet.absoluteFillObject as object),
+                  ...(StyleSheet.absoluteFill as object),
                   backgroundColor: `rgba(0,0,0,${Math.max(0, Math.min(1, dimBehindMenuAlpha))})`,
                   zIndex: 5,
                 }}
@@ -954,7 +964,6 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                         }}
                         anchorPosition={anchorPosition}
                         dockingSide={effectiveConfig.dockingSide}
-                        helpList={effectiveConfig.helpList}
                         activeButtonSize={activeButtonSize}
                     />
                 );
@@ -963,8 +972,6 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
             {/* Content with Safe Zones */}
             <View style={{ flex: 1, marginTop: '20%', marginBottom: '10%' }}>
                 {children}
-                {secLocVisible && <View />} {/* Silence unused var */}
-                {secLocClicks > 0 && <View />} {/* Silence unused var */}
             </View>
 
             {isLoading && (
@@ -1196,7 +1203,7 @@ const styles = StyleSheet.create({
       borderTopColor: '#ccc',
   },
   loaderOverlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: 'rgba(255,255,255,0.5)',
       alignItems: 'center',
       justifyContent: 'center',
@@ -1204,7 +1211,7 @@ const styles = StyleSheet.create({
       elevation: 10,
   },
   infoOverlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: 'rgba(0,0,0,0.85)',
       zIndex: 20000,
       paddingTop: 40,

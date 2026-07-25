@@ -33,6 +33,7 @@ export interface AzButtonProps {
    * node (including an `<Image>` or a `react-native-svg` `<Svg>`) or an image source
    * (`require()` id / `{ uri }`). Graphics fill the shape (cover) and are clipped to it.
    */
+  content?: React.ReactNode | ImageSourcePropType;
   /** Optional size in dp, defaults to 72. */
   size?: number;
   /** Badge text to display. */
@@ -76,6 +77,7 @@ export const AzButton: React.FC<AzButtonProps> = ({
     } else {
       setShowBadge(false);
     }
+    return undefined;
   }, [badge, persistentBadge]);
 
   const containerStyle: ViewStyle = {

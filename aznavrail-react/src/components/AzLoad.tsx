@@ -7,11 +7,16 @@ export interface AzLoadProps {
     size?: number | 'small' | 'large';
     /** Spinner stroke color. Defaults to the library primary color. */
     color?: string;
+    /** Test identifier. Defaults to [AzLoadTestID] so a loading state is findable without guessing. */
+    testID?: string;
 }
 
+/** The identity an `AzLoad` answers to in tests and for assistive tech. */
+export const AzLoadTestID = 'az-load';
+
 /** Card-style activity indicator overlay used by the rail when `isLoading` is set. */
-export const AzLoad: React.FC<AzLoadProps> = ({ size = "large", color = "#6200ee" }) => (
-    <View style={styles.container}>
+export const AzLoad: React.FC<AzLoadProps> = ({ size = "large", color = "#6200ee", testID = AzLoadTestID }) => (
+    <View style={styles.container} testID={testID} accessibilityRole="progressbar" accessibilityLabel="loading">
         <ActivityIndicator size={size} color={color} />
     </View>
 );

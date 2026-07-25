@@ -1,6 +1,9 @@
+/**
+ * @jest-environment jsdom
+ */
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import '@testing-library/jest-dom';
 import AzToggle from './AzToggle';
 
 describe('AzToggle', () => {
@@ -24,7 +27,7 @@ describe('AzToggle', () => {
   });
 
   it('calls onValueChange when clicked', () => {
-    const handleValueChange = vi.fn();
+    const handleValueChange = jest.fn();
     render(<AzToggle value={false} onValueChange={handleValueChange} />);
     const checkbox = screen.getByRole('checkbox');
     fireEvent.click(checkbox);
@@ -33,7 +36,7 @@ describe('AzToggle', () => {
   });
 
   it('does not call onValueChange when disabled', () => {
-    const handleValueChange = vi.fn();
+    const handleValueChange = jest.fn();
     render(<AzToggle value={false} onValueChange={handleValueChange} enabled={false} />);
     const checkbox = screen.getByRole('checkbox');
     fireEvent.click(checkbox);

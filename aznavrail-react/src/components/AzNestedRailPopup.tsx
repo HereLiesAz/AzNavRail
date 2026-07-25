@@ -19,7 +19,6 @@ interface AzNestedRailPopupProps {
     anchorPosition?: { x: number, y: number, width: number, height: number };
     /** Which side the parent rail is docked to, used to position the popup correctly. */
     dockingSide: 'LEFT' | 'RIGHT';
-    /** Per-item help text map forwarded to the help overlay for items inside the popup. */
     /** Optional active button size for dynamic shrinking logic. */
     activeButtonSize?: number;
 }

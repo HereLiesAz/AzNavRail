@@ -34,27 +34,21 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      # Install the React lib and build its JS/typescript output. `bob build` emits the JS
-      # targets reliably; the typescript target is fragile in CI, so we fall back to a direct
-      # tsc invocation that force-emits declarations even on pre-existing type errors.
+      # sample-pwa consumes aznavrail-react's built `lib/`, which is gitignored — so it has to be
+      # built here, and the build has to be allowed to fail the job. It used to run as
+      # `bob build || true` with a force-emit tsc fallback; that masked a genuine build break and
+      # left a stale `lib/` in place, which then failed the PWA build with unresolved imports.
       - name: Install aznavrail-react deps
         working-directory: aznavrail-react
-        run: npm install --legacy-peer-deps --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
-      - name: Build aznavrail-react (JS targets)
+      - name: Build aznavrail-react
         working-directory: aznavrail-react
-        run: npx bob build || true
-
-      - name: Emit aznavrail-react type declarations
-        working-directory: aznavrail-react
-        run: |
-          node node_modules/typescript/bin/tsc -p tsconfig.build.json \
-            --emitDeclarationOnly --noEmitOnError false --skipLibCheck || true
-          test -f lib/typescript/index.d.ts
+        run: npm run build
 
       - name: Install sample-pwa deps
         working-directory: sample-pwa
-        run: npm install --legacy-peer-deps --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Build sample-pwa
         working-directory: sample-pwa

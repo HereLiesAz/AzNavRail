@@ -252,7 +252,7 @@ function isAppIcon(url: string): boolean {
 }
 
 const styles = StyleSheet.create({
-  overlay: { ...StyleSheet.absoluteFillObject, zIndex: 3000, paddingTop: '6%', paddingBottom: '10%', paddingHorizontal: 20 },
+  overlay: { ...StyleSheet.absoluteFill, zIndex: 3000, paddingTop: '6%', paddingBottom: '10%', paddingHorizontal: 20 },
   flex: { flex: 1 },
   half: { flex: 1 },
   divider: { height: 1, marginVertical: 8 },

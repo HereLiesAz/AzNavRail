@@ -129,6 +129,7 @@ export const RailMenuItem: React.FC<RailMenuItemProps> = ({
         } else {
             setShowBadge(false);
         }
+        return undefined;
     }, [item.badge, item.persistentBadge]);
 
     const handlePress = () => {

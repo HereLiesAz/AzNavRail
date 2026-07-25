@@ -1,11 +1,15 @@
+/**
+ * @jest-environment jsdom
+ */
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import '@testing-library/jest-dom';
 import AzButton from './AzButton';
 
 // Mock the useFitText hook
-vi.mock('../hooks/useFitText', () => ({
-  default: () => ({ current: null })
+jest.mock('../hooks/useFitText', () => ({
+  __esModule: true,
+  default: () => ({ current: null }),
 }));
 
 describe('AzButton', () => {
@@ -15,7 +19,7 @@ describe('AzButton', () => {
   });
 
   it('calls onClick when clicked and enabled', () => {
-    const handleClick = vi.fn();
+    const handleClick = jest.fn();
     render(<AzButton text="Click Me" onClick={handleClick} />);
     const button = screen.getByRole('button');
     fireEvent.click(button);
@@ -23,7 +27,7 @@ describe('AzButton', () => {
   });
 
   it('does not call onClick when enabled is false', () => {
-    const handleClick = vi.fn();
+    const handleClick = jest.fn();
     render(<AzButton text="Click Me" onClick={handleClick} enabled={false} />);
     const button = screen.getByRole('button');
     expect(button).toBeDisabled();
@@ -32,7 +36,7 @@ describe('AzButton', () => {
   });
 
   it('does not call onClick when isLoading is true', () => {
-    const handleClick = vi.fn();
+    const handleClick = jest.fn();
     render(<AzButton text="Click Me" onClick={handleClick} isLoading={true} />);
     const button = screen.getByRole('button');
     fireEvent.click(button);

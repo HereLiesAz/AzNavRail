@@ -1,13 +1,14 @@
 {
+  "extends": "@react-native/typescript-config",
   "compilerOptions": {
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "jsx": "react-native",
-    "lib": ["es2019"],
+    "lib": ["es2019", "dom"],
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
     "noImplicitUseStrict": false,
@@ -18,6 +19,9 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "esnext",
-    "types": ["node", "jest", "react-test-renderer"]
-  }
+    "types": ["node", "jest", "@testing-library/jest-dom"]
+  },
+  // `showcase/` is a separate Vite app with its own tsconfig and its own dependencies; type-checking
+  // the library must not reach into it.
+  "exclude": ["node_modules", "lib", "showcase"]
 }

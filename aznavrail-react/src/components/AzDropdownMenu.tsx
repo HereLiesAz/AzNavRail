@@ -154,8 +154,13 @@ const JustifiedDropdownLine: React.FC<{
   const scaledFontSize = DROPDOWN_BASE_FONT_PX * fontScale;
   return (
     <>
+      {/* The natural-width measurer. It is a second copy of the same label, so it must be invisible
+          to assistive tech as well as to the eye — otherwise a screen reader announces every menu
+          row twice. */}
       <Text
         onLayout={onLabelLayout}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
         style={[
           styles.menuRowText,
           { position: 'absolute', opacity: 0, left: -9999, top: -9999 } as any,
@@ -337,14 +342,14 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
 
   const openMenu = () => {
     if (vibrate) Vibration.vibrate();
-    if (triggerRef.current) {
-      triggerRef.current.measureInWindow((x, y, width, height) => {
-        setAnchor({ x, y, width, height });
-        setOpen(true);
-      });
-    } else {
-      setOpen(true);
-    }
+    // Open first. The panel's visibility must not be hostage to a measurement callback: if the
+    // trigger has not been laid out yet, or the host does not implement `measureInWindow`, the
+    // callback never fires and the menu simply never opens. The anchor refines the position when
+    // the measurement does land, and the fallback placement holds until then.
+    setOpen(true);
+    triggerRef.current?.measureInWindow((x, y, width, height) => {
+      setAnchor({ x, y, width, height });
+    });
   };
 
   // Reactive so the panel re-positions on orientation / split-screen changes.

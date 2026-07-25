@@ -257,7 +257,7 @@ export const AzHostActivityLayout: React.FC<AzHostActivityLayoutProps> = (props)
       <View style={styles.container}>
         {/* Backgrounds */}
         {orderBackgrounds(backgrounds, pagesEnabled).map(bg => (
-          <View key={bg.id} style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
+          <View key={bg.id} style={StyleSheet.absoluteFill} pointerEvents="box-none">
             {bg.content}
           </View>
         ))}
@@ -283,7 +283,7 @@ export const AzHostActivityLayout: React.FC<AzHostActivityLayoutProps> = (props)
 
         {/* Onscreen Fragments */}
         <View style={[
-            StyleSheet.absoluteFillObject,
+            StyleSheet.absoluteFill,
             {
               paddingTop: safeTop,
               paddingBottom: safeBottom,
@@ -316,7 +316,7 @@ export const AzHostActivityLayout: React.FC<AzHostActivityLayoutProps> = (props)
 // but we provide the component for parity).
 /** Generic nav-host wrapper provided for API parity with the Compose library; renders children in an absolute fill view. */
 export const AzNavHost: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
-  return <View style={StyleSheet.absoluteFillObject}>{children}</View>;
+  return <View style={StyleSheet.absoluteFill}>{children}</View>;
 };
 
 const styles = StyleSheet.create({

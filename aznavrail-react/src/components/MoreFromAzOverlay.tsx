@@ -74,7 +74,7 @@ export const MoreFromAzOverlay: React.FC<MoreFromAzOverlayProps> = ({ jsonUrl, s
 };
 
 const styles = StyleSheet.create({
-  overlay: { ...StyleSheet.absoluteFillObject, zIndex: 3100, paddingTop: '6%', paddingBottom: '10%', paddingHorizontal: 20 },
+  overlay: { ...StyleSheet.absoluteFill, zIndex: 3100, paddingTop: '6%', paddingBottom: '10%', paddingHorizontal: 20 },
   flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   title: { fontSize: 30, fontWeight: 'bold', marginLeft: 8 },

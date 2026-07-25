@@ -65,7 +65,7 @@ let edgeCounter = 0;
 export const AzEdge: React.FC<AzEdgeProps> = (props) => {
   const { from, to = null } = props;
   const reg = useAzGuidanceContext();
-  const keyRef = useRef<string>();
+  const keyRef = useRef<string | undefined>(undefined);
   if (!keyRef.current) keyRef.current = `az_edge_${edgeCounter++}`;
   const propsRef = useRef(props);
   propsRef.current = props;
@@ -153,7 +153,7 @@ export interface AzSuppressGuideProps {
 let suppressCounter = 0;
 export const AzSuppressGuide: React.FC<AzSuppressGuideProps> = ({ predicate, settleMs = 700 }) => {
   const reg = useAzGuidanceContext();
-  const keyRef = useRef<string>();
+  const keyRef = useRef<string | undefined>(undefined);
   if (!keyRef.current) keyRef.current = `az_suppress_${suppressCounter++}`;
   const predRef = useRef(predicate);
   predRef.current = predicate;

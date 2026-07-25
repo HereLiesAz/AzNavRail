@@ -52,6 +52,11 @@ const MenuItem = ({
     onFocus,
   } = item;
 
+  // Hooks first, unconditionally. `rowRef` used to be declared below the divider early-return, so a
+  // row that changed between divider and item — a reorder, a toggled section — changed this
+  // component's hook count between renders, which React treats as a fatal error.
+  const rowRef = useRef(null);
+
   if (isDivider) {
     return <div className="az-menu-divider" style={{ backgroundColor: color, opacity: 0.2 }} />;
   }
@@ -119,7 +124,6 @@ const MenuItem = ({
         ? 'right'
         : 'left';
 
-  const rowRef = useRef(null);
   const label = (isToggle ? (isChecked ? toggleOnText : toggleOffText) : (isCycler ? selectedOption : text)) || '';
   // Split up-front on `\n` so each line owns its own measurement + solve. Compose does this too;
   // measuring the whole label at once folds newline width into `naturalWidth` and inflates the
