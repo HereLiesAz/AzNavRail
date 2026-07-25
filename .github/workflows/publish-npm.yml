@@ -1,5 +1,8 @@
 name: Publish to GitHub Packages
 
+# Single source of truth for publishing the React package. A second workflow
+# (npm-publish.yml) used to publish the same package on `release: published`, so a
+# tagged release fired both and whichever lost the race failed on a duplicate version.
 on:
   push:
     tags:

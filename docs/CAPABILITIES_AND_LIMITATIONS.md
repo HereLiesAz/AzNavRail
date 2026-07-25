@@ -119,3 +119,34 @@ A host item can auto-expand its sub-items reactively.
 | About `.azignore` filtering | ✅ | ✅ |
 | Pinned "More from Az", tap-to-open cards, real app icon | ✅ | ✅ |
 | Clear Help/Tutorial while About open | ✅ | ✅ |
+
+---
+
+## Feature parity (as of this release)
+
+| Feature | Android (`aznavrail`) | CMP (`aznavrail-cmp`) | React (`aznavrail-react`) |
+| :--- | :--- | :--- | :--- |
+| Drop-down trigger set + title-row placement | ✅ | ✅ | ❌ not ported |
+| Unattached hosts (`azUnattachedHostItem`) | ✅ | ✅ | ❌ not ported |
+| Per-item badge / loading (`azItemState`) | ✅ | ✅ | ❌ not ported |
+| Popups (`azPopup`) + warning triangle | ✅ | ✅ | ❌ not ported |
+| Pinned "More from Az" rail item | ✅ | ✅ | ✅ |
+| System overlay (`overlayService`) | ✅ | Android target only | ❌ n/a |
+| Dissolve overlay on item tap | ✅ | ❌ not ported | ❌ |
+| Unit tests | ✅ | ✅ (DSL-level only) | ✅ |
+
+## Known gaps
+
+- **The React port lags the Kotlin modules.** The four features added in this cycle are Kotlin-only.
+  `aznavrail-react` is versioned separately (`package.json`) from the Gradle artifact, so the two do
+  not move together.
+- **No `@Az` annotations / KSP processor.** Older revisions of `docs/API.md` documented an
+  annotation-driven "High-Inference API" that generates an `AzGraph`. No such annotation package or
+  processor exists in this repository. `AzActivity`/`AzGraphInterface` remain for anyone who
+  implements the interface by hand; nothing generates one for you. Use the DSL.
+- **CMP test coverage is DSL-level only.** The common test source set exercises the scope/DSL logic
+  (unattached subtrees, per-item state). Compose rendering — placement, drag, the triangle glyph —
+  is not covered by an automated test on any platform.
+- **The physical-docking 180° rule is a product choice, not physics.** Docked LEFT and turned upside
+  down, the rail stays on the LEFT even though the device's physical-left edge is then on the
+  screen's right. `AzRailLayoutHelper` and its test both encode the documented rule.

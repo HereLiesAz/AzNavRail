@@ -77,7 +77,10 @@ kotlin {
                 // JetBrains multiplatform fork of AndroidX Navigation — the API is
                 // package-compatible with `androidx.navigation`, so files ported from the Android
                 // sibling generally need no import changes.
-                implementation("org.jetbrains.androidx.navigation:navigation-compose:$navigationComposeCmpVersion")
+                // `api`, not `implementation`: AzHostActivityLayout/AzNavHost take a
+                // NavHostController in their public signatures, so consumers must be able to
+                // resolve those types transitively.
+                api("org.jetbrains.androidx.navigation:navigation-compose:$navigationComposeCmpVersion")
                 // Network layer (About docs + More-from-Az carousel). Ktor's no-arg `HttpClient()`
                 // auto-selects whichever engine artifact is on each target's classpath, so
                 // commonMain needs only the core + the JSON runtime; the per-target engines live in
@@ -94,6 +97,15 @@ kotlin {
                 implementation("com.russhwolf:multiplatform-settings-no-arg:$multiplatformSettingsVersion")
             }
         }
+        // The CMP module had no test source set at all — every unit test in the repo lived in the
+        // Android module, so the multiplatform code (which is what most of the library now is) was
+        // shipping untested. This adds the common one.
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
+
         val androidMain by getting {
             dependencies {
                 // BackHandler's `actual` on Android delegates to androidx.activity's BackHandler.

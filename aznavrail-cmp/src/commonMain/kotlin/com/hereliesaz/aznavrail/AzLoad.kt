@@ -13,6 +13,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
@@ -60,7 +62,10 @@ fun AzLoad(
                 width = 2.dp,
                 color = ringColor,
                 shape = CircleShape
-            ),
+            )
+            // The label is dropped at button scale, so the spinner needs an identity of its own for
+            // accessibility (and for tests) that does not depend on rendering text.
+            .semantics { contentDescription = AzLoadContentDescription },
         contentAlignment = Alignment.Center
     ) {
         if (showLabel) {
@@ -74,3 +79,6 @@ fun AzLoad(
         }
     }
 }
+
+/** Accessibility label (and test handle) for every [AzLoad] spinner, at any size. */
+const val AzLoadContentDescription: String = "loading"

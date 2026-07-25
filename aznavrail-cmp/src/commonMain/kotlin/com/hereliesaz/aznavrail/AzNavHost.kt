@@ -32,6 +32,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
@@ -547,6 +549,22 @@ fun AzHostActivityLayout(
                 onSwipeRight = item.onSwipeRight,
                 content = item.content,
             )
+        }
+
+        // Global loading state (`azAdvanced(isLoading = …)` / `azSettings(isLoading = …)`). Documented
+        // since forever as "a full-screen AzLoad spinner"; it had never been read by anything. It
+        // draws above the rail and swallows input, because a screen that is loading is not a screen
+        // you can act on.
+        if (railScope.advancedConfig.isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(4f)
+                    .pointerInput(Unit) { detectTapGestures { } },
+                contentAlignment = Alignment.Center,
+            ) {
+                AzLoad()
+            }
         }
 
         // Popups sit above the sheets: they are the layer that interrupts, and a warning raised

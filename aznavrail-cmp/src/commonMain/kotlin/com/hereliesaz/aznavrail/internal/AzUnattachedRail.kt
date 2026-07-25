@@ -228,6 +228,9 @@ internal fun AzUnattachedRail(
                 hosts = hosts,
                 modifier = Modifier
                     .wrapContentSize(Alignment.TopStart, unbounded = true)
+                    // A gutter around the column: without it the stack is wall-to-wall clickable
+                    // buttons and the drag gesture has nowhere to begin.
+                    .padding(AzNavRailDefaults.RailContentVerticalArrangement)
                     .offset {
                         val p = position
                         IntOffset(p?.x?.roundToInt() ?: 0, p?.y?.roundToInt() ?: 0)
@@ -343,7 +346,10 @@ private fun UnattachedNode(
     )
 
     if (item.isHost && hostStates[item.id] == true) {
-        val children = scope.navItems.filter { it.isSubItem && it.hostId == item.id && it.isRailItem }
+        // Every child, not just the rail-flavoured ones: an unattached host is removed from
+        // the drawer along with its whole subtree, so this stack is the only place a
+        // `azMenuSubItem` attached to it can be drawn at all.
+        val children = scope.navItems.filter { it.isSubItem && it.hostId == item.id }
         children.forEach { child ->
             UnattachedNode(
                 item = child,

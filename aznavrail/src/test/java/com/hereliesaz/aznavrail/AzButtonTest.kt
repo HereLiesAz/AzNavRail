@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
@@ -76,8 +77,11 @@ class AzButtonTest {
         composeTestRule.onNodeWithText("Loading").assertIsDisplayed() // assertIsDisplayed checks if it's placed, not if visible/alpha > 0
         // We can inspect semantics or just rely on manual verification/visuals, but here we confirm it renders.
 
-        // To be more precise, we could check if "loading..." text from AzLoad is present.
-        composeTestRule.onNodeWithText("loading...").assertIsDisplayed()
+        // AzLoad scales itself to the button and drops its "loading..." label at that size, so the
+        // spinner is asserted by its content description rather than by rendered text.
+        composeTestRule.onNodeWithContentDescription(
+            com.hereliesaz.aznavrail.AzLoadContentDescription
+        ).assertExists()
     }
 
     @Test

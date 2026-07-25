@@ -245,7 +245,7 @@ data class AzEdge(
  * edge share a cursor, consistent with routing's dedup-by-(text,highlight)). Uses string fields only,
  * so it is independent of any lambda identity.
  */
-internal fun AzEdge.stepKey(): String = "$from ${to ?: ""} ${instruction.text}"
+internal fun AzEdge.stepKey(): String = "$from\u0000${to ?: ""}\u0000${instruction.text}"
 
 /**
  * A developer-declared guidance target. The engine routes from the current status toward [target]; the

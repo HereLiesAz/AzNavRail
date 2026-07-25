@@ -65,7 +65,9 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
 
     api(libs.coil.compose)
-    implementation(libs.androidx.navigation.compose)
+    // `api`, not `implementation`: AzHostActivityLayout/AzNavHost expose NavHostController in
+    // their public signatures.
+    api(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.activity.compose)
 

@@ -79,6 +79,7 @@ import com.hereliesaz.aznavrail.internal.MenuItem
 import com.hereliesaz.aznavrail.internal.rememberAzKineticModifier
 import com.hereliesaz.aznavrail.internal.rememberAzClosingState
 import com.hereliesaz.aznavrail.internal.RailItems
+import com.hereliesaz.aznavrail.internal.rememberAzOverlayLauncher
 import com.hereliesaz.aznavrail.internal.toComposeShape
 import com.hereliesaz.aznavrail.model.AzExit
 import com.hereliesaz.aznavrail.internal.SecretScreens
@@ -405,6 +406,15 @@ fun AzNavRail(
         }
     }
 
+
+    // The documented "rail as a system-wide overlay" mode: when the developer supplied an
+    // `overlayService`, undocking hands off to that service instead of only floating in-app. The
+    // config has always been collected; this is the edge that finally acts on it.
+    val launchOverlay = rememberAzOverlayLauncher()
+    LaunchedEffect(isFloating) {
+        if (isFloating) scope.advancedConfig.overlayService?.let { launchOverlay(it) }
+    }
+
     LaunchedEffect(isExpanded) {
         onExpandedChange?.invoke(isExpanded)
         if (!isExpanded) {
@@ -538,6 +548,13 @@ fun AzNavRail(
                             if (isFloating) {
                                 offsetX += dragAmount.x
                                 offsetY += dragAmount.y
+                                // Report the drag to the consumer. `onOverlayDrag` is the
+                                // system-overlay flavour, `onRailDrag` the in-app one; both were
+                                // collected by azAdvanced/azSettings but never invoked.
+                                scope.advancedConfig.onRailDrag?.invoke(dragAmount.x, dragAmount.y)
+                                if (scope.advancedConfig.overlayService != null) {
+                                    scope.advancedConfig.onOverlayDrag?.invoke(dragAmount.x, dragAmount.y)
+                                }
                                 val minY = screenHeightPx * 0.1f
                                 val maxY = maxOf(minY, (screenHeightPx * 0.9f) - railContentHeight)
                                 offsetY = offsetY.coerceIn(minY, maxY)
