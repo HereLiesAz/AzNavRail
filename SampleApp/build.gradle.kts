@@ -1,4 +1,5 @@
 plugins {
+    alias(libs.plugins.ksp)
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.parcelize)
@@ -34,6 +35,9 @@ kotlin {
 }
 
 dependencies {
+    // The High-Inference API: `@Az` annotations + the processor that turns them into an AzGraph.
+    implementation(project(":aznavrail-annotations"))
+    ksp(project(":aznavrail-processor"))
     implementation(project(":aznavrail"))
 
     implementation(platform(libs.androidx.compose.bom))

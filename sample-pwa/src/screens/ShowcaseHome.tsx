@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { useState } from 'react'
 
 const entries: { route: string; title: string; blurb: string }[] = [

@@ -2,7 +2,7 @@ package com.hereliesaz.aznavrail
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -17,11 +17,15 @@ class AzLoadTest {
     val composeTestRule = createComposeRule()
 
     @Test
-    fun azLoad_renders_text() {
+    fun azLoad_renders() {
         composeTestRule.setContent {
             AzLoad()
         }
 
-        composeTestRule.onNodeWithText("loading...").assertIsDisplayed()
+        // The indicator is a morphing shape now, not a ring captioned "loading...". A spinner that
+        // prints the word "loading" is two elements doing one element's job — and that word was the
+        // only English sentence the core rail put in front of a user. Its identity for assistive
+        // tech (and for this assertion) is its content description.
+        composeTestRule.onNodeWithContentDescription(AzLoadContentDescription).assertIsDisplayed()
     }
 }

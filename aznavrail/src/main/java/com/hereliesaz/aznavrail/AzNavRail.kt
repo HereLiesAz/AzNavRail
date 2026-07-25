@@ -78,6 +78,7 @@ import com.hereliesaz.aznavrail.internal.CyclerTransientState
 import com.hereliesaz.aznavrail.internal.Footer
 import com.hereliesaz.aznavrail.internal.MenuItem
 import com.hereliesaz.aznavrail.internal.RailItems
+import com.hereliesaz.aznavrail.internal.rememberAzHaptics
 import com.hereliesaz.aznavrail.internal.toComposeShape
 import com.hereliesaz.aznavrail.internal.azUnattachedSubtreeIds
 import com.hereliesaz.aznavrail.internal.SecretScreens
@@ -187,13 +188,15 @@ fun AzNavRail(
         }
     }
 
+    // One haptic handle per rail, built once the scope (and its `vibrate` setting) exists.
+    val azHaptics = rememberAzHaptics(scope.vibrate)
+
     // Ids of the unattached hosts and their whole subtrees. They are declared on this scope like any
     // other item, but they render at their own anchor (see `AzUnattachedRail`), so the rail strip
     // and the drawer both have to skip them.
     val unattachedIds = remember(scope.navItems.toList()) { azUnattachedSubtreeIds(scope.navItems) }
 
     var isExpanded by remember { mutableStateOf(if (scope.noMenu) false else initiallyExpanded) }
-    var dissolving: com.hereliesaz.aznavrail.internal.DissolveState? by remember { mutableStateOf(null) }
     var isFloating by remember { mutableStateOf(false) }
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
@@ -587,7 +590,10 @@ fun AzNavRail(
                                 .fillMaxSize()
                                 .verticalScroll(scrollState)) {
                                 topLevelItems.forEachIndexed { index, item ->
-                                    dissolving?.takeIf { it.itemId == item.id }?.let {
+                                    // The tapped entry's slot is held open (empty) while its label
+                                    // travels out of the menu, so the label never animates in two
+                                    // places at once.
+                                    hostScope?.dissolving?.takeIf { it.itemId == item.id }?.let {
                                         Spacer(Modifier.height(with(density) { it.bounds.height.toDp() }))
                                     } ?: MenuItemNode(
                                         item = item,
@@ -601,19 +607,24 @@ fun AzNavRail(
                                         onCollapseMenu = { isExpanded = false },
                                         onDissolveTap = { itemId, text ->
                                             scope.itemBoundsCache[itemId]?.let {
-                                                dissolving =
+                                                // Hand it to the host: by the time this animates,
+                                                // this menu is gone, and the label has to cross the
+                                                // whole window.
+                                                hostScope?.dissolve(
                                                     com.hereliesaz.aznavrail.internal.DissolveState(
                                                         itemId,
                                                         text,
                                                         it
                                                     )
+                                                )
                                             }
                                         },
                                         index = index,
                                         count = topLevelItems.size,
                                         visible = isExpanded,
                                         floating = isFloating,
-                                        dockingSide = scope.dockingSide
+                                        dockingSide = scope.dockingSide,
+                                        haptics = azHaptics
                                     )
                                 }
                             }
@@ -668,6 +679,7 @@ fun AzNavRail(
                                             // Remember who was touched last: a notice/warning popup
                                             // raised without an explicit source claims this item.
                                             scope.lastTouchedItemId = item.id
+                                            azHaptics.commit()
                                             if (item.isHelpItem) toggleHelpOverlay(item.id); if (item.collapseOnClick && !scope.noMenu) isExpanded =
                                             false
                                         },
@@ -936,8 +948,17 @@ fun AzNavRail(
     if (guidanceController.enabled && hostScope?.aboutVisible != true && hostScope?.moreFromAzVisible != true) {
         val openMenuLabel = stringResource(R.string.az_guide_open_menu)
         val tapTemplate = stringResource(R.string.az_guide_tap_item)
-        val guidanceEdges = remember(scope.guidanceEdges.toList(), scope.navItems.toList(), openMenuLabel, tapTemplate) {
-            scope.guidanceEdges + computeAutoEdges(
+        val guidanceEdges = remember(
+            scope.guidanceEdges.toList(),
+            scope.navItems.toList(),
+            openMenuLabel,
+            tapTemplate,
+            scope.advancedConfig.autoGuidanceEdges,
+        ) {
+            // Auto-edges are opt-in: the rail describing its own buttons back to the user is the
+            // failure mode, not the feature. Developer-authored edges always apply.
+            if (!scope.advancedConfig.autoGuidanceEdges) scope.guidanceEdges.toList()
+            else scope.guidanceEdges + computeAutoEdges(
                 items = scope.navItems,
                 openMenuLabel = openMenuLabel,
                 tapLabel = { label -> String.format(tapTemplate, label) })
@@ -1009,21 +1030,6 @@ fun AzNavRail(
         LaunchedEffect(guidanceController) { guidanceController.publishCurrent(emptyList()) }
     }
 
-    dissolving?.let { snapshot ->
-        val accent = scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
-        val style = MaterialTheme.typography.titleLarge.let { base ->
-            scope.itemTextStyle?.let {
-                base.merge(it)
-            } ?: base
-        }
-        com.hereliesaz.aznavrail.internal.DissolveOverlay(
-            state = snapshot,
-            textStyle = style,
-            color = accent,
-            durationMs = scope.entranceDurationMs,
-            easing = scope.entranceEasing,
-            onFinished = { dissolving = null })
-    }
 }
 
 private fun handleRailCyclerClick(
@@ -1068,7 +1074,8 @@ private fun MenuItemNode(
     count: Int,
     visible: Boolean,
     floating: Boolean,
-    dockingSide: AzDockingSide
+    dockingSide: AzDockingSide,
+    haptics: com.hereliesaz.aznavrail.internal.AzHaptics
 ) {
     if (item.isDivider) {
         val dividerAccent = scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
@@ -1098,6 +1105,7 @@ private fun MenuItemNode(
         },
         onClick = {
             scope.lastTouchedItemId = item.id
+            haptics.commit()
             if (item.isHelpItem) onToggleHelp(item.id) else scope.onClickMap[item.id]?.invoke(); scope.advancedConfig.onInteraction?.invoke(
             item.id,
             item
@@ -1155,7 +1163,8 @@ private fun MenuItemNode(
                 count = children.size,
                 visible = visible,
                 floating = floating,
-                dockingSide = dockingSide
+                dockingSide = dockingSide,
+                haptics = haptics
             )
         }
     }

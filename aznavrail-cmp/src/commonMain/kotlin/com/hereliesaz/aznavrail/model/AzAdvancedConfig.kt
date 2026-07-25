@@ -6,8 +6,17 @@ import androidx.compose.ui.geometry.Rect
  * Aggregated advanced settings for the rail, populated by [com.hereliesaz.aznavrail.AzNavRailScope.azAdvanced]
  * and [com.hereliesaz.aznavrail.AzNavRailScope.azSettings].
  *
- * @param isLoading When true, the rail content is replaced by a full-screen [com.hereliesaz.aznavrail.AzLoad] spinner.
+ * @param isLoading When true, a screen-centred [com.hereliesaz.aznavrail.AzLoad] draws above
+ *   everything and swallows input. **Prefer `azItemState(id, isLoading = true)`**: a whole screen
+ *   blacked out to say "busy" is a second element doing the work the busy element could do itself,
+ *   and it takes the app away from the user while it does so. Reach for this only when genuinely
+ *   nothing on screen is actionable.
  * @param helpEnabled Whether the interactive help/info overlay is enabled.
+ * @param autoGuidanceEdges Whether the rail auto-generates guidance instructions ("Open the menu",
+ *   "Tap Settings") for its own affordances. **Off by default.** Guidance is a last resort: a rail
+ *   that has to caption its own buttons has already failed to convey them. Author `azEdge`s for
+ *   transitions into your app's own domain statuses instead, and turn this on only when telemetry
+ *   says people are actually getting stuck.
  * @param onDismissHelp Callback invoked when the help overlay is dismissed.
  * @param overlayService Service class used to launch a system overlay (FAB mode) on Android.
  *   Automatically sets [enableRailDragging] to true when non-null. Typed `Any?` in the CMP port —
@@ -37,6 +46,7 @@ import androidx.compose.ui.geometry.Rect
 data class AzAdvancedConfig(
     val isLoading: Boolean = false,
     val helpEnabled: Boolean = false,
+    val autoGuidanceEdges: Boolean = false,
     val onDismissHelp: (() -> Unit)? = null,
     val overlayService: Any? = null,
     val onUndock: (() -> Unit)? = null,

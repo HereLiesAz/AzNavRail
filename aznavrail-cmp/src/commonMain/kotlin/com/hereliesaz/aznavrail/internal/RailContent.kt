@@ -1,6 +1,10 @@
 // FILE: ./aznavrail/src/main/java/com/hereliesaz/aznavrail/internal/RailContent.kt
 package com.hereliesaz.aznavrail.internal
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.lerp
+import com.hereliesaz.aznavrail.model.AzEasing
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Alignment
@@ -136,20 +140,44 @@ internal fun RailContent(
         // glyph: a yellow, rounded-corner triangle outline. Everything else about it is untouched,
         // and it reverts the instant the popup is dismissed.
         val alert = item.alert
+        val baseShape = item.shape ?: defaultShape
+        // The item does not *cut* to a warning triangle — it becomes one, and comes back the same
+        // way. The morph is the conveyance; a hard swap is just a different picture.
+        val alertProgress by animateFloatAsState(
+            targetValue = if (alert != null) 1f else 0f,
+            animationSpec = tween(durationMillis = 420, easing = AzEasing.Wp7Decelerate),
+            label = "az-alert-morph",
+        )
+        val baseColor = item.color ?: MaterialTheme.colorScheme.primary
+        // Remember the colour the alert was, so the morph *out* has something to fade back from —
+        // otherwise the colour snaps to normal on the frame the alert clears, while the shape is
+        // still a triangle.
+        val lastAlertColor = remember(item.id) { mutableStateOf<androidx.compose.ui.graphics.Color?>(null) }
+        val liveAlertColor = alert?.color()
+        if (liveAlertColor != null && lastAlertColor.value != liveAlertColor) {
+            lastAlertColor.value = liveAlertColor
+        }
+        val alertColor = liveAlertColor ?: lastAlertColor.value
+        val morphedColor = if (alertProgress <= 0f || alertColor == null) baseColor
+            else lerp(baseColor, alertColor, alertProgress)
         AzNavRailButton(
             onClick = finalOnClick,
             text = textToShow,
             modifier = Modifier,
-            color = alert?.color() ?: item.color ?: MaterialTheme.colorScheme.primary,
-            activeColor = alert?.color() ?: activeColor ?: MaterialTheme.colorScheme.primary,
-            textColor = if (alert != null) alert.color() else item.textColor,
+            color = morphedColor,
+            activeColor = if (alertProgress > 0f && alertColor != null) morphedColor
+                else (activeColor ?: MaterialTheme.colorScheme.primary),
+            textColor = if (alertProgress > 0f && alertColor != null) morphedColor else item.textColor,
             fillColor = item.fillColor,
             size = buttonSize,
-            shape = if (alert != null) AzButtonShape.TRIANGLE else (item.shape ?: defaultShape),
+            shape = baseShape,
+            shapeOverride = if (alertProgress > 0f) AzAlertMorphShape(baseShape, alertProgress) else null,
             enabled = isEnabled,
             isSelected = isSelected,
             isLoading = item.isLoading,
-            itemContent = if (alert != null) null else item.content,
+            // The item's own content fades out as the triangle takes over, rather than vanishing
+            // the instant the alert lands.
+            itemContent = if (alertProgress >= 0.5f) null else item.content,
             rotationDegrees = rotationDegrees
         )
 

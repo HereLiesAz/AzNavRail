@@ -284,7 +284,6 @@ internal fun MenuItem(
                 com.hereliesaz.aznavrail.AzLoad(
                     size = 20.dp,
                     color = textColor,
-                    showLabel = false,
                 )
             }
 

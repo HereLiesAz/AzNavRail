@@ -20,6 +20,8 @@ dependencyResolutionManagement {
 rootProject.name = "AzNavRail"
 include(":SampleApp")
 include(":aznavrail")
+include(":aznavrail-annotations")
+include(":aznavrail-processor")
 include(":aznavrail-cmp")
 // The demo is a runnable app, not a published artifact. Its wasmJs executable pulls in the Binaryen
 // setup task (and node/yarn tooling) during `assemble`, needlessly building an app during a library

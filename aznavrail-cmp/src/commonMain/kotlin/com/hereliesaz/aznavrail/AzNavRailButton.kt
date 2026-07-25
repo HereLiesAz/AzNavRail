@@ -102,12 +102,18 @@ internal fun AzNavRailButton(
     itemContent: Any? = null,
     onLongClick: (() -> Unit)? = null,
     onGloballyPositioned: ((Rect) -> Unit)? = null,
-    rotationDegrees: Float = 0f
+    rotationDegrees: Float = 0f,
+    /**
+     * Overrides the Compose [Shape] derived from [shape]. Used to hand the button a shape that is
+     * mid-morph (see [com.hereliesaz.aznavrail.internal.AzAlertMorphShape]); [shape] still decides
+     * the footprint and the border.
+     */
+    shapeOverride: Shape? = null
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
-    val buttonShape: Shape = shape.toComposeShape()
+    val buttonShape: Shape = shapeOverride ?: shape.toComposeShape()
 
     val isRotated = rotationDegrees != 0f && (rotationDegrees % 180 != 0f)
 
@@ -213,7 +219,7 @@ internal fun AzNavRailButton(
                     AzButtonShape.RECTANGLE, AzButtonShape.NONE -> 28.dp
                     else -> size * 0.6f
                 }
-                AzLoad(size = spinnerSize, color = finalColor, showLabel = false)
+                AzLoad(size = spinnerSize, color = finalColor)
             }
         }
     }

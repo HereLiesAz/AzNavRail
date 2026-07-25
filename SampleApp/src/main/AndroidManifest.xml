@@ -21,6 +21,14 @@
             </intent-filter>
         </activity>
 
+        <!-- The High-Inference API demo: its rail comes entirely from `@Az` annotations, via the
+             graph the KSP processor generates. Not the launcher; start it explicitly. -->
+        <activity
+            android:name=".AzGraphDemoActivity"
+            android:exported="false"
+            android:label="AzGraph Demo"
+            android:theme="@style/Theme.SampleApp" />
+
         <service
             android:name=".SampleOverlayService"
             android:exported="false" />

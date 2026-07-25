@@ -88,6 +88,12 @@ internal object AzIcons {
         "M7,10l5,5 5,-5z",
     )
 
+    /** Right-pointing chevron — the "there is more" affordance on a guidance callout. */
+    val ChevronRight: ImageVector = icon(
+        "ChevronRight",
+        "M10,6L8.59,7.41 13.17,12l-4.58,4.59L10,18l6,-6z",
+    )
+
     /** Plain left arrow — matches `Icons.AutoMirrored.Filled.ArrowBack` (RTL mirroring not needed). */
     val ArrowBack: ImageVector = icon(
         "ArrowBack",
