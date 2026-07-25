@@ -189,6 +189,55 @@ configurable (mirroring the rail's `azTheme`). Only the dropped list is an overl
   exactly like `MenuItem.kt`. RN/web use an `onNavigate(route)` prop + `route?` on `AzDropdownItem`.
 - Controlled `expanded`/`onExpandedChange` remain. Tapping outside, back, or an item folds it up.
 
+Drop-down trigger: `AzDropdownMenu`'s trigger is chosen with `azConfig(trigger = …)` from the sanctioned
+`AzDropdownTrigger` set — `MoreVert` (three vertical dots, **the default**), `Hamburger`, `AppIcon` (the
+launcher icon, the pre-trigger default), `Text("…")`, or `Icon(model)` (ImageVector/Painter/URL/any Coil
+model). Size and clip shape still come from `headerIconSize`/`headerIconShape`. `azConfig(triggerPlacement = …)`
+takes `AzDropdownTriggerPlacement { AUTO, TITLE, INLINE }`: `AUTO` (default) lifts the trigger out of its call
+site and places it **next to the big screen title**, above the onscreen area, whenever the drop-down is declared
+inside an `AzHostActivityLayout`; a standalone drop-down stays inline. Several title-hosted drop-downs line their
+triggers up beside each other in registration (= declaration) order, on the side opposite the rail. The dropped
+panel stays composed at the call site and anchors to the real trigger via window-space bounds the trigger reports
+back (`AzTitleTriggerSlot` in `internal/AzTitleTriggers.kt`; the slot publishes a comparable
+`AzDropdownTriggerSpec` as snapshot state and keeps its tap/bounds callbacks as plain fields, which is what stops
+the host's composition from looping).
+
+Unattached host rail items (`azUnattachedHostItem`): a rail host that does **not** live in the rail strip. It is
+drawn on its own at an `AzUnattachedAnchor` — `OPPOSITE` (side opposite the rail, level with the rail's items),
+`BOTTOM` (bottom of the screen, opposite side), or `FLOATING` (draggable, position persisted) — and tapping it
+unfolds its sub-items inline beneath it, exactly as they would have unfolded in the rail. Sub-items attach by
+`hostId` as usual and sub-hosts nest to any depth. The host and its **whole subtree** are filtered out of both the
+rail strip and the drawer (`azUnattachedSubtreeIds`). Several hosts sharing an anchor stack into a column with the
+rail's own spacing/packing. The `FLOATING` stack drags as one unit, is clamped to the 10%–90% vertical safe zone
+FAB mode uses, and persists its position **as a fraction of the window** (`AzUnattachedStore` —
+multiplatform-settings on CMP, SharedPreferences on Android) so it survives rotation and different screen sizes.
+Rendered by `internal/AzUnattachedRail.kt`, which owns its own `hostStates` (the rail's map does not cover it) and
+re-implements the same rising-edge `initiallyExpanded` / `expandWhen` contract.
+
+Per-item badges + loading: every item builder accepts `badge` / `persistentBadge` / `isLoading`, and **any**
+already-declared item can be decorated by id with `azItemState(id, badge, persistentBadge, isLoading, alert)` —
+applied after the whole DSL runs (alongside `applyRelocReorders`), so declaration order is irrelevant and null
+fields leave the item's existing value alone. Loading is **per item**: the button hides its content and spins an
+`AzLoad` scaled to the button and tinted to the item's colour (`AzLoad` now takes `size`/`color`/`showLabel`); a
+menu row keeps its label and spins a small ring beside it. Badges now render in nested rails too — previously
+`NestedRail.kt` silently dropped them.
+
+Popups (`AzPopup`): a window **bound to a rail item**, registered with `azPopup(controller)` on the host DSL and
+driven by an `AzPopupController` from `rememberAzPopupController()`. `show(itemId = …)` names the source item;
+`show()` with no id binds to the **last touched** rail item (`AzNavRailScopeImpl.lastTouchedItemId`). The body runs
+in an `AzPopupScope` exposing `kind`/`title`/`message`/`payload`, `dismiss()`, and `item` — an
+`AzPopupItemHandle` that can read the live `AzNavItem` and write back to it (`setBadge`, `setLoading`, `setAlert`,
+`clear`). Those writes land in `AzNavRailScopeImpl.itemOverrides`, which deliberately survives `reset()` (the DSL
+re-runs every recomposition and would otherwise wipe them next frame) and wins over `azItemState`. A
+`AzPopupKind.NOTICE` / `WARNING` popup redraws its bound item as a **yellow, rounded-corner triangle outline**
+(`AzButtonShape.TRIANGLE` + `AzRoundedTriangleShape`, corners cut back and bridged with a quadratic through the
+vertex) for exactly as long as the popup is up — raised and dropped by the popup's own `DisposableEffect`, never
+left behind. In the drawer, where a row is type rather than a button, the flagged item takes the same yellow.
+
+INVARIANT — every `AzButtonShape` -> Compose `Shape` conversion goes through the single
+`AzButtonShape.toComposeShape()` in `internal/AzShapes.kt`, so adding a member can never be silently missed by one
+call site.
+
 In-app About reader + "More from Az": the footer "About" item opens a built-in, themed markdown reader
 instead of opening the repo URL in a browser. On the rail (Android/web) About + More-from-Az flow
 through the host's `onscreen()` layout path (rail stays docked beside them); the standalone

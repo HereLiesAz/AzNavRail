@@ -172,10 +172,13 @@ internal fun MenuItem(
     val effectiveActiveColor = activeColor ?: MaterialTheme.colorScheme.primary
     val effectiveDefaultColor = item.textColor ?: item.color ?: MaterialTheme.colorScheme.primary
 
+    // A menu row is type, not a button, so an alerted item can't become a triangle here — it takes
+    // the same warning yellow instead, so the drawer and the rail agree about which item is flagged.
+    val alertColor = item.alert?.color()
     val textColor = if (isDisabled) {
-        effectiveDefaultColor.copy(alpha = 0.5f)
+        (alertColor ?: effectiveDefaultColor).copy(alpha = 0.5f)
     } else {
-        effectiveDefaultColor
+        alertColor ?: effectiveDefaultColor
     }
 
     val backgroundColor = if (isSelected && !isPressed) {
@@ -275,6 +278,16 @@ internal fun MenuItem(
                         }
                     }
                 }
+            }
+
+            // Per-item loading: the row keeps its label and spins a small ring beside it, rather
+            // than the whole rail being replaced by one global spinner.
+            if (item.isLoading) {
+                com.hereliesaz.aznavrail.AzLoad(
+                    size = 20.dp,
+                    color = textColor,
+                    showLabel = false,
+                )
             }
 
             var showBadge by remember { mutableStateOf(false) }

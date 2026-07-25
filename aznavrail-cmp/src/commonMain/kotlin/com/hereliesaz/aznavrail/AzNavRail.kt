@@ -79,6 +79,7 @@ import com.hereliesaz.aznavrail.internal.MenuItem
 import com.hereliesaz.aznavrail.internal.rememberAzKineticModifier
 import com.hereliesaz.aznavrail.internal.rememberAzClosingState
 import com.hereliesaz.aznavrail.internal.RailItems
+import com.hereliesaz.aznavrail.internal.toComposeShape
 import com.hereliesaz.aznavrail.model.AzExit
 import com.hereliesaz.aznavrail.internal.SecretScreens
 import com.hereliesaz.aznavrail.service.GithubDocsRepository
@@ -239,6 +240,7 @@ fun AzNavRail(
         scope.reset()
         scope.apply(content)
         scope.applyRelocReorders()
+        scope.applyItemStates()
     }
     // When providedScope is non-null, AzHostActivityLayout already applied the DSL + reorders.
 
@@ -254,6 +256,13 @@ fun AzNavRail(
         scope.appRepositoryUrl.ifBlank {
             packageName?.let { GithubDocsRepository.repoUrlFromPackage(it) } ?: scope.appRepositoryUrl
         }
+    }
+
+    // Ids of the unattached hosts and their whole subtrees. They are declared on this scope like any
+    // other item, but they render at their own anchor (see `AzUnattachedRail`), so the rail strip
+    // and the drawer both have to skip them.
+    val unattachedIds = remember(scope.navItems.toList()) {
+        com.hereliesaz.aznavrail.internal.azUnattachedSubtreeIds(scope.navItems)
     }
 
     var isExpanded by remember { mutableStateOf(if (scope.noMenu) false else initiallyExpanded) }
@@ -705,7 +714,8 @@ fun AzNavRail(
                     }
                 }
                 val isRailOpen = !(isFloating && !showFloatingButtons) && !(scope.noMenu && scope.isFoldedUp)
-                val railItemsCount = scope.navItems.filter { it.isRailItem && !it.isSubItem }.size
+                val railItemsCount =
+                    scope.navItems.filter { it.isRailItem && !it.isSubItem && it.id !in unattachedIds }.size
                 val railItemsRendered = rememberAzClosingState(
                     open = isRailOpen,
                     exit = AzExit.Turnstile,
@@ -718,13 +728,18 @@ fun AzNavRail(
                     // MAIN CONTENT and MENU separation
                     BoxWithConstraints(modifier = Modifier.weight(1f)) {
                         val hasExplicitHelpItem = scope.navItems.any { it.isHelpItem || it.id == AzNavRailDefaults.AUTO_HELP_ID }
+                        // Unattached hosts and everything hanging off them have left the rail: they
+                        // draw themselves at their own anchor, so neither the strip nor the drawer
+                        // may render them.
+                        val attachedItems = if (unattachedIds.isEmpty()) scope.navItems
+                        else scope.navItems.filterNot { it.id in unattachedIds }
                         val displayItems = if (scope.advancedConfig.helpEnabled && !hasExplicitHelpItem) {
-                            scope.navItems + AzNavItem.Help(
+                            attachedItems + AzNavItem.Help(
                                 id = AzNavRailDefaults.AUTO_HELP_ID,
                                 isRailItem = false
                             )
                         } else {
-                            scope.navItems
+                            attachedItems
                         }
                         val topLevelItems = displayItems.filter { !it.isSubItem }
                         // Keep the menu composed through the staggered exit so items can turnstile out as the
@@ -793,7 +808,7 @@ fun AzNavRail(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 RailItems(
-                                    items = scope.navItems,
+                                    items = attachedItems,
                                     scope = scope,
                                     navController = effectiveNavController,
                                     currentDestination = actualCurrentDestination,
@@ -822,6 +837,9 @@ fun AzNavRail(
                                         }
                                     },
                                     onItemSelected = { item ->
+                                        // Remember who was touched last: a notice/warning popup
+                                        // raised without an explicit source claims this item.
+                                        scope.lastTouchedItemId = item.id
                                         if (item.isHelpItem) {
                                             toggleHelpOverlay(item.id)
                                         }
@@ -871,7 +889,9 @@ fun AzNavRail(
                                 .padding(8.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            val buttonShape = scope.defaultShape
+                            // `defaultShape` is an AzButtonShape; border/background need the real
+                            // Compose Shape it maps to.
+                            val buttonShape = scope.defaultShape.toComposeShape()
                             val transparentShapeModifier = Modifier
                                 .size(activeButtonSize)
                                 .border(
@@ -1142,6 +1162,7 @@ private fun MenuItemNode(
         isSelected = (item.route != null && item.route == currentDestination) ||
                 item.classifiers.any { scope.activeClassifiers.contains(it) },
         onClick = {
+            scope.lastTouchedItemId = item.id
             if (item.isHelpItem) {
                 onToggleHelp(item.id)
             } else {

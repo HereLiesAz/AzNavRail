@@ -36,6 +36,14 @@ internal object AzIcons {
         "M3,18h18v-2H3v2zM3,13h18v-2H3v2zM3,6v2h18V6H3z",
     )
 
+    /** Three vertical dots — the default [com.hereliesaz.aznavrail.AzDropdownMenu] trigger. */
+    val MoreVert: ImageVector = icon(
+        "MoreVert",
+        "M12,8c1.1,0 2,-0.9 2,-2s-0.9,-2 -2,-2 -2,0.9 -2,2 0.9,2 2,2zM12,10c-1.1,0 -2,0.9 -2,2s0.9," +
+            "2 2,2 2,-0.9 2,-2 -0.9,-2 -2,-2zM12,16c-1.1,0 -2,0.9 -2,2s0.9,2 2,2 2,-0.9 2,-2 -0.9," +
+            "-2 -2,-2z",
+    )
+
     /** The "X" glyph. `Icons.Filled.Close` and `Icons.Filled.Clear` are the same glyph. */
     val Close: ImageVector = icon(
         "Close",
