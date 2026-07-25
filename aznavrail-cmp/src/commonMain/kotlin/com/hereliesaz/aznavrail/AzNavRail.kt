@@ -79,6 +79,7 @@ import com.hereliesaz.aznavrail.internal.MenuItem
 import com.hereliesaz.aznavrail.internal.rememberAzKineticModifier
 import com.hereliesaz.aznavrail.internal.rememberAzClosingState
 import com.hereliesaz.aznavrail.internal.RailItems
+import com.hereliesaz.aznavrail.internal.rememberAzHaptics
 import com.hereliesaz.aznavrail.internal.rememberAzOverlayLauncher
 import com.hereliesaz.aznavrail.internal.toComposeShape
 import com.hereliesaz.aznavrail.model.AzExit
@@ -258,6 +259,9 @@ fun AzNavRail(
             packageName?.let { GithubDocsRepository.repoUrlFromPackage(it) } ?: scope.appRepositoryUrl
         }
     }
+
+    // One haptic handle per rail, built once the scope (and its `vibrate` setting) exists.
+    val azHaptics = rememberAzHaptics(scope.vibrate)
 
     // Ids of the unattached hosts and their whole subtrees. They are declared on this scope like any
     // other item, but they render at their own anchor (see `AzUnattachedRail`), so the rail strip
@@ -792,6 +796,7 @@ fun AzNavRail(
                                         visible = isExpanded,
                                         floating = isFloating,
                                         dockingSide = scope.dockingSide,
+                                        haptics = azHaptics,
                                     )
                                 }
                             }
@@ -857,6 +862,7 @@ fun AzNavRail(
                                         // Remember who was touched last: a notice/warning popup
                                         // raised without an explicit source claims this item.
                                         scope.lastTouchedItemId = item.id
+                                        azHaptics.commit()
                                         if (item.isHelpItem) {
                                             toggleHelpOverlay(item.id)
                                         }
@@ -1052,8 +1058,11 @@ fun AzNavRail(
         val guideStrings = LocalAzGuideStrings.current
         val openMenuLabel = guideStrings.openMenu
         val tapTemplate = guideStrings.tapItem
-        val guidanceEdges = remember(scope.guidanceEdges.toList(), scope.navItems.toList(), openMenuLabel, tapTemplate) {
-            scope.guidanceEdges + computeAutoEdges(
+        val guidanceEdges = remember(scope.guidanceEdges.toList(), scope.navItems.toList(), openMenuLabel, tapTemplate, scope.advancedConfig.autoGuidanceEdges) {
+            // Auto-edges are opt-in: the rail describing its own buttons back to the user is the
+            // failure mode, not the feature. Developer-authored edges always apply.
+            if (!scope.advancedConfig.autoGuidanceEdges) scope.guidanceEdges.toList()
+            else scope.guidanceEdges + computeAutoEdges(
                 items = scope.navItems,
                 openMenuLabel = openMenuLabel,
                 tapLabel = { label -> tapTemplate.replace("%s", label) },
@@ -1147,7 +1156,8 @@ private fun MenuItemNode(
     count: Int,
     visible: Boolean,
     floating: Boolean,
-    dockingSide: AzDockingSide
+    dockingSide: AzDockingSide,
+    haptics: com.hereliesaz.aznavrail.internal.AzHaptics
 ) {
     // DSL `azDivider()` calls declare a synthetic item with `isDivider = true`. Render it as an
     // actual AzDivider — same accent color as the surrounding labels — instead of falling through
@@ -1180,6 +1190,7 @@ private fun MenuItemNode(
                 item.classifiers.any { scope.activeClassifiers.contains(it) },
         onClick = {
             scope.lastTouchedItemId = item.id
+            haptics.commit()
             if (item.isHelpItem) {
                 onToggleHelp(item.id)
             } else {
@@ -1239,7 +1250,8 @@ private fun MenuItemNode(
                 count = children.size,
                 visible = visible,
                 floating = floating,
-                dockingSide = dockingSide
+                dockingSide = dockingSide,
+                haptics = haptics
             )
         }
     }

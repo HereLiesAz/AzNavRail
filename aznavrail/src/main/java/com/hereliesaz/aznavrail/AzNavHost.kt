@@ -40,6 +40,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -282,6 +283,16 @@ class AzNavHostScopeImpl(
         private set
     var moreFromAzVisible by mutableStateOf(false)
         private set
+
+    /**
+     * The label currently travelling out of a dismissed menu (see
+     * [com.hereliesaz.aznavrail.internal.DissolveOverlay]). Owned by the host, not by the rail: the
+     * rail's menu is gone by the time the animation runs, and the label has to cross the whole
+     * window, which nothing inside the rail's layer can do.
+     */
+    var dissolving by mutableStateOf<com.hereliesaz.aznavrail.internal.DissolveState?>(null)
+
+    fun dissolve(state: com.hereliesaz.aznavrail.internal.DissolveState?) { dissolving = state }
 
     fun showAbout() { aboutVisible = true }
     fun hideAbout() { aboutVisible = false }
@@ -742,6 +753,11 @@ fun AzHostActivityLayout(
             }
         }
 
+        // The dissolving label from a dismissed menu entry. Drawn at the window root, above the rail
+        // and the onscreen content, so it can actually travel across the screen — inside the rail's
+        // own layer it was clipped at the rail's edge and simply disappeared.
+        railScopeDissolve(scope, railScope)
+
         // Popups sit above the sheets: they are the layer that interrupts, and a warning raised
         // while a sheet is open still has to be the thing the user answers.
         scope.popups.forEach { popup ->
@@ -754,6 +770,29 @@ fun AzHostActivityLayout(
     }
 
     return guidanceController
+}
+
+/**
+ * Renders the host's pending [com.hereliesaz.aznavrail.internal.DissolveState], if any, at the
+ * window root.
+ */
+@Composable
+private fun railScopeDissolve(scope: AzNavHostScopeImpl, railScope: AzNavRailScopeImpl) {
+    val snapshot = scope.dissolving ?: return
+    val accent = railScope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
+    val style = MaterialTheme.typography.titleLarge.let { base ->
+        railScope.itemTextStyle?.let { base.merge(it) } ?: base
+    }
+    Box(modifier = Modifier.fillMaxSize().zIndex(2.5f)) {
+        com.hereliesaz.aznavrail.internal.DissolveOverlay(
+            state = snapshot,
+            textStyle = style,
+            color = accent,
+            durationMs = railScope.entranceDurationMs,
+            easing = railScope.entranceEasing,
+            onFinished = { scope.dissolve(null) },
+        )
+    }
 }
 
 /**

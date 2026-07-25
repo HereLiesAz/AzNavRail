@@ -63,6 +63,8 @@ private fun DemoHost() {
     var grid by remember { mutableStateOf(false) }
 
     AzHostActivityLayout(navController = navController) {
+        // `vibrate` turns on the haptic vocabulary: every commit answers, not just FAB activation.
+        azConfig(vibrate = true)
         azAdvanced(enableRailDragging = true)
 
         // --- Ordinary rail items ---------------------------------------------------------------

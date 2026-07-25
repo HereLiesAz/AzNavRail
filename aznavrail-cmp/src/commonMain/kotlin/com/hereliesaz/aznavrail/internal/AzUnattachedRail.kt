@@ -350,16 +350,29 @@ private fun UnattachedNode(
         // the drawer along with its whole subtree, so this stack is the only place a
         // `azMenuSubItem` attached to it can be drawn at all.
         val children = scope.navItems.filter { it.isSubItem && it.hostId == item.id }
-        children.forEach { child ->
-            UnattachedNode(
-                item = child,
-                scope = scope,
-                navController = navController,
-                currentDestination = currentDestination,
-                hostStates = hostStates,
-                buttonSize = buttonSize,
-                onCyclerClick = onCyclerClick,
-            )
+        children.forEachIndexed { index, child ->
+            // The same staggered accordion the rail's own sub-items unfold on. The unfolding is
+            // what tells you these belong to the host above them; blinking into place says nothing.
+            Box(
+                modifier = rememberAzAccordionModifier(
+                    index = index,
+                    count = children.size,
+                    visible = true,
+                    isHorizontal = false,
+                    staggerMs = 40,
+                    durationMs = 260,
+                )
+            ) {
+                UnattachedNode(
+                    item = child,
+                    scope = scope,
+                    navController = navController,
+                    currentDestination = currentDestination,
+                    hostStates = hostStates,
+                    buttonSize = buttonSize,
+                    onCyclerClick = onCyclerClick,
+                )
+            }
         }
     }
 }

@@ -245,14 +245,10 @@ internal fun HelpOverlay(
                             overflow = TextOverflow.Ellipsis
                         )
                     }
-                    if (isExpanded) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Tap to collapse",
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                    }
+                    // No "Tap to collapse" caption. The card is already clickable and the text it
+                    // reveals is the affordance: one line means there is more, many lines means you
+                    // are looking at all of it. A card that has to label its own tap target is the
+                    // sign explaining the sign.
                 }
                 }
             }

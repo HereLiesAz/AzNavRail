@@ -1,5 +1,19 @@
 package com.hereliesaz.aznavrail.tutorial
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -191,17 +205,42 @@ private fun Callout(
         }
         Text(instruction.text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
         instruction.media?.let { Box(Modifier.padding(top = 8.dp)) { it() } }
+        // No "Tap to continue" / "swipe to dismiss" captions: a callout that has to caption its own
+        // affordances has already lost the argument. The step counter carries position, and a
+        // chevron that breathes toward the next step carries "there is more" on its own.
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                if (stepTotal > 1) "${stepIndex + 1} / $stepTotal" else "swipe to dismiss",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            if (stepTotal > 1) {
+                Text(
+                    "${stepIndex + 1} / $stepTotal",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                Spacer(Modifier.width(1.dp))
+            }
             if (tappable) {
-                Text("Tap to continue ▸", style = MaterialTheme.typography.labelSmall, color = accent)
+                val nudge = rememberInfiniteTransition(label = "az-callout-nudge")
+                val dx by nudge.animateFloat(
+                    initialValue = 0f,
+                    targetValue = 4f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(700, easing = FastOutSlowInEasing),
+                        repeatMode = RepeatMode.Reverse,
+                    ),
+                    label = "az-callout-nudge-dx",
+                )
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = accent,
+                    modifier = Modifier
+                        .size(18.dp)
+                        .graphicsLayer { translationX = dx },
+                )
             }
         }
     }

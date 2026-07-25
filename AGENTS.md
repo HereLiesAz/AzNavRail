@@ -91,8 +91,13 @@ should snap back into place, activating the original docked mode.
 I need the sample app to show in the logcat every function it actively performs and every user
 interaction.
 
-The only haptic feedback should be when fab mode is activated and deactivated, not at the start and
-end of every drag event.
+Haptics (superseded): the old rule was "the only haptic feedback should be when fab mode is
+activated and deactivated". That left every interaction people actually perform — tapping an item,
+flipping a toggle, landing a cycler — with no physical acknowledgement at all, which is the cheapest
+conveyance there is to withhold. The rule now: haptics run through `internal/AzHaptics.kt`, gated by
+`vibrate`, with two voices — `commit()` for a tap that did something, `modeChange()` for FAB in/out
+and other mode flips. Still nothing per drag frame, and a cycler speaks once when it *commits*, not
+on each tap through its options.
 
 The menu SHOULD expand and collapse on single tap of the app icon/name.
 
@@ -271,6 +276,30 @@ physical-left edge on the screen's right, but the spec says the rail stays LEFT.
 The `@Az` annotation / KSP code-generation system described in older docs **does not exist** — there
 is no annotation package and no processor module. `AzActivity`/`AzGraphInterface` remain for anyone
 implementing the interface by hand. Do not document the annotations as available.
+
+CONVEYANCE — the library is measured against the Conveyance manifesto
+(github.com/HereLiesAz/Conveyance): guide by example, resourceful minimalism, compassionate design.
+Concretely, for this codebase:
+
+- **Guidance and help are last resorts.** `azAdvanced(autoGuidanceEdges = …)` is **off by default**;
+  the rail no longer auto-generates "Open the menu" / "Tap Settings" captions for its own
+  affordances. A rail that has to caption its own buttons has already failed to convey them.
+  Developer-authored `azEdge`s (for transitions into an app's own domain statuses) always apply.
+- **No captions on affordances.** The guidance callout's "Tap to continue ▸" and the help card's
+  "Tap to collapse" are gone — a breathing chevron and the revealed text carry those. Do not add
+  copy that explains a tap target.
+- **Every element earns its place.** `AzLoad` is a shape that morphs through rounded polygons rather
+  than a ring plus the word "loading..." — the refusal to settle *is* the message, and it localises
+  for free. Toggles/cyclers remain label-is-state-is-control. Per-item loading (`azItemState`) is
+  preferred over the screen-blanking global `isLoading`.
+- **Transformations, not swaps.** An item flagged by a notice/warning popup *morphs* into the
+  warning triangle (`AzAlertMorphShape`) and morphs back; it never cuts. New surfaces get motion —
+  the popup rises in, unattached sub-items unfold on the rail's accordion.
+- **The dissolve must be hosted at the window root.** `DissolveOverlay` is rendered by
+  `AzHostActivityLayout`, not by the rail or the dropdown, and state lives on `AzNavHostScopeImpl`.
+  It used to render itself in a `Popup`, whose window is sized to its own content, so the travelling
+  label was clipped the instant it left the rail — which looked exactly like it vanishing. Do not
+  move it back inside the rail's layer.
 
 In-app About reader + "More from Az": the footer "About" item opens a built-in, themed markdown reader
 instead of opening the repo URL in a browser. On the rail (Android/web) About + More-from-Az flow

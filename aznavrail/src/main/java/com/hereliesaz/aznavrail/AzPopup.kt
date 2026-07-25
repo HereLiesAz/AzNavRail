@@ -1,5 +1,10 @@
 package com.hereliesaz.aznavrail
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.graphicsLayer
+import com.hereliesaz.aznavrail.model.AzEasing
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -273,9 +278,15 @@ internal fun AzPopupHost(
     val dismiss = { popup.controller.dismiss() }
     val scope = remember(request, handle) { AzPopupScopeImpl(request, handle, dismiss) }
 
+    // The panel arrives rather than appearing: the scrim fades and the card rises and settles.
+    // An interrupt that cuts in gives the user no sense of where it came from.
+    val entrance = remember { Animatable(0f) }
+    LaunchedEffect(request) { entrance.animateTo(1f, tween(320, easing = AzEasing.Wp7Decelerate)) }
+
     Box(
         modifier = modifier
             .fillMaxSize()
+            .graphicsLayer { alpha = entrance.value }
             .background(Color.Black.copy(alpha = 0.45f))
             .pointerInput(popup.dismissOnOutsideTap) {
                 detectTapGestures {
@@ -288,6 +299,14 @@ internal fun AzPopupHost(
             modifier = Modifier
                 .padding(24.dp)
                 .widthIn(max = 420.dp)
+                .graphicsLayer {
+                    // Slightly under-scaled and low at rest, settling into place — the same
+                    // decelerate the rail's own kinetics use.
+                    val t = entrance.value
+                    scaleX = 0.92f + 0.08f * t
+                    scaleY = 0.92f + 0.08f * t
+                    translationY = (1f - t) * 24.dp.toPx()
+                }
                 // Swallow taps on the panel itself so they don't reach the dismissing scrim.
                 .pointerInput(Unit) { detectTapGestures { } },
             color = MaterialTheme.colorScheme.surface,

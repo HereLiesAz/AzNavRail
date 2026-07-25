@@ -150,3 +150,29 @@ A host item can auto-expand its sub-items reactively.
 - **The physical-docking 180° rule is a product choice, not physics.** Docked LEFT and turned upside
   down, the rail stays on the LEFT even though the device's physical-left edge is then on the
   screen's right. `AzRailLayoutHelper` and its test both encode the documented rule.
+
+---
+
+## Conveyance posture
+
+The library is measured against the [Conveyance manifesto](https://github.com/HereLiesAz/Conveyance).
+What that means in practice, and what changed to honour it:
+
+| Principle | How the rail expresses it |
+| :--- | :--- |
+| Guide by example | Toggles/cyclers are label-is-state-is-control. An alerted item **morphs** into the warning triangle and back. Menus unfold; taps dissolve outward across the screen. |
+| Resourceful minimalism | `AzLoad` is a morphing shape, not a ring plus the word "loading...". Per-item loading rather than a screen-blanking overlay. The rail is also the FAB, the drag handle and the app identity. |
+| Eradicate explicit instruction | Auto-generated guidance ("Open the menu", "Tap Settings") is **off by default** (`azAdvanced(autoGuidanceEdges = true)` opts in). Affordance captions ("Tap to continue", "Tap to collapse") are gone. |
+| Physics and motion | Haptics now answer every commit, not only FAB activation. New surfaces animate in rather than appearing. |
+
+### Behaviour changes to be aware of
+
+- **`AzLoad` no longer renders the text "loading..."** and no longer takes `showLabel`. It draws a
+  filled shape morphing through rounded polygons. If you asserted on that string, assert on
+  `AzLoadContentDescription` instead.
+- **Guidance auto-edges are opt-in.** Apps that relied on the rail captioning its own affordances
+  must set `azAdvanced(autoGuidanceEdges = true)`.
+- **Haptics fire on item commits** when `vibrate` is on, where previously only FAB activation did.
+- **The dissolve effect now works** (and works on every platform). It was rendering inside a `Popup`
+  whose window is sized to its content, so the travelling label was clipped at the rail's edge and
+  appeared to vanish. It is now drawn by the host at the window root.

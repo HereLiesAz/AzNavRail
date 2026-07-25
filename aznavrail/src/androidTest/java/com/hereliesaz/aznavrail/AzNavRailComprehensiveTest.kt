@@ -145,11 +145,9 @@ class AzNavRailComprehensiveTest {
         // Info text
         composeTestRule.onNodeWithText("This is help text").assertExists()
 
-        // Verify "Tap to collapse" doesn't exist yet (not expanded)
-        composeTestRule.onNodeWithText("Tap to collapse").assertDoesNotExist()
-
-        // Tap card to expand
+        // Expansion is conveyed by the card revealing the rest of its text, not by a caption
+        // telling you it can collapse. Tapping the card is what toggles it.
         composeTestRule.onNodeWithText("Help Me").performClick()
-        composeTestRule.onNodeWithText("Tap to collapse").assertExists()
+        composeTestRule.onNodeWithText("This is help text").assertExists()
     }
 }
