@@ -52,6 +52,7 @@ import com.hereliesaz.SampleApp.screens.ShowcaseHomeScreen
 import com.hereliesaz.SampleApp.screens.StandaloneWidgetsScreen
 import com.hereliesaz.SampleApp.screens.TutorialDemoScreen
 import com.hereliesaz.aznavrail.AzHostActivityLayout
+import kotlinx.coroutines.launch
 import com.hereliesaz.aznavrail.AzNavHost
 import com.hereliesaz.aznavrail.AzTextBoxDefaults
 import com.hereliesaz.aznavrail.bottomsheet.rememberAzSheetController
@@ -126,6 +127,13 @@ fun MainApp() {
 
     // Help system state — drives azAdvanced(helpEnabled, helpList) and azConfig(activeClassifiers).
     var helpSystem by remember { mutableStateOf(HelpSystemState(autoInjectHelpEnabled = false, activeClassifiers = emptySet(), dismissCount = 0)) }
+
+    // Release-audit demo state: per-item loading + badge, and a rail-bound popup.
+    var itemSyncing by remember { mutableStateOf(false) }
+    var itemUnread by remember { mutableStateOf(2) }
+    var toolsGrid by remember { mutableStateOf(false) }
+    val alerts = com.hereliesaz.aznavrail.rememberAzPopupController()
+    val demoScope = androidx.compose.runtime.rememberCoroutineScope()
 
     // FAB / overlay screen state.
     var fabState by remember {
@@ -445,6 +453,79 @@ fun MainApp() {
 
         azRailItem(id = "loading", text = "Load", onClick = { isLoading = !isLoading })
 
+        // --- Per-item loading + badge (azItemState) -------------------------------------------
+        // Only this one button spins; the global `isLoading` above dims the whole screen instead.
+        azRailItem(
+            id = "item-sync",
+            text = "Sync",
+            info = "azItemState(isLoading = …) — this item spins its own AzLoad while the rest of the rail stays live.",
+            onClick = {
+                if (!itemSyncing) {
+                    itemSyncing = true
+                    demoScope.launch {
+                        kotlinx.coroutines.delay(2500)
+                        itemSyncing = false
+                        itemUnread += 1
+                    }
+                }
+            },
+        )
+        azItemState(
+            id = "item-sync",
+            isLoading = itemSyncing,
+            badge = itemUnread.takeIf { it > 0 }?.toString(),
+        )
+
+        // --- Popup bound to a rail item -------------------------------------------------------
+        // No itemId, so it binds to whatever the user touched last and turns that item into the
+        // yellow rounded-corner warning triangle until the popup is dismissed.
+        azRailItem(
+            id = "item-warn",
+            text = "Warn",
+            info = "AzPopupKind.WARNING — the last touched rail item becomes a yellow triangle while the popup is up.",
+            onClick = {
+                alerts.show(
+                    kind = com.hereliesaz.aznavrail.AzPopupKind.WARNING,
+                    title = "Offline",
+                    message = "Changes are queued and will sync when the connection returns.",
+                )
+            },
+        )
+        azPopup(alerts)
+
+        // --- Unattached hosts ------------------------------------------------------------------
+        // Rail hosts drawn outside the rail strip. FLOATING is draggable and remembers where it was
+        // dropped; BOTTOM parks at the bottom of the side opposite the rail.
+        azUnattachedHostItem(
+            id = "unattached-tools",
+            text = "Tools",
+            anchor = com.hereliesaz.aznavrail.model.AzUnattachedAnchor.FLOATING,
+            info = "azUnattachedHostItem(anchor = FLOATING) — drag it anywhere; its position persists.",
+        )
+        azRailSubItem(id = "unattached-measure", hostId = "unattached-tools", text = "Measure") {
+            Log.d(TAG, "Unattached: Measure clicked")
+        }
+        azRailSubToggle(
+            id = "unattached-grid",
+            hostId = "unattached-tools",
+            isChecked = toolsGrid,
+            toggleOnText = "Grid On",
+            toggleOffText = "Grid Off",
+        ) { toolsGrid = !toolsGrid }
+
+        azUnattachedHostItem(
+            id = "unattached-layers",
+            text = "Layers",
+            anchor = com.hereliesaz.aznavrail.model.AzUnattachedAnchor.BOTTOM,
+            info = "azUnattachedHostItem(anchor = BOTTOM) — bottom of the side opposite the rail.",
+        )
+        azRailSubItem(id = "unattached-layer-base", hostId = "unattached-layers", text = "Base") {
+            Log.d(TAG, "Unattached: Base layer clicked")
+        }
+        azRailSubItem(id = "unattached-layer-over", hostId = "unattached-layers", text = "Over") {
+            Log.d(TAG, "Unattached: Over layer clicked")
+        }
+
         // expandWhen demo toggle — lives in the menu so it doesn't clutter the rail.
         // Toggling On triggers a false→true edge on azRailHostItem("rail-host"), causing it
         // to auto-expand. Toggling Off causes a true→false edge and auto-collapses it.
@@ -670,6 +751,34 @@ fun MainApp() {
         // ---------- Onscreen + NavHost ----------
         onscreen(alignment = Alignment.TopStart) {
             Text("Aligned TopStart (Flips)", modifier = Modifier.padding(16.dp))
+
+            // Declared down here, drawn up beside the big screen title — and two of them line up
+            // next to each other in declaration order.
+            com.hereliesaz.aznavrail.AzDropdownMenu(navController = navController) {
+                azConfig(showFooter = false)
+                azItem("Clear badge") { itemUnread = 0 }
+                azItem("Add badge") { itemUnread += 1 }
+            }
+            com.hereliesaz.aznavrail.AzDropdownMenu(navController = navController) {
+                azConfig(
+                    showFooter = false,
+                    trigger = com.hereliesaz.aznavrail.model.AzDropdownTrigger.Text("View"),
+                )
+                azToggle(
+                    isChecked = toolsGrid,
+                    toggleOnText = "Grid On",
+                    toggleOffText = "Grid Off",
+                ) { toolsGrid = it }
+                azDivider()
+                azItem("Notice on Home") {
+                    alerts.show(
+                        itemId = "home",
+                        kind = com.hereliesaz.aznavrail.AzPopupKind.NOTICE,
+                        title = "Heads up",
+                        message = "Home stays flagged while this notice is open.",
+                    )
+                }
+            }
         }
         onscreen(alignment = Alignment.TopEnd) {
             Text("Aligned TopEnd (Flips)", modifier = Modifier.padding(16.dp))

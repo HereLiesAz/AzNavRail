@@ -238,6 +238,40 @@ INVARIANT — every `AzButtonShape` -> Compose `Shape` conversion goes through t
 `AzButtonShape.toComposeShape()` in `internal/AzShapes.kt`, so adding a member can never be silently missed by one
 call site.
 
+INVARIANT — no dead config. `azAdvanced`/`azSettings` knobs must be **read** by something, not merely
+stored. `isLoading`, `onRailDrag`, `onOverlayDrag` and `overlayService` were collected into
+`AzAdvancedConfig` and documented for a long time while nothing consumed them; they are now wired:
+`isLoading` draws a screen-centred `AzLoad` above everything (and swallows input) from
+`AzHostActivityLayout`; `onRailDrag` fires on every FAB-mode drag delta; `onOverlayDrag` fires the
+same way when an `overlayService` is configured; and supplying `overlayService` makes undocking hand
+off to that service via `OverlayHelper.launch` (`rememberAzOverlayLauncher` — Android actual, no-op
+on Desktop/Web/iOS). Do not reintroduce a config field with no reader.
+
+INVARIANT — `navigation-compose` is an **`api`** dependency in both modules, not `implementation`:
+`AzHostActivityLayout`/`AzNavHost` name `NavHostController` in their public signatures, so consumers
+must resolve those types transitively.
+
+Per-item state applies in a second pass. `applyItemStates()` runs right after `applyRelocReorders()`
+in both `AzNavRail` (standalone) and `AzHostActivityLayout`, stamping `declaredItemStates` (from
+`azItemState`, cleared by `reset()`) and `itemOverrides` (pushed by an `AzPopupItemHandle`,
+deliberately NOT cleared by `reset()`) onto the freshly-rebuilt `navItems`, nested-rail children
+included. Overrides win over declarations; null fields leave the item's existing value alone.
+
+Toggle/cycler `AzNavItem.text` carries the **live label** (the checked/selected string) in both
+modules. The rail and drawer derive their own label from `isChecked`/`selectedOption`, but guidance
+(`computeAutoEdges` → "Tap Dark") and the help overlay read `text` and fall back to the raw item id
+when it is blank. The CMP module used to store `""` here, which is why its callouts named ids.
+
+Physical-docking rotation mapping is specified at the bottom of this file and implemented in
+`AzRailLayoutHelper`: docked LEFT, `ROTATION_90` → TOP, `ROTATION_180` → LEFT, `ROTATION_270` →
+BOTTOM (mirrored for RIGHT). `AzRailLayoutHelperTest` encodes exactly that. Note the 180° rule is a
+deliberate product choice, not a physical consequence — a device turned upside down puts its
+physical-left edge on the screen's right, but the spec says the rail stays LEFT.
+
+The `@Az` annotation / KSP code-generation system described in older docs **does not exist** — there
+is no annotation package and no processor module. `AzActivity`/`AzGraphInterface` remain for anyone
+implementing the interface by hand. Do not document the annotations as available.
+
 In-app About reader + "More from Az": the footer "About" item opens a built-in, themed markdown reader
 instead of opening the repo URL in a browser. On the rail (Android/web) About + More-from-Az flow
 through the host's `onscreen()` layout path (rail stays docked beside them); the standalone

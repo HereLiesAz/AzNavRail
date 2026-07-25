@@ -130,6 +130,13 @@ fun azAdvanced(
 )
 ~~~
 
+> **Note.** `isLoading`, `onRailDrag`, `onOverlayDrag` and `overlayService` were collected into the
+> config but never acted on. They now behave as documented: `isLoading` draws a screen-centred
+> `AzLoad` above everything and swallows input; `onRailDrag` reports `(dx, dy)` while the rail is
+> dragged in FAB mode; `onOverlayDrag` does the same when an `overlayService` is configured; and
+> supplying `overlayService` makes undocking hand off to that system-overlay service (Android only —
+> a no-op elsewhere).
+
 ### `azAbout`
 Configures the built-in **About** reader and the **"More from Az"** carousel.
 
@@ -154,7 +161,7 @@ are hidden, and they return exactly where they were when the footer screen close
 
 `onInteraction` is called whenever any rail item is interacted with — click, toggle, cycler advance, nested rail open, reloc drag, or host expand/collapse. It fires for both leaf items (`azRailItem` / `azRailSubItem`) and host items (`azRailHostItem`), in both the compact rail and the expanded menu, so opening a host menu is observable just like tapping a leaf. It receives the item's `id` and the `AzNavItem` itself, enabling analytics and UI feedback without per-item callbacks. (Guidance advancement no longer relies on this — the status-driven engine observes status predicates directly; see the Guidance DSL below.)
 
-## `AzDropdownMenu` (standalone app-icon drop-down)
+## `AzDropdownMenu` (standalone drop-down; three-dot trigger by default)
 
 A drop-down menu is a standalone widget declared with the **same opinionated DSL as the rail**: it
 accepts only the configuration the rest of the library sanctions (no arbitrary panel background,
@@ -268,6 +275,13 @@ The following functions are used to define the rail structure.
 * `azMenuSubCycler(id, hostId, options, selectedOption, route, color, shape, disabled, disabledOptions, screenTitle, info, onClick)`
 * `azRailSubCycler(id, hostId, options, selectedOption, route, color, shape, disabled, disabledOptions, screenTitle, info, onClick)`
 * `azRailRelocItem(id, hostId, text, route, content, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick, onRelocate, forceHiddenMenuOpen, onHiddenMenuDismiss) { ... }`
+* `azUnattachedHostItem(id, text, anchor, route, content, color, shape, disabled, screenTitle, info, classifiers, menuText, textColor, fillColor, badge, persistentBadge, isLoading, initiallyExpanded, expandWhen, onExpandedChange, onClick)` — a rail host drawn **outside** the rail strip, at an `AzUnattachedAnchor` (`OPPOSITE` / `BOTTOM` / `FLOATING`). Sub-items attach by `hostId` as usual and unfold beneath it; the host and its whole subtree leave both the rail and the drawer.
+* `azItemState(id, badge, persistentBadge, isLoading, alert)` — decorates an **already-declared** item of any kind by id. Applied after the whole DSL block runs, so declaration order is irrelevant; `null` fields leave the item's existing value alone.
+
+> **Every** item builder above also accepts `badge`, `persistentBadge` and `isLoading` (per-item
+> loading spins that item's own `AzLoad`, tinted to its colour, while the rest of the rail stays
+> live). `azItemState` is the uniform alternative when you'd rather not thread them through the
+> builder.
 
 ---
 
@@ -580,3 +594,19 @@ host.attachNavBarDecor()   // call from your accessibility service's onServiceCo
 ~~~
 
 The library ships no `Service`; consumers declare the `SYSTEM_ALERT_WINDOW` (and, for the nav-bar decoration, `BIND_ACCESSIBILITY_SERVICE`) permissions in their own manifest.
+
+---
+
+## Popups (`azPopup`)
+
+`azPopup(controller, dismissOnOutsideTap = true) { … }` registers a popup window **bound to a rail
+item**, driven by an `AzPopupController` from `rememberAzPopupController()`.
+
+* `controller.show(itemId, kind, title, message, payload)` — `itemId` names the source item; omitting
+  it binds to the **last touched** rail item.
+* The body runs in an `AzPopupScope`: `kind`, `title`, `message`, `payload`, `dismiss()`, and `item`
+  — an `AzPopupItemHandle` with `setBadge`, `setLoading`, `setAlert`, `clear`, plus the live
+  `AzNavItem` via `item.item`. Those writes survive the DSL re-running until the popup clears them.
+* `AzPopupKind.NOTICE` / `AzPopupKind.WARNING` redraw the bound item as a **yellow, rounded-corner
+  triangle outline** while the popup is up, restoring it on dismiss.
+* Omitting the body renders the built-in title/message/OK panel.

@@ -40,6 +40,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -480,10 +481,12 @@ fun AzHostActivityLayout(
             Box(modifier = Modifier.fillMaxSize()) { item.content() }
         }
 
-        val startPadding = if (visualSide == AzVisualSide.LEFT) railWidth else 0.dp
-        val endPadding = if (visualSide == AzVisualSide.RIGHT) railWidth else 0.dp
-        val topPadding = if (visualSide == AzVisualSide.TOP) railWidth else 0.dp
-        val bottomPadding = if (visualSide == AzVisualSide.BOTTOM) railWidth else 0.dp
+        // A folded-up `noMenu` rail occupies nothing, so it must not reserve a gutter either.
+        val isStationaryFolded = scope.getRailScopeImpl().noMenu && scope.getRailScopeImpl().isFoldedUp
+        val startPadding = if (visualSide == AzVisualSide.LEFT && !isStationaryFolded) railWidth else 0.dp
+        val endPadding = if (visualSide == AzVisualSide.RIGHT && !isStationaryFolded) railWidth else 0.dp
+        val topPadding = if (visualSide == AzVisualSide.TOP && !isStationaryFolded) railWidth else 0.dp
+        val bottomPadding = if (visualSide == AzVisualSide.BOTTOM && !isStationaryFolded) railWidth else 0.dp
 
         // Identify active item and pull actual transient states
         val railScopeImpl = scope.getRailScopeImpl()
@@ -721,6 +724,22 @@ fun AzHostActivityLayout(
                 onSwipeRight = item.onSwipeRight,
                 content = item.content,
             )
+        }
+
+        // Global loading state (`azAdvanced(isLoading = …)` / `azSettings(isLoading = …)`). Documented
+        // since forever as "a full-screen AzLoad spinner"; it had never been read by anything. It
+        // draws above the rail and swallows input, because a screen that is loading is not a screen
+        // you can act on.
+        if (railScope.advancedConfig.isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(4f)
+                    .pointerInput(Unit) { detectTapGestures { } },
+                contentAlignment = Alignment.Center,
+            ) {
+                AzLoad()
+            }
         }
 
         // Popups sit above the sheets: they are the layer that interrupts, and a warning raised

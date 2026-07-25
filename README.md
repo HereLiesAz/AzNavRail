@@ -8,6 +8,12 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 
 ---
 
+> **Platform parity note.** The Kotlin modules (`aznavrail` for Android, `aznavrail-cmp` for
+> Compose Multiplatform) are the reference implementation. The React port (`aznavrail-react`) is
+> versioned separately and currently lags them — the drop-down trigger set, unattached hosts,
+> `azItemState` and `azPopup` are Kotlin-only. See
+> [Capabilities & Limitations](docs/CAPABILITIES_AND_LIMITATIONS.md#feature-parity-as-of-this-release).
+
 ## 📚 Documentation
 
 -   **[Complete Guide (The Bible)](/docs/AZNAVRAIL_COMPLETE_GUIDE.md)**: Comprehensive, encyclopedic reference for every feature.
@@ -468,6 +474,71 @@ const items: AzNavItem[] = [
 ```
 
 
+### Unattached Hosts (`azUnattachedHostItem`)
+
+A host item does not have to live *in* the rail. `azUnattachedHostItem` draws one on its own
+somewhere else on the screen; tapping it unfolds its sub-items inline beneath it, exactly as they
+would have unfolded inside the rail. Sub-items attach the usual way — `hostId` — and sub-hosts still
+nest to any depth. The host and its whole subtree leave both the rail strip and the drawer.
+
+| `anchor` | Where it parks |
+| :--- | :--- |
+| `AzUnattachedAnchor.OPPOSITE` (default) | Side opposite the rail, level with the rail's own items. |
+| `AzUnattachedAnchor.BOTTOM` | Bottom of the screen, opposite side. |
+| `AzUnattachedAnchor.FLOATING` | Draggable; its position is persisted across launches. |
+
+Several hosts sharing an anchor stack into a column with the rail's own spacing.
+
+```kotlin
+azUnattachedHostItem(id = "tools", text = "Tools", anchor = AzUnattachedAnchor.FLOATING)
+azRailSubItem(id = "measure", hostId = "tools", text = "Measure") { measure() }
+azRailSubToggle(
+    id = "grid", hostId = "tools",
+    isChecked = grid, toggleOnText = "Grid On", toggleOffText = "Grid Off",
+) { grid = !grid }
+```
+
+### Per-Item Badges & Loading (`azItemState`)
+
+Every item builder takes `badge` / `persistentBadge` / `isLoading`, and **any** declared item — rail,
+menu, sub-item, host, unattached host, nested-rail child — can be decorated by id afterwards:
+
+```kotlin
+azRailItem(id = "sync", text = "Sync") { startSync() }
+azItemState(id = "sync", isLoading = syncing, badge = pending.takeIf { it > 0 }?.toString())
+```
+
+Loading is **per item** — the button spins its own `AzLoad`, scaled to itself and tinted to its own
+colour, while the rest of the rail stays live. Null fields leave the item's existing value alone, so
+setting the badge does not clear the spinner.
+
+### Popups (`AzPopup`)
+
+An `AzPopup` is **bound to a rail item**, and the two share state both ways.
+
+```kotlin
+val alerts = rememberAzPopupController()
+
+AzHostActivityLayout(navController = navController) {
+    azRailItem(id = "sync", text = "Sync") {
+        alerts.show(itemId = "sync", title = "Syncing", message = "Talking to the server…")
+    }
+    azPopup(alerts) {
+        Text(message ?: "")
+        AzButton(onClick = { item?.setLoading(false); dismiss() }, text = "Stop")
+    }
+}
+```
+
+The body's `item` handle reads the live `AzNavItem` and writes back to it — `setBadge`, `setLoading`,
+`setAlert`, `clear` — and those writes survive the DSL re-running until the popup clears them.
+`show()` with no `itemId` binds to the **last touched** rail item, so a warning raised from a
+background job lands on whatever the user just did.
+
+A `AzPopupKind.NOTICE` / `WARNING` popup redraws its bound item as a **yellow, rounded-corner
+triangle outline** for as long as it is up, then restores it. The glyph is also available as an
+ordinary item shape, `AzButtonShape.TRIANGLE`.
+
 ### Draggable Rail (FAB Mode)
 
 The rail can be detached and moved around the screen by long-pressing the header icon, which activates "FAB Mode". To enable this feature, set `enableRailDragging = true` in the `azAdvanced` block.
@@ -496,10 +567,21 @@ const settings: AzNavRailSettings = {
 
 A drop-down menu is a **standalone widget** declared with the same opinionated DSL as the rail. In
 AzNavRail tradition it accepts **only** what the rest of the library sanctions — no arbitrary panel
-background, offsets, icon tint/source, or free composable escape hatch. Its trigger is the **app
-icon** (auto-drawn exactly like the rail's header), dropped inline like any widget. Tapping it unfolds
-an **overlay panel** of the items you declare; tapping outside, pressing back, or tapping an item
-folds it up.
+background, offsets, or free composable escape hatch.
+
+Its trigger is chosen with `azConfig(trigger = …)` from the sanctioned `AzDropdownTrigger` set:
+`MoreVert` (three vertical dots — **the default**), `Hamburger`, `Text("Filter")`, `Icon(myVector)`
+(any `ImageVector` / `Painter` / URL / Coil model), or `AppIcon` (the launcher icon). Its size and
+clip shape come from `headerIconSize` / `headerIconShape`.
+
+By default (`azConfig(triggerPlacement = AzDropdownTriggerPlacement.AUTO)`) that trigger is **placed
+next to the big screen title**, above the onscreen content area, whenever the drop-down is declared
+inside an `AzHostActivityLayout`. Declare several drop-downs and their triggers **line up beside each
+other** in declaration order. A drop-down used outside a host stays inline; force either behaviour
+with `TITLE` / `INLINE`.
+
+Tapping it unfolds an **overlay panel** of the items you declare; tapping outside, pressing back, or
+tapping an item folds it up.
 
 Configure it through `azConfig` (mirroring the rail): **`design`** picks `AzDropdownDesign.RAIL`
 (compact rail buttons at the **collapsed width**, ≈100dp) or `AzDropdownDesign.MENU` (the default;
@@ -811,9 +893,27 @@ const relocItem: AzRailRelocItemProps = {
 
 ### System Overlay
 
-AzNavRail can function as a system-wide overlay (using `SYSTEM_ALERT_WINDOW`). This allows users to access the navigation menu from anywhere on their device.
+AzNavRail can function as a system-wide overlay (using `SYSTEM_ALERT_WINDOW`), so the rail is
+reachable from anywhere on the device rather than only inside your app.
 
-#### Features
+Supply the service class through `azSettings(overlayService = MyOverlayService::class.java)`. Doing
+so implies `enableRailDragging = true`, and **undocking the rail hands off to that service**: the
+library requests `SYSTEM_ALERT_WINDOW` if it hasn't been granted, then starts the service (as a
+foreground service when it extends `AzNavRailOverlayService`).
+
+Your service extends one of:
+
+| Base class | Permission | Notes |
+| :--- | :--- | :--- |
+| `AzNavRailOverlayService` | `SYSTEM_ALERT_WINDOW` + `FOREGROUND_SERVICE` | Foreground service. Implement `getNotification()`; optionally override `getNotificationId()`. |
+| `AzNavRailSimpleOverlayService` | `SYSTEM_ALERT_WINDOW` | No notification, but the system may reclaim it sooner. |
+
+Declare the permissions **and the service** in your `AndroidManifest.xml`
+(`FOREGROUND_SERVICE_SPECIAL_USE` too when targeting API 34+), and call `AzNavRail` from inside the
+service's content. `onOverlayDrag` reports `(dx, dy)` while the overlay is dragged; `onRailDrag`
+reports the same for in-app FAB dragging.
+
+This is Android-only — on Desktop, Web and iOS, undocking stays an in-app floating rail.
 
 ---
 ### Theming and Customization

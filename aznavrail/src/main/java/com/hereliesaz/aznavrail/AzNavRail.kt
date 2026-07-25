@@ -293,6 +293,23 @@ fun AzNavRail(
         }
     }
 
+
+    // The documented "rail as a system-wide overlay" mode: when the developer supplied an
+    // `overlayService`, undocking hands off to that service instead of only floating in-app. The
+    // config has always been collected; this is the edge that finally acts on it.
+    val launchOverlay = run {
+        val overlayContext = androidx.compose.ui.platform.LocalContext.current
+        { serviceClass: Any? ->
+            if (serviceClass is Class<*>) {
+                runCatching { com.hereliesaz.aznavrail.internal.OverlayHelper.launch(overlayContext, serviceClass) }
+                    .onFailure { AzNavRailLogger.e("AzNavRail", "Failed to start overlay service: $it") }
+            }
+        }
+    }
+    LaunchedEffect(isFloating) {
+        if (isFloating) scope.advancedConfig.overlayService?.let { launchOverlay(it) }
+    }
+
     LaunchedEffect(isExpanded) {
         onExpandedChange?.invoke(isExpanded)
         if (!isExpanded) {
@@ -411,6 +428,13 @@ fun AzNavRail(
                             if (isFloating) {
                                 offsetX += dragAmount.x
                                 offsetY += dragAmount.y
+                                // Report the drag to the consumer. `onOverlayDrag` is the
+                                // system-overlay flavour, `onRailDrag` the in-app one; both were
+                                // collected by azAdvanced/azSettings but never invoked.
+                                scope.advancedConfig.onRailDrag?.invoke(dragAmount.x, dragAmount.y)
+                                if (scope.advancedConfig.overlayService != null) {
+                                    scope.advancedConfig.onOverlayDrag?.invoke(dragAmount.x, dragAmount.y)
+                                }
                                 val minY = screenHeightPx * 0.1f
                                 val maxY = maxOf(minY, (screenHeightPx * 0.9f) - railContentHeight)
                                 offsetY = offsetY.coerceIn(minY, maxY)
@@ -696,6 +720,22 @@ fun AzNavRail(
                                         isRailOpen = isRailOpen,
                                         railItemsCount = railItemsCount
                                     )
+
+                                    // Optional pinned "More" rail item that opens the More-from-Az
+                                    // carousel. The CMP module has always drawn this; `moreRailItem`
+                                    // was accepted here but never rendered.
+                                    if (scope.advancedConfig.moreFromAzRailItem &&
+                                        scope.advancedConfig.moreFromAzEnabled && !isFloating
+                                    ) {
+                                        val moreColor = scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
+                                        AzButton(
+                                            onClick = { hostScope?.showMoreFromAz() },
+                                            text = "More",
+                                            color = moreColor,
+                                            activeColor = moreColor,
+                                            shape = scope.defaultShape
+                                        )
+                                    }
                                 }
                             }
                         }

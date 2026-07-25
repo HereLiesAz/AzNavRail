@@ -1,85 +1,31 @@
 # AzNavRail API Reference
 
-This document serves as the technical reference for the AzNavRail library. **Dynamic Reactive Binding** lets the annotation-driven architecture react to runtime state changes in the host Activity.
+This document serves as the technical reference for the AzNavRail library. The library is driven by a **Kotlin DSL** declared inside `AzHostActivityLayout`; the DSL block is re-applied on every recomposition, so items simply read your state and stay in sync.
 
-* **[1. High-Inference API](#1-high-inference-api-az)**: The annotation system used to dictate structure and reactive bindings.
-* **[2. The Configuration Duality (Scope API)](#2-the-configuration-duality-scope-api)**: The backend API used to inject runtime configurations.
+* **[1. High-Inference API](#1-high-inference-api-az--not-shipped)**: *(not shipped — see the note)*
+* **[2. The Configuration Duality (Scope API)](#2-the-configuration-duality-scope-api)**: The DSL — the primary way to configure the rail.
 * **[3. UI Components](#3-ui-components)**: Standalone components (`AzTextBox`, `AzRoller`, etc.) for building screens.
 * **[4. Low-Level API](#4-low-level-api-manual)**: The underlying layout engine (`AzHostActivityLayout`).
 
 ---
 
-## 1. High-Inference API (`@Az`)
+## 1. High-Inference API (`@Az`) — not shipped
 
-The primary interface for the library is the `@Az` annotation. Annotations support `*Property` strings which bind directly to properties in your `AzActivity` (ideally `mutableStateOf`).
+> **This annotation system does not exist in the library.** There is no
+> `com.hereliesaz.aznavrail.annotation` package, no KSP processor module, and nothing that generates
+> an `AzGraph`. The reference that used to live here described `@Az`, `RailItem`, `Toggle`,
+> `Cycler`, `isLoadingProperty` and the rest of the `*Property` reactive bindings as though they were
+> available; none of them are. It has been removed rather than left to send people looking for an
+> API they cannot import.
+>
+> **Use [the DSL](#2-the-configuration-duality-scope-api) instead** — `azRailItem`, `azRailToggle`,
+> `azRailCycler`, `azMenuItem`, `azItemState`, and friends, declared inside `AzHostActivityLayout`.
+> It covers everything the annotations claimed to, and it is what every sample in this repository
+> uses.
+>
+> `AzActivity` and `AzGraphInterface` are still present in the Android module for anyone who
+> implements `AzGraphInterface` by hand, but nothing generates an implementation for you.
 
-### `com.hereliesaz.aznavrail.annotation.Az`
-
-**Target:** `FUNCTION`, `CLASS`, `PROPERTY`
-
-| Parameter | Type | Description |
-| :--- | :--- | :--- |
-| `app` | `App` | Configuration for the `MainActivity` (Global State). |
-| `advanced`| `Advanced` | Binds system overlays and loading states. |
-| `rail` | `RailItem` | Defines a navigation destination or action. |
-| `menu` | `MenuItem` | Defines an item visible only in the expanded footer menu. |
-| `host` | `RailHost` | Defines a parent item that expands inline. |
-| `nested` | `NestedRail` | Defines a popup menu structure. |
-| `toggle` | `Toggle` | Defines a state toggle button. |
-| `cycler` | `Cycler` | Defines a multi-option cycle button. |
-| `reloc` | `RelocItem` | Defines a draggable, reorderable item with hidden menus. |
-| `background`| `Background`| Plunges content beneath the safe zones based on weight. |
-| `divider` | `Divider` | Injects visual silence into the list. |
-
-### Context Classes & Reactive Bindings
-
-All items now support the following **Reactive Binding Fields**. Provide the name of a property in your Activity as a `String`.
-
-#### `RailItem` / `MenuItem` / `NestedRail` / `RelocItem`
-* `textProperty`: Binds the item's label to a property.
-* `iconTextProperty`: Binds the badge/icon text (e.g., notification count).
-* `visibleProperty`: Binds visibility to a `Boolean` property. Generated code uses `if (instance.property)`.
-* `disabledProperty`: Binds the disabled state to a `Boolean` property.
-* `onFocus`: Bind a function name to be called when the item is focused.
-
-#### `Toggle`
-* `isCheckedProperty`: **Mandatory for reactive toggles.** Binds to a `Boolean` property. The generated `onClick` will automatically toggle this property.
-
-#### `Cycler`
-* `optionsProperty`: Binds to a `List<String>` property for dynamic options.
-* `selectedOptionProperty`: Binds to a `String` property. The generated `onClick` will cycle through `optionsProperty`.
-* `disabledOptionsProperty`: Binds to a `List<String>` property to disable specific options.
-
-#### `Advanced` (Class Level)
-* `isLoadingProperty`: Binds the global loading spinner to a `Boolean` property.
-* `helpEnabled`: When `true`, auto-injects a Help item into the menu drawer if no explicit `azHelpRailItem` / `azHelpSubItem` is registered. The overlay itself is toggled exclusively by tapping a help item (there is no public API to open it externally).
-* `helpList`: An optional mapping of `RailItem` IDs to help texts to be shown in the help overlay alongside `info`.
-* `onInteraction`: Optional callback `((String, AzNavItem) -> Unit)?` invoked whenever any rail item is interacted with (click, toggle, cycler advance, nested rail open, reloc drag, **and host expand/collapse**). Receives the item's ID and the `AzNavItem` itself. Fires for both leaf items (`azRailItem` / `azRailSubItem`) and host items (`azRailHostItem`), in both the compact rail and the expanded menu — so a host tap that opens a sub-menu is observable exactly like a leaf tap. This is the supported way to react to "the user used the rail" (e.g. to update your own state that a guidance `azStatus` predicate reads, or to `activate`/`deactivate` a guidance goal); it does not require — and is not affected by — the rail consuming its own taps.
-
-#### `AzNavRail` / `AzHostActivityLayout` parameters — expansion observability
-
-| Parameter | Type | Description |
-| :--- | :--- | :--- |
-| `onExpandedChange` | `((Boolean) -> Unit)?` | Called whenever the **rail** transitions between collapsed and expanded states. Receives `true` on expand, `false` on collapse. Also fires on initial composition with the starting state. Available on both `AzNavRail` (direct) and `AzHostActivityLayout` (forwarded). |
-
-### Help overlay scoping & rendering
-
-* **Scope follows the trigger.** Tapping `azHelpRailItem` in the main rail shows cards for the main-rail items. Tapping `azHelpRailItem`/`azHelpSubItem` inside an `azNestedRail` block shows cards only for that nested rail's children. Internally the library tracks `helpScopeId = parent.id` (or `null` for main rail) at toggle time.
-* **Offscreen items are suppressed.** Cards (and their connector lines) are filtered out when the item's last-known bounds don't overlap the overlay viewport — so a card never renders for a rail item that's currently scrolled off, in a collapsed menu, or in a closed nested popup.
-* **Cards/lines update during scroll.** `itemBoundsCache` is a `SnapshotStateMap` populated by every rail item's `onGloballyPositioned`; the overlay's filter and `drawBehind` subscribe to it, so scrolling the rail re-runs the filter and the lines follow item positions in real time.
-* **Bounds eviction.** Each rail/menu item attaches a `DisposableEffect` that removes its entry from `itemBoundsCache` on dispose. Without this, items that had bounds cached when the menu was expanded would keep stale positions after the menu collapsed, and the overlay would draw cards pointing at phantom locations.
-
-### Reorderable items — persistence
-
-`azRailRelocItem` reorders survive recomposition. The library writes the new per-host sibling order into `AzNavRailScopeImpl.savedRelocOrders` on drag-end, and re-applies it after every DSL re-evaluation via `applyRelocReorders()`. Without this layer the DSL block — which is re-applied on every recomposition — would always reinstate the original declaration order, snapping a freshly-dropped item back to where the user moved it from. The `onRelocate(from, to, newOrder)` callback still fires on drop so you can mirror the order into your own persistent store and seed the DSL with it on next launch.
-
-#### `App` (Class Level)
-* `dock`: `String` ("LEFT" or "RIGHT").
-* `packButtons`, `noMenu`, `vibrate`, `displayAppName`, `usePhysicalDocking`, `showFooter`: `Boolean`.
-* `expandedWidth` / `collapsedWidth`: `Int`.
-* `activeClassifiers`: `Array<String>`.
-
----
 
 ## 2. The Configuration Duality (Scope API)
 

@@ -25,6 +25,10 @@ class AzRailLayoutHelperTest {
         assertEquals(AzOrientation.Vertical, right0.orientation)
     }
 
+    // The mapping below is the one AGENTS.md specifies: docked LEFT, rotating the device clockwise
+    // puts the rail at the TOP, counter-clockwise puts it at the BOTTOM, and upside-down leaves it
+    // on the LEFT. These expectations previously encoded a different (mirrored) mapping and had been
+    // failing against the implementation.
     @Test
     fun `physical docking LEFT rotation mapping`() {
         // 0: Left -> Left
@@ -33,21 +37,21 @@ class AzRailLayoutHelperTest {
         assertEquals(AzOrientation.Vertical, rot0.orientation)
         assertEquals(false, rot0.reverseLayout)
 
-        // 90: Left -> Bottom
+        // 90 (clockwise): Left -> Top
         val rot90 = AzRailLayoutHelper.calculateLayout(AzDockingSide.LEFT, Surface.ROTATION_90, true)
-        assertEquals(AzVisualSide.BOTTOM, rot90.visualSide)
+        assertEquals(AzVisualSide.TOP, rot90.visualSide)
         assertEquals(AzOrientation.Horizontal, rot90.orientation)
         assertEquals(false, rot90.reverseLayout)
 
-        // 180: Left -> Right (Reversed)
+        // 180 (upside down): Left -> Left
         val rot180 = AzRailLayoutHelper.calculateLayout(AzDockingSide.LEFT, Surface.ROTATION_180, true)
-        assertEquals(AzVisualSide.RIGHT, rot180.visualSide)
+        assertEquals(AzVisualSide.LEFT, rot180.visualSide)
         assertEquals(AzOrientation.Vertical, rot180.orientation)
-        assertEquals(true, rot180.reverseLayout)
+        assertEquals(false, rot180.reverseLayout)
 
-        // 270: Left -> Top (Reversed)
+        // 270 (counter-clockwise): Left -> Bottom, item order reversed
         val rot270 = AzRailLayoutHelper.calculateLayout(AzDockingSide.LEFT, Surface.ROTATION_270, true)
-        assertEquals(AzVisualSide.TOP, rot270.visualSide)
+        assertEquals(AzVisualSide.BOTTOM, rot270.visualSide)
         assertEquals(AzOrientation.Horizontal, rot270.orientation)
         assertEquals(true, rot270.reverseLayout)
     }
@@ -60,21 +64,21 @@ class AzRailLayoutHelperTest {
         assertEquals(AzOrientation.Vertical, rot0.orientation)
         assertEquals(false, rot0.reverseLayout)
 
-        // 90: Right -> Top (Reversed)
+        // 90 (clockwise): Right -> Bottom, item order reversed
         val rot90 = AzRailLayoutHelper.calculateLayout(AzDockingSide.RIGHT, Surface.ROTATION_90, true)
-        assertEquals(AzVisualSide.TOP, rot90.visualSide)
+        assertEquals(AzVisualSide.BOTTOM, rot90.visualSide)
         assertEquals(AzOrientation.Horizontal, rot90.orientation)
         assertEquals(true, rot90.reverseLayout)
 
-        // 180: Right -> Left (Reversed)
+        // 180 (upside down): Right -> Right
         val rot180 = AzRailLayoutHelper.calculateLayout(AzDockingSide.RIGHT, Surface.ROTATION_180, true)
-        assertEquals(AzVisualSide.LEFT, rot180.visualSide)
+        assertEquals(AzVisualSide.RIGHT, rot180.visualSide)
         assertEquals(AzOrientation.Vertical, rot180.orientation)
-        assertEquals(true, rot180.reverseLayout)
+        assertEquals(false, rot180.reverseLayout)
 
-        // 270: Right -> Bottom
+        // 270 (counter-clockwise): Right -> Top
         val rot270 = AzRailLayoutHelper.calculateLayout(AzDockingSide.RIGHT, Surface.ROTATION_270, true)
-        assertEquals(AzVisualSide.BOTTOM, rot270.visualSide)
+        assertEquals(AzVisualSide.TOP, rot270.visualSide)
         assertEquals(AzOrientation.Horizontal, rot270.orientation)
         assertEquals(false, rot270.reverseLayout)
     }
