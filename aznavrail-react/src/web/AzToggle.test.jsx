@@ -22,7 +22,9 @@ describe('AzToggle', () => {
   });
 
   it('renders label if provided', () => {
-    render(<AzToggle value={false} onValueChange={() => {}} label="Test Label" />);
+    render(
+      <AzToggle value={false} onValueChange={() => {}} label="Test Label" />
+    );
     expect(screen.getByText('Test Label')).toBeInTheDocument();
   });
 
@@ -37,7 +39,13 @@ describe('AzToggle', () => {
 
   it('does not call onValueChange when disabled', () => {
     const handleValueChange = jest.fn();
-    render(<AzToggle value={false} onValueChange={handleValueChange} enabled={false} />);
+    render(
+      <AzToggle
+        value={false}
+        onValueChange={handleValueChange}
+        enabled={false}
+      />
+    );
     const checkbox = screen.getByRole('checkbox');
     fireEvent.click(checkbox);
     expect(handleValueChange).not.toHaveBeenCalled();

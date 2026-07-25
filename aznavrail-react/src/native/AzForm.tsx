@@ -1,5 +1,17 @@
-import React, { useState, createContext, useContext, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
+import React, {
+  useState,
+  createContext,
+  useContext,
+  useEffect,
+  useCallback,
+} from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ViewStyle,
+} from 'react-native';
 import { AzTextBox, AzTextBoxProps } from './AzTextBox';
 
 interface AzFormContextType {
@@ -44,11 +56,11 @@ export const AzForm: React.FC<AzFormProps> = ({
   const [formData, setFormData] = useState<Record<string, string>>({});
 
   const updateField = useCallback((name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   }, []);
 
   const registerField = useCallback((name: string, initialValue: string) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       if (prev[name] === undefined) {
         return { ...prev, [name]: initialValue };
       }
@@ -61,7 +73,16 @@ export const AzForm: React.FC<AzFormProps> = ({
   };
 
   return (
-    <AzFormContext.Provider value={{ updateField, registerField, formName, outlineColor, outlined, formData }}>
+    <AzFormContext.Provider
+      value={{
+        updateField,
+        registerField,
+        formName,
+        outlineColor,
+        outlined,
+        formData,
+      }}
+    >
       <View style={[styles.container, style]}>
         {children}
         <TouchableOpacity
@@ -72,10 +93,12 @@ export const AzForm: React.FC<AzFormProps> = ({
               backgroundColor: 'transparent', // Match main component background?
               borderColor: outlineColor,
               borderWidth: outlined ? 0 : 1, // Inverse
-            }
+            },
           ]}
         >
-          {submitButtonContent || <Text style={{ color: outlineColor }}>Submit</Text>}
+          {submitButtonContent || (
+            <Text style={{ color: outlineColor }}>Submit</Text>
+          )}
         </TouchableOpacity>
       </View>
     </AzFormContext.Provider>
@@ -83,7 +106,10 @@ export const AzForm: React.FC<AzFormProps> = ({
 };
 
 /** Props for an individual field inside an `AzForm`. */
-interface AzFormEntryProps extends Omit<AzTextBoxProps, 'onSubmit' | 'submitButtonContent'> {
+interface AzFormEntryProps extends Omit<
+  AzTextBoxProps,
+  'onSubmit' | 'submitButtonContent'
+> {
   /** Field name key used to store this field's value in the form data map. */
   name: string;
   /** Initial text pre-filled in the field. */
@@ -91,13 +117,24 @@ interface AzFormEntryProps extends Omit<AzTextBoxProps, 'onSubmit' | 'submitButt
 }
 
 /** A single text-input field that registers itself with the enclosing `AzForm`. */
-export const AzFormEntry: React.FC<AzFormEntryProps> = ({ name, initialValue = '', ...props }) => {
+export const AzFormEntry: React.FC<AzFormEntryProps> = ({
+  name,
+  initialValue = '',
+  ...props
+}) => {
   const context = useContext(AzFormContext);
   if (!context) {
     throw new Error('AzFormEntry must be used within an AzForm');
   }
 
-  const { updateField, registerField, formName, outlineColor, outlined, formData } = context;
+  const {
+    updateField,
+    registerField,
+    formName,
+    outlineColor,
+    outlined,
+    formData,
+  } = context;
 
   useEffect(() => {
     registerField(name, initialValue);

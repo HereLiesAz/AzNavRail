@@ -1,10 +1,24 @@
-import { parseRepo, humanize, parseContents, orderToc, parseIgnore, isIgnored, findDownloadUrl } from '../services/githubDocs';
+import {
+  parseRepo,
+  humanize,
+  parseContents,
+  orderToc,
+  parseIgnore,
+  isIgnored,
+  findDownloadUrl,
+} from '../services/githubDocs';
 import { parse } from '../services/moreFromAz';
 
 describe('githubDocs', () => {
   it('parseRepo extracts owner/repo and strips .git', () => {
-    expect(parseRepo('https://github.com/HereLiesAz/AzNavRail')).toEqual(['HereLiesAz', 'AzNavRail']);
-    expect(parseRepo('https://github.com/HereLiesAz/AzNavRail.git')).toEqual(['HereLiesAz', 'AzNavRail']);
+    expect(parseRepo('https://github.com/HereLiesAz/AzNavRail')).toEqual([
+      'HereLiesAz',
+      'AzNavRail',
+    ]);
+    expect(parseRepo('https://github.com/HereLiesAz/AzNavRail.git')).toEqual([
+      'HereLiesAz',
+      'AzNavRail',
+    ]);
     expect(parseRepo('https://gitlab.com/a/b')).toBeNull();
   });
 
@@ -16,7 +30,12 @@ describe('githubDocs', () => {
   it('parseContents keeps only markdown files', () => {
     const json = JSON.stringify([
       { type: 'file', name: 'README.md', path: 'README.md', download_url: 'u' },
-      { type: 'file', name: 'build.gradle', path: 'build.gradle', download_url: 'u' },
+      {
+        type: 'file',
+        name: 'build.gradle',
+        path: 'build.gradle',
+        download_url: 'u',
+      },
       { type: 'dir', name: 'docs', path: 'docs' },
       { type: 'file', name: 'API.md', path: 'API.md', download_url: 'u' },
     ]);
@@ -24,20 +43,36 @@ describe('githubDocs', () => {
   });
 
   it('orderToc puts README first and docs last', () => {
-    const root = parseContents(JSON.stringify([
-      { type: 'file', name: 'API.md', path: 'API.md', download_url: 'u' },
-      { type: 'file', name: 'README.md', path: 'README.md', download_url: 'u' },
-    ]));
-    const docs = parseContents(JSON.stringify([
-      { type: 'file', name: 'DSL.md', path: 'docs/DSL.md', download_url: 'u' },
-    ]));
+    const root = parseContents(
+      JSON.stringify([
+        { type: 'file', name: 'API.md', path: 'API.md', download_url: 'u' },
+        {
+          type: 'file',
+          name: 'README.md',
+          path: 'README.md',
+          download_url: 'u',
+        },
+      ])
+    );
+    const docs = parseContents(
+      JSON.stringify([
+        {
+          type: 'file',
+          name: 'DSL.md',
+          path: 'docs/DSL.md',
+          download_url: 'u',
+        },
+      ])
+    );
     const toc = orderToc(root, docs);
     expect(toc[0].title).toBe('README');
     expect(toc[toc.length - 1].path).toBe('docs/DSL.md');
   });
 
   it('azignore excludes listed docs from the TOC', () => {
-    const p = parseIgnore('# private\n\nCHANGELOG.md\ndocs/internal/\n*.draft.md\n');
+    const p = parseIgnore(
+      '# private\n\nCHANGELOG.md\ndocs/internal/\n*.draft.md\n'
+    );
     expect(isIgnored('CHANGELOG.md', p)).toBe(true);
     expect(isIgnored('docs/internal/notes.md', p)).toBe(true);
     expect(isIgnored('docs/x.draft.md', p)).toBe(true);
@@ -47,8 +82,18 @@ describe('githubDocs', () => {
 
   it('findDownloadUrl locates a dotfile in the contents listing', () => {
     const json = JSON.stringify([
-      { type: 'file', name: 'README.md', path: 'README.md', download_url: 'u-readme' },
-      { type: 'file', name: '.azignore', path: '.azignore', download_url: 'u-azignore' },
+      {
+        type: 'file',
+        name: 'README.md',
+        path: 'README.md',
+        download_url: 'u-readme',
+      },
+      {
+        type: 'file',
+        name: '.azignore',
+        path: '.azignore',
+        download_url: 'u-azignore',
+      },
       { type: 'dir', name: 'docs', path: 'docs' },
     ]);
     expect(findDownloadUrl(json, '.azignore')).toBe('u-azignore');
@@ -61,9 +106,21 @@ describe('moreFromAz', () => {
     const baked = JSON.stringify({
       version: 7,
       apps: [
-        { name: 'NoPlay', iconUrl: '', description: 'd', github: 'https://github.com/a/b' },
-        { name: 'HasPlay', iconUrl: 'i', description: 'd', github: 'https://github.com/a/c',
-          play: 'https://play.google.com/store/apps/details?id=com.a.c', web: 'https://c.example.com', isPwa: true },
+        {
+          name: 'NoPlay',
+          iconUrl: '',
+          description: 'd',
+          github: 'https://github.com/a/b',
+        },
+        {
+          name: 'HasPlay',
+          iconUrl: 'i',
+          description: 'd',
+          github: 'https://github.com/a/c',
+          play: 'https://play.google.com/store/apps/details?id=com.a.c',
+          web: 'https://c.example.com',
+          isPwa: true,
+        },
       ],
     });
     const { version, apps } = parse(baked);
@@ -77,7 +134,10 @@ describe('moreFromAz', () => {
   it('parse tolerates an un-baked github-link list (degraded cards)', () => {
     const raw = JSON.stringify({
       version: 2,
-      apps: ['https://github.com/HereLiesAz/AzNavRail', 'https://github.com/HereLiesAz/CueDetat'],
+      apps: [
+        'https://github.com/HereLiesAz/AzNavRail',
+        'https://github.com/HereLiesAz/CueDetat',
+      ],
     });
     const { apps } = parse(raw);
     expect(apps).toHaveLength(2);

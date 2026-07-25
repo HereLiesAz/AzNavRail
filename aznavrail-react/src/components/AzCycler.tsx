@@ -76,9 +76,9 @@ export const AzCycler: React.FC<AzCyclerProps> = ({
     // Guard against infinite loop if all are disabled
     let loopCount = 0;
     while (disabledOptions.includes(nextOption) && loopCount < options.length) {
-       nextIndex = (nextIndex + 1) % options.length;
-       nextOption = options[nextIndex];
-       loopCount++;
+      nextIndex = (nextIndex + 1) % options.length;
+      nextOption = options[nextIndex];
+      loopCount++;
     }
 
     setDisplayOption(nextOption);

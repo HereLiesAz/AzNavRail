@@ -58,10 +58,15 @@ const MenuItem = ({
   const rowRef = useRef(null);
 
   if (isDivider) {
-    return <div className="az-menu-divider" style={{ backgroundColor: color, opacity: 0.2 }} />;
+    return (
+      <div
+        className="az-menu-divider"
+        style={{ backgroundColor: color, opacity: 0.2 }}
+      />
+    );
   }
 
-  const isInteractive = infoScreen ? (isHost || item.isHelpItem) : !item.disabled;
+  const isInteractive = infoScreen ? isHost || item.isHelpItem : !item.disabled;
 
   const handleClick = () => {
     if (!isInteractive) return;
@@ -89,7 +94,7 @@ const MenuItem = ({
     }
   };
 
-  const paddingLeft = 16 + (depth * 16);
+  const paddingLeft = 16 + depth * 16;
 
   const ariaProps = {};
   if (isToggle) {
@@ -107,14 +112,15 @@ const MenuItem = ({
   // Kinetic entrance: rotateY from `startAngle` → 0, hinged on the docked edge.
   const useTurnstile = entrance === 'Turnstile';
   const hingeSide = dockingSide === 'RIGHT' ? 'right' : 'left';
-  const kineticStyle = useTurnstile && visible
-    ? {
-        animation: `azTurnstile ${durationMs}ms cubic-bezier(0.1, 0.9, 0.2, 1) ${index * staggerMs}ms both`,
-        transformOrigin: `${hingeSide} center`,
-        // Custom prop the keyframes read.
-        '--az-start-angle': `${dockingSide === 'RIGHT' ? -startAngle : startAngle}deg`,
-      }
-    : undefined;
+  const kineticStyle =
+    useTurnstile && visible
+      ? {
+          'animation': `azTurnstile ${durationMs}ms cubic-bezier(0.1, 0.9, 0.2, 1) ${index * staggerMs}ms both`,
+          'transformOrigin': `${hingeSide} center`,
+          // Custom prop the keyframes read.
+          '--az-start-angle': `${dockingSide === 'RIGHT' ? -startAngle : startAngle}deg`,
+        }
+      : undefined;
 
   // Side-align + kerning-justify.
   const textAlign =
@@ -124,20 +130,35 @@ const MenuItem = ({
         ? 'right'
         : 'left';
 
-  const label = (isToggle ? (isChecked ? toggleOnText : toggleOffText) : (isCycler ? selectedOption : text)) || '';
+  const label =
+    (isToggle
+      ? isChecked
+        ? toggleOnText
+        : toggleOffText
+      : isCycler
+        ? selectedOption
+        : text) || '';
   // Split up-front on `\n` so each line owns its own measurement + solve. Compose does this too;
   // measuring the whole label at once folds newline width into `naturalWidth` and inflates the
   // solver's `charCount`, so per-line justification would drift for any multi-line label.
   const lines = label.split('\n');
 
   const renderLabelBlock = (visibleText) => (
-    <span className="az-menu-item-text" style={{
-      flex: 1,
-      color: textColor || undefined,
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: textAlign === 'right' ? 'flex-end' : textAlign === 'center' ? 'center' : 'flex-start',
-    }}>
+    <span
+      className="az-menu-item-text"
+      style={{
+        flex: 1,
+        color: textColor || undefined,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems:
+          textAlign === 'right'
+            ? 'flex-end'
+            : textAlign === 'center'
+              ? 'center'
+              : 'flex-start',
+      }}
+    >
       {lines.map((line, i) => (
         <JustifiedWebLine
           key={i}
@@ -158,13 +179,20 @@ const MenuItem = ({
     <div
       ref={rowRef}
       className="az-menu-item"
-      style={{ color, paddingLeft: `${paddingLeft}px`, position: 'relative', ...kineticStyle }}
+      style={{
+        color,
+        paddingLeft: `${paddingLeft}px`,
+        position: 'relative',
+        ...kineticStyle,
+      }}
       onClick={handleClick}
       data-az-nav-id={item.id}
       {...ariaProps}
     >
       {isToggle ? (
-        <div className="az-menu-item-content toggle">{renderLabelBlock(isChecked ? toggleOnText : toggleOffText)}</div>
+        <div className="az-menu-item-content toggle">
+          {renderLabelBlock(isChecked ? toggleOnText : toggleOffText)}
+        </div>
       ) : isCycler ? (
         <div className="az-menu-item-content cycler">
           {renderLabelBlock(text)}
@@ -174,9 +202,7 @@ const MenuItem = ({
         <div className="az-menu-item-content button">
           {renderLabelBlock(text)}
           {isHost && (
-            <span className="az-menu-item-arrow">
-              {isExpanded ? '▼' : '▶'}
-            </span>
+            <span className="az-menu-item-arrow">{isExpanded ? '▼' : '▶'}</span>
           )}
         </div>
       )}
@@ -189,20 +215,33 @@ const MenuItem = ({
  * renders this per line so each has its own `naturalWidth` measurement and its own solver call.
  * `whiteSpace: nowrap` prevents auto-wrap; explicit line breaks come from the `.map` in the parent.
  */
-const JustifiedWebLine = ({ line, justify, rowRef, paddingLeft, textAlign }) => {
+const JustifiedWebLine = ({
+  line,
+  justify,
+  rowRef,
+  paddingLeft,
+  textAlign,
+}) => {
   const measureRef = useRef(null);
   const [letterSpacing, setLetterSpacing] = useState(0);
   const [fontScale, setFontScale] = useState(1);
   useEffect(() => {
     if (!justify || !line || line.length < 1) {
-      setLetterSpacing(0); setFontScale(1); return;
+      setLetterSpacing(0);
+      setFontScale(1);
+      return;
     }
     const row = rowRef.current;
     const meas = measureRef.current;
     if (!row || !meas) return;
     const rowWidth = row.getBoundingClientRect().width - paddingLeft - 16;
     const natural = meas.getBoundingClientRect().width;
-    const solved = solveHybridJustify(natural, rowWidth, line.length, WEB_BASE_FONT_PX);
+    const solved = solveHybridJustify(
+      natural,
+      rowWidth,
+      line.length,
+      WEB_BASE_FONT_PX
+    );
     setLetterSpacing(solved.letterSpacing);
     setFontScale(solved.scale);
   }, [line, justify, paddingLeft, rowRef]);
@@ -219,7 +258,9 @@ const JustifiedWebLine = ({ line, justify, rowRef, paddingLeft, textAlign }) => 
 
   return (
     <>
-      <span ref={measureRef} className="az-menu-item-measurer">{line}</span>
+      <span ref={measureRef} className="az-menu-item-measurer">
+        {line}
+      </span>
       <span style={style}>{line}</span>
     </>
   );

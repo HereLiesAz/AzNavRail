@@ -43,7 +43,15 @@ export type AzGuideHighlight =
  */
 export type AzGuideShape =
   | { type: 'Circle'; cx: number; cy: number; radius: number; padding?: number }
-  | { type: 'Rect'; left: number; top: number; width: number; height: number; cornerRadius?: number; padding?: number }
+  | {
+      type: 'Rect';
+      left: number;
+      top: number;
+      width: number;
+      height: number;
+      cornerRadius?: number;
+      padding?: number;
+    }
   | { type: 'Path'; commands: AzPathCmd[]; padding?: number };
 
 /** One command of an `AzGuideShape` path, in absolute window-space px (SVG-style). */
@@ -51,7 +59,15 @@ export type AzPathCmd =
   | { type: 'M'; x: number; y: number }
   | { type: 'L'; x: number; y: number }
   | { type: 'Q'; x1: number; y1: number; x: number; y: number }
-  | { type: 'C'; x1: number; y1: number; x2: number; y2: number; x: number; y: number }
+  | {
+      type: 'C';
+      x1: number;
+      y1: number;
+      x2: number;
+      y2: number;
+      x: number;
+      y: number;
+    }
   | { type: 'Z' };
 
 /** Axis-aligned window-space bounds of a shape (inflated by its padding); used for callout placement. */
@@ -66,25 +82,49 @@ export interface AzShapeBounds {
 export function shapeBounds(shape: AzGuideShape): AzShapeBounds {
   const p = shape.padding ?? 0;
   if (shape.type === 'Circle') {
-    return { left: shape.cx - shape.radius - p, top: shape.cy - shape.radius - p, width: 2 * (shape.radius + p), height: 2 * (shape.radius + p) };
+    return {
+      left: shape.cx - shape.radius - p,
+      top: shape.cy - shape.radius - p,
+      width: 2 * (shape.radius + p),
+      height: 2 * (shape.radius + p),
+    };
   }
   if (shape.type === 'Rect') {
-    return { left: shape.left - p, top: shape.top - p, width: shape.width + 2 * p, height: shape.height + 2 * p };
+    return {
+      left: shape.left - p,
+      top: shape.top - p,
+      width: shape.width + 2 * p,
+      height: shape.height + 2 * p,
+    };
   }
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
   let maxY = -Infinity;
   const acc = (x: number, y: number) => {
-    minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x);
+    maxY = Math.max(maxY, y);
   };
   for (const c of shape.commands) {
     if (c.type === 'M' || c.type === 'L') acc(c.x, c.y);
-    else if (c.type === 'Q') { acc(c.x1, c.y1); acc(c.x, c.y); }
-    else if (c.type === 'C') { acc(c.x1, c.y1); acc(c.x2, c.y2); acc(c.x, c.y); }
+    else if (c.type === 'Q') {
+      acc(c.x1, c.y1);
+      acc(c.x, c.y);
+    } else if (c.type === 'C') {
+      acc(c.x1, c.y1);
+      acc(c.x2, c.y2);
+      acc(c.x, c.y);
+    }
   }
   if (minX > maxX) return { left: 0, top: 0, width: 0, height: 0 };
-  return { left: minX - p, top: minY - p, width: maxX - minX + 2 * p, height: maxY - minY + 2 * p };
+  return {
+    left: minX - p,
+    top: minY - p,
+    width: maxX - minX + 2 * p,
+    height: maxY - minY + 2 * p,
+  };
 }
 
 /** Preferred placement of a callout relative to its highlight target. */
@@ -157,10 +197,12 @@ export interface AzGuidanceSnapshot {
 export function resolveAzHighlight(
   highlightItemId?: string,
   highlightSelector?: () => string | null,
-  highlightTargetId?: string,
+  highlightTargetId?: string
 ): AzGuideHighlight {
-  if (highlightTargetId != null) return { type: 'Target', id: highlightTargetId };
-  if (highlightSelector != null) return { type: 'Dynamic', selector: highlightSelector };
+  if (highlightTargetId != null)
+    return { type: 'Target', id: highlightTargetId };
+  if (highlightSelector != null)
+    return { type: 'Dynamic', selector: highlightSelector };
   if (highlightItemId === AZ_ITEM_ACTIVE) return { type: 'ActiveItem' };
   if (highlightItemId != null) return { type: 'Item', id: highlightItemId };
   return { type: 'None' };
@@ -168,16 +210,31 @@ export function resolveAzHighlight(
 
 /** This step's highlight directive as an `AzGuideHighlight`. */
 export function stepHighlight(step: AzInstructionStep): AzGuideHighlight {
-  return resolveAzHighlight(step.highlightItemId, step.highlightSelector, step.highlightTargetId);
+  return resolveAzHighlight(
+    step.highlightItemId,
+    step.highlightSelector,
+    step.highlightTargetId
+  );
 }
 
 /** This step as a standalone `AzInstruction` (used when the overlay pages a stepped edge). */
-export function stepToInstruction(step: AzInstructionStep, edgeTitle?: string): AzInstruction {
-  return { text: step.text, title: step.title ?? edgeTitle, highlight: stepHighlight(step), side: step.side };
+export function stepToInstruction(
+  step: AzInstructionStep,
+  edgeTitle?: string
+): AzInstruction {
+  return {
+    text: step.text,
+    title: step.title ?? edgeTitle,
+    highlight: stepHighlight(step),
+    side: step.side,
+  };
 }
 
 /** The rail item id a highlight points at (folding ActiveItem/Dynamic against the live active id). */
-export function resolveItemId(h: AzGuideHighlight, activeItemId: string | null): string | null {
+export function resolveItemId(
+  h: AzGuideHighlight,
+  activeItemId: string | null
+): string | null {
   if (h.type === 'Item') return h.id;
   if (h.type === 'ActiveItem') return activeItemId;
   if (h.type === 'Dynamic') {
@@ -188,7 +245,10 @@ export function resolveItemId(h: AzGuideHighlight, activeItemId: string | null):
 }
 
 /** The resolved target/item id this highlight points at, if any (for the snapshot/analytics). */
-export function resolveTargetId(h: AzGuideHighlight, activeItemId: string | null): string | null {
+export function resolveTargetId(
+  h: AzGuideHighlight,
+  activeItemId: string | null
+): string | null {
   if (h.type === 'Target') return h.id;
   return resolveItemId(h, activeItemId);
 }
@@ -206,14 +266,23 @@ export function resolveShape(
   h: AzGuideHighlight,
   cache: Record<string, AzItemBounds>,
   activeItemId: string | null,
-  targets: Record<string, () => AzGuideShape | null>,
+  targets: Record<string, () => AzGuideShape | null>
 ): AzGuideShape | null {
-  if (h.type === 'Area') return { type: 'Rect', left: h.left, top: h.top, width: h.width, height: h.height };
+  if (h.type === 'Area')
+    return {
+      type: 'Rect',
+      left: h.left,
+      top: h.top,
+      width: h.width,
+      height: h.height,
+    };
   if (h.type === 'Target') return targets[h.id]?.() ?? null;
   const itemId = resolveItemId(h, activeItemId);
   if (itemId == null) return null;
   const b = cache[itemId];
-  return b ? { type: 'Rect', left: b.x, top: b.y, width: b.width, height: b.height } : null;
+  return b
+    ? { type: 'Rect', left: b.x, top: b.y, width: b.width, height: b.height }
+    : null;
 }
 
 /** Stable per-edge cursor key (string fields only), matching Kotlin `AzEdge.stepKey()`. */
@@ -240,7 +309,10 @@ export type AzStatusPredicate = () => boolean;
 export type AzGuideShapeProvider = () => AzGuideShape | null;
 
 /** Host renderer replacing the built-in callout body (the dim/spotlight still draws). */
-export type AzGuidanceRenderer = (snapshot: AzGuidanceSnapshot, bounds: AzShapeBounds | null) => ReactNode;
+export type AzGuidanceRenderer = (
+  snapshot: AzGuidanceSnapshot,
+  bounds: AzShapeBounds | null
+) => ReactNode;
 
 /** A registered guidance suppressor: `[settleMs, predicate]`. */
 export type AzGuidanceSuppressor = [number, () => boolean];

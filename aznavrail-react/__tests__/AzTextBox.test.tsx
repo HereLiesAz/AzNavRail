@@ -28,18 +28,31 @@ describe('AzTextBox', () => {
       <AzTextBox hint="Enter text" historyContext="test-context-1" />
     );
 
-    await fireEvent.changeText(getByPlaceholderText('Enter text'), 'hello world');
+    await fireEvent.changeText(
+      getByPlaceholderText('Enter text'),
+      'hello world'
+    );
     await fireEvent.press(getByText('GO'));
 
-    expect(historyManager.addEntry).toHaveBeenCalledWith('test-context-1', 'hello world');
+    expect(historyManager.addEntry).toHaveBeenCalledWith(
+      'test-context-1',
+      'hello world'
+    );
   });
 
   it('should NOT call historyManager.addEntry on submit when secret is true', async () => {
     const { getByPlaceholderText, getByText } = await render(
-      <AzTextBox hint="Enter password" secret={true} historyContext="test-context-2" />
+      <AzTextBox
+        hint="Enter password"
+        secret={true}
+        historyContext="test-context-2"
+      />
     );
 
-    await fireEvent.changeText(getByPlaceholderText('Enter password'), 'my_secret_password');
+    await fireEvent.changeText(
+      getByPlaceholderText('Enter password'),
+      'my_secret_password'
+    );
     await fireEvent.press(getByText('GO'));
 
     expect(historyManager.addEntry).not.toHaveBeenCalled();

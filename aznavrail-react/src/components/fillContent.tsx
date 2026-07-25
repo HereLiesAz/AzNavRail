@@ -18,7 +18,9 @@ import { Image, ImageSourcePropType, StyleSheet, View } from 'react-native';
 export const AzFillContentTestID = 'az-button-content';
 export const AzFillContentGraphicTestID = 'az-button-content-graphic';
 
-export function renderFillContent(content: React.ReactNode | ImageSourcePropType): React.ReactNode {
+export function renderFillContent(
+  content: React.ReactNode | ImageSourcePropType
+): React.ReactNode {
   return (
     <View
       style={[StyleSheet.absoluteFill, styles.fill]}
@@ -43,7 +45,9 @@ function isImageSource(value: unknown): value is ImageSourcePropType {
   );
 }
 
-function renderInner(content: React.ReactNode | ImageSourcePropType): React.ReactNode {
+function renderInner(
+  content: React.ReactNode | ImageSourcePropType
+): React.ReactNode {
   if (isImageSource(content)) {
     return (
       <Image

@@ -1,5 +1,17 @@
-import React, { useState, createContext, useContext, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
+import React, {
+  useState,
+  createContext,
+  useContext,
+  useEffect,
+  useCallback,
+} from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ViewStyle,
+} from 'react-native';
 import { AzTextBox, AzTextBoxProps } from './AzTextBox';
 
 /** Declarative description of a single field in an `AzForm` when using the `entries` API. */
@@ -80,21 +92,21 @@ export const AzForm: React.FC<AzFormProps> = ({
   trailingIcon,
 }) => {
   const [formData, setFormData] = useState<Record<string, string>>(() => {
-     const initial: Record<string, string> = {};
-     if (entries) {
-         entries.forEach(e => {
-             initial[e.name] = e.initialValue || '';
-         });
-     }
-     return initial;
+    const initial: Record<string, string> = {};
+    if (entries) {
+      entries.forEach((e) => {
+        initial[e.name] = e.initialValue || '';
+      });
+    }
+    return initial;
   });
 
   const updateField = useCallback((name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   }, []);
 
   const registerField = useCallback((name: string, initialValue: string) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       if (prev[name] === undefined) {
         return { ...prev, [name]: initialValue };
       }
@@ -108,66 +120,89 @@ export const AzForm: React.FC<AzFormProps> = ({
 
   // Modern Android-parity rendering
   if (entries && entries.length > 0) {
-      return (
-        <View style={[styles.container, style]}>
-            {entries.map((entry, index) => {
-                const isLast = index === entries.length - 1;
-                const returnKeyType = entry.returnKeyType || (isLast ? 'send' : 'next');
-                const val = formData[entry.name] !== undefined ? formData[entry.name] : (entry.initialValue || '');
-                
-                const textBox = (
-                    <AzTextBox
-                        value={val}
-                        onValueChange={(t) => updateField(entry.name, t)}
-                        historyContext={formName}
-                        hint={entry.hint}
-                        outlined={outlined}
-                        outlineColor={outlineColor}
-                        multiline={entry.multiline}
-                        secret={entry.secret}
-                        leadingIcon={entry.leadingIcon}
-                        trailingIcon={trailingIcon}
-                        isError={entry.isError}
-                        enabled={entry.enabled}
-                        keyboardType={entry.keyboardType}
-                        returnKeyType={returnKeyType}
-                        showSubmitButton={false}
-                        containerStyle={isLast ? { flex: 1, marginBottom: 0 } : undefined}
-                        onSubmitEditing={isLast ? handleSubmit : undefined}
-                    />
-                );
+    return (
+      <View style={[styles.container, style]}>
+        {entries.map((entry, index) => {
+          const isLast = index === entries.length - 1;
+          const returnKeyType =
+            entry.returnKeyType || (isLast ? 'send' : 'next');
+          const val =
+            formData[entry.name] !== undefined
+              ? formData[entry.name]
+              : entry.initialValue || '';
 
-                if (isLast) {
-                    return (
-                        <View key={entry.name} style={styles.lastRow}>
-                            {textBox}
-                            <View style={{ width: 8 }} />
-                            <TouchableOpacity
-                                onPress={handleSubmit}
-                                style={[
-                                    styles.paritySubmitButton,
-                                    {
-                                        backgroundColor: 'transparent',
-                                        borderColor: outlineColor,
-                                        borderWidth: outlined ? 0 : 1,
-                                    }
-                                ]}
-                            >
-                                {submitButtonContent || <Text style={{ color: outlineColor, fontSize: 12, fontWeight: 'bold' }}>GO</Text>}
-                            </TouchableOpacity>
-                        </View>
-                    );
-                }
+          const textBox = (
+            <AzTextBox
+              value={val}
+              onValueChange={(t) => updateField(entry.name, t)}
+              historyContext={formName}
+              hint={entry.hint}
+              outlined={outlined}
+              outlineColor={outlineColor}
+              multiline={entry.multiline}
+              secret={entry.secret}
+              leadingIcon={entry.leadingIcon}
+              trailingIcon={trailingIcon}
+              isError={entry.isError}
+              enabled={entry.enabled}
+              keyboardType={entry.keyboardType}
+              returnKeyType={returnKeyType}
+              showSubmitButton={false}
+              containerStyle={isLast ? { flex: 1, marginBottom: 0 } : undefined}
+              onSubmitEditing={isLast ? handleSubmit : undefined}
+            />
+          );
 
-                return <View key={entry.name}>{textBox}</View>;
-            })}
-        </View>
-      );
+          if (isLast) {
+            return (
+              <View key={entry.name} style={styles.lastRow}>
+                {textBox}
+                <View style={{ width: 8 }} />
+                <TouchableOpacity
+                  onPress={handleSubmit}
+                  style={[
+                    styles.paritySubmitButton,
+                    {
+                      backgroundColor: 'transparent',
+                      borderColor: outlineColor,
+                      borderWidth: outlined ? 0 : 1,
+                    },
+                  ]}
+                >
+                  {submitButtonContent || (
+                    <Text
+                      style={{
+                        color: outlineColor,
+                        fontSize: 12,
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      GO
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            );
+          }
+
+          return <View key={entry.name}>{textBox}</View>;
+        })}
+      </View>
+    );
   }
 
   // Legacy rendering
   return (
-    <AzFormContext.Provider value={{ updateField, registerField, formName, outlineColor, outlined, formData }}>
+    <AzFormContext.Provider
+      value={{
+        updateField,
+        registerField,
+        formName,
+        outlineColor,
+        outlined,
+        formData,
+      }}
+    >
       <View style={[styles.container, style]}>
         {children}
         <TouchableOpacity
@@ -178,10 +213,12 @@ export const AzForm: React.FC<AzFormProps> = ({
               backgroundColor: 'transparent', // Match main component background?
               borderColor: outlineColor,
               borderWidth: outlined ? 0 : 1, // Inverse
-            }
+            },
           ]}
         >
-          {submitButtonContent || <Text style={{ color: outlineColor }}>Submit</Text>}
+          {submitButtonContent || (
+            <Text style={{ color: outlineColor }}>Submit</Text>
+          )}
         </TouchableOpacity>
       </View>
     </AzFormContext.Provider>
@@ -189,7 +226,10 @@ export const AzForm: React.FC<AzFormProps> = ({
 };
 
 /** Props for `AzFormEntry`, an `AzTextBox` registered into the surrounding `AzForm` by `name`. */
-export interface AzFormEntryProps extends Omit<AzTextBoxProps, 'onSubmit' | 'submitButtonContent'> {
+export interface AzFormEntryProps extends Omit<
+  AzTextBoxProps,
+  'onSubmit' | 'submitButtonContent'
+> {
   /** Field name; used as the key in the data emitted by the parent form. */
   name: string;
   /** Initial value for uncontrolled use. */
@@ -197,13 +237,24 @@ export interface AzFormEntryProps extends Omit<AzTextBoxProps, 'onSubmit' | 'sub
 }
 
 /** Single `AzTextBox` row that registers itself into the nearest `AzForm` context. */
-export const AzFormEntry: React.FC<AzFormEntryProps> = ({ name, initialValue = '', ...props }) => {
+export const AzFormEntry: React.FC<AzFormEntryProps> = ({
+  name,
+  initialValue = '',
+  ...props
+}) => {
   const context = useContext(AzFormContext);
   if (!context) {
     throw new Error('AzFormEntry must be used within an AzForm');
   }
 
-  const { updateField, registerField, formName, outlineColor, outlined, formData } = context;
+  const {
+    updateField,
+    registerField,
+    formName,
+    outlineColor,
+    outlined,
+    formData,
+  } = context;
 
   useEffect(() => {
     registerField(name, initialValue);
@@ -253,5 +304,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     height: 40,
-  }
+  },
 });

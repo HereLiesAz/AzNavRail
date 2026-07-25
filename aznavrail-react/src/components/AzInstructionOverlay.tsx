@@ -1,5 +1,13 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, PanResponder, type LayoutChangeEvent, type ViewStyle } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  PanResponder,
+  type LayoutChangeEvent,
+  type ViewStyle,
+} from 'react-native';
 import type {
   AzGuidanceRenderer,
   AzGuideShape,
@@ -50,21 +58,42 @@ export const AzInstructionOverlay: React.FC<Props> = ({
   onSkip,
   renderSlot,
 }) => {
-  const [sizes, setSizes] = useState<Record<number, { width: number; height: number }>>({});
+  const [sizes, setSizes] = useState<
+    Record<number, { width: number; height: number }>
+  >({});
   if (!resolved || resolved.length === 0) return null;
   const screen = Dimensions.get('window');
-  const safe: AzShapeBounds = { left: 8, top: 8, width: screen.width - 16, height: screen.height - 16 - 24 };
+  const safe: AzShapeBounds = {
+    left: 8,
+    top: 8,
+    width: screen.width - 16,
+    height: screen.height - 16 - 24,
+  };
 
-  const shapes = resolved.map((r) => resolveShape(r.instruction.highlight ?? { type: 'None' }, itemBounds, activeItemId, targets));
+  const shapes = resolved.map((r) =>
+    resolveShape(
+      r.instruction.highlight ?? { type: 'None' },
+      itemBounds,
+      activeItemId,
+      targets
+    )
+  );
   const targetBounds = shapes.map((s) => (s ? shapeBounds(s) : null));
-  const itemObstacles: AzShapeBounds[] = Object.values(itemBounds).map((b) => ({ left: b.x, top: b.y, width: b.width, height: b.height }));
+  const itemObstacles: AzShapeBounds[] = Object.values(itemBounds).map((b) => ({
+    left: b.x,
+    top: b.y,
+    width: b.width,
+    height: b.height,
+  }));
 
   const placedRects: AzShapeBounds[] = [];
   const placements = resolved.map((_, i) => {
     const size = sizes[i] ?? { width: CALLOUT_W, height: DEFAULT_H };
     const obstacles = [
       ...itemObstacles,
-      ...(targetBounds.filter((b, j) => j !== i && b != null) as AzShapeBounds[]),
+      ...(targetBounds.filter(
+        (b, j) => j !== i && b != null
+      ) as AzShapeBounds[]),
       ...placedRects,
     ];
     const rect = placeCallout(targetBounds[i], size, obstacles, safe);
@@ -81,21 +110,50 @@ export const AzInstructionOverlay: React.FC<Props> = ({
         const measured = sizes[i] != null;
         const stepKey = edgeStepKey(r.edge);
         const currentStep = r.edge.steps?.[r.stepIndex];
-        const tappable = r.stepTotal > 1 && r.stepIndex < r.stepTotal - 1 && currentStep?.advanceWhen == null;
-        const body = renderSlot
-          ? renderSlot(toSnapshotLite(r, shape, b), b)
-          : <Callout ins={r.instruction} accent={accent} stepIndex={r.stepIndex} stepTotal={r.stepTotal} tappable={tappable} />;
+        const tappable =
+          r.stepTotal > 1 &&
+          r.stepIndex < r.stepTotal - 1 &&
+          currentStep?.advanceWhen == null;
+        const body = renderSlot ? (
+          renderSlot(toSnapshotLite(r, shape, b), b)
+        ) : (
+          <Callout
+            ins={r.instruction}
+            accent={accent}
+            stepIndex={r.stepIndex}
+            stepTotal={r.stepTotal}
+            tappable={tappable}
+          />
+        );
         return (
           <React.Fragment key={i}>
-            {shape && b ? <View pointerEvents="none" style={ringStyle(shape, b, accent)} /> : null}
-            {b ? <Connector from={center(rect)} to={center(b)} color={accent} /> : null}
+            {shape && b ? (
+              <View pointerEvents="none" style={ringStyle(shape, b, accent)} />
+            ) : null}
+            {b ? (
+              <Connector from={center(rect)} to={center(b)} color={accent} />
+            ) : null}
             <CalloutGesture
               onSwipe={() => onSkip?.()}
-              onTap={tappable && onAdvance ? () => onAdvance(stepKey) : undefined}
-              style={{ position: 'absolute', left: rect.left, top: rect.top, maxWidth: CALLOUT_W, opacity: measured ? 1 : 0 }}
+              onTap={
+                tappable && onAdvance ? () => onAdvance(stepKey) : undefined
+              }
+              style={{
+                position: 'absolute',
+                left: rect.left,
+                top: rect.top,
+                maxWidth: CALLOUT_W,
+                opacity: measured ? 1 : 0,
+              }}
               onLayout={(e: LayoutChangeEvent) => {
                 const { width, height } = e.nativeEvent.layout;
-                setSizes((prev) => (prev[i] && prev[i].width === width && prev[i].height === height ? prev : { ...prev, [i]: { width, height } }));
+                setSizes((prev) =>
+                  prev[i] &&
+                  prev[i].width === width &&
+                  prev[i].height === height
+                    ? prev
+                    : { ...prev, [i]: { width, height } }
+                );
               }}
             >
               {body}
@@ -107,7 +165,10 @@ export const AzInstructionOverlay: React.FC<Props> = ({
   );
 };
 
-const center = (r: AzShapeBounds) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+const center = (r: AzShapeBounds) => ({
+  x: r.left + r.width / 2,
+  y: r.top + r.height / 2,
+});
 
 /** A callout wrapper: a swipe past a threshold cancels guidance; a clean tap advances an info step. */
 const CalloutGesture: React.FC<{
@@ -124,13 +185,14 @@ const CalloutGesture: React.FC<{
   const handlers = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) + Math.abs(g.dy) > 4,
+      onMoveShouldSetPanResponder: (_, g) =>
+        Math.abs(g.dx) + Math.abs(g.dy) > 4,
       onPanResponderRelease: (_, g) => {
         const dist = Math.hypot(g.dx, g.dy);
         if (dist > SWIPE_PX) onSwipeRef.current();
         else if (dist < TAP_PX) onTapRef.current?.();
       },
-    }),
+    })
   ).current;
   return (
     <View {...handlers.panHandlers} style={style} onLayout={onLayout}>
@@ -140,7 +202,11 @@ const CalloutGesture: React.FC<{
 };
 
 /** A connector line from the callout to its target (no arrowhead — see the parity note). */
-const Connector: React.FC<{ from: { x: number; y: number }; to: { x: number; y: number }; color: string }> = ({ from, to, color }) => {
+const Connector: React.FC<{
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+  color: string;
+}> = ({ from, to, color }) => {
   const dx = to.x - from.x;
   const dy = to.y - from.y;
   const len = Math.hypot(dx, dy);
@@ -151,14 +217,31 @@ const Connector: React.FC<{ from: { x: number; y: number }; to: { x: number; y: 
   return (
     <View
       pointerEvents="none"
-      style={{ position: 'absolute', left: mx - len / 2, top: my - 1, width: len, height: 2, backgroundColor: color, transform: [{ rotate: `${angle}deg` }] }}
+      style={{
+        position: 'absolute',
+        left: mx - len / 2,
+        top: my - 1,
+        width: len,
+        height: 2,
+        backgroundColor: color,
+        transform: [{ rotate: `${angle}deg` }],
+      }}
     />
   );
 };
 
 /** A bounding ring around the shape (circle → circular border; rect/path → rounded box). */
-function ringStyle(shape: AzGuideShape, b: AzShapeBounds, accent: string): ViewStyle {
-  const radius = shape.type === 'Circle' ? Math.min(b.width, b.height) / 2 : shape.type === 'Rect' ? (shape.cornerRadius ?? 12) : 12;
+function ringStyle(
+  shape: AzGuideShape,
+  b: AzShapeBounds,
+  accent: string
+): ViewStyle {
+  const radius =
+    shape.type === 'Circle'
+      ? Math.min(b.width, b.height) / 2
+      : shape.type === 'Rect'
+        ? (shape.cornerRadius ?? 12)
+        : 12;
   return {
     position: 'absolute',
     left: b.left - 4,
@@ -172,7 +255,11 @@ function ringStyle(shape: AzGuideShape, b: AzShapeBounds, accent: string): ViewS
 }
 
 /** Minimal snapshot for the render slot (mirrors the controller's published snapshot). */
-function toSnapshotLite(r: ResolvedInstruction, shape: AzGuideShape | null, b: AzShapeBounds | null) {
+function toSnapshotLite(
+  r: ResolvedInstruction,
+  shape: AzGuideShape | null,
+  b: AzShapeBounds | null
+) {
   const h = r.instruction.highlight ?? { type: 'None' as const };
   return {
     text: r.instruction.text,
@@ -188,20 +275,28 @@ function toSnapshotLite(r: ResolvedInstruction, shape: AzGuideShape | null, b: A
   };
 }
 
-const Callout: React.FC<{ ins: AzInstruction; accent: string; stepIndex: number; stepTotal: number; tappable: boolean }> = ({
-  ins,
-  accent,
-  stepIndex,
-  stepTotal,
-  tappable,
-}) => (
+const Callout: React.FC<{
+  ins: AzInstruction;
+  accent: string;
+  stepIndex: number;
+  stepTotal: number;
+  tappable: boolean;
+}> = ({ ins, accent, stepIndex, stepTotal, tappable }) => (
   <View style={styles.callout}>
-    {ins.title ? <Text style={[styles.title, { color: accent }]}>{ins.title}</Text> : null}
+    {ins.title ? (
+      <Text style={[styles.title, { color: accent }]}>{ins.title}</Text>
+    ) : null}
     <Text style={styles.text}>{ins.text}</Text>
     {ins.media ? <View style={styles.media}>{ins.media()}</View> : null}
     <View style={styles.stepRow}>
-      <Text style={styles.stepCount}>{stepTotal > 1 ? `${stepIndex + 1} / ${stepTotal}` : 'swipe to dismiss'}</Text>
-      {tappable ? <Text style={[styles.tapHint, { color: accent }]}>Tap to continue ▸</Text> : null}
+      <Text style={styles.stepCount}>
+        {stepTotal > 1 ? `${stepIndex + 1} / ${stepTotal}` : 'swipe to dismiss'}
+      </Text>
+      {tappable ? (
+        <Text style={[styles.tapHint, { color: accent }]}>
+          Tap to continue ▸
+        </Text>
+      ) : null}
     </View>
   </View>
 );
@@ -221,7 +316,11 @@ const styles = StyleSheet.create({
   title: { fontWeight: 'bold', marginBottom: 4 },
   text: { color: '#222222' },
   media: { marginTop: 8 },
-  stepRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
+  stepRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
   stepCount: { fontSize: 12, color: '#888888' },
   tapHint: { fontSize: 12 },
 });

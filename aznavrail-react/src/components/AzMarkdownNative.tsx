@@ -6,7 +6,8 @@ import { Text, View, Linking, StyleSheet } from 'react-native';
  * Covers the common doc subset (headings, paragraphs, bold/italic, inline code, fenced code blocks,
  * lists, block-quotes, horizontal rules, links). `accent` colors links and headings.
  */
-const INLINE = /(`([^`]+)`)|(\*\*([^*]+)\*\*)|(__([^_]+)__)|(\*([^*]+)\*)|(_([^_]+)_)|(\[([^\]]+)\]\(([^)]+)\))/g;
+const INLINE =
+  /(`([^`]+)`)|(\*\*([^*]+)\*\*)|(__([^_]+)__)|(\*([^*]+)\*)|(_([^_]+)_)|(\[([^\]]+)\]\(([^)]+)\))/g;
 
 function renderInline(text: string, accent: string): React.ReactNode[] {
   const nodes: React.ReactNode[] = [];
@@ -16,15 +17,44 @@ function renderInline(text: string, accent: string): React.ReactNode[] {
   INLINE.lastIndex = 0;
   while ((m = INLINE.exec(text)) !== null) {
     if (m.index > last) nodes.push(text.slice(last, m.index));
-    if (m[2]) nodes.push(<Text key={k} style={styles.code}>{m[2]}</Text>);
-    else if (m[4]) nodes.push(<Text key={k} style={styles.bold}>{m[4]}</Text>);
-    else if (m[6]) nodes.push(<Text key={k} style={styles.bold}>{m[6]}</Text>);
-    else if (m[8]) nodes.push(<Text key={k} style={styles.italic}>{m[8]}</Text>);
-    else if (m[10]) nodes.push(<Text key={k} style={styles.italic}>{m[10]}</Text>);
+    if (m[2])
+      nodes.push(
+        <Text key={k} style={styles.code}>
+          {m[2]}
+        </Text>
+      );
+    else if (m[4])
+      nodes.push(
+        <Text key={k} style={styles.bold}>
+          {m[4]}
+        </Text>
+      );
+    else if (m[6])
+      nodes.push(
+        <Text key={k} style={styles.bold}>
+          {m[6]}
+        </Text>
+      );
+    else if (m[8])
+      nodes.push(
+        <Text key={k} style={styles.italic}>
+          {m[8]}
+        </Text>
+      );
+    else if (m[10])
+      nodes.push(
+        <Text key={k} style={styles.italic}>
+          {m[10]}
+        </Text>
+      );
     else if (m[12]) {
       const url = m[13];
       nodes.push(
-        <Text key={k} style={[styles.link, { color: accent }]} onPress={() => Linking.openURL(url).catch(() => {})}>
+        <Text
+          key={k}
+          style={[styles.link, { color: accent }]}
+          onPress={() => Linking.openURL(url).catch(() => {})}
+        >
           {m[12]}
         </Text>
       );
@@ -36,7 +66,13 @@ function renderInline(text: string, accent: string): React.ReactNode[] {
   return nodes;
 }
 
-export default function AzMarkdownNative({ markdown, accent }: { markdown: string; accent: string }) {
+export default function AzMarkdownNative({
+  markdown,
+  accent,
+}: {
+  markdown: string;
+  accent: string;
+}) {
   const lines = (markdown || '').replace(/\r\n/g, '\n').split('\n');
   const blocks: React.ReactNode[] = [];
   let para: string[] = [];
@@ -46,7 +82,12 @@ export default function AzMarkdownNative({ markdown, accent }: { markdown: strin
   const flushPara = () => {
     if (para.length) {
       const text = para.join(' ').trim();
-      if (text) blocks.push(<Text key={key++} style={styles.p}>{renderInline(text, accent)}</Text>);
+      if (text)
+        blocks.push(
+          <Text key={key++} style={styles.p}>
+            {renderInline(text, accent)}
+          </Text>
+        );
       para = [];
     }
   };
@@ -57,16 +98,32 @@ export default function AzMarkdownNative({ markdown, accent }: { markdown: strin
       flushPara();
       const code: string[] = [];
       i++;
-      while (i < lines.length && !lines[i].trimStart().startsWith('```')) { code.push(lines[i]); i++; }
-      blocks.push(<View key={key++} style={styles.pre}><Text style={styles.preText}>{code.join('\n')}</Text></View>);
+      while (i < lines.length && !lines[i].trimStart().startsWith('```')) {
+        code.push(lines[i]);
+        i++;
+      }
+      blocks.push(
+        <View key={key++} style={styles.pre}>
+          <Text style={styles.preText}>{code.join('\n')}</Text>
+        </View>
+      );
     } else if (/^(---|\*\*\*|___)\s*$/.test(line.trim())) {
       flushPara();
-      blocks.push(<View key={key++} style={[styles.hr, { backgroundColor: accent }]} />);
+      blocks.push(
+        <View key={key++} style={[styles.hr, { backgroundColor: accent }]} />
+      );
     } else if (/^#{1,6} /.test(line)) {
       flushPara();
       const level = (line.match(/^#+/) as RegExpMatchArray)[0].length;
       blocks.push(
-        <Text key={key++} style={[styles.heading, headingSize(level), level <= 2 ? { color: accent } : null]}>
+        <Text
+          key={key++}
+          style={[
+            styles.heading,
+            headingSize(level),
+            level <= 2 ? { color: accent } : null,
+          ]}
+        >
           {renderInline(line.replace(/^#+\s/, ''), accent)}
         </Text>
       );
@@ -74,7 +131,9 @@ export default function AzMarkdownNative({ markdown, accent }: { markdown: strin
       flushPara();
       blocks.push(
         <View key={key++} style={[styles.quote, { borderLeftColor: accent }]}>
-          <Text style={styles.p}>{renderInline(line.trimStart().replace(/^>\s?/, ''), accent)}</Text>
+          <Text style={styles.p}>
+            {renderInline(line.trimStart().replace(/^>\s?/, ''), accent)}
+          </Text>
         </View>
       );
     } else if (/^\s*([-*+] |\d+\. )/.test(lines[i])) {
@@ -87,10 +146,13 @@ export default function AzMarkdownNative({ markdown, accent }: { markdown: strin
         blocks.push(
           <View key={key++} style={styles.li}>
             <Text style={[styles.p, { color: accent }]}>{marker}</Text>
-            <Text style={[styles.p, styles.liText]}>{renderInline(content, accent)}</Text>
+            <Text style={[styles.p, styles.liText]}>
+              {renderInline(content, accent)}
+            </Text>
           </View>
         );
-        n++; i++;
+        n++;
+        i++;
       }
       i--;
     } else if (line.trim() === '') {
@@ -107,10 +169,14 @@ export default function AzMarkdownNative({ markdown, accent }: { markdown: strin
 
 function headingSize(level: number) {
   switch (level) {
-    case 1: return { fontSize: 26 };
-    case 2: return { fontSize: 22 };
-    case 3: return { fontSize: 19 };
-    default: return { fontSize: 16 };
+    case 1:
+      return { fontSize: 26 };
+    case 2:
+      return { fontSize: 22 };
+    case 3:
+      return { fontSize: 19 };
+    default:
+      return { fontSize: 16 };
   }
 }
 
@@ -120,7 +186,12 @@ const styles = StyleSheet.create({
   italic: { fontStyle: 'italic' },
   link: { textDecorationLine: 'underline' },
   code: { fontFamily: 'monospace', backgroundColor: 'rgba(127,127,127,0.15)' },
-  pre: { backgroundColor: 'rgba(127,127,127,0.12)', borderRadius: 8, padding: 12, marginBottom: 8 },
+  pre: {
+    backgroundColor: 'rgba(127,127,127,0.12)',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+  },
   preText: { fontFamily: 'monospace', fontSize: 13 },
   heading: { fontWeight: 'bold', marginTop: 12, marginBottom: 6 },
   quote: { borderLeftWidth: 3, paddingLeft: 12, marginBottom: 8 },

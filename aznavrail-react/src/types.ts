@@ -446,7 +446,9 @@ export interface AzRailRelocItemProps extends AzSubItemProps {
   /** Called after the user drops the item to a new position with the source index, target index, and new ordering. */
   onRelocate?: (fromIndex: number, toIndex: number, newOrder: string[]) => void;
   /** Hidden-menu definition: either an array of simple label/action pairs, or a builder function using `HiddenMenuScope`. */
-  hiddenMenu?: { text: string; onClick: () => void }[] | ((scope: HiddenMenuScope) => void);
+  hiddenMenu?:
+    | { text: string; onClick: () => void }[]
+    | ((scope: HiddenMenuScope) => void);
   /** When true, the hidden menu is shown immediately on render without requiring a long-press. */
   forceHiddenMenuOpen?: boolean;
   /** Called when the hidden menu is dismissed by the user. */
@@ -476,7 +478,11 @@ export interface HiddenMenuScope {
   /**
    * Adds a text input item to the hidden menu with an initial value.
    */
-  inputItem(hint: string, initialValue: string, onValueChange: (value: string) => void): void;
+  inputItem(
+    hint: string,
+    initialValue: string,
+    onValueChange: (value: string) => void
+  ): void;
 }
 
 /**

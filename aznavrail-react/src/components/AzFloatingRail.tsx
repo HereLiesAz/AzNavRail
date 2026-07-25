@@ -61,8 +61,19 @@ export interface AzFloatingRailProps {
  * );
  * ```
  */
-export function AzFloatingRail(props: AzFloatingRailProps): React.ReactElement | null {
-  const { visible, children, onDrag, onDragEnd, onDismiss, initialX = 16, initialY = 80, style } = props;
+export function AzFloatingRail(
+  props: AzFloatingRailProps
+): React.ReactElement | null {
+  const {
+    visible,
+    children,
+    onDrag,
+    onDragEnd,
+    onDismiss,
+    initialX = 16,
+    initialY = 80,
+    style,
+  } = props;
   const offsetRef = useRef({ x: initialX, y: initialY });
   const containerRef = useRef<View | null>(null);
 
@@ -81,7 +92,7 @@ export function AzFloatingRail(props: AzFloatingRailProps): React.ReactElement |
           onDragEnd?.();
         },
       }),
-    [onDrag, onDragEnd],
+    [onDrag, onDragEnd]
   );
 
   if (!visible) return null;

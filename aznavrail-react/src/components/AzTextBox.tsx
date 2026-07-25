@@ -12,12 +12,15 @@ import { historyManager } from '../util/HistoryManager';
 
 /** Module-level configuration for `AzTextBox` autocomplete behaviour. */
 export const AzTextBoxDefaults = {
-    /** Sets the maximum number of suggestion entries retained by the shared `historyManager`. */
-    setSuggestionLimit: (limit: number) => historyManager.setLimit(limit),
+  /** Sets the maximum number of suggestion entries retained by the shared `historyManager`. */
+  setSuggestionLimit: (limit: number) => historyManager.setLimit(limit),
 };
 
 /** Props for the `AzTextBox` text input. Extends `TextInputProps` minus `value`/`onChangeText` which are renamed below. */
-export interface AzTextBoxProps extends Omit<TextInputProps, 'value' | 'onChangeText'> {
+export interface AzTextBoxProps extends Omit<
+  TextInputProps,
+  'value' | 'onChangeText'
+> {
   /** Controlled text value. When set, the input is fully controlled. */
   value?: string;
   /** Initial text value used when the input is uncontrolled. */
@@ -138,7 +141,7 @@ export const AzTextBox: React.FC<AzTextBoxProps> = ({
     if (onSubmit) onSubmit(currentValue);
     setShowSuggestions(false);
     if (!isControlled) {
-        setInternalValue('');
+      setInternalValue('');
     }
   };
 
@@ -154,36 +157,38 @@ export const AzTextBox: React.FC<AzTextBoxProps> = ({
   };
 
   const toggleSecret = () => {
-      if (!enabled) return;
-      setIsSecretVisible(!isSecretVisible);
+    if (!enabled) return;
+    setIsSecretVisible(!isSecretVisible);
   };
   const clearText = () => handleChange('');
 
   const effectiveColor = isError ? 'red' : outlineColor;
-  const effectiveTextColor = isError ? 'red' : (textColor || outlineColor);
+  const effectiveTextColor = isError ? 'red' : textColor || outlineColor;
   const effectiveFillColor = fillColor || backgroundColor;
 
   return (
-    <View style={[
+    <View
+      style={[
         styles.container,
         containerStyle,
         {
-            zIndex: showSuggestions ? 1000 : 1,
-            opacity: enabled ? 1 : 0.5
-        }
-    ]}>
-      <View style={[
+          zIndex: showSuggestions ? 1000 : 1,
+          opacity: enabled ? 1 : 0.5,
+        },
+      ]}
+    >
+      <View
+        style={[
           styles.inputRow,
           {
-              borderColor: effectiveColor,
-              borderWidth: outlined ? 1 : 0,
-              backgroundColor: effectiveFillColor,
-              opacity: backgroundOpacity
-          }
-      ]}>
-        {leadingIcon && (
-           <View style={styles.iconWrapper}>{leadingIcon}</View>
-        )}
+            borderColor: effectiveColor,
+            borderWidth: outlined ? 1 : 0,
+            backgroundColor: effectiveFillColor,
+            opacity: backgroundOpacity,
+          },
+        ]}
+      >
+        {leadingIcon && <View style={styles.iconWrapper}>{leadingIcon}</View>}
 
         <TextInput
           {...textInputProps}
@@ -195,30 +200,30 @@ export const AzTextBox: React.FC<AzTextBoxProps> = ({
           multiline={effectiveMultiline}
           editable={enabled}
           style={[
-              styles.input,
-              textInputProps.style,
-              {
-                  color: effectiveTextColor,
-                  minHeight: effectiveMultiline ? 40 : 40,
-                  height: effectiveMultiline ? undefined : 40,
-                  textAlignVertical: effectiveMultiline ? 'top' : 'center'
-              }
+            styles.input,
+            textInputProps.style,
+            {
+              color: effectiveTextColor,
+              minHeight: effectiveMultiline ? 40 : 40,
+              height: effectiveMultiline ? undefined : 40,
+              textAlignVertical: effectiveMultiline ? 'top' : 'center',
+            },
           ]}
         />
 
-        {trailingIcon && (
-           <View style={styles.iconWrapper}>{trailingIcon}</View>
-        )}
+        {trailingIcon && <View style={styles.iconWrapper}>{trailingIcon}</View>}
 
         {isError && (
-           <View style={styles.iconWrapper}><Text style={{ color: 'red', fontWeight: 'bold' }}>!</Text></View>
+          <View style={styles.iconWrapper}>
+            <Text style={{ color: 'red', fontWeight: 'bold' }}>!</Text>
+          </View>
         )}
 
-        {(currentValue.length > 0 && showClearButton) && (
+        {currentValue.length > 0 && showClearButton && (
           <TouchableOpacity
-              onPress={secret ? toggleSecret : clearText}
-              style={styles.iconButton}
-              disabled={!enabled}
+            onPress={secret ? toggleSecret : clearText}
+            style={styles.iconButton}
+            disabled={!enabled}
           >
             <Text style={{ color: effectiveColor, fontSize: 10 }}>
               {secret ? (isSecretVisible ? 'HIDE' : 'SHOW') : 'X'}
@@ -227,20 +232,24 @@ export const AzTextBox: React.FC<AzTextBoxProps> = ({
         )}
 
         {showSubmitButton && (
-            <TouchableOpacity
-                onPress={handleSubmit}
-                disabled={!enabled}
-                style={[
-                    styles.submitButton,
-                    {
-                        backgroundColor: effectiveFillColor,
-                        borderColor: effectiveColor,
-                        borderWidth: !outlined ? 1 : 0
-                    }
-                ]}
-            >
-                 {submitButtonContent || <Text style={{color: effectiveTextColor, fontSize: 10}}>GO</Text>}
-            </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleSubmit}
+            disabled={!enabled}
+            style={[
+              styles.submitButton,
+              {
+                backgroundColor: effectiveFillColor,
+                borderColor: effectiveColor,
+                borderWidth: !outlined ? 1 : 0,
+              },
+            ]}
+          >
+            {submitButtonContent || (
+              <Text style={{ color: effectiveTextColor, fontSize: 10 }}>
+                GO
+              </Text>
+            )}
+          </TouchableOpacity>
         )}
       </View>
 
@@ -252,7 +261,12 @@ export const AzTextBox: React.FC<AzTextBoxProps> = ({
               onPress={() => handleSuggestionClick(item)}
               style={[
                 styles.suggestionItem,
-                { backgroundColor: index % 2 === 0 ? 'rgba(200,200,200,0.9)' : 'rgba(200,200,200,0.8)' }
+                {
+                  backgroundColor:
+                    index % 2 === 0
+                      ? 'rgba(200,200,200,0.9)'
+                      : 'rgba(200,200,200,0.8)',
+                },
               ]}
             >
               <Text style={styles.suggestionText}>{item}</Text>

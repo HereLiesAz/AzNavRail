@@ -9,12 +9,12 @@ import { RelocItemHandler } from '../util/RelocItemHandler';
 
 describe('AzNavRail Full Suite', () => {
   beforeEach(async () => {
-      jest.useFakeTimers();
+    jest.useFakeTimers();
   });
 
   afterEach(async () => {
-      jest.useRealTimers();
-      jest.clearAllMocks();
+    jest.useRealTimers();
+    jest.clearAllMocks();
   });
 
   it('renders loading overlay at root level when isLoading is true', async () => {
@@ -25,7 +25,8 @@ describe('AzNavRail Full Suite', () => {
     );
 
     // Find view with zIndex 10000
-    const loader = root!.queryAll((node) =>
+    const loader = root!.queryAll(
+      (node) =>
         node.type === 'View' &&
         !!node.props.style &&
         node.props.style.zIndex === 10000
@@ -47,26 +48,47 @@ describe('AzNavRail Full Suite', () => {
     ] as AzNavItem[];
 
     const cluster = RelocItemHandler.getCluster(items, 'host');
-    expect(cluster.map(i => i.id)).toEqual(['reloc1', 'reloc2']);
+    expect(cluster.map((i) => i.id)).toEqual(['reloc1', 'reloc2']);
 
     // Dragging the first item down by one slot height (48 + 8) targets cluster index 1.
     const draggedClusterIndex = 0;
-    const targetClusterIndex = RelocItemHandler.calculateTargetIndex(60, draggedClusterIndex, cluster.length, 56);
+    const targetClusterIndex = RelocItemHandler.calculateTargetIndex(
+      60,
+      draggedClusterIndex,
+      cluster.length,
+      56
+    );
     expect(targetClusterIndex).toBe(1);
 
-    const reordered = RelocItemHandler.reorderItems(items, 'reloc1', 'host', targetClusterIndex);
-    const newOrder = RelocItemHandler.getCluster(reordered, 'host').map(i => i.id);
+    const reordered = RelocItemHandler.reorderItems(
+      items,
+      'reloc1',
+      'host',
+      targetClusterIndex
+    );
+    const newOrder = RelocItemHandler.getCluster(reordered, 'host').map(
+      (i) => i.id
+    );
     expect(newOrder).toEqual(['reloc2', 'reloc1']);
 
     // ...which is exactly what the rail reports to a reloc item's `onRelocate`.
-    expect([draggedClusterIndex, targetClusterIndex, newOrder]).toEqual([0, 1, ['reloc2', 'reloc1']]);
+    expect([draggedClusterIndex, targetClusterIndex, newOrder]).toEqual([
+      0,
+      1,
+      ['reloc2', 'reloc1'],
+    ]);
   });
 
   it('enforces NONE shape for SubItems regardless of props', async () => {
     const { getByTestId, unmount } = await render(
       <AzNavRail initiallyExpanded={false}>
         <AzRailHostItem id="host" text="Host" />
-        <AzRailSubItem id="sub" hostId="host" text="Sub" shape={AzButtonShape.SQUARE} />
+        <AzRailSubItem
+          id="sub"
+          hostId="host"
+          text="Sub"
+          shape={AzButtonShape.SQUARE}
+        />
       </AzNavRail>
     );
 
@@ -75,7 +97,9 @@ describe('AzNavRail Full Suite', () => {
 
     // A SQUARE was asked for; NONE is what a sub-item gets — no border at all. The shape lives on
     // the container View around the pressable, not on the pressable itself.
-    const shape = StyleSheet.flatten(getByTestId('sub').parent!.props.style) as any;
+    const shape = StyleSheet.flatten(
+      getByTestId('sub').parent!.props.style
+    ) as any;
     expect(shape.borderWidth).toBe(0);
     expect(shape.borderColor).toBe('transparent');
 

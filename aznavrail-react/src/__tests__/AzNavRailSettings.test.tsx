@@ -73,7 +73,8 @@ describe('AzNavRail rendering with AzNavRailSettings flags', () => {
       </AzNavRail>
     );
     const loader = tree.root!.queryAll(
-      (n) => n.type === 'View' && !!n.props.style && n.props.style.zIndex === 10000
+      (n) =>
+        n.type === 'View' && !!n.props.style && n.props.style.zIndex === 10000
     );
     expect(loader.length).toBe(1);
     await tree.unmount();

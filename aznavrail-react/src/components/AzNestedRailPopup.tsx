@@ -1,117 +1,131 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, Modal, TouchableWithoutFeedback, Dimensions } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Modal,
+  TouchableWithoutFeedback,
+  Dimensions,
+} from 'react-native';
 import { AzNavItem, AzNestedRailAlignment } from '../types';
 import { AzNavRailDefaults } from '../AzNavRailDefaults';
 
 /** Props for the shared `AzNestedRailPopup` modal panel used in both native and web contexts. */
 interface AzNestedRailPopupProps {
-    /** Whether the popup is currently visible. */
-    visible: boolean;
-    /** Called when the user taps outside the popup to dismiss it. */
-    onDismiss: () => void;
-    /** Sub-items to render inside the popup. */
-    items: AzNavItem[];
-    /** Whether items are stacked vertically or laid out horizontally. */
-    alignment: AzNestedRailAlignment;
-    /** Renders a single sub-item inside the popup. */
-    renderItem: (item: AzNavItem, index: number) => React.ReactNode;
-    /** Screen-space bounds of the host item used to position the popup. */
-    anchorPosition?: { x: number, y: number, width: number, height: number };
-    /** Which side the parent rail is docked to, used to position the popup correctly. */
-    dockingSide: 'LEFT' | 'RIGHT';
-    /** Optional active button size for dynamic shrinking logic. */
-    activeButtonSize?: number;
+  /** Whether the popup is currently visible. */
+  visible: boolean;
+  /** Called when the user taps outside the popup to dismiss it. */
+  onDismiss: () => void;
+  /** Sub-items to render inside the popup. */
+  items: AzNavItem[];
+  /** Whether items are stacked vertically or laid out horizontally. */
+  alignment: AzNestedRailAlignment;
+  /** Renders a single sub-item inside the popup. */
+  renderItem: (item: AzNavItem, index: number) => React.ReactNode;
+  /** Screen-space bounds of the host item used to position the popup. */
+  anchorPosition?: { x: number; y: number; width: number; height: number };
+  /** Which side the parent rail is docked to, used to position the popup correctly. */
+  dockingSide: 'LEFT' | 'RIGHT';
+  /** Optional active button size for dynamic shrinking logic. */
+  activeButtonSize?: number;
 }
 
 /** Shared Modal panel that floats next to a nested-rail host item and displays its sub-items. */
 export const AzNestedRailPopup: React.FC<AzNestedRailPopupProps> = ({
-    visible,
-    onDismiss,
-    items,
-    alignment,
-    renderItem,
-    anchorPosition,
-    dockingSide = 'LEFT',
-    activeButtonSize
+  visible,
+  onDismiss,
+  items,
+  alignment,
+  renderItem,
+  anchorPosition,
+  dockingSide = 'LEFT',
+  activeButtonSize,
 }) => {
-    if (!visible) return null;
+  if (!visible) return null;
 
-    const isHorizontal = alignment === AzNestedRailAlignment.HORIZONTAL;
-    const window = Dimensions.get('window');
-    const buttonSize = activeButtonSize ?? AzNavRailDefaults.ButtonWidth;
+  const isHorizontal = alignment === AzNestedRailAlignment.HORIZONTAL;
+  const window = Dimensions.get('window');
+  const buttonSize = activeButtonSize ?? AzNavRailDefaults.ButtonWidth;
 
-    const popupStyle: any = {
-        position: 'absolute',
-        backgroundColor: '#f9f9f9',
-        borderRadius: 8,
-        padding: 8,
-        elevation: 5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-    };
+  const popupStyle: any = {
+    position: 'absolute',
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+    padding: 8,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  };
 
-    if (anchorPosition) {
-        if (isHorizontal) {
-            popupStyle.top = anchorPosition.y;
-            if (dockingSide === 'LEFT') {
-                popupStyle.left = anchorPosition.x + anchorPosition.width + 8;
-            } else {
-                popupStyle.right = (window.width - anchorPosition.x) + 8;
-            }
-            popupStyle.maxWidth = window.width * 0.8;
-            popupStyle.maxHeight = buttonSize + 16;
-        } else {
-            // Vertical popup centered on screen as per Android spec if possible,
-            // but usually anchored next to parent
-            popupStyle.top = Math.max(window.height * 0.1, anchorPosition.y - (items.length * 30));
-            if (dockingSide === 'LEFT') {
-                popupStyle.left = anchorPosition.x + anchorPosition.width + 8;
-            } else {
-                popupStyle.right = (window.width - anchorPosition.x) + 8;
-            }
-            popupStyle.maxHeight = window.height * 0.8;
-            popupStyle.width = buttonSize + 16;
-        }
+  if (anchorPosition) {
+    if (isHorizontal) {
+      popupStyle.top = anchorPosition.y;
+      if (dockingSide === 'LEFT') {
+        popupStyle.left = anchorPosition.x + anchorPosition.width + 8;
+      } else {
+        popupStyle.right = window.width - anchorPosition.x + 8;
+      }
+      popupStyle.maxWidth = window.width * 0.8;
+      popupStyle.maxHeight = buttonSize + 16;
+    } else {
+      // Vertical popup centered on screen as per Android spec if possible,
+      // but usually anchored next to parent
+      popupStyle.top = Math.max(
+        window.height * 0.1,
+        anchorPosition.y - items.length * 30
+      );
+      if (dockingSide === 'LEFT') {
+        popupStyle.left = anchorPosition.x + anchorPosition.width + 8;
+      } else {
+        popupStyle.right = window.width - anchorPosition.x + 8;
+      }
+      popupStyle.maxHeight = window.height * 0.8;
+      popupStyle.width = buttonSize + 16;
     }
+  }
 
-    return (
-        <Modal
-            transparent={true}
-            visible={visible}
-            onRequestClose={onDismiss}
-            animationType="fade"
-        >
-            <TouchableWithoutFeedback onPress={onDismiss}>
-                <View style={styles.overlay}>
-                    <TouchableWithoutFeedback>
-                        <View style={popupStyle}>
-                            <ScrollView
-                                horizontal={isHorizontal}
-                                contentContainerStyle={isHorizontal ? styles.horizontalContent : styles.verticalContent}
-                            >
-                                {items.map((item, index) => renderItem(item, index))}
-                            </ScrollView>
-                        </View>
-                    </TouchableWithoutFeedback>
-                </View>
-            </TouchableWithoutFeedback>
-        </Modal>
-    );
+  return (
+    <Modal
+      transparent={true}
+      visible={visible}
+      onRequestClose={onDismiss}
+      animationType="fade"
+    >
+      <TouchableWithoutFeedback onPress={onDismiss}>
+        <View style={styles.overlay}>
+          <TouchableWithoutFeedback>
+            <View style={popupStyle}>
+              <ScrollView
+                horizontal={isHorizontal}
+                contentContainerStyle={
+                  isHorizontal
+                    ? styles.horizontalContent
+                    : styles.verticalContent
+                }
+              >
+                {items.map((item, index) => renderItem(item, index))}
+              </ScrollView>
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+    </Modal>
+  );
 };
 
 const styles = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.1)',
-    },
-    horizontalContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    verticalContent: {
-        flexDirection: 'column',
-        alignItems: 'center',
-    }
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+  horizontalContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  verticalContent: {
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
 });

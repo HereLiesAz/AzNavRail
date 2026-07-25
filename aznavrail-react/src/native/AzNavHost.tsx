@@ -16,10 +16,15 @@ interface AzNavHostProps {
 }
 
 /** Native implementation: Full-screen host layout that layers a background, content area, and the `AzNavRail`. */
-const AzNavHost: React.FC<AzNavHostProps> = ({ railProps, background, children }) => {
+const AzNavHost: React.FC<AzNavHostProps> = ({
+  railProps,
+  background,
+  children,
+}) => {
   const settings = railProps.settings || {};
   const dockingSide = settings.dockingSide || AzDockingSide.LEFT;
-  const collapsedWidth = settings.collapsedRailWidth || AzNavRailDefaults.CollapsedRailWidth;
+  const collapsedWidth =
+    settings.collapsedRailWidth || AzNavRailDefaults.CollapsedRailWidth;
 
   const { height: screenHeight } = Dimensions.get('window');
 
@@ -31,62 +36,89 @@ const AzNavHost: React.FC<AzNavHostProps> = ({ railProps, background, children }
   const currentDestination = railProps.currentDestination;
   const items: AzNavItem[] = railProps.content || [];
 
-  const currentActiveItem = items.find(item =>
-    (item.route && item.route === currentDestination) ||
-    (item.id === currentDestination)
+  const currentActiveItem = items.find(
+    (item) =>
+      (item.route && item.route === currentDestination) ||
+      item.id === currentDestination
   );
 
   let currentTitle = '';
   if (currentActiveItem) {
     if (currentActiveItem.isToggle) {
-        currentTitle = currentActiveItem.isChecked ? currentActiveItem.toggleOnText : currentActiveItem.toggleOffText;
+      currentTitle = currentActiveItem.isChecked
+        ? currentActiveItem.toggleOnText
+        : currentActiveItem.toggleOffText;
     } else if (currentActiveItem.isCycler) {
-        currentTitle = currentActiveItem.selectedOption || currentActiveItem.text;
+      currentTitle = currentActiveItem.selectedOption || currentActiveItem.text;
     } else {
-        currentTitle = currentActiveItem.screenTitle || currentActiveItem.text;
+      currentTitle = currentActiveItem.screenTitle || currentActiveItem.text;
     }
   }
 
   const showTitle = currentTitle && currentTitle !== AzNavRailDefaults.NO_TITLE;
 
-  const titleAlignment = dockingSide === AzDockingSide.LEFT ? 'flex-end' : 'flex-start';
-  const titlePaddingSide = dockingSide === AzDockingSide.LEFT ? { paddingRight: 32 } : { paddingLeft: 32 };
+  const titleAlignment =
+    dockingSide === AzDockingSide.LEFT ? 'flex-end' : 'flex-start';
+  const titlePaddingSide =
+    dockingSide === AzDockingSide.LEFT
+      ? { paddingRight: 32 }
+      : { paddingLeft: 32 };
 
   return (
     <View style={styles.container}>
       {/* Layer 0: Background */}
-      <View style={StyleSheet.absoluteFill}>
-        {background}
-      </View>
+      <View style={StyleSheet.absoluteFill}>{background}</View>
 
       {/* Layer 1: Content with Title and Safe Zones */}
-      <View style={[
+      <View
+        style={[
           styles.contentWrapper,
           {
-              paddingLeft: dockingSide === AzDockingSide.LEFT ? collapsedWidth : 0,
-              paddingRight: dockingSide === AzDockingSide.RIGHT ? collapsedWidth : 0,
-          }
-      ]}>
+            paddingLeft:
+              dockingSide === AzDockingSide.LEFT ? collapsedWidth : 0,
+            paddingRight:
+              dockingSide === AzDockingSide.RIGHT ? collapsedWidth : 0,
+          },
+        ]}
+      >
         {showTitle && (
-            <View style={[styles.titleContainer, { alignItems: titleAlignment }, titlePaddingSide]}>
-                {/* Keyed on the title so the WP7 sweep replays each time the active screen changes. */}
-                <AzKineticTitle
-                    key={currentTitle}
-                    title={currentTitle}
-                    entrance={settings.titleEntrance ?? AzEntrance.Turnstile}
-                    dockingSide={dockingSide}
-                >
-                    <Text style={[styles.titleText, settings.titleTextStyle]}>{currentTitle}</Text>
-                </AzKineticTitle>
-            </View>
+          <View
+            style={[
+              styles.titleContainer,
+              { alignItems: titleAlignment },
+              titlePaddingSide,
+            ]}
+          >
+            {/* Keyed on the title so the WP7 sweep replays each time the active screen changes. */}
+            <AzKineticTitle
+              key={currentTitle}
+              title={currentTitle}
+              entrance={settings.titleEntrance ?? AzEntrance.Turnstile}
+              dockingSide={dockingSide}
+            >
+              <Text style={[styles.titleText, settings.titleTextStyle]}>
+                {currentTitle}
+              </Text>
+            </AzKineticTitle>
+          </View>
         )}
-        <View style={[styles.onscreenContent, { marginTop: safeTop, marginBottom: safeBottom }]}>
-            {children}
+        <View
+          style={[
+            styles.onscreenContent,
+            { marginTop: safeTop, marginBottom: safeBottom },
+          ]}
+        >
+          {children}
         </View>
       </View>
 
       {/* Layer 2: Rail */}
-      <View style={[styles.railWrapper, dockingSide === AzDockingSide.RIGHT ? { right: 0 } : { left: 0 }]}>
+      <View
+        style={[
+          styles.railWrapper,
+          dockingSide === AzDockingSide.RIGHT ? { right: 0 } : { left: 0 },
+        ]}
+      >
         <AzNavRail {...railProps} />
       </View>
     </View>

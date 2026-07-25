@@ -33,7 +33,9 @@ export interface AzBottomSheetProps {
   style?: ViewStyle;
 }
 
-const DEFAULTS: Required<Omit<AzSheetConfig, 'backgroundColor'>> & { backgroundColor?: string } = {
+const DEFAULTS: Required<Omit<AzSheetConfig, 'backgroundColor'>> & {
+  backgroundColor?: string;
+} = {
   backgroundColor: undefined,
   backgroundAlpha: 0.92,
   scrimColor: '#000000',
@@ -57,7 +59,11 @@ function resolveConfig(config?: AzSheetConfig): typeof DEFAULTS {
   return { ...DEFAULTS, ...(config ?? {}) };
 }
 
-function detentHeight(detent: AzSheetDetent, parentHeight: number, cfg: typeof DEFAULTS): number {
+function detentHeight(
+  detent: AzSheetDetent,
+  parentHeight: number,
+  cfg: typeof DEFAULTS
+): number {
   switch (detent) {
     case AzSheetDetent.HIDDEN:
       return cfg.hiddenStripDp;
@@ -103,7 +109,11 @@ export function AzBottomSheet(props: AzBottomSheetProps): React.ReactElement {
 
   // Compute the target height for the current detent and animate when it changes.
   useEffect(() => {
-    const target = detentHeight(controller.detent, parentHeightRef.current, cfg);
+    const target = detentHeight(
+      controller.detent,
+      parentHeightRef.current,
+      cfg
+    );
     if (cfg.animateInTree && parentHeightRef.current > 0) {
       Animated.timing(animatedHeight, {
         toValue: target,
@@ -114,7 +124,15 @@ export function AzBottomSheet(props: AzBottomSheetProps): React.ReactElement {
     } else {
       animatedHeight.setValue(target);
     }
-  }, [controller.detent, cfg.animateInTree, animatedHeight, cfg.halfFraction, cfg.fullFraction, cfg.peekDp, cfg.hiddenStripDp]);
+  }, [
+    controller.detent,
+    cfg.animateInTree,
+    animatedHeight,
+    cfg.halfFraction,
+    cfg.fullFraction,
+    cfg.peekDp,
+    cfg.hiddenStripDp,
+  ]);
 
   // Hardware back: step down rather than dismiss when collapseOnBack is on (native only).
   useEffect(() => {
@@ -143,7 +161,10 @@ export function AzBottomSheet(props: AzBottomSheetProps): React.ReactElement {
           dragAccumulatorRef.current = 0;
         },
         onPanResponderMove: (_e, gesture) => {
-          if (cfg.horizontalSwipeEnabled && Math.abs(gesture.dx) > Math.abs(gesture.dy)) {
+          if (
+            cfg.horizontalSwipeEnabled &&
+            Math.abs(gesture.dx) > Math.abs(gesture.dy)
+          ) {
             // Horizontal: emit on release, not move.
             return;
           }
@@ -167,7 +188,13 @@ export function AzBottomSheet(props: AzBottomSheetProps): React.ReactElement {
           dragAccumulatorRef.current = 0;
         },
       }),
-    [cfg.horizontalSwipeEnabled, cfg.dragThresholdDp, controller, onSwipeLeft, onSwipeRight],
+    [
+      cfg.horizontalSwipeEnabled,
+      cfg.dragThresholdDp,
+      controller,
+      onSwipeLeft,
+      onSwipeRight,
+    ]
   );
 
   const onParentLayout = (e: LayoutChangeEvent) => {
@@ -178,13 +205,19 @@ export function AzBottomSheet(props: AzBottomSheetProps): React.ReactElement {
     }
   };
 
-  const scrimVisible = controller.detent === AzSheetDetent.HALF || controller.detent === AzSheetDetent.FULL;
+  const scrimVisible =
+    controller.detent === AzSheetDetent.HALF ||
+    controller.detent === AzSheetDetent.FULL;
   const tapOverlayVisible = controller.detent === AzSheetDetent.PEEK;
   const backgroundColor = cfg.backgroundColor ?? '#FFFFFF';
   const isHidden = controller.detent === AzSheetDetent.HIDDEN;
 
   return (
-    <View style={StyleSheet.absoluteFill} onLayout={onParentLayout} pointerEvents="box-none">
+    <View
+      style={StyleSheet.absoluteFill}
+      onLayout={onParentLayout}
+      pointerEvents="box-none"
+    >
       {scrimVisible ? (
         <Pressable
           style={[
@@ -224,7 +257,10 @@ export function AzBottomSheet(props: AzBottomSheetProps): React.ReactElement {
         ) : null}
         {cfg.handleVisible ? (
           <View
-            style={[styles.handleContainer, isHidden ? styles.handleContainerHidden : null]}
+            style={[
+              styles.handleContainer,
+              isHidden ? styles.handleContainerHidden : null,
+            ]}
             pointerEvents="none"
           >
             <View style={[styles.handle, isHidden ? styles.handleDim : null]} />

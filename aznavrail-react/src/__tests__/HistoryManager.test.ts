@@ -113,7 +113,10 @@ describe('HistoryManager', () => {
       historyManager.addEntry('ctxB', 'Beta');
       historyManager.addEntry('ctxA', 'Apple');
       expect(historyManager.getSuggestions('ctxA', '')).toEqual([]);
-      expect(historyManager.getSuggestions('ctxA', 'a')).toEqual(['Apple', 'Alpha']);
+      expect(historyManager.getSuggestions('ctxA', 'a')).toEqual([
+        'Apple',
+        'Alpha',
+      ]);
       expect(historyManager.getSuggestions('ctxB', 'b')).toEqual(['Beta']);
       // ctxA-only entries ("Apple", "Alpha") must not leak into ctxB. Use substrings unique
       // to those entries — note: query 'a' would match 'Beta' (case-insensitive substring),

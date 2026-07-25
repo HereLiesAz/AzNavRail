@@ -7,7 +7,14 @@ import type {
   AzInstruction,
   AzItemBounds,
 } from './AzStatus';
-import { edgeStepKey, resolveShape, resolveTargetId, shapeBounds, stepHighlight, stepToInstruction } from './AzStatus';
+import {
+  edgeStepKey,
+  resolveShape,
+  resolveTargetId,
+  shapeBounds,
+  stepHighlight,
+  stepToInstruction,
+} from './AzStatus';
 import type { AzNavItem } from '../types';
 
 /**
@@ -15,7 +22,11 @@ import type { AzNavItem } from '../types';
  * on a shortest path (its instruction is the next hop), or null if `target` is already true or
  * unreachable. Only interactive edges (`to != null`) are traversed.
  */
-export function nextHop(edges: AzEdge[], activeStatuses: Set<string>, target: string): AzEdge | null {
+export function nextHop(
+  edges: AzEdge[],
+  activeStatuses: Set<string>,
+  target: string
+): AzEdge | null {
   if (activeStatuses.has(target)) return null;
   const adjacency: Record<string, AzEdge[]> = {};
   for (const e of edges) {
@@ -87,14 +98,32 @@ export function resolveEdge(
   edge: AzEdge,
   goalId: string | null,
   stepIndexOf: (key: string) => number,
-  activeStatuses: Set<string>,
+  activeStatuses: Set<string>
 ): ResolvedInstruction {
   const steps = edge.steps ?? [];
-  if (steps.length === 0) return { instruction: edge.instruction, edge, goalId, stepIndex: 0, stepTotal: 1 };
+  if (steps.length === 0)
+    return {
+      instruction: edge.instruction,
+      edge,
+      goalId,
+      stepIndex: 0,
+      stepTotal: 1,
+    };
   const last = steps.length - 1;
   let idx = Math.max(0, Math.min(stepIndexOf(edgeStepKey(edge)), last));
-  while (idx < last && steps[idx].advanceWhen != null && activeStatuses.has(steps[idx].advanceWhen as string)) idx++;
-  return { instruction: stepToInstruction(steps[idx], edge.instruction.title), edge, goalId, stepIndex: idx, stepTotal: steps.length };
+  while (
+    idx < last &&
+    steps[idx].advanceWhen != null &&
+    activeStatuses.has(steps[idx].advanceWhen as string)
+  )
+    idx++;
+  return {
+    instruction: stepToInstruction(steps[idx], edge.instruction.title),
+    edge,
+    goalId,
+    stepIndex: idx,
+    stepTotal: steps.length,
+  };
 }
 
 /**
@@ -108,14 +137,18 @@ export function routeInstructions(
   activeGoalIds: string[],
   activeStatuses: Set<string>,
   stepIndexOf: (key: string) => number = () => 0,
-  consumedStatuses: Set<string> = new Set(),
+  consumedStatuses: Set<string> = new Set()
 ): GuidanceFrame {
   // De-dup: a status that was a shown hop's target and has since been reached is treated as
   // permanently true, so its hop is never re-shown.
-  const effective = consumedStatuses.size === 0 ? activeStatuses : new Set([...activeStatuses, ...consumedStatuses]);
+  const effective =
+    consumedStatuses.size === 0
+      ? activeStatuses
+      : new Set([...activeStatuses, ...consumedStatuses]);
   const out = new Map<string, ResolvedInstruction>();
   const reached = new Set<string>();
-  const keyOf = (ins: AzInstruction) => `${ins.text}|${highlightKey(ins.highlight)}`;
+  const keyOf = (ins: AzInstruction) =>
+    `${ins.text}|${highlightKey(ins.highlight)}`;
   for (const gid of activeGoalIds) {
     const goal = goals[gid];
     if (!goal) continue;
@@ -136,14 +169,18 @@ export function routeInstructions(
     }
   }
   const resolved = Array.from(out.values());
-  return { resolved, instructions: resolved.map((r) => r.instruction), reachedGoals: reached };
+  return {
+    resolved,
+    instructions: resolved.map((r) => r.instruction),
+    reachedGoals: reached,
+  };
 }
 
 /** Builds the public `AzGuidanceSnapshot` for a resolved instruction (the `shape` resolved by caller). */
 export function toSnapshot(
   r: ResolvedInstruction,
   shape: AzGuideShape | null,
-  activeItemId: string | null,
+  activeItemId: string | null
 ): AzGuidanceSnapshot {
   const h = r.instruction.highlight ?? { type: 'None' };
   return {
@@ -167,12 +204,13 @@ export function toSnapshot(
 export function snapshotsOf(
   resolved: ResolvedInstruction[],
   cache: Record<string, AzItemBounds>,
-  activeItemId: string | null,
+  activeItemId: string | null
 ): AzGuidanceSnapshot[] {
   return resolved.map((r) => {
     const h = r.instruction.highlight ?? { type: 'None' };
     // Don't invoke moving target lambdas here (the host has its own shape + the targetId).
-    const shape = h.type === 'Target' ? null : resolveShape(h, cache, activeItemId, {});
+    const shape =
+      h.type === 'Target' ? null : resolveShape(h, cache, activeItemId, {});
     return toSnapshot(r, shape, activeItemId);
   });
 }
@@ -189,7 +227,7 @@ export { resolveShape, stepHighlight, edgeStepKey };
 export function computeAutoEdges(
   items: AzNavItem[],
   openMenuLabel = 'Open the menu',
-  tapLabel: (label: string) => string = (s) => `Tap ${s}`,
+  tapLabel: (label: string) => string = (s) => `Tap ${s}`
 ): AzEdge[] {
   const edges: AzEdge[] = [];
   edges.push({
@@ -203,11 +241,23 @@ export function computeAutoEdges(
     const highlight: AzGuideHighlight = { type: 'Item', id: item.id };
     const tap = tapLabel(item.text || item.id);
     if (item.isHost) {
-      edges.push({ from: visibleFrom, to: `az.host.${item.id}.expanded`, instruction: { text: tap, highlight } });
+      edges.push({
+        from: visibleFrom,
+        to: `az.host.${item.id}.expanded`,
+        instruction: { text: tap, highlight },
+      });
     } else if (item.isNestedRail) {
-      edges.push({ from: visibleFrom, to: `az.nestedRail.${item.id}.open`, instruction: { text: tap, highlight } });
+      edges.push({
+        from: visibleFrom,
+        to: `az.nestedRail.${item.id}.open`,
+        instruction: { text: tap, highlight },
+      });
     } else if (item.route) {
-      edges.push({ from: visibleFrom, to: `az.screen.${item.route}`, instruction: { text: tap, highlight } });
+      edges.push({
+        from: visibleFrom,
+        to: `az.screen.${item.route}`,
+        instruction: { text: tap, highlight },
+      });
     }
   }
   return edges;

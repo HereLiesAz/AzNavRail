@@ -8,7 +8,9 @@ import { AzNavItem, AzButtonShape } from '../types';
  * have either an `info` field or a `helpList` entry, and that the overlay does not
  * throw when given a minimal set of inputs.
  */
-const makeItem = (overrides: Partial<AzNavItem> & Pick<AzNavItem, 'id' | 'text'>): AzNavItem => ({
+const makeItem = (
+  overrides: Partial<AzNavItem> & Pick<AzNavItem, 'id' | 'text'>
+): AzNavItem => ({
   isRailItem: true,
   isToggle: false,
   toggleOnText: '',
@@ -34,7 +36,12 @@ describe('HelpOverlay smoke', () => {
       makeItem({ id: 'home', text: 'Home', info: 'Home button info text.' }),
     ];
     const { getByText } = await renderWithProvider(
-      <HelpOverlay items={items} onDismiss={jest.fn()} helpList={{}} itemBounds={{}} />
+      <HelpOverlay
+        items={items}
+        onDismiss={jest.fn()}
+        helpList={{}}
+        itemBounds={{}}
+      />
     );
     expect(getByText('Home')).toBeTruthy();
     expect(getByText('Home button info text.')).toBeTruthy();
@@ -46,7 +53,12 @@ describe('HelpOverlay smoke', () => {
     const items = [makeItem({ id: 'search', text: 'Search' })];
     const helpList = { search: 'Search functionality help.' };
     const { getByText } = await renderWithProvider(
-      <HelpOverlay items={items} onDismiss={jest.fn()} helpList={helpList} itemBounds={{}} />
+      <HelpOverlay
+        items={items}
+        onDismiss={jest.fn()}
+        helpList={helpList}
+        itemBounds={{}}
+      />
     );
     expect(getByText('Search')).toBeTruthy();
     expect(getByText('Search functionality help.')).toBeTruthy();
@@ -59,7 +71,12 @@ describe('HelpOverlay smoke', () => {
       makeItem({ id: 'visible', text: 'Visible', info: 'Has info.' }),
     ];
     const { queryByText, getByText } = await renderWithProvider(
-      <HelpOverlay items={items} onDismiss={jest.fn()} helpList={{}} itemBounds={{}} />
+      <HelpOverlay
+        items={items}
+        onDismiss={jest.fn()}
+        helpList={{}}
+        itemBounds={{}}
+      />
     );
     expect(queryByText('Empty')).toBeNull();
     expect(getByText('Visible')).toBeTruthy();
@@ -74,7 +91,12 @@ describe('HelpOverlay smoke', () => {
       makeItem({ id: 'c', text: 'Charlie', info: 'C info' }),
     ];
     const { getByText } = await renderWithProvider(
-      <HelpOverlay items={items} onDismiss={jest.fn()} helpList={{}} itemBounds={{}} />
+      <HelpOverlay
+        items={items}
+        onDismiss={jest.fn()}
+        helpList={{}}
+        itemBounds={{}}
+      />
     );
     expect(getByText('Alpha')).toBeTruthy();
     expect(getByText('Bravo')).toBeTruthy();
@@ -88,7 +110,12 @@ describe('HelpOverlay smoke', () => {
     const itemBounds = { home: { x: 0, y: 50, width: 56, height: 56 } };
     await expect(
       renderWithProvider(
-        <HelpOverlay items={items} onDismiss={jest.fn()} helpList={{}} itemBounds={itemBounds} />
+        <HelpOverlay
+          items={items}
+          onDismiss={jest.fn()}
+          helpList={{}}
+          itemBounds={itemBounds}
+        />
       )
     ).resolves.toBeTruthy();
   });
@@ -98,7 +125,12 @@ describe('HelpOverlay smoke', () => {
     // a method on undefined.
     await expect(
       renderWithProvider(
-        <HelpOverlay items={[]} onDismiss={jest.fn()} helpList={{}} itemBounds={{}} />
+        <HelpOverlay
+          items={[]}
+          onDismiss={jest.fn()}
+          helpList={{}}
+          itemBounds={{}}
+        />
       )
     ).resolves.toBeTruthy();
   });
@@ -112,7 +144,12 @@ describe('HelpOverlay smoke', () => {
         text: 'Host',
         info: 'Host info',
         nestedRailItems: [
-          makeItem({ id: 'sub1', text: 'Sub One', info: 'Sub 1 info', isSubItem: true }),
+          makeItem({
+            id: 'sub1',
+            text: 'Sub One',
+            info: 'Sub 1 info',
+            isSubItem: true,
+          }),
         ],
       } as any),
     ];

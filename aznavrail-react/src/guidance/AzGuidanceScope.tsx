@@ -80,11 +80,17 @@ export const AzEdge: React.FC<AzEdgeProps> = (props) => {
     // Serialize steps by value (functions are dropped by JSON.stringify), but encode each step's
     // selector *presence* so toggling a step's highlightSelector on/off re-registers. Identity changes
     // of an existing selector are handled live via propsRef in the effect below — not here.
-    JSON.stringify((props.steps ?? []).map((s) => ({
-      text: s.text, title: s.title, highlightItemId: s.highlightItemId,
-      highlightTargetId: s.highlightTargetId, side: s.side, advanceWhen: s.advanceWhen,
-      sel: s.highlightSelector ? 'sel' : '',
-    }))),
+    JSON.stringify(
+      (props.steps ?? []).map((s) => ({
+        text: s.text,
+        title: s.title,
+        highlightItemId: s.highlightItemId,
+        highlightTargetId: s.highlightTargetId,
+        side: s.side,
+        advanceWhen: s.advanceWhen,
+        sel: s.highlightSelector ? 'sel' : '',
+      }))
+    ),
   ].join('|');
   useEffect(() => {
     const p = propsRef.current;
@@ -92,20 +98,45 @@ export const AzEdge: React.FC<AzEdgeProps> = (props) => {
     // fields of `steps`) so a fresh selector closure each render can't loop register→bump→render. The
     // tradeoff is that the registered edge must resolve selectors LIVE from `propsRef` — otherwise it
     // would freeze the first render's closure and the spotlight would point at a stale item.
-    const liveEdgeSelector = p.highlightSelector ? () => propsRef.current.highlightSelector?.() ?? null : undefined;
+    const liveEdgeSelector = p.highlightSelector
+      ? () => propsRef.current.highlightSelector?.() ?? null
+      : undefined;
     const liveSteps = p.steps?.map((s, idx) =>
-      s.highlightSelector ? { ...s, highlightSelector: () => propsRef.current.steps?.[idx]?.highlightSelector?.() ?? null } : s,
+      s.highlightSelector
+        ? {
+            ...s,
+            highlightSelector: () =>
+              propsRef.current.steps?.[idx]?.highlightSelector?.() ?? null,
+          }
+        : s
     );
     let instruction: AzInstruction;
     if (liveSteps && liveSteps.length > 0) {
       const first = liveSteps[0];
-      instruction = { text: first.text, title: first.title ?? p.title, highlight: stepHighlight(first), side: first.side };
+      instruction = {
+        text: first.text,
+        title: first.title ?? p.title,
+        highlight: stepHighlight(first),
+        side: first.side,
+      };
     } else {
-      instruction = { text: p.text ?? '', title: p.title, highlight: resolveAzHighlight(p.highlightItemId, liveEdgeSelector, p.highlightTargetId) };
+      instruction = {
+        text: p.text ?? '',
+        title: p.title,
+        highlight: resolveAzHighlight(
+          p.highlightItemId,
+          liveEdgeSelector,
+          p.highlightTargetId
+        ),
+      };
     }
-    reg.registerEdge(keyRef.current!, { from, to: to ?? null, instruction, steps: liveSteps });
+    reg.registerEdge(keyRef.current!, {
+      from,
+      to: to ?? null,
+      instruction,
+      steps: liveSteps,
+    });
     return () => reg.unregisterEdge(keyRef.current!);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reg, from, to, sig]);
   return null;
 };
@@ -125,7 +156,10 @@ export interface AzGuidanceTargetProps {
   id: string;
   shape: AzGuideShapeProvider;
 }
-export const AzGuidanceTarget: React.FC<AzGuidanceTargetProps> = ({ id, shape }) => {
+export const AzGuidanceTarget: React.FC<AzGuidanceTargetProps> = ({
+  id,
+  shape,
+}) => {
   const reg = useAzGuidanceContext();
   const shapeRef = useRef(shape);
   shapeRef.current = shape;
@@ -151,7 +185,10 @@ export interface AzSuppressGuideProps {
   settleMs?: number;
 }
 let suppressCounter = 0;
-export const AzSuppressGuide: React.FC<AzSuppressGuideProps> = ({ predicate, settleMs = 700 }) => {
+export const AzSuppressGuide: React.FC<AzSuppressGuideProps> = ({
+  predicate,
+  settleMs = 700,
+}) => {
   const reg = useAzGuidanceContext();
   const keyRef = useRef<string | undefined>(undefined);
   if (!keyRef.current) keyRef.current = `az_suppress_${suppressCounter++}`;
@@ -200,10 +237,20 @@ export interface AzGoalProps {
   label?: string;
   autoStartWhen?: string | null;
 }
-export const AzGoal: React.FC<AzGoalProps> = ({ id, target, label, autoStartWhen }) => {
+export const AzGoal: React.FC<AzGoalProps> = ({
+  id,
+  target,
+  label,
+  autoStartWhen,
+}) => {
   const reg = useAzGuidanceContext();
   useEffect(() => {
-    reg.registerGoal({ id, target, label, autoStartWhen: autoStartWhen ?? null });
+    reg.registerGoal({
+      id,
+      target,
+      label,
+      autoStartWhen: autoStartWhen ?? null,
+    });
     return () => reg.unregisterGoal(id);
   }, [reg, id, target, label, autoStartWhen]);
   return null;

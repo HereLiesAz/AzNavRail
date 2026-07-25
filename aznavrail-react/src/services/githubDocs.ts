@@ -33,9 +33,12 @@ export function humanize(fileName: string): string {
     .split(' ')
     .filter(Boolean);
 
-  if (words.length === 1 && words[0] === words[0].toUpperCase()) return words[0];
+  if (words.length === 1 && words[0] === words[0].toUpperCase())
+    return words[0];
 
-  return words.map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  return words
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
 }
 
 /** Parses a GitHub contents-API JSON array into the `.md` entries it contains. */
@@ -43,15 +46,29 @@ export function parseContents(json: string): AzDocEntry[] {
   const arr = JSON.parse(json);
   if (!Array.isArray(arr)) return [];
   return arr
-    .filter((o) => o && o.type === 'file' && typeof o.name === 'string' && /\.md$/i.test(o.name) && o.download_url)
-    .map((o) => ({ title: humanize(o.name), path: o.path ?? o.name, downloadUrl: o.download_url }));
+    .filter(
+      (o) =>
+        o &&
+        o.type === 'file' &&
+        typeof o.name === 'string' &&
+        /\.md$/i.test(o.name) &&
+        o.download_url
+    )
+    .map((o) => ({
+      title: humanize(o.name),
+      path: o.path ?? o.name,
+      downloadUrl: o.download_url,
+    }));
 }
 
 /** Orders the TOC: README first, then other root docs, then docs/ — each group alphabetised. */
 export function orderToc(root: AzDocEntry[], docs: AzDocEntry[]): AzDocEntry[] {
-  const isReadme = (e: AzDocEntry) => e.path.split('/').pop()!.toUpperCase().startsWith('README');
+  const isReadme = (e: AzDocEntry) =>
+    e.path.split('/').pop()!.toUpperCase().startsWith('README');
   const readme = root.filter(isReadme);
-  const otherRoot = root.filter((e) => !isReadme(e)).sort((a, b) => a.title.localeCompare(b.title));
+  const otherRoot = root
+    .filter((e) => !isReadme(e))
+    .sort((a, b) => a.title.localeCompare(b.title));
   const docsSorted = [...docs].sort((a, b) => a.title.localeCompare(b.title));
   return [...readme, ...otherRoot, ...docsSorted];
 }
@@ -67,8 +84,12 @@ export async function listDocs(repoUrl: string): Promise<DocsResult> {
   if (!parsed) throw new Error(`Not a GitHub repo URL: ${repoUrl}`);
   const [owner, repo] = parsed;
 
-  const rootRes = await cachedGet(`https://api.github.com/repos/${owner}/${repo}/contents/`);
-  const docsRes = await cachedGet(`https://api.github.com/repos/${owner}/${repo}/contents/docs`);
+  const rootRes = await cachedGet(
+    `https://api.github.com/repos/${owner}/${repo}/contents/`
+  );
+  const docsRes = await cachedGet(
+    `https://api.github.com/repos/${owner}/${repo}/contents/docs`
+  );
 
   if (!rootRes && !docsRes) throw new Error(`Could not reach ${repoUrl}`);
 
@@ -79,19 +100,29 @@ export async function listDocs(repoUrl: string): Promise<DocsResult> {
   // Honor a repo-root `.azignore` (or `.aiexclude`): docs it lists are excluded from the About TOC.
   // Fetch it via the contents listing's resolved `download_url` — `raw.githubusercontent` with a
   // `HEAD` ref doesn't resolve, so the previous approach silently never filtered.
-  const ignoreUrl = rootRes ? (findDownloadUrl(rootRes.body, '.azignore') ?? findDownloadUrl(rootRes.body, '.aiexclude')) : null;
+  const ignoreUrl = rootRes
+    ? (findDownloadUrl(rootRes.body, '.azignore') ??
+      findDownloadUrl(rootRes.body, '.aiexclude'))
+    : null;
   const ignore = ignoreUrl ? await cachedGet(ignoreUrl) : null;
   const patterns = ignore ? parseIgnore(ignore.body) : [];
-  const entries = orderToc(root, docs).filter((e) => !isIgnored(e.path, patterns));
+  const entries = orderToc(root, docs).filter(
+    (e) => !isIgnored(e.path, patterns)
+  );
   return { entries, offline };
 }
 
 /** Returns the `download_url` of a root file named `fileName` in a contents-API JSON array, or null. */
-export function findDownloadUrl(contentsJson: string, fileName: string): string | null {
+export function findDownloadUrl(
+  contentsJson: string,
+  fileName: string
+): string | null {
   try {
     const arr = JSON.parse(contentsJson);
     if (!Array.isArray(arr)) return null;
-    const f = arr.find((o) => o && o.type === 'file' && o.name === fileName && o.download_url);
+    const f = arr.find(
+      (o) => o && o.type === 'file' && o.name === fileName && o.download_url
+    );
     return f ? f.download_url : null;
   } catch {
     return null;
@@ -112,8 +143,16 @@ export function isIgnored(path: string, patterns: string[]): boolean {
   if (!patterns.length) return false;
   const fileName = path.split('/').pop() || path;
   return patterns.some((pat) => {
-    if (pat.endsWith('/')) return path === pat.slice(0, -1) || path.startsWith(pat);
-    const re = new RegExp('^' + pat.split('*').map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$');
+    if (pat.endsWith('/'))
+      return path === pat.slice(0, -1) || path.startsWith(pat);
+    const re = new RegExp(
+      '^' +
+        pat
+          .split('*')
+          .map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+          .join('.*') +
+        '$'
+    );
     return re.test(path) || re.test(fileName);
   });
 }

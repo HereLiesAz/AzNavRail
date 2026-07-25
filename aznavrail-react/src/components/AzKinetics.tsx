@@ -1,5 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Platform, ViewStyle, StyleProp, LayoutChangeEvent } from 'react-native';
+import {
+  Animated,
+  Easing,
+  Platform,
+  ViewStyle,
+  StyleProp,
+  LayoutChangeEvent,
+} from 'react-native';
 import { AzDockingSide, AzEasing, AzEntrance, AzExit } from '../types';
 
 const CASCADE_DIST = 20; // px vertical slide for FAB-mode / SlideUp cascade
@@ -15,7 +22,7 @@ export function useAzClosing(
   exit: AzExit,
   count: number,
   staggerMs: number,
-  durationMs: number,
+  durationMs: number
 ): boolean {
   const [rendered, setRendered] = useState(open);
   useEffect(() => {
@@ -79,7 +86,9 @@ export const AzKineticItem: React.FC<AzKineticItemProps> = ({
 }) => {
   const animates = entrance !== AzEntrance.None || exit !== AzExit.None;
   // 0 = hidden (pre-entrance / exited), 1 = settled.
-  const vis = useRef(new Animated.Value(entrance === AzEntrance.None ? 1 : 0)).current;
+  const vis = useRef(
+    new Animated.Value(entrance === AzEntrance.None ? 1 : 0)
+  ).current;
   const tiltX = useRef(new Animated.Value(0)).current;
   const tiltY = useRef(new Animated.Value(0)).current;
 
@@ -120,22 +129,38 @@ export const AzKineticItem: React.FC<AzKineticItemProps> = ({
   }, [visible]);
 
   // Out-pose: a turnstile hinge (docked) or a vertical slide (FAB / SlideUp).
-  const useTurnstile = !floating && (entrance === AzEntrance.Turnstile || exit === AzExit.Turnstile);
+  const useTurnstile =
+    !floating &&
+    (entrance === AzEntrance.Turnstile || exit === AzExit.Turnstile);
   const useSlide = floating || entrance === AzEntrance.SlideUp;
   const outAngle = useTurnstile ? startAngle : 0;
   const outDist = useSlide ? CASCADE_DIST : 0;
 
   // Docked Turnstile is a pure rotation (no fade); Fade/SlideUp/floating-Turnstile still fade in.
   const entranceUsesAlpha =
-    entrance === AzEntrance.Fade || entrance === AzEntrance.SlideUp ||
+    entrance === AzEntrance.Fade ||
+    entrance === AzEntrance.SlideUp ||
     (entrance === AzEntrance.Turnstile && floating);
-  const exitUsesAlpha = exit === AzExit.Fade || (exit === AzExit.Turnstile && floating);
+  const exitUsesAlpha =
+    exit === AzExit.Fade || (exit === AzExit.Turnstile && floating);
   const usesAlpha = entranceUsesAlpha || exitUsesAlpha;
   const opacity = animates && usesAlpha ? vis : 1;
-  const rotateY = vis.interpolate({ inputRange: [0, 1], outputRange: [`${outAngle}deg`, '0deg'] });
-  const translateY = vis.interpolate({ inputRange: [0, 1], outputRange: [outDist, 0] });
-  const rotateXTilt = tiltX.interpolate({ inputRange: [-1, 1], outputRange: [`${-maxTiltDegrees}deg`, `${maxTiltDegrees}deg`] });
-  const rotateYTilt = tiltY.interpolate({ inputRange: [-1, 1], outputRange: [`${-maxTiltDegrees}deg`, `${maxTiltDegrees}deg`] });
+  const rotateY = vis.interpolate({
+    inputRange: [0, 1],
+    outputRange: [`${outAngle}deg`, '0deg'],
+  });
+  const translateY = vis.interpolate({
+    inputRange: [0, 1],
+    outputRange: [outDist, 0],
+  });
+  const rotateXTilt = tiltX.interpolate({
+    inputRange: [-1, 1],
+    outputRange: [`${-maxTiltDegrees}deg`, `${maxTiltDegrees}deg`],
+  });
+  const rotateYTilt = tiltY.interpolate({
+    inputRange: [-1, 1],
+    outputRange: [`${-maxTiltDegrees}deg`, `${maxTiltDegrees}deg`],
+  });
 
   // Native RN silently ignores `transformOrigin`, so on iOS/Android we emulate the docked hinge by
   // translating ±(width/2) before the rotate and back after. Web uses the CSS property instead.
@@ -144,9 +169,14 @@ export const AzKineticItem: React.FC<AzKineticItemProps> = ({
     const w = e.nativeEvent.layout.width;
     if (w && Math.abs(w - measuredWidth) > 0.5) setMeasuredWidth(w);
   };
-  const nativePivot = Platform.OS !== 'web' && useTurnstile && measuredWidth > 0;
+  const nativePivot =
+    Platform.OS !== 'web' && useTurnstile && measuredWidth > 0;
   const half = measuredWidth / 2;
-  const pivotOffset = nativePivot ? (dockingSide === AzDockingSide.RIGHT ? half : -half) : 0;
+  const pivotOffset = nativePivot
+    ? dockingSide === AzDockingSide.RIGHT
+      ? half
+      : -half
+    : 0;
 
   const springBack = () => {
     Animated.spring(tiltX, { toValue: 0, useNativeDriver: true }).start();
@@ -162,8 +192,14 @@ export const AzKineticItem: React.FC<AzKineticItemProps> = ({
           if (!r) return;
           const nx = ((e.clientX - r.left) / r.width) * 2 - 1;
           const ny = ((e.clientY - r.top) / r.height) * 2 - 1;
-          Animated.spring(tiltY, { toValue: nx, useNativeDriver: true }).start();
-          Animated.spring(tiltX, { toValue: -ny, useNativeDriver: true }).start();
+          Animated.spring(tiltY, {
+            toValue: nx,
+            useNativeDriver: true,
+          }).start();
+          Animated.spring(tiltX, {
+            toValue: -ny,
+            useNativeDriver: true,
+          }).start();
         },
         onMouseUp: springBack,
         onMouseLeave: springBack,
@@ -226,7 +262,9 @@ export const AzKineticTitle: React.FC<AzKineticTitleProps> = ({
   style,
   children,
 }) => {
-  const vis = useRef(new Animated.Value(entrance === AzEntrance.None ? 1 : 0)).current;
+  const vis = useRef(
+    new Animated.Value(entrance === AzEntrance.None ? 1 : 0)
+  ).current;
   const easing = Easing.bezier(...AzEasing.Wp7Decelerate);
 
   useEffect(() => {
@@ -234,15 +272,25 @@ export const AzKineticTitle: React.FC<AzKineticTitleProps> = ({
       vis.setValue(1);
       return;
     }
-    const anim = Animated.timing(vis, { toValue: 1, duration: durationMs, easing, useNativeDriver: true });
+    const anim = Animated.timing(vis, {
+      toValue: 1,
+      duration: durationMs,
+      easing,
+      useNativeDriver: true,
+    });
     anim.start();
     return () => anim.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const outAngle = entrance === AzEntrance.Turnstile ? startAngle : 0;
-  const rotateY = vis.interpolate({ inputRange: [0, 1], outputRange: [`${outAngle}deg`, '0deg'] });
-  const transformOrigin = (dockingSide === AzDockingSide.RIGHT ? 'right center' : 'left center') as any;
+  const rotateY = vis.interpolate({
+    inputRange: [0, 1],
+    outputRange: [`${outAngle}deg`, '0deg'],
+  });
+  const transformOrigin = (
+    dockingSide === AzDockingSide.RIGHT ? 'right center' : 'left center'
+  ) as any;
 
   return (
     <Animated.View

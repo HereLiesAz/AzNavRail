@@ -7,12 +7,24 @@ import type { AzShapeBounds } from './AzStatus';
 
 /** Area of the intersection of two rects (0 when disjoint). */
 export function overlapArea(a: AzShapeBounds, b: AzShapeBounds): number {
-  const w = Math.max(0, Math.min(a.left + a.width, b.left + b.width) - Math.max(a.left, b.left));
-  const h = Math.max(0, Math.min(a.top + a.height, b.top + b.height) - Math.max(a.top, b.top));
+  const w = Math.max(
+    0,
+    Math.min(a.left + a.width, b.left + b.width) - Math.max(a.left, b.left)
+  );
+  const h = Math.max(
+    0,
+    Math.min(a.top + a.height, b.top + b.height) - Math.max(a.top, b.top)
+  );
   return w * h;
 }
 
-function clampToSafe(x: number, y: number, w: number, h: number, safe: AzShapeBounds): AzShapeBounds {
+function clampToSafe(
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  safe: AzShapeBounds
+): AzShapeBounds {
   const maxLeft = Math.max(safe.left, safe.left + safe.width - w);
   const maxTop = Math.max(safe.top, safe.top + safe.height - h);
   const left = Math.min(Math.max(x, safe.left), maxLeft);
@@ -20,7 +32,11 @@ function clampToSafe(x: number, y: number, w: number, h: number, safe: AzShapeBo
   return { left, top, width: w, height: h };
 }
 
-function penalty(rect: AzShapeBounds, obstacles: AzShapeBounds[], target: AzShapeBounds | null): number {
+function penalty(
+  rect: AzShapeBounds,
+  obstacles: AzShapeBounds[],
+  target: AzShapeBounds | null
+): number {
   let p = 0;
   if (target) p += overlapArea(rect, target) * 2;
   for (const o of obstacles) p += overlapArea(rect, o);
@@ -37,15 +53,19 @@ export function placeCallout(
   size: { width: number; height: number },
   obstacles: AzShapeBounds[],
   safe: AzShapeBounds,
-  gap = 8,
+  gap = 8
 ): AzShapeBounds {
   const w = size.width;
   const h = size.height;
   const candidates: AzShapeBounds[] = [];
   if (target) {
-    candidates.push(clampToSafe(target.left, target.top + target.height + gap, w, h, safe)); // below
+    candidates.push(
+      clampToSafe(target.left, target.top + target.height + gap, w, h, safe)
+    ); // below
     candidates.push(clampToSafe(target.left, target.top - h - gap, w, h, safe)); // above
-    candidates.push(clampToSafe(target.left + target.width + gap, target.top, w, h, safe)); // end
+    candidates.push(
+      clampToSafe(target.left + target.width + gap, target.top, w, h, safe)
+    ); // end
     candidates.push(clampToSafe(target.left - w - gap, target.top, w, h, safe)); // start
   } else {
     const stepX = Math.max(1, w * 0.5);
@@ -57,7 +77,8 @@ export function placeCallout(
         candidates.push(clampToSafe(x, y, w, h, safe));
       }
     }
-    if (candidates.length === 0) candidates.push(clampToSafe(safe.left, safe.top, w, h, safe));
+    if (candidates.length === 0)
+      candidates.push(clampToSafe(safe.left, safe.top, w, h, safe));
   }
   let best = candidates[0];
   let bestP = penalty(best, obstacles, target);

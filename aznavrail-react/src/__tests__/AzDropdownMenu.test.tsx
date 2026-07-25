@@ -65,7 +65,9 @@ describe('AzDropdownMenu', () => {
       </AzDropdownMenu>
     );
     const style = getByTestId('az-dropdown-panel').props.style.flat();
-    expect(style).toEqual(expect.arrayContaining([expect.objectContaining({ width: 160 })]));
+    expect(style).toEqual(
+      expect.arrayContaining([expect.objectContaining({ width: 160 })])
+    );
   });
 
   it('constrains the panel to the rail width for the rail design (100)', async () => {
@@ -75,7 +77,9 @@ describe('AzDropdownMenu', () => {
       </AzDropdownMenu>
     );
     const style = getByTestId('az-dropdown-panel').props.style.flat();
-    expect(style).toEqual(expect.arrayContaining([expect.objectContaining({ width: 100 })]));
+    expect(style).toEqual(
+      expect.arrayContaining([expect.objectContaining({ width: 100 })])
+    );
   });
 
   it('pins the panel to the left edge by default and the right edge when docked right', async () => {
@@ -85,7 +89,9 @@ describe('AzDropdownMenu', () => {
       </AzDropdownMenu>
     );
     const leftStyle = left.getByTestId('az-dropdown-panel').props.style.flat();
-    expect(leftStyle).toEqual(expect.arrayContaining([expect.objectContaining({ left: 0 })]));
+    expect(leftStyle).toEqual(
+      expect.arrayContaining([expect.objectContaining({ left: 0 })])
+    );
 
     const right = await render(
       <AzDropdownMenu expanded dockingSide={AzDockingSide.RIGHT}>
@@ -95,13 +101,22 @@ describe('AzDropdownMenu', () => {
     // Right edge = window width minus the panel width. Read the width rather than hard-coding it:
     // this used to assume the 375 that a hand-rolled `react-native` mock reported.
     const windowWidth = Dimensions.get('window').width;
-    const rightStyle = right.getByTestId('az-dropdown-panel').props.style.flat();
-    expect(rightStyle).toEqual(expect.arrayContaining([expect.objectContaining({ left: windowWidth - 160 })]));
+    const rightStyle = right
+      .getByTestId('az-dropdown-panel')
+      .props.style.flat();
+    expect(rightStyle).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ left: windowWidth - 160 }),
+      ])
+    );
   });
 
   it('applies a configurable app-icon size and shape to the trigger', async () => {
     const { getByTestId } = await render(
-      <AzDropdownMenu headerIconSize={72} headerIconShape={AzHeaderIconShape.ROUNDED}>
+      <AzDropdownMenu
+        headerIconSize={72}
+        headerIconShape={AzHeaderIconShape.ROUNDED}
+      >
         <AzDropdownItem text="Profile" onClick={() => {}} />
       </AzDropdownMenu>
     );
@@ -157,7 +172,9 @@ describe('AzDropdownMenu', () => {
       </AzDropdownMenu>
     );
     const style = getByText('Profile').props.style.flat();
-    expect(style).toEqual(expect.arrayContaining([expect.objectContaining({ fontSize: 16 })]));
+    expect(style).toEqual(
+      expect.arrayContaining([expect.objectContaining({ fontSize: 16 })])
+    );
   });
 
   it('dispatches an item route through onNavigate before the callback', async () => {

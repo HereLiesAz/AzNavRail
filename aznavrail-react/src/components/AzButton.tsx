@@ -1,5 +1,13 @@
 import React from 'react';
-import { TouchableOpacity, Text, ViewStyle, TextStyle, View, StyleSheet, ImageSourcePropType } from 'react-native';
+import {
+  TouchableOpacity,
+  Text,
+  ViewStyle,
+  TextStyle,
+  View,
+  StyleSheet,
+  ImageSourcePropType,
+} from 'react-native';
 import { AzButtonShape } from '../types';
 import { AzLoad } from './AzLoad';
 import { renderFillContent } from './fillContent';
@@ -92,7 +100,12 @@ export const AzButton: React.FC<AzButtonProps> = ({
   };
 
   const lowercaseColor = color.toLowerCase();
-  const defaultFillColor = (lowercaseColor === 'black' || lowercaseColor === '#000000' || lowercaseColor === '#000') ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)';
+  const defaultFillColor =
+    lowercaseColor === 'black' ||
+    lowercaseColor === '#000000' ||
+    lowercaseColor === '#000'
+      ? 'rgba(255, 255, 255, 0.25)'
+      : 'rgba(0, 0, 0, 0.25)';
 
   const actualFillColor = fillColor || defaultFillColor;
 
@@ -117,9 +130,9 @@ export const AzButton: React.FC<AzButtonProps> = ({
       containerStyle.height = 40;
       containerStyle.borderRadius = 0;
     } else if (isNone) {
-       // Invisible rectangle
-       containerStyle.width = size;
-       containerStyle.height = 40;
+      // Invisible rectangle
+      containerStyle.width = size;
+      containerStyle.height = 40;
     }
   }
 
@@ -138,7 +151,15 @@ export const AzButton: React.FC<AzButtonProps> = ({
   ) : customContentNode ? (
     renderFillContent(customContentNode)
   ) : (
-    <View style={{ padding: 8, width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+    <View
+      style={{
+        padding: 8,
+        width: '100%',
+        height: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
       <Text
         style={textStyle}
         adjustsFontSizeToFit={!hasNewline}
@@ -155,29 +176,47 @@ export const AzButton: React.FC<AzButtonProps> = ({
       <TouchableOpacity
         onPress={onClick}
         disabled={!enabled || isLoading}
-        style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}
+        style={[
+          StyleSheet.absoluteFill,
+          { alignItems: 'center', justifyContent: 'center' },
+        ]}
         testID={testID}
         accessibilityRole="button"
         accessibilityLabel={text}
         accessibilityState={{ disabled: !enabled || isLoading }}
       >
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: actualFillColor, zIndex: -1, borderRadius: containerStyle.borderRadius }]} pointerEvents="none" />
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: actualFillColor,
+              zIndex: -1,
+              borderRadius: containerStyle.borderRadius,
+            },
+          ]}
+          pointerEvents="none"
+        />
         {content}
       </TouchableOpacity>
       {showBadge && (
-        <View style={{
-          position: 'absolute',
-          top: -4,
-          right: -4,
-          backgroundColor: color,
-          borderRadius: 12,
-          paddingHorizontal: 6,
-          paddingVertical: 2,
-          justifyContent: 'center',
-          alignItems: 'center',
-          minWidth: 20,
-        }} pointerEvents="none">
-          <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>{badge}</Text>
+        <View
+          style={{
+            position: 'absolute',
+            top: -4,
+            right: -4,
+            backgroundColor: color,
+            borderRadius: 12,
+            paddingHorizontal: 6,
+            paddingVertical: 2,
+            justifyContent: 'center',
+            alignItems: 'center',
+            minWidth: 20,
+          }}
+          pointerEvents="none"
+        >
+          <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>
+            {badge}
+          </Text>
         </View>
       )}
     </View>

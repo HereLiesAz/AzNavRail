@@ -28,7 +28,7 @@ const AzButton = ({
   enabled = true,
   contentPadding,
   className = '',
-  style = {}
+  style = {},
 }) => {
   const isFixedSize = shape === 'CIRCLE' || shape === 'SQUARE';
   const fitTextRef = useFitText();
@@ -37,7 +37,8 @@ const AzButton = ({
   const shapeClass = `az-button-shape-${shape.toLowerCase()}`;
 
   const lowerColor = color.toLowerCase();
-  const computedFillColor = (lowerColor === 'black' || lowerColor === '#000000' || lowerColor === '#000')
+  const computedFillColor =
+    lowerColor === 'black' || lowerColor === '#000000' || lowerColor === '#000'
       ? 'rgba(255, 255, 255, 0.25)'
       : 'rgba(0, 0, 0, 0.25)';
   const finalFillColor = fillColor || computedFillColor;
@@ -47,7 +48,7 @@ const AzButton = ({
     backgroundColor: finalFillColor,
     color: color,
     ...style,
-    ...(contentPadding ? { padding: contentPadding } : {})
+    ...(contentPadding ? { padding: contentPadding } : {}),
   };
 
   return (
@@ -66,9 +67,7 @@ const AzButton = ({
           {text}
         </span>
       </div>
-      {isLoading && (
-        <AzLoad color={color} size={20} />
-      )}
+      {isLoading && <AzLoad color={color} size={20} />}
     </button>
   );
 };

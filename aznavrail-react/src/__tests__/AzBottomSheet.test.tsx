@@ -24,7 +24,9 @@ describe('useAzSheetController', () => {
   it('stepDown saturates at HIDDEN (cannot go below index 0 in the order array)', async () => {
     // Failure: If detent goes negative or undefined, the Math.max(idx - 1, 0) guard in
     // useAzSheetController.stepDown is broken.
-    const { result } = await renderHook(() => useAzSheetController(AzSheetDetent.PEEK));
+    const { result } = await renderHook(() =>
+      useAzSheetController(AzSheetDetent.PEEK)
+    );
     await act(() => result.current.stepDown());
     expect(result.current.detent).toBe(AzSheetDetent.HIDDEN);
     await act(() => result.current.stepDown());
@@ -51,7 +53,9 @@ describe('useAzSheetController', () => {
   it('disabling collapses to HIDDEN and stops stepUp (setEnabled(false) must force HIDDEN and freeze the ladder)', async () => {
     // Failure: If detent stays at FULL after setEnabled(false), the setDetent(HIDDEN) line
     // inside setEnabled is missing or its condition is inverted.
-    const { result } = await renderHook(() => useAzSheetController(AzSheetDetent.FULL));
+    const { result } = await renderHook(() =>
+      useAzSheetController(AzSheetDetent.FULL)
+    );
     expect(result.current.detent).toBe(AzSheetDetent.FULL);
     await act(() => result.current.setEnabled(false));
     expect(result.current.detent).toBe(AzSheetDetent.HIDDEN);
@@ -62,14 +66,18 @@ describe('useAzSheetController', () => {
   // Edge cases at detent boundaries
   it('stepDown from HIDDEN is a no-op (HIDDEN is the floor of the ladder)', async () => {
     // Failure: order.indexOf returns 0 for HIDDEN; Math.max(0 - 1, 0) should clamp to HIDDEN.
-    const { result } = await renderHook(() => useAzSheetController(AzSheetDetent.HIDDEN));
+    const { result } = await renderHook(() =>
+      useAzSheetController(AzSheetDetent.HIDDEN)
+    );
     await act(() => result.current.stepDown());
     expect(result.current.detent).toBe(AzSheetDetent.HIDDEN);
   });
 
   it('stepUp from FULL is a no-op (FULL is the ceiling of the ladder)', async () => {
     // Failure: order.indexOf returns 3 for FULL; Math.min(3 + 1, order.length - 1) clamps to FULL.
-    const { result } = await renderHook(() => useAzSheetController(AzSheetDetent.FULL));
+    const { result } = await renderHook(() =>
+      useAzSheetController(AzSheetDetent.FULL)
+    );
     await act(() => result.current.stepUp());
     expect(result.current.detent).toBe(AzSheetDetent.FULL);
   });
@@ -77,7 +85,9 @@ describe('useAzSheetController', () => {
   it('re-enabling after disable does not auto-restore prior detent (setEnabled(true) leaves sheet at HIDDEN)', async () => {
     // Failure: If the prior detent re-appears after re-enabling, useAzSheetController is
     // caching the pre-disable detent; per spec it must remain HIDDEN until snapTo/stepUp.
-    const { result } = await renderHook(() => useAzSheetController(AzSheetDetent.HALF));
+    const { result } = await renderHook(() =>
+      useAzSheetController(AzSheetDetent.HALF)
+    );
     await act(() => result.current.setEnabled(false));
     expect(result.current.detent).toBe(AzSheetDetent.HIDDEN);
     await act(() => result.current.setEnabled(true));
@@ -89,7 +99,9 @@ describe('useAzSheetController', () => {
 
   it('setEnabled(false) mid-flight cancels an in-progress stepUp (stepUp called after disable is a no-op)', async () => {
     // Failure: If detent advances after disable, the isEnabled guard in stepUp is missing.
-    const { result } = await renderHook(() => useAzSheetController(AzSheetDetent.PEEK));
+    const { result } = await renderHook(() =>
+      useAzSheetController(AzSheetDetent.PEEK)
+    );
     await act(() => {
       result.current.setEnabled(false);
       result.current.stepUp();
@@ -100,7 +112,9 @@ describe('useAzSheetController', () => {
   it('setEnabled(false) gates snapTo to any non-HIDDEN detent (snapTo to HIDDEN is always allowed)', async () => {
     // Failure: If snapTo(HIDDEN) is also blocked, the gate condition is too restrictive;
     // it should allow `target === HIDDEN` even when disabled.
-    const { result } = await renderHook(() => useAzSheetController(AzSheetDetent.FULL));
+    const { result } = await renderHook(() =>
+      useAzSheetController(AzSheetDetent.FULL)
+    );
     await act(() => result.current.setEnabled(false));
     await act(() => result.current.snapTo(AzSheetDetent.HALF));
     expect(result.current.detent).toBe(AzSheetDetent.HIDDEN);
@@ -138,13 +152,20 @@ describe('<AzBottomSheet>', () => {
   it('renders sheet children (children render inside the sheet body)', async () => {
     // Failure: If sheet-body is missing, AzBottomSheet is not forwarding `children` into
     // the sheet body View; check the JSX in AzBottomSheet.tsx.
-    const { getByTestId } = await render(<Harness detent={AzSheetDetent.PEEK} />);
+    const { getByTestId } = await render(
+      <Harness detent={AzSheetDetent.PEEK} />
+    );
     expect(getByTestId('sheet-body')).toBeTruthy();
   });
 
   it('renders without crashing at every detent (HIDDEN, PEEK, HALF, FULL)', async () => {
     // Failure: A crash here means detentHeight switch is missing a case or returns undefined.
-    for (const d of [AzSheetDetent.HIDDEN, AzSheetDetent.PEEK, AzSheetDetent.HALF, AzSheetDetent.FULL]) {
+    for (const d of [
+      AzSheetDetent.HIDDEN,
+      AzSheetDetent.PEEK,
+      AzSheetDetent.HALF,
+      AzSheetDetent.FULL,
+    ]) {
       await expect(render(<Harness detent={d} />)).resolves.toBeTruthy();
     }
   });
@@ -211,7 +232,10 @@ describe('<AzBottomSheet>', () => {
       const controller = useAzSheetController(AzSheetDetent.HALF);
       return (
         <View>
-          <AzBottomSheet controller={controller} config={{ handleVisible: false }}>
+          <AzBottomSheet
+            controller={controller}
+            config={{ handleVisible: false }}
+          >
             <Text testID="sheet-body">body</Text>
           </AzBottomSheet>
         </View>
@@ -226,7 +250,10 @@ describe('<AzBottomSheet>', () => {
       const controller = useAzSheetController(AzSheetDetent.HALF);
       return (
         <View>
-          <AzBottomSheet controller={controller} config={{ horizontalSwipeEnabled: true }}>
+          <AzBottomSheet
+            controller={controller}
+            config={{ horizontalSwipeEnabled: true }}
+          >
             <Text testID="sheet-body">body</Text>
           </AzBottomSheet>
         </View>
@@ -329,7 +356,10 @@ describe('<AzBottomSheet> swipe callbacks (PanResponder wiring)', () => {
         const controller = useAzSheetController(AzSheetDetent.FULL);
         ctrl = controller;
         return (
-          <AzBottomSheet controller={controller} config={{ dragThresholdDp: 10 }}>
+          <AzBottomSheet
+            controller={controller}
+            config={{ dragThresholdDp: 10 }}
+          >
             <Text>body</Text>
           </AzBottomSheet>
         );
@@ -359,7 +389,10 @@ describe('<AzBottomSheet> swipe callbacks (PanResponder wiring)', () => {
         const controller = useAzSheetController(AzSheetDetent.PEEK);
         ctrl = controller;
         return (
-          <AzBottomSheet controller={controller} config={{ dragThresholdDp: 10 }}>
+          <AzBottomSheet
+            controller={controller}
+            config={{ dragThresholdDp: 10 }}
+          >
             <Text>body</Text>
           </AzBottomSheet>
         );

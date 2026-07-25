@@ -20,7 +20,7 @@ const AzToggle = ({
   enabled = true,
   color = 'currentColor',
   className = '',
-  style = {}
+  style = {},
 }) => {
   const handleChange = (e) => {
     if (enabled) {

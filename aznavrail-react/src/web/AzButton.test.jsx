@@ -44,7 +44,9 @@ describe('AzButton', () => {
   });
 
   it('applies the correct shape class', () => {
-    const { rerender } = render(<AzButton text="Shape" shape="CIRCLE" onClick={() => {}} />);
+    const { rerender } = render(
+      <AzButton text="Shape" shape="CIRCLE" onClick={() => {}} />
+    );
     let button = screen.getByRole('button');
     expect(button).toHaveClass('az-button-shape-circle');
 
@@ -70,7 +72,9 @@ describe('AzButton', () => {
   });
 
   it('renders loading state correctly', () => {
-    const { container } = render(<AzButton text="Loading" onClick={() => {}} isLoading={true} />);
+    const { container } = render(
+      <AzButton text="Loading" onClick={() => {}} isLoading={true} />
+    );
 
     // The text content wrapper should have opacity 0 when loading
     const contentWrapper = container.querySelector('.az-button-content');

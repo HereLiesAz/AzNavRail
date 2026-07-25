@@ -1,5 +1,13 @@
 import React from 'react';
-import { TouchableOpacity, Text, ViewStyle, TextStyle, View, StyleSheet, ImageSourcePropType } from 'react-native';
+import {
+  TouchableOpacity,
+  Text,
+  ViewStyle,
+  TextStyle,
+  View,
+  StyleSheet,
+  ImageSourcePropType,
+} from 'react-native';
 import { AzButtonShape } from '../types';
 import { AzLoad } from './AzLoad';
 import { renderFillContent } from '../components/fillContent';
@@ -68,7 +76,12 @@ export const AzButton: React.FC<AzButtonProps> = ({
   };
 
   const lowercaseColor = color.toLowerCase();
-  const defaultFillColor = (lowercaseColor === 'black' || lowercaseColor === '#000000' || lowercaseColor === '#000') ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)';
+  const defaultFillColor =
+    lowercaseColor === 'black' ||
+    lowercaseColor === '#000000' ||
+    lowercaseColor === '#000'
+      ? 'rgba(255, 255, 255, 0.25)'
+      : 'rgba(0, 0, 0, 0.25)';
 
   const actualFillColor = fillColor || defaultFillColor;
 
@@ -92,8 +105,8 @@ export const AzButton: React.FC<AzButtonProps> = ({
       containerStyle.paddingHorizontal = 8;
       containerStyle.borderRadius = 0;
     } else if (isNone) {
-       // Invisible rectangle
-       containerStyle.height = size;
+      // Invisible rectangle
+      containerStyle.height = size;
     }
   }
 
@@ -132,7 +145,17 @@ export const AzButton: React.FC<AzButtonProps> = ({
       accessibilityLabel={text}
       accessibilityState={{ disabled: !enabled || isLoading }}
     >
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: actualFillColor, zIndex: -1, borderRadius: containerStyle.borderRadius }]} pointerEvents="none" />
+      <View
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            backgroundColor: actualFillColor,
+            zIndex: -1,
+            borderRadius: containerStyle.borderRadius,
+          },
+        ]}
+        pointerEvents="none"
+      />
       {content}
     </TouchableOpacity>
   );

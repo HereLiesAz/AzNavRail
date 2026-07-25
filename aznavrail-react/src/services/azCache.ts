@@ -51,14 +51,19 @@ function writeEntry(url: string, entry: CacheEntry): void {
  * AND no cached body), or a 404 with no cache (so callers can treat e.g. a missing docs/ folder as
  * empty rather than an error).
  */
-export async function cachedGet(url: string, ttlMs = DEFAULT_TTL_MS): Promise<CachedResult | null> {
+export async function cachedGet(
+  url: string,
+  ttlMs = DEFAULT_TTL_MS
+): Promise<CachedResult | null> {
   const cached = readEntry(url);
   if (cached && Date.now() - cached.ts < ttlMs) {
     return { body: cached.body, fromCache: true, rateLimited: false };
   }
 
   try {
-    const headers: Record<string, string> = { Accept: 'application/vnd.github+json' };
+    const headers: Record<string, string> = {
+      Accept: 'application/vnd.github+json',
+    };
     if (cached?.etag) headers['If-None-Match'] = cached.etag;
     const res = await fetch(url, { headers });
 
@@ -68,15 +73,23 @@ export async function cachedGet(url: string, ttlMs = DEFAULT_TTL_MS): Promise<Ca
     }
     if (res.ok) {
       const body = await res.text();
-      writeEntry(url, { body, etag: res.headers.get('ETag') ?? undefined, ts: Date.now() });
+      writeEntry(url, {
+        body,
+        etag: res.headers.get('ETag') ?? undefined,
+        ts: Date.now(),
+      });
       return { body, fromCache: false, rateLimited: false };
     }
     if (res.status === 404 && !cached) return null;
 
     const remaining = Number(res.headers.get('X-RateLimit-Remaining'));
     const limited = res.status === 403 || res.status === 429 || remaining === 0;
-    return cached ? { body: cached.body, fromCache: true, rateLimited: limited } : null;
+    return cached
+      ? { body: cached.body, fromCache: true, rateLimited: limited }
+      : null;
   } catch {
-    return cached ? { body: cached.body, fromCache: true, rateLimited: false } : null;
+    return cached
+      ? { body: cached.body, fromCache: true, rateLimited: false }
+      : null;
   }
 }

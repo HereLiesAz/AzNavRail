@@ -2,75 +2,88 @@ import { AzNavItem } from '../types';
 
 /** Static utility methods for managing drag-reorder operations on reloc-item clusters. */
 export class RelocItemHandler {
-    /** Returns the contiguous run of `isRelocItem` sub-items that belong to `hostId`. */
-    static getCluster(items: AzNavItem[], hostId: string): AzNavItem[] {
-        const cluster: AzNavItem[] = [];
-        let inCluster = false;
+  /** Returns the contiguous run of `isRelocItem` sub-items that belong to `hostId`. */
+  static getCluster(items: AzNavItem[], hostId: string): AzNavItem[] {
+    const cluster: AzNavItem[] = [];
+    let inCluster = false;
 
-        for (const item of items) {
-            if (item.hostId === hostId) {
-                if (item.isRelocItem) {
-                    inCluster = true;
-                    cluster.push(item);
-                } else if (inCluster) {
-                    // Break cluster if we encounter a non-reloc sibling under the same host
-                    break;
-                }
-            } else if (inCluster) {
-                 // Break cluster if we leave the host
-                 break;
-            }
+    for (const item of items) {
+      if (item.hostId === hostId) {
+        if (item.isRelocItem) {
+          inCluster = true;
+          cluster.push(item);
+        } else if (inCluster) {
+          // Break cluster if we encounter a non-reloc sibling under the same host
+          break;
         }
-        return cluster;
+      } else if (inCluster) {
+        // Break cluster if we leave the host
+        break;
+      }
+    }
+    return cluster;
+  }
+
+  /** Computes the drop target cluster-index from a vertical drag displacement `dy`. */
+  static calculateTargetIndex(
+    dy: number,
+    currentIndex: number,
+    clusterSize: number,
+    itemHeight: number
+  ): number {
+    const slotsMoved = Math.round(dy / itemHeight);
+    const target = currentIndex + slotsMoved;
+    return Math.max(0, Math.min(target, clusterSize - 1));
+  }
+
+  /** Returns a new items array with the specified item moved to `targetClusterIndex` within its host cluster. */
+  static reorderItems(
+    items: AzNavItem[],
+    itemId: string,
+    hostId: string,
+    targetClusterIndex: number
+  ): AzNavItem[] {
+    // Find cluster start and length directly
+    let clusterStartGlobalIndex = -1;
+    let clusterSize = 0;
+    let currentClusterIndex = -1;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.hostId === hostId) {
+        if (item.isRelocItem) {
+          if (clusterStartGlobalIndex === -1) {
+            clusterStartGlobalIndex = i;
+          }
+          if (item.id === itemId) {
+            currentClusterIndex = clusterSize;
+          }
+          clusterSize++;
+        } else if (clusterStartGlobalIndex !== -1) {
+          break;
+        }
+      } else if (clusterStartGlobalIndex !== -1) {
+        break;
+      }
     }
 
-    /** Computes the drop target cluster-index from a vertical drag displacement `dy`. */
-    static calculateTargetIndex(dy: number, currentIndex: number, clusterSize: number, itemHeight: number): number {
-        const slotsMoved = Math.round(dy / itemHeight);
-        const target = currentIndex + slotsMoved;
-        return Math.max(0, Math.min(target, clusterSize - 1));
+    if (
+      clusterStartGlobalIndex === -1 ||
+      targetClusterIndex < 0 ||
+      targetClusterIndex >= clusterSize ||
+      currentClusterIndex === -1 ||
+      currentClusterIndex === targetClusterIndex
+    ) {
+      return items;
     }
 
-    /** Returns a new items array with the specified item moved to `targetClusterIndex` within its host cluster. */
-    static reorderItems(items: AzNavItem[], itemId: string, hostId: string, targetClusterIndex: number): AzNavItem[] {
-        // Find cluster start and length directly
-        let clusterStartGlobalIndex = -1;
-        let clusterSize = 0;
-        let currentClusterIndex = -1;
+    const newItems = [...items];
+    const [movedItem] = newItems.splice(
+      clusterStartGlobalIndex + currentClusterIndex,
+      1
+    );
+    newItems.splice(clusterStartGlobalIndex + targetClusterIndex, 0, movedItem);
 
-        for (let i = 0; i < items.length; i++) {
-            const item = items[i];
-            if (item.hostId === hostId) {
-                if (item.isRelocItem) {
-                    if (clusterStartGlobalIndex === -1) {
-                        clusterStartGlobalIndex = i;
-                    }
-                    if (item.id === itemId) {
-                        currentClusterIndex = clusterSize;
-                    }
-                    clusterSize++;
-                } else if (clusterStartGlobalIndex !== -1) {
-                    break;
-                }
-            } else if (clusterStartGlobalIndex !== -1) {
-                break;
-            }
-        }
-
-        if (
-            clusterStartGlobalIndex === -1 ||
-            targetClusterIndex < 0 ||
-            targetClusterIndex >= clusterSize ||
-            currentClusterIndex === -1 ||
-            currentClusterIndex === targetClusterIndex
-        ) {
-            return items;
-        }
-
-        const newItems = [...items];
-        const [movedItem] = newItems.splice(clusterStartGlobalIndex + currentClusterIndex, 1);
-        newItems.splice(clusterStartGlobalIndex + targetClusterIndex, 0, movedItem);
-
-        return newItems;
-    }
+    return newItems;
+  }
 }

@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   View,
   Text,
@@ -16,7 +22,15 @@ import {
   Easing as RNEasing,
 } from 'react-native';
 import { AzButton } from './AzButton';
-import { AzButtonShape, AzDockingSide, AzDropdownDesign, AzEasing, AzEntrance, AzExit, AzHeaderIconShape } from '../types';
+import {
+  AzButtonShape,
+  AzDockingSide,
+  AzDropdownDesign,
+  AzEasing,
+  AzEntrance,
+  AzExit,
+  AzHeaderIconShape,
+} from '../types';
 import { AzNavRailDefaults } from '../AzNavRailDefaults';
 import { AboutOverlay } from './AboutOverlay';
 import { AzKineticItem, useAzClosing } from './AzKinetics';
@@ -40,7 +54,9 @@ interface AzDropdownMenuContextValue {
   /** When true, MENU-design labels are full-justified via computed letter-spacing. */
   justifyMenuItems?: boolean;
 }
-const AzDropdownMenuContext = createContext<AzDropdownMenuContextValue | null>(null);
+const AzDropdownMenuContext = createContext<AzDropdownMenuContextValue | null>(
+  null
+);
 
 export interface AzDropdownMenuProps {
   /** Whether the panel imitates the collapsed rail or the expanded menu. */
@@ -138,7 +154,15 @@ const JustifiedDropdownLine: React.FC<{
   color: string;
   enabled: boolean;
   itemTextStyle?: object;
-}> = ({ line, justify, containerWidth, textAlign, color, enabled, itemTextStyle }) => {
+}> = ({
+  line,
+  justify,
+  containerWidth,
+  textAlign,
+  color,
+  enabled,
+  itemTextStyle,
+}) => {
   const [naturalWidth, setNaturalWidth] = useState(0);
   const onLabelLayout = (e: LayoutChangeEvent) => {
     const w = e.nativeEvent.layout.width;
@@ -147,7 +171,12 @@ const JustifiedDropdownLine: React.FC<{
   let letterSpacing = 0;
   let fontScale = 1;
   if (justify && line.length >= 1 && containerWidth > 0 && naturalWidth > 0) {
-    const solved = solveHybridJustify(naturalWidth, containerWidth, line.length, DROPDOWN_BASE_FONT_PX);
+    const solved = solveHybridJustify(
+      naturalWidth,
+      containerWidth,
+      line.length,
+      DROPDOWN_BASE_FONT_PX
+    );
     fontScale = solved.scale;
     letterSpacing = solved.letterSpacing;
   }
@@ -209,7 +238,8 @@ export const AzDropdownItem: React.FC<AzDropdownItemProps> = ({
   const ctx = useContext(AzDropdownMenuContext);
   // Hooks must run unconditionally. Guard reads via optional chaining below.
   const [availableWidth, setAvailableWidth] = useState(0);
-  if (!ctx) throw new Error('AzDropdownItem must be used inside an <AzDropdownMenu>');
+  if (!ctx)
+    throw new Error('AzDropdownItem must be used inside an <AzDropdownMenu>');
   const {
     dismiss,
     design,
@@ -230,7 +260,9 @@ export const AzDropdownItem: React.FC<AzDropdownItemProps> = ({
     const textAlign: 'left' | 'right' | 'center' =
       alignment === 'center'
         ? 'center'
-        : ctxDockingSide === AzDockingSide.RIGHT ? 'right' : 'left';
+        : ctxDockingSide === AzDockingSide.RIGHT
+          ? 'right'
+          : 'left';
     const onContainerLayout = (e: LayoutChangeEvent) => {
       const w = e.nativeEvent.layout.width;
       if (w && Math.abs(w - availableWidth) > 0.5) setAvailableWidth(w);
@@ -278,7 +310,12 @@ export const AzDropdownItem: React.FC<AzDropdownItemProps> = ({
   );
 };
 
-interface Anchor { x: number; y: number; width: number; height: number; }
+interface Anchor {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
 /**
  * A standalone, hamburger-style drop-down menu, declared with the same opinionated surface as the
@@ -329,7 +366,12 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
   const [internalOpen, setInternalOpen] = useState(false);
   const isOpen = expanded ?? internalOpen;
   const triggerRef = useRef<View>(null);
-  const [anchor, setAnchor] = useState<Anchor>({ x: 0, y: 0, width: 0, height: 0 });
+  const [anchor, setAnchor] = useState<Anchor>({
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+  });
   const [panelSize, setPanelSize] = useState({ width: 0, height: 0 });
   // Full-screen About reader reachable from the dropdown footer (parity with the rail). The
   // "More from Az" carousel is reachable from within AboutOverlay itself.
@@ -354,29 +396,43 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
 
   // Reactive so the panel re-positions on orientation / split-screen changes.
   const screen = useWindowDimensions();
-  const panelWidth = design === AzDropdownDesign.RAIL ? collapsedWidth : expandedWidth;
+  const panelWidth =
+    design === AzDropdownDesign.RAIL ? collapsedWidth : expandedWidth;
   const triggerSize = headerIconSize;
   // Clip radius mirrors the rail's header icon: circle = half, rounded = 8, anything else = 0.
   const triggerRadius =
-    headerIconShape === AzHeaderIconShape.ROUNDED ? 8 :
-    headerIconShape === AzHeaderIconShape.CIRCLE ? triggerSize / 2 :
-    0;
+    headerIconShape === AzHeaderIconShape.ROUNDED
+      ? 8
+      : headerIconShape === AzHeaderIconShape.CIRCLE
+        ? triggerSize / 2
+        : 0;
 
   const panelPosition: ViewStyle = { position: 'absolute' };
   // Horizontal: pin to the physical docking-side edge.
-  panelPosition.left = dockingSide === AzDockingSide.RIGHT ? screen.width - panelWidth : 0;
+  panelPosition.left =
+    dockingSide === AzDockingSide.RIGHT ? screen.width - panelWidth : 0;
   // Vertical: drop from the trigger — downward when it fits below, otherwise upward.
-  const fitsBelow = anchor.y + anchor.height + panelSize.height <= screen.height;
-  panelPosition.top = fitsBelow ? anchor.y + anchor.height : Math.max(0, anchor.y - panelSize.height);
+  const fitsBelow =
+    anchor.y + anchor.height + panelSize.height <= screen.height;
+  panelPosition.top = fitsBelow
+    ? anchor.y + anchor.height
+    : Math.max(0, anchor.y - panelSize.height);
 
   const onPanelLayout = (e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
-    if (width !== panelSize.width || height !== panelSize.height) setPanelSize({ width, height });
+    if (width !== panelSize.width || height !== panelSize.height)
+      setPanelSize({ width, height });
   };
 
   // Keep the panel mounted through the staggered exit so items can animate out before teardown.
   const items = React.Children.toArray(children);
-  const rendered = useAzClosing(isOpen, itemExit, items.length, entranceStaggerMs, entranceDurationMs);
+  const rendered = useAzClosing(
+    isOpen,
+    itemExit,
+    items.length,
+    entranceStaggerMs,
+    entranceDurationMs
+  );
 
   return (
     <View style={style}>
@@ -405,12 +461,19 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
       </TouchableOpacity>
 
       {rendered && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <Modal
+          visible
+          transparent
+          animationType="fade"
+          onRequestClose={() => setOpen(false)}
+        >
           <Pressable
             style={[
               StyleSheet.absoluteFill,
               dimBehindMenu
-                ? { backgroundColor: `rgba(0,0,0,${Math.max(0, Math.min(1, dimBehindMenuAlpha))})` }
+                ? {
+                    backgroundColor: `rgba(0,0,0,${Math.max(0, Math.min(1, dimBehindMenuAlpha))})`,
+                  }
                 : null,
             ]}
             onPress={() => setOpen(false)}
@@ -433,7 +496,17 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
                       : { alignItems: 'center', padding: 8 }
                   }
                 >
-                  <AzDropdownMenuContext.Provider value={{ dismiss: () => setOpen(false), design, onNavigate, itemTextStyle, dockingSide, menuItemAlignment, justifyMenuItems }}>
+                  <AzDropdownMenuContext.Provider
+                    value={{
+                      dismiss: () => setOpen(false),
+                      design,
+                      onNavigate,
+                      itemTextStyle,
+                      dockingSide,
+                      menuItemAlignment,
+                      justifyMenuItems,
+                    }}
+                  >
                     {items.map((child, i) => (
                       <AzKineticItem
                         key={i}
@@ -508,7 +581,10 @@ const AzDropdownFooter: React.FC<{
   // Only open safe schemes — this also runs on the web via react-native-web, where a `javascript:`
   // URL would otherwise execute.
   const open = (url: string) => {
-    const isSafe = url.startsWith('http://') || url.startsWith('https://') || url.startsWith('mailto:');
+    const isSafe =
+      url.startsWith('http://') ||
+      url.startsWith('https://') ||
+      url.startsWith('mailto:');
     if (isSafe) Linking.openURL(url).catch(() => {});
   };
   const onAbout = () => {
@@ -547,21 +623,39 @@ const AzDropdownFooter: React.FC<{
       style={{
         opacity: anim,
         transform: [{ scaleY: anim }],
-        ...( { transformOrigin: 'top center' } as any ),
+        ...({ transformOrigin: 'top center' } as any),
       }}
     >
       <View style={styles.footer}>
         {/* About is hidden entirely when no repository URL is configured. */}
         {!!appRepositoryUrl && (
-          <TouchableOpacity onPress={onAbout} style={styles.footerRow} accessibilityRole="button">
-            <Text style={[styles.footerText, { color: footerColor }]}>About</Text>
+          <TouchableOpacity
+            onPress={onAbout}
+            style={styles.footerRow}
+            accessibilityRole="button"
+          >
+            <Text style={[styles.footerText, { color: footerColor }]}>
+              About
+            </Text>
           </TouchableOpacity>
         )}
-        <TouchableOpacity onPress={() => open('mailto:hereliesaz@gmail.com?subject=Feedback')} style={styles.footerRow} accessibilityRole="button">
-          <Text style={[styles.footerText, { color: footerColor }]}>Feedback</Text>
+        <TouchableOpacity
+          onPress={() => open('mailto:hereliesaz@gmail.com?subject=Feedback')}
+          style={styles.footerRow}
+          accessibilityRole="button"
+        >
+          <Text style={[styles.footerText, { color: footerColor }]}>
+            Feedback
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => open('https://instagram.com/HereLiesAz')} style={styles.footerRow} accessibilityRole="button">
-          <Text style={[styles.footerText, { color: footerColor }]}>@HereLiesAz</Text>
+        <TouchableOpacity
+          onPress={() => open('https://instagram.com/HereLiesAz')}
+          style={styles.footerRow}
+          accessibilityRole="button"
+        >
+          <Text style={[styles.footerText, { color: footerColor }]}>
+            @HereLiesAz
+          </Text>
         </TouchableOpacity>
       </View>
     </Animated.View>

@@ -39,7 +39,12 @@ module.exports = [
   {
     // Jest globals. The RN config only claims the conventional `__tests__` layout, and this
     // package also keeps `*.test.jsx` beside the web components they cover.
-    files: ['**/__tests__/**', '**/*.test.{js,jsx,ts,tsx}', 'jest.config.js', 'jest.style-mock.js'],
+    files: [
+      '**/__tests__/**',
+      '**/*.test.{js,jsx,ts,tsx}',
+      'jest.config.js',
+      'jest.style-mock.js',
+    ],
     languageOptions: {
       globals: {
         afterAll: 'readonly',
