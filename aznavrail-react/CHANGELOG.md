@@ -28,10 +28,17 @@
   indicators wherever the value is quantised. One composable covers all four variants — `CONTINUOUS`,
   `STEPPED`, `CENTERED`, `RANGE` — across five sizes and both orientations, because they differ only
   in where the active track begins and how many thumbs ride it.
-- **`azRailSlider(...)`** — a rail item that unfolds into that slider **in its own slot**. Folded it
-  is an ordinary rail button; tapped, the slot grows along the rail and the button becomes the track,
-  with the value underneath as the way back. Nothing opens over the rail, so the control arrives
-  where the user was already looking.
+- **`azRailSlider(...)`** / **`<AzRailSlider>`** — a rail item that unfolds into that slider **in
+  its own slot**. Folded it is an ordinary rail button; tapped, the slot grows along the rail and
+  the button becomes the track, with the value underneath as the way back. Nothing opens over the
+  rail, so the control arrives where the user was already looking.
+
+### React port
+All of the above lands here too: `AzMotion` in `AzNavRailDefaults`, `AzSlider`, `<AzRailSlider>`, and
+the dark About reader with drag-to-dismiss, a grab handle and 48dp header targets. Markdown prose now
+takes an explicit `ink` colour — it carried none of its own and would have inherited React Native's
+near-black, invisible on the new ground. The help `?` recolour has no React counterpart: the port has
+no synthesised `noMenu` footer glyph to recolour.
 
 
 ## Unreleased — toolchain: React Native 0.86 / React 19

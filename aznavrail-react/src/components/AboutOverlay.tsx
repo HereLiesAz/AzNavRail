@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,13 +12,40 @@ import {
   Dimensions,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Animated,
+  PanResponder,
 } from 'react-native';
+import { AzMotion } from '../AzNavRailDefaults';
 import AzMarkdownNative from './AzMarkdownNative';
 import { AzButton } from './AzButton';
 import { AzLoad } from './AzLoad';
 import { AzButtonShape } from '../types';
 import { listDocs, fetchDoc, AzDocEntry } from '../services/githubDocs';
 import { fetchMoreFromAz, AzMoreFromApp } from '../services/moreFromAz';
+
+/**
+ * The About reader's own palette: dark ground, light ink, in every theme.
+ *
+ * This is one of the few places in the library that does not follow the host's colour scheme, for
+ * the reason given where `surface` is resolved. The host's accent still comes through on headings,
+ * links, and the close affordance.
+ */
+export const AzAboutColors = {
+  /** Near-black, very slightly cool, so the accent reads warm against it. */
+  Ground: '#101014',
+  /** Primary ink. Not pure white — pure white on near-black glares. */
+  Ink: '#ECECF0',
+  /** Secondary ink for supporting lines. */
+  InkMuted: '#B4B4BE',
+  /** The grab handle and hairline rules. */
+  Hairline: '#3A3A44',
+} as const;
+
+/** How far the sheet must be pulled down before releasing it dismisses the reader. */
+const AZ_ABOUT_DISMISS_THRESHOLD = 140;
+
+/** Grows the header glyphs' touch targets to something a finger can actually find. */
+const AZ_ABOUT_HIT_SLOP = { top: 12, bottom: 12, left: 12, right: 12 };
 
 interface AboutOverlayProps {
   repoUrl: string;
@@ -55,7 +82,11 @@ export const AboutOverlay: React.FC<AboutOverlayProps> = ({
   onDismiss,
 }) => {
   const accent = settings.activeColor || '#6200ee';
-  const surface = settings.translucentBackground || '#ffffff';
+  // Dark ground, light ink, in every theme. The reader is a full-screen surface the user has
+  // stepped *aside* into — long-form prose, a document list, a carousel — and long-form reading on
+  // a bright white field is the wrong call regardless of what the surrounding app is doing. It used
+  // to default to '#ffffff'. A host-supplied translucentBackground still wins outright.
+  const surface = settings.translucentBackground || AzAboutColors.Ground;
   const [state, setState] = useState<DocsState>({ status: 'loading' });
   const [selected, setSelected] = useState<AzDocEntry | null>(null);
   const [body, setBody] = useState<string | null>(null);
@@ -116,13 +147,56 @@ export const AboutOverlay: React.FC<AboutOverlayProps> = ({
     };
   }, [moreFromAzEnabled, moreFromAzJsonUrl]);
 
+  // Drag-down-to-dismiss. A full-screen reader that can only be left through one small glyph is a
+  // room with a keyhole for a door; this gives the whole surface a way out. The sheet follows the
+  // finger, springs back if the pull was not committed, and leaves if it was.
+  const dragY = useRef(new Animated.Value(0)).current;
+  const dragValue = useRef(0);
+  const dismissResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_e, g) =>
+          g.dy > 6 && Math.abs(g.dy) > Math.abs(g.dx),
+        onPanResponderMove: (_e, g) => {
+          dragValue.current = Math.max(0, g.dy);
+          dragY.setValue(dragValue.current);
+        },
+        onPanResponderRelease: () => {
+          if (dragValue.current > AZ_ABOUT_DISMISS_THRESHOLD) {
+            onDismiss();
+            return;
+          }
+          Animated.timing(dragY, {
+            toValue: 0,
+            duration: AzMotion.PanelDurationMs,
+            useNativeDriver: true,
+          }).start();
+          dragValue.current = 0;
+        },
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [onDismiss]
+  );
+
   return (
-    <View style={[styles.overlay, { backgroundColor: surface }]}>
+    <Animated.View
+      {...dismissResponder.panHandlers}
+      style={[
+        styles.overlay,
+        { backgroundColor: surface, transform: [{ translateY: dragY }] },
+      ]}
+    >
+      {/* The grab handle — the visible half of the drag-to-dismiss gesture. Without it the gesture
+          exists but nothing announces it. */}
+      <View style={styles.grabHandle} />
       <View style={styles.header}>
         {selected && (
           <TouchableOpacity
             onPress={() => setSelected(null)}
             accessibilityLabel="Back to contents"
+            accessibilityRole="button"
+            hitSlop={AZ_ABOUT_HIT_SLOP}
+            style={styles.iconTarget}
           >
             <Text style={[styles.icon, { color: accent }]}>←</Text>
           </TouchableOpacity>
@@ -130,7 +204,13 @@ export const AboutOverlay: React.FC<AboutOverlayProps> = ({
         <Text style={[styles.title, { color: accent }]} numberOfLines={1}>
           {selected ? selected.title : 'About'}
         </Text>
-        <TouchableOpacity onPress={onDismiss} accessibilityLabel="Close">
+        <TouchableOpacity
+          onPress={onDismiss}
+          accessibilityLabel="Close"
+          accessibilityRole="button"
+          hitSlop={AZ_ABOUT_HIT_SLOP}
+          style={styles.iconTarget}
+        >
           <Text style={[styles.icon, { color: accent }]}>✕</Text>
         </TouchableOpacity>
       </View>
@@ -193,7 +273,7 @@ export const AboutOverlay: React.FC<AboutOverlayProps> = ({
           )}
         </>
       )}
-    </View>
+    </Animated.View>
   );
 };
 
@@ -360,6 +440,20 @@ function isAppIcon(url: string): boolean {
 }
 
 const styles = StyleSheet.create({
+  grabHandle: {
+    alignSelf: 'center',
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    marginBottom: 10,
+    backgroundColor: AzAboutColors.Hairline,
+  },
+  iconTarget: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   overlay: {
     ...StyleSheet.absoluteFill,
     zIndex: 3000,

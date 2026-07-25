@@ -236,6 +236,23 @@ export interface AzNavItem {
   /** Alternative label used in the expanded menu; falls back to `text`. */
   menuText?: string;
   /** Badge text to display on the item. */
+  /**
+   * True for an item declared with `<AzRailSlider>`: tapping it unfolds an `AzSlider` **in the
+   * item's own slot** on the rail, rather than opening a panel somewhere else.
+   */
+  isSlider?: boolean;
+  /** How an `isSlider` item's slider is shaped. */
+  sliderConfig?: Partial<AzSliderConfig>;
+  /** The live value of an `isSlider` item, for every variant except `RANGE`. */
+  sliderValue?: number;
+  /** The live span of an `isSlider` item, for the `RANGE` variant only. */
+  sliderRange?: [number, number];
+  /** Renders the value as the label under the track. */
+  sliderValueFormatter?: (value: number) => string;
+  /** Called continuously as an `isSlider` item's thumb moves. */
+  onSliderChange?: (value: number) => void;
+  /** Called continuously as either `RANGE` thumb moves. */
+  onSliderRangeChange?: (range: [number, number]) => void;
   badge?: string;
   /** Whether the badge should remain permanently visible (true) or dissolve after 1 second (false). */
   persistentBadge?: boolean;
@@ -571,4 +588,100 @@ export interface AzItemConfig {
   fillColor?: string;
   /** Button shape. */
   shape?: AzButtonShape;
+}
+
+/**
+ * Which of Material 3 Expressive's slider shapes an `AzSlider` takes.
+ *
+ * The variants differ only in where the active track starts and how many thumbs there are — the
+ * track, the inset gap, the thumb and the stop indicators are the same instrument throughout, which
+ * is why they are one component and not four.
+ */
+export enum AzSliderVariant {
+  /** Free movement across the range. The active track runs from the range start to the thumb. */
+  CONTINUOUS = 'CONTINUOUS',
+  /**
+   * Movement snaps to evenly-spaced stops. The inactive track carries a stop indicator at every
+   * step, which is the only cue a user gets that the value is quantised — so it is not optional.
+   */
+  STEPPED = 'STEPPED',
+  /**
+   * The value has a natural zero in the middle — balance, trim, an EQ band. The active track grows
+   * *out of the centre* toward the thumb, so the sign of the value is legible without the number.
+   */
+  CENTERED = 'CENTERED',
+  /** Two thumbs bounding a span. The active track is the region between them. */
+  RANGE = 'RANGE',
+}
+
+/** The size ladder from Material 3 Expressive. */
+export enum AzSliderSize {
+  XSMALL = 'XSMALL',
+  SMALL = 'SMALL',
+  MEDIUM = 'MEDIUM',
+  LARGE = 'LARGE',
+  XLARGE = 'XLARGE',
+}
+
+/** Which way an `AzSlider` runs. */
+export enum AzSliderOrientation {
+  HORIZONTAL = 'HORIZONTAL',
+  VERTICAL = 'VERTICAL',
+}
+
+/**
+ * Track and thumb dimensions per size. Bigger is not merely larger: the track thickens faster than
+ * the thumb grows, so a large slider reads as a substantial physical control rather than a
+ * scaled-up small one. `thumbThickness` is the thumb's along-axis width — the M3 Expressive thumb
+ * is a pill standing across the track, not a circle sitting on it.
+ */
+export const AzSliderSizeMetrics: Record<
+  AzSliderSize,
+  { trackThickness: number; thumbThickness: number; thumbLength: number }
+> = {
+  [AzSliderSize.XSMALL]: {
+    trackThickness: 16,
+    thumbThickness: 4,
+    thumbLength: 24,
+  },
+  [AzSliderSize.SMALL]: {
+    trackThickness: 24,
+    thumbThickness: 4,
+    thumbLength: 34,
+  },
+  [AzSliderSize.MEDIUM]: {
+    trackThickness: 40,
+    thumbThickness: 4,
+    thumbLength: 52,
+  },
+  [AzSliderSize.LARGE]: {
+    trackThickness: 56,
+    thumbThickness: 8,
+    thumbLength: 68,
+  },
+  [AzSliderSize.XLARGE]: {
+    trackThickness: 96,
+    thumbThickness: 8,
+    thumbLength: 108,
+  },
+};
+
+/** Everything about a slider except its live value. */
+export interface AzSliderConfig {
+  variant: AzSliderVariant;
+  size: AzSliderSize;
+  orientation: AzSliderOrientation;
+  /** Inclusive bounds. */
+  valueFrom: number;
+  valueTo: number;
+  /**
+   * Number of interior stops for `STEPPED`. `steps = 3` over 0..1 gives stops at 0, .25, .5, .75
+   * and 1 — the two ends are always stops and are not counted here, matching Material's convention.
+   */
+  steps: number;
+  /**
+   * The origin a `CENTERED` track grows out of. Omitted means the arithmetic middle of the range,
+   * which is what "centred" means in the ordinary case.
+   */
+  origin?: number;
 }

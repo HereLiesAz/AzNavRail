@@ -307,6 +307,9 @@ It is drawn rather than composed out of Material's own `Slider` because the rail
 identically on Android and in Compose Multiplatform, and has to stand in an 80 dp-wide rail slot
 running vertically — which Material's slider will not do.
 
+On React the same control ships as `<AzSlider>` plus `<AzRailSlider>`, with `AzSliderSizeMetrics`
+carrying the size ladder and `AzMotion` (in `AzNavRailDefaults`) carrying the timings.
+
 **In the rail:** `azRailSlider(...)` puts the same control in a rail item that unfolds *in its own
 slot*. Folded it is an ordinary rail button; tapped, the slot grows along the rail and the button
 becomes the track, with the value underneath as the way back. Nothing opens over the rail and nothing

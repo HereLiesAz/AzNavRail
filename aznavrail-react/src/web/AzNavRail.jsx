@@ -15,6 +15,7 @@ import AzDivider from './AzDivider';
 import AzTextBox from './AzTextBox';
 import AboutOverlay from './AboutOverlay';
 import MoreFromAzOverlay from './MoreFromAzOverlay';
+import { AzMotion } from '../AzNavRailDefaults';
 
 /**
  * An M3-style navigation rail that expands into a menu drawer for web applications.
@@ -55,8 +56,8 @@ const AzNavRail = ({
     appRepositoryUrl,
     // WP7 kinetic typography — same defaults as the RN build.
     itemEntrance = 'Turnstile',
-    entranceStaggerMs = 60,
-    entranceDurationMs = 720,
+    entranceStaggerMs = AzMotion.ItemStaggerMs,
+    entranceDurationMs = AzMotion.ItemDurationMs,
     entranceStartAngle = 90,
     // Menu drawer look/feel.
     dimBehindMenu = false,
