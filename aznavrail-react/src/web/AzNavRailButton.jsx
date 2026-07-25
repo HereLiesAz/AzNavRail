@@ -5,11 +5,28 @@ import './AzNavRailButton.css';
 /**
  * A circular button for the collapsed navigation rail.
  */
-const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen, style, onItemGloballyPositioned }) => {
+const AzNavRailButton = ({
+  item,
+  onCyclerClick,
+  onClickOverride,
+  infoScreen,
+  style,
+  onItemGloballyPositioned,
+}) => {
   const {
-      text, isToggle, isChecked, toggleOnText, toggleOffText,
-      isCycler, selectedOption, onClick, onFocus,
-      color, id, disabled, content
+    text,
+    isToggle,
+    isChecked,
+    toggleOnText,
+    toggleOffText,
+    isCycler,
+    selectedOption,
+    onClick,
+    onFocus,
+    color,
+    id,
+    disabled,
+    content,
   } = item;
 
   const fitTextRef = useFitText();
@@ -21,27 +38,29 @@ const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen, sty
     return text;
   })();
 
-  const isInteractive = infoScreen ? (!!onClickOverride || item.isHelpItem) : !disabled;
+  const isInteractive = infoScreen
+    ? !!onClickOverride || item.isHelpItem
+    : !disabled;
 
   const handleClick = (e) => {
     if (!isInteractive) return;
 
     if (infoScreen) {
-        if (item.isHelpItem && onClick) {
-            onClick(e);
-        } else if (onClickOverride) {
-            onClickOverride(e); // Allow host expansion
-        }
-        return;
+      if (item.isHelpItem && onClick) {
+        onClick(e);
+      } else if (onClickOverride) {
+        onClickOverride(e); // Allow host expansion
+      }
+      return;
     }
 
     // Always trigger onFocus if present (parity with Android)
     if (onFocus) {
-        onFocus();
+      onFocus();
     }
 
     if (onClickOverride) {
-        onClickOverride(e);
+      onClickOverride(e);
     } else if (isCycler) {
       onCyclerClick();
     } else {
@@ -68,7 +87,8 @@ const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen, sty
 
   const effectiveColor = color || 'blue';
   const lowerColor = effectiveColor.toLowerCase();
-  const computedFillColor = (lowerColor === 'black' || lowerColor === '#000000' || lowerColor === '#000')
+  const computedFillColor =
+    lowerColor === 'black' || lowerColor === '#000000' || lowerColor === '#000'
       ? 'rgba(255, 255, 255, 0.25)'
       : 'rgba(0, 0, 0, 0.25)';
   const finalFillColor = item.fillColor || computedFillColor;
@@ -76,49 +96,79 @@ const AzNavRailButton = ({ item, onCyclerClick, onClickOverride, infoScreen, sty
   const wrapperRef = React.useRef(null);
 
   React.useEffect(() => {
-      if (onItemGloballyPositioned && wrapperRef.current) {
-          onItemGloballyPositioned(id, wrapperRef.current.getBoundingClientRect());
-      }
+    if (onItemGloballyPositioned && wrapperRef.current) {
+      onItemGloballyPositioned(id, wrapperRef.current.getBoundingClientRect());
+    }
   }, [id, onItemGloballyPositioned]);
 
   return (
     <div style={{ position: 'relative' }} data-az-nav-id={id} ref={wrapperRef}>
-        <button
-            className={`az-nav-rail-button ${shapeClass} ${!isInteractive ? 'disabled' : ''}`}
-            onClick={handleClick}
-            style={{
-                borderColor: effectiveColor,
-                backgroundColor: finalFillColor,
-                opacity: isInteractive ? 1 : 0.5,
-                cursor: isInteractive ? 'pointer' : 'default',
-                width: '64px',
-                minWidth: '64px',
-                maxWidth: '64px',
-                height: '64px',
-                minHeight: '64px',
-                maxHeight: '64px',
-                overflow: 'hidden',
-                ...style
-            }}
-            disabled={!isInteractive}
-            {...ariaProps}
-        >
-          {content ? (
-              isReactNode ? (
-                  content
-              ) : (
-                  <div className="button-content-wrapper" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {typeof content === 'string' && (content.startsWith('http') || content.startsWith('/') || content.startsWith('data:')) ? (
-                          <img src={content} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} />
-                      ) : (
-                          <div style={{ backgroundColor: content, width: '100%', height: '100%', borderRadius: 'inherit' }} />
-                      )}
-                  </div>
-              )
+      <button
+        className={`az-nav-rail-button ${shapeClass} ${!isInteractive ? 'disabled' : ''}`}
+        onClick={handleClick}
+        style={{
+          borderColor: effectiveColor,
+          backgroundColor: finalFillColor,
+          opacity: isInteractive ? 1 : 0.5,
+          cursor: isInteractive ? 'pointer' : 'default',
+          width: '64px',
+          minWidth: '64px',
+          maxWidth: '64px',
+          height: '64px',
+          minHeight: '64px',
+          maxHeight: '64px',
+          overflow: 'hidden',
+          ...style,
+        }}
+        disabled={!isInteractive}
+        {...ariaProps}
+      >
+        {content ? (
+          isReactNode ? (
+            content
           ) : (
-              <span className="button-text" ref={textRef}>{textToShow}</span>
-          )}
-        </button>
+            <div
+              className="button-content-wrapper"
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {typeof content === 'string' &&
+              (content.startsWith('http') ||
+                content.startsWith('/') ||
+                content.startsWith('data:')) ? (
+                <img
+                  src={content}
+                  alt=""
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    borderRadius: 'inherit',
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    backgroundColor: content,
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: 'inherit',
+                  }}
+                />
+              )}
+            </div>
+          )
+        ) : (
+          <span className="button-text" ref={textRef}>
+            {textToShow}
+          </span>
+        )}
+      </button>
     </div>
   );
 };

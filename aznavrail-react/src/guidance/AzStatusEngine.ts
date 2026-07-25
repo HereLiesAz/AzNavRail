@@ -30,9 +30,12 @@ export function computeBuiltinStatuses(input: BuiltinStatusInput): Set<string> {
   });
   if (input.currentRoute) out.add(`az.screen.${input.currentRoute}`);
   if (input.activeItemId) out.add(`az.item.${input.activeItemId}.active`);
-  if (input.nestedRailOpenId) out.add(`az.nestedRail.${input.nestedRailOpenId}.open`);
+  if (input.nestedRailOpenId)
+    out.add(`az.nestedRail.${input.nestedRailOpenId}.open`);
   if (input.helpOpen) out.add('az.help.open');
-  (input.onscreenVisibleIds || []).forEach((id) => out.add(`az.onscreen.${id}.visible`));
+  (input.onscreenVisibleIds || []).forEach((id) =>
+    out.add(`az.onscreen.${id}.visible`)
+  );
   return out;
 }
 
@@ -43,7 +46,9 @@ function setsEqual(a: Set<string>, b: Set<string>): boolean {
 }
 
 /** True if any registered suppressor predicate is currently true (a throwing predicate counts false). */
-export function anySuppressorActive(suppressors: Array<[number, () => boolean]>): boolean {
+export function anySuppressorActive(
+  suppressors: Array<[number, () => boolean]>
+): boolean {
   return suppressors.some(([, predicate]) => {
     try {
       return predicate();
@@ -60,7 +65,9 @@ export function anySuppressorActive(suppressors: Array<[number, () => boolean]>)
  * back to false. Predicates are re-evaluated each render and on the same ~300 ms poll as
  * {@link useActiveStatuses}. Mirrors Kotlin `rememberGuidanceSuppressed`.
  */
-export function useGuidanceSuppressed(suppressors: Array<[number, () => boolean]>): boolean {
+export function useGuidanceSuppressed(
+  suppressors: Array<[number, () => boolean]>
+): boolean {
   const rawNow = anySuppressorActive(suppressors);
   const settleMs = suppressors.reduce((m, [s]) => Math.max(m, s), 0);
   // Seed from the live state so the overlay starts hidden when it should (no first-render flash).
@@ -93,7 +100,7 @@ export function useGuidanceSuppressed(suppressors: Array<[number, () => boolean]
 export function useActiveStatuses(
   predicates: Record<string, AzStatusPredicate>,
   activeClassifiers: Set<string> | string[] | undefined,
-  builtins: () => Set<string>,
+  builtins: () => Set<string>
 ): Set<string> {
   // A periodic tick re-evaluates predicates backed by non-React sources (a ref, an external store)
   // within the poll interval. React-state/prop-driven inputs are caught for free because the host
@@ -109,7 +116,10 @@ export function useActiveStatuses(
   const out = new Set<string>();
   builtins().forEach((s) => out.add(s));
   if (activeClassifiers) {
-    (Array.isArray(activeClassifiers) ? activeClassifiers : Array.from(activeClassifiers)).forEach((c) => out.add(c));
+    (Array.isArray(activeClassifiers)
+      ? activeClassifiers
+      : Array.from(activeClassifiers)
+    ).forEach((c) => out.add(c));
   }
   for (const id in predicates) {
     try {

@@ -18,7 +18,9 @@ export default function useFitText(options: any = {}) {
 
     const trySize = (size: number) => {
       el.style.fontSize = `${size}px`;
-      return el.scrollWidth <= el.clientWidth && el.scrollHeight <= el.clientHeight;
+      return (
+        el.scrollWidth <= el.clientWidth && el.scrollHeight <= el.clientHeight
+      );
     };
 
     while (min <= max) {

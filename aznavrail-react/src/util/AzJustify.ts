@@ -29,7 +29,7 @@ export function solveHybridJustify(
   baseFontSize: number,
   maxTrackingRatio = 0.15,
   maxFontScale = 1.5,
-  minFontScale = 0.5,
+  minFontScale = 0.5
 ): { scale: number; letterSpacing: number } {
   if (charCount < 1 || naturalWidth <= 0 || rowWidth <= 0) {
     return { scale: 1, letterSpacing: 0 };

@@ -14,9 +14,19 @@ import { Image, ImageSourcePropType, StyleSheet, View } from 'react-native';
  *   is an RN `Image`);
  * - any other React node — rendered as-is inside the fill+clip container.
  */
-export function renderFillContent(content: React.ReactNode | ImageSourcePropType): React.ReactNode {
+/** Test identifier on the fill container, and on the graphic itself when it carries none of its own. */
+export const AzFillContentTestID = 'az-button-content';
+export const AzFillContentGraphicTestID = 'az-button-content-graphic';
+
+export function renderFillContent(
+  content: React.ReactNode | ImageSourcePropType
+): React.ReactNode {
   return (
-    <View style={[StyleSheet.absoluteFill, styles.fill]} pointerEvents="box-none">
+    <View
+      style={[StyleSheet.absoluteFill, styles.fill]}
+      pointerEvents="box-none"
+      testID={AzFillContentTestID}
+    >
       {renderInner(content)}
     </View>
   );
@@ -35,15 +45,28 @@ function isImageSource(value: unknown): value is ImageSourcePropType {
   );
 }
 
-function renderInner(content: React.ReactNode | ImageSourcePropType): React.ReactNode {
+function renderInner(
+  content: React.ReactNode | ImageSourcePropType
+): React.ReactNode {
   if (isImageSource(content)) {
-    return <Image source={content} resizeMode="cover" style={FILL_STYLE} />;
+    return (
+      <Image
+        source={content}
+        resizeMode="cover"
+        style={FILL_STYLE}
+        testID={AzFillContentGraphicTestID}
+      />
+    );
   }
 
   if (React.isValidElement(content)) {
     const element = content as React.ReactElement<any>;
     const mergedStyle = [FILL_STYLE, element.props?.style];
-    const extraProps: Record<string, unknown> = { style: mergedStyle };
+    const extraProps: Record<string, unknown> = {
+      style: mergedStyle,
+      // A caller's own testID always wins; this only names an otherwise anonymous graphic.
+      testID: element.props?.testID ?? AzFillContentGraphicTestID,
+    };
     // RN Image fills its box via resizeMode rather than CSS object-fit.
     if (element.type === Image) {
       extraProps.resizeMode = element.props?.resizeMode ?? 'cover';

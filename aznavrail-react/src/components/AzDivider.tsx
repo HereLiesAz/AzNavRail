@@ -21,7 +21,9 @@ export const AzDivider: React.FC<AzDividerProps> = ({
   // native iOS/Android, `View.backgroundColor` does NOT understand CSS keywords and would throw at
   // runtime, so we fall back to a subtle outline color there. The rail's/dropdown's own call sites
   // pass their accent explicitly, so this native fallback only affects standalone uses.
-  color = typeof document !== 'undefined' ? 'currentColor' : 'rgba(0, 0, 0, 0.12)',
+  color = typeof document !== 'undefined'
+    ? 'currentColor'
+    : 'rgba(0, 0, 0, 0.12)',
   horizontalPadding = 16,
   verticalPadding = 8,
 }) => {
@@ -36,7 +38,11 @@ export const AzDivider: React.FC<AzDividerProps> = ({
   if (layout.width === 0 && layout.height === 0) {
     return (
       <View
-        style={{ flex: 1, paddingHorizontal: horizontalPadding, paddingVertical: verticalPadding }}
+        style={{
+          flex: 1,
+          paddingHorizontal: horizontalPadding,
+          paddingVertical: verticalPadding,
+        }}
         onLayout={handleLayout}
       />
     );

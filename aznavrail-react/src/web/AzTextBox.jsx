@@ -37,7 +37,7 @@ const AzTextBox = ({
   color = 'currentColor',
   suggestions = [],
   className = '',
-  style = {}
+  style = {},
 }) => {
   const [internalValue, setInternalValue] = useState(initialValue);
   const [isRevealed, setIsRevealed] = useState(false);
@@ -57,7 +57,10 @@ const AzTextBox = ({
   const containerRef = useRef(null);
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target)
+      ) {
         setShowSuggestions(false);
       }
     };
@@ -102,8 +105,9 @@ const AzTextBox = ({
   const inputType = secret && !isRevealed ? 'password' : 'text';
   const InputComponent = multiline ? 'textarea' : 'input';
 
-  const filteredSuggestions = suggestions.filter(s =>
-    s.toLowerCase().includes(currentValue.toLowerCase()) && s !== currentValue
+  const filteredSuggestions = suggestions.filter(
+    (s) =>
+      s.toLowerCase().includes(currentValue.toLowerCase()) && s !== currentValue
   );
 
   return (
@@ -117,9 +121,7 @@ const AzTextBox = ({
         style={{ borderColor: color }}
       >
         {leadingIcon && (
-          <div className="az-textbox-icon leading">
-            {leadingIcon}
-          </div>
+          <div className="az-textbox-icon leading">{leadingIcon}</div>
         )}
 
         <InputComponent
@@ -142,15 +144,16 @@ const AzTextBox = ({
         />
 
         {currentValue && enabled && !readOnly && (
-          <div className="az-textbox-icon action" onClick={secret ? () => setIsRevealed(!isRevealed) : handleClear}>
+          <div
+            className="az-textbox-icon action"
+            onClick={secret ? () => setIsRevealed(!isRevealed) : handleClear}
+          >
             {secret ? (isRevealed ? '👁️' : '👁️‍🗨️') : '✕'}
           </div>
         )}
 
         {trailingIcon && (
-          <div className="az-textbox-icon trailing">
-            {trailingIcon}
-          </div>
+          <div className="az-textbox-icon trailing">{trailingIcon}</div>
         )}
 
         {onSubmit && (

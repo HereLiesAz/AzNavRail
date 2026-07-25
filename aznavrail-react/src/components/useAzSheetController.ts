@@ -61,7 +61,7 @@ const order: AzSheetDetent[] = [
  * ```
  */
 export function useAzSheetController(
-  initial: AzSheetDetent = AzSheetDetent.HIDDEN,
+  initial: AzSheetDetent = AzSheetDetent.HIDDEN
 ): AzSheetController {
   const [detent, setDetent] = useState<AzSheetDetent>(initial);
   const [isEnabled, setEnabledState] = useState<boolean>(true);
@@ -86,7 +86,8 @@ export function useAzSheetController(
 
   const stepDown = useCallback(() => {
     setDetent((d) => {
-      if (!isEnabledRef.current && d !== AzSheetDetent.HIDDEN) return AzSheetDetent.HIDDEN;
+      if (!isEnabledRef.current && d !== AzSheetDetent.HIDDEN)
+        return AzSheetDetent.HIDDEN;
       const idx = order.indexOf(d);
       return order[Math.max(idx - 1, 0)];
     });
@@ -98,7 +99,15 @@ export function useAzSheetController(
   }, []);
 
   return useMemo<AzSheetController>(
-    () => ({ detent, isEnabled, setDetent, setEnabled, stepUp, stepDown, snapTo }),
-    [detent, isEnabled, setEnabled, stepUp, stepDown, snapTo],
+    () => ({
+      detent,
+      isEnabled,
+      setDetent,
+      setEnabled,
+      stepUp,
+      stepDown,
+      snapTo,
+    }),
+    [detent, isEnabled, setEnabled, stepUp, stepDown, snapTo]
   );
 }

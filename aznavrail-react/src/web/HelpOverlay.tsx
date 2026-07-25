@@ -15,7 +15,10 @@ interface HelpOverlayProps {
    * Pre-measured layout rectangles for nav items keyed by item ID; used as the source for
    * elbow-arrow connector endpoints instead of live `getBoundingClientRect` queries.
    */
-  itemBounds?: Record<string, { x: number; y: number; width: number; height: number }>;
+  itemBounds?: Record<
+    string,
+    { x: number; y: number; width: number; height: number }
+  >;
   /**
    * Additional help text keyed by item ID that supplements or replaces each item's `info` field;
    * items without an entry here and without an `info` value are omitted from the overlay.
@@ -79,7 +82,9 @@ const HelpOverlay: React.FC<HelpOverlayProps> = ({
 
       const itemRect =
         itemBounds[item.id] ??
-        document.querySelector<HTMLElement>(`[data-az-nav-id="${item.id}"]`)?.getBoundingClientRect();
+        document
+          .querySelector<HTMLElement>(`[data-az-nav-id="${item.id}"]`)
+          ?.getBoundingClientRect();
       const descEl = document.querySelector(`[data-az-desc-id="${item.id}"]`);
 
       if (itemRect && descEl) {
@@ -127,7 +132,9 @@ const HelpOverlay: React.FC<HelpOverlayProps> = ({
   const isNestedRailOpen = nestedRailVisibleId !== null;
   const effectiveMarginLeft = isNestedRailOpen
     ? `calc(${typeof railWidth === 'number' ? `${railWidth}px` : railWidth} + 120px)`
-    : typeof railWidth === 'number' ? `${railWidth}px` : railWidth;
+    : typeof railWidth === 'number'
+      ? `${railWidth}px`
+      : railWidth;
 
   return (
     <div className="az-help-overlay">
@@ -158,7 +165,12 @@ const HelpOverlay: React.FC<HelpOverlayProps> = ({
                 <div style={isExpanded ? {} : clampStyle}>{infoText}</div>
               )}
               {listText && (
-                <div style={{ ...(isExpanded ? {} : clampStyle), marginTop: infoText ? 8 : 0 }}>
+                <div
+                  style={{
+                    ...(isExpanded ? {} : clampStyle),
+                    marginTop: infoText ? 8 : 0,
+                  }}
+                >
                   {listText}
                 </div>
               )}
@@ -173,7 +185,9 @@ const HelpOverlay: React.FC<HelpOverlayProps> = ({
         })}
       </div>
       <canvas ref={canvasRef} className="az-help-canvas" />
-      <button className="az-fab-exit" onClick={onDismiss}>{'✕'}</button>
+      <button className="az-fab-exit" onClick={onDismiss}>
+        {'✕'}
+      </button>
     </div>
   );
 };

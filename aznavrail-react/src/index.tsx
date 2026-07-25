@@ -28,7 +28,14 @@ export type { AzToggleProps, AzCyclerProps } from './types';
 export { AzHelpRailItem, AzHelpSubItem } from './AzNavRailScope';
 
 // --- Status-driven guidance framework (replaces the scripted tutorial) ---
-export { AzStatus, AzEdge, AzGoal, AzGuidanceTarget, AzSuppressGuide, AzGuideRenderer } from './guidance/AzGuidanceScope';
+export {
+  AzStatus,
+  AzEdge,
+  AzGoal,
+  AzGuidanceTarget,
+  AzSuppressGuide,
+  AzGuideRenderer,
+} from './guidance/AzGuidanceScope';
 export type {
   AzStatusProps,
   AzEdgeProps,
@@ -37,7 +44,10 @@ export type {
   AzSuppressGuideProps,
   AzGuideRendererProps,
 } from './guidance/AzGuidanceScope';
-export { AzGuidanceProvider, useAzGuidanceController } from './guidance/AzGuidanceController';
+export {
+  AzGuidanceProvider,
+  useAzGuidanceController,
+} from './guidance/AzGuidanceController';
 export type { AzGuidanceController } from './guidance/AzGuidanceController';
 export {
   AZ_ITEM_ACTIVE,
@@ -66,7 +76,19 @@ export type {
   AzStatusPredicate,
 } from './guidance/AzStatus';
 export { AzInstructionOverlay } from './components/AzInstructionOverlay';
-export { useActiveStatuses, computeBuiltinStatuses, useGuidanceSuppressed, anySuppressorActive } from './guidance/AzStatusEngine';
-export { nextHop, routeInstructions, computeAutoEdges, resolveEdge, toSnapshot, snapshotsOf } from './guidance/AzGuidance';
+export {
+  useActiveStatuses,
+  computeBuiltinStatuses,
+  useGuidanceSuppressed,
+  anySuppressorActive,
+} from './guidance/AzStatusEngine';
+export {
+  nextHop,
+  routeInstructions,
+  computeAutoEdges,
+  resolveEdge,
+  toSnapshot,
+  snapshotsOf,
+} from './guidance/AzGuidance';
 export type { ResolvedInstruction, GuidanceFrame } from './guidance/AzGuidance';
 export { placeCallout, overlapArea } from './guidance/AzCalloutPlacement';

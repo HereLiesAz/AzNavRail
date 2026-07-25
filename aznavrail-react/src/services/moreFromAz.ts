@@ -17,7 +17,9 @@ export interface AzMoreFromApp {
 
 /** Stable sort placing apps with a Play link first. */
 export function sortPlayFirst(apps: AzMoreFromApp[]): AzMoreFromApp[] {
-  return [...apps].sort((a, b) => (a.playStoreUrl ? 0 : 1) - (b.playStoreUrl ? 0 : 1));
+  return [...apps].sort(
+    (a, b) => (a.playStoreUrl ? 0 : 1) - (b.playStoreUrl ? 0 : 1)
+  );
 }
 
 /** Best-effort display name from a URL (GitHub repo name, else last path segment / host). */
@@ -40,7 +42,10 @@ function appFromObject(o: any): AzMoreFromApp | null {
       playStoreUrl: o.play || undefined,
       webUrl: o.web || undefined,
       isPwa: Boolean(o.isPwa),
-      bannerUrl: typeof o.bannerUrl === 'string' && o.bannerUrl ? o.bannerUrl : undefined,
+      bannerUrl:
+        typeof o.bannerUrl === 'string' && o.bannerUrl
+          ? o.bannerUrl
+          : undefined,
     };
   }
   // Un-baked link object { github?, play?, web? } -> degraded card.
@@ -58,8 +63,10 @@ function appFromObject(o: any): AzMoreFromApp | null {
 
 function degradedFromUrl(url: string): AzMoreFromApp {
   const name = displayNameFor(url);
-  if (url.includes('github.com')) return { name, iconUrl: '', description: '', githubUrl: url };
-  if (url.includes('play.google.com')) return { name, iconUrl: '', description: '', playStoreUrl: url };
+  if (url.includes('github.com'))
+    return { name, iconUrl: '', description: '', githubUrl: url };
+  if (url.includes('play.google.com'))
+    return { name, iconUrl: '', description: '', playStoreUrl: url };
   return { name, iconUrl: '', description: '', webUrl: url };
 }
 
@@ -92,7 +99,9 @@ export function parse(json: string): MoreFromResult {
  * then the OpenGraph social preview.  Entries without a `bannerUrl` also get a `docs/banner.*` walk
  * so the About page can render a banner strip above the active app's info.
  */
-export async function fetchMoreFromAz(jsonUrl: string): Promise<MoreFromResult | null> {
+export async function fetchMoreFromAz(
+  jsonUrl: string
+): Promise<MoreFromResult | null> {
   const res = await cachedGet(jsonUrl);
   if (!res) return null;
   let parsed: MoreFromResult;
@@ -116,9 +125,14 @@ const LAUNCHER_ICON_PATHS = [
 ];
 
 const BANNER_NAMES = [
-  'docs/banner.png', 'docs/banner.webp', 'docs/banner.jpg', 'docs/banner.jpeg',
-  'docs/Banner.png', 'docs/Banner.webp',
-  'docs/hero.png', 'docs/hero.webp',
+  'docs/banner.png',
+  'docs/banner.webp',
+  'docs/banner.jpg',
+  'docs/banner.jpeg',
+  'docs/Banner.png',
+  'docs/Banner.webp',
+  'docs/hero.png',
+  'docs/hero.webp',
 ];
 
 const BRANCHES = ['main', 'master', 'HEAD'];
@@ -127,16 +141,23 @@ async function headOk(url: string): Promise<boolean> {
   try {
     // HEAD would be ideal, but on the web CORS blocks preflight for many hosts. GET with cache: 'no-store'
     // (and no-cors mode so we get an opaque response) is the safest cross-platform ping.
-    const r = await fetch(url, { method: 'GET', mode: 'no-cors', cache: 'no-store' as any } as any);
+    const r = await fetch(url, {
+      method: 'GET',
+      mode: 'no-cors',
+      cache: 'no-store' as any,
+    } as any);
     // In `no-cors` mode the status is 0 with type "opaque"; treat that as "reachable" so we don't
     // gate on CORS misconfig. On native platforms (no CORS), we get the real status.
-    return (r.type === 'opaque') || (r.status >= 200 && r.status < 400);
+    return r.type === 'opaque' || (r.status >= 200 && r.status < 400);
   } catch {
     return false;
   }
 }
 
-export async function resolveRepoIcon(owner: string, repo: string): Promise<string> {
+export async function resolveRepoIcon(
+  owner: string,
+  repo: string
+): Promise<string> {
   for (const branch of BRANCHES) {
     for (const path of LAUNCHER_ICON_PATHS) {
       const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
@@ -146,7 +167,10 @@ export async function resolveRepoIcon(owner: string, repo: string): Promise<stri
   return `https://opengraph.githubassets.com/1/${owner}/${repo}`;
 }
 
-export async function resolveRepoBanner(owner: string, repo: string): Promise<string | undefined> {
+export async function resolveRepoBanner(
+  owner: string,
+  repo: string
+): Promise<string | undefined> {
   for (const branch of BRANCHES) {
     for (const name of BANNER_NAMES) {
       const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${name}`;
@@ -156,7 +180,9 @@ export async function resolveRepoBanner(owner: string, repo: string): Promise<st
   return undefined;
 }
 
-export async function enrichWithRepoAssets(apps: AzMoreFromApp[]): Promise<AzMoreFromApp[]> {
+export async function enrichWithRepoAssets(
+  apps: AzMoreFromApp[]
+): Promise<AzMoreFromApp[]> {
   return Promise.all(
     apps.map(async (app) => {
       const gh = app.githubUrl;
@@ -164,14 +190,17 @@ export async function enrichWithRepoAssets(apps: AzMoreFromApp[]): Promise<AzMor
       const parsed = parseRepo(gh);
       if (!parsed) return app;
       const [owner, repo] = parsed;
-      const needsIcon = !app.iconUrl || app.iconUrl.includes('avatars.githubusercontent.com');
+      const needsIcon =
+        !app.iconUrl || app.iconUrl.includes('avatars.githubusercontent.com');
       const needsBanner = !app.bannerUrl;
       if (!needsIcon && !needsBanner) return app;
       const [iconUrl, bannerUrl] = await Promise.all([
         needsIcon ? resolveRepoIcon(owner, repo) : Promise.resolve(app.iconUrl),
-        needsBanner ? resolveRepoBanner(owner, repo) : Promise.resolve(app.bannerUrl),
+        needsBanner
+          ? resolveRepoBanner(owner, repo)
+          : Promise.resolve(app.bannerUrl),
       ]);
       return { ...app, iconUrl: iconUrl || app.iconUrl, bannerUrl };
-    }),
+    })
   );
 }

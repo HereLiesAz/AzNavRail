@@ -54,15 +54,15 @@ export const AzRoller: React.FC<AzRollerProps> = ({
   const repeatCount = 50;
   const displayOptions: string[] = [];
   if (options.length > 0) {
-      for (let i = 0; i < repeatCount; i++) {
-          displayOptions.push(...options);
-      }
+    for (let i = 0; i < repeatCount; i++) {
+      displayOptions.push(...options);
+    }
   }
 
   useEffect(() => {
-      if (!expanded) {
-          setFilterText(selectedOption || '');
-      }
+    if (!expanded) {
+      setFilterText(selectedOption || '');
+    }
   }, [selectedOption, expanded]);
 
   const handleSelect = (option: string) => {
@@ -83,60 +83,68 @@ export const AzRoller: React.FC<AzRollerProps> = ({
   const handleArrowClick = () => {
     if (!enabled) return;
     if (expanded && isTyping) {
-        // If currently typing, switch to slot machine mode
-        setIsTyping(false);
-        // Don't close, just switch mode? Or close and reopen?
-        // Android: "Clicking the dropdown arrow while typing exits Text Mode and re-opens the full list"
-        setExpanded(true); // Ensure open
+      // If currently typing, switch to slot machine mode
+      setIsTyping(false);
+      // Don't close, just switch mode? Or close and reopen?
+      // Android: "Clicking the dropdown arrow while typing exits Text Mode and re-opens the full list"
+      setExpanded(true); // Ensure open
     } else {
-        setExpanded(!expanded);
-        setIsTyping(false);
+      setExpanded(!expanded);
+      setIsTyping(false);
     }
   };
 
   const getVisibleOptions = () => {
-      if (isTyping) {
-          if (!filterText) return options;
-          return options.filter(o => o.toLowerCase().includes(filterText.toLowerCase()));
-      }
-      return displayOptions;
+    if (isTyping) {
+      if (!filterText) return options;
+      return options.filter((o) =>
+        o.toLowerCase().includes(filterText.toLowerCase())
+      );
+    }
+    return displayOptions;
   };
 
   const visibleOptions = getVisibleOptions();
   const effectiveOutlineColor = isError ? 'red' : outlineColor;
 
   return (
-    <View style={[styles.container, style, { zIndex: expanded ? 1000 : 1, opacity: enabled ? 1 : 0.5 }]}>
+    <View
+      style={[
+        styles.container,
+        style,
+        { zIndex: expanded ? 1000 : 1, opacity: enabled ? 1 : 0.5 },
+      ]}
+    >
       <View
         style={[
           styles.header,
           {
             borderColor: effectiveOutlineColor,
             backgroundColor: backgroundColor,
-            opacity: backgroundOpacity
-          }
+            opacity: backgroundOpacity,
+          },
         ]}
       >
         <TextInput
-            style={[styles.input, { color: effectiveOutlineColor }]}
-            value={filterText}
-            onChangeText={(text) => {
-                setFilterText(text);
-                if (!expanded) setExpanded(true);
-                setIsTyping(true);
-            }}
-            onFocus={handleTextFocus}
-            placeholder={hint}
-            placeholderTextColor={effectiveOutlineColor + '80'}
-            editable={enabled}
+          style={[styles.input, { color: effectiveOutlineColor }]}
+          value={filterText}
+          onChangeText={(text) => {
+            setFilterText(text);
+            if (!expanded) setExpanded(true);
+            setIsTyping(true);
+          }}
+          onFocus={handleTextFocus}
+          placeholder={hint}
+          placeholderTextColor={effectiveOutlineColor + '80'}
+          editable={enabled}
         />
 
         <TouchableOpacity
-            onPress={handleArrowClick}
-            style={styles.arrowButton}
-            disabled={!enabled}
+          onPress={handleArrowClick}
+          style={styles.arrowButton}
+          disabled={!enabled}
         >
-             <Text style={[styles.icon, { color: effectiveOutlineColor }]}>▼</Text>
+          <Text style={[styles.icon, { color: effectiveOutlineColor }]}>▼</Text>
         </TouchableOpacity>
       </View>
 
@@ -153,8 +161,8 @@ export const AzRoller: React.FC<AzRollerProps> = ({
               const itemBg = isSelected
                 ? 'rgba(0,0,0,0.1)'
                 : isEven
-                ? 'rgba(0,0,0,0.05)'
-                : 'transparent';
+                  ? 'rgba(0,0,0,0.05)'
+                  : 'transparent';
 
               return (
                 <TouchableOpacity
@@ -162,14 +170,16 @@ export const AzRoller: React.FC<AzRollerProps> = ({
                   onPress={() => handleSelect(option)}
                   style={[styles.item, { backgroundColor: itemBg }]}
                 >
-                  <Text style={[styles.itemText, { color: '#000' }]}>{option}</Text>
+                  <Text style={[styles.itemText, { color: '#000' }]}>
+                    {option}
+                  </Text>
                 </TouchableOpacity>
               );
             })}
             {visibleOptions.length === 0 && (
-                <View style={styles.item}>
-                    <Text style={styles.itemText}>No options</Text>
-                </View>
+              <View style={styles.item}>
+                <Text style={styles.itemText}>No options</Text>
+              </View>
             )}
           </ScrollView>
         </View>
@@ -197,10 +207,10 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
   arrowButton: {
-      paddingHorizontal: 8,
-      height: '100%',
-      justifyContent: 'center',
-      borderLeftWidth: 0, // Maybe separator?
+    paddingHorizontal: 8,
+    height: '100%',
+    justifyContent: 'center',
+    borderLeftWidth: 0, // Maybe separator?
   },
   icon: {
     fontSize: 12,

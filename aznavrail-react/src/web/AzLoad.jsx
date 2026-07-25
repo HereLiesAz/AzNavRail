@@ -10,7 +10,12 @@ import './AzLoad.css';
  * @param {object} [props.style] - Additional styles.
  * @param {string} [props.className] - Additional classes.
  */
-const AzLoad = ({ color = 'currentColor', size = 24, style = {}, className = '' }) => {
+const AzLoad = ({
+  color = 'currentColor',
+  size = 24,
+  style = {},
+  className = '',
+}) => {
   return (
     <div
       className={`az-load-container ${className}`}

@@ -11,8 +11,8 @@ import { historyManager } from '../util/HistoryManager';
 
 /** Global defaults for `AzTextBox` instances. */
 export const AzTextBoxDefaults = {
-    /** Sets the maximum number of history suggestions stored per context. */
-    setSuggestionLimit: (limit: number) => historyManager.setLimit(limit),
+  /** Sets the maximum number of history suggestions stored per context. */
+  setSuggestionLimit: (limit: number) => historyManager.setLimit(limit),
 };
 
 /** Props for the `AzTextBox` text-input component. */
@@ -115,7 +115,7 @@ export const AzTextBox: React.FC<AzTextBoxProps> = ({
     if (onSubmit) onSubmit(currentValue);
     setShowSuggestions(false);
     if (!isControlled) {
-        setInternalValue('');
+      setInternalValue('');
     }
   };
 
@@ -131,29 +131,33 @@ export const AzTextBox: React.FC<AzTextBoxProps> = ({
   };
 
   const toggleSecret = () => {
-      if (!enabled) return;
-      setIsSecretVisible(!isSecretVisible);
+    if (!enabled) return;
+    setIsSecretVisible(!isSecretVisible);
   };
   const clearText = () => handleChange('');
 
   return (
-    <View style={[
+    <View
+      style={[
         styles.container,
         containerStyle,
         {
-            zIndex: showSuggestions ? 1000 : 1,
-            opacity: enabled ? 1 : 0.5
-        }
-    ]}>
-      <View style={[
+          zIndex: showSuggestions ? 1000 : 1,
+          opacity: enabled ? 1 : 0.5,
+        },
+      ]}
+    >
+      <View
+        style={[
           styles.inputRow,
           {
-              borderColor: outlineColor,
-              borderWidth: outlined ? 1 : 0,
-              backgroundColor: backgroundColor,
-              opacity: backgroundOpacity
-          }
-      ]}>
+            borderColor: outlineColor,
+            borderWidth: outlined ? 1 : 0,
+            backgroundColor: backgroundColor,
+            opacity: backgroundOpacity,
+          },
+        ]}
+      >
         <TextInput
           value={currentValue}
           onChangeText={handleChange}
@@ -163,21 +167,21 @@ export const AzTextBox: React.FC<AzTextBoxProps> = ({
           multiline={effectiveMultiline}
           editable={enabled}
           style={[
-              styles.input,
-              {
-                  color: outlineColor,
-                  minHeight: effectiveMultiline ? 40 : 40,
-                  height: effectiveMultiline ? undefined : 40,
-                  textAlignVertical: effectiveMultiline ? 'top' : 'center'
-              }
+            styles.input,
+            {
+              color: outlineColor,
+              minHeight: effectiveMultiline ? 40 : 40,
+              height: effectiveMultiline ? undefined : 40,
+              textAlignVertical: effectiveMultiline ? 'top' : 'center',
+            },
           ]}
         />
 
-        {(currentValue.length > 0) && (
+        {currentValue.length > 0 && (
           <TouchableOpacity
-              onPress={secret ? toggleSecret : clearText}
-              style={styles.iconButton}
-              disabled={!enabled}
+            onPress={secret ? toggleSecret : clearText}
+            style={styles.iconButton}
+            disabled={!enabled}
           >
             <Text style={{ color: outlineColor, fontSize: 10 }}>
               {secret ? (isSecretVisible ? 'HIDE' : 'SHOW') : 'X'}
@@ -186,20 +190,22 @@ export const AzTextBox: React.FC<AzTextBoxProps> = ({
         )}
 
         {showSubmitButton && (
-            <TouchableOpacity
-                onPress={handleSubmit}
-                disabled={!enabled}
-                style={[
-                    styles.submitButton,
-                    {
-                        backgroundColor: backgroundColor,
-                        borderColor: outlineColor,
-                        borderWidth: !outlined ? 1 : 0
-                    }
-                ]}
-            >
-                 {submitButtonContent || <Text style={{color: outlineColor, fontSize: 10}}>GO</Text>}
-            </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleSubmit}
+            disabled={!enabled}
+            style={[
+              styles.submitButton,
+              {
+                backgroundColor: backgroundColor,
+                borderColor: outlineColor,
+                borderWidth: !outlined ? 1 : 0,
+              },
+            ]}
+          >
+            {submitButtonContent || (
+              <Text style={{ color: outlineColor, fontSize: 10 }}>GO</Text>
+            )}
+          </TouchableOpacity>
         )}
       </View>
 
@@ -211,7 +217,12 @@ export const AzTextBox: React.FC<AzTextBoxProps> = ({
               onPress={() => handleSuggestionClick(item)}
               style={[
                 styles.suggestionItem,
-                { backgroundColor: index % 2 === 0 ? 'rgba(200,200,200,0.9)' : 'rgba(200,200,200,0.8)' }
+                {
+                  backgroundColor:
+                    index % 2 === 0
+                      ? 'rgba(200,200,200,0.9)'
+                      : 'rgba(200,200,200,0.8)',
+                },
               ]}
             >
               <Text style={styles.suggestionText}>{item}</Text>

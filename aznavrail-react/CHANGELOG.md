@@ -1,5 +1,48 @@
 # Changelog
 
+## Unreleased — toolchain: React Native 0.86 / React 19
+
+### Changed
+- **React Native 0.72.4 → 0.86.0, React 18.2 → 19.2.** With it: `@react-native/babel-preset` and
+  `@react-native/jest-preset` (replacing the retired `metro-react-native-babel-preset`),
+  `@react-native/typescript-config`, TypeScript 5.9, Jest 30, ESLint 9 on a flat
+  `eslint.config.js`, and `react-native-builder-bob` 0.43. `@types/react-native` and
+  `react-test-renderer` are gone — RN ships its own types, and React 19 deprecated the test
+  renderer. `npm ci` now resolves without `--legacy-peer-deps`.
+- **`@testing-library/react-native` 11.5 → 14.** Its rendering API is asynchronous in v14
+  (`render`, `renderHook`, `fireEvent`, `rerender`, `unmount`), and the whole suite was migrated.
+- **Tests run against the real React Native tree.** A hand-rolled `jest.setup.js` that mocked the
+  entire `react-native` module has been deleted in favour of the official preset. It was hiding
+  real defects (see Fixed). `jest.config.js` declares two projects, `native` and `web`; the web
+  components in `src/web` are now covered by Jest + jsdom + `react-dom` rather than by two
+  `vitest`-authored suites that no runner had ever executed.
+- **`StyleSheet.absoluteFillObject` → `StyleSheet.absoluteFill`**, which RN 0.86 collapsed into one.
+
+### Fixed
+- **Stray `" "` text node inside a `<View>`** in `AzNavRail`. Two `{flag && <View />} {/* … */}`
+  lines existed only to silence unused-variable warnings, and the space before the comment rendered
+  a bare text child — an invariant violation that crashes a real React Native app.
+- **The dropdown menu could fail to open at all.** `openMenu` called `setOpen(true)` *inside* the
+  `measureInWindow` callback, so if the trigger had not been laid out yet — or the host did not
+  implement `measureInWindow` — the menu never appeared. It now opens immediately and lets the
+  measurement refine the anchor when it lands.
+- **`MenuItem` (web) called `useRef` after an early return**, so a row switching between divider and
+  item changed the component's hook count between renders.
+- **Menu labels were announced twice.** Each `MENU`-design row renders an invisible copy of its
+  label to measure natural width; that copy is now hidden from assistive tech.
+- **`humanize('MIGRATION_GUIDE.md')` returned `MIGRATION GUIDE`.** It title-cases multi-word names
+  now, while leaving a single all-caps name (`README`, `API`, `DSL`) as written.
+- **`key` was being passed through a props spread**, which React 19 rejects.
+- **`bob build` was broken** by a `brace-expansion: ^5.0.8` security override: `minimatch` 3.x calls
+  it as a function and v5 is a named export. Because the Pages workflow ran `bob build || true`,
+  this failed silently and left a stale committed `lib/` in place, which in turn failed the
+  `sample-pwa` build with unresolved imports. `lib/` is no longer tracked by git, the workflow no
+  longer swallows build failures, and the override is gone (see `docs/SECURITY.md`).
+
+### Added
+- **Rail items carry their declared `id` as a `testID`**, so any item can be addressed by the id it
+  was given. `AzLoad` and the button fill-content graphic have stable test ids too.
+
 ## Unreleased — cosmetic (Compose only: dissolve overlay on close)
 
 ### Added

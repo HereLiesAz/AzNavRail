@@ -3,14 +3,25 @@ import type { AzEdge, AzGoal } from '../guidance/AzStatus';
 
 /** Verifies BFS next-hop routing and the multi-goal instruction frame (parity with the Kotlin tests). */
 
-const edge = (from: string, to: string | null, text: string, item?: string): AzEdge => ({
+const edge = (
+  from: string,
+  to: string | null,
+  text: string,
+  item?: string
+): AzEdge => ({
   from,
   to,
-  instruction: { text, highlight: item ? { type: 'Item', id: item } : { type: 'None' } },
+  instruction: {
+    text,
+    highlight: item ? { type: 'Item', id: item } : { type: 'None' },
+  },
 });
 
 // a --Do A--> b --Do B--> c
-const chain: AzEdge[] = [edge('a', 'b', 'Do A', 'ia'), edge('b', 'c', 'Do B', 'ib')];
+const chain: AzEdge[] = [
+  edge('a', 'b', 'Do A', 'ia'),
+  edge('b', 'c', 'Do B', 'ib'),
+];
 
 describe('nextHop', () => {
   it('returns the first edge on the shortest path', () => {
@@ -31,7 +42,9 @@ describe('nextHop', () => {
 
   it('prefers the shorter of two paths', () => {
     const edges = [...chain, edge('a', 'c', 'Shortcut', 'sc')];
-    expect(nextHop(edges, new Set(['a']), 'c')?.instruction.text).toBe('Shortcut');
+    expect(nextHop(edges, new Set(['a']), 'c')?.instruction.text).toBe(
+      'Shortcut'
+    );
   });
 });
 
@@ -44,13 +57,23 @@ describe('routeInstructions', () => {
   });
 
   it('surfaces a next hop per active goal simultaneously', () => {
-    const edges = [edge('root', 'p', 'Tap P', 'ip'), edge('root', 'q', 'Tap Q', 'iq')];
+    const edges = [
+      edge('root', 'p', 'Tap P', 'ip'),
+      edge('root', 'q', 'Tap Q', 'iq'),
+    ];
     const goals: Record<string, AzGoal> = {
       gp: { id: 'gp', target: 'p' },
       gq: { id: 'gq', target: 'q' },
     };
-    const frame = routeInstructions(edges, goals, ['gp', 'gq'], new Set(['root']));
-    expect(new Set(frame.instructions.map((i) => i.text))).toEqual(new Set(['Tap P', 'Tap Q']));
+    const frame = routeInstructions(
+      edges,
+      goals,
+      ['gp', 'gq'],
+      new Set(['root'])
+    );
+    expect(new Set(frame.instructions.map((i) => i.text))).toEqual(
+      new Set(['Tap P', 'Tap Q'])
+    );
     expect(frame.reachedGoals.size).toBe(0);
   });
 

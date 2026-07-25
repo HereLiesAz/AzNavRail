@@ -41,7 +41,9 @@ interface DraggableRailItemWrapperProps {
  * Renders a single reloc item that can be dragged vertically and long-pressed to reveal a hidden menu.
  * Used internally by `AzNavRail` to host `AzRailRelocItem` declarations.
  */
-export const DraggableRailItemWrapper: React.FC<DraggableRailItemWrapperProps> = ({
+export const DraggableRailItemWrapper: React.FC<
+  DraggableRailItemWrapperProps
+> = ({
   item,
   index,
   onDragStart,
@@ -58,43 +60,43 @@ export const DraggableRailItemWrapper: React.FC<DraggableRailItemWrapperProps> =
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
-      if (item.forceHiddenMenuOpen) {
-          setShowHiddenMenu(true);
-      }
+    if (item.forceHiddenMenuOpen) {
+      setShowHiddenMenu(true);
+    }
   }, [item.forceHiddenMenuOpen]);
 
   const closeMenu = () => {
-      setShowHiddenMenu(false);
-      if (item.onHiddenMenuDismiss) {
-          item.onHiddenMenuDismiss();
-      }
+    setShowHiddenMenu(false);
+    if (item.onHiddenMenuDismiss) {
+      item.onHiddenMenuDismiss();
+    }
   };
 
   // Create a listener for offset updates
   useEffect(() => {
-     // If this item is being displaced by another item being dragged
-     // offsetY prop drives the displacement animation
+    // If this item is being displaced by another item being dragged
+    // offsetY prop drives the displacement animation
   }, [offsetY]);
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (_, gestureState) => {
-          // Only start drag if vertical movement is significant
-          return Math.abs(gestureState.dy) > 10;
+        // Only start drag if vertical movement is significant
+        return Math.abs(gestureState.dy) > 10;
       },
       onPanResponderGrant: () => {
         setIsDragging(true);
         pan.setOffset({
-           x: 0, // Constrain horizontal
-           y: (pan.y as any).__getValue()
+          x: 0, // Constrain horizontal
+          y: (pan.y as any).__getValue(),
         });
         onDragStart(index);
       },
       onPanResponderMove: (_, gestureState) => {
-          // Constrain to vertical
-          pan.setValue({ x: 0, y: gestureState.dy });
-          onDragMove(gestureState.dy, index);
+        // Constrain to vertical
+        pan.setValue({ x: 0, y: gestureState.dy });
+        onDragMove(gestureState.dy, index);
       },
       onPanResponderRelease: () => {
         pan.flattenOffset();
@@ -103,144 +105,151 @@ export const DraggableRailItemWrapper: React.FC<DraggableRailItemWrapperProps> =
 
         // Reset position visually - the list reorder handles the actual move
         Animated.spring(pan, {
-            toValue: { x: 0, y: 0 },
-            useNativeDriver: false
+          toValue: { x: 0, y: 0 },
+          useNativeDriver: false,
         }).start();
       },
     })
   ).current;
 
   const handleLongPress = (event: any) => {
-      // Show hidden menu
-      const { pageX, pageY } = event.nativeEvent;
-      setMenuPosition({ x: pageX + 60, y: pageY - 20 }); // Offset slightly
-      setShowHiddenMenu(true);
+    // Show hidden menu
+    const { pageX, pageY } = event.nativeEvent;
+    setMenuPosition({ x: pageX + 60, y: pageY - 20 }); // Offset slightly
+    setShowHiddenMenu(true);
   };
 
   const renderHiddenMenu = () => {
-      if (!showHiddenMenu || !item.hiddenMenu) return null;
+    if (!showHiddenMenu || !item.hiddenMenu) return null;
 
-      return (
-          <Modal
-              transparent={true}
-              visible={showHiddenMenu}
-              onRequestClose={closeMenu}
+    return (
+      <Modal
+        transparent={true}
+        visible={showHiddenMenu}
+        onRequestClose={closeMenu}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={closeMenu}
+        >
+          <View
+            style={[
+              styles.hiddenMenu,
+              { top: menuPosition.y, left: menuPosition.x },
+              translucentBackground
+                ? { backgroundColor: translucentBackground }
+                : {},
+            ]}
           >
-              <TouchableOpacity
-                  style={styles.modalOverlay}
-                  activeOpacity={1}
-                  onPress={closeMenu}
-              >
-                  <View style={[styles.hiddenMenu, { top: menuPosition.y, left: menuPosition.x }, translucentBackground ? { backgroundColor: translucentBackground } : {}]}>
-                       {item.hiddenMenu.map((menuItem, i) => {
-                           if (menuItem.isInput) {
-                               return (
-                                   <View key={i} style={styles.hiddenMenuItem}>
-                                       <AzTextBox
-                                           containerStyle={styles.hiddenMenuInput}
-                                           initialValue={menuItem.initialValue}
-                                           hint={menuItem.hint}
-                                           onValueChange={menuItem.onValueChange}
-                                           onSubmit={(val) => {
-                                               if (menuItem.onValueChange) menuItem.onValueChange(val);
-                                               closeMenu();
-                                           }}
-                                           showSubmitButton={true}
-                                           outlined={true}
-                                       />
-                                   </View>
-                               );
-                           }
-
-                           return (
-                               <TouchableOpacity
-                                   key={i}
-                                   style={styles.hiddenMenuItem}
-                                   onPress={() => {
-                                       if (menuItem.onClick) menuItem.onClick();
-                                       if (menuItem.route) {
-                                           Linking.openURL(menuItem.route).catch(err => console.error("Couldn't open URL", err));
-                                       }
-                                       setShowHiddenMenu(false);
-                                   }}
-                               >
-                                   <Text style={styles.hiddenMenuItemText}>{menuItem.text}</Text>
-                               </TouchableOpacity>
-                           );
-                       })}
+            {item.hiddenMenu.map((menuItem, i) => {
+              if (menuItem.isInput) {
+                return (
+                  <View key={i} style={styles.hiddenMenuItem}>
+                    <AzTextBox
+                      containerStyle={styles.hiddenMenuInput}
+                      initialValue={menuItem.initialValue}
+                      hint={menuItem.hint}
+                      onValueChange={menuItem.onValueChange}
+                      onSubmit={(val) => {
+                        if (menuItem.onValueChange) menuItem.onValueChange(val);
+                        closeMenu();
+                      }}
+                      showSubmitButton={true}
+                      outlined={true}
+                    />
                   </View>
-              </TouchableOpacity>
-          </Modal>
-      );
+                );
+              }
+
+              return (
+                <TouchableOpacity
+                  key={i}
+                  style={styles.hiddenMenuItem}
+                  onPress={() => {
+                    if (menuItem.onClick) menuItem.onClick();
+                    if (menuItem.route) {
+                      Linking.openURL(menuItem.route).catch((err) =>
+                        console.error("Couldn't open URL", err)
+                      );
+                    }
+                    setShowHiddenMenu(false);
+                  }}
+                >
+                  <Text style={styles.hiddenMenuItemText}>{menuItem.text}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    );
   };
 
   // Combine dragging transform with displacement transform
   const transform = [
-      { translateY: Animated.add(pan.y, offsetY) },
-      { scale: isDragging ? 1.1 : 1 }
+    { translateY: Animated.add(pan.y, offsetY) },
+    { scale: isDragging ? 1.1 : 1 },
   ];
 
   return (
     <View style={[styles.container, style, { zIndex: isDragging ? 100 : 1 }]}>
-        <Animated.View
-            style={{ transform }}
-            {...panResponder.panHandlers}
+      <Animated.View style={{ transform }} {...panResponder.panHandlers}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onLongPress={handleLongPress}
+          onPress={() => item.onClick && item.onClick()}
+          delayLongPress={500}
         >
-             <TouchableOpacity
-                 activeOpacity={0.8}
-                 onLongPress={handleLongPress}
-                 onPress={() => item.onClick && item.onClick()}
-                 delayLongPress={500}
-             >
-                <AzButton
-                    text={item.text}
-                    color={item.color}
-                    shape={item.shape}
-                    enabled={!item.disabled}
-                    size={size}
-                    // Pass a dummy click handler since we handle clicks on the wrapper for gesture conflict resolution
-                    onClick={() => {}}
-                />
-             </TouchableOpacity>
-        </Animated.View>
-        {renderHiddenMenu()}
+          <AzButton
+            text={item.text}
+            color={item.color}
+            shape={item.shape}
+            enabled={!item.disabled}
+            size={size}
+            // Pass a dummy click handler since we handle clicks on the wrapper for gesture conflict resolution
+            onClick={() => {}}
+          />
+        </TouchableOpacity>
+      </Animated.View>
+      {renderHiddenMenu()}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-      marginBottom: 8, // Standard spacing
+    marginBottom: 8, // Standard spacing
   },
   modalOverlay: {
-      flex: 1,
-      backgroundColor: 'transparent',
+    flex: 1,
+    backgroundColor: 'transparent',
   },
   hiddenMenu: {
-      position: 'absolute',
-      backgroundColor: 'white',
-      borderRadius: 4,
-      borderWidth: 2,
-      borderColor: '#6200ee', // Primary color ideally
-      padding: 8,
-      minWidth: 150,
-      elevation: 5,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 3.84,
+    position: 'absolute',
+    backgroundColor: 'white',
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#6200ee', // Primary color ideally
+    padding: 8,
+    minWidth: 150,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   hiddenMenuItem: {
-      paddingVertical: 8,
-      paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
   hiddenMenuItemText: {
-      fontSize: 16,
-      color: 'black',
+    fontSize: 16,
+    color: 'black',
   },
   // Explicit width for input items so the text boxes (not the popup) drive the
   // hidden menu's width. Mirrors the Kotlin library's menuItemWidth = 250.dp.
   hiddenMenuInput: {
-      width: 250,
-  }
+    width: 250,
+  },
 });

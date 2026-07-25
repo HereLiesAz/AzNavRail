@@ -18,7 +18,9 @@ import { AzBottomSheet, AzBottomSheetProps } from './AzBottomSheet';
  * );
  * ```
  */
-export function AzBottomSheetInsetAware(props: AzBottomSheetProps): React.ReactElement {
+export function AzBottomSheetInsetAware(
+  props: AzBottomSheetProps
+): React.ReactElement {
   if (Platform.OS === 'web') {
     return (
       <View style={[StyleSheet.absoluteFill, webSafeAreaStyle]}>

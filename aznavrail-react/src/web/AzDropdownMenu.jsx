@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useRef,
+  useEffect,
+} from 'react';
 import AzButton from './AzButton';
 import AboutOverlay from './AboutOverlay';
 import { solveHybridJustify } from '../util/AzJustify';
@@ -11,7 +17,8 @@ const AzDropdownMenuContext = createContext(null);
 /** Internal accessor for the enclosing menu's dismiss/design/navigation. */
 function useDropdownContext() {
   const ctx = useContext(AzDropdownMenuContext);
-  if (!ctx) throw new Error('AzDropdownItem must be used inside an <AzDropdownMenu>');
+  if (!ctx)
+    throw new Error('AzDropdownItem must be used inside an <AzDropdownMenu>');
   return ctx;
 }
 
@@ -65,12 +72,17 @@ export const AzDropdownItem = ({
         ref={rowRef}
         className={`az-dropdown-menu-item--menu${enabled ? '' : ' disabled'}`}
         style={{
-          color: textColor || color || undefined,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: textAlign === 'right' ? 'flex-end' : textAlign === 'center' ? 'center' : 'flex-start',
-          animation: `azTurnstile ${entranceDurationMs}ms cubic-bezier(0.1, 0.9, 0.2, 1) ${index * entranceStaggerMs}ms both`,
-          transformOrigin: `${hingeSide} center`,
+          'color': textColor || color || undefined,
+          'display': 'flex',
+          'flexDirection': 'column',
+          'alignItems':
+            textAlign === 'right'
+              ? 'flex-end'
+              : textAlign === 'center'
+                ? 'center'
+                : 'flex-start',
+          'animation': `azTurnstile ${entranceDurationMs}ms cubic-bezier(0.1, 0.9, 0.2, 1) ${index * entranceStaggerMs}ms both`,
+          'transformOrigin': `${hingeSide} center`,
           '--az-start-angle': `${dockingSide === 'RIGHT' ? -entranceStartAngle : entranceStartAngle}deg`,
         }}
         role="menuitem"
@@ -114,14 +126,21 @@ const JustifiedWebDropdownLine = ({ line, justify, rowRef, textAlign }) => {
   const [fontScale, setFontScale] = useState(1);
   useEffect(() => {
     if (!justify || !line || line.length < 1) {
-      setLetterSpacing(0); setFontScale(1); return;
+      setLetterSpacing(0);
+      setFontScale(1);
+      return;
     }
     const row = rowRef.current;
     const meas = measureRef.current;
     if (!row || !meas) return;
     const rowWidth = row.getBoundingClientRect().width;
     const natural = meas.getBoundingClientRect().width;
-    const solved = solveHybridJustify(natural, rowWidth, line.length, DROPDOWN_WEB_BASE_FONT_PX);
+    const solved = solveHybridJustify(
+      natural,
+      rowWidth,
+      line.length,
+      DROPDOWN_WEB_BASE_FONT_PX
+    );
     setLetterSpacing(solved.letterSpacing);
     setFontScale(solved.scale);
   }, [line, justify, rowRef]);
@@ -129,7 +148,12 @@ const JustifiedWebDropdownLine = ({ line, justify, rowRef, textAlign }) => {
     <>
       <span
         ref={measureRef}
-        style={{ position: 'absolute', visibility: 'hidden', whiteSpace: 'nowrap', left: -9999 }}
+        style={{
+          position: 'absolute',
+          visibility: 'hidden',
+          whiteSpace: 'nowrap',
+          left: -9999,
+        }}
       >
         {line}
       </span>
@@ -214,7 +238,13 @@ const AzDropdownMenu = ({
   };
 
   const toggle = () => {
-    if (!isOpen && vibrate && typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+    if (
+      !isOpen &&
+      vibrate &&
+      typeof navigator !== 'undefined' &&
+      navigator.vibrate
+    )
+      navigator.vibrate(10);
     setOpen(!isOpen);
   };
 
@@ -222,7 +252,8 @@ const AzDropdownMenu = ({
   useEffect(() => {
     if (!isOpen) return undefined;
     const onDocClick = (e) => {
-      if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false);
+      if (rootRef.current && !rootRef.current.contains(e.target))
+        setOpen(false);
     };
     document.addEventListener('mousedown', onDocClick);
     return () => document.removeEventListener('mousedown', onDocClick);
@@ -234,10 +265,16 @@ const AzDropdownMenu = ({
   useEffect(() => {
     if (!isOpen) return undefined;
     let frame = 0;
-    const measure = () => { if (triggerRef.current) setRect(triggerRef.current.getBoundingClientRect()); };
+    const measure = () => {
+      if (triggerRef.current)
+        setRect(triggerRef.current.getBoundingClientRect());
+    };
     const schedule = () => {
       if (frame) return;
-      frame = window.requestAnimationFrame(() => { frame = 0; measure(); });
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        measure();
+      });
     };
     measure();
     window.addEventListener('resize', schedule);
@@ -273,9 +310,11 @@ const AzDropdownMenu = ({
 
   // Clip radius mirrors the rail's header icon: circle = half, rounded = 8, anything else = 0.
   const triggerRadius =
-    headerIconShape === 'ROUNDED' ? 8 :
-    headerIconShape === 'CIRCLE' ? headerIconSize / 2 :
-    0;
+    headerIconShape === 'ROUNDED'
+      ? 8
+      : headerIconShape === 'CIRCLE'
+        ? headerIconSize / 2
+        : 0;
 
   return (
     <div className="az-dropdown-menu" ref={rootRef}>
@@ -283,24 +322,44 @@ const AzDropdownMenu = ({
         type="button"
         ref={triggerRef}
         className="az-dropdown-menu-trigger"
-        style={{ width: headerIconSize, height: headerIconSize, borderRadius: triggerRadius }}
+        style={{
+          width: headerIconSize,
+          height: headerIconSize,
+          borderRadius: triggerRadius,
+        }}
         aria-label="Menu"
         aria-haspopup="menu"
         aria-expanded={isOpen}
         onClick={toggle}
       >
         {/* The app icon — drawn like the rail header, clipped to the configured shape/size. */}
-        <img src="/app-icon.png" alt="App Icon" className="az-dropdown-menu-app-icon" style={{ borderRadius: triggerRadius }} />
+        <img
+          src="/app-icon.png"
+          alt="App Icon"
+          className="az-dropdown-menu-app-icon"
+          style={{ borderRadius: triggerRadius }}
+        />
       </button>
       {isOpen && dimBehindMenu && (
         <div
           className="az-nav-rail__scrim"
-          style={{ '--az-scrim-alpha': String(Math.max(0, Math.min(1, dimBehindMenuAlpha))), position: 'fixed', inset: 0, zIndex: 999 }}
+          style={{
+            '--az-scrim-alpha': String(
+              Math.max(0, Math.min(1, dimBehindMenuAlpha))
+            ),
+            'position': 'fixed',
+            'inset': 0,
+            'zIndex': 999,
+          }}
           onClick={() => setOpen(false)}
         />
       )}
       {isOpen && (
-        <div className={`az-dropdown-menu-panel ${design === 'menu' ? 'menu' : 'rail'}`} style={{ ...panelStyle, zIndex: 1000 }} role="menu">
+        <div
+          className={`az-dropdown-menu-panel ${design === 'menu' ? 'menu' : 'rail'}`}
+          style={{ ...panelStyle, zIndex: 1000 }}
+          role="menu"
+        >
           <AzDropdownMenuContext.Provider
             value={{
               dismiss: () => setOpen(false),
@@ -315,7 +374,9 @@ const AzDropdownMenu = ({
             }}
           >
             {React.Children.map(children, (child, i) =>
-              React.isValidElement(child) ? React.cloneElement(child, { index: i }) : child
+              React.isValidElement(child)
+                ? React.cloneElement(child, { index: i })
+                : child
             )}
           </AzDropdownMenuContext.Provider>
           {/* The expanded-menu design carries the rail's footer. Its accordion unfold starts when
@@ -334,17 +395,50 @@ const AzDropdownMenu = ({
             >
               {/* About is hidden entirely when no repository URL is configured. */}
               {!!appRepositoryUrl && (
-                <div className="az-dropdown-menu-footer-item" onClick={() => {
-                  if (inAppAbout) {
-                    setShowAbout(true);
-                  } else if (appRepositoryUrl.startsWith('http://') || appRepositoryUrl.startsWith('https://')) {
-                    // Only follow plain web URLs, never an injected scheme (e.g. javascript:).
-                    window.open(appRepositoryUrl, '_blank', 'noopener,noreferrer');
-                  }
-                }}>About</div>
+                <div
+                  className="az-dropdown-menu-footer-item"
+                  onClick={() => {
+                    if (inAppAbout) {
+                      setShowAbout(true);
+                    } else if (
+                      appRepositoryUrl.startsWith('http://') ||
+                      appRepositoryUrl.startsWith('https://')
+                    ) {
+                      // Only follow plain web URLs, never an injected scheme (e.g. javascript:).
+                      window.open(
+                        appRepositoryUrl,
+                        '_blank',
+                        'noopener,noreferrer'
+                      );
+                    }
+                  }}
+                >
+                  About
+                </div>
               )}
-              <div className="az-dropdown-menu-footer-item" onClick={() => window.open('mailto:hereliesaz@gmail.com?subject=Feedback', '_self')}>Feedback</div>
-              <div className="az-dropdown-menu-footer-item" onClick={() => window.open('https://instagram.com/HereLiesAz', '_blank', 'noopener,noreferrer')}>@HereLiesAz</div>
+              <div
+                className="az-dropdown-menu-footer-item"
+                onClick={() =>
+                  window.open(
+                    'mailto:hereliesaz@gmail.com?subject=Feedback',
+                    '_self'
+                  )
+                }
+              >
+                Feedback
+              </div>
+              <div
+                className="az-dropdown-menu-footer-item"
+                onClick={() =>
+                  window.open(
+                    'https://instagram.com/HereLiesAz',
+                    '_blank',
+                    'noopener,noreferrer'
+                  )
+                }
+              >
+                @HereLiesAz
+              </div>
             </div>
           )}
         </div>

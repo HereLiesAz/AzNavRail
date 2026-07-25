@@ -23,7 +23,7 @@ const AzCycler = ({
   enabled = true,
   color = 'currentColor',
   className = '',
-  style = {}
+  style = {},
 }) => {
   const [displayedValue, setDisplayedValue] = useState(value);
   const timerRef = useRef(null);
@@ -34,8 +34,8 @@ const AzCycler = ({
 
   useEffect(() => {
     return () => {
-        if (timerRef.current) clearTimeout(timerRef.current);
-    }
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, []);
 
   const handleClick = () => {

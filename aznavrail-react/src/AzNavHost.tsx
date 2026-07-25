@@ -1,7 +1,19 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+} from 'react';
 import { View, StyleSheet, Dimensions, Text } from 'react-native';
 import { AzNavRail } from './AzNavRail';
-import { AzDockingSide, AzEntrance, AzNavItem, AzNavRailSettings } from './types';
+import {
+  AzDockingSide,
+  AzEntrance,
+  AzNavItem,
+  AzNavRailSettings,
+} from './types';
 import { AzNavRailDefaults } from './AzNavRailDefaults';
 import { AzKineticTitle } from './components/AzKinetics';
 
@@ -60,7 +72,11 @@ export const useAzHostContext = () => useContext(AzHostContext);
  *   insert a page between existing ones. Honoured when the host's `pagesEnabled` is `true` (default).
  * @param props.children - Content rendered as an absolute fill layer behind the rail and screen content.
  */
-export const AzBackground: React.FC<{ weight?: number; page?: number; children: React.ReactNode }> = ({ weight = 0, page = 0, children }) => {
+export const AzBackground: React.FC<{
+  weight?: number;
+  page?: number;
+  children: React.ReactNode;
+}> = ({ weight = 0, page = 0, children }) => {
   const context = useAzHostContext();
   const id = useMemo(() => Math.random().toString(36).substr(2, 9), []);
 
@@ -85,7 +101,11 @@ export const AzBackground: React.FC<{ weight?: number; page?: number; children: 
  * @param props.page - The page (Z-layer); see above. Defaults to `0`.
  * @param props.children - Content rendered as an overlay at the specified alignment.
  */
-export const AzOnscreen: React.FC<{ alignment?: AzAlignment; page?: number; children: React.ReactNode }> = ({ alignment = AzAlignment.TopStart, page = 0, children }) => {
+export const AzOnscreen: React.FC<{
+  alignment?: AzAlignment;
+  page?: number;
+  children: React.ReactNode;
+}> = ({ alignment = AzAlignment.TopStart, page = 0, children }) => {
   const context = useAzHostContext();
   const id = useMemo(() => Math.random().toString(36).substr(2, 9), []);
 
@@ -133,9 +153,12 @@ export interface AzHostActivityLayoutProps extends AzNavRailSettings {
  * `pagesEnabled`, a higher page draws further back, with `weight` breaking ties within a page;
  * otherwise falls back to the legacy weight sort.
  */
-export const orderBackgrounds = (items: AzBackgroundItem[], pagesEnabled: boolean): AzBackgroundItem[] =>
+export const orderBackgrounds = (
+  items: AzBackgroundItem[],
+  pagesEnabled: boolean
+): AzBackgroundItem[] =>
   pagesEnabled
-    ? [...items].sort((a, b) => (b.page - a.page) || (a.weight - b.weight))
+    ? [...items].sort((a, b) => b.page - a.page || a.weight - b.weight)
     : [...items].sort((a, b) => a.weight - b.weight);
 
 /**
@@ -143,32 +166,73 @@ export const orderBackgrounds = (items: AzBackgroundItem[], pagesEnabled: boolea
  * `pagesEnabled`, a higher page draws further back, with declaration order preserved within a page
  * (stable sort); otherwise declaration order is preserved unchanged.
  */
-export const orderOnscreen = (items: AzOnscreenItem[], pagesEnabled: boolean): AzOnscreenItem[] =>
+export const orderOnscreen = (
+  items: AzOnscreenItem[],
+  pagesEnabled: boolean
+): AzOnscreenItem[] =>
   pagesEnabled ? [...items].sort((a, b) => b.page - a.page) : items;
 
-const getAlignmentStyle = (alignment: AzAlignment, dockingSide: AzDockingSide) => {
+const getAlignmentStyle = (
+  alignment: AzAlignment,
+  dockingSide: AzDockingSide
+) => {
   // Mirror logic for right docking
   let finalAlignment = alignment;
   if (dockingSide === AzDockingSide.RIGHT) {
     if (alignment === AzAlignment.TopStart) finalAlignment = AzAlignment.TopEnd;
-    else if (alignment === AzAlignment.TopEnd) finalAlignment = AzAlignment.TopStart;
-    else if (alignment === AzAlignment.CenterStart) finalAlignment = AzAlignment.CenterEnd;
-    else if (alignment === AzAlignment.CenterEnd) finalAlignment = AzAlignment.CenterStart;
-    else if (alignment === AzAlignment.BottomStart) finalAlignment = AzAlignment.BottomEnd;
-    else if (alignment === AzAlignment.BottomEnd) finalAlignment = AzAlignment.BottomStart;
+    else if (alignment === AzAlignment.TopEnd)
+      finalAlignment = AzAlignment.TopStart;
+    else if (alignment === AzAlignment.CenterStart)
+      finalAlignment = AzAlignment.CenterEnd;
+    else if (alignment === AzAlignment.CenterEnd)
+      finalAlignment = AzAlignment.CenterStart;
+    else if (alignment === AzAlignment.BottomStart)
+      finalAlignment = AzAlignment.BottomEnd;
+    else if (alignment === AzAlignment.BottomEnd)
+      finalAlignment = AzAlignment.BottomStart;
   }
 
   const style: any = { position: 'absolute' };
   switch (finalAlignment) {
-    case AzAlignment.TopStart: style.top = 0; style.left = 0; break;
-    case AzAlignment.TopCenter: style.top = 0; style.alignSelf = 'center'; break;
-    case AzAlignment.TopEnd: style.top = 0; style.right = 0; break;
-    case AzAlignment.CenterStart: style.top = '50%'; style.left = 0; style.transform = [{ translateY: -50 }]; break;
-    case AzAlignment.Center: style.top = '50%'; style.left = '50%'; style.transform = [{ translateX: '-50%' }, { translateY: '-50%' }]; break;
-    case AzAlignment.CenterEnd: style.top = '50%'; style.right = 0; style.transform = [{ translateY: -50 }]; break;
-    case AzAlignment.BottomStart: style.bottom = 0; style.left = 0; break;
-    case AzAlignment.BottomCenter: style.bottom = 0; style.alignSelf = 'center'; break;
-    case AzAlignment.BottomEnd: style.bottom = 0; style.right = 0; break;
+    case AzAlignment.TopStart:
+      style.top = 0;
+      style.left = 0;
+      break;
+    case AzAlignment.TopCenter:
+      style.top = 0;
+      style.alignSelf = 'center';
+      break;
+    case AzAlignment.TopEnd:
+      style.top = 0;
+      style.right = 0;
+      break;
+    case AzAlignment.CenterStart:
+      style.top = '50%';
+      style.left = 0;
+      style.transform = [{ translateY: -50 }];
+      break;
+    case AzAlignment.Center:
+      style.top = '50%';
+      style.left = '50%';
+      style.transform = [{ translateX: '-50%' }, { translateY: '-50%' }];
+      break;
+    case AzAlignment.CenterEnd:
+      style.top = '50%';
+      style.right = 0;
+      style.transform = [{ translateY: -50 }];
+      break;
+    case AzAlignment.BottomStart:
+      style.bottom = 0;
+      style.left = 0;
+      break;
+    case AzAlignment.BottomCenter:
+      style.bottom = 0;
+      style.alignSelf = 'center';
+      break;
+    case AzAlignment.BottomEnd:
+      style.bottom = 0;
+      style.right = 0;
+      break;
   }
   return style;
 };
@@ -177,7 +241,9 @@ const getAlignmentStyle = (alignment: AzAlignment, dockingSide: AzDockingSide) =
  * Full-screen layout container that composes `AzNavRail` with layered background and onscreen overlay slots.
  * Mirrors the Jetpack Compose `AzNavHost` + `AzHostActivityLayout` API.
  */
-export const AzHostActivityLayout: React.FC<AzHostActivityLayoutProps> = (props) => {
+export const AzHostActivityLayout: React.FC<AzHostActivityLayoutProps> = (
+  props
+) => {
   const {
     navController,
     currentDestination,
@@ -189,7 +255,9 @@ export const AzHostActivityLayout: React.FC<AzHostActivityLayoutProps> = (props)
 
   const [backgrounds, setBackgrounds] = useState<AzBackgroundItem[]>([]);
   const [onscreenItems, setOnscreenItems] = useState<AzOnscreenItem[]>([]);
-  const [screenHeight, setScreenHeight] = useState(Dimensions.get('window').height);
+  const [screenHeight, setScreenHeight] = useState(
+    Dimensions.get('window').height
+  );
   // Only the setter is used (width is tracked for the resize listener); skip the unread value.
   const [, setScreenWidth] = useState(Dimensions.get('window').width);
 
@@ -202,8 +270,8 @@ export const AzHostActivityLayout: React.FC<AzHostActivityLayoutProps> = (props)
   }, []);
 
   const registerBackground = useCallback((item: AzBackgroundItem) => {
-    setBackgrounds(prev => {
-      const idx = prev.findIndex(i => i.id === item.id);
+    setBackgrounds((prev) => {
+      const idx = prev.findIndex((i) => i.id === item.id);
       if (idx >= 0) {
         const next = [...prev];
         next[idx] = item;
@@ -214,12 +282,12 @@ export const AzHostActivityLayout: React.FC<AzHostActivityLayoutProps> = (props)
   }, []);
 
   const unregisterBackground = useCallback((id: string) => {
-    setBackgrounds(prev => prev.filter(i => i.id !== id));
+    setBackgrounds((prev) => prev.filter((i) => i.id !== id));
   }, []);
 
   const registerOnscreen = useCallback((item: AzOnscreenItem) => {
-    setOnscreenItems(prev => {
-      const idx = prev.findIndex(i => i.id === item.id);
+    setOnscreenItems((prev) => {
+      const idx = prev.findIndex((i) => i.id === item.id);
       if (idx >= 0) {
         const next = [...prev];
         next[idx] = item;
@@ -230,22 +298,33 @@ export const AzHostActivityLayout: React.FC<AzHostActivityLayoutProps> = (props)
   }, []);
 
   const unregisterOnscreen = useCallback((id: string) => {
-    setOnscreenItems(prev => prev.filter(i => i.id !== id));
+    setOnscreenItems((prev) => prev.filter((i) => i.id !== id));
   }, []);
 
-  const hostContext: AzHostContextType = useMemo(() => ({
-    registerBackground,
-    unregisterBackground,
-    registerOnscreen,
-    unregisterOnscreen,
-    navController,
-    dockingSide,
-  }), [registerBackground, unregisterBackground, registerOnscreen, unregisterOnscreen, navController, dockingSide]);
+  const hostContext: AzHostContextType = useMemo(
+    () => ({
+      registerBackground,
+      unregisterBackground,
+      registerOnscreen,
+      unregisterOnscreen,
+      navController,
+      dockingSide,
+    }),
+    [
+      registerBackground,
+      unregisterBackground,
+      registerOnscreen,
+      unregisterOnscreen,
+      navController,
+      dockingSide,
+    ]
+  );
 
   // Safe zones (10% top, 10% bottom as per Android)
   const safeTop = screenHeight * 0.1;
   const safeBottom = screenHeight * 0.1;
-  const collapsedRailWidth = railProps.collapsedRailWidth || AzNavRailDefaults.CollapsedRailWidth;
+  const collapsedRailWidth =
+    railProps.collapsedRailWidth || AzNavRailDefaults.CollapsedRailWidth;
 
   // Title rendering logic (stubbed to use currentDestination for parity until Context extraction is possible)
   const currentTitle = currentDestination || '';
@@ -256,56 +335,84 @@ export const AzHostActivityLayout: React.FC<AzHostActivityLayoutProps> = (props)
     <AzHostContext.Provider value={hostContext}>
       <View style={styles.container}>
         {/* Backgrounds */}
-        {orderBackgrounds(backgrounds, pagesEnabled).map(bg => (
-          <View key={bg.id} style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
+        {orderBackgrounds(backgrounds, pagesEnabled).map((bg) => (
+          <View
+            key={bg.id}
+            style={StyleSheet.absoluteFill}
+            pointerEvents="box-none"
+          >
             {bg.content}
           </View>
         ))}
 
         {/* Title rendering */}
         {currentTitle ? (
-           <View style={[
-               styles.titleContainer,
-               { top: titleTop, height: titleHeight },
-               dockingSide === AzDockingSide.LEFT ? { right: 32, alignItems: 'flex-end' } : { left: 32, alignItems: 'flex-start' }
-           ]} pointerEvents="none">
-               {/* Keyed on the title so the WP7 sweep replays each time the active screen changes. */}
-               <AzKineticTitle
-                   key={currentTitle}
-                   title={currentTitle}
-                   entrance={(railProps as AzNavRailSettings | undefined)?.titleEntrance ?? AzEntrance.Turnstile}
-                   dockingSide={dockingSide}
-               >
-                   <Text style={[styles.titleText, (railProps as AzNavRailSettings | undefined)?.titleTextStyle]}>{currentTitle}</Text>
-               </AzKineticTitle>
-           </View>
+          <View
+            style={[
+              styles.titleContainer,
+              { top: titleTop, height: titleHeight },
+              dockingSide === AzDockingSide.LEFT
+                ? { right: 32, alignItems: 'flex-end' }
+                : { left: 32, alignItems: 'flex-start' },
+            ]}
+            pointerEvents="none"
+          >
+            {/* Keyed on the title so the WP7 sweep replays each time the active screen changes. */}
+            <AzKineticTitle
+              key={currentTitle}
+              title={currentTitle}
+              entrance={
+                (railProps as AzNavRailSettings | undefined)?.titleEntrance ??
+                AzEntrance.Turnstile
+              }
+              dockingSide={dockingSide}
+            >
+              <Text
+                style={[
+                  styles.titleText,
+                  (railProps as AzNavRailSettings | undefined)?.titleTextStyle,
+                ]}
+              >
+                {currentTitle}
+              </Text>
+            </AzKineticTitle>
+          </View>
         ) : null}
 
         {/* Onscreen Fragments */}
-        <View style={[
-            StyleSheet.absoluteFillObject,
+        <View
+          style={[
+            StyleSheet.absoluteFill,
             {
               paddingTop: safeTop,
               paddingBottom: safeBottom,
-              paddingLeft: dockingSide === AzDockingSide.LEFT ? collapsedRailWidth : 0,
-              paddingRight: dockingSide === AzDockingSide.RIGHT ? collapsedRailWidth : 0,
-            }
-        ]} pointerEvents="box-none">
-            {orderOnscreen(onscreenItems, pagesEnabled).map(item => (
-                <View key={item.id} style={getAlignmentStyle(item.alignment, dockingSide)} pointerEvents="box-none">
-                    {item.content}
-                </View>
-            ))}
+              paddingLeft:
+                dockingSide === AzDockingSide.LEFT ? collapsedRailWidth : 0,
+              paddingRight:
+                dockingSide === AzDockingSide.RIGHT ? collapsedRailWidth : 0,
+            },
+          ]}
+          pointerEvents="box-none"
+        >
+          {orderOnscreen(onscreenItems, pagesEnabled).map((item) => (
+            <View
+              key={item.id}
+              style={getAlignmentStyle(item.alignment, dockingSide)}
+              pointerEvents="box-none"
+            >
+              {item.content}
+            </View>
+          ))}
         </View>
 
         {/* AzNavRail and standard children */}
         <AzNavRail
-            {...railProps}
-            dockingSide={dockingSide}
-            navController={navController}
-            currentDestination={currentDestination}
+          {...railProps}
+          dockingSide={dockingSide}
+          navController={navController}
+          currentDestination={currentDestination}
         >
-            {children}
+          {children}
         </AzNavRail>
       </View>
     </AzHostContext.Provider>
@@ -315,8 +422,10 @@ export const AzHostActivityLayout: React.FC<AzHostActivityLayoutProps> = (props)
 // Generic NavHost wrapper (React Native doesn't have an exact Compose equivalent natively,
 // but we provide the component for parity).
 /** Generic nav-host wrapper provided for API parity with the Compose library; renders children in an absolute fill view. */
-export const AzNavHost: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
-  return <View style={StyleSheet.absoluteFillObject}>{children}</View>;
+export const AzNavHost: React.FC<{ children?: React.ReactNode }> = ({
+  children,
+}) => {
+  return <View style={StyleSheet.absoluteFill}>{children}</View>;
 };
 
 const styles = StyleSheet.create({
@@ -335,5 +444,5 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#000',
-  }
+  },
 });

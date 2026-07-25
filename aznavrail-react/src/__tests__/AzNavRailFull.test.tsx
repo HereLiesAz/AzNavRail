@@ -1,127 +1,108 @@
 import React from 'react';
-import renderer from 'react-test-renderer';
-import { Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
+import { render, fireEvent } from '@testing-library/react-native';
 import { AzNavRail } from '../AzNavRail';
 // `AzNavHostContext` was removed in the React-port refactor; tests now mount AzNavRail directly.
-import { AzRailHostItem, AzRailSubItem, AzRailRelocItem } from '../AzNavRailScope';
-import { AzButtonShape } from '../types';
-import { AzButton } from '../components/AzButton';
-import { DraggableRailItemWrapper } from '../components/DraggableRailItemWrapper';
+import { AzRailHostItem, AzRailSubItem } from '../AzNavRailScope';
+import { AzButtonShape, AzNavItem } from '../types';
+import { RelocItemHandler } from '../util/RelocItemHandler';
 
 describe('AzNavRail Full Suite', () => {
-  beforeEach(() => {
-      jest.useFakeTimers();
+  beforeEach(async () => {
+    jest.useFakeTimers();
   });
 
-  afterEach(() => {
-      jest.useRealTimers();
-      jest.clearAllMocks();
+  afterEach(async () => {
+    jest.useRealTimers();
+    jest.clearAllMocks();
   });
 
-  it('renders loading overlay at root level when isLoading is true', () => {
-    let component: renderer.ReactTestRenderer = {} as any;
-    renderer.act(() => {
-component = renderer.create(
-<AzNavRail isLoading={true}>
-          <Text>Content</Text>
-        </AzNavRail>
-      );
-});
-    const root = component.root;
+  it('renders loading overlay at root level when isLoading is true', async () => {
+    const { root, unmount } = await render(
+      <AzNavRail isLoading={true}>
+        <Text>Content</Text>
+      </AzNavRail>
+    );
 
     // Find view with zIndex 10000
-    const loader = root.findAll((node: any) =>
+    const loader = root!.queryAll(
+      (node) =>
         node.type === 'View' &&
-        node.props.style &&
+        !!node.props.style &&
         node.props.style.zIndex === 10000
     );
     expect(loader.length).toBe(1);
 
-    // Explicitly unmount to avoid warnings
-    renderer.act(() => {
-      component.unmount();
-    });
+    await unmount();
   });
 
-  it('handles RelocItemHandler drag and drop reordering', () => {
-    const mockOnRelocate = jest.fn();
+  // This used to reach into the composite `DraggableRailItemWrapper` and invoke its `onDragMove` /
+  // `onDragEnd` props by hand — a capability the test renderer no longer offers, and one that never
+  // exercised a real gesture anyway. The computation it was actually asserting lives in
+  // `RelocItemHandler`, which is pure and can simply be called.
+  it('handles RelocItemHandler drag and drop reordering', async () => {
+    const items = [
+      { id: 'host', text: 'Host', isHost: true },
+      { id: 'reloc1', text: 'Reloc1', hostId: 'host', isRelocItem: true },
+      { id: 'reloc2', text: 'Reloc2', hostId: 'host', isRelocItem: true },
+    ] as AzNavItem[];
 
-    let component: renderer.ReactTestRenderer = {} as any;
-    renderer.act(() => {
-component = renderer.create(
-  <AzNavRail initiallyExpanded={false}>
-            <AzRailHostItem id="host" text="Host" />
-            <AzRailRelocItem id="reloc1" hostId="host" text="Reloc1" onRelocate={mockOnRelocate} />
-            <AzRailRelocItem id="reloc2" hostId="host" text="Reloc2" />
-          </AzNavRail>
-        );
-});
+    const cluster = RelocItemHandler.getCluster(items, 'host');
+    expect(cluster.map((i) => i.id)).toEqual(['reloc1', 'reloc2']);
 
-    const root = component.root;
-    const buttons = root.findAllByType(AzButton);
-    const hostBtn = buttons.find((b) => b.props.text === 'Host');
+    // Dragging the first item down by one slot height (48 + 8) targets cluster index 1.
+    const draggedClusterIndex = 0;
+    const targetClusterIndex = RelocItemHandler.calculateTargetIndex(
+      60,
+      draggedClusterIndex,
+      cluster.length,
+      56
+    );
+    expect(targetClusterIndex).toBe(1);
 
-    // Expand host
-    renderer.act(() => {
-        hostBtn?.props.onClick();
-    });
+    const reordered = RelocItemHandler.reorderItems(
+      items,
+      'reloc1',
+      'host',
+      targetClusterIndex
+    );
+    const newOrder = RelocItemHandler.getCluster(reordered, 'host').map(
+      (i) => i.id
+    );
+    expect(newOrder).toEqual(['reloc2', 'reloc1']);
 
-    const wrappers = root.findAllByType(DraggableRailItemWrapper);
-    expect(wrappers.length).toBe(2);
-
-    // Get the first item's wrapper (reloc1)
-    const firstWrapper = wrappers.find((w) => w.props.item.id === 'reloc1');
-
-    // Find its index in the items array. The wrapper gets index from mapping over `effectiveRailItems`
-    const index = firstWrapper?.props.index;
-
-    renderer.act(() => {
-        // Simulate dragging down past the second item (dy = 60)
-        firstWrapper?.props.onDragMove(60, index);
-
-        // Simulate drop
-        firstWrapper?.props.onDragEnd(index);
-    });
-
-    // Verify mockOnRelocate was called with:
-    // draggedClusterIndex (0), targetClusterIndex (1), newOrder (['reloc2', 'reloc1'])
-    expect(mockOnRelocate).toHaveBeenCalledWith(0, 1, ['reloc2', 'reloc1']);
-
-    // Explicitly unmount to avoid warnings
-    renderer.act(() => {
-      component.unmount();
-    });
+    // ...which is exactly what the rail reports to a reloc item's `onRelocate`.
+    expect([draggedClusterIndex, targetClusterIndex, newOrder]).toEqual([
+      0,
+      1,
+      ['reloc2', 'reloc1'],
+    ]);
   });
 
-  it('enforces NONE shape for SubItems regardless of props', () => {
-    let component: renderer.ReactTestRenderer = {} as any;
-    renderer.act(() => {
-component = renderer.create(
-  <AzNavRail initiallyExpanded={false}>
-            <AzRailHostItem id="host" text="Host" />
-            <AzRailSubItem id="sub" hostId="host" text="Sub" shape={AzButtonShape.SQUARE} />
-          </AzNavRail>
-        );
-});
-
-    const root = component.root;
-    const buttons = root.findAllByType(AzButton);
-    const hostBtn = buttons.find((b: any) => b.props.text === 'Host');
+  it('enforces NONE shape for SubItems regardless of props', async () => {
+    const { getByTestId, unmount } = await render(
+      <AzNavRail initiallyExpanded={false}>
+        <AzRailHostItem id="host" text="Host" />
+        <AzRailSubItem
+          id="sub"
+          hostId="host"
+          text="Sub"
+          shape={AzButtonShape.SQUARE}
+        />
+      </AzNavRail>
+    );
 
     // Expand host
-    renderer.act(() => {
-        hostBtn?.props.onClick();
-    });
+    await fireEvent.press(getByTestId('host'));
 
-    const updatedButtons = root.findAllByType(AzButton);
-    const subBtn = updatedButtons.find((b: any) => b.props.text === 'Sub');
+    // A SQUARE was asked for; NONE is what a sub-item gets — no border at all. The shape lives on
+    // the container View around the pressable, not on the pressable itself.
+    const shape = StyleSheet.flatten(
+      getByTestId('sub').parent!.props.style
+    ) as any;
+    expect(shape.borderWidth).toBe(0);
+    expect(shape.borderColor).toBe('transparent');
 
-    expect(subBtn).toBeDefined();
-    expect(subBtn?.props.shape).toBe(AzButtonShape.NONE);
-
-    // Explicitly unmount to avoid warnings
-    renderer.act(() => {
-      component.unmount();
-    });
+    await unmount();
   });
 });

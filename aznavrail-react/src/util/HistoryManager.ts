@@ -29,7 +29,9 @@ class HistoryManager {
   getSuggestions(context: string = 'global', query: string): string[] {
     const list = this.history[context] || [];
     if (!query) return [];
-    return list.filter(item => item.toLowerCase().includes(query.toLowerCase()));
+    return list.filter((item) =>
+      item.toLowerCase().includes(query.toLowerCase())
+    );
   }
 }
 

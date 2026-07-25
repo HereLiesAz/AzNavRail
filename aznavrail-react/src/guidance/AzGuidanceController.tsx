@@ -1,4 +1,11 @@
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type {
   AzEdge,
   AzGoal,
@@ -12,9 +19,9 @@ const STORAGE_KEY = 'az_navrail_completed_goals';
 const DISMISSED_KEY = 'az_navrail_dismissed_goals';
 
 // Optional AsyncStorage (React Native) — used if installed, no-op otherwise.
-let AsyncStorage: { setItem: (k: string, v: string) => Promise<void> } | null = null;
+let AsyncStorage: { setItem: (k: string, v: string) => Promise<void> } | null =
+  null;
 try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   AsyncStorage = require('@react-native-async-storage/async-storage').default;
 } catch {
   /* not installed — fall back to localStorage / no-op */
@@ -104,7 +111,11 @@ interface AzGuidanceContextValue extends AzGuidanceController {
   unregisterGoal: (id: string) => void;
   registerTarget: (id: string, shape: AzGuideShapeProvider) => void;
   unregisterTarget: (id: string) => void;
-  registerSuppressor: (key: string, settleMs: number, predicate: () => boolean) => void;
+  registerSuppressor: (
+    key: string,
+    settleMs: number,
+    predicate: () => boolean
+  ) => void;
   unregisterSuppressor: (key: string) => void;
   setRenderer: (renderer: AzGuidanceRenderer | null) => void;
   /** Publish the latest routed snapshot list. Called by the rail; not for app use. */
@@ -128,11 +139,18 @@ interface AzGuidanceProviderProps {
  * Owns guidance state and the status/edge/goal registry. `AzNavRail` mounts one automatically; the DSL
  * components (`<AzStatus>` / `<AzEdge>` / `<AzGoal>`) register into it and the rail's engine reads it.
  */
-export const AzGuidanceProvider: React.FC<AzGuidanceProviderProps> = ({ children, initialCompleted }) => {
+export const AzGuidanceProvider: React.FC<AzGuidanceProviderProps> = ({
+  children,
+  initialCompleted,
+}) => {
   const [enabled, setEnabled] = useState(false);
   const [activeGoals, setActiveGoals] = useState<string[]>([]);
-  const [completedGoals, setCompletedGoals] = useState<string[]>(() => initialCompleted ?? loadIds(STORAGE_KEY));
-  const [dismissedGoals, setDismissedGoals] = useState<string[]>(() => loadIds(DISMISSED_KEY));
+  const [completedGoals, setCompletedGoals] = useState<string[]>(
+    () => initialCompleted ?? loadIds(STORAGE_KEY)
+  );
+  const [dismissedGoals, setDismissedGoals] = useState<string[]>(() =>
+    loadIds(DISMISSED_KEY)
+  );
   const [consumed, setConsumed] = useState<string[]>([]);
 
   // Registry kept in refs (predicate identities churn every render); a version bump notifies consumers.
@@ -145,46 +163,138 @@ export const AzGuidanceProvider: React.FC<AzGuidanceProviderProps> = ({ children
   const [version, setVersion] = useState(0);
   const bump = useCallback(() => setVersion((v) => v + 1), []);
 
-  const registerStatus = useCallback((id: string, predicate: AzStatusPredicate) => { statusRef.current[id] = predicate; bump(); }, [bump]);
-  const unregisterStatus = useCallback((id: string) => { delete statusRef.current[id]; bump(); }, [bump]);
-  const registerEdge = useCallback((key: string, edge: AzEdge) => { edgeRef.current[key] = edge; bump(); }, [bump]);
-  const unregisterEdge = useCallback((key: string) => { delete edgeRef.current[key]; bump(); }, [bump]);
-  const registerGoal = useCallback((goal: AzGoal) => { goalRef.current[goal.id] = goal; bump(); }, [bump]);
-  const unregisterGoal = useCallback((id: string) => { delete goalRef.current[id]; bump(); }, [bump]);
-  const registerTarget = useCallback((id: string, shape: AzGuideShapeProvider) => { targetRef.current[id] = shape; bump(); }, [bump]);
-  const unregisterTarget = useCallback((id: string) => { delete targetRef.current[id]; bump(); }, [bump]);
-  const registerSuppressor = useCallback((key: string, settleMs: number, predicate: () => boolean) => { suppressorRef.current[key] = [settleMs, predicate]; bump(); }, [bump]);
-  const unregisterSuppressor = useCallback((key: string) => { delete suppressorRef.current[key]; bump(); }, [bump]);
-  const setRenderer = useCallback((renderer: AzGuidanceRenderer | null) => { rendererRef.current = renderer; bump(); }, [bump]);
+  const registerStatus = useCallback(
+    (id: string, predicate: AzStatusPredicate) => {
+      statusRef.current[id] = predicate;
+      bump();
+    },
+    [bump]
+  );
+  const unregisterStatus = useCallback(
+    (id: string) => {
+      delete statusRef.current[id];
+      bump();
+    },
+    [bump]
+  );
+  const registerEdge = useCallback(
+    (key: string, edge: AzEdge) => {
+      edgeRef.current[key] = edge;
+      bump();
+    },
+    [bump]
+  );
+  const unregisterEdge = useCallback(
+    (key: string) => {
+      delete edgeRef.current[key];
+      bump();
+    },
+    [bump]
+  );
+  const registerGoal = useCallback(
+    (goal: AzGoal) => {
+      goalRef.current[goal.id] = goal;
+      bump();
+    },
+    [bump]
+  );
+  const unregisterGoal = useCallback(
+    (id: string) => {
+      delete goalRef.current[id];
+      bump();
+    },
+    [bump]
+  );
+  const registerTarget = useCallback(
+    (id: string, shape: AzGuideShapeProvider) => {
+      targetRef.current[id] = shape;
+      bump();
+    },
+    [bump]
+  );
+  const unregisterTarget = useCallback(
+    (id: string) => {
+      delete targetRef.current[id];
+      bump();
+    },
+    [bump]
+  );
+  const registerSuppressor = useCallback(
+    (key: string, settleMs: number, predicate: () => boolean) => {
+      suppressorRef.current[key] = [settleMs, predicate];
+      bump();
+    },
+    [bump]
+  );
+  const unregisterSuppressor = useCallback(
+    (key: string) => {
+      delete suppressorRef.current[key];
+      bump();
+    },
+    [bump]
+  );
+  const setRenderer = useCallback(
+    (renderer: AzGuidanceRenderer | null) => {
+      rendererRef.current = renderer;
+      bump();
+    },
+    [bump]
+  );
 
   // Transient paged-edge step cursor (only goal completion persists).
   const [stepCursor, setStepCursor] = useState<Record<string, number>>({});
-  const stepIndex = useCallback((key: string) => stepCursor[key] ?? 0, [stepCursor]);
+  const stepIndex = useCallback(
+    (key: string) => stepCursor[key] ?? 0,
+    [stepCursor]
+  );
   const setStep = useCallback((key: string, index: number) => {
     setStepCursor((prev) => ({ ...prev, [key]: Math.max(0, index) }));
   }, []);
   const back = useCallback((key: string) => {
-    setStepCursor((prev) => ({ ...prev, [key]: Math.max(0, (prev[key] ?? 0) - 1) }));
+    setStepCursor((prev) => ({
+      ...prev,
+      [key]: Math.max(0, (prev[key] ?? 0) - 1),
+    }));
   }, []);
 
   // Observable current instruction(s).
-  const [currentInstructions, setCurrentInstructions] = useState<AzGuidanceSnapshot[]>([]);
-  const publishCurrent = useCallback((snaps: AzGuidanceSnapshot[]) => { setCurrentInstructions(snaps); }, []);
-  const advance = useCallback((key?: string) => {
-    const resolvedKey = key ?? currentInstructions.find((s) => s.stepTotal > 1)?.stepKey;
-    if (resolvedKey == null) return;
-    setStepCursor((prev) => ({ ...prev, [resolvedKey]: (prev[resolvedKey] ?? 0) + 1 }));
-  }, [currentInstructions]);
+  const [currentInstructions, setCurrentInstructions] = useState<
+    AzGuidanceSnapshot[]
+  >([]);
+  const publishCurrent = useCallback((snaps: AzGuidanceSnapshot[]) => {
+    setCurrentInstructions(snaps);
+  }, []);
+  const advance = useCallback(
+    (key?: string) => {
+      const resolvedKey =
+        key ?? currentInstructions.find((s) => s.stepTotal > 1)?.stepKey;
+      if (resolvedKey == null) return;
+      setStepCursor((prev) => ({
+        ...prev,
+        [resolvedKey]: (prev[resolvedKey] ?? 0) + 1,
+      }));
+    },
+    [currentInstructions]
+  );
   const next = advance;
 
   const enable = useCallback(() => setEnabled(true), []);
-  const disable = useCallback(() => { setEnabled(false); setConsumed([]); }, []);
-  const activate = useCallback((goalId: string) => {
-    // No-op for a completed or skipped goal — it is never re-shown until resetGuidance.
-    if (completedGoals.includes(goalId) || dismissedGoals.includes(goalId)) return;
-    setEnabled(true);
-    setActiveGoals((prev) => (prev.includes(goalId) ? prev : [...prev, goalId]));
-  }, [completedGoals, dismissedGoals]);
+  const disable = useCallback(() => {
+    setEnabled(false);
+    setConsumed([]);
+  }, []);
+  const activate = useCallback(
+    (goalId: string) => {
+      // No-op for a completed or skipped goal — it is never re-shown until resetGuidance.
+      if (completedGoals.includes(goalId) || dismissedGoals.includes(goalId))
+        return;
+      setEnabled(true);
+      setActiveGoals((prev) =>
+        prev.includes(goalId) ? prev : [...prev, goalId]
+      );
+    },
+    [completedGoals, dismissedGoals]
+  );
   const deactivate = useCallback((goalId: string) => {
     setActiveGoals((prev) => prev.filter((g) => g !== goalId));
   }, []);
@@ -197,36 +307,59 @@ export const AzGuidanceProvider: React.FC<AzGuidanceProviderProps> = ({ children
       return next;
     });
   }, []);
-  const isCompleted = useCallback((goalId: string) => completedGoals.includes(goalId), [completedGoals]);
-  const isDismissed = useCallback((goalId: string) => dismissedGoals.includes(goalId), [dismissedGoals]);
-  const skip = useCallback((goalId?: string) => {
-    if (goalId != null) {
-      setActiveGoals((prev) => prev.filter((g) => g !== goalId));
-      setDismissedGoals((prev) => {
-        if (prev.includes(goalId)) return prev;
-        const next = [...prev, goalId];
-        saveIds(DISMISSED_KEY, next);
-        return next;
-      });
-    } else {
-      // Cancel tutorial mode: skip every active goal (persisted), then turn guidance off.
-      setDismissedGoals((prev) => {
-        const next = Array.from(new Set([...prev, ...activeGoals]));
-        saveIds(DISMISSED_KEY, next);
-        return next;
-      });
-      setActiveGoals([]);
-      setEnabled(false);
-      setConsumed([]);
-    }
-  }, [activeGoals]);
+  const isCompleted = useCallback(
+    (goalId: string) => completedGoals.includes(goalId),
+    [completedGoals]
+  );
+  const isDismissed = useCallback(
+    (goalId: string) => dismissedGoals.includes(goalId),
+    [dismissedGoals]
+  );
+  const skip = useCallback(
+    (goalId?: string) => {
+      if (goalId != null) {
+        setActiveGoals((prev) => prev.filter((g) => g !== goalId));
+        setDismissedGoals((prev) => {
+          if (prev.includes(goalId)) return prev;
+          const next = [...prev, goalId];
+          saveIds(DISMISSED_KEY, next);
+          return next;
+        });
+      } else {
+        // Cancel tutorial mode: skip every active goal (persisted), then turn guidance off.
+        setDismissedGoals((prev) => {
+          const next = Array.from(new Set([...prev, ...activeGoals]));
+          saveIds(DISMISSED_KEY, next);
+          return next;
+        });
+        setActiveGoals([]);
+        setEnabled(false);
+        setConsumed([]);
+      }
+    },
+    [activeGoals]
+  );
   const resetGuidance = useCallback((goalId?: string) => {
     if (goalId != null) {
-      setCompletedGoals((prev) => { const next = prev.filter((g) => g !== goalId); saveIds(STORAGE_KEY, next); return next; });
-      setDismissedGoals((prev) => { const next = prev.filter((g) => g !== goalId); saveIds(DISMISSED_KEY, next); return next; });
+      setCompletedGoals((prev) => {
+        const next = prev.filter((g) => g !== goalId);
+        saveIds(STORAGE_KEY, next);
+        return next;
+      });
+      setDismissedGoals((prev) => {
+        const next = prev.filter((g) => g !== goalId);
+        saveIds(DISMISSED_KEY, next);
+        return next;
+      });
     } else {
-      setCompletedGoals(() => { saveIds(STORAGE_KEY, []); return []; });
-      setDismissedGoals(() => { saveIds(DISMISSED_KEY, []); return []; });
+      setCompletedGoals(() => {
+        saveIds(STORAGE_KEY, []);
+        return [];
+      });
+      setDismissedGoals(() => {
+        saveIds(DISMISSED_KEY, []);
+        return [];
+      });
     }
     setConsumed([]);
   }, []);
@@ -240,44 +373,155 @@ export const AzGuidanceProvider: React.FC<AzGuidanceProviderProps> = ({ children
   const goals = useMemo(() => ({ ...goalRef.current }), [version]);
   const statusPredicates = useMemo(() => ({ ...statusRef.current }), [version]);
   const targets = useMemo(() => ({ ...targetRef.current }), [version]);
-  const suppressors = useMemo<Array<[number, () => boolean]>>(() => Object.values(suppressorRef.current), [version]);
+  const suppressors = useMemo<Array<[number, () => boolean]>>(
+    () => Object.values(suppressorRef.current),
+    [version]
+  );
   const renderer = useMemo(() => rendererRef.current, [version]);
-  const current = currentInstructions.length > 0 ? currentInstructions[0] : null;
+  const current =
+    currentInstructions.length > 0 ? currentInstructions[0] : null;
 
   const value = useMemo<AzGuidanceContextValue>(
     () => ({
-      enabled, activeGoals, completedGoals, enable, disable, activate, deactivate, markReached, isCompleted,
-      dismissedGoals, isDismissed, skip, resetGuidance, consumedStatuses, consume,
-      stepIndex, setStep, advance, next, back, currentInstructions, current,
-      statusPredicates, edges, goals, targets, suppressors, renderer,
-      registerStatus, unregisterStatus, registerEdge, unregisterEdge, registerGoal, unregisterGoal,
-      registerTarget, unregisterTarget, registerSuppressor, unregisterSuppressor, setRenderer, publishCurrent,
+      enabled,
+      activeGoals,
+      completedGoals,
+      enable,
+      disable,
+      activate,
+      deactivate,
+      markReached,
+      isCompleted,
+      dismissedGoals,
+      isDismissed,
+      skip,
+      resetGuidance,
+      consumedStatuses,
+      consume,
+      stepIndex,
+      setStep,
+      advance,
+      next,
+      back,
+      currentInstructions,
+      current,
+      statusPredicates,
+      edges,
+      goals,
+      targets,
+      suppressors,
+      renderer,
+      registerStatus,
+      unregisterStatus,
+      registerEdge,
+      unregisterEdge,
+      registerGoal,
+      unregisterGoal,
+      registerTarget,
+      unregisterTarget,
+      registerSuppressor,
+      unregisterSuppressor,
+      setRenderer,
+      publishCurrent,
     }),
-    [enabled, activeGoals, completedGoals, enable, disable, activate, deactivate, markReached, isCompleted,
-     dismissedGoals, isDismissed, skip, resetGuidance, consumedStatuses, consume,
-     stepIndex, setStep, advance, next, back, currentInstructions, current,
-     statusPredicates, edges, goals, targets, suppressors, renderer,
-     registerStatus, unregisterStatus, registerEdge, unregisterEdge, registerGoal, unregisterGoal,
-     registerTarget, unregisterTarget, registerSuppressor, unregisterSuppressor, setRenderer, publishCurrent],
+    [
+      enabled,
+      activeGoals,
+      completedGoals,
+      enable,
+      disable,
+      activate,
+      deactivate,
+      markReached,
+      isCompleted,
+      dismissedGoals,
+      isDismissed,
+      skip,
+      resetGuidance,
+      consumedStatuses,
+      consume,
+      stepIndex,
+      setStep,
+      advance,
+      next,
+      back,
+      currentInstructions,
+      current,
+      statusPredicates,
+      edges,
+      goals,
+      targets,
+      suppressors,
+      renderer,
+      registerStatus,
+      unregisterStatus,
+      registerEdge,
+      unregisterEdge,
+      registerGoal,
+      unregisterGoal,
+      registerTarget,
+      unregisterTarget,
+      registerSuppressor,
+      unregisterSuppressor,
+      setRenderer,
+      publishCurrent,
+    ]
   );
 
-  return <AzGuidanceContext.Provider value={value}>{children}</AzGuidanceContext.Provider>;
+  return (
+    <AzGuidanceContext.Provider value={value}>
+      {children}
+    </AzGuidanceContext.Provider>
+  );
 };
 
 /** No-op controller returned when used outside a provider (so screens don't have to guard). */
 const NOOP: AzGuidanceContextValue = {
-  enabled: false, activeGoals: [], completedGoals: [],
-  enable: () => {}, disable: () => {}, activate: () => {}, deactivate: () => {}, markReached: () => {}, isCompleted: () => false,
-  dismissedGoals: [], isDismissed: () => false, skip: () => {}, resetGuidance: () => {}, consumedStatuses: new Set(), consume: () => {},
-  stepIndex: () => 0, setStep: () => {}, advance: () => {}, next: () => {}, back: () => {},
-  currentInstructions: [], current: null,
-  statusPredicates: {}, edges: [], goals: {}, targets: {}, suppressors: [], renderer: null,
-  registerStatus: () => {}, unregisterStatus: () => {}, registerEdge: () => {}, unregisterEdge: () => {}, registerGoal: () => {}, unregisterGoal: () => {},
-  registerTarget: () => {}, unregisterTarget: () => {}, registerSuppressor: () => {}, unregisterSuppressor: () => {}, setRenderer: () => {}, publishCurrent: () => {},
+  enabled: false,
+  activeGoals: [],
+  completedGoals: [],
+  enable: () => {},
+  disable: () => {},
+  activate: () => {},
+  deactivate: () => {},
+  markReached: () => {},
+  isCompleted: () => false,
+  dismissedGoals: [],
+  isDismissed: () => false,
+  skip: () => {},
+  resetGuidance: () => {},
+  consumedStatuses: new Set(),
+  consume: () => {},
+  stepIndex: () => 0,
+  setStep: () => {},
+  advance: () => {},
+  next: () => {},
+  back: () => {},
+  currentInstructions: [],
+  current: null,
+  statusPredicates: {},
+  edges: [],
+  goals: {},
+  targets: {},
+  suppressors: [],
+  renderer: null,
+  registerStatus: () => {},
+  unregisterStatus: () => {},
+  registerEdge: () => {},
+  unregisterEdge: () => {},
+  registerGoal: () => {},
+  unregisterGoal: () => {},
+  registerTarget: () => {},
+  unregisterTarget: () => {},
+  registerSuppressor: () => {},
+  unregisterSuppressor: () => {},
+  setRenderer: () => {},
+  publishCurrent: () => {},
 };
 
 /** Internal: full context (controller + registry), used by the rail engine and the DSL components. */
-export const useAzGuidanceContext = (): AzGuidanceContextValue => useContext(AzGuidanceContext) ?? NOOP;
+export const useAzGuidanceContext = (): AzGuidanceContextValue =>
+  useContext(AzGuidanceContext) ?? NOOP;
 
 /**
  * Returns the developer-facing {@link AzGuidanceController} from the nearest `AzNavRail`. Use it to

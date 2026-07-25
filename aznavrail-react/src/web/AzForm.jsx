@@ -31,18 +31,18 @@ const AzForm = ({
   color = 'currentColor',
   isLoading = false,
   className = '',
-  style = {}
+  style = {},
 }) => {
   const [values, setValues] = useState(() => {
     const initial = {};
-    entries.forEach(e => {
+    entries.forEach((e) => {
       initial[e.name] = e.initialValue || '';
     });
     return initial;
   });
 
   const handleChange = (name, newValue) => {
-    setValues(prev => ({ ...prev, [name]: newValue }));
+    setValues((prev) => ({ ...prev, [name]: newValue }));
   };
 
   const handleSubmit = () => {
@@ -53,7 +53,7 @@ const AzForm = ({
 
   return (
     <div className={`az-form-container ${className}`} style={style}>
-      {entries.map(entry => (
+      {entries.map((entry) => (
         <AzTextBox
           key={entry.name}
           value={values[entry.name]}
