@@ -4,6 +4,8 @@ package com.hereliesaz.aznavrail
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
@@ -702,8 +704,9 @@ fun AzNavRail(
                             contentAlignment = Alignment.Center
                         ) {
                             val buttonShape = scope.defaultShape
+                            val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
                             val transparentShapeModifier = Modifier
-                                .size(activeButtonSize.value)
+                                .size(activeButtonSize)
                                 .border(
                                     width = 2.dp,
                                     color = scope.activeColor,
@@ -716,12 +719,7 @@ fun AzNavRail(
                                     } else {
                                         try {
                                             if (effectiveRepoUrl.isNotBlank()) {
-                                                context.startActivity(
-                                                    Intent(
-                                                        Intent.ACTION_VIEW,
-                                                        Uri.parse(effectiveRepoUrl)
-                                                    )
-                                                )
+                                                uriHandler.openUri(effectiveRepoUrl)
                                             }
                                         } catch (e: Exception) {
                                         }

@@ -4,6 +4,8 @@ package com.hereliesaz.aznavrail
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -743,12 +745,7 @@ fun AzNavRail(
                                     .verticalScroll(scrollState)
                             ) {
                                 topLevelItems.forEachIndexed { index, item ->
-                                    // Custom layout-stretching logic: if an item is currently dissolving,
-                                    // we draw a spacer of exactly its reported bounds rather than the item
-                                    // composable itself so the layout height matches perfectly.
-                                    dissolving?.takeIf { it.itemId == item.id }?.let {
-                                        Spacer(Modifier.height(with(LocalDensity.current) { it.bounds.height.toDp() }))
-                                    } ?: MenuItemNode(
+                                    MenuItemNode(
                                         item = item,
                                         allItems = displayItems,
                                         navController = effectiveNavController,
@@ -758,11 +755,6 @@ fun AzNavRail(
                                         showHelpOverlay = showHelpOverlay,
                                         onToggleHelp = { toggleHelpOverlay(it) },
                                         onCollapseMenu = { isExpanded = false },
-                                        onDissolveTap = { itemId, text ->
-                                            scope.itemBoundsCache[itemId]?.let {
-                                                dissolving = com.hereliesaz.aznavrail.internal.DissolveState(itemId, text, it)
-                                            }
-                                        },
                                         index = index,
                                         count = topLevelItems.size,
                                         visible = isExpanded,
