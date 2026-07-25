@@ -143,6 +143,7 @@ private fun NestedItemWrapper(
                 ),
             )
         }) {
+            val alert = item.alert
             AzNavRailButton(
                 onClick = {
                     if (item.isHost) {
@@ -154,17 +155,40 @@ private fun NestedItemWrapper(
                     }
                 },
                 text = item.text,
-                color = item.color ?: MaterialTheme.colorScheme.onSurface,
-                activeColor = activeColor,
-                textColor = item.textColor,
+                color = alert?.color() ?: item.color ?: MaterialTheme.colorScheme.onSurface,
+                activeColor = alert?.color() ?: activeColor,
+                textColor = if (alert != null) alert.color() else item.textColor,
                 fillColor = item.fillColor,
-                shape = item.shape ?: AzButtonShape.CIRCLE,
+                shape = if (alert != null) AzButtonShape.TRIANGLE else (item.shape ?: AzButtonShape.CIRCLE),
                 size = AzNavRailDefaults.ButtonWidth,
                 enabled = !item.disabled,
                 isSelected = (item.route != null && currentDestination == item.route) || item.classifiers.any { activeClassifiers.contains(it) },
-                itemContent = item.content,
+                isLoading = item.isLoading,
+                itemContent = if (alert != null) null else item.content,
                 rotationDegrees = rotationDegrees
             )
+
+            // Nested-rail children carry badges too — they are rail items like any other, and used
+            // to be the one place a declared badge was silently dropped.
+            val showBadge = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+            androidx.compose.runtime.LaunchedEffect(item.badge) {
+                if (!item.badge.isNullOrBlank()) {
+                    showBadge.value = true
+                    if (!item.persistentBadge) {
+                        kotlinx.coroutines.delay(1000)
+                        showBadge.value = false
+                    }
+                } else {
+                    showBadge.value = false
+                }
+            }
+            if (showBadge.value && !item.badge.isNullOrBlank()) {
+                com.hereliesaz.aznavrail.AzBadge(
+                    text = item.badge,
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    containerColor = item.color ?: activeColor,
+                )
+            }
         }
 
         if (item.isHost && hostStates[item.id] == true) {

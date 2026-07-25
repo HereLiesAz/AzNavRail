@@ -11,22 +11,33 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * A standard loading spinner component for AzNavRail.
+ * The standard AzNavRail loading spinner: a circular border rotating about its Y axis, with
+ * "loading..." in the middle.
  *
- * It renders a rotating circular border with "loading..." text in the center.
- * This component is used by [AzNavRail] when `isLoading` is set to true in `azAdvanced`,
- * and by [AzButton] when its `isLoading` state is true.
+ * Used full-size by the About/More-from-Az readers, and shrunk down **inside individual buttons** —
+ * every rail item is its own loading animation, so a single item can spin while the rest of the rail
+ * stays live. The label is dropped automatically at button scale, where there is no room for it.
  *
- * It uses a simple Y-axis rotation animation.
+ * @param size The spinner's diameter. Defaults to the full-screen reader size.
+ * @param color Ring and label colour. [Color.Unspecified] (the default) uses the theme primary.
+ * @param showLabel Whether "loading..." is drawn. Defaults to true only when [size] is large enough
+ *   to fit it.
  */
 @Composable
-fun AzLoad() {
+fun AzLoad(
+    size: Dp = 120.dp,
+    color: Color = Color.Unspecified,
+    showLabel: Boolean = size >= 96.dp,
+) {
     val infiniteTransition = rememberInfiniteTransition()
     val rotationY by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -37,25 +48,29 @@ fun AzLoad() {
         )
     )
 
+    val ringColor = color.takeOrElse { MaterialTheme.colorScheme.primary }
+
     Box(
         modifier = Modifier
-            .size(120.dp)
+            .size(size)
             .graphicsLayer {
                 this.rotationY = rotationY
             }
             .border(
                 width = 2.dp,
-                color = MaterialTheme.colorScheme.primary,
+                color = ringColor,
                 shape = CircleShape
             ),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = "loading...",
-            style = TextStyle(
-                color = MaterialTheme.colorScheme.primary,
-                fontSize = 16.sp
+        if (showLabel) {
+            Text(
+                text = "loading...",
+                style = TextStyle(
+                    color = ringColor,
+                    fontSize = 16.sp
+                )
             )
-        )
+        }
     }
 }

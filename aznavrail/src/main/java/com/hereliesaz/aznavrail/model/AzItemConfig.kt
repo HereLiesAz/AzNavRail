@@ -48,5 +48,11 @@ data class AzItemConfig(
     /** Optional short badge text drawn in a small circle on the item's button corner. */
     val badge: String? = null,
     /** Whether the badge should remain permanently visible (true) or dissolve after 1 second (false). */
-    val persistentBadge: Boolean = false
+    val persistentBadge: Boolean = false,
+    /** When true, this item's button spins its own loading animation in place of its content. */
+    val isLoading: Boolean = false,
+    /** Marks a host declared with `azUnattachedHostItem`, which lives outside the rail strip. */
+    val isUnattached: Boolean = false,
+    /** Where an [isUnattached] host parks. Ignored for every other item. */
+    val unattachedAnchor: AzUnattachedAnchor? = null
 )

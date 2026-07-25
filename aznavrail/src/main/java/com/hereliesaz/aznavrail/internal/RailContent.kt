@@ -153,19 +153,24 @@ internal fun RailContent(
                 containerColor = item.color ?: activeColor ?: MaterialTheme.colorScheme.primary,
             )
         }
+        // While an item owns a notice/warning popup it stops being itself and becomes the alert
+        // glyph: a yellow, rounded-corner triangle outline. Everything else about it is untouched,
+        // and it reverts the instant the popup is dismissed.
+        val alert = item.alert
         AzNavRailButton(
             onClick = finalOnClick,
             text = textToShow,
             modifier = Modifier,
-            color = item.color ?: MaterialTheme.colorScheme.primary,
-            activeColor = activeColor ?: MaterialTheme.colorScheme.primary,
-            textColor = item.textColor,
+            color = alert?.color() ?: item.color ?: MaterialTheme.colorScheme.primary,
+            activeColor = alert?.color() ?: activeColor ?: MaterialTheme.colorScheme.primary,
+            textColor = if (alert != null) alert.color() else item.textColor,
             fillColor = item.fillColor,
             size = buttonSize,
-            shape = item.shape ?: defaultShape,
+            shape = if (alert != null) AzButtonShape.TRIANGLE else (item.shape ?: defaultShape),
             enabled = isEnabled,
             isSelected = isSelected,
-            itemContent = item.content,
+            isLoading = item.isLoading,
+            itemContent = if (alert != null) null else item.content,
             rotationDegrees = rotationDegrees
         )
     }

@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
+import com.hereliesaz.aznavrail.internal.toComposeShape
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzComposableContent
 import com.hereliesaz.aznavrail.util.text.AutoSizeText
@@ -108,16 +109,13 @@ internal fun AzNavRailButton(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
-    val buttonShape: Shape = when (shape) {
-        AzButtonShape.CIRCLE -> CircleShape
-        AzButtonShape.SQUARE -> RectangleShape
-        AzButtonShape.RECTANGLE -> RectangleShape
-        AzButtonShape.NONE -> RectangleShape
-    }
+    val buttonShape: Shape = shape.toComposeShape()
 
     // STRICT WIDTH COMPLIANCE for all shapes.
     val buttonModifier = when (shape) {
-        AzButtonShape.CIRCLE, AzButtonShape.SQUARE -> modifier
+        // The triangle occupies the same square footprint as a circle, so an item that flips to the
+        // warning glyph doesn't reflow the rail around it.
+        AzButtonShape.CIRCLE, AzButtonShape.SQUARE, AzButtonShape.TRIANGLE -> modifier
             .size(size)
             .aspectRatio(1f)
         AzButtonShape.RECTANGLE, AzButtonShape.NONE -> {
@@ -177,7 +175,12 @@ internal fun AzNavRailButton(
     ) {
         Box(
             // If itemContent is present (Color/Img), we force 0 padding to Fill/Crop. Otherwise, apply text padding.
-            modifier = if (itemContent != null) Modifier else Modifier.padding(contentPadding),
+            // A triangle's usable area is its lower half, so its content is nudged down off the apex.
+            modifier = when {
+                itemContent != null -> Modifier
+                shape == AzButtonShape.TRIANGLE -> Modifier.padding(contentPadding).padding(top = size * 0.25f)
+                else -> Modifier.padding(contentPadding)
+            },
             contentAlignment = Alignment.Center
         ) {
             Box(
@@ -201,7 +204,15 @@ internal fun AzNavRailButton(
                     )
                 }
             }
-            if (isLoading) AzLoad()
+            // Each button spins its own spinner, scaled to the button rather than the full-screen
+            // default, and tinted to the item's own colour so a loading item still reads as itself.
+            if (isLoading) {
+                val spinnerSize = when (shape) {
+                    AzButtonShape.RECTANGLE, AzButtonShape.NONE -> 28.dp
+                    else -> size * 0.6f
+                }
+                AzLoad(size = spinnerSize, color = finalColor, showLabel = false)
+            }
         }
     }
 }

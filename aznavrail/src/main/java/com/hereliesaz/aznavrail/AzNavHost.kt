@@ -11,6 +11,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +32,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -59,6 +62,9 @@ import com.hereliesaz.aznavrail.bottomsheet.AzBottomSheet
 import com.hereliesaz.aznavrail.bottomsheet.AzSheetController
 import com.hereliesaz.aznavrail.internal.AboutOverlay
 import com.hereliesaz.aznavrail.internal.AzBottomSheetItem
+import com.hereliesaz.aznavrail.internal.AzDropdownTriggerButton
+import com.hereliesaz.aznavrail.internal.AzTitleTriggerSlot
+import com.hereliesaz.aznavrail.internal.AzUnattachedRail
 import com.hereliesaz.aznavrail.internal.AzLayoutConfig
 import com.hereliesaz.aznavrail.internal.AzNavMode
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
@@ -130,6 +136,31 @@ interface AzNavHostScope : AzNavRailScope {
      * @param content The composable content.
      */
     fun onscreen(alignment: Alignment = Alignment.TopStart, page: Float = 0f, content: @Composable () -> Unit)
+
+    /**
+     * Registers a popup window driven by [controller], drawn over everything else in the host.
+     *
+     * A popup is **bound to a rail item**: `controller.show(itemId = "sync")` names one explicitly,
+     * and `controller.show()` binds to whichever rail item the user touched last. The body receives
+     * that item as an [AzPopupItemHandle] through its [AzPopupScope], so the two share state in both
+     * directions — the popup can read the item and write back to it (badge, its own loading
+     * animation, an alert flag), and those writes outlive the DSL re-running until the popup clears
+     * them.
+     *
+     * A [AzPopupKind.NOTICE] or [AzPopupKind.WARNING] popup additionally redraws its bound item as a
+     * **yellow, rounded-corner triangle outline** for as long as it is up, and restores the item
+     * when it closes.
+     *
+     * @param controller Created with [rememberAzPopupController] outside the DSL so its state
+     *   survives recomposition.
+     * @param dismissOnOutsideTap Whether tapping the scrim closes the popup.
+     * @param content The popup's body. Defaults to the built-in title/message/OK panel.
+     */
+    fun azPopup(
+        controller: AzPopupController,
+        dismissOnOutsideTap: Boolean = true,
+        content: @Composable AzPopupScope.() -> Unit = { AzPopupBody() },
+    )
 
     /**
      * Registers a bottom sheet that draws above the rail, the menu, and the onscreen area, and
@@ -215,6 +246,24 @@ class AzNavHostScopeImpl(
     val backgrounds = mutableListOf<AzBackgroundItem>()
     val onscreenItems = mutableListOf<AzOnscreenItem>()
     internal val bottomSheets = mutableListOf<AzBottomSheetItem>()
+    internal val popups = mutableListOf<AzPopupItem>()
+
+    /**
+     * Drop-down triggers lifted out of their call sites and hosted next to the screen title, in
+     * registration order (which is declaration order, since `onscreen` blocks compose in order).
+     *
+     * Registered from `AzDropdownMenu`'s `DisposableEffect`, so — unlike [onscreenItems] — this is
+     * NOT cleared by [resetHost]: it is keyed to composition lifetime, not to the DSL pass.
+     */
+    internal val titleTriggers = mutableStateListOf<AzTitleTriggerSlot>()
+
+    internal fun registerTitleTrigger(slot: AzTitleTriggerSlot) {
+        if (!titleTriggers.contains(slot)) titleTriggers.add(slot)
+    }
+
+    internal fun unregisterTitleTrigger(slot: AzTitleTriggerSlot) {
+        titleTriggers.remove(slot)
+    }
 
     // --- Built-in overlay visibility ---
     // The rail (which always runs inside this host) flips these on user action; the host renders the
@@ -263,6 +312,14 @@ class AzNavHostScopeImpl(
         bottomSheets.add(AzBottomSheetItem(controller, config, onSwipeLeft, onSwipeRight, content))
     }
 
+    override fun azPopup(
+        controller: AzPopupController,
+        dismissOnOutsideTap: Boolean,
+        content: @Composable AzPopupScope.() -> Unit,
+    ) {
+        popups.add(AzPopupItem(controller, dismissOnOutsideTap, content))
+    }
+
     fun getRailScopeImpl() = railScope
 
     fun resetHost() {
@@ -270,6 +327,7 @@ class AzNavHostScopeImpl(
         backgrounds.clear()
         onscreenItems.clear()
         bottomSheets.clear()
+        popups.clear()
     }
 }
 
@@ -347,6 +405,7 @@ fun AzHostActivityLayout(
     scope.apply(content)
     // Re-apply persisted reloc-item reorders so drag-and-drop sticks across recomposition.
     scope.getRailScopeImpl().applyRelocReorders()
+    scope.getRailScopeImpl().applyItemStates()
 
     // The status-driven guidance controller. Created here, provided to the rail (which routes/renders
     // it), and returned to the developer so they can `activate`/`deactivate` goals (see AzStatus.kt).
@@ -461,7 +520,10 @@ fun AzHostActivityLayout(
         val titleAlignment = if (visualDockingSideProxy == AzDockingSide.LEFT) Alignment.CenterEnd else Alignment.CenterStart
         val titlePaddingSide = if (visualDockingSideProxy == AzDockingSide.LEFT) Modifier.padding(end = 32.dp) else Modifier.padding(start = 32.dp)
 
-        if (currentTitle != null && currentTitle != AzNavRailDefaults.NO_TITLE && currentTitle.isNotBlank()) {
+        val hasTitle = currentTitle != null && currentTitle != AzNavRailDefaults.NO_TITLE && currentTitle.isNotBlank()
+        // The title row is also where hosted drop-down triggers live, so it is drawn whenever there
+        // is a title OR at least one trigger to place.
+        if (hasTitle || scope.titleTriggers.isNotEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -470,31 +532,47 @@ fun AzHostActivityLayout(
                     .then(titlePaddingSide),
                 contentAlignment = titleAlignment
             ) {
-                // Keying on the title text restarts the composition (and the kinetic entrance) every
-                // time the active screen changes, giving the big Metro title its WP7 sweep-in.
-                key(currentTitle) {
-                    val titleKinetic = rememberAzKineticModifier(
-                        index = 0,
-                        count = 1,
-                        visible = true,
-                        entrance = railScopeImpl.titleEntrance,
-                        exit = AzExit.None,
-                        staggerMs = 0,
-                        durationMs = 420,
-                        easing = com.hereliesaz.aznavrail.model.AzEasing.Wp7Decelerate,
-                        startAngle = 70f,
-                        tiltOnPress = false,
-                        maxTiltDegrees = 0f,
-                        dockingSide = visualDockingSideProxy
-                    )
-                    Text(
-                        text = currentTitle,
-                        modifier = titleKinetic,
-                        style = MaterialTheme.typography.displayMedium // Much bigger requirement
-                            .copy(fontWeight = FontWeight.Bold)
-                            .merge(railScopeImpl.titleTextStyle),
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
+                // Title and triggers read like an app bar mirrored onto the rail's docking side: the
+                // triggers sit hard against the edge the title hugs, with the title just inboard of
+                // them. Several triggers line up beside each other in registration order.
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(0.dp)
+                ) {
+                    if (visualDockingSideProxy != AzDockingSide.LEFT) {
+                        scope.titleTriggers.forEach { slot -> AzDropdownTriggerButton(slot) }
+                    }
+                    if (hasTitle) {
+                        // Keying on the title text restarts the composition (and the kinetic
+                        // entrance) every time the active screen changes.
+                        key(currentTitle) {
+                            val titleKinetic = rememberAzKineticModifier(
+                                index = 0,
+                                count = 1,
+                                visible = true,
+                                entrance = railScopeImpl.titleEntrance,
+                                exit = AzExit.None,
+                                staggerMs = 0,
+                                durationMs = 420,
+                                easing = com.hereliesaz.aznavrail.model.AzEasing.Wp7Decelerate,
+                                startAngle = 70f,
+                                tiltOnPress = false,
+                                maxTiltDegrees = 0f,
+                                dockingSide = visualDockingSideProxy
+                            )
+                            Text(
+                                text = currentTitle!!,
+                                modifier = titleKinetic,
+                                style = MaterialTheme.typography.displayMedium // Much bigger requirement
+                                    .copy(fontWeight = FontWeight.Bold)
+                                    .merge(railScopeImpl.titleTextStyle),
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                    }
+                    if (visualDockingSideProxy == AzDockingSide.LEFT) {
+                        scope.titleTriggers.forEach { slot -> AzDropdownTriggerButton(slot) }
+                    }
                 }
             }
         }
@@ -534,6 +612,21 @@ fun AzHostActivityLayout(
                 railAlignment = railAlignment,
                 reverseLayout = reverseLayout,
                 content = {}
+            )
+        }
+
+        // Unattached host items — rail hosts that live outside the rail strip. Drawn after the rail
+        // so a floating stack can be dragged over it, and before the built-in overlays so About /
+        // Help / More-from-Az still cover everything.
+        CompositionLocalProvider(
+            LocalAzNavHostScope provides scope,
+            LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom)
+        ) {
+            AzUnattachedRail(
+                scope = railScope,
+                navController = navController,
+                currentDestination = effectiveCurrentDestination,
+                visualDockingSide = visualDockingSideProxy
             )
         }
 
@@ -627,6 +720,16 @@ fun AzHostActivityLayout(
                 onSwipeLeft = item.onSwipeLeft,
                 onSwipeRight = item.onSwipeRight,
                 content = item.content,
+            )
+        }
+
+        // Popups sit above the sheets: they are the layer that interrupts, and a warning raised
+        // while a sheet is open still has to be the thing the user answers.
+        scope.popups.forEach { popup ->
+            AzPopupHost(
+                popup = popup,
+                railScope = railScope,
+                modifier = Modifier.zIndex(3f)
             )
         }
     }

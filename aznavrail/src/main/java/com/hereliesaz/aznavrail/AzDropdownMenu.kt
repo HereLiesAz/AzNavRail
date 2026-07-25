@@ -63,7 +63,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -80,7 +79,14 @@ import com.hereliesaz.aznavrail.internal.MoreFromAzOverlay
 import com.hereliesaz.aznavrail.service.GithubDocsRepository
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDockingSide
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.unit.IntRect
+import com.hereliesaz.aznavrail.internal.AzDropdownTriggerButton
+import com.hereliesaz.aznavrail.internal.AzDropdownTriggerSpec
+import com.hereliesaz.aznavrail.internal.AzTitleTriggerSlot
 import com.hereliesaz.aznavrail.model.AzDropdownDesign
+import com.hereliesaz.aznavrail.model.AzDropdownTrigger
+import com.hereliesaz.aznavrail.model.AzDropdownTriggerPlacement
 import com.hereliesaz.aznavrail.model.AzEasing
 import com.hereliesaz.aznavrail.model.AzEntrance
 import com.hereliesaz.aznavrail.model.AzExit
@@ -136,6 +142,17 @@ interface AzDropdownMenuScope {
      * @param maxTiltDegrees Maximum tilt angle for [tiltOnPress].
      * @param itemExit Exit played as the panel dismisses (see [AzExit]); defaults to [AzExit.Turnstile].
      *   Items are held mounted through the close so they can animate out.
+     * @param trigger What the user taps to open the menu. Defaults to [AzDropdownTrigger.MoreVert] —
+     *   the three vertical dots. Pass [AzDropdownTrigger.Text] for a word, [AzDropdownTrigger.Icon]
+     *   for your own glyph/image, [AzDropdownTrigger.Hamburger] for the bars, or
+     *   [AzDropdownTrigger.AppIcon] for the launcher icon (the pre-trigger default). The trigger's
+     *   size and clip shape come from [headerIconSize] / [headerIconShape].
+     * @param triggerPlacement Where that trigger is drawn. [AzDropdownTriggerPlacement.AUTO] (the
+     *   default) lifts it up next to the big screen title, above the onscreen content area, whenever
+     *   the drop-down is declared inside an `AzHostActivityLayout`; standalone drop-downs stay
+     *   inline. Several title-hosted drop-downs line their triggers up beside each other in
+     *   declaration order. Force either behaviour with [AzDropdownTriggerPlacement.TITLE] /
+     *   [AzDropdownTriggerPlacement.INLINE].
      */
     fun azConfig(
         design: AzDropdownDesign = AzDropdownDesign.MENU,
@@ -162,6 +179,8 @@ interface AzDropdownMenuScope {
         menuItemAlignment: com.hereliesaz.aznavrail.model.AzMenuItemAlignment =
             com.hereliesaz.aznavrail.model.AzMenuItemAlignment.SIDE,
         justifyMenuItems: Boolean = true,
+        trigger: AzDropdownTrigger = AzDropdownTrigger.MoreVert,
+        triggerPlacement: AzDropdownTriggerPlacement = AzDropdownTriggerPlacement.AUTO,
     )
 
     /**
@@ -239,6 +258,8 @@ internal data class AzDropdownConfig(
     val menuItemAlignment: com.hereliesaz.aznavrail.model.AzMenuItemAlignment =
         com.hereliesaz.aznavrail.model.AzMenuItemAlignment.SIDE,
     val justifyMenuItems: Boolean = true,
+    val trigger: AzDropdownTrigger = AzDropdownTrigger.MoreVert,
+    val triggerPlacement: AzDropdownTriggerPlacement = AzDropdownTriggerPlacement.AUTO,
 )
 
 /** One declared entry, collected by the builder and rendered by the composable. */
@@ -323,12 +344,14 @@ private class AzDropdownMenuScopeImpl : AzDropdownMenuScope {
         dimBehindMenuAlpha: Float,
         menuItemAlignment: com.hereliesaz.aznavrail.model.AzMenuItemAlignment,
         justifyMenuItems: Boolean,
+        trigger: AzDropdownTrigger,
+        triggerPlacement: AzDropdownTriggerPlacement,
     ) {
         config = AzDropdownConfig(
             design, dockingSide, vibrate, expandedWidth, collapsedWidth, headerIconShape, headerIconSize,
             showFooter, inAppAbout, appRepositoryUrl, itemTextStyle, itemEntrance, entranceStaggerMs,
             entranceDurationMs, entranceEasing, entranceStartAngle, tiltOnPress, maxTiltDegrees, itemExit,
-            dimBehindMenu, dimBehindMenuAlpha, menuItemAlignment, justifyMenuItems,
+            dimBehindMenu, dimBehindMenuAlpha, menuItemAlignment, justifyMenuItems, trigger, triggerPlacement,
         )
     }
 
@@ -795,7 +818,8 @@ private fun entryLabel(entry: AzDropdownEntry): String = when (entry) {
  * the rail, the side is physical ([AzDockingSide.LEFT] → left edge, [AzDockingSide.RIGHT] → right).
  */
 private class AzDropdownEdgePositionProvider(
-    private val dockingSide: AzDockingSide
+    private val dockingSide: AzDockingSide,
+    private val anchorOverride: () -> IntRect? = { null },
 ) : PopupPositionProvider {
     override fun calculatePosition(
         anchorBounds: IntRect,
@@ -803,12 +827,13 @@ private class AzDropdownEdgePositionProvider(
         layoutDirection: LayoutDirection,
         popupContentSize: IntSize
     ): IntOffset {
+        val anchor = anchorOverride() ?: anchorBounds
         val x = if (dockingSide == AzDockingSide.LEFT) 0 else windowSize.width - popupContentSize.width
-        val fitsBelow = anchorBounds.bottom + popupContentSize.height <= windowSize.height
+        val fitsBelow = anchor.bottom + popupContentSize.height <= windowSize.height
         val y = if (fitsBelow) {
-            anchorBounds.bottom
+            anchor.bottom
         } else {
-            (anchorBounds.top - popupContentSize.height).coerceAtLeast(0)
+            (anchor.top - popupContentSize.height).coerceAtLeast(0)
         }
         return IntOffset(x, y)
     }
@@ -890,47 +915,59 @@ fun AzDropdownMenu(
     val maxPanelHeight = (LocalConfiguration.current.screenHeightDp * 0.8f).dp
     val panelWidth = if (config.design == AzDropdownDesign.RAIL) config.collapsedWidth else config.expandedWidth
 
-    val positionProvider = remember(config.dockingSide) {
-        AzDropdownEdgePositionProvider(config.dockingSide)
+    // Where the trigger ends up. AUTO lifts it into the screen-title row whenever there is a host to
+    // put it in; a standalone drop-down (no AzHostActivityLayout) has no title row, so it stays inline.
+    val titleHost = LocalAzNavHostScope.current as? AzNavHostScopeImpl
+    val hostsTrigger = titleHost != null && when (config.triggerPlacement) {
+        AzDropdownTriggerPlacement.INLINE -> false
+        AzDropdownTriggerPlacement.TITLE, AzDropdownTriggerPlacement.AUTO -> true
     }
 
-    // The trigger is the app's launcher icon, loaded exactly like the rail's header icon.
+    // The trigger's real window-space bounds, reported by whichever button ends up drawing it, so
+    // the panel drops from the button the user tapped even when that button lives in the title row.
+    var triggerBounds by remember { mutableStateOf<IntRect?>(null) }
+
+    val positionProvider = remember(config.dockingSide) {
+        AzDropdownEdgePositionProvider(config.dockingSide) { triggerBounds }
+    }
+
+    // The launcher icon, loaded exactly like the rail's header icon. Only AzDropdownTrigger.AppIcon
+    // uses it.
     val appIcon = remember(context.packageName) {
         try { context.packageManager.getApplicationIcon(context.packageName) } catch (e: Exception) { null }
     }
 
-    Box(modifier = modifier) {
-        // The inline app-icon trigger — the app icon, clipped to the configured shape/size. The icon
-        // itself is decorative; the box carries the "Menu" accessibility label.
-        val iconClipShape: Shape? = when (config.headerIconShape) {
-            AzHeaderIconShape.CIRCLE -> CircleShape
-            AzHeaderIconShape.ROUNDED -> RoundedCornerShape(12.dp)
-            else -> null
+    // One slot per drop-down. It carries the trigger's (comparable) look as snapshot state and its
+    // behaviour as plain fields, so the title row can render a trigger that always calls back into
+    // this composition without this composition having to re-publish a fresh lambda every frame.
+    val slot = remember { AzTitleTriggerSlot() }
+    slot.onTap = {
+        setOpen(!isOpen)
+        if (config.vibrate) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+    }
+    slot.onBounds = { bounds -> triggerBounds = bounds }
+    slot.publish(
+        AzDropdownTriggerSpec(
+            trigger = config.trigger,
+            size = config.headerIconSize,
+            iconShape = config.headerIconShape,
+            appIcon = appIcon,
+            textStyle = config.itemTextStyle,
+        )
+    )
+
+    if (hostsTrigger) {
+        DisposableEffect(titleHost, slot) {
+            titleHost?.registerTitleTrigger(slot)
+            onDispose { titleHost?.unregisterTitleTrigger(slot) }
         }
-        val clipModifier = if (iconClipShape != null) Modifier.clip(iconClipShape) else Modifier
-        Box(
-            modifier = Modifier
-                // Automatic breathing room around the app-icon trigger so it never sits flush against
-                // neighbouring widgets (mirrors the rail header's spacing).
-                .padding(AzNavRailDefaults.HeaderPadding)
-                .size(config.headerIconSize)
-                .then(clipModifier)
-                .clickable {
-                    setOpen(!isOpen)
-                    if (config.vibrate) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                }
-                .semantics(mergeDescendants = true) { contentDescription = "Menu" },
-            contentAlignment = Alignment.Center
-        ) {
-            if (appIcon != null) {
-                Image(
-                    painter = rememberAsyncImagePainter(appIcon),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize().then(clipModifier)
-                )
-            } else {
-                Icon(imageVector = Icons.Default.Menu, contentDescription = null)
-            }
+    }
+
+    Box(modifier = modifier) {
+        // The trigger itself, unless the host has taken it up to the title row — in which case
+        // nothing is drawn here and only the dropped panel below still belongs to this call site.
+        if (!hostsTrigger) {
+            AzDropdownTriggerButton(slot)
         }
 
         // Keep the panel composed through the staggered exit so items can animate out before teardown.

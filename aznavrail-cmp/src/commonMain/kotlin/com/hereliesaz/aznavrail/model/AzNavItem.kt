@@ -65,6 +65,25 @@ data class AzNavItem(
     val badge: String? = null,
     /** Whether the badge should remain permanently visible (true) or dissolve after 1 second (false). */
     val persistentBadge: Boolean = false,
+    /**
+     * Per-item loading state. When true this item's button hides its content and spins its own
+     * [com.hereliesaz.aznavrail.AzLoad] in place — every rail item is its own loading animation,
+     * rather than the whole app being blocked by one global spinner.
+     */
+    val isLoading: Boolean = false,
+    /**
+     * Transient alert styling. Set by an [com.hereliesaz.aznavrail.AzPopupController] on the item
+     * that raised a notice/warning popup, which redraws it as a yellow rounded-corner triangle
+     * outline for as long as the popup is up. Null is the item's normal appearance.
+     */
+    val alert: AzItemAlert? = null,
+    /**
+     * True for a host declared with `azUnattachedHostItem`: it is a rail host that does NOT live in
+     * the rail strip. It is drawn on its own at [unattachedAnchor] and unfolds its sub-items there.
+     */
+    val isUnattached: Boolean = false,
+    /** Where an [isUnattached] host parks. Null (and ignored) for every other item. */
+    val unattachedAnchor: AzUnattachedAnchor? = null,
 ) {
     companion object {
         /**
@@ -82,6 +101,7 @@ data class AzNavItem(
             shape: AzButtonShape? = null,
             badge: String? = null,
             persistentBadge: Boolean = false,
+            isLoading: Boolean = false,
         ): AzNavItem = AzNavItem(
             id = id,
             text = text,
@@ -95,6 +115,7 @@ data class AzNavItem(
             shape = shape,
             badge = badge,
             persistentBadge = persistentBadge,
+            isLoading = isLoading,
         )
     }
 }
