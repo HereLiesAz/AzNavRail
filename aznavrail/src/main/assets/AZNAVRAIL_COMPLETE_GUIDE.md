@@ -184,10 +184,34 @@ const settings: AzNavRailSettings = {
 
 A hamburger drop-down is **not** a rail mode — it is a standalone widget, `AzDropdownMenu`, declared
 with the **same opinionated DSL as the rail**. In AzNavRail tradition it accepts only the
-configuration the rest of the library sanctions (no arbitrary panel background, offsets, icon
-tint/source, or free composable escape hatch). Its trigger is the **app icon** (auto-drawn like the
-rail's header; its shape/size set via `azConfig`'s `headerIconShape`/`headerIconSize`), dropped
-inline like any widget. Tapping it unfolds an **overlay
+configuration the rest of the library sanctions (no arbitrary panel background, offsets, or free
+composable escape hatch).
+
+**The trigger.** `azConfig(trigger = …)` picks what the user taps, from the sanctioned set
+`AzDropdownTrigger`:
+
+| Trigger | What it draws |
+| --- | --- |
+| `AzDropdownTrigger.MoreVert` | Three vertical dots. **The default.** |
+| `AzDropdownTrigger.Hamburger` | The three stacked bars. |
+| `AzDropdownTrigger.Text("Filter")` | A word, in the rail's accent and menu type. |
+| `AzDropdownTrigger.Icon(myVector)` | Your own `ImageVector` / `Painter` / image URL / any Coil model. |
+| `AzDropdownTrigger.AppIcon` | The launcher icon, exactly like the rail's header (the pre-trigger default). |
+
+Its size and clip shape come from `azConfig`'s `headerIconSize` / `headerIconShape`, mirroring the
+rail's `azTheme`.
+
+**Where the trigger goes.** `azConfig(triggerPlacement = …)` takes an `AzDropdownTriggerPlacement`.
+The default, `AUTO`, means: when the drop-down is declared inside an `AzHostActivityLayout` — i.e.
+inside an `onscreen { … }` block, which is where drop-downs actually live — the trigger is **lifted
+out of the call site and placed next to the big screen title**, above the onscreen content area, on
+the side opposite the rail. Declare several drop-downs and their triggers **line up beside each
+other** there, in declaration order. The dropped panel still belongs to the call site and still
+drops from the real trigger button, because the button reports its window bounds back. A drop-down
+used outside a host has no title row, so `AUTO` leaves it inline. Force either with `TITLE` /
+`INLINE`.
+
+Tapping it unfolds an **overlay
 panel** (a `Popup`) of the items you declare. Configure it through `azConfig`: `design` picks
 `AzDropdownDesign.RAIL` (compact rail buttons at the collapsed width ≈100dp) or `AzDropdownDesign.MENU`
 (default; full-width labeled rows at the expanded width ≈160dp); `dockingSide` pins the panel to the
@@ -203,6 +227,7 @@ only the rail's sanctioned per-item knobs, plus a `route` that navigates the sup
 
 ```kotlin
 AzDropdownMenu(navController = navController) {
+    // Three dots next to the screen title, because both defaults already say so.
     azConfig(design = AzDropdownDesign.MENU, dockingSide = AzDockingSide.LEFT)
     azItem("Home", route = "home") { }
     azToggle(isChecked = dark, toggleOnText = "Dark", toggleOffText = "Light") { dark = it }
@@ -488,6 +513,71 @@ AzHostActivityLayout(
 The callback fires once per state transition (expand or collapse), including on initial composition with the starting value. To also observe host-item sub-menu expansion, use `onInteraction` and filter for `action === 'Host toggled'` (React) or the item's `isHost` flag (Android).
 
 ---
+
+### Unattached hosts (`azUnattachedHostItem`)
+
+A host does not have to live *in* the rail. `azUnattachedHostItem` declares a rail host that is
+drawn on its own somewhere else on the screen; tapping it unfolds its sub-items inline beneath it,
+exactly as they would have unfolded inside the rail. Sub-items attach the usual way — by pointing
+their `hostId` at it — so `azRailSubItem` / `azRailSubToggle` / `azRailSubCycler` /
+`azRailSubHostItem` all work unchanged, and sub-hosts still nest to any depth.
+
+The host and its whole subtree are removed from the rail strip *and* the drawer menu: an unattached
+host exists only at its anchor.
+
+`anchor: AzUnattachedAnchor` says where it parks:
+
+| Anchor | Where it sits |
+| --- | --- |
+| `OPPOSITE` (default) | The side of the screen opposite the rail, level with where the rail's own items start. |
+| `BOTTOM` | The bottom of the screen, on the side opposite the rail. |
+| `FLOATING` | Free-floating and **draggable**, with its position **persisted** across launches. |
+
+Declare several unattached hosts sharing an anchor and they **stack into a column**, spaced exactly
+as they would have been in the rail (and packed when `packButtons` is on). The `FLOATING` stack
+drags as one unit; its position is stored as a fraction of the window, so it survives rotation and
+lands sensibly on a different screen size, and it is clamped to the same 10%–90% vertical safe zone
+FAB mode uses.
+
+```kotlin
+azUnattachedHostItem(id = "tools", text = "Tools", anchor = AzUnattachedAnchor.FLOATING)
+azRailSubItem(id = "measure", hostId = "tools", text = "Measure") { measure() }
+azRailSubToggle(
+    id = "grid", hostId = "tools",
+    isChecked = grid, toggleOnText = "Grid On", toggleOffText = "Grid Off",
+) { grid = !grid }
+
+azUnattachedHostItem(id = "layers", text = "Layers", anchor = AzUnattachedAnchor.BOTTOM)
+azRailSubItem(id = "layer-1", hostId = "layers", text = "Base") { select(0) }
+```
+
+
+### Per-item badges, loading and alerts (`azItemState`)
+
+Every item builder takes `badge` / `persistentBadge` / `isLoading` directly, and **every** item —
+rail item, menu item, sub-item, host, unattached host, nested-rail child — can also be decorated
+after the fact with `azItemState`, so you never have to thread the same three arguments through a
+builder that happens not to be the one you are using:
+
+```kotlin
+azRailItem(id = "sync", text = "Sync") { startSync() }
+azItemState(
+    id = "sync",
+    isLoading = syncing,                                   // this item spins its own animation
+    badge = pending.takeIf { it > 0 }?.toString(),          // and carries its own badge
+)
+```
+
+`azItemState` is applied after every item is declared, so declaration order does not matter, and
+values left `null` leave whatever the item already had — decorating the badge does not clear the
+loading state. Unknown ids are ignored.
+
+**Loading is per item, not per app.** A loading item hides its content and spins an `AzLoad` ring
+scaled to its own button and tinted to its own colour; the rest of the rail stays live. In the
+drawer, the row keeps its label and spins a small ring beside it.
+
+**Badges render everywhere.** Rail buttons, menu rows and nested-rail children all draw them
+(nested-rail children previously dropped a declared badge on the floor).
 
 ## 5. Drag & Drop (Relocatable Items)
 
@@ -1075,4 +1165,60 @@ The overlay also **delivers real window insets to the content**: an `OnApplyWind
 
 **Pages (Z-ordering).** `onscreen(alignment, page = 0f)` and `background(weight, page = 0f)` take a `page: Float`. Items sharing a page render on one co-planar layer (positioned with standard Compose `alignment`, so distinct alignments — or your own `Row`/`Column` inside the content — tile without overlapping). Items on *different* pages are stacked in Z and may overlap: a **higher** page number draws **further back**, the lowest page on top. Decimal pages (`1.5f`) insert a layer between existing ones without renumbering. `background()` items form their own book of pages beneath the entire `onscreen` book (itself beneath the rail and nav bar); `weight` breaks ties within a background page, and onscreen pages still respect the safe zones. The system is gated by `AzHostActivityLayout(pagesEnabled = true)` (the default); when on it is forced — items with no explicit page share page `0f`. Set `pagesEnabled = false` to fall back to plain declaration-order rendering (backgrounds by `weight`) with `page` ignored. The React port mirrors this on `<AzOnscreen page={…}>` / `<AzBackground page={…}>` and `pagesEnabled`.
 
+---
 
+## 11. Popups (`AzPopup`)
+
+An `AzPopup` is a window that is **bound to a rail item**, and the two share state in both
+directions. Create a controller with `rememberAzPopupController()`, register it in the host DSL with
+`azPopup(controller)`, and raise it from anywhere — an item's `onClick`, a coroutine, a callback.
+
+```kotlin
+val alerts = rememberAzPopupController()
+
+AzHostActivityLayout(navController = navController) {
+    azRailItem(id = "sync", text = "Sync") {
+        alerts.show(itemId = "sync", title = "Syncing", message = "Talking to the server…")
+    }
+
+    azPopup(alerts) {
+        Text(message ?: "")
+        AzButton(
+            onClick = { item?.setLoading(false); item?.setBadge(null); dismiss() },
+            text = "Stop",
+        )
+    }
+}
+```
+
+**The shared handle.** The body runs in an `AzPopupScope`, which exposes the request (`kind`,
+`title`, `message`, `payload`), a `dismiss()`, and `item` — an `AzPopupItemHandle` on the rail item
+that raised the popup. Through it the popup can read the item as the rail currently has it
+(`item.item`) and write back to it:
+
+- `setLoading(true)` — spin that item's own loading animation while the popup's work runs
+- `setBadge("3")` — drop a badge on it when the work finishes
+- `setAlert(AzItemAlert.WARNING)` — flag it
+- `clear()` — drop everything the popup pushed, restoring what the DSL declared
+
+Those writes are held on the rail scope, so they survive the DSL re-running on every recomposition
+— they last until the popup clears them.
+
+**Which item.** `show(itemId = "sync")` names one explicitly. `show()` with no id binds to the
+**last touched** rail item, which is what makes a warning raised from a background job land on
+whatever the user just did.
+
+**Notices and warnings mark their item.** While a `AzPopupKind.NOTICE` or `AzPopupKind.WARNING`
+popup is up, its bound item is redrawn as a **yellow, rounded-corner triangle outline** — the
+warning glyph — and reverts the instant the popup closes. `NOTICE` uses a softer amber, `WARNING` a
+saturated hazard yellow. In the drawer, where a row is type rather than a button, the flagged item
+takes the same yellow instead. The triangle is also available as an ordinary item shape,
+`AzButtonShape.TRIANGLE`.
+
+```kotlin
+// No tap to attribute it to — lands on whatever the user last touched.
+alerts.show(kind = AzPopupKind.WARNING, title = "Offline", message = "Changes are queued.")
+```
+
+`azPopup(controller)` with no body renders the built-in title/message/OK panel;
+`azPopup(controller, dismissOnOutsideTap = false)` makes it modal.
