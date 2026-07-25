@@ -179,7 +179,7 @@ internal fun AboutOverlay(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = safe.top, bottom = safe.bottom)
+                .padding(top = safe.top, bottom = safe.bottom, start = safe.start, end = safe.end)
                 .padding(horizontal = 20.dp, vertical = 12.dp)
         ) {
             // The grab handle — the visible half of the drag-to-dismiss gesture. Without it the

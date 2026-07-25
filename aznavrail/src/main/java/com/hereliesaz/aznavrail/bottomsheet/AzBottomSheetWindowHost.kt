@@ -32,6 +32,7 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.hereliesaz.aznavrail.internal.AzBottomSheetShell
 import com.hereliesaz.aznavrail.internal.AzNavBarDecorWindow
 import com.hereliesaz.aznavrail.internal.AzNavMode
+import com.hereliesaz.aznavrail.internal.azAllowDisplayCutout
 import com.hereliesaz.aznavrail.internal.heightForDetent
 import com.hereliesaz.aznavrail.internal.navBarExtensionPx
 import com.hereliesaz.aznavrail.model.AzSheetConfig
@@ -231,24 +232,20 @@ class AzBottomSheetWindowHost(
             WindowManager.LayoutParams.TYPE_SYSTEM_ALERT
         }
         val needsFocus = detent == AzSheetDetent.HALF || detent == AzSheetDetent.FULL
+        // azAllowDisplayCutout: lay out into the display cutout / system-bar area so the extended
+        // height can actually occupy the nav-bar region (paired with FLAG_LAYOUT_NO_LIMITS).
         return WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             windowHeightFor(detent, config),
             type,
             baseFlags(needsFocus),
             PixelFormat.TRANSLUCENT,
-        ).apply {
+        ).azAllowDisplayCutout().apply {
             gravity = Gravity.BOTTOM
             // Anchor flush to the screen bottom; the height already includes any nav-bar extension.
             y = 0
             @Suppress("DEPRECATION")
             softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
-            // Allow the window to lay out into the display cutout / system-bar area so the extended
-            // height can actually occupy the nav-bar region (paired with FLAG_LAYOUT_NO_LIMITS).
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                layoutInDisplayCutoutMode =
-                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
-            }
         }
     }
 

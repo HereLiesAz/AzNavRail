@@ -343,6 +343,20 @@ The KSP processor generates this object. It casts the `activity` to your specifi
 | Two books | `background()` pages form a book entirely beneath the `onscreen` book (which is beneath the rail/nav bar). `onscreen` pages respect safe zones; backgrounds fill the screen. `weight` breaks ties within a background page. |
 | `AzHostActivityLayout(pagesEnabled = true)` | Default. Forced when on — unlabelled items share page `0f`. Set `false` to render in declaration order (backgrounds by `weight`) and ignore `page`. |
 
+### Edge-to-edge & window insets (Android 15 / SDK 35)
+
+`AzHostActivityLayout` owns this; nothing to opt into. See the Complete Guide §1.1 for the reasoning.
+
+| Concern | Behavior |
+| :--- | :--- |
+| Enabling edge-to-edge | The host calls `enableEdgeToEdge()` on the enclosing `ComponentActivity`, falling back to `WindowCompat.setDecorFitsSystemWindows(window, false)`. Calling it yourself (as `AzActivity` does) is idempotent. |
+| Safe-zone insets | Each edge resolves to `max(systemBars, displayCutout)`. The cutout matters on its own: under Android 15's enforced `LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS` it can occlude an edge with no system bar — the landscape short edge, where the rail docks. `ime` is deliberately excluded so the layout doesn't jump when the keyboard opens. |
+| `AzSafeZones` | Now `(top, bottom, start, end)`. `start`/`end` are `0.dp` in portrait and non-zero only where the system reports something to clear. Applied to the `onscreen` area, the title row, and the built-in About / Help / More-from-Az overlays. Read via `LocalAzSafeZones.current`. |
+| Horizontal combination | In the `onscreen` area, `safeStart`/`safeEnd` combine with the rail gutter by **`max`**, not addition — the rail hugs the same physical edge, so a rail wider than the inset already clears it. Content therefore keeps its current position unless the system inset exceeds the rail width. |
+| `AzHostFragmentLayout` | Gained trailing `safeStart: Dp = 0.dp, safeEnd: Dp = 0.dp`. Existing calls are unaffected. |
+| Library-added windows | The bottom-sheet overlay, `AzNavBarDecorWindow`, and `AzNavRailWindowService.windowParams` all set `LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS` — the only value Android 15 left non-deprecated. **If you override `windowParams`, keep that assignment**; leaving the field unset inherits the deprecated `DEFAULT`. |
+| `drawBehindNavBar` | Writes `navigationBarColor` / `isNavigationBarContrastEnforced` **below API 35 only**. Both are deprecated in API 35 and ignored for apps targeting SDK 35, where the bar is already transparent. |
+
 ---
 
 ## 5. Status-Driven Guidance API

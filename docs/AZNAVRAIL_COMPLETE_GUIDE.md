@@ -66,6 +66,45 @@ export default function AppLayout() {
 }
 ```
 
+### 1.1 Edge-to-edge and window insets (Android 15 / SDK 35)
+
+From Android 15, an app targeting SDK 35 is laid out **edge-to-edge whether it asks or not**, and
+`LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS` is in force. `AzHostActivityLayout` handles that for you —
+there is nothing to opt into:
+
+- **The Activity is put edge-to-edge for you.** The host calls `enableEdgeToEdge()` on the enclosing
+  `ComponentActivity` (falling back to `WindowCompat.setDecorFitsSystemWindows(window, false)` for a
+  host that isn't one). Calling `enableEdgeToEdge()` yourself in `onCreate` is still fine and is what
+  `AzActivity` does — the two are idempotent.
+- **Safe zones clear the display cutout, not just the system bars.** The host resolves each edge as
+  `max(systemBars, displayCutout)`. The cutout is not redundant: under enforced edge-to-edge a camera
+  cutout can occlude an edge that carries no system bar at all — most visibly the short edge in
+  landscape, where the rail docks. `ime` is deliberately **not** folded in (as
+  `WindowInsets.safeDrawing` would), so the layout doesn't jump when the keyboard opens.
+- **Horizontal safe zones exist now.** `AzSafeZones` carries `start` / `end` alongside `top` /
+  `bottom`; both are `0.dp` in portrait and non-zero only where the system reports something to clear
+  (a landscape button navigation bar, or a cutout on that edge). They are applied to the `onscreen`
+  content area, the title row, and the built-in About / Help / More-from-Az overlays. In the
+  `onscreen` area they are combined with the rail gutter by **`max`, not addition** — the rail hugs
+  that same physical edge, so a rail wider than the system inset already clears it. Where that holds
+  (the usual case) the content area is positioned exactly as before; it shifts only when the system
+  inset is genuinely wider than the rail.
+- **Every window the library adds sets the non-deprecated cutout mode.** Android 15 deprecated
+  `LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT`, `…_SHORT_EDGES` and `…_NEVER`, and a window that never
+  assigns the field inherits the deprecated `DEFAULT`. The bottom-sheet overlay, the nav-bar
+  decoration window, and `AzNavRailWindowService`'s default `windowParams` all assign `…_ALWAYS`
+  explicitly. **If you override `windowParams`, keep that assignment** — the Play Console flags the
+  inherited value.
+- **The deprecated bar-colour properties are no longer touched on Android 15+.**
+  `navigationBarColor` / `isNavigationBarContrastEnforced` (used by `AzSheetConfig.drawBehindNavBar`
+  under button navigation) are deprecated in API 35 and ignored for apps targeting SDK 35, so the
+  library only writes them below API 35 — above it, the bar is already transparent and there is
+  nothing to force.
+
+Your own content inside `onscreen { … }` is already inside the safe area. Content you draw yourself
+outside the host — a full-screen `background()`, for instance — is intentionally *not* inset; use
+`LocalAzSafeZones.current` if you want the same treatment.
+
 ---
 
 ## 2. Rail Configuration (DSL)
@@ -1160,7 +1199,7 @@ The overlay also **delivers real window insets to the content**: an `OnApplyWind
 
 **Navigation-mode awareness.** The library detects the device's navigation mode via the `Settings.Secure` `navigation_mode` key (no permission required). Two behaviors follow:
 
-- `AzSheetConfig.drawBehindNavBar` (default `false`): when `true` **and** the device uses button navigation (3-button / 2-button), the sheet draws *behind* the system navigation bar — the exposed height above the bar is unchanged, but the bar is forced see-through so the sheet content shows through it. In the in-tree flavor this sets the host Activity's `navigationBarColor` transparent (and disables contrast enforcement on API 29+), restoring the previous values when the sheet leaves the composition; in the system-overlay flavor `AzNavBarDecorWindow` paints at a capped semi-transparent alpha (`minOf(backgroundAlpha, 0.5)`) so the sheet window behind it shows through. It is a no-op in gesture navigation.
+- `AzSheetConfig.drawBehindNavBar` (default `false`): when `true` **and** the device uses button navigation (3-button / 2-button), the sheet draws *behind* the system navigation bar — the exposed height above the bar is unchanged, but the bar is forced see-through so the sheet content shows through it. In the in-tree flavor this sets the host Activity's `navigationBarColor` transparent (and disables contrast enforcement on API 29+), restoring the previous values when the sheet leaves the composition — **below Android 15 only**, since those properties are deprecated in API 35 and ignored for apps targeting SDK 35, where the bar is already transparent under enforced edge-to-edge. In the system-overlay flavor `AzNavBarDecorWindow` paints at a capped semi-transparent alpha (`minOf(backgroundAlpha, 0.5)`) so the sheet window behind it shows through. It is a no-op in gesture navigation.
 - **Automatic, no flag:** in gesture navigation `AzHostActivityLayout` imposes **zero** bottom margin on on-screen content (it runs edge-to-edge — there is no button bar to clear). Button-navigation devices keep the usual `max(10% content safe-zone, nav-bar inset)` bottom margin. The rail's own symmetric safe-zone is unaffected.
 
 **Pages (Z-ordering).** `onscreen(alignment, page = 0f)` and `background(weight, page = 0f)` take a `page: Float`. Items sharing a page render on one co-planar layer (positioned with standard Compose `alignment`, so distinct alignments — or your own `Row`/`Column` inside the content — tile without overlapping). Items on *different* pages are stacked in Z and may overlap: a **higher** page number draws **further back**, the lowest page on top. Decimal pages (`1.5f`) insert a layer between existing ones without renumbering. `background()` items form their own book of pages beneath the entire `onscreen` book (itself beneath the rail and nav bar); `weight` breaks ties within a background page, and onscreen pages still respect the safe zones. The system is gated by `AzHostActivityLayout(pagesEnabled = true)` (the default); when on it is forced — items with no explicit page share page `0f`. Set `pagesEnabled = false` to fall back to plain declaration-order rendering (backgrounds by `weight`) with `page` ignored. The React port mirrors this on `<AzOnscreen page={…}>` / `<AzBackground page={…}>` and `pagesEnabled`.

@@ -9,15 +9,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -75,6 +72,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.internal.AboutOverlay
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.internal.AzSafeZones
+import com.hereliesaz.aznavrail.internal.azWindowSafeInsets
 import com.hereliesaz.aznavrail.internal.MoreFromAzOverlay
 import com.hereliesaz.aznavrail.service.GithubDocsRepository
 import com.hereliesaz.aznavrail.model.AzMotion
@@ -1082,10 +1080,10 @@ fun AzDropdownMenu(
 
         // Full-screen About reader / More-from-Az carousel for the dropdown. Drawn in its own Popup
         // so it escapes the inline trigger box and covers the whole window (the dropdown has no host
-        // onscreen area). Safe-zone insets come from the system bars since there is no host to
-        // compute the rail's 10%/20% zones.
+        // onscreen area). Safe-zone insets come from the window (system bars union display cutout)
+        // since there is no host to compute the rail's 10%/20% zones.
         if (showAbout || showMoreFromAz) {
-            val systemBars = WindowInsets.systemBars.asPaddingValues()
+            val windowInsets = azWindowSafeInsets()
             Popup(
                 popupPositionProvider = AzFullScreenPopupPositionProvider,
                 onDismissRequest = { showAbout = false; showMoreFromAz = false },
@@ -1093,8 +1091,10 @@ fun AzDropdownMenu(
             ) {
                 CompositionLocalProvider(
                     LocalAzSafeZones provides AzSafeZones(
-                        systemBars.calculateTopPadding(),
-                        systemBars.calculateBottomPadding()
+                        top = windowInsets.top,
+                        bottom = windowInsets.bottom,
+                        start = windowInsets.start,
+                        end = windowInsets.end
                     )
                 ) {
                     Box(Modifier.fillMaxSize()) {
