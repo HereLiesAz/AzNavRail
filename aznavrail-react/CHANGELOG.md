@@ -8,9 +8,22 @@
   the bordered ones beside it. `NONE_SQUARE` and `NONE_CIRCLE` join it: each keeps the footprint of
   the base shape it names, so dropping the border no longer reflows the rail.
 - **`<AzAboutRailItem>`** declares the rail's About (`?`) item explicitly, wherever you render it,
-  replacing the automatic one.
+  replacing the automatic one. It takes the same per-item props as any other item, `info` included.
+- **`useAzAccent()` / `useAzRailSurface()` / `AzRailPaletteContext`** expose the rail's own colours to
+  your components. A rail also *publishes* its palette outside the tree, so a second floating rail —
+  a sibling, somewhere React context cannot reach — inherits from the rail on screen rather than
+  falling back to the library default.
 
 ### Changed
+- **Full parity across both React builds.** Everything below now applies to the React Native build
+  (`src/`) *and* the web build (`src/web/`), which previously had none of it: the About (`?`) rail
+  item, the shared rail palette, the borderless shape family, and the reader's escape hatches. The
+  web reader also adopted the dark ground the other ports already had, and is inset by the rail's
+  gutter so the app icon stays reachable behind it.
+- **The drawer collapses on an outside tap whether or not `dimBehindMenu` is on.** The scrim used to
+  exist only when the developer opted into dimming, which meant the documented "tap outside to
+  collapse" behaviour silently did not exist for anyone who left dimming off. It is now always
+  present while the drawer is open; `dimBehindMenu` decides only whether that area is darkened.
 - **About lives on the rail.** The rail now ends with an About (`?`) rail item in every mode, not
   only in the footer of a drawer the rail may not even have. It persists but it is not fixed:
   declare your own `<AzAboutRailItem>` to move or restyle it, or pass `aboutRailItem: false` to drop

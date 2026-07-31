@@ -157,6 +157,58 @@ const settings: AzNavRailSettings = {
 // Pass this object to the settings prop on AzNavRail
 ```
 
+#### Shapes
+
+`defaultShape` (and every item's `shape`) accepts:
+
+| Shape | Border | Footprint |
+| --- | --- | --- |
+| `CIRCLE` | yes | square box, circular clip |
+| `SQUARE` | yes | square |
+| `RECTANGLE` | yes | wide, fixed height |
+| `TRIANGLE` | yes | square box, rounded-corner triangle |
+| `NONE` | no | wide, fixed height (same as `RECTANGLE`) |
+| `NONE_SQUARE` | no | square |
+| `NONE_CIRCLE` | no | square box, circular clip |
+
+A borderless shape keeps the footprint of the base shape it names, so dropping the border never
+reflows the rail around the item — a `NONE_CIRCLE` item still lines up with the `CIRCLE` items
+beside it. `AzButtonShape.isBorderless` / `.baseShape` expose the mapping (Android/CMP);
+`isBorderlessShape()` / `baseShapeOf()` do the same on React.
+
+#### One palette for every AzNavRail surface
+
+`activeColor` is not just the rail's own accent — it is what **every other AzNavRail surface** draws
+itself in: a second unattached or floating rail, a drop-down menu, the About reader, the
+"More from Az" carousel, the Help overlay, nested-rail popups, popups, and the expanded drawer.
+Chrome that belongs to the same navigation system has to look like it; falling back to the app's
+theme is how a rail's own drop-down ends up a different colour from the rail.
+
+When `activeColor` is left unset, the accent is **derived from the rail's own items** — the colour
+most of them are drawn in — before falling back to the app theme. A rail whose every button is white
+is a white rail, whatever `MaterialTheme.colorScheme.primary` says:
+
+```kotlin
+// No azTheme(activeColor = …) anywhere, yet the drop-down, the About reader and the
+// unattached rail all come out white, because the rail reads as white.
+azRailItem(id = "home", text = "Home", color = Color.White) { }
+azRailItem(id = "docs", text = "Docs", color = Color.White) { }
+```
+
+The mechanism is a CompositionLocal on Android/CMP (`LocalAzRailPalette`, read via the internal
+`azAccent()`), and a React context plus a published fallback for siblings
+(`AzRailPaletteContext` / `useAzAccent()` / `resolveRailAccent()`). Consumers can read it too:
+
+```kotlin
+val accent = LocalAzRailPalette.current.accent   // Color.Unspecified when no rail is present
+```
+```tsx
+const accent = useAzAccent()                     // falls back to the library default
+```
+
+The About reader additionally forces its ground **opaque**: `translucentBackground` supplies the
+hue, never the alpha, because a see-through full-screen reader is an unreadable one.
+
 ### B2. Kinetic Typography (`azKinetics`)
 
 Windows-Phone-7-style motion for the menu words: a staggered **turnstile** entrance/exit on the
@@ -218,6 +270,58 @@ const settings: AzNavRailSettings = {
 > **Note on Help Overlay:**
 > The `HelpOverlay` displays a short, truncated entry for each item to conserve space. Tapping a help card expands it to reveal the full description and any extra text provided in `helpList`. Furthermore, `helpList` can be supplied dynamically to `AzNestedRail` components for distinct, localized help data.
 
+### C2. The About reader (`azAbout`)
+
+```kotlin
+azAbout(
+    inAppAbout = true,          // in-app markdown reader (default) vs opening the repo in a browser
+    moreFromAzEnabled = true,   // offer the "More from Az" carousel inside the reader
+    moreRailItem = false,       // also pin a "More" item at the bottom of the rail
+    aboutRailItem = true,       // end the rail with the built-in About ("?") item
+)
+```
+
+**About is on the RAIL, not only in the drawer.** The rail ends with an About (`?`) **rail item** in
+every mode — including `noMenu` rails, which have no drawer footer to put it in. It persists, but it
+is not fixed:
+
+```kotlin
+azAboutRailItem(id = "about", text = "?", color = Color.White, info = "What this app is")
+azAbout(aboutRailItem = false)   // …or no About item at all
+```
+
+Declaring your own suppresses the automatic one, so its position in the item order, its text, colour,
+shape and help text are yours. On React it is `<AzAboutRailItem id="about" />` and the
+`aboutRailItem` setting.
+
+**Leaving the reader.** It is deliberately easy to get out of:
+
+- tap the About item again;
+- tap **any other rail item, any menu item, or the app icon**;
+- drag down anywhere on the reader (a grab handle announces it);
+- the 48dp close target, or system back.
+
+**The reader never covers the rail's own gutter.** `AzHostActivityLayout` insets the About /
+More-from-Az layer by the rail's width whether or not the rail is folded up. Drawn edge-to-edge over
+a folded rail it would sit on the very app icon you tap to bring the rail back — an app you cannot
+leave the reader from.
+
+### C3. Gestures the rail will and will not claim
+
+The rail is laid out **over the whole window**, so what it listens for is what the app underneath
+does not get. It only installs pointer handlers it can answer, and only consumes the events it acts
+on:
+
+| Situation | What the rail does |
+| --- | --- |
+| Menu expanded | A scrim covering everything **except the rail** collapses the menu on an outside tap. It exists whenever the drawer is open; `dimBehindMenu` only decides whether that area is also darkened. |
+| Drag anywhere on the rail | The drag detector is installed only when the rail is floating, `enableRailDragging` is on, or the menu is swipe-openable. It consumes the pointer only on the branch that actually undocks the rail or moves the menu, so a scroll that starts under the rail still reaches your content. |
+| Tap on the collapsed, docked rail | Only the buttons take taps. The gaps between them — and the empty strip above and below — pass through to whatever the app drew underneath. |
+| Tap while expanded or floating | The rail is a panel in its own right and swallows stray taps. |
+| Nested rail open | A tap-to-dismiss listener exists over the strip **only while one is open**. |
+
+There is deliberately **no window-wide tap listener**. If you find the rail eating a gesture your app
+wanted, that is a bug — file it.
 
 ### D. Drop-down menu — `AzDropdownMenu` (standalone)
 

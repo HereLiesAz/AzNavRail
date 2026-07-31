@@ -97,6 +97,15 @@ A host item can auto-expand its sub-items reactively.
   falls back to the app's initials — the owner's GitHub avatar is never shown as an app icon.
 - While the About / More-from-Az reader is open, the **Help and Tutorial overlays are fully cleared**
   (not composed), and only one reader shows at a time (no bleed-through on a translucent surface).
+- **About is a rail item**, appended to the end of the strip in every mode — including `noMenu` rails
+  that have no drawer footer. It persists but is not fixed: `azAboutRailItem(...)` /
+  `<AzAboutRailItem>` places and styles your own, `azAbout(aboutRailItem = false)` drops it.
+- **Five ways out** of the reader: the About item again, any other rail or menu item, the app icon,
+  drag-down, the 48dp close target, or system back.
+- The reader is **inset by the rail's gutter**, folded or not, so the app icon behind it stays
+  tappable — a reader can never become an app you cannot leave.
+- The reader wears the **rail's** accent, not the app theme's, and always draws on an **opaque**
+  ground (`translucentBackground` supplies the hue, never the alpha).
 
 **Limitations**
 - Discovery and fetching use the **public GitHub API** (unauthenticated) — subject to rate limits;
@@ -110,6 +119,28 @@ A host item can auto-expand its sub-items reactively.
 
 ---
 
+## Gestures the rail claims
+
+**Capabilities**
+- The rail installs pointer handlers **only when it can answer them**: the drag detector exists only
+  while the rail is floating, draggable (`enableRailDragging`), or swipe-openable, and it consumes
+  the pointer only on the branch that actually undocks the rail or moves the menu.
+- Collapsed and docked, only the **buttons** take taps. The gaps between them, and the empty strip
+  above and below, pass through to the app underneath — you can draw, scroll or drag there.
+- Expanded or floating, the rail is a panel in its own right and does swallow stray taps.
+- An outside tap collapses the drawer whether or not `dimBehindMenu` is on; the scrim is inset to
+  exclude the rail, so taps on the rail still reach the rail.
+- The nested-rail tap-to-dismiss listener exists **only while a nested rail is open**.
+
+**Limitations**
+- The rail is laid out over the whole window. Within the rail's own strip, its buttons win — an app
+  gesture that must start exactly on a rail button will not reach the app.
+- A drag the rail *does* act on (undock, swipe-open/close) is consumed; the app will not also see it.
+- On Compose the rail deliberately has **no window-wide tap listener**. If it appears to eat a
+  gesture your app wanted, that is a bug, not a design constraint.
+
+---
+
 ## Platform parity
 
 | Area | Android | React |
@@ -119,6 +150,10 @@ A host item can auto-expand its sub-items reactively.
 | About `.azignore` filtering | ✅ | ✅ |
 | Pinned "More from Az", tap-to-open cards, real app icon | ✅ | ✅ |
 | Clear Help/Tutorial while About open | ✅ | ✅ |
+| About (`?`) rail item, auto-appended + overridable | ✅ | ✅ |
+| Borderless shapes with a base footprint (`NONE_SQUARE`/`NONE_CIRCLE`) | ✅ | ✅ |
+| Shared rail palette for every AzNavRail surface | ✅ `LocalAzRailPalette` | ✅ `AzRailPaletteContext` |
+| Outside-tap collapses the drawer without `dimBehindMenu` | ✅ | ✅ |
 
 ---
 

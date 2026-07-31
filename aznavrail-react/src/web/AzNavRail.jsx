@@ -15,7 +15,13 @@ import AzDivider from './AzDivider';
 import AzTextBox from './AzTextBox';
 import AboutOverlay from './AboutOverlay';
 import MoreFromAzOverlay from './MoreFromAzOverlay';
-import { AzMotion } from '../AzNavRailDefaults';
+import { AzMotion, AzNavRailDefaults } from '../AzNavRailDefaults';
+import {
+  AzRailPaletteContext,
+  resolveRailAccent,
+  usePublishRailPalette,
+  AZ_ACCENT_FALLBACK,
+} from '../AzRailPalette';
 
 /**
  * An M3-style navigation rail that expands into a menu drawer for web applications.
@@ -53,6 +59,7 @@ const AzNavRail = ({
     moreFromAzEnabled = true,
     moreFromAzJsonUrl = 'https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json',
     moreRailItem = false,
+    aboutRailItem = true,
     appRepositoryUrl,
     // WP7 kinetic typography — same defaults as the RN build.
     itemEntrance = 'Turnstile',
@@ -107,6 +114,10 @@ const AzNavRail = ({
 
   const onToggle = () => {
     if (infoScreen) return;
+    // Reaching for the rail means the user is done reading; the reader must never be the thing
+    // standing between them and the app icon.
+    setShowAbout(false);
+    setShowMoreFromAz(false);
     if (effectiveNoMenu) {
       setShowFooterPopup(!showFooterPopup);
     } else {
@@ -400,7 +411,7 @@ const AzNavRail = ({
 
   const renderMenuItem = (item, depth = 0, index = 0, count = 1) => {
     if (item.isDivider) {
-      return <AzDivider key={item.id} color={activeColor || 'currentColor'} />;
+      return <AzDivider key={item.id} color={railAccent || 'currentColor'} />;
     }
 
     const finalItem = item.isCycler
@@ -419,6 +430,9 @@ const AzNavRail = ({
           item={finalItem}
           depth={depth}
           onToggle={onToggle}
+          onLeaveReader={() =>
+            item.isAboutItem ? toggleAbout() : dismissFooterScreens()
+          }
           onCyclerClick={() => handleCyclerClick(item)}
           isHost={isHost}
           isExpanded={isHostExpanded}
@@ -467,11 +481,66 @@ const AzNavRail = ({
     return visible;
   }, [navItems, hostStates, subItemsMap, getEffectiveSubItems]);
 
+  // The colour this rail actually reads as, published to every other AzNavRail surface — the About
+  // reader, More-from-Az, a drop-down. Chrome belonging to the same navigation system has to look
+  // like it, so an unset `activeColor` falls back to the colour the rail's own items are drawn in
+  // before it falls back to the library default.
+  const railAccent = useMemo(
+    () => resolveRailAccent(activeColor, navItems),
+    [activeColor, navItems]
+  );
+  const railPalette = useMemo(
+    () => ({ accent: railAccent, surface: translucentBackground }),
+    [railAccent, translucentBackground]
+  );
+  // Context reaches this rail's own children; the published palette reaches its siblings — a second
+  // floating rail, or anything the host draws outside the rail.
+  usePublishRailPalette(railPalette);
+
+  /** Opens the About reader (or the repo in a browser), and closes it again on a second tap. */
+  const toggleAbout = useCallback(() => {
+    if (inAppAbout) {
+      setShowAbout((prev) => !prev);
+      setIsExpanded(false);
+    } else if (
+      appRepositoryUrl &&
+      (appRepositoryUrl.startsWith('http://') ||
+        appRepositoryUrl.startsWith('https://'))
+    ) {
+      // Only follow safe web URLs, never an injected scheme (e.g. javascript:).
+      window.open(appRepositoryUrl, '_blank', 'noopener,noreferrer');
+    }
+  }, [inAppAbout, appRepositoryUrl]);
+
+  /**
+   * Leaves the About / More-from-Az reader. Any other interaction with the rail means the user is
+   * done reading — a full-screen reader you can only escape through its own close button is a room
+   * with a keyhole for a door.
+   */
+  const dismissFooterScreens = useCallback(() => {
+    setShowAbout(false);
+    setShowMoreFromAz(false);
+  }, []);
+
   const effectiveRailItems = useMemo(() => {
-    return navItems.filter(
+    const strip = navItems.filter(
       (item) => item.isRailItem || item.items || subItemsMap[item.id]
     );
-  }, [navItems, subItemsMap]);
+    // The rail strip ends with the About ("?") button — unless the developer declared their own,
+    // in which case theirs stands where they put it. It persists; it is not fixed. The drawer does
+    // not need one: its footer already carries About.
+    if (!aboutRailItem || navItems.some((i) => i.isAboutItem)) return strip;
+    return [
+      ...strip,
+      {
+        id: AzNavRailDefaults.AutoAboutId,
+        text: '?',
+        isRailItem: true,
+        isAboutItem: true,
+        collapseOnClick: false,
+      },
+    ];
+  }, [navItems, subItemsMap, aboutRailItem]);
 
   const menuItems = useMemo(() => {
     return navItems.filter((item) => !item.isSubItem);
@@ -493,13 +562,17 @@ const AzNavRail = ({
   // accordion; cyclers stay open for multi-tap; any other tap performs its action and folds up.
 
   return (
-    <>
-      {dimBehindMenu && isExpanded && (
+    <AzRailPaletteContext.Provider value={railPalette}>
+      {/* The scrim behind the drawer. It exists whenever the drawer is open, not only when
+          `dimBehindMenu` is on — tapping outside the menu collapses it either way, and the dimming
+          is just whether that area is also darkened. It sits below the rail's own z-index, so taps
+          on the rail still reach the rail. */}
+      {isExpanded && (
         <div
           className="az-nav-rail__scrim"
           style={{
             '--az-scrim-alpha': String(
-              Math.max(0, Math.min(1, dimBehindMenuAlpha))
+              dimBehindMenu ? Math.max(0, Math.min(1, dimBehindMenuAlpha)) : 0
             ),
           }}
           onClick={() => setIsExpanded(false)}
@@ -555,7 +628,7 @@ const AzNavRail = ({
                     return (
                       <AzDivider
                         key={item.id}
-                        color={activeColor || 'currentColor'}
+                        color={railAccent || 'currentColor'}
                       />
                     );
 
@@ -611,9 +684,11 @@ const AzNavRail = ({
                             zIndex: draggedItemId === item.id ? 100 : 1,
                             // Apply active color override if active
                             borderColor:
-                              isActive && activeColor
-                                ? activeColor
-                                : item.color || 'blue',
+                              isActive && railAccent
+                                ? railAccent
+                                : item.color ||
+                                  railAccent ||
+                                  AZ_ACCENT_FALLBACK,
                           }}
                         />
                         {hiddenMenuOpenId === item.id && item.hiddenMenu && (
@@ -740,6 +815,15 @@ const AzNavRail = ({
                         item={{ ...finalItem, isActive }}
                         onCyclerClick={() => handleCyclerClick(item)}
                         onClickOverride={(e) => {
+                          // Reaching for any other rail item is the user leaving the About
+                          // reader; only the About item itself toggles it.
+                          if (item.isAboutItem) {
+                            toggleAbout();
+                            // A declared About item may still carry its own callback.
+                            if (item.onClick) item.onClick();
+                            return;
+                          }
+                          dismissFooterScreens();
                           if (item.isNestedRail) {
                             const rect =
                               e.currentTarget.getBoundingClientRect();
@@ -754,14 +838,16 @@ const AzNavRail = ({
                           }
                           if (item.items || subItemsMap[item.id]) {
                             toggleHost(item);
+                            return;
                           }
+                          if (item.onClick) item.onClick();
                         }}
                         infoScreen={infoScreen}
                         style={{
                           borderColor:
-                            isActive && activeColor
-                              ? activeColor
-                              : item.color || 'blue',
+                            isActive && railAccent
+                              ? railAccent
+                              : item.color || railAccent || AZ_ACCENT_FALLBACK,
                         }}
                       />
                       {/* Sub items rendering */}
@@ -788,9 +874,11 @@ const AzNavRail = ({
                                         : 'none',
                                     zIndex: draggedItemId === sub.id ? 100 : 1,
                                     borderColor:
-                                      subActive && activeColor
-                                        ? activeColor
-                                        : sub.color || 'blue',
+                                      subActive && railAccent
+                                        ? railAccent
+                                        : sub.color ||
+                                          railAccent ||
+                                          AZ_ACCENT_FALLBACK,
                                   }}
                                 />
                               </div>
@@ -805,8 +893,8 @@ const AzNavRail = ({
                     role="button"
                     tabIndex={0}
                     style={{
-                      borderColor: activeColor || 'blue',
-                      color: activeColor || 'blue',
+                      borderColor: railAccent || AZ_ACCENT_FALLBACK,
+                      color: railAccent || AZ_ACCENT_FALLBACK,
                       cursor: 'pointer',
                       marginTop: 8,
                     }}
@@ -828,7 +916,7 @@ const AzNavRail = ({
               flexDirection: 'column',
               alignItems: 'center',
               padding: '16px',
-              color: activeColor || 'currentColor',
+              color: railAccent || 'currentColor',
               // Open: footer arrives one stagger tick AFTER the last menu item begins.
               // Close: no delay — footer is the FIRST thing to go.
               animationDelay: footerClosing
@@ -926,12 +1014,16 @@ const AzNavRail = ({
         </div>
       )}
 
+      {/* The readers never cover the rail's own gutter: drawn edge-to-edge they would sit over the
+          very app icon you tap to get back, and the app becomes a reader you cannot leave. */}
       {showAbout && !!appRepositoryUrl && (
         <AboutOverlay
           repoUrl={appRepositoryUrl}
           settings={settings}
           moreFromAzEnabled={moreFromAzEnabled}
           moreFromAzJsonUrl={moreFromAzJsonUrl}
+          railGutter={collapsedRailWidth}
+          dockingSide={dockingSide}
           onDismiss={() => setShowAbout(false)}
         />
       )}
@@ -940,6 +1032,8 @@ const AzNavRail = ({
         <MoreFromAzOverlay
           jsonUrl={moreFromAzJsonUrl}
           settings={settings}
+          railGutter={collapsedRailWidth}
+          dockingSide={dockingSide}
           onDismiss={() => setShowMoreFromAz(false)}
         />
       )}
@@ -968,7 +1062,7 @@ const AzNavRail = ({
             dockingSide={dockingSide}
           />
         ))}
-    </>
+    </AzRailPaletteContext.Provider>
   );
 };
 

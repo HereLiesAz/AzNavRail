@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import './AboutOverlay.css';
 import { fetchMoreFromAz } from '../services/moreFromAz';
+import { useAzAccent, AZ_ACCENT_FALLBACK } from '../AzRailPalette';
+
+/** The reader's ground and ink — dark in every theme, matching the About reader. */
+const AZ_ABOUT_GROUND = '#101014';
+const AZ_ABOUT_INK = '#ececf0';
 
 /**
  * Full-screen "More from Az" overlay for the web: a horizontal scroll-snap carousel of app-icon
@@ -10,10 +15,18 @@ import { fetchMoreFromAz } from '../services/moreFromAz';
 export default function MoreFromAzOverlay({
   jsonUrl,
   settings = {},
+  railGutter,
+  dockingSide = 'LEFT',
   onDismiss,
 }) {
-  const accent = settings.activeColor || '#6200ee';
-  const surface = settings.translucentBackground || '#ffffff';
+  const railAccent = useAzAccent(AZ_ACCENT_FALLBACK);
+  const accent = settings.activeColor || railAccent;
+  const surface = settings.translucentBackground || AZ_ABOUT_GROUND;
+  // Never cover the rail's own gutter — the app icon behind it has to stay tappable.
+  const gutter =
+    dockingSide === 'RIGHT'
+      ? { right: railGutter || 0 }
+      : { left: railGutter || 0 };
   const [apps, setApps] = useState(null);
   const [selected, setSelected] = useState(0);
 
@@ -29,7 +42,10 @@ export default function MoreFromAzOverlay({
     apps && apps.length ? apps[Math.min(selected, apps.length - 1)] : null;
 
   return (
-    <div className="az-about-overlay" style={{ background: surface }}>
+    <div
+      className="az-about-overlay"
+      style={{ background: surface, color: AZ_ABOUT_INK, ...gutter }}
+    >
       <div className="az-about-header">
         <button
           className="az-about-iconbtn"

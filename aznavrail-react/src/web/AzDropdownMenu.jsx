@@ -7,6 +7,7 @@ import React, {
 } from 'react';
 import AzButton from './AzButton';
 import AboutOverlay from './AboutOverlay';
+import { useAzAccent } from '../AzRailPalette';
 import { solveHybridJustify } from '../util/AzJustify';
 import './AzDropdownMenu.css';
 import { AzMotion } from '../AzNavRailDefaults';
@@ -51,6 +52,9 @@ export const AzDropdownItem = ({
     entranceStaggerMs,
     entranceDurationMs,
   } = useDropdownContext();
+  // The host rail's accent when there is one, so a rail's own drop-down does not arrive in a
+  // different colour from the rail.
+  const railAccent = useAzAccent();
   const press = () => {
     if (route && onNavigate) onNavigate(route);
     onClick && onClick();
@@ -73,7 +77,7 @@ export const AzDropdownItem = ({
         ref={rowRef}
         className={`az-dropdown-menu-item--menu${enabled ? '' : ' disabled'}`}
         style={{
-          'color': textColor || color || undefined,
+          'color': textColor || color || railAccent,
           'display': 'flex',
           'flexDirection': 'column',
           'alignItems':
@@ -107,7 +111,7 @@ export const AzDropdownItem = ({
       text={text}
       shape={shape}
       enabled={enabled}
-      color={color}
+      color={color || railAccent}
       textColor={textColor}
       fillColor={fillColor}
       onClick={press}

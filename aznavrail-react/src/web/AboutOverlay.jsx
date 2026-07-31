@@ -3,6 +3,15 @@ import './AboutOverlay.css';
 import AzMarkdownWeb from './AzMarkdownWeb';
 import { listDocs, fetchDoc } from '../services/githubDocs';
 import { fetchMoreFromAz } from '../services/moreFromAz';
+import { useAzAccent, AZ_ACCENT_FALLBACK } from '../AzRailPalette';
+
+/**
+ * The reader's own palette — dark ground, light ink, in every theme. It is a full-screen surface the
+ * user has stepped *aside* into for long-form reading, and a bright white field is the wrong call
+ * regardless of what the surrounding app is doing. Matches the Android/CMP/RN readers.
+ */
+const AZ_ABOUT_GROUND = '#101014';
+const AZ_ABOUT_INK = '#ececf0';
 
 /**
  * In-app About reader for the web.
@@ -18,10 +27,22 @@ export default function AboutOverlay({
   settings = {},
   moreFromAzEnabled,
   moreFromAzJsonUrl,
+  railGutter,
+  dockingSide = 'LEFT',
   onDismiss,
 }) {
-  const accent = settings.activeColor || '#6200ee';
-  const surface = settings.translucentBackground || '#ffffff';
+  // The reader wears the rail's colour, not the app's. `activeColor` when the developer set one;
+  // failing that, the colour the rail's own items are drawn in (see `resolveRailAccent`).
+  const railAccent = useAzAccent(AZ_ACCENT_FALLBACK);
+  const accent = settings.activeColor || railAccent;
+  // `translucentBackground` supplies the hue; a see-through full-screen reader is unreadable, so
+  // the reader always draws on an opaque ground.
+  const surface = settings.translucentBackground || AZ_ABOUT_GROUND;
+  // Never cover the rail's own gutter — the app icon behind it has to stay tappable.
+  const gutter =
+    dockingSide === 'RIGHT'
+      ? { right: railGutter || 0 }
+      : { left: railGutter || 0 };
 
   const [state, setState] = useState({
     status: 'loading',
@@ -79,7 +100,10 @@ export default function AboutOverlay({
   }, [moreFromAzEnabled, moreFromAzJsonUrl]);
 
   return (
-    <div className="az-about-overlay" style={{ background: surface }}>
+    <div
+      className="az-about-overlay"
+      style={{ background: surface, color: AZ_ABOUT_INK, ...gutter }}
+    >
       <div className="az-about-header">
         {selected && (
           <button

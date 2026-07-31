@@ -47,6 +47,7 @@ import { AboutOverlay } from './components/AboutOverlay';
 import {
   AzRailPaletteContext,
   resolveRailAccent,
+  usePublishRailPalette,
   AZ_ACCENT_FALLBACK,
 } from './AzRailPalette';
 import { MoreFromAzOverlay } from './components/MoreFromAzOverlay';
@@ -764,6 +765,9 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     () => ({ accent: railAccent, surface: config.translucentBackground }),
     [railAccent, config.translucentBackground]
   );
+  // Context reaches this rail's own children; the published palette reaches its siblings — a second
+  // floating rail, or anything the host draws outside `<AzNavRail>`.
+  usePublishRailPalette(railPalette);
 
   const renderRailItem = (
     item: AzNavItem,
@@ -1208,15 +1212,19 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     >
       <AzRailPaletteContext.Provider value={railPalette}>
         <View style={{ flexDirection: flexDirection, height: '100%', flex: 1 }}>
-          {/* Dim scrim behind the drawer: developer-opt-in via `dimBehindMenu`; alpha via
-                `dimBehindMenuAlpha`. Tapping the scrim collapses the menu. */}
-          {dimBehindMenu && isExpanded && !isFloating && (
+          {/* The scrim behind the drawer. It exists whenever the drawer is open, not only when
+              `dimBehindMenu` is on — tapping outside the menu collapses it either way, and the
+              dimming is just whether that area is also darkened. It sits below the rail's own
+              z-index, so taps on the rail still reach the rail. */}
+          {isExpanded && !isFloating && (
             <TouchableOpacity
               onPress={() => setIsExpanded(false)}
               activeOpacity={1}
               style={{
                 ...(StyleSheet.absoluteFill as object),
-                backgroundColor: `rgba(0,0,0,${Math.max(0, Math.min(1, dimBehindMenuAlpha))})`,
+                backgroundColor: dimBehindMenu
+                  ? `rgba(0,0,0,${Math.max(0, Math.min(1, dimBehindMenuAlpha))})`
+                  : 'transparent',
                 zIndex: 5,
               }}
             />

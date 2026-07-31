@@ -13,6 +13,7 @@ import {
   AzRailToggle,
   AzMenuToggle,
   AzHelpRailItem,
+  AzAboutRailItem,
   AzDivider,
   AzRailCycler,
   AzMenuCycler,
@@ -189,7 +190,9 @@ function App() {
       <AzRailItem id="shape-circle" text="Circle" shape={AzButtonShape.CIRCLE} info="AzButtonShape.CIRCLE" onClick={() => console.log('circle')} />
       <AzRailItem id="shape-square" text="Square" shape={AzButtonShape.SQUARE} info="AzButtonShape.SQUARE" onClick={() => console.log('square')} />
       <AzRailItem id="shape-rectangle" text="Rectangle" shape={AzButtonShape.RECTANGLE} info="AzButtonShape.RECTANGLE" onClick={() => console.log('rectangle')} />
-      <AzRailItem id="shape-none" text="No Shape" shape={AzButtonShape.NONE} info="AzButtonShape.NONE — text only" onClick={() => console.log('none')} />
+      <AzRailItem id="shape-none" text="No Shape" shape={AzButtonShape.NONE} info="AzButtonShape.NONE — borderless on the RECTANGLE footprint" onClick={() => console.log('none')} />
+      <AzRailItem id="shape-none-square" text={'None\nSquare'} shape={AzButtonShape.NONE_SQUARE} info="AzButtonShape.NONE_SQUARE — borderless, square footprint" onClick={() => console.log('none-square')} />
+      <AzRailItem id="shape-none-circle" text={'None\nCircle'} shape={AzButtonShape.NONE_CIRCLE} info="AzButtonShape.NONE_CIRCLE — borderless, circle footprint" onClick={() => console.log('none-circle')} />
 
       <AzRailItem
         id="color-item"
@@ -298,6 +301,11 @@ function App() {
       />
 
       <AzRailItem id="loading" text="Load" onClick={() => setIsLoading((v) => !v)} />
+
+      {/* The rail ends with an About ("?") item on its own. Declaring one places it yourself, and
+          `aboutRailItem: false` in settings drops it. Tapping it opens the About reader; tapping it
+          again — or any other rail or menu item, or the app icon — closes it. */}
+      <AzAboutRailItem id="about" text="?" info="The About reader. Persistent, but yours to place." />
 
       <AzDivider />
 

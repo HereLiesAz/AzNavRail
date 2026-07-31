@@ -35,6 +35,9 @@ export {
   AzRailPaletteContext,
   useAzAccent,
   useAzRailSurface,
+  useAzRailPalette,
+  usePublishRailPalette,
+  publishRailPalette,
   resolveRailAccent,
   AZ_ACCENT_FALLBACK,
 } from './AzRailPalette';

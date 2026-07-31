@@ -202,8 +202,9 @@ interface AzNavRailScope {
      * @param text Label drawn in the button. Defaults to `?`.
      * @param color Border/icon color override; defaults to the rail's accent.
      * @param shape Shape override; defaults to the rail's `defaultShape`.
+     * @param info Help-overlay text for this item, like any other rail item's.
      */
-    fun azAboutRailItem(id: String = "about", text: String = "?", content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, badge: String? = null, persistentBadge: Boolean = false, isLoading: Boolean = false)
+    fun azAboutRailItem(id: String = "about", text: String = "?", content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, info: String? = null, badge: String? = null, persistentBadge: Boolean = false, isLoading: Boolean = false)
 
     /**
      * Registers a status-driven guidance **status** — a named boolean [predicate] that becomes a node
@@ -1344,7 +1345,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         )
     }
 
-    override fun azAboutRailItem(id: String, text: String, content: Any?, color: Color?, shape: AzButtonShape?, menuText: String?, textColor: Color?, fillColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean) {
+    override fun azAboutRailItem(id: String, text: String, content: Any?, color: Color?, shape: AzButtonShape?, menuText: String?, textColor: Color?, fillColor: Color?, info: String?, badge: String?, persistentBadge: Boolean, isLoading: Boolean) {
         checkId(id)
         navItems.add(
             AzNavItem.About(
@@ -1357,6 +1358,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
                 textColor = textColor,
                 fillColor = fillColor,
                 shape = shape ?: defaultShape,
+                info = info,
                 badge = badge,
                 persistentBadge = persistentBadge,
                 isLoading = isLoading,

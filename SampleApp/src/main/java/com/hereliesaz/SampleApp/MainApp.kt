@@ -222,6 +222,10 @@ fun MainApp() {
 
         // In-app About reader (auto-generated from this repo's docs) + pinned "More" rail item that
         // opens the "More from Az" carousel.
+        //
+        // The rail ends with an About ("?") item on its own; this app declares its own instead
+        // (below, after the last rail item) to show that the button is placeable and styleable
+        // rather than fixed. `azAbout(aboutRailItem = false)` would drop it entirely.
         azAbout(moreRailItem = true)
 
         azAdvanced(
@@ -418,8 +422,22 @@ fun MainApp() {
             id = "none-shape",
             text = "No Shape",
             shape = AzButtonShape.NONE,
-            info = "azRailItem(shape = AzButtonShape.NONE) — text only, no border or fill",
+            info = "azRailItem(shape = AzButtonShape.NONE) — borderless on the RECTANGLE footprint",
             onClick = { Log.d(TAG, "No Shape item clicked") },
+        )
+        azRailItem(
+            id = "none-square-shape",
+            text = "None\nSquare",
+            shape = AzButtonShape.NONE_SQUARE,
+            info = "azRailItem(shape = AzButtonShape.NONE_SQUARE) — borderless, square footprint",
+            onClick = { Log.d(TAG, "None-square shape clicked") },
+        )
+        azRailItem(
+            id = "none-circle-shape",
+            text = "None\nCircle",
+            shape = AzButtonShape.NONE_CIRCLE,
+            info = "azRailItem(shape = AzButtonShape.NONE_CIRCLE) — borderless, circle footprint",
+            onClick = { Log.d(TAG, "None-circle shape clicked") },
         )
 
         azRailItem(
@@ -758,6 +776,18 @@ fun MainApp() {
             azRailItem(id = "nested-h-3", text = "H-Item 3", route = "nested-h-3", info = "Third horizontal nested item.")
             azHelpRailItem(id = "nested-h-help", text = "?")
         }
+
+        // ---------- About ("?") ----------
+        // Declared explicitly rather than letting the rail append its own, to show that the button
+        // is placeable and styleable: this one carries the theme accent and sits after the nested
+        // rails. Tapping it opens the About reader; tapping it again — or any other rail or menu
+        // item, or the app icon — closes it.
+        azAboutRailItem(
+            id = "about",
+            text = "?",
+            color = themeColor,
+            info = "azAboutRailItem(...) — the About reader. Persistent, but yours to place.",
+        )
 
         // ---------- Host-registered bottom sheet (azBottomSheet DSL) ----------
         // Registered unconditionally so the HIDDEN strip is always present at the bottom of the

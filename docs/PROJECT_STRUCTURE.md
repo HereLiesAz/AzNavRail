@@ -80,6 +80,7 @@ The `aznavrail` directory contains the core `aznavrail` Android library module.
 | `src/main/java/com/hereliesaz/aznavrail/AzNavRail.kt` | The internal `AzNavRail` composable and logic. |
 | `src/main/java/com/hereliesaz/aznavrail/AzNavHost.kt` | Defines `AzHostActivityLayout` (mandatory top-level) and `AzNavHost` (wrapper). |
 | `src/main/java/com/hereliesaz/aznavrail/AzNavRailScope.kt` | The DSL scope definition for `AzNavRail`. |
+| `src/main/java/com/hereliesaz/aznavrail/AzRailPalette.kt` | `LocalAzRailPalette` — the accent/surface every AzNavRail surface inherits from the rail, plus `azResolveRailAccent`. |
 | `src/main/java/com/hereliesaz/aznavrail/AzTextBox.kt` | The `AzTextBox` composable. |
 | `src/main/java/com/hereliesaz/aznavrail/AzForm.kt` | The `AzForm` composable. |
 | `src/main/java/com/hereliesaz/aznavrail/AzRoller.kt` | The slot-machine dropdown dropdown picker. |
