@@ -33,7 +33,10 @@ Add JitPack to your `settings.gradle.kts`:
 - **DSL API**: Simple, declarative API.
 - **Multi-line Items**: Supports multi-line text.
 - **Stateless**: Hoist and manage state yourself.
-- **Shapes**: `CIRCLE`, `SQUARE`, `RECTANGLE`, or `NONE`. `RECTANGLE`/`NONE` auto-size width (fixed 36dp height).
+- **Shapes**: `CIRCLE`, `SQUARE`, `RECTANGLE`, `TRIANGLE`, or the borderless `NONE` family —
+  `NONE` (rectangle footprint), `NONE_SQUARE`, `NONE_CIRCLE`. `RECTANGLE`/`NONE` auto-size width
+  (fixed 36dp height); the borderless shapes keep the footprint of the base shape they name, so
+  dropping the border never reflows the rail.
 - **Smart Collapse**: Items collapse the rail after interaction.
 - **Delayed Cycler**: Built-in delay prevents accidental triggers.
 - **Custom Colors**: Apply custom colors to buttons.
@@ -770,6 +773,19 @@ in-app reader (same namespace derivation; `inAppAbout = false` reverts to a brow
 azConfig(/* appRepositoryUrl = "https://github.com/YourOrg/YourApp" */)  // optional override
 azAbout(inAppAbout = true)   // default; set false to open the repo URL in a browser instead
 ```
+
+The rail itself always ends with an About (`?`) button — a real rail item, appended last, present
+whether or not the rail has a menu. It persists but it is not fixed: declare your own anywhere in the
+item order to move, restyle, or rename it, or drop it entirely.
+
+```kotlin
+azAboutRailItem(id = "about", text = "?", color = Color.White)  // yours, wherever you call it
+azAbout(aboutRailItem = false)                                  // or no rail item at all
+```
+
+Tapping the `?` opens the reader; tapping it again closes it. So does tapping **any other rail or
+menu item**, or the app icon — reaching for the rail means you are done reading. The reader never
+covers the rail's own gutter, so the app icon stays tappable behind it.
 
 ```tsx
 const settings: AzNavRailSettings = {

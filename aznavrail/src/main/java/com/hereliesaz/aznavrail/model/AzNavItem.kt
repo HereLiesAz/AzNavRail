@@ -95,6 +95,13 @@ data class AzNavItem(
     val nestedRailAlignment: AzNestedRailAlignment? = null,
     val nestedRailItems: List<AzNavItem>? = null,
     val isHelpItem: Boolean = false,
+    /**
+     * True for the rail's About affordance — the trailing `?` button. It opens the in-app About
+     * reader (or the repo URL when `inAppAbout` is false) and closes it again on a second tap. One
+     * is appended to the end of the rail automatically; declaring your own with `azAboutRailItem`
+     * replaces it, so its position, text, colour and shape are yours.
+     */
+    val isAboutItem: Boolean = false,
     val keepNestedRailOpen: Boolean = false,
     /**
      * Per-item loading state. When true this item's button hides its content and spins its own
@@ -166,6 +173,42 @@ data class AzNavItem(
             badge = badge,
             persistentBadge = persistentBadge,
             isLoading = isLoading,
+        )
+
+        /**
+         * Factory method for creating an [AzNavItem] designated as the rail's About trigger — the
+         * trailing `?` button.
+         */
+        fun About(
+            id: String,
+            text: String = "?",
+            menuText: String? = null,
+            isRailItem: Boolean = true,
+            content: Any? = null,
+            color: Color? = null,
+            textColor: Color? = null,
+            fillColor: Color? = null,
+            shape: AzButtonShape? = null,
+            badge: String? = null,
+            persistentBadge: Boolean = false,
+            isLoading: Boolean = false,
+        ): AzNavItem = AzNavItem(
+            id = id,
+            text = text,
+            menuText = menuText,
+            isRailItem = isRailItem,
+            isAboutItem = true,
+            content = content,
+            color = color,
+            textColor = textColor,
+            fillColor = fillColor,
+            shape = shape,
+            badge = badge,
+            persistentBadge = persistentBadge,
+            isLoading = isLoading,
+            // The About reader is a place you go, not a menu action; closing the drawer behind you
+            // would hide the rail the reader is drawn beside.
+            collapseOnClick = false,
         )
     }
 }

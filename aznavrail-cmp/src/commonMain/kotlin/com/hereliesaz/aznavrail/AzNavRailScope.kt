@@ -183,8 +183,27 @@ interface AzNavRailScope {
      * @param moreFromAzJsonUrl Raw URL of the `more-from-az.json` manifest.
      * @param moreRailItem When true, pins a "More" item at the bottom of the collapsed rail that
      *   opens the "More from Az" carousel directly.
+     * @param aboutRailItem Whether the rail ends with the built-in About (`?`) button. True by
+     *   default: About is how the user finds out what the app is, and burying it inside a menu the
+     *   rail may not even have is how it goes unfound. Set false to drop it entirely, or declare
+     *   your own with [azAboutRailItem] to place and style it yourself.
      */
-    fun azAbout(inAppAbout: Boolean = true, moreFromAzEnabled: Boolean = true, moreFromAzJsonUrl: String = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json", moreRailItem: Boolean = false)
+    fun azAbout(inAppAbout: Boolean = true, moreFromAzEnabled: Boolean = true, moreFromAzJsonUrl: String = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json", moreRailItem: Boolean = false, aboutRailItem: Boolean = true)
+
+    /**
+     * Declares the rail's About (`?`) item **explicitly**, in the position you call it from.
+     *
+     * The rail appends one of these on its own when you declare none, so About is always reachable;
+     * declaring your own replaces that automatic item, which is the point — the button persists, it
+     * is not fixed. Tapping it opens the in-app About reader (or the repo URL when `azAbout` was
+     * given `inAppAbout = false`), and tapping it again closes it.
+     *
+     * @param id Unique item id.
+     * @param text Label drawn in the button. Defaults to `?`.
+     * @param color Border/icon color override; defaults to the rail's accent.
+     * @param shape Shape override; defaults to the rail's `defaultShape`.
+     */
+    fun azAboutRailItem(id: String = "about", text: String = "?", content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, badge: String? = null, persistentBadge: Boolean = false, isLoading: Boolean = false)
 
     /**
      * Registers a status-driven guidance **status** — a named boolean [predicate] that becomes a node
@@ -1041,6 +1060,14 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     /** Colors used for the connecting lines drawn in the Help overlay. Falls back to a built-in rainbow palette. */
     var helpLineColors: List<Color> = emptyList()
 
+    /**
+     * The colour this rail actually reads as — [activeColor] when set, otherwise the colour most of
+     * its own items are drawn in. Published as [com.hereliesaz.aznavrail.LocalAzRailPalette] so a
+     * second rail, a drop-down, the About reader and every other AzNavRail surface can match the
+     * rail on screen instead of the app's theme. [Color.Unspecified] when the rail stated no colour.
+     */
+    val railAccent: Color get() = azResolveRailAccent(activeColor, navItems)
+
     // Kinetic typography (set by [azKinetics]). Defaults animate — the library's signature WP7 look.
     /** Entrance played by each expanded-menu item when the menu opens. */
     var itemEntrance: AzEntrance = AzEntrance.Turnstile
@@ -1089,12 +1116,13 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         this.justifyMenuItems = justifyMenuItems
     }
 
-    override fun azAbout(inAppAbout: Boolean, moreFromAzEnabled: Boolean, moreFromAzJsonUrl: String, moreRailItem: Boolean) {
+    override fun azAbout(inAppAbout: Boolean, moreFromAzEnabled: Boolean, moreFromAzJsonUrl: String, moreRailItem: Boolean, aboutRailItem: Boolean) {
         this.advancedConfig = this.advancedConfig.copy(
             inAppAbout = inAppAbout,
             moreFromAzEnabled = moreFromAzEnabled,
             moreFromAzJsonUrl = moreFromAzJsonUrl,
-            moreFromAzRailItem = moreRailItem
+            moreFromAzRailItem = moreRailItem,
+            aboutRailItem = aboutRailItem
         )
     }
 
@@ -1312,6 +1340,26 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
                 textColor = textColor,
                 fillColor = fillColor,
                 shape = shape ?: defaultShape
+            )
+        )
+    }
+
+    override fun azAboutRailItem(id: String, text: String, content: Any?, color: Color?, shape: AzButtonShape?, menuText: String?, textColor: Color?, fillColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean) {
+        checkId(id)
+        navItems.add(
+            AzNavItem.About(
+                id = id,
+                text = text,
+                menuText = menuText,
+                isRailItem = true,
+                content = content,
+                color = color,
+                textColor = textColor,
+                fillColor = fillColor,
+                shape = shape ?: defaultShape,
+                badge = badge,
+                persistentBadge = persistentBadge,
+                isLoading = isLoading,
             )
         )
     }

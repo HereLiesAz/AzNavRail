@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import coil3.compose.rememberAsyncImagePainter
+import com.hereliesaz.aznavrail.azAccent
 import com.hereliesaz.aznavrail.model.AzDropdownTrigger
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import kotlin.math.roundToInt
@@ -93,7 +94,7 @@ internal fun AzDropdownTriggerButton(
     modifier: Modifier = Modifier,
 ) {
     val spec = slot.spec
-    val accent = spec.color.takeOrElse { MaterialTheme.colorScheme.primary }
+    val accent = spec.color.takeOrElse { azAccent() }
     val clipShape: Shape? = when (spec.iconShape) {
         AzHeaderIconShape.CIRCLE -> CircleShape
         AzHeaderIconShape.ROUNDED -> RoundedCornerShape(12.dp)

@@ -29,6 +29,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.geometry.Rect
+import com.hereliesaz.aznavrail.azAccent
 import com.hereliesaz.aznavrail.AzNavRailButton
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzNavItem
@@ -155,7 +156,7 @@ private fun NestedItemWrapper(
                     }
                 },
                 text = item.text,
-                color = alert?.color() ?: item.color ?: MaterialTheme.colorScheme.onSurface,
+                color = alert?.color() ?: item.color ?: azAccent(),
                 activeColor = alert?.color() ?: activeColor,
                 textColor = if (alert != null) alert.color() else item.textColor,
                 fillColor = item.fillColor,

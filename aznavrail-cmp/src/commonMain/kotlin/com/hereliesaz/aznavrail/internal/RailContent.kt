@@ -9,7 +9,6 @@ import com.hereliesaz.aznavrail.model.AzEasing
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Alignment
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -18,6 +17,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -26,6 +27,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.AzNavRailButton
+import com.hereliesaz.aznavrail.azAccent
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 
@@ -48,7 +50,8 @@ import com.hereliesaz.aznavrail.model.AzNavItem
  * @param onBoundsCalculated Secondary bounds callback written directly to the scope's bounds cache.
  * @param helpEnabled When true, disables non-host/non-help interactions and dims other items.
  * @param dragModifier Additional pointer-input modifier attached for relocatable drag handling.
- * @param activeColor Override for the active-state color; falls back to [MaterialTheme.colorScheme.primary].
+ * @param activeColor Override for the active-state color; falls back to the host rail's accent
+ *   (see [com.hereliesaz.aznavrail.azAccent]) and then to the app theme.
  */
 @Composable
 internal fun RailContent(
@@ -73,6 +76,11 @@ internal fun RailContent(
     /** Reports a `RANGE` slider item's new span. */
     onSliderRangeChange: ((String, ClosedFloatingPointRange<Float>) -> Unit)? = null,
 ) {
+    // Every unstyled item resolves to the rail's own accent — the rail's `activeColor` when it set
+    // one, else the colour its items are drawn in, else the app theme. That is what lets a second
+    // (floating / unattached) rail match the rail already on screen instead of the app's palette.
+    val railAccent = azAccent()
+
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
         item.isCycler -> item.selectedOption ?: ""
@@ -149,7 +157,7 @@ internal fun RailContent(
                 item = item,
                 buttonSize = buttonSize,
                 enabled = isEnabled,
-                color = item.color ?: activeColor ?: MaterialTheme.colorScheme.primary,
+                color = item.color ?: railAccent,
                 onValueChange = { onSliderChange?.invoke(item.id, it) },
                 onRangeChange = { onSliderRangeChange?.invoke(item.id, it) },
             )
@@ -168,7 +176,7 @@ internal fun RailContent(
             animationSpec = tween(durationMillis = AzMotion.SettleDurationMs, easing = AzEasing.Wp7Decelerate),
             label = "az-alert-morph",
         )
-        val baseColor = item.color ?: MaterialTheme.colorScheme.primary
+        val baseColor = item.color ?: railAccent
         // Remember the colour the alert was, so the morph *out* has something to fade back from —
         // otherwise the colour snaps to normal on the frame the alert clears, while the shape is
         // still a triangle.
@@ -186,7 +194,7 @@ internal fun RailContent(
             modifier = Modifier,
             color = morphedColor,
             activeColor = if (alertProgress > 0f && alertColor != null) morphedColor
-                else (activeColor ?: MaterialTheme.colorScheme.primary),
+                else (activeColor ?: Color.Unspecified).takeOrElse { railAccent },
             textColor = if (alertProgress > 0f && alertColor != null) morphedColor else item.textColor,
             fillColor = item.fillColor,
             size = buttonSize,
@@ -218,7 +226,7 @@ internal fun RailContent(
             com.hereliesaz.aznavrail.AzBadge(
                 text = item.badge,
                 modifier = Modifier.align(Alignment.TopEnd),
-                containerColor = item.color ?: activeColor ?: MaterialTheme.colorScheme.primary,
+                containerColor = item.color ?: railAccent,
             )
         }
     }

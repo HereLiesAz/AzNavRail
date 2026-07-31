@@ -24,6 +24,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
@@ -37,6 +39,7 @@ import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.navigation.NavController
+import com.hereliesaz.aznavrail.azAccent
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzMenuItemAlignment
 import com.hereliesaz.aznavrail.model.AzNavItem
@@ -167,8 +170,12 @@ internal fun MenuItem(
         }
     }
 
-    val effectiveActiveColor = activeColor ?: MaterialTheme.colorScheme.primary
-    val effectiveDefaultColor = item.textColor ?: item.color ?: MaterialTheme.colorScheme.primary
+    // `Color.Unspecified` is a real value, not null, so `?:` alone would let an unset accent through
+    // and paint the row in nothing. Resolve through the host rail's palette, then the theme.
+    val railAccent = azAccent()
+    val effectiveActiveColor = (activeColor ?: Color.Unspecified).takeOrElse { railAccent }
+    val effectiveDefaultColor =
+        (item.textColor ?: item.color ?: Color.Unspecified).takeOrElse { railAccent }
 
     // A menu row is type, not a button, so an alerted item can't become a triangle here — it takes
     // the same warning yellow instead, so the drawer and the rail agree about which item is flagged.

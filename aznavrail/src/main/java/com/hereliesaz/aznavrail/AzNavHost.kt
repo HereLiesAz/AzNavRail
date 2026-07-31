@@ -431,6 +431,14 @@ fun AzHostActivityLayout(
     val guidanceController = rememberAzGuidanceController()
 
     val railScope = scope.getRailScopeImpl()
+    // The colours the rail is actually wearing, published to everything else the host draws — a
+    // second (unattached / floating) rail, a drop-down, the About reader, the Help overlay. Chrome
+    // that belongs to the same navigation system has to look like it; falling back to the app's
+    // theme is how a rail's own drop-down ends up a different colour from the rail.
+    val railPalette = AzRailPalette(
+        accent = railScope.railAccent,
+        surface = railScope.translucentBackground,
+    )
     val dockingSide = railScope.dockingSide
     val railWidth = railScope.collapsedWidth
     val usePhysicalDocking = railScope.usePhysicalDocking
@@ -497,6 +505,15 @@ fun AzHostActivityLayout(
         val endPadding = if (visualSide == AzVisualSide.RIGHT && !isStationaryFolded) railWidth else 0.dp
         val topPadding = if (visualSide == AzVisualSide.TOP && !isStationaryFolded) railWidth else 0.dp
         val bottomPadding = if (visualSide == AzVisualSide.BOTTOM && !isStationaryFolded) railWidth else 0.dp
+
+        // The rail's gutter, reserved whether or not the rail is folded up. Onscreen content is free
+        // to reclaim it while the rail is a lone app icon (above), but a full-screen overlay is not:
+        // drawn edge-to-edge it covers the very icon you tap to bring the rail back, and the app
+        // becomes a reader you cannot leave.
+        val railGutterStart = if (visualSide == AzVisualSide.LEFT) railWidth else 0.dp
+        val railGutterEnd = if (visualSide == AzVisualSide.RIGHT) railWidth else 0.dp
+        val railGutterTop = if (visualSide == AzVisualSide.TOP) railWidth else 0.dp
+        val railGutterBottom = if (visualSide == AzVisualSide.BOTTOM) railWidth else 0.dp
 
         // Identify active item and pull actual transient states
         val railScopeImpl = scope.getRailScopeImpl()
@@ -591,7 +608,8 @@ fun AzHostActivityLayout(
         }
 
         CompositionLocalProvider(
-            LocalAzNavHostScope provides scope
+            LocalAzNavHostScope provides scope,
+            LocalAzRailPalette provides railPalette
         ) {
             AzHostFragmentLayout(
                 safeTop = safeTop,
@@ -610,6 +628,7 @@ fun AzHostActivityLayout(
         CompositionLocalProvider(
             LocalAzNavHostPresent provides true,
             LocalAzNavHostScope provides scope,
+            LocalAzRailPalette provides railPalette,
             LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom, safeStart, safeEnd),
             LocalAzGuidanceController provides guidanceController
         ) {
@@ -635,6 +654,7 @@ fun AzHostActivityLayout(
         // Help / More-from-Az still cover everything.
         CompositionLocalProvider(
             LocalAzNavHostScope provides scope,
+            LocalAzRailPalette provides railPalette,
             LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom, safeStart, safeEnd)
         ) {
             AzUnattachedRail(
@@ -661,6 +681,7 @@ fun AzHostActivityLayout(
 
         CompositionLocalProvider(
             LocalAzNavHostScope provides scope,
+            LocalAzRailPalette provides railPalette,
             LocalAzSafeZones provides AzSafeZones(safeTop, safeBottom, safeStart, safeEnd),
         ) {
             if (scope.aboutVisible || scope.moreFromAzVisible) {
@@ -671,10 +692,10 @@ fun AzHostActivityLayout(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(
-                            top = topPadding,
-                            bottom = bottomPadding,
-                            start = startPadding,
-                            end = endPadding
+                            top = railGutterTop,
+                            bottom = railGutterBottom,
+                            start = railGutterStart,
+                            end = railGutterEnd
                         )
                 ) {
                     // Only one reader at a time: when More-from-Az is open it fully replaces About, so

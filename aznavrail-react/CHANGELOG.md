@@ -1,6 +1,29 @@
 # Changelog
 
-## Unreleased — motion, the rail slider, the help item, and the About reader
+## Unreleased — borderless shapes, About on the rail, and one palette for every surface
+
+### Added
+- **Borderless shapes now have a base shape.** `AzButtonShape.NONE` kept the wide `RECTANGLE`
+  footprint and there was no way to ask for anything else, so a borderless item never lined up with
+  the bordered ones beside it. `NONE_SQUARE` and `NONE_CIRCLE` join it: each keeps the footprint of
+  the base shape it names, so dropping the border no longer reflows the rail.
+- **`<AzAboutRailItem>`** declares the rail's About (`?`) item explicitly, wherever you render it,
+  replacing the automatic one.
+
+### Changed
+- **About lives on the rail.** The rail now ends with an About (`?`) rail item in every mode, not
+  only in the footer of a drawer the rail may not even have. It persists but it is not fixed:
+  declare your own `<AzAboutRailItem>` to move or restyle it, or pass `aboutRailItem: false` to drop
+  it. Tapping it toggles the reader.
+- **The About reader is easy to leave.** Tapping any other rail item, any menu item, or the app icon
+  closes it — only the About item itself toggles.
+- **Every AzNavRail surface takes its colour from the rail, not the app's theme.** `AzNavRail`
+  publishes `AzRailPaletteContext`; a floating rail, a drop-down menu, the About reader and the
+  More-from-Az carousel resolve their accent through `useAzAccent()`. The accent is `activeColor`
+  when set, otherwise the colour most of the rail's own items are drawn in (`resolveRailAccent`) —
+  a rail whose every button is white is a white rail, whatever the theme's primary says.
+
+## Earlier unreleased — motion, the rail slider, the help item, and the About reader
 
 ### Changed
 - **One motion scale (`AzMotion`), and everything got faster.** Every transition in the library now

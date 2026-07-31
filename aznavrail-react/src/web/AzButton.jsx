@@ -30,11 +30,21 @@ const AzButton = ({
   className = '',
   style = {},
 }) => {
-  const isFixedSize = shape === 'CIRCLE' || shape === 'SQUARE';
+  // A borderless shape keeps the footprint of the base shape it names, so dropping the border never
+  // reflows the rail around the item.
+  const base =
+    shape === 'NONE'
+      ? 'RECTANGLE'
+      : shape === 'NONE_SQUARE'
+        ? 'SQUARE'
+        : shape === 'NONE_CIRCLE'
+          ? 'CIRCLE'
+          : shape;
+  const isFixedSize = base === 'CIRCLE' || base === 'SQUARE';
   const fitTextRef = useFitText();
   const textRef = isFixedSize ? fitTextRef : null;
 
-  const shapeClass = `az-button-shape-${shape.toLowerCase()}`;
+  const shapeClass = `az-button-shape-${shape.toLowerCase().replace(/_/g, '-')}`;
 
   const lowerColor = color.toLowerCase();
   const computedFillColor =

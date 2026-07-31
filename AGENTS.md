@@ -194,6 +194,26 @@ configurable (mirroring the rail's `azTheme`). Only the dropped list is an overl
   exactly like `MenuItem.kt`. RN/web use an `onNavigate(route)` prop + `route?` on `AzDropdownItem`.
 - Controlled `expanded`/`onExpandedChange` remain. Tapping outside, back, or an item folds it up.
 
+Every AzNavRail surface takes its colour from the RAIL, not from the app's theme. `AzNavRail`
+publishes `LocalAzRailPalette` (`AzRailPalette(accent, surface)`); a second unattached/floating rail,
+a drop-down menu, the About reader, the Help overlay, nested rails, popups and the drawer all resolve
+their accent through `azAccent()`, which falls back to `MaterialTheme.colorScheme` only when there is
+no rail. The accent itself is `AzNavRailScopeImpl.railAccent`: `activeColor` when the developer set
+one, otherwise the colour most of the rail's own items are drawn in (`azResolveRailAccent`) — a rail
+whose every button is white is a white rail, whatever `colorScheme.primary` says. The About reader
+additionally forces its ground opaque: `translucentBackground` supplies the hue, never the alpha,
+because a see-through full-screen reader is an unreadable one.
+
+The rail must not be greedy with gestures. It is laid out over the whole window, so it may only
+install pointer handlers it will actually answer, and may only consume the events it acts on:
+- no window-wide tap listener — the expanded menu's scrim (inset to exclude the rail) collapses on
+  outside taps;
+- the drag detector is attached only when the rail is floating, draggable, or swipe-openable, and
+  `change.consume()` is called only on the branch that actually undocks or moves the menu;
+- the rail Surface swallows stray taps only while it is expanded or floating; collapsed and docked it
+  is a mostly-empty full-height strip whose gaps belong to the app underneath;
+- the "tap to dismiss the open nested rail" listener exists only while a nested rail is open.
+
 Drop-down trigger: `AzDropdownMenu`'s trigger is chosen with `azConfig(trigger = …)` from the sanctioned
 `AzDropdownTrigger` set — `MoreVert` (three vertical dots, **the default**), `Hamburger`, `AppIcon` (the
 launcher icon, the pre-trigger default), `Text("…")`, or `Icon(model)` (ImageVector/Painter/URL/any Coil
@@ -326,7 +346,20 @@ suffix like `.debug` is stripped), via `GithubDocsRepository.repoUrlFromPackage`
 derivation **never** falls back to the AzNavRail library repo. On **web** there is no namespace, so
 `appRepositoryUrl` is **required** there (no auto-derivation); when unset the About entry is hidden.
 
-Configured via `azAbout(inAppAbout, moreFromAzEnabled, moreFromAzJsonUrl, moreRailItem)`;
+About lives on the RAIL, not only in the drawer. The rail always ends with an About ("?") rail
+item — an ordinary `AzNavItem` (`isAboutItem`, id `AzNavRailDefaults.AUTO_ABOUT_ID`) appended to the
+strip, in every mode, not the hand-drawn footer glyph that used to appear only for `noMenu` rails.
+It persists but it is NOT fixed: `azAboutRailItem(id, text, color, shape, …)` declares your own in
+whatever position you call it from and suppresses the automatic one, and `azAbout(aboutRailItem =
+false)` drops it. Tapping it toggles the reader.
+
+The About reader must be easy to LEAVE. Tapping any other rail item, any menu item, or the app icon
+closes it (only the About item itself toggles); back and drag-down still work. And it never covers
+the rail's own gutter — `AzHostActivityLayout` insets the About / More-from-Az layer by the rail
+width whether or not the rail is folded up, because an overlay drawn edge-to-edge over a folded rail
+covers the very app icon you tap to bring the rail back.
+
+Configured via `azAbout(inAppAbout, moreFromAzEnabled, moreFromAzJsonUrl, moreRailItem, aboutRailItem)`;
 `inAppAbout = false` restores the browser behavior. A repo-root `.azignore` (one pattern per line;
 `#` comments; exact paths, `dir/` prefixes, or `*` globs) excludes listed docs from the About TOC —
 implemented in `GithubDocsRepository.parseIgnore`/`isIgnored` (Android) and `githubDocs.ts` (React).

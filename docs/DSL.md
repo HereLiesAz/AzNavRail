@@ -72,6 +72,15 @@ fun azTheme(
 )
 ~~~
 
+`defaultShape` accepts `CIRCLE`, `SQUARE`, `RECTANGLE`, `TRIANGLE`, and the borderless family —
+`NONE` (rectangle footprint), `NONE_SQUARE`, `NONE_CIRCLE`. A borderless shape keeps the footprint of
+the base shape it names, so dropping the border never reflows the rail around the item.
+
+`activeColor` is also what every **other** AzNavRail surface draws itself in — a second unattached or
+floating rail, a drop-down menu, the About reader, the Help overlay. When it is left unset the accent
+is derived from the rail's own items (the colour most of them use) rather than from the app's theme:
+a rail whose every button is white is a white rail.
+
 `headerIconSize` pins the header app-icon to an exact diameter. When left `Dp.Unspecified` the icon
 sizes itself to the rail width (legacy behavior).
 
@@ -145,9 +154,16 @@ fun azAbout(
     inAppAbout: Boolean = true,        // footer "About" opens the in-app reader vs a browser
     moreFromAzEnabled: Boolean = true, // show the "More from Az" entry in the About screen
     moreFromAzJsonUrl: String = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json",
-    moreRailItem: Boolean = false      // also pin a "More" item at the bottom of the rail
+    moreRailItem: Boolean = false,     // also pin a "More" item at the bottom of the rail
+    aboutRailItem: Boolean = true      // end the rail with the built-in About ("?") item
 )
 ~~~
+
+The rail ends with an About (`?`) **rail item** in every mode — not only in the drawer's footer,
+which a `noMenu` rail does not have. It persists but it is not fixed: `azAboutRailItem(...)` declares
+your own anywhere in the item order and suppresses the automatic one, and `aboutRailItem = false`
+drops it. Tapping it toggles the reader; tapping any other rail or menu item, or the app icon, closes
+it. The reader never covers the rail's own gutter, so the app icon stays reachable behind it.
 
 The About reader auto-discovers the markdown docs (root + `docs/`) of the resolved repo via the GitHub
 API (cached; public repos only) and renders them inline. On **Android** the repo is auto-derived from
@@ -257,6 +273,7 @@ The following functions are used to define the rail structure.
 
 * `azMenuItem(id, text, route, content, color, shape, disabled, screenTitle, info, onClick)`
 * `azHelpRailItem(id, text, content, color, shape)`
+* `azAboutRailItem(id, text, content, color, shape, menuText, textColor, fillColor, badge, persistentBadge, isLoading)` — the rail's About (`?`) button, declared explicitly in the position you call it from. The rail appends one automatically when you declare none, so About is always reachable; yours replaces it. `azAbout(aboutRailItem = false)` drops it entirely.
 * `azRailItem(id, text, route, content, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick)`
 * `@Composable azNestedRail(id, text, route, content, color, shape, alignment, disabled, screenTitle, info, classifiers, onFocus) { ... }`
 * `azMenuToggle(id, isChecked, toggleOnText, toggleOffText, route, color, shape, disabled, screenTitle, info, onClick)`

@@ -212,16 +212,21 @@ internal fun RailItems(
     val onHiddenMenuDismiss: () -> Unit = { hiddenMenuOpenId = null }
     val onUpdateLastTappedId: (String) -> Unit = { id -> lastTappedId = id }
 
-    Box(modifier = Modifier.pointerInput(Unit) {
-        detectTapGestures(onTap = {
-            if (scope.nestedRailOpenId != null) {
+    // Listen for the "tap the rail to dismiss the open nested rail" gesture only while there IS an
+    // open nested rail. Installed unconditionally it sat over every rail button for the whole life
+    // of the rail, taking taps the app might otherwise have received.
+    val dismissNestedRailOnTap = if (scope.nestedRailOpenId == null) Modifier else {
+        Modifier.pointerInput(scope.nestedRailOpenId) {
+            detectTapGestures(onTap = {
                 val openNestedItem = scope.navItems.find { it.id == scope.nestedRailOpenId }
                 if (openNestedItem?.keepNestedRailOpen != true) {
                     scope.nestedRailOpenId = null
                 }
-            }
-        })
-    }) {
+            })
+        }
+    }
+
+    Box(modifier = dismissNestedRailOnTap) {
         if (isHorizontal) {
             Row {
                 itemsToRender.forEachIndexed { index, item ->
@@ -731,7 +736,7 @@ private fun DraggableRailItemWrapper(
                     onBoundsCalculated = { id, bounds -> scope.itemBoundsCache[id] = bounds },
                     helpEnabled = helpEnabled,
                     dragModifier = dragModifier,
-                    activeColor = scope.activeColor,
+                    activeColor = scope.railAccent,
                     rotationDegrees = rotationDegrees,
                     onSliderChange = { id, v -> scope.onSliderChangeMap[id]?.invoke(v) },
                     onSliderRangeChange = { id, r -> scope.onSliderRangeChangeMap[id]?.invoke(r) },
@@ -780,7 +785,7 @@ private fun DraggableRailItemWrapper(
                             onBoundsCleared = { id -> scope.itemBoundsCache.remove(id) },
                     helpEnabled = helpEnabled,
                     dragModifier = dragModifier,
-                    activeColor = scope.activeColor,
+                    activeColor = scope.railAccent,
                     rotationDegrees = rotationDegrees,
                     onSliderChange = { id, v -> scope.onSliderChangeMap[id]?.invoke(v) },
                     onSliderRangeChange = { id, r -> scope.onSliderRangeChangeMap[id]?.invoke(r) },
@@ -800,7 +805,7 @@ private fun DraggableRailItemWrapper(
                         parentItem = item,
                         items = item.nestedRailItems ?: emptyList(),
                         currentDestination = currentDestination,
-                        activeColor = scope.activeColor,
+                        activeColor = scope.railAccent,
                         activeClassifiers = scope.activeClassifiers,
                         onItemSelected = { subItem ->
                             scope.onClickMap[subItem.id]?.invoke()
@@ -838,7 +843,7 @@ private fun DraggableRailItemWrapper(
                         parentItem = item,
                         items = item.nestedRailItems ?: emptyList(),
                         currentDestination = currentDestination,
-                        activeColor = scope.activeColor,
+                        activeColor = scope.railAccent,
                         activeClassifiers = scope.activeClassifiers,
                         onItemSelected = { subItem ->
                             scope.onClickMap[subItem.id]?.invoke()
@@ -904,7 +909,7 @@ private fun DraggableRailItemWrapper(
                     onRailCyclerClick = {},
                     onItemClick = {},
                     helpEnabled = helpEnabled,
-                    activeColor = scope.activeColor,
+                    activeColor = scope.railAccent,
                     rotationDegrees = rotationDegrees,
                     onSliderChange = { id, v -> scope.onSliderChangeMap[id]?.invoke(v) },
                     onSliderRangeChange = { id, r -> scope.onSliderRangeChangeMap[id]?.invoke(r) },

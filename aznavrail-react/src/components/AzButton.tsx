@@ -8,7 +8,7 @@ import {
   StyleSheet,
   ImageSourcePropType,
 } from 'react-native';
-import { AzButtonShape } from '../types';
+import { AzButtonShape, baseShapeOf, isBorderlessShape } from '../types';
 import { AzLoad } from './AzLoad';
 import { renderFillContent } from './fillContent';
 
@@ -68,10 +68,13 @@ export const AzButton: React.FC<AzButtonProps> = ({
   badge,
   persistentBadge = false,
 }) => {
-  const isCircle = shape === AzButtonShape.CIRCLE;
-  const isSquare = shape === AzButtonShape.SQUARE;
-  const isRectangle = shape === AzButtonShape.RECTANGLE;
-  const isNone = shape === AzButtonShape.NONE;
+  // A borderless shape keeps the footprint of the base shape it names, so dropping the border never
+  // reflows the rail around the item.
+  const base = baseShapeOf(shape);
+  const isCircle = base === AzButtonShape.CIRCLE;
+  const isSquare = base === AzButtonShape.SQUARE;
+  const isRectangle = base === AzButtonShape.RECTANGLE;
+  const isNone = isBorderlessShape(shape);
 
   const [showBadge, setShowBadge] = React.useState(!!badge);
 
@@ -113,7 +116,7 @@ export const AzButton: React.FC<AzButtonProps> = ({
 
   if (isCustomContent) {
     containerStyle.width = size;
-    containerStyle.height = isRectangle || isNone ? 40 : size;
+    containerStyle.height = isRectangle ? 40 : size;
     if (isCircle) containerStyle.borderRadius = size / 2;
     else containerStyle.borderRadius = 0;
   } else {
@@ -129,10 +132,6 @@ export const AzButton: React.FC<AzButtonProps> = ({
       containerStyle.width = size;
       containerStyle.height = 40;
       containerStyle.borderRadius = 0;
-    } else if (isNone) {
-      // Invisible rectangle
-      containerStyle.width = size;
-      containerStyle.height = 40;
     }
   }
 

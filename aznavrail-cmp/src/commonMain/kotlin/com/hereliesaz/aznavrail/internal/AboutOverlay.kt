@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -116,8 +117,16 @@ internal fun AboutOverlay(
     onDismiss: () -> Unit,
 ) {
     val uriHandler = LocalUriHandler.current
-    val accent = scope.activeColor.takeIf { it != Color.Unspecified } ?: MaterialTheme.colorScheme.primary
-    val surface = scope.translucentBackground.takeIf { it != Color.Unspecified } ?: AzAboutColors.Ground
+    // The reader wears the rail's colour, not the app theme's. `activeColor` when the developer set
+    // one; failing that, the colour the rail's own items are drawn in. A theme-primary fallback is
+    // how the reader ended up as near-invisible grey-on-black beside a white rail.
+    val accent = scope.railAccent.takeOrElse { MaterialTheme.colorScheme.primary }
+    // `translucentBackground` styles popups — a see-through full-screen reader is unreadable, so its
+    // hue is honoured but its alpha is not.
+    val surface = scope.translucentBackground
+        .takeIf { it != Color.Unspecified }
+        ?.copy(alpha = 1f)
+        ?: AzAboutColors.Ground
     // Safe-zone insets come from the host (rail) or a dropdown-supplied default; rail-offset padding,
     // when present, is applied by the caller's wrapper.
     val safe = LocalAzSafeZones.current
@@ -299,7 +308,7 @@ private fun DocReader(entry: AzDocEntry, accent: Color) {
         Box(Modifier.fillMaxSize(), Alignment.Center) { AzLoad() }
     } else {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-            AzMarkdown(markdown = current, activeColor = accent)
+            AzMarkdown(markdown = current, activeColor = accent, ink = AzAboutColors.Ink)
         }
     }
 }

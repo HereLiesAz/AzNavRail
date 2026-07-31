@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.hereliesaz.aznavrail.azAccent
 import com.hereliesaz.aznavrail.LocalAzSafeZones
 import com.hereliesaz.aznavrail.model.AzNavItem
 
@@ -210,7 +211,7 @@ internal fun HelpOverlay(
                 ) {
                     Text(
                         text = item.text.ifBlank { "Item ${item.id}" },
-                        color = MaterialTheme.colorScheme.primary,
+                        color = azAccent(),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )

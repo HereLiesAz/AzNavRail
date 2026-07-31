@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { AzLoad } from './AzLoad';
 import { fetchMoreFromAz, AzMoreFromApp } from '../services/moreFromAz';
+import { useAzAccent, AZ_ACCENT_FALLBACK } from '../AzRailPalette';
 
 interface MoreFromAzOverlayProps {
   jsonUrl: string;
@@ -36,7 +37,8 @@ export const MoreFromAzOverlay: React.FC<MoreFromAzOverlayProps> = ({
   settings = {},
   onDismiss,
 }) => {
-  const accent = settings.activeColor || '#6200ee';
+  const railAccent = useAzAccent(AZ_ACCENT_FALLBACK);
+  const accent = settings.activeColor || railAccent;
   const surface = settings.translucentBackground || '#ffffff';
   const [apps, setApps] = useState<AzMoreFromApp[] | null>(null);
 

@@ -89,8 +89,8 @@ internal fun roundedTrianglePath(size: Size, radiusPx: Float): Path {
  * new member (like [AzButtonShape.TRIANGLE]) can never be silently missed by one of them.
  */
 internal fun AzButtonShape.toComposeShape(): Shape = when (this) {
-    AzButtonShape.CIRCLE -> CircleShape
-    AzButtonShape.SQUARE -> RectangleShape
+    AzButtonShape.CIRCLE, AzButtonShape.NONE_CIRCLE -> CircleShape
+    AzButtonShape.SQUARE, AzButtonShape.NONE_SQUARE -> RectangleShape
     AzButtonShape.RECTANGLE -> RectangleShape
     AzButtonShape.TRIANGLE -> AzRoundedTriangleShape()
     AzButtonShape.NONE -> RectangleShape
@@ -209,8 +209,9 @@ internal data class AzAlertMorphShape(
     ): Outline {
         if (progress <= 0f) return base.toComposeShape().createOutline(size, layoutDirection, density)
         val from = when (base) {
-            AzButtonShape.CIRCLE -> 32
-            AzButtonShape.SQUARE, AzButtonShape.RECTANGLE, AzButtonShape.NONE -> 4
+            AzButtonShape.CIRCLE, AzButtonShape.NONE_CIRCLE -> 32
+            AzButtonShape.SQUARE, AzButtonShape.RECTANGLE,
+            AzButtonShape.NONE, AzButtonShape.NONE_SQUARE -> 4
             AzButtonShape.TRIANGLE -> 3
         }
         return Outline.Generic(

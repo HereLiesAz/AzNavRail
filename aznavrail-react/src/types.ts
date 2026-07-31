@@ -6,8 +6,42 @@ export enum AzButtonShape {
   SQUARE = 'SQUARE',
   /** Full-width rectangular pill, height fixed to button height. */
   RECTANGLE = 'RECTANGLE',
-  /** No visible border or background — renders an invisible hit area. */
+  /**
+   * No visible border or background — renders an invisible hit area on the RECTANGLE footprint
+   * (the wide, fixed-height slot a text label wants).
+   */
   NONE = 'NONE',
+  /** Borderless, on the SQUARE footprint. */
+  NONE_SQUARE = 'NONE_SQUARE',
+  /** Borderless, on the CIRCLE footprint. */
+  NONE_CIRCLE = 'NONE_CIRCLE',
+}
+
+/** True for the whole borderless `NONE*` family. */
+export function isBorderlessShape(shape: AzButtonShape): boolean {
+  return (
+    shape === AzButtonShape.NONE ||
+    shape === AzButtonShape.NONE_SQUARE ||
+    shape === AzButtonShape.NONE_CIRCLE
+  );
+}
+
+/**
+ * The shape whose footprint and outline a shape adopts — identity for every bordered shape, and for
+ * the borderless family the base shape the developer named. Dropping the border must never reflow
+ * the rail around the item.
+ */
+export function baseShapeOf(shape: AzButtonShape): AzButtonShape {
+  switch (shape) {
+    case AzButtonShape.NONE:
+      return AzButtonShape.RECTANGLE;
+    case AzButtonShape.NONE_SQUARE:
+      return AzButtonShape.SQUARE;
+    case AzButtonShape.NONE_CIRCLE:
+      return AzButtonShape.CIRCLE;
+    default:
+      return shape;
+  }
 }
 
 /** Which edge of the screen the navigation rail is anchored to. */
@@ -157,6 +191,13 @@ export interface AzNavRailSettings {
   moreFromAzJsonUrl?: string;
   /** When true, pins a "More" item at the bottom of the rail that opens the "More from Az" carousel. */
   moreRailItem?: boolean;
+  /**
+   * Whether the rail ends with the built-in About (`?`) button. True by default: About is how
+   * the user finds out what the app is, and burying it inside a menu the rail may not even have
+   * is how it goes unfound. Set false to drop it, or declare your own `AzAboutRailItem` to place
+   * and style it yourself.
+   */
+  aboutRailItem?: boolean;
   /** Whether the help overlay feature is enabled. */
   helpEnabled?: boolean;
   /** When true, docking side follows the physical device edge rather than logical left/right. */
@@ -348,6 +389,13 @@ export interface AzNavItem {
   keepNestedRailOpen?: boolean;
   /** True when this item was declared via `AzHelpRailItem` or `AzHelpSubItem`. */
   isHelpItem?: boolean;
+  /**
+   * True for the rail's About affordance — the trailing `?` button. It opens the in-app About
+   * reader (or the repo URL when `inAppAbout` is false) and closes it again on a second tap. One
+   * is appended to the end of the rail automatically; declaring your own with `AzAboutRailItem`
+   * replaces it, so its position, text, colour and shape are yours.
+   */
+  isAboutItem?: boolean;
   /** Layout direction of this item's nested-rail popup. */
   nestedRailAlignment?: AzNestedRailAlignment;
   /** Pre-resolved sub-items for the nested-rail popup. */

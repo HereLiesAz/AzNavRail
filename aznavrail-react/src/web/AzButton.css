@@ -43,10 +43,25 @@
   min-width: 64px;
 }
 
+/* The borderless family: no border, but the footprint of the base shape each one names. */
 .az-button-shape-none {
   border: none;
   height: 36px;
   padding: 0 12px;
+}
+
+.az-button-shape-none-square {
+  border: none;
+  border-radius: 0;
+  width: 48px;
+  height: 48px;
+}
+
+.az-button-shape-none-circle {
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
 }
 
 .az-button-content {

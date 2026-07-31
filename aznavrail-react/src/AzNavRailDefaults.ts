@@ -26,6 +26,11 @@ export const AzNavRailDefaults = {
   NO_TITLE: 'NO_TITLE',
   /** The colour a rail item falls back to when neither the item nor the host names one. */
   AccentFallback: '#6200ee',
+  /**
+   * Auto-generated ID for the implicit About (`?`) button appended to the end of the rail when
+   * the developer declared none of their own.
+   */
+  AutoAboutId: 'AZ_AUTO_ABOUT_ID_INTERNAL',
 };
 
 /**

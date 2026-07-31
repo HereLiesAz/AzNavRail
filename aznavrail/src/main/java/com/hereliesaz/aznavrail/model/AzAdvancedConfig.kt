@@ -41,6 +41,8 @@ import androidx.compose.ui.geometry.Rect
  *   `version` integer is CI-managed and used to invalidate the local cache.
  * @param moreFromAzRailItem When true, a "More" item is pinned at the bottom of the collapsed rail
  *   that opens the "More from Az" carousel directly (independent of the About screen).
+ * @param aboutRailItem When true (default), the rail ends with a built-in About (`?`) rail item,
+ *   unless the developer declared their own with `azAboutRailItem`.
  */
 data class AzAdvancedConfig(
     val isLoading: Boolean = false,
@@ -60,5 +62,6 @@ data class AzAdvancedConfig(
     val inAppAbout: Boolean = true,
     val moreFromAzEnabled: Boolean = true,
     val moreFromAzJsonUrl: String = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json",
-    val moreFromAzRailItem: Boolean = false
+    val moreFromAzRailItem: Boolean = false,
+    val aboutRailItem: Boolean = true
 )

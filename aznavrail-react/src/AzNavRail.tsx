@@ -44,6 +44,11 @@ import { RelocItemHandler } from './util/RelocItemHandler';
 import { AzNestedRailPopup } from './components/AzNestedRailPopup';
 import { HelpOverlay } from './components/HelpOverlay';
 import { AboutOverlay } from './components/AboutOverlay';
+import {
+  AzRailPaletteContext,
+  resolveRailAccent,
+  AZ_ACCENT_FALLBACK,
+} from './AzRailPalette';
 import { MoreFromAzOverlay } from './components/MoreFromAzOverlay';
 import {
   AzGuidanceProvider,
@@ -165,6 +170,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     moreFromAzEnabled = true,
     moreFromAzJsonUrl = 'https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json',
     moreRailItem = false,
+    aboutRailItem = true,
   } = props;
   const logInteraction = useCallback(
     (action: string, details?: string, item?: AzNavItem) => {
@@ -214,6 +220,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     moreFromAzEnabled: dslOverrides.moreFromAzEnabled ?? moreFromAzEnabled,
     moreFromAzJsonUrl: dslOverrides.moreFromAzJsonUrl ?? moreFromAzJsonUrl,
     moreRailItem: dslOverrides.moreRailItem ?? moreRailItem,
+    aboutRailItem: dslOverrides.aboutRailItem ?? aboutRailItem,
   };
 
   const [isExpanded, setIsExpanded] = useState(
@@ -686,6 +693,10 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
 
   const handleHeaderTap = () => {
     logInteraction('Header tapped');
+    // Reaching for the rail means the user is done reading; the reader must never be the thing
+    // standing between them and the app icon.
+    setShowAbout(false);
+    setShowMoreFromAz(false);
     if (isFloating) {
       const willShow = !showFloatingButtons;
       setShowFloatingButtons(willShow);
@@ -714,6 +725,45 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     ? targetShrunkSize
     : baseButtonSize;
   const sizeRatio = activeButtonSize / baseButtonSize;
+
+  /** Opens the About reader (or the repo in a browser), and closes it again on a second tap. */
+  const toggleAbout = () => {
+    if (config.inAppAbout) {
+      setShowAbout((prev) => !prev);
+    } else if (config.appRepositoryUrl) {
+      // Only follow safe web URLs — on react-native-web a `javascript:` URL would otherwise execute.
+      const isSafe =
+        config.appRepositoryUrl.startsWith('http://') ||
+        config.appRepositoryUrl.startsWith('https://');
+      if (isSafe) {
+        Linking.openURL(config.appRepositoryUrl).catch((e) =>
+          console.error('Could not open About', e)
+        );
+      }
+    }
+  };
+
+  /**
+   * Leaves the About / More-from-Az reader. Any other interaction with the rail means the user is
+   * done reading — a full-screen reader you can only escape through its own close button is a room
+   * with a keyhole for a door.
+   */
+  const dismissFooterScreens = () => {
+    setShowAbout(false);
+    setShowMoreFromAz(false);
+  };
+
+  // The colour this rail actually reads as, published to every other AzNavRail surface — a second
+  // (floating) rail, a drop-down, the About reader, the Help overlay. Chrome belonging to the same
+  // navigation system has to look like it.
+  const railAccent = useMemo(
+    () => resolveRailAccent(config.activeColor, items),
+    [config.activeColor, items]
+  );
+  const railPalette = useMemo(
+    () => ({ accent: railAccent, surface: config.translucentBackground }),
+    [railAccent, config.translucentBackground]
+  );
 
   const renderRailItem = (
     item: AzNavItem,
@@ -763,11 +813,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
           item={item}
           buttonSize={activeButtonSize}
           enabled={!item.disabled}
-          color={
-            item.color ??
-            overrideConfig.activeColor ??
-            AzNavRailDefaults.AccentFallback
-          }
+          color={item.color ?? railAccent ?? AzNavRailDefaults.AccentFallback}
         />
       );
     }
@@ -869,6 +915,13 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
           hasCustomContent={!!item.content}
           onClick={() => {
             logInteraction('Item clicked', item.text, item);
+            // Reaching for any other rail item is the user leaving the About reader; only the
+            // About item itself toggles it.
+            if (item.isAboutItem) {
+              toggleAbout();
+            } else {
+              dismissFooterScreens();
+            }
             if (item.isNestedRail) {
               setNestedRailVisible(item.id);
               // Use actual bounds if available
@@ -945,7 +998,14 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
             }}
             onItemClick={() => {
               logInteraction('Menu item clicked', item.text, item);
-              if (item.onClick) item.onClick();
+              // Same contract as the rail strip: acting on the menu means the user is done with
+              // the About / More-from-Az reader, so it gets out of the way.
+              if (item.isAboutItem) {
+                toggleAbout();
+              } else {
+                dismissFooterScreens();
+                if (item.onClick) item.onClick();
+              }
               if (item.collapseOnClick) setIsExpanded(false);
             }}
             renderSubItems={() => (
@@ -969,9 +1029,9 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   };
 
   const renderFooter = () => {
-    // Use `config.activeColor` so DSL overrides (via `dslOverrides.activeColor`) win over the raw
-    // prop — matches the pattern used everywhere else the rail reads its theming.
-    const footerColor = config.activeColor || '#6200ee';
+    // The rail's own accent — `activeColor` (DSL overrides included) when set, else the colour the
+    // rail's items are drawn in. The footer belongs to the rail, so it looks like the rail.
+    const footerColor = railAccent || AZ_ACCENT_FALLBACK;
 
     const handleUndock = () => {
       if (enableRailDragging) {
@@ -1080,9 +1140,26 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     // Only the top-level items are listed here; `renderRailItem`'s host branch renders each
     // expanded host's sub-items inline and recurses for sub-hosts, so hosts nest to any depth
     // without this list having to be flattened (which would otherwise double-render sub-items).
-    return items.filter((i) => !i.isSubItem && (config.noMenu || i.isRailItem));
-  }, [items, config.noMenu]);
-
+    const strip = items.filter(
+      (i) => !i.isSubItem && (config.noMenu || i.isRailItem)
+    );
+    // The rail strip ends with the About ("?") button — unless the developer declared their own
+    // with `AzAboutRailItem`, in which case theirs stands where they put it. It persists; it is
+    // not fixed. The drawer does not need one: its footer already carries About.
+    const wantsAbout = config.aboutRailItem !== false;
+    if (!wantsAbout || items.some((i) => i.isAboutItem)) return strip;
+    return [
+      ...strip,
+      {
+        id: AzNavRailDefaults.AutoAboutId,
+        text: '?',
+        isRailItem: true,
+        isAboutItem: true,
+        collapseOnClick: false,
+        shape: config.defaultShape,
+      } as AzNavItem,
+    ];
+  }, [items, config.noMenu, config.aboutRailItem, config.defaultShape]);
   const menuItems = useMemo(() => {
     return items.filter((i) => !i.isSubItem);
   }, [items]);
@@ -1129,241 +1206,243 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     <AzNavRailContext.Provider
       value={{ register, unregister, updateSettings, getDividerId, hasItem }}
     >
-      <View style={{ flexDirection: flexDirection, height: '100%', flex: 1 }}>
-        {/* Dim scrim behind the drawer: developer-opt-in via `dimBehindMenu`; alpha via
+      <AzRailPaletteContext.Provider value={railPalette}>
+        <View style={{ flexDirection: flexDirection, height: '100%', flex: 1 }}>
+          {/* Dim scrim behind the drawer: developer-opt-in via `dimBehindMenu`; alpha via
                 `dimBehindMenuAlpha`. Tapping the scrim collapses the menu. */}
-        {dimBehindMenu && isExpanded && !isFloating && (
-          <TouchableOpacity
-            onPress={() => setIsExpanded(false)}
-            activeOpacity={1}
-            style={{
-              ...(StyleSheet.absoluteFill as object),
-              backgroundColor: `rgba(0,0,0,${Math.max(0, Math.min(1, dimBehindMenuAlpha))})`,
-              zIndex: 5,
-            }}
-          />
-        )}
-        <Animated.View
-          style={[
-            styles.railContainer,
-            {
-              width: railWidthAnim,
-              position: isFloating ? 'absolute' : 'relative',
-              transform: isFloating
-                ? [{ translateX: pan.x }, { translateY: pan.y }]
-                : [],
-              zIndex: isFloating ? 1000 : 10,
-              height: isFloating ? 'auto' : '100%',
-              borderRightWidth: dockingSide === AzDockingSide.LEFT ? 1 : 0,
-              borderLeftWidth: dockingSide === AzDockingSide.RIGHT ? 1 : 0,
-            },
-          ]}
-          {...panResponder.panHandlers}
-        >
-          <TouchableOpacity
-            onPress={handleHeaderTap}
-            onLongPress={handleHeaderLongPress}
-            delayLongPress={500}
+          {dimBehindMenu && isExpanded && !isFloating && (
+            <TouchableOpacity
+              onPress={() => setIsExpanded(false)}
+              activeOpacity={1}
+              style={{
+                ...(StyleSheet.absoluteFill as object),
+                backgroundColor: `rgba(0,0,0,${Math.max(0, Math.min(1, dimBehindMenuAlpha))})`,
+                zIndex: 5,
+              }}
+            />
+          )}
+          <Animated.View
             style={[
-              styles.header,
+              styles.railContainer,
               {
-                flexDirection:
-                  config.dockingSide === AzDockingSide.RIGHT
-                    ? 'row-reverse'
-                    : 'row',
+                width: railWidthAnim,
+                position: isFloating ? 'absolute' : 'relative',
+                transform: isFloating
+                  ? [{ translateX: pan.x }, { translateY: pan.y }]
+                  : [],
+                zIndex: isFloating ? 1000 : 10,
+                height: isFloating ? 'auto' : '100%',
+                borderRightWidth: dockingSide === AzDockingSide.LEFT ? 1 : 0,
+                borderLeftWidth: dockingSide === AzDockingSide.RIGHT ? 1 : 0,
               },
             ]}
-            onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
-            accessibilityRole="button"
-            accessibilityLabel={
-              isFloating
-                ? 'Undocked Rail'
-                : isExpanded
-                  ? 'Collapse Menu'
-                  : 'Expand Menu'
-            }
-            accessibilityHint="Double tap to toggle, long press to drag"
+            {...panResponder.panHandlers}
           >
-            <View
-              style={{
-                width: AzNavRailDefaults.HeaderIconSize,
-                height: AzNavRailDefaults.HeaderIconSize,
-                backgroundColor: 'gray',
-                borderRadius: getHeaderBorderRadius(),
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+            <TouchableOpacity
+              onPress={handleHeaderTap}
+              onLongPress={handleHeaderLongPress}
+              delayLongPress={500}
+              style={[
+                styles.header,
+                {
+                  flexDirection:
+                    config.dockingSide === AzDockingSide.RIGHT
+                      ? 'row-reverse'
+                      : 'row',
+                },
+              ]}
+              onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
+              accessibilityRole="button"
+              accessibilityLabel={
+                isFloating
+                  ? 'Undocked Rail'
+                  : isExpanded
+                    ? 'Collapse Menu'
+                    : 'Expand Menu'
+              }
+              accessibilityHint="Double tap to toggle, long press to drag"
             >
-              <Text style={{ color: 'white' }}>Icon</Text>
-            </View>
-            {!isFloating && isExpanded && config.displayAppNameInHeader && (
-              <Text
-                style={[
-                  styles.appName,
-                  {
-                    marginLeft:
-                      config.dockingSide === AzDockingSide.RIGHT ? 0 : 16,
-                    marginRight:
-                      config.dockingSide === AzDockingSide.RIGHT ? 16 : 0,
-                    flexShrink: 0,
-                    minWidth: 200,
-                  },
-                ]}
-                numberOfLines={1}
-              >
-                App Name
-              </Text>
-            )}
-          </TouchableOpacity>
-
-          {menuRendered && !noMenu ? (
-            <ScrollView style={styles.menuContent}>
-              {menuItems.map((item, index) => {
-                if (item.isDivider) {
-                  return (
-                    <View
-                      key={item.id}
-                      style={[
-                        styles.divider,
-                        { backgroundColor: config.activeColor || '#6200ee' },
-                      ]}
-                    />
-                  );
-                }
-                return renderMenuItem(
-                  item,
-                  index,
-                  menuItems.length,
-                  isExpanded
-                );
-              })}
-              {showFooter && renderFooter()}
-            </ScrollView>
-          ) : (
-            <ScrollView contentContainerStyle={styles.railContent}>
-              {isFloating && !showFloatingButtons
-                ? null
-                : effectiveRailItems.map((item, index) =>
-                    renderRailItem(item, index)
-                  )}
-              {!isFloating &&
-                config.moreRailItem &&
-                config.moreFromAzEnabled && (
-                  <AzButton
-                    text="More"
-                    color={config.activeColor || '#6200ee'}
-                    shape={config.defaultShape}
-                    onClick={() => setShowMoreFromAz(true)}
-                  />
-                )}
-            </ScrollView>
-          )}
-        </Animated.View>
-
-        {items
-          .filter((i) => i.isNestedRail)
-          .map((item) => {
-            const effectiveConfig = item.nestedRailSettings
-              ? { ...config, ...item.nestedRailSettings }
-              : config;
-            return (
-              <AzNestedRailPopup
-                key={`nested-${item.id}`}
-                visible={nestedRailVisible === item.id}
-                onDismiss={() => setNestedRailVisible(null)}
-                items={subItemsMap[item.id] || []}
-                alignment={
-                  item.nestedRailAlignment || AzNestedRailAlignment.VERTICAL
-                }
-                renderItem={(subItem, idx) => {
-                  return (
-                    <View
-                      key={`wrap-${subItem.id}`}
-                      onLayout={(e) => handleItemLayout(subItem.id, e)}
-                    >
-                      {renderRailItem(subItem, idx, effectiveConfig)}
-                    </View>
-                  );
+              <View
+                style={{
+                  width: AzNavRailDefaults.HeaderIconSize,
+                  height: AzNavRailDefaults.HeaderIconSize,
+                  backgroundColor: 'gray',
+                  borderRadius: getHeaderBorderRadius(),
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
-                anchorPosition={anchorPosition}
-                dockingSide={effectiveConfig.dockingSide}
-                activeButtonSize={activeButtonSize}
-              />
-            );
-          })}
+              >
+                <Text style={{ color: 'white' }}>Icon</Text>
+              </View>
+              {!isFloating && isExpanded && config.displayAppNameInHeader && (
+                <Text
+                  style={[
+                    styles.appName,
+                    {
+                      marginLeft:
+                        config.dockingSide === AzDockingSide.RIGHT ? 0 : 16,
+                      marginRight:
+                        config.dockingSide === AzDockingSide.RIGHT ? 16 : 0,
+                      flexShrink: 0,
+                      minWidth: 200,
+                    },
+                  ]}
+                  numberOfLines={1}
+                >
+                  App Name
+                </Text>
+              )}
+            </TouchableOpacity>
 
-        {/* Content with Safe Zones */}
-        <View style={{ flex: 1, marginTop: '20%', marginBottom: '10%' }}>
-          {children}
-        </View>
+            {menuRendered && !noMenu ? (
+              <ScrollView style={styles.menuContent}>
+                {menuItems.map((item, index) => {
+                  if (item.isDivider) {
+                    return (
+                      <View
+                        key={item.id}
+                        style={[
+                          styles.divider,
+                          { backgroundColor: railAccent || AZ_ACCENT_FALLBACK },
+                        ]}
+                      />
+                    );
+                  }
+                  return renderMenuItem(
+                    item,
+                    index,
+                    menuItems.length,
+                    isExpanded
+                  );
+                })}
+                {showFooter && renderFooter()}
+              </ScrollView>
+            ) : (
+              <ScrollView contentContainerStyle={styles.railContent}>
+                {isFloating && !showFloatingButtons
+                  ? null
+                  : effectiveRailItems.map((item, index) =>
+                      renderRailItem(item, index)
+                    )}
+                {!isFloating &&
+                  config.moreRailItem &&
+                  config.moreFromAzEnabled && (
+                    <AzButton
+                      text="More"
+                      color={railAccent || AZ_ACCENT_FALLBACK}
+                      shape={config.defaultShape}
+                      onClick={() => setShowMoreFromAz(true)}
+                    />
+                  )}
+              </ScrollView>
+            )}
+          </Animated.View>
 
-        {isLoading && (
-          <View style={styles.loaderOverlay}>
-            <AzLoad />
+          {items
+            .filter((i) => i.isNestedRail)
+            .map((item) => {
+              const effectiveConfig = item.nestedRailSettings
+                ? { ...config, ...item.nestedRailSettings }
+                : config;
+              return (
+                <AzNestedRailPopup
+                  key={`nested-${item.id}`}
+                  visible={nestedRailVisible === item.id}
+                  onDismiss={() => setNestedRailVisible(null)}
+                  items={subItemsMap[item.id] || []}
+                  alignment={
+                    item.nestedRailAlignment || AzNestedRailAlignment.VERTICAL
+                  }
+                  renderItem={(subItem, idx) => {
+                    return (
+                      <View
+                        key={`wrap-${subItem.id}`}
+                        onLayout={(e) => handleItemLayout(subItem.id, e)}
+                      >
+                        {renderRailItem(subItem, idx, effectiveConfig)}
+                      </View>
+                    );
+                  }}
+                  anchorPosition={anchorPosition}
+                  dockingSide={effectiveConfig.dockingSide}
+                  activeButtonSize={activeButtonSize}
+                />
+              );
+            })}
+
+          {/* Content with Safe Zones */}
+          <View style={{ flex: 1, marginTop: '20%', marginBottom: '10%' }}>
+            {children}
           </View>
-        )}
 
-        {/* Help must be fully CLEARED from the screen while a footer screen (About / More-from-Az)
+          {isLoading && (
+            <View style={styles.loaderOverlay}>
+              <AzLoad />
+            </View>
+          )}
+
+          {/* Help must be fully CLEARED from the screen while a footer screen (About / More-from-Az)
                 is open — not merely dimmed — so it is not rendered at all then. */}
-        {infoScreen && !showAbout && !showMoreFromAz && (
-          <View style={StyleSheet.absoluteFill}>
-            <HelpOverlay
-              items={items}
-              helpList={config.helpList || {}}
-              onDismiss={onDismissInfoScreen!}
-              itemBounds={itemBounds}
-              nestedRailVisibleId={nestedRailVisible}
-            />
-          </View>
-        )}
+          {infoScreen && !showAbout && !showMoreFromAz && (
+            <View style={StyleSheet.absoluteFill}>
+              <HelpOverlay
+                items={items}
+                helpList={config.helpList || {}}
+                onDismiss={onDismissInfoScreen!}
+                itemBounds={itemBounds}
+                nestedRailVisibleId={nestedRailVisible}
+              />
+            </View>
+          )}
 
-        {/* Only one reader at a time: More-from-Az fully replaces About while open, so a
+          {/* Only one reader at a time: More-from-Az fully replaces About while open, so a
                 translucent surface can't let the About doc links bleed through its cards. */}
-        {showAbout && !showMoreFromAz && !!config.appRepositoryUrl && (
-          <AboutOverlay
-            repoUrl={config.appRepositoryUrl}
-            settings={{
-              activeColor: config.activeColor,
-              translucentBackground: config.translucentBackground,
-            }}
-            moreFromAzEnabled={config.moreFromAzEnabled}
-            moreFromAzJsonUrl={config.moreFromAzJsonUrl}
-            onDismiss={() => setShowAbout(false)}
-          />
-        )}
+          {showAbout && !showMoreFromAz && !!config.appRepositoryUrl && (
+            <AboutOverlay
+              repoUrl={config.appRepositoryUrl}
+              settings={{
+                activeColor: railAccent,
+                translucentBackground: config.translucentBackground,
+              }}
+              moreFromAzEnabled={config.moreFromAzEnabled}
+              moreFromAzJsonUrl={config.moreFromAzJsonUrl}
+              onDismiss={() => setShowAbout(false)}
+            />
+          )}
 
-        {showMoreFromAz && (
-          <MoreFromAzOverlay
-            jsonUrl={config.moreFromAzJsonUrl}
-            settings={{
-              activeColor: config.activeColor,
-              translucentBackground: config.translucentBackground,
-            }}
-            onDismiss={() => setShowMoreFromAz(false)}
-          />
-        )}
+          {showMoreFromAz && (
+            <MoreFromAzOverlay
+              jsonUrl={config.moreFromAzJsonUrl}
+              settings={{
+                activeColor: railAccent,
+                translucentBackground: config.translucentBackground,
+              }}
+              onDismiss={() => setShowMoreFromAz(false)}
+            />
+          )}
 
-        {/* Guidance instruction callouts are fully CLEARED while a footer screen is open. The
+          {/* Guidance instruction callouts are fully CLEARED while a footer screen is open. The
                 engine lives in its own component so its state changes never re-render this host. */}
-        {!showAbout && !showMoreFromAz && (
-          <AzGuidanceLayer
-            items={items}
-            itemBounds={itemBounds}
-            isExpanded={isExpanded}
-            isFloating={isFloating}
-            hostStates={hostStates}
-            currentDestination={currentDestination}
-            nestedRailVisible={nestedRailVisible}
-            infoScreen={infoScreen}
-            activeClassifiers={(props as any).activeClassifiers}
-            accent={
-              typeof config.activeColor === 'string'
-                ? config.activeColor
-                : undefined
-            }
-          />
-        )}
-      </View>
+          {!showAbout && !showMoreFromAz && (
+            <AzGuidanceLayer
+              items={items}
+              itemBounds={itemBounds}
+              isExpanded={isExpanded}
+              isFloating={isFloating}
+              hostStates={hostStates}
+              currentDestination={currentDestination}
+              nestedRailVisible={nestedRailVisible}
+              infoScreen={infoScreen}
+              activeClassifiers={(props as any).activeClassifiers}
+              accent={
+                typeof config.activeColor === 'string'
+                  ? config.activeColor
+                  : undefined
+              }
+            />
+          )}
+        </View>
+      </AzRailPaletteContext.Provider>
     </AzNavRailContext.Provider>
   );
 };

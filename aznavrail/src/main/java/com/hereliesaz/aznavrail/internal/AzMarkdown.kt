@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -44,6 +45,12 @@ internal fun AzMarkdown(
     markdown: String,
     activeColor: Color,
     modifier: Modifier = Modifier,
+    /**
+     * Body-text colour. Defaults to the theme's `onSurface`, which is correct on a surface the theme
+     * also painted — but a caller that brings its own ground (the About reader's dark field) must
+     * bring its own ink too, or a light-themed host renders black prose on it.
+     */
+    ink: Color = Color.Unspecified,
 ) {
     val codeBg = if (activeColor != Color.Unspecified) {
         activeColor.copy(alpha = 0.08f)
@@ -51,6 +58,7 @@ internal fun AzMarkdown(
         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
     }
     val accent = if (activeColor != Color.Unspecified) activeColor else MaterialTheme.colorScheme.primary
+    val onSurface = ink.takeOrElse { MaterialTheme.colorScheme.onSurface }
 
     Column(modifier = modifier) {
         val lines = markdown.replace("\r\n", "\n").split("\n")
@@ -63,7 +71,7 @@ internal fun AzMarkdown(
                 Text(
                     text = parseInline(paragraph.toString().trim(), accent),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = onSurface,
                 )
                 Spacer(Modifier.height(8.dp))
             }
@@ -82,7 +90,7 @@ internal fun AzMarkdown(
                     while (i < lines.size && !lines[i].trimStart().startsWith("```")) {
                         code.appendLine(lines[i]); i++
                     }
-                    CodeBlock(code.toString().trimEnd(), codeBg)
+                    CodeBlock(code.toString().trimEnd(), codeBg, onSurface)
                     Spacer(Modifier.height(8.dp))
                 }
                 // Horizontal rule
@@ -99,7 +107,7 @@ internal fun AzMarkdown(
                     Text(
                         text = parseInline(text, accent),
                         style = headingStyleFor(level),
-                        color = if (level <= 2) accent else MaterialTheme.colorScheme.onSurface,
+                        color = if (level <= 2) accent else onSurface,
                         fontWeight = FontWeight.Bold,
                     )
                     Spacer(Modifier.height(6.dp))
@@ -119,7 +127,7 @@ internal fun AzMarkdown(
                         Text(
                             text = parseInline(quote, accent),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                            color = onSurface.copy(alpha = 0.8f),
                         )
                     }
                     Spacer(Modifier.height(6.dp))
@@ -136,7 +144,7 @@ internal fun AzMarkdown(
                         Text(
                             text = parseInline(content, accent),
                             style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            color = onSurface,
                         )
                     }
                     Spacer(Modifier.height(2.dp))
@@ -154,7 +162,7 @@ internal fun AzMarkdown(
 }
 
 @Composable
-private fun CodeBlock(code: String, background: Color) {
+private fun CodeBlock(code: String, background: Color, ink: Color) {
     Box(
         Modifier
             .fillMaxWidth()
@@ -165,7 +173,7 @@ private fun CodeBlock(code: String, background: Color) {
         Text(
             text = code,
             style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
-            color = MaterialTheme.colorScheme.onSurface,
+            color = ink,
         )
     }
 }

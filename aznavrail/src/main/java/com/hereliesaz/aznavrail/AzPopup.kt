@@ -213,7 +213,7 @@ internal class AzPopupScopeImpl(
 @Composable
 fun AzPopupScope.AzPopupBody() {
     val accent = when (kind) {
-        AzPopupKind.INFO -> MaterialTheme.colorScheme.primary
+        AzPopupKind.INFO -> azAccent()
         AzPopupKind.NOTICE -> AzItemAlert.NOTICE.color()
         AzPopupKind.WARNING -> AzItemAlert.WARNING.color()
     }
@@ -317,7 +317,7 @@ internal fun AzPopupHost(
             border = BorderStroke(
                 width = 2.dp,
                 color = when (request.kind) {
-                    AzPopupKind.INFO -> railScope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
+                    AzPopupKind.INFO -> railScope.railAccent.takeOrElse { MaterialTheme.colorScheme.primary }
                     AzPopupKind.NOTICE -> AzItemAlert.NOTICE.color()
                     AzPopupKind.WARNING -> AzItemAlert.WARNING.color()
                 },
