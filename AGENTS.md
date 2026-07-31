@@ -194,7 +194,11 @@ configurable (mirroring the rail's `azTheme`). Only the dropped list is an overl
   exactly like `MenuItem.kt`. RN/web use an `onNavigate(route)` prop + `route?` on `AzDropdownItem`.
 - Controlled `expanded`/`onExpandedChange` remain. Tapping outside, back, or an item folds it up.
 
-Every AzNavRail surface takes its colour from the RAIL, not from the app's theme. `AzNavRail`
+Every AzNavRail surface takes its colour from the RAIL, not from the app's theme. On React the same
+contract is `AzRailPaletteContext` + `useAzAccent()` + `resolveRailAccent()`, in BOTH builds (`src/`
+and `src/web/`); because a second floating rail there is a *sibling* rather than a descendant, the
+rail also publishes its palette outside the tree (`usePublishRailPalette`) and `useAzAccent` falls
+back to that when no provider is above. `AzNavRail`
 publishes `LocalAzRailPalette` (`AzRailPalette(accent, surface)`); a second unattached/floating rail,
 a drop-down menu, the About reader, the Help overlay, nested rails, popups and the drawer all resolve
 their accent through `azAccent()`, which falls back to `MaterialTheme.colorScheme` only when there is
@@ -207,7 +211,10 @@ because a see-through full-screen reader is an unreadable one.
 The rail must not be greedy with gestures. It is laid out over the whole window, so it may only
 install pointer handlers it will actually answer, and may only consume the events it acts on:
 - no window-wide tap listener — the expanded menu's scrim (inset to exclude the rail) collapses on
-  outside taps;
+  outside taps. That scrim exists whenever the drawer is open on EVERY platform; `dimBehindMenu`
+  decides only whether the area is darkened, never whether the tap-to-collapse affordance exists
+  (React and web used to render it only when dimming was on, which silently deleted the documented
+  behaviour for anyone who left dimming off);
 - the drag detector is attached only when the rail is floating, draggable, or swipe-openable, and
   `change.consume()` is called only on the branch that actually undocks or moves the menu;
 - the rail Surface swallows stray taps only while it is expanded or floating; collapsed and docked it

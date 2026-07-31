@@ -163,6 +163,18 @@ fun azTheme(
 
 * `headerIconSize`: `Dp` — exact diameter of the header app-icon. `Dp.Unspecified` (default) sizes
   the icon to the rail width (legacy behavior).
+* `defaultShape`: `AzButtonShape` — `CIRCLE`, `SQUARE`, `RECTANGLE`, `TRIANGLE`, or the borderless
+  family `NONE` (rectangle footprint), `NONE_SQUARE`, `NONE_CIRCLE`. A borderless shape keeps the
+  footprint of the base shape it names, so dropping the border never reflows the rail.
+  `AzButtonShape.isBorderless` / `.baseShape` expose the mapping.
+* `activeColor`: `Color` — the accent for **every** AzNavRail surface, not just this rail: a second
+  unattached or floating rail, a drop-down menu, the About reader, More-from-Az, the Help overlay,
+  nested rails, popups and the drawer. Left `Unspecified`, the accent is derived from the rail's own
+  items (the colour most of them are drawn in) before falling back to the app theme — a rail whose
+  every button is white is a white rail. Published as `LocalAzRailPalette`; read it with
+  `LocalAzRailPalette.current.accent` (React: `useAzAccent()`).
+* `translucentBackground`: `Color` — the panel colour for overlays. The About reader takes its hue
+  but always draws on an opaque ground; a see-through full-screen reader is an unreadable one.
 
 ### `azKinetics`
 Configures the WP7-style kinetic typography (entrance/exit on the expanded menu items, press-tilt, and
@@ -223,7 +235,8 @@ fun azAbout(
     inAppAbout: Boolean = true,
     moreFromAzEnabled: Boolean = true,
     moreFromAzJsonUrl: String = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json",
-    moreRailItem: Boolean = false
+    moreRailItem: Boolean = false,
+    aboutRailItem: Boolean = true
 )
 ~~~
 
@@ -234,6 +247,35 @@ fun azAbout(
 * `moreFromAzEnabled` — show the "More from Az" entry inside the About screen.
 * `moreFromAzJsonUrl` — raw URL of the link-only, CI-versioned `more-from-az.json` manifest.
 * `moreRailItem` — also pin a "More" item at the bottom of the collapsed rail that opens the carousel.
+* `aboutRailItem` — whether the rail ends with the built-in About (`?`) rail item. On by default, in
+  every mode (a `noMenu` rail has no drawer footer to hide About in). Declare `azAboutRailItem(...)`
+  to place and style your own instead; set this `false` to drop it.
+
+### `azAboutRailItem`
+Declares the rail's About (`?`) item explicitly, in the position you call it from — replacing the
+automatic one. The button persists; it is not fixed.
+
+~~~kotlin
+fun azAboutRailItem(
+    id: String = "about",
+    text: String = "?",
+    content: Any? = null,
+    color: Color? = null,
+    shape: AzButtonShape? = null,
+    menuText: String? = null,
+    textColor: Color? = null,
+    fillColor: Color? = null,
+    info: String? = null,
+    badge: String? = null,
+    persistentBadge: Boolean = false,
+    isLoading: Boolean = false
+)
+~~~
+
+Tapping it opens the About reader; tapping it again closes it. So does tapping **any other rail item,
+any menu item, or the app icon** — plus drag-down, the close target, and system back. The reader is
+inset by the rail's gutter, so the app icon stays tappable behind it even when the rail is folded up.
+React: `<AzAboutRailItem id="about" />` and the `aboutRailItem` setting.
 
 > **Guides hidden over footer screens (all platforms):** while a footer screen (About or More from Az)
 > is open, visible Help cards and any guidance callouts are hidden, and they return exactly where

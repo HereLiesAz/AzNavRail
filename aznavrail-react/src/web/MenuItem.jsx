@@ -37,6 +37,12 @@ const MenuItem = ({
   // Menu-drawer look
   menuItemAlignment = 'side',
   justifyMenuItems = true,
+  /**
+   * Called before the item's own action runs. Acting on the menu means the user is done with the
+   * About / More-from-Az reader, so the rail closes it here — except for the About item itself,
+   * which toggles it and then consumes the click.
+   */
+  onLeaveReader,
 }) => {
   const {
     text,
@@ -78,6 +84,15 @@ const MenuItem = ({
       } else if (isHost) {
         onHostClick();
       }
+      return;
+    }
+
+    if (onLeaveReader) onLeaveReader();
+    // The About item's action is the toggle `onLeaveReader` just performed — plus its own callback
+    // if a declared item carries one. It does not fall through to the menu-collapse below, because
+    // opening the reader already collapsed the menu.
+    if (item.isAboutItem) {
+      if (onClick) onClick();
       return;
     }
 

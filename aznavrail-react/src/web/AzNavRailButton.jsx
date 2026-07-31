@@ -1,5 +1,6 @@
 import React from 'react';
 import useFitText from '../hooks/useFitText';
+import { useAzAccent, AZ_ACCENT_FALLBACK } from '../AzRailPalette';
 import './AzNavRailButton.css';
 
 /**
@@ -81,11 +82,18 @@ const AzNavRailButton = ({
     ariaProps['aria-haspopup'] = 'true';
   }
 
-  const shapeClass = item.shape ? item.shape.toLowerCase() : 'circle';
+  // `NONE_SQUARE` -> `none-square`: the borderless family keeps the footprint of the base shape
+  // it names, and the CSS class carries that.
+  const shapeClass = item.shape
+    ? item.shape.toLowerCase().replace(/_/g, '-')
+    : 'circle';
 
   const isReactNode = content && React.isValidElement(content);
 
-  const effectiveColor = color || 'blue';
+  // An unstyled item draws in the rail's own accent, never a hard-coded default — that is what
+  // lets a second rail or a nested-rail popup match the rail already on screen.
+  const railAccent = useAzAccent(AZ_ACCENT_FALLBACK);
+  const effectiveColor = color || railAccent;
   const lowerColor = effectiveColor.toLowerCase();
   const computedFillColor =
     lowerColor === 'black' || lowerColor === '#000000' || lowerColor === '#000'

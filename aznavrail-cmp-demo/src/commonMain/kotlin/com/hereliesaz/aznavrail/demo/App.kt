@@ -25,6 +25,8 @@ import com.hereliesaz.aznavrail.model.AzUnattachedAnchor
 import com.hereliesaz.aznavrail.rememberAzPopupController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.hereliesaz.aznavrail.model.AzButtonShape
+import androidx.compose.ui.graphics.Color
 
 /**
  * The shared demo UI, used by every platform entry point.
@@ -68,8 +70,21 @@ private fun DemoHost() {
         azAdvanced(enableRailDragging = true)
 
         // --- Ordinary rail items ---------------------------------------------------------------
-        azRailItem(id = "home", text = "Home", screenTitle = "Home") {}
-        azRailItem(id = "docs", text = "Docs", screenTitle = "Docs") {}
+        // Every item is drawn in the same white, so the rail *reads* as white — and that is the
+        // colour the drop-down, the unattached rail and the About reader all inherit, without an
+        // `activeColor` being set anywhere. See `azResolveRailAccent`.
+        azRailItem(id = "home", text = "Home", screenTitle = "Home", color = Color.White) {}
+        azRailItem(id = "docs", text = "Docs", screenTitle = "Docs", color = Color.White) {}
+
+        // The borderless family keeps the footprint of the base shape it names, so a borderless
+        // item still lines up with the bordered ones beside it.
+        azRailItem(
+            id = "flat",
+            text = "Flat",
+            screenTitle = "Flat",
+            shape = AzButtonShape.NONE_CIRCLE,
+            color = Color.White,
+        ) {}
 
         // Per-item loading: only this button spins; the rest of the rail stays live.
         azRailItem(id = "sync", text = "Sync", screenTitle = "Sync") {
@@ -107,6 +122,16 @@ private fun DemoHost() {
         }
 
         azMenuItem(id = "settings", text = "Settings", screenTitle = "Settings") {}
+
+        // The rail ends with an About ("?") item on its own. Declaring one places it yourself —
+        // here, right after the menu item — and `azAbout(aboutRailItem = false)` drops it. Tapping
+        // it opens the reader; tapping any other rail or menu item, or the app icon, closes it.
+        azAboutRailItem(
+            id = "about",
+            text = "?",
+            color = Color.White,
+            info = "The About reader. Persistent, but yours to place.",
+        )
 
         // --- Unattached hosts ------------------------------------------------------------------
         // A rail host that lives outside the rail: draggable, and its position is remembered.

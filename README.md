@@ -543,6 +543,23 @@ A `AzPopupKind.NOTICE` / `WARNING` popup redraws its bound item as a **yellow, r
 triangle outline** for as long as it is up, then restores it. The glyph is also available as an
 ordinary item shape, `AzButtonShape.TRIANGLE`.
 
+### Gestures the rail will and will not claim
+
+The rail is laid out **over the whole window**, so what it listens for is what your app underneath
+does not get. It installs pointer handlers only when it can answer them, and consumes only the events
+it acts on:
+
+| Situation | What the rail does |
+| :--- | :--- |
+| Menu expanded | A scrim covering everything **except the rail** collapses it on an outside tap. It exists whenever the drawer is open; `dimBehindMenu` only decides whether that area is also darkened. |
+| Drag on the rail | The drag detector exists only when the rail is floating, `enableRailDragging` is on, or the menu is swipe-openable — and it consumes the pointer only on the branch that actually undocks the rail or moves the menu. A scroll that starts under the rail still reaches your content. |
+| Tap on the collapsed, docked rail | Only the buttons take taps. The gaps between them, and the empty strip above and below, pass through to whatever your app drew underneath. |
+| Tap while expanded or floating | The rail is a panel in its own right and swallows stray taps. |
+| Nested rail open | A tap-to-dismiss listener covers the strip **only while one is open**. |
+
+There is deliberately **no window-wide tap listener**. If the rail appears to eat a gesture your app
+wanted, that is a bug — please file it.
+
 ### Draggable Rail (FAB Mode)
 
 The rail can be detached and moved around the screen by long-pressing the header icon, which activates "FAB Mode". To enable this feature, set `enableRailDragging = true` in the `azAdvanced` block.
@@ -745,7 +762,8 @@ const settings: AzNavRailSettings = { headerIconSize: 48 };
 
 ### In-App About Reader
 
-The footer **About** item opens a built-in, themed **in-app reader** split into two halves:
+The rail's **About (`?`)** item — and the drawer footer's **About** — open a built-in, themed
+**in-app reader** split into two halves:
 
 - **Top half — docs TOC.** Auto-discovers every `.md` file in the resolved repo's root and `docs/`
   folder via the GitHub API, builds a table of contents, and renders each doc inline with a markdown
@@ -781,6 +799,11 @@ item order to move, restyle, or rename it, or drop it entirely.
 ```kotlin
 azAboutRailItem(id = "about", text = "?", color = Color.White)  // yours, wherever you call it
 azAbout(aboutRailItem = false)                                  // or no rail item at all
+```
+
+```tsx
+<AzAboutRailItem id="about" text="?" />          {/* yours, wherever you render it */}
+const settings = { aboutRailItem: false };       {/* or no rail item at all */}
 ```
 
 Tapping the `?` opens the reader; tapping it again closes it. So does tapping **any other rail or
@@ -941,6 +964,37 @@ The expanded menu text font size (and the footer items text size) is strictly co
 #### Customizing Item Text and Colors
 Navigation items support overriding their display text and colors when shown in the menu versus the rail using `menuText`, `menuToggleOnText`, `menuToggleOffText`, `menuOptions`, `textColor`, and `fillColor` properties! By default, the `fillColor` (translucent background) is automatically computed to be Black (with 25% opacity), unless the item's main color is Black, in which case it is set to White (with 25% opacity) to ensure proper contrast.
 
+
+#### One palette for every AzNavRail surface
+
+`activeColor` is not just this rail's accent — it is what **every other AzNavRail surface** draws
+itself in: a second unattached or floating rail, a drop-down menu, the About reader, the "More from
+Az" carousel, the Help overlay, nested-rail popups, popups, and the expanded drawer. Chrome that
+belongs to the same navigation system has to look like it; falling back to the app's theme is how a
+rail's own drop-down ends up a different colour from the rail.
+
+Leave `activeColor` unset and the accent is **derived from the rail's own items** — the colour most
+of them are drawn in — before it falls back to the app theme. A rail whose every button is white is a
+white rail, whatever `MaterialTheme.colorScheme.primary` says:
+
+```kotlin
+// No azTheme(activeColor = …) anywhere, yet the drop-down, the About reader and the unattached
+// rail all come out white, because the rail reads as white.
+azRailItem(id = "home", text = "Home", color = Color.White) { }
+azRailItem(id = "docs", text = "Docs", color = Color.White) { }
+```
+
+Read it yourself when you need to match it:
+
+```kotlin
+val accent = LocalAzRailPalette.current.accent   // Color.Unspecified when no rail is present
+```
+```tsx
+const accent = useAzAccent()                     // falls back to the library default
+```
+
+The About reader also forces its ground **opaque**: `translucentBackground` supplies the hue, never
+the alpha, because a see-through full-screen reader is an unreadable one.
 
 **React Implementation:**
 ```tsx

@@ -30,6 +30,7 @@ should be added before shipping.
 | `azRailSubToggle` / `azMenuSubToggle` | `MainApp.kt` (sub-toggle under menu-host) |
 | `azRailSubCycler` / `azMenuSubCycler` | `MainApp.kt` (sub-cycler under rail-host) |
 | `azHelpRailItem` | `MainApp.kt` (toggle-help) |
+| `azAboutRailItem` (explicit About item, `info`, `color`) | `MainApp.kt` (`about`) — declared rather than auto-appended, to prove the button is placeable |
 | `azHelpSubItem` | `MainApp.kt` (menu-host-help) |
 | `azDivider` (DSL) | `MainApp.kt` (×3) |
 | `azNestedRail` (VERTICAL + HORIZONTAL, custom `AzComposableContent` child) | `MainApp.kt` (nested-rail vertical, nested-horizontal) |
@@ -46,7 +47,7 @@ should be added before shipping.
 
 | Symbol | Exercised by |
 | --- | --- |
-| `AzButton` (all `AzButtonShape` values, `isLoading`, `enabled`, `contentPadding`) | `StandaloneWidgetsScreen`, `LegacyRailDemoScreen`, `BottomSheetDemoScreen`, others |
+| `AzButton` (all `AzButtonShape` values — including the borderless `NONE`/`NONE_SQUARE`/`NONE_CIRCLE` family, enumerated via `AzButtonShape.values()` — `isLoading`, `enabled`, `contentPadding`) | `StandaloneWidgetsScreen`, `LegacyRailDemoScreen`, `BottomSheetDemoScreen`, others |
 | `AzToggle` (all shapes) | `StandaloneWidgetsScreen`, `BottomSheetDemoScreen`, others |
 | `AzCycler` | `StandaloneWidgetsScreen`, `LegacyRailDemoScreen` |
 | `AzRoller` | `StandaloneWidgetsScreen`, `LegacyRailDemoScreen` |

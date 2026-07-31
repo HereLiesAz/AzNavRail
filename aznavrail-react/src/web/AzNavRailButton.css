@@ -29,7 +29,18 @@
 .az-nav-rail-button.rectangle {
   border-radius: 0;
 }
+/* The borderless family: no border, but the footprint of the base shape each one names. */
 .az-nav-rail-button.none {
   border: none;
+  background-color: transparent;
+}
+.az-nav-rail-button.none-square {
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+}
+.az-nav-rail-button.none-circle {
+  border: none;
+  border-radius: 50%;
   background-color: transparent;
 }
