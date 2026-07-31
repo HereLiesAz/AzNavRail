@@ -46,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -123,9 +124,16 @@ internal fun AboutOverlay(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    val accent = scope.activeColor.takeIf { it != Color.Unspecified } ?: MaterialTheme.colorScheme.primary
-    // A host-supplied translucent background still wins; otherwise the reader brings its own dark ground.
-    val surface = scope.translucentBackground.takeIf { it != Color.Unspecified } ?: AzAboutColors.Ground
+    // The reader wears the rail's colour, not the app theme's. `activeColor` when the developer set
+    // one; failing that, the colour the rail's own items are drawn in. A theme-primary fallback is
+    // how the reader ended up as near-invisible grey-on-black beside a white rail.
+    val accent = scope.railAccent.takeOrElse { MaterialTheme.colorScheme.primary }
+    // A host-supplied translucent background still supplies the hue; its alpha is not honoured,
+    // because a see-through full-screen reader is an unreadable one.
+    val surface = scope.translucentBackground
+        .takeIf { it != Color.Unspecified }
+        ?.copy(alpha = 1f)
+        ?: AzAboutColors.Ground
     // Safe-zone insets come from the host (rail) or a dropdown-supplied default; rail-offset padding,
     // when present, is applied by the caller's wrapper.
     val safe = LocalAzSafeZones.current
@@ -311,7 +319,7 @@ private fun DocReader(entry: AzDocEntry, accent: Color) {
         Box(Modifier.fillMaxSize(), Alignment.Center) { AzLoad() }
     } else {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-            AzMarkdown(markdown = current, activeColor = accent)
+            AzMarkdown(markdown = current, activeColor = accent, ink = AzAboutColors.Ink)
         }
     }
 }

@@ -408,10 +408,13 @@ private class AzDropdownMenuScopeImpl : AzDropdownMenuScope {
     }
 }
 
-/** Resolves the row text colour: explicit [textColor], else [color], else the theme primary. */
+/**
+ * Resolves the row text colour: explicit [textColor], else [color], else the host rail's accent
+ * (falling back to the theme primary when the drop-down stands on its own).
+ */
 @Composable
 private fun effectiveTextColor(textColor: Color?, color: Color): Color =
-    (textColor ?: color).takeOrElse { MaterialTheme.colorScheme.primary }
+    (textColor ?: color).takeOrElse { azAccent() }
 
 /**
  * A full-width, labeled menu row mirroring the expanded drawer's look (centred [titleLarge] text,
@@ -517,7 +520,7 @@ private fun AzDropdownFooter(
     easing: Easing = AzEasing.Wp7Decelerate,
 ) {
     val context = LocalContext.current
-    val footerColor = MaterialTheme.colorScheme.primary
+    val footerColor = azAccent()
     val appName = remember(context.packageName) {
         try {
             context.packageManager.getApplicationLabel(
@@ -698,7 +701,7 @@ private fun AzDropdownEntryItem(
                     AzButton(
                         onClick = action,
                         text = entry.text,
-                        color = entry.color.takeOrElse { MaterialTheme.colorScheme.primary },
+                        color = entry.color.takeOrElse { azAccent() },
                         textColor = entry.textColor,
                         fillColor = entry.fillColor,
                         shape = entry.shape,
@@ -742,7 +745,7 @@ private fun AzDropdownEntryItem(
                         },
                         toggleOnText = entry.toggleOnText,
                         toggleOffText = entry.toggleOffText,
-                        color = entry.color.takeOrElse { MaterialTheme.colorScheme.primary },
+                        color = entry.color.takeOrElse { azAccent() },
                         textColor = entry.textColor,
                         fillColor = entry.fillColor,
                         shape = entry.shape,
@@ -788,7 +791,7 @@ private fun AzDropdownEntryItem(
                                 dismiss()
                             }
                         },
-                        color = entry.color.takeOrElse { MaterialTheme.colorScheme.primary },
+                        color = entry.color.takeOrElse { azAccent() },
                         textColor = entry.textColor,
                         fillColor = entry.fillColor,
                         shape = entry.shape,
@@ -1004,7 +1007,10 @@ fun AzDropdownMenu(
                 properties = PopupProperties(focusable = true, dismissOnClickOutside = true)
             ) {
                 Surface(
-                    color = MaterialTheme.colorScheme.surface,
+                    // The host rail's panel colour when there is one, so a rail's own drop-down does
+                    // not arrive in the app theme's surface instead of the rail's.
+                    color = LocalAzRailPalette.current.surface
+                        .takeOrElse { MaterialTheme.colorScheme.surface },
                     shape = RoundedCornerShape(12.dp),
                     tonalElevation = 2.dp,
                     shadowElevation = 8.dp
@@ -1060,7 +1066,7 @@ fun AzDropdownMenu(
                         }
                         // The expanded-menu design carries the rail's footer (About / Feedback / @HereLiesAz).
                         if (config.design == AzDropdownDesign.MENU && config.showFooter) {
-                            AzDivider(color = MaterialTheme.colorScheme.primary)
+                            AzDivider(color = azAccent())
                             AzDropdownFooter(
                                 repoUrl = effectiveRepoUrl,
                                 onAboutClick = if (config.inAppAbout && effectiveRepoUrl.isNotBlank()) {

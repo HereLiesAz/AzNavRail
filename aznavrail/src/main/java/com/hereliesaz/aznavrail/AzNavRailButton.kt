@@ -118,13 +118,15 @@ internal fun AzNavRailButton(
     val buttonShape: Shape = shapeOverride ?: shape.toComposeShape()
 
     // STRICT WIDTH COMPLIANCE for all shapes.
-    val buttonModifier = when (shape) {
+    // A borderless shape keeps the footprint of the base shape it was built on, so dropping the
+    // border never reflows the rail around the item.
+    val buttonModifier = when (shape.baseShape) {
         // The triangle occupies the same square footprint as a circle, so an item that flips to the
         // warning glyph doesn't reflow the rail around it.
         AzButtonShape.CIRCLE, AzButtonShape.SQUARE, AzButtonShape.TRIANGLE -> modifier
             .size(size)
             .aspectRatio(1f)
-        AzButtonShape.RECTANGLE, AzButtonShape.NONE -> {
+        else -> {
             modifier
                 .width(size)
                 .height(40.dp)
@@ -171,7 +173,7 @@ internal fun AzNavRailButton(
         shape = buttonShape,
         color = containerColor,
         contentColor = finalColor,
-        border = if (shape == AzButtonShape.NONE) null else BorderStroke(3.dp, finalColor),
+        border = if (shape.isBorderless) null else BorderStroke(3.dp, finalColor),
         modifier = clippedModifier
             .onGloballyPositioned { coordinates ->
                 onGloballyPositioned?.invoke(coordinates.boundsInWindow())
@@ -184,7 +186,7 @@ internal fun AzNavRailButton(
             // A triangle's usable area is its lower half, so its content is nudged down off the apex.
             modifier = when {
                 itemContent != null -> Modifier
-                shape == AzButtonShape.TRIANGLE -> Modifier.padding(contentPadding).padding(top = size * 0.25f)
+                shape.baseShape == AzButtonShape.TRIANGLE -> Modifier.padding(contentPadding).padding(top = size * 0.25f)
                 else -> Modifier.padding(contentPadding)
             },
             contentAlignment = Alignment.Center
@@ -213,8 +215,8 @@ internal fun AzNavRailButton(
             // Each button spins its own spinner, scaled to the button rather than the full-screen
             // default, and tinted to the item's own colour so a loading item still reads as itself.
             if (isLoading) {
-                val spinnerSize = when (shape) {
-                    AzButtonShape.RECTANGLE, AzButtonShape.NONE -> 28.dp
+                val spinnerSize = when (shape.baseShape) {
+                    AzButtonShape.RECTANGLE -> 28.dp
                     else -> size * 0.6f
                 }
                 AzLoad(size = spinnerSize, color = finalColor)

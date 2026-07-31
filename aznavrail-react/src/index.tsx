@@ -26,7 +26,19 @@ export * from './types';
 // Explicitly re-export the canonical DSL versions from `./types` to resolve the ambiguity
 // (an explicit re-export takes precedence over `export *`).
 export type { AzToggleProps, AzCyclerProps } from './types';
-export { AzHelpRailItem, AzHelpSubItem } from './AzNavRailScope';
+export {
+  AzHelpRailItem,
+  AzHelpSubItem,
+  AzAboutRailItem,
+} from './AzNavRailScope';
+export {
+  AzRailPaletteContext,
+  useAzAccent,
+  useAzRailSurface,
+  resolveRailAccent,
+  AZ_ACCENT_FALLBACK,
+} from './AzRailPalette';
+export type { AzRailPalette } from './AzRailPalette';
 
 // --- Status-driven guidance framework (replaces the scripted tutorial) ---
 export {

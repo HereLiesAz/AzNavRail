@@ -58,6 +58,11 @@ internal object AzNavRailDefaults {
     const val NO_TITLE = "NO_TITLE_AZ_NAV_RAIL"
     /** Auto-generated ID used for the implicit help button injected when no explicit help item is present. */
     const val AUTO_HELP_ID = "AZ_AUTO_HELP_ID_INTERNAL"
+    /**
+     * Auto-generated ID for the implicit About (`?`) button appended to the end of the rail when
+     * the developer declared none of their own.
+     */
+    const val AUTO_ABOUT_ID = "AZ_AUTO_ABOUT_ID_INTERNAL"
 }
 
 /**

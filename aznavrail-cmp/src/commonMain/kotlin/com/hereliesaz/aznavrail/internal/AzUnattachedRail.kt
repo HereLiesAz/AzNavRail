@@ -343,7 +343,7 @@ private fun UnattachedNode(
         onItemGloballyPositioned = scope.advancedConfig.onItemGloballyPositioned,
         onBoundsCalculated = { id, bounds -> scope.itemBoundsCache[id] = bounds },
         onBoundsCleared = { id -> scope.itemBoundsCache.remove(id) },
-        activeColor = scope.activeColor,
+        activeColor = scope.railAccent,
         onSliderChange = { id, v -> scope.onSliderChangeMap[id]?.invoke(v) },
         onSliderRangeChange = { id, r -> scope.onSliderRangeChangeMap[id]?.invoke(r) },
     )

@@ -22,6 +22,7 @@ import { AzLoad } from './AzLoad';
 import { AzButtonShape } from '../types';
 import { listDocs, fetchDoc, AzDocEntry } from '../services/githubDocs';
 import { fetchMoreFromAz, AzMoreFromApp } from '../services/moreFromAz';
+import { useAzAccent, AZ_ACCENT_FALLBACK } from '../AzRailPalette';
 
 /**
  * The About reader's own palette: dark ground, light ink, in every theme.
@@ -81,11 +82,16 @@ export const AboutOverlay: React.FC<AboutOverlayProps> = ({
   moreFromAzJsonUrl,
   onDismiss,
 }) => {
-  const accent = settings.activeColor || '#6200ee';
+  // The reader wears the rail's colour, not the app's theme. `activeColor` when the developer set
+  // one; failing that, the colour the rail's own items are drawn in (see `resolveRailAccent`).
+  const railAccent = useAzAccent(AZ_ACCENT_FALLBACK);
+  const accent = settings.activeColor || railAccent;
   // Dark ground, light ink, in every theme. The reader is a full-screen surface the user has
   // stepped *aside* into — long-form prose, a document list, a carousel — and long-form reading on
   // a bright white field is the wrong call regardless of what the surrounding app is doing. It used
   // to default to '#ffffff'. A host-supplied translucentBackground still wins outright.
+  // `translucentBackground` supplies the hue; its alpha is not honoured, because a see-through
+  // full-screen reader is an unreadable one.
   const surface = settings.translucentBackground || AzAboutColors.Ground;
   const [state, setState] = useState<DocsState>({ status: 'loading' });
   const [selected, setSelected] = useState<AzDocEntry | null>(null);

@@ -4,8 +4,6 @@ package com.hereliesaz.aznavrail
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -81,7 +79,6 @@ import com.hereliesaz.aznavrail.internal.rememberAzClosingState
 import com.hereliesaz.aznavrail.internal.RailItems
 import com.hereliesaz.aznavrail.internal.rememberAzHaptics
 import com.hereliesaz.aznavrail.internal.rememberAzOverlayLauncher
-import com.hereliesaz.aznavrail.internal.toComposeShape
 import com.hereliesaz.aznavrail.model.AzExit
 import com.hereliesaz.aznavrail.internal.SecretScreens
 import com.hereliesaz.aznavrail.service.GithubDocsRepository
@@ -282,6 +279,36 @@ fun AzNavRail(
     // is always present (the rail errors out above without one), so this is effectively non-null.
     val hostScope = LocalAzNavHostScope.current as? AzNavHostScopeImpl
     val showHelpOverlay = hostScope?.helpVisible == true
+
+    // The About ("?") affordance is a rail item like any other, appended last — unless the developer
+    // declared their own with `azAboutRailItem`, in which case theirs stands where they put it. It
+    // persists; it is not fixed.
+    val hasExplicitAboutItem = scope.navItems.any { it.isAboutItem }
+    val autoAboutItem = if (scope.advancedConfig.aboutRailItem && !hasExplicitAboutItem) {
+        AzNavItem.About(id = AzNavRailDefaults.AUTO_ABOUT_ID, shape = scope.defaultShape)
+    } else null
+
+    /** Opens the About reader (or the repo in a browser), and closes it again on a second tap. */
+    val toggleAbout: () -> Unit = {
+        if (scope.advancedConfig.inAppAbout) {
+            if (hostScope?.aboutVisible == true) hostScope.hideAbout() else hostScope?.showAbout()
+        } else if (effectiveRepoUrl.isNotBlank()) {
+            try {
+                uriHandler.openUri(effectiveRepoUrl)
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    /**
+     * Leaves the About / More-from-Az reader. Any other interaction with the rail means the user is
+     * done reading — a full-screen reader you can only escape through its own close button is a
+     * room with a keyhole for a door.
+     */
+    val dismissFooterScreens: () -> Unit = {
+        hostScope?.hideAbout()
+        hostScope?.hideMoreFromAz()
+    }
     var wasFloatingOpenBeforeDrag by remember { mutableStateOf(false) }
     val cyclerStates = remember { mutableStateMapOf<String, CyclerTransientState>() }
     val onSecretClick = SecretScreens(secLoc = scope.advancedConfig.secLoc, secLocPort = scope.advancedConfig.secLocPort)
@@ -445,6 +472,7 @@ fun AzNavRail(
     }
 
     fun toggleExpanded() {
+        dismissFooterScreens()
         if (!showHelpOverlay) {
             if (isFloating) {
                 showFloatingButtons = !showFloatingButtons
@@ -456,6 +484,12 @@ fun AzNavRail(
             if (scope.vibrate) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         }
     }
+
+    // Which pointer gestures this rail can actually act on. Everything else must fall through to the
+    // app: the rail is drawn over the host's content, and a listener that answers no gesture is
+    // simply a hole in the app's own input.
+    val canSwipeMenu = !disableSwipeToOpen && !scope.noMenu
+    val railHandlesDrags = isFloating || scope.advancedConfig.enableRailDragging || canSwipeMenu
 
     val sizeModifier = if (isFloating || (scope.noMenu && scope.isFoldedUp)) {
         // Enforce max height/width in FAB mode to ensure it fits within 10-90% safe zone
@@ -488,16 +522,12 @@ fun AzNavRail(
     val surfaceColor = Color.Transparent
     val surfaceElevation = if (isExpanded && !isFloating) 2.dp else 0.dp
 
-    val tapOutsideToCollapse = if (isExpanded) {
-        Modifier.pointerInput(Unit) {
-            detectTapGestures(onTap = { isExpanded = false })
-        }
-    } else Modifier
-
+    // Deliberately no window-wide tap listener on this Box. The rail is laid out over the entire
+    // window, so a `detectTapGestures` here eats every tap meant for the app beneath it. Collapsing
+    // on an outside tap is the scrim's job below — it is inset to exclude the rail, and it only
+    // exists while the menu is actually open.
     Box(
-
-        modifier = modifier.then(tapOutsideToCollapse),
-
+        modifier = modifier,
         contentAlignment = if (isFloating) Alignment.TopStart else railAlignment
     ) {
         val swipeWidthIncrease = if (isExpanded) 40.dp else 0.dp
@@ -539,121 +569,139 @@ fun AzNavRail(
                 .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
                 .then(safeZoneModifier)
                 .width(railWidth + swipeWidthIncrease)
-                .pointerInput(isFloating, disableSwipeToOpen, visualDockingSide) {
-                    detectDragGestures(
-                        onDragStart = {
-                            if (isFloating) {
-                                wasFloatingOpenBeforeDrag = showFloatingButtons
-                                showFloatingButtons = false
-                            }
-                        },
-                        onDrag = { change, dragAmount ->
-                            change.consume()
-                            if (isFloating) {
-                                offsetX += dragAmount.x
-                                offsetY += dragAmount.y
-                                // Report the drag to the consumer. `onOverlayDrag` is the
-                                // system-overlay flavour, `onRailDrag` the in-app one; both were
-                                // collected by azAdvanced/azSettings but never invoked.
-                                scope.advancedConfig.onRailDrag?.invoke(dragAmount.x, dragAmount.y)
-                                if (scope.advancedConfig.overlayService != null) {
-                                    scope.advancedConfig.onOverlayDrag?.invoke(dragAmount.x, dragAmount.y)
+                // Listen for drags only when the rail could act on one. A rail that can neither be
+                // undocked nor swiped open has no business installing a pointer handler over the
+                // app's content — and even when it does listen, it consumes only the drags it
+                // actually uses, so a scroll that starts under the rail still reaches the app.
+                .then(
+                    if (!railHandlesDrags) Modifier
+                    else Modifier.pointerInput(isFloating, disableSwipeToOpen, visualDockingSide) {
+                        detectDragGestures(
+                            onDragStart = {
+                                if (isFloating) {
+                                    wasFloatingOpenBeforeDrag = showFloatingButtons
+                                    showFloatingButtons = false
                                 }
-                                val minY = screenHeightPx * 0.1f
-                                val maxY = maxOf(minY, (screenHeightPx * 0.9f) - railContentHeight)
-                                offsetY = offsetY.coerceIn(minY, maxY)
-
-                                val minX = 0f
-                                val maxX = screenWidthPx - with(density) { railWidth.toPx() }
-                                offsetX = offsetX.coerceIn(minX, maxX)
-                            } else {
-                                val absX = kotlin.math.abs(dragAmount.x)
-                                val absY = kotlin.math.abs(dragAmount.y)
-
-                                if (scope.advancedConfig.enableRailDragging && absY > 20 && absY > absX) {
-                                    isFloating = true
-                                    isExpanded = false
-                                    offsetX = 0f
-                                    offsetY = screenHeightPx * 0.1f
-
-                                    if (dragAmount.y < 0) {
-                                        showFloatingButtons = false
-                                        wasFloatingOpenBeforeDrag = false
-                                        AzNavRailLogger.e(
-                                            "AzNavRail",
-                                            "Vertical swipe UP: FAB mode activated, items folded."
-                                        )
-                                    } else {
-                                        showFloatingButtons = false
-                                        wasFloatingOpenBeforeDrag = false
-                                        AzNavRailLogger.e(
-                                            "AzNavRail",
-                                            "Vertical swipe DOWN: FAB mode activated, dragging initiated."
-                                        )
+                            },
+                            onDrag = { change, dragAmount ->
+                                if (isFloating) {
+                                    change.consume()
+                                    offsetX += dragAmount.x
+                                    offsetY += dragAmount.y
+                                    // Report the drag to the consumer. `onOverlayDrag` is the
+                                    // system-overlay flavour, `onRailDrag` the in-app one; both were
+                                    // collected by azAdvanced/azSettings but never invoked.
+                                    scope.advancedConfig.onRailDrag?.invoke(dragAmount.x, dragAmount.y)
+                                    if (scope.advancedConfig.overlayService != null) {
+                                        scope.advancedConfig.onOverlayDrag?.invoke(dragAmount.x, dragAmount.y)
                                     }
+                                    val minY = screenHeightPx * 0.1f
+                                    val maxY = maxOf(minY, (screenHeightPx * 0.9f) - railContentHeight)
+                                    offsetY = offsetY.coerceIn(minY, maxY)
 
-                                    if (scope.vibrate) haptic.performHapticFeedback(
-                                        HapticFeedbackType.LongPress
-                                    )
-                                } else if (!disableSwipeToOpen && !scope.noMenu) {
-                                    if (visualDockingSide == AzDockingSide.LEFT) {
-                                        if (dragAmount.x > 20 && !isExpanded) {
-                                            isExpanded = true
+                                    val minX = 0f
+                                    val maxX = screenWidthPx - with(density) { railWidth.toPx() }
+                                    offsetX = offsetX.coerceIn(minX, maxX)
+                                } else {
+                                    val absX = kotlin.math.abs(dragAmount.x)
+                                    val absY = kotlin.math.abs(dragAmount.y)
+
+                                    if (scope.advancedConfig.enableRailDragging && absY > 20 && absY > absX) {
+                                        change.consume()
+                                        isFloating = true
+                                        isExpanded = false
+                                        offsetX = 0f
+                                        offsetY = screenHeightPx * 0.1f
+
+                                        if (dragAmount.y < 0) {
+                                            showFloatingButtons = false
+                                            wasFloatingOpenBeforeDrag = false
                                             AzNavRailLogger.e(
                                                 "AzNavRail",
-                                                "Horizontal swipe RIGHT: Menu expanded."
+                                                "Vertical swipe UP: FAB mode activated, items folded."
                                             )
-                                        } else if (dragAmount.x < -20 && isExpanded) {
-                                            isExpanded = false
+                                        } else {
+                                            showFloatingButtons = false
+                                            wasFloatingOpenBeforeDrag = false
                                             AzNavRailLogger.e(
                                                 "AzNavRail",
-                                                "Horizontal swipe LEFT: Menu collapsed."
+                                                "Vertical swipe DOWN: FAB mode activated, dragging initiated."
                                             )
                                         }
-                                    } else {
-                                        if (dragAmount.x < -20 && !isExpanded) {
-                                            isExpanded = true
-                                            AzNavRailLogger.e(
-                                                "AzNavRail",
-                                                "Horizontal swipe LEFT: Menu expanded."
-                                            )
-                                        } else if (dragAmount.x > 20 && isExpanded) {
-                                            isExpanded = false
-                                            AzNavRailLogger.e(
-                                                "AzNavRail",
-                                                "Horizontal swipe RIGHT: Menu collapsed."
-                                            )
+
+                                        if (scope.vibrate) haptic.performHapticFeedback(
+                                            HapticFeedbackType.LongPress
+                                        )
+                                    } else if (canSwipeMenu) {
+                                        if (visualDockingSide == AzDockingSide.LEFT) {
+                                            if (dragAmount.x > 20 && !isExpanded) {
+                                                change.consume()
+                                                isExpanded = true
+                                                AzNavRailLogger.e(
+                                                    "AzNavRail",
+                                                    "Horizontal swipe RIGHT: Menu expanded."
+                                                )
+                                            } else if (dragAmount.x < -20 && isExpanded) {
+                                                change.consume()
+                                                isExpanded = false
+                                                AzNavRailLogger.e(
+                                                    "AzNavRail",
+                                                    "Horizontal swipe LEFT: Menu collapsed."
+                                                )
+                                            }
+                                        } else {
+                                            if (dragAmount.x < -20 && !isExpanded) {
+                                                change.consume()
+                                                isExpanded = true
+                                                AzNavRailLogger.e(
+                                                    "AzNavRail",
+                                                    "Horizontal swipe LEFT: Menu expanded."
+                                                )
+                                            } else if (dragAmount.x > 20 && isExpanded) {
+                                                change.consume()
+                                                isExpanded = false
+                                                AzNavRailLogger.e(
+                                                    "AzNavRail",
+                                                    "Horizontal swipe RIGHT: Menu collapsed."
+                                                )
+                                            }
                                         }
                                     }
                                 }
-                            }
-                        },
-                        onDragEnd = {
-                            if (isFloating) {
-                                if (wasFloatingOpenBeforeDrag) {
-                                    showFloatingButtons = true
-                                    AzNavRailLogger.e("AzNavRail", "FAB drag end: items unfolded.")
-                                }
+                            },
+                            onDragEnd = {
+                                if (isFloating) {
+                                    if (wasFloatingOpenBeforeDrag) {
+                                        showFloatingButtons = true
+                                        AzNavRailLogger.e("AzNavRail", "FAB drag end: items unfolded.")
+                                    }
 
-                                if (offsetX * offsetX + offsetY * offsetY < snapBackRadius * snapBackRadius) {
-                                    isFloating = false
-                                    offsetX = 0f
-                                    offsetY = 0f
-                                    AzNavRailLogger.e("AzNavRail", "FAB docked via snapping.")
+                                    if (offsetX * offsetX + offsetY * offsetY < snapBackRadius * snapBackRadius) {
+                                        isFloating = false
+                                        offsetX = 0f
+                                        offsetY = 0f
+                                        AzNavRailLogger.e("AzNavRail", "FAB docked via snapping.")
+                                    }
                                 }
                             }
-                        }
-                    )
-                }
+                        )
+                    }
+                )
         ) {
             Surface(
                 modifier = sizeModifier
                     .onGloballyPositioned {
                         if (isFloating) railContentHeight = it.size.height.toFloat()
                     }
-                    .pointerInput(Unit) {
-                        detectTapGestures { /* Consume */ }
-                    }
+                    // Swallow stray taps only while the rail is a panel in its own right — expanded,
+                    // or floating over the app. Collapsed and docked it is a full-height strip that
+                    // is mostly empty space, its buttons take their own taps, and the gaps between
+                    // them belong to whatever the app drew underneath.
+                    .then(
+                        if (isExpanded || isFloating) Modifier.pointerInput(Unit) {
+                            detectTapGestures { /* Consume */ }
+                        } else Modifier
+                    )
                     .then(if (isFloating) Modifier.shadow(8.dp, RectangleShape) else Modifier),
                 color = surfaceColor,
                 tonalElevation = surfaceElevation
@@ -736,11 +784,12 @@ fun AzNavRail(
                 }
                 val isRailOpen = !(isFloating && !showFloatingButtons) && !(scope.noMenu && scope.isFoldedUp)
                 val railItemsCount =
-                    scope.navItems.filter { it.isRailItem && !it.isSubItem && it.id !in unattachedIds }.size
+                    scope.navItems.filter { it.isRailItem && !it.isSubItem && it.id !in unattachedIds }.size +
+                        (if (autoAboutItem != null) 1 else 0)
                 val railItemsRendered = rememberAzClosingState(
                     open = isRailOpen,
                     exit = AzExit.Turnstile,
-                    count = railItemsCount + (if (scope.noMenu) 1 else 0),
+                    count = railItemsCount,
                     staggerMs = scope.entranceStaggerMs,
                     durationMs = scope.entranceDurationMs
                 )
@@ -754,6 +803,10 @@ fun AzNavRail(
                         // may render them.
                         val attachedItems = if (unattachedIds.isEmpty()) scope.navItems
                         else scope.navItems.filterNot { it.id in unattachedIds }
+                        // The rail strip ends with the About ("?") button. The drawer does not need
+                        // one — its footer already carries About — so this is appended here only.
+                        val railStripItems =
+                            if (autoAboutItem != null) attachedItems + autoAboutItem else attachedItems
                         val displayItems = if (scope.advancedConfig.helpEnabled && !hasExplicitHelpItem) {
                             attachedItems + AzNavItem.Help(
                                 id = AzNavRailDefaults.AUTO_HELP_ID,
@@ -830,7 +883,7 @@ fun AzNavRail(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 RailItems(
-                                    items = attachedItems,
+                                    items = railStripItems,
                                     scope = scope,
                                     navController = effectiveNavController,
                                     currentDestination = actualCurrentDestination,
@@ -866,6 +919,9 @@ fun AzNavRail(
                                         if (item.isHelpItem) {
                                             toggleHelpOverlay(item.id)
                                         }
+                                        // Reaching for any other rail item is the user leaving the
+                                        // About reader; only the About item itself toggles it.
+                                        if (item.isAboutItem) toggleAbout() else dismissFooterScreens()
                                         if (item.collapseOnClick && !scope.noMenu) isExpanded = false
                                     },
                                     hostStates = hostStates,
@@ -882,7 +938,7 @@ fun AzNavRail(
                                 if (scope.advancedConfig.moreFromAzRailItem &&
                                     scope.advancedConfig.moreFromAzEnabled && !isFloating
                                 ) {
-                                    val moreColor = scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
+                                    val moreColor = scope.railAccent.takeOrElse { MaterialTheme.colorScheme.primary }
                                     AzButton(
                                         onClick = { hostScope?.showMoreFromAz() },
                                         text = "More",
@@ -895,102 +951,47 @@ fun AzNavRail(
                         }
                     }
 
-                    // FIXED FOOTER (Does not scroll, pinned below menu)
-                    if (scope.noMenu) {
-                        val accordionModifier = com.hereliesaz.aznavrail.internal.rememberAzAccordionModifier(
-                            index = railItemsCount,
-                            count = railItemsCount + 1,
-                            visible = isRailOpen,
-                            isHorizontal = false,
-                            staggerMs = scope.entranceStaggerMs,
-                            durationMs = scope.entranceDurationMs,
-                            baseRotationZ = rotationDegrees
-                        )
-                        Box(
-                            modifier = Modifier
-                                .then(accordionModifier)
-                                .padding(8.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            // `defaultShape` is an AzButtonShape; border/background need the real
-                            // Compose Shape it maps to.
-                            val buttonShape = scope.defaultShape.toComposeShape()
-                            // The same colour an ordinary, unselected rail item resolves to (`item.color ?: primary`
-                            // — see RailContent). This used to draw in `scope.activeColor`, which is the
-                            // *selected* accent, so the help affordance stood out from the rail it belongs
-                            // to — and rendered as Unspecified whenever the host had not set one at all.
-                            val railItemColor = MaterialTheme.colorScheme.primary
-                            val transparentShapeModifier = Modifier
-                                .size(activeButtonSize)
-                                .border(
-                                    width = 2.dp,
-                                    color = railItemColor,
-                                    shape = buttonShape
-                                )
-                                .background(Color.Transparent, buttonShape)
-                                .clickable {
-                                    if (scope.advancedConfig.inAppAbout) {
-                                        hostScope?.showAbout()
-                                    } else {
-                                        try {
-                                            if (effectiveRepoUrl.isNotBlank()) {
-                                                uriHandler.openUri(effectiveRepoUrl)
-                                            }
-                                        } catch (e: Exception) {
-                                        }
-                                    }
-                                }
-
-                            Box(
-                                modifier = transparentShapeModifier,
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "?",
-                                    color = railItemColor,
-                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                                )
-                            }
-                        }
-                    } else {
-                        // Keep the footer composed for `entranceDurationMs` after `isExpanded` flips false
-                        // so its accordion fold-UP animation actually plays. Without this the footer would
-                        // leave composition instantly and never animate out.
-                        val footerRendered = rememberAzClosingState(
-                            open = isExpanded,
-                            exit = AzExit.Turnstile,
-                            count = 1,
-                            staggerMs = scope.entranceStaggerMs,
-                            durationMs = scope.entranceDurationMs,
-                        )
-                        if (scope.showFooter && footerRendered) {
-                            val footerMenuCount = scope.navItems.count { !it.isSubItem }
-                            val dividerColor = scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
-                            Column {
-                                AzDivider(color = dividerColor)
-                                Footer(
-                                    appName = appName,
-                                    onToggle = { toggleExpanded() },
-                                    onUndock = {
-                                        isFloating = true
-                                        isExpanded = false
-                                        offsetY = screenHeightPx * 0.1f
-                                        scope.advancedConfig.onUndock?.invoke()
-                                    },
-                                    onSecretClick = onSecretClick,
-                                    scope = scope,
-                                    repoUrl = effectiveRepoUrl,
-                                    footerColor = scope.activeColor,
-                                    onAboutClick = if (scope.advancedConfig.inAppAbout) {
-                                        { isExpanded = false; hostScope?.showAbout() }
-                                    } else null,
-                                    visible = isExpanded,
-                                    menuItemCount = footerMenuCount,
-                                    staggerMs = scope.entranceStaggerMs,
-                                    durationMs = scope.entranceDurationMs,
-                                    easing = scope.entranceEasing,
-                                )
-                            }
+                    // FIXED FOOTER (Does not scroll, pinned below menu). The About ("?") button
+                    // used to live here, hand-drawn and reachable only in `noMenu` rails; it is now
+                    // an ordinary rail item (see `autoAboutItem`), so it is on the rail in every
+                    // mode and the developer can move, restyle or replace it.
+                    // Keep the footer composed for `entranceDurationMs` after `isExpanded` flips false
+                    // so its accordion fold-UP animation actually plays. Without this the footer would
+                    // leave composition instantly and never animate out.
+                    val footerRendered = rememberAzClosingState(
+                        open = isExpanded,
+                        exit = AzExit.Turnstile,
+                        count = 1,
+                        staggerMs = scope.entranceStaggerMs,
+                        durationMs = scope.entranceDurationMs,
+                    )
+                    if (scope.showFooter && footerRendered) {
+                        val footerMenuCount = scope.navItems.count { !it.isSubItem }
+                        val dividerColor = scope.railAccent.takeOrElse { MaterialTheme.colorScheme.primary }
+                        Column {
+                            AzDivider(color = dividerColor)
+                            Footer(
+                                appName = appName,
+                                onToggle = { toggleExpanded() },
+                                onUndock = {
+                                    isFloating = true
+                                    isExpanded = false
+                                    offsetY = screenHeightPx * 0.1f
+                                    scope.advancedConfig.onUndock?.invoke()
+                                },
+                                onSecretClick = onSecretClick,
+                                scope = scope,
+                                repoUrl = effectiveRepoUrl,
+                                footerColor = scope.railAccent,
+                                onAboutClick = if (scope.advancedConfig.inAppAbout) {
+                                    { isExpanded = false; hostScope?.showAbout() }
+                                } else null,
+                                visible = isExpanded,
+                                menuItemCount = footerMenuCount,
+                                staggerMs = scope.entranceStaggerMs,
+                                durationMs = scope.entranceDurationMs,
+                                easing = scope.entranceEasing,
+                            )
                         }
                     }
                 }
@@ -1125,7 +1126,7 @@ fun AzNavRail(
             AzInstructionOverlay(
                 resolved = frame.resolved,
                 itemBoundsCache = scope.itemBoundsCache,
-                accent = if (scope.activeColor != Color.Unspecified) scope.activeColor else MaterialTheme.colorScheme.primary,
+                accent = scope.railAccent.takeOrElse { MaterialTheme.colorScheme.primary },
                 activeItemId = activeItemId,
                 targets = scope.guidanceTargets,
                 controller = guidanceController,
@@ -1168,7 +1169,7 @@ private fun MenuItemNode(
     // actual AzDivider — same accent color as the surrounding labels — instead of falling through
     // to the empty-MenuItem code path (which used to render as a blank clickable row).
     if (item.isDivider) {
-        val dividerAccent = scope.activeColor.takeOrElse { MaterialTheme.colorScheme.primary }
+        val dividerAccent = scope.railAccent.takeOrElse { MaterialTheme.colorScheme.primary }
         AzDivider(color = dividerAccent)
         return
     }
@@ -1188,6 +1189,9 @@ private fun MenuItemNode(
         dockingSide = dockingSide,
         floating = floating
     )
+    // Same contract as the rail strip: acting on the menu means the user is done with the About /
+    // More-from-Az reader, so it gets out of the way.
+    val readerHost = LocalAzNavHostScope.current as? AzNavHostScopeImpl
     MenuItem(
         item = item,
         navController = navController,
@@ -1196,9 +1200,15 @@ private fun MenuItemNode(
         onClick = {
             scope.lastTouchedItemId = item.id
             haptics.commit()
+            if (item.isAboutItem) {
+                if (readerHost?.aboutVisible == true) readerHost.hideAbout() else readerHost?.showAbout()
+            } else {
+                readerHost?.hideAbout()
+                readerHost?.hideMoreFromAz()
+            }
             if (item.isHelpItem) {
                 onToggleHelp(item.id)
-            } else {
+            } else if (!item.isAboutItem) {
                 scope.onClickMap[item.id]?.invoke()
             }
             scope.advancedConfig.onInteraction?.invoke(item.id, item)
@@ -1230,7 +1240,7 @@ private fun MenuItemNode(
         },
         onBoundsCleared = { id -> scope.itemBoundsCache.remove(id) },
         helpEnabled = showHelpOverlay,
-        activeColor = scope.activeColor,
+        activeColor = scope.railAccent,
         kineticModifier = kinetic,
         textStyle = scope.itemTextStyle,
         dockingSide = dockingSide,

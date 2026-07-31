@@ -35,6 +35,7 @@ import { AzNavRailDefaults, AzMotion } from '../AzNavRailDefaults';
 import { AboutOverlay } from './AboutOverlay';
 import { AzKineticItem, useAzClosing } from './AzKinetics';
 import { solveHybridJustify } from '../util/AzJustify';
+import { useAzAccent } from '../AzRailPalette';
 
 const DROPDOWN_BASE_FONT_PX = 16;
 
@@ -238,6 +239,7 @@ export const AzDropdownItem: React.FC<AzDropdownItemProps> = ({
   const ctx = useContext(AzDropdownMenuContext);
   // Hooks must run unconditionally. Guard reads via optional chaining below.
   const [availableWidth, setAvailableWidth] = useState(0);
+  const railAccent = useAzAccent();
   if (!ctx)
     throw new Error('AzDropdownItem must be used inside an <AzDropdownMenu>');
   const {
@@ -270,7 +272,9 @@ export const AzDropdownItem: React.FC<AzDropdownItemProps> = ({
     // Split up-front on `\n` so each line gets its own measurement + solve — the newline count
     // would otherwise skew both `naturalWidth` and `charCount` for multi-line labels.
     const lines = text.split('\n');
-    const rowColor = textColor || color || '#6750A4';
+    // The host rail's accent when there is one, so a rail's own drop-down does not arrive in a
+    // different colour from the rail.
+    const rowColor = textColor || color || railAccent;
     return (
       <TouchableOpacity
         style={styles.menuRow}
@@ -303,7 +307,7 @@ export const AzDropdownItem: React.FC<AzDropdownItemProps> = ({
       onClick={press}
       shape={shape}
       enabled={enabled}
-      color={color}
+      color={color || railAccent}
       textColor={textColor}
       fillColor={fillColor}
     />
@@ -577,7 +581,7 @@ const AzDropdownFooter: React.FC<{
   staggerMs = AzMotion.ItemStaggerMs,
   durationMs = AzMotion.ItemDurationMs,
 }) => {
-  const footerColor = '#6750A4';
+  const footerColor = useAzAccent();
   // Only open safe schemes — this also runs on the web via react-native-web, where a `javascript:`
   // URL would otherwise execute.
   const open = (url: string) => {

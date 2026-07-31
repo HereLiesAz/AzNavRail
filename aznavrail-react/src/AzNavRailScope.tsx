@@ -966,6 +966,42 @@ export const AzNestedRail: React.FC<AzNestedRailProps> = (props) => {
  * />
  * ```
  */
+/**
+ * Declares the rail's About (`?`) item **explicitly**, in the position you render it from.
+ *
+ * The rail appends one of these on its own when you declare none, so About is always reachable;
+ * declaring your own replaces that automatic item, which is the point — the button persists, it is
+ * not fixed. Tapping it opens the in-app About reader (or the repo URL when `inAppAbout` is false),
+ * and tapping it again closes it.
+ *
+ * @example
+ * ```tsx
+ * <AzAboutRailItem id="about" text="?" color="#ffffff" />
+ * ```
+ */
+export const AzAboutRailItem: React.FC<AzNavItemProps> = (props) => {
+  useAzItem({
+    ...props,
+    text: props.text || '?',
+    shape: props.shape || AzButtonShape.CIRCLE,
+    isRailItem: true,
+    isToggle: false,
+    isCycler: false,
+    isDivider: false,
+    // The About reader is a place you go, not a menu action; closing the drawer behind you would
+    // hide the rail the reader is drawn beside.
+    collapseOnClick: false,
+    isHost: false,
+    isSubItem: false,
+    isExpanded: false,
+    toggleOnText: '',
+    toggleOffText: '',
+    isAboutItem: true,
+    disabled: props.disabled || false,
+  });
+  return null;
+};
+
 export const AzHelpRailItem: React.FC<AzNavItemProps> = (props) => {
   useAzItem({
     ...props,

@@ -328,6 +328,12 @@ azHelpRailItem(id = "help-trigger", text = "Get Help")
 // Help trigger as a sub-item
 azHelpSubItem(id = "help-sub-trigger", hostId = "rail-host", text = "Get Help Here")
 
+// About trigger. One is appended to the end of the rail automatically, in every mode — declaring
+// your own replaces it, so its position, text, colour and shape become yours. `azAbout(aboutRailItem
+// = false)` removes it entirely. Tapping it opens the About reader; tapping it again closes it, and
+// so does tapping any other rail or menu item.
+azAboutRailItem(id = "about", text = "?")
+
 // Rail item with Color content
 azRailItem(id = "color-item", text = "Color", content = Color.Red)
 
@@ -337,8 +343,12 @@ azRailItem(id = "icon-item", text = "Icon", content = android.R.drawable.ic_menu
 // Rail item with a Compose ImageVector (fills + clips to the shape, tinted with the item color)
 azRailItem(id = "vector-item", text = "Delete", content = Icons.Default.Delete)
 
-// Rail item with specific shape override
+// Rail item with specific shape override. The borderless family keeps the footprint of the base
+// shape it names — NONE is a wide rectangle, NONE_SQUARE a square, NONE_CIRCLE a circle — so a
+// borderless item still lines up with the bordered ones beside it.
 azRailItem(id = "none-shape", text = "No Shape", shape = AzButtonShape.NONE)
+azRailItem(id = "none-square", text = "Square", shape = AzButtonShape.NONE_SQUARE)
+azRailItem(id = "none-circle", text = "Circle", shape = AzButtonShape.NONE_CIRCLE)
 
 // Rail item with Custom Composable Content Size
 azRailItem(id = "wide-composable", text = "Wide", content = AzComposableContent {
