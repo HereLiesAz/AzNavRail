@@ -993,8 +993,12 @@ val accent = LocalAzRailPalette.current.accent   // Color.Unspecified when no ra
 const accent = useAzAccent()                     // falls back to the library default
 ```
 
-The About reader also forces its ground **opaque**: `translucentBackground` supplies the hue, never
-the alpha, because a see-through full-screen reader is an unreadable one.
+The About reader and the drop-down's panel also force their ground **opaque**:
+`translucentBackground` supplies the hue, never the alpha, because a see-through full-screen reader
+is an unreadable one — and a menu you can read the app's artwork through is not a menu. Both then run
+a **legibility guard** over the accent: a colour the library chose is swapped for plain ink when it
+fails WCAG's 3:1 large-text ratio against the panel, while a colour you named on an item is left
+exactly as declared.
 
 **React Implementation:**
 ```tsx

@@ -35,7 +35,7 @@ import { AzNavRailDefaults, AzMotion } from '../AzNavRailDefaults';
 import { AboutOverlay } from './AboutOverlay';
 import { AzKineticItem, useAzClosing } from './AzKinetics';
 import { solveHybridJustify } from '../util/AzJustify';
-import { useAzAccent } from '../AzRailPalette';
+import { useAzAccent, useAzPanelColor, azReadableOn } from '../AzRailPalette';
 
 const DROPDOWN_BASE_FONT_PX = 16;
 
@@ -54,6 +54,8 @@ interface AzDropdownMenuContextValue {
   menuItemAlignment?: 'center' | 'side';
   /** When true, MENU-design labels are full-justified via computed letter-spacing. */
   justifyMenuItems?: boolean;
+  /** The panel's resolved, legible accent — what an item that declared no colour of its own wears. */
+  panelAccent: string;
 }
 const AzDropdownMenuContext = createContext<AzDropdownMenuContextValue | null>(
   null
@@ -239,7 +241,6 @@ export const AzDropdownItem: React.FC<AzDropdownItemProps> = ({
   const ctx = useContext(AzDropdownMenuContext);
   // Hooks must run unconditionally. Guard reads via optional chaining below.
   const [availableWidth, setAvailableWidth] = useState(0);
-  const railAccent = useAzAccent();
   if (!ctx)
     throw new Error('AzDropdownItem must be used inside an <AzDropdownMenu>');
   const {
@@ -250,6 +251,7 @@ export const AzDropdownItem: React.FC<AzDropdownItemProps> = ({
     dockingSide: ctxDockingSide,
     menuItemAlignment: ctxMenuItemAlignment,
     justifyMenuItems: ctxJustifyMenuItems,
+    panelAccent: railAccent,
   } = ctx;
   const press = () => {
     if (route) onNavigate?.(route);
@@ -400,6 +402,13 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
 
   // Reactive so the panel re-positions on orientation / split-screen changes.
   const screen = useWindowDimensions();
+  // The panel's own colour, resolved once for the whole drop-down so the rows, the divider and the
+  // footer are guaranteed to agree.
+  const panelColor = useAzPanelColor();
+  // The rail's accent, checked against the panel it lands on. A menu whose words disappear into its
+  // own background is not a menu.
+  const railAccent = useAzAccent();
+  const panelAccent = azReadableOn(panelColor, railAccent);
   const panelWidth =
     design === AzDropdownDesign.RAIL ? collapsedWidth : expandedWidth;
   const triggerSize = headerIconSize;
@@ -488,7 +497,14 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
               style={[
                 styles.panel,
                 panelPosition,
-                { maxHeight: screen.height * 0.8, width: panelWidth },
+                {
+                  maxHeight: screen.height * 0.8,
+                  width: panelWidth,
+                  // The rail's own panel colour, drawn opaque (see useAzPanelColor). The hardcoded
+                  // white this replaces was the app theme's UI, not the rail's — and on a dark rail
+                  // it was somebody else's.
+                  backgroundColor: panelColor,
+                },
               ]}
             >
               {/* Stop propagation so taps inside the panel don't dismiss it. */}
@@ -509,6 +525,7 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
                       dockingSide,
                       menuItemAlignment,
                       justifyMenuItems,
+                      panelAccent,
                     }}
                   >
                     {items.map((child, i) => (
@@ -533,6 +550,7 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
                   {/* The expanded-menu design carries the rail's footer. */}
                   {design === AzDropdownDesign.MENU && showFooter && (
                     <AzDropdownFooter
+                      panelAccent={panelAccent}
                       appRepositoryUrl={appRepositoryUrl}
                       inAppAbout={inAppAbout}
                       onInAppAbout={() => setShowAbout(true)}
@@ -568,6 +586,8 @@ const AzDropdownFooter: React.FC<{
   appRepositoryUrl?: string;
   inAppAbout?: boolean;
   onInAppAbout?: () => void;
+  /** The panel's resolved, legible accent — the same colour its item rows wear. */
+  panelAccent: string;
   visible?: boolean;
   menuItemCount?: number;
   staggerMs?: number;
@@ -576,12 +596,12 @@ const AzDropdownFooter: React.FC<{
   appRepositoryUrl,
   inAppAbout = true,
   onInAppAbout,
+  panelAccent,
   visible = true,
   menuItemCount = 0,
   staggerMs = AzMotion.ItemStaggerMs,
   durationMs = AzMotion.ItemDurationMs,
 }) => {
-  const footerColor = useAzAccent();
   // Only open safe schemes — this also runs on the web via react-native-web, where a `javascript:`
   // URL would otherwise execute.
   const open = (url: string) => {
@@ -638,7 +658,7 @@ const AzDropdownFooter: React.FC<{
             style={styles.footerRow}
             accessibilityRole="button"
           >
-            <Text style={[styles.footerText, { color: footerColor }]}>
+            <Text style={[styles.footerText, { color: panelAccent }]}>
               About
             </Text>
           </TouchableOpacity>
@@ -648,7 +668,7 @@ const AzDropdownFooter: React.FC<{
           style={styles.footerRow}
           accessibilityRole="button"
         >
-          <Text style={[styles.footerText, { color: footerColor }]}>
+          <Text style={[styles.footerText, { color: panelAccent }]}>
             Feedback
           </Text>
         </TouchableOpacity>
@@ -657,7 +677,7 @@ const AzDropdownFooter: React.FC<{
           style={styles.footerRow}
           accessibilityRole="button"
         >
-          <Text style={[styles.footerText, { color: footerColor }]}>
+          <Text style={[styles.footerText, { color: panelAccent }]}>
             @HereLiesAz
           </Text>
         </TouchableOpacity>
@@ -669,7 +689,6 @@ const AzDropdownFooter: React.FC<{
 const styles = StyleSheet.create({
   panel: {
     borderRadius: 12,
-    backgroundColor: '#ffffff',
     elevation: 8,
     shadowColor: '#000',
     shadowOpacity: 0.18,

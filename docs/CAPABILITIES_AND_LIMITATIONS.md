@@ -105,7 +105,9 @@ A host item can auto-expand its sub-items reactively.
 - The reader is **inset by the rail's gutter**, folded or not, so the app icon behind it stays
   tappable — a reader can never become an app you cannot leave.
 - The reader wears the **rail's** accent, not the app theme's, and always draws on an **opaque**
-  ground (`translucentBackground` supplies the hue, never the alpha).
+  ground (`translucentBackground` supplies the hue, never the alpha). The drop-down's dropped panel
+  does the same, and additionally replaces a library-chosen accent that fails WCAG 3:1 against that
+  panel with plain ink.
 
 **Limitations**
 - Discovery and fetching use the **public GitHub API** (unauthenticated) — subject to rate limits;

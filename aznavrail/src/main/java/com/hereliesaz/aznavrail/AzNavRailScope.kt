@@ -96,7 +96,10 @@ interface AzNavRailScope {
      * @param activeColor The color used for active/selected items.
      * @param defaultShape The default shape for buttons (Circle, Square, Rectangle, None).
      * @param headerIconShape The shape of the header icon (Circle, Rounded, None).
-     * @param translucentBackground The translucent background color for the rail and popup menus.
+     * @param translucentBackground The background color for the rail and the panels the library drops
+     *   over the app. Its alpha applies to the rail itself; panels of *words* — a drop-down's dropped
+     *   menu, the About reader — take the hue and draw it opaque, because a menu you can read the
+     *   app's artwork through is not a menu.
      * @param helpLineColors List of colors to use for the connecting lines in the Help overlay.
      * @param headerIconSize The exact diameter (width and height) of the app icon in the header.
      *   When [Dp.Unspecified] (the default) the icon sizes itself to the rail width as before.

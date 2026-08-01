@@ -62,6 +62,61 @@ class AzRailPaletteTest {
     }
 }
 
+/**
+ * The legibility guard behind the drop-down's panel. It exists because of a real screenshot: a menu
+ * of near-black words on a near-black panel, the app's own artwork showing through both.
+ */
+class AzPanelLegibilityTest {
+
+    /** WCAG's own worked example, so the ratio is not merely self-consistent. */
+    @Test
+    fun `the contrast ratio matches the WCAG scale`() {
+        assertEquals(21f, azContrastRatio(Color.Black, Color.White), 0.01f)
+        assertEquals(1f, azContrastRatio(Color.White, Color.White), 0.01f)
+    }
+
+    @Test
+    fun `ink follows the ground it is written on`() {
+        assertEquals(AzChromeColors.Ink, azInkOn(AzChromeColors.Ground))
+        assertEquals(AzChromeColors.InkInverse, azInkOn(Color.White))
+    }
+
+    @Test
+    fun `an accent that reads on the panel is kept exactly`() {
+        assertEquals(Color.White, azReadableOn(AzChromeColors.Ground, Color.White))
+        assertEquals(Color.Black, azReadableOn(Color.White, Color.Black))
+    }
+
+    @Test
+    fun `the theme purple that produced the unreadable menu is replaced`() {
+        // Material 3's default light primary. It is what a drop-down landed on when it could not see
+        // the rail's palette, and on a near-black panel it is the screenshot that started this: dark
+        // words on a dark panel.
+        assertEquals(AzChromeColors.Ink, azReadableOn(AzChromeColors.Ground, Color(0xFF6650A4)))
+        // The same purple on a light panel reads perfectly well, and is left exactly alone. The guard
+        // replaces colours that fail on the ground they land on, not colours it dislikes.
+        assertEquals(Color(0xFF6650A4), azReadableOn(Color.White, Color(0xFF6650A4)))
+        // M3's dark-theme primary reads on the dark panel, so it survives untouched too.
+        assertEquals(Color(0xFFD0BCFF), azReadableOn(AzChromeColors.Ground, Color(0xFFD0BCFF)))
+    }
+
+    @Test
+    fun `an accent is judged as it will be seen, composited over the panel`() {
+        // Opaque white reads on the dark panel; the same white at 5% does not, because what lands on
+        // screen is the panel itself.
+        assertEquals(Color.White, azReadableOn(AzChromeColors.Ground, Color.White))
+        assertEquals(
+            AzChromeColors.Ink,
+            azReadableOn(AzChromeColors.Ground, Color.White.copy(alpha = 0.05f)),
+        )
+    }
+
+    @Test
+    fun `a rail with no colour at all still gets ink rather than nothing`() {
+        assertEquals(AzChromeColors.Ink, azReadableOn(AzChromeColors.Ground, Color.Unspecified))
+    }
+}
+
 /** The borderless shape family keeps the footprint of the base shape it names. */
 class AzButtonShapeBorderlessTest {
 

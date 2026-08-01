@@ -173,8 +173,10 @@ fun azTheme(
   items (the colour most of them are drawn in) before falling back to the app theme — a rail whose
   every button is white is a white rail. Published as `LocalAzRailPalette`; read it with
   `LocalAzRailPalette.current.accent` (React: `useAzAccent()`).
-* `translucentBackground`: `Color` — the panel colour for overlays. The About reader takes its hue
-  but always draws on an opaque ground; a see-through full-screen reader is an unreadable one.
+* `translucentBackground`: `Color` — the panel colour for overlays. Its alpha applies to the rail
+  itself; the panels of *words* the library drops over the app — the About reader, a drop-down's
+  dropped menu — take the hue and always draw on an **opaque** ground. A see-through full-screen
+  reader is an unreadable one, and so is a menu with the app's artwork behind its labels.
 
 ### `azKinetics`
 Configures the WP7-style kinetic typography (entrance/exit on the expanded menu items, press-tilt, and
