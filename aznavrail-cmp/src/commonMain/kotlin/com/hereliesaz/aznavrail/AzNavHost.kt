@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -317,6 +318,10 @@ fun AzHostActivityLayout(
         accent = railScope.railAccent,
         surface = railScope.translucentBackground,
     )
+    // Also published outside the composition, for the library's chrome that cannot see the provider
+    // below — a drop-down declared beside this host rather than inside its content, and any Popup it
+    // opens. See AzRailPaletteRegistry.
+    SideEffect { AzRailPaletteRegistry.palette = railPalette }
     val dockingSide = railScope.dockingSide
     val railWidth = railScope.collapsedWidth
     val usePhysicalDocking = railScope.usePhysicalDocking
@@ -431,7 +436,9 @@ fun AzHostActivityLayout(
                     horizontalArrangement = Arrangement.spacedBy(0.dp),
                 ) {
                     if (visualDockingSideProxy != AzDockingSide.LEFT) {
-                        scope.titleTriggers.forEach { slot -> AzDropdownTriggerButton(slot) }
+                        CompositionLocalProvider(LocalAzRailPalette provides railPalette) {
+                            scope.titleTriggers.forEach { slot -> AzDropdownTriggerButton(slot) }
+                        }
                     }
                     if (hasTitle) {
                         // Keying on the title restarts the kinetic entrance every time the active
@@ -462,7 +469,9 @@ fun AzHostActivityLayout(
                         }
                     }
                     if (visualDockingSideProxy == AzDockingSide.LEFT) {
-                        scope.titleTriggers.forEach { slot -> AzDropdownTriggerButton(slot) }
+                        CompositionLocalProvider(LocalAzRailPalette provides railPalette) {
+                            scope.titleTriggers.forEach { slot -> AzDropdownTriggerButton(slot) }
+                        }
                     }
                 }
             }

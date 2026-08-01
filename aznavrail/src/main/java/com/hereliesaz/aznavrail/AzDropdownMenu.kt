@@ -409,12 +409,12 @@ private class AzDropdownMenuScopeImpl : AzDropdownMenuScope {
 }
 
 /**
- * Resolves the row text colour: explicit [textColor], else [color], else the host rail's accent
- * (falling back to the theme primary when the drop-down stands on its own).
+ * Resolves the row text colour: an explicit [textColor] or [color] is used exactly as declared,
+ * otherwise the panel's own [accent] — the rail's, already checked against the panel it lands on
+ * (see [azReadableOn]). A menu whose words disappear into its own background is not a menu.
  */
-@Composable
-private fun effectiveTextColor(textColor: Color?, color: Color): Color =
-    (textColor ?: color).takeOrElse { azAccent() }
+private fun effectiveTextColor(textColor: Color?, color: Color, accent: Color): Color =
+    (textColor ?: color).takeOrElse { accent }
 
 /**
  * A full-width, labeled menu row mirroring the expanded drawer's look (centred [titleLarge] text,
@@ -508,11 +508,13 @@ private fun AzDropdownMenuRow(
  *   by "About" when the in-app reader is disabled.
  * @param onAboutClick When non-null, "About" opens the in-app reader via this callback instead of a
  *   browser.
+ * @param footerColor The panel's resolved, legible accent — the same colour its item rows wear.
  */
 @Composable
 private fun AzDropdownFooter(
     repoUrl: String,
     onAboutClick: (() -> Unit)?,
+    footerColor: Color,
     visible: Boolean = true,
     menuItemCount: Int = 0,
     staggerMs: Int = AzMotion.ItemStaggerMs,
@@ -520,7 +522,6 @@ private fun AzDropdownFooter(
     easing: Easing = AzEasing.Wp7Decelerate,
 ) {
     val context = LocalContext.current
-    val footerColor = azAccent()
     val appName = remember(context.packageName) {
         try {
             context.packageManager.getApplicationLabel(
@@ -623,6 +624,8 @@ private fun AzDropdownEntryItem(
     entry: AzDropdownEntry,
     config: AzDropdownConfig,
     navController: NavController?,
+    // The panel's resolved, legible accent — what an item that declared no colour of its own wears.
+    accent: Color,
     dismiss: () -> Unit,
     // Captures each entry's true window-space bounds so the dissolve overlay can render at the
     // right screen position after the panel Popup tears down. Called from `.onGloballyPositioned`.
@@ -638,7 +641,7 @@ private fun AzDropdownEntryItem(
 
     // Dividers carry no kinetics; everything else gets the staggered entrance/exit + optional tilt.
     if (entry is AzDropdownEntry.Divider) {
-        AzDivider()
+        AzDivider(color = accent)
         return
     }
 
@@ -688,7 +691,7 @@ private fun AzDropdownEntryItem(
                 AzDropdownMenuRow(
                     text = entry.text,
                     enabled = entry.enabled,
-                    textColor = effectiveTextColor(entry.textColor, entry.color),
+                    textColor = effectiveTextColor(entry.textColor, entry.color, accent),
                     onClick = action,
                     modifier = kinetic,
                     textStyle = config.itemTextStyle,
@@ -701,7 +704,7 @@ private fun AzDropdownEntryItem(
                     AzButton(
                         onClick = action,
                         text = entry.text,
-                        color = entry.color.takeOrElse { azAccent() },
+                        color = entry.color.takeOrElse { accent },
                         textColor = entry.textColor,
                         fillColor = entry.fillColor,
                         shape = entry.shape,
@@ -716,7 +719,7 @@ private fun AzDropdownEntryItem(
                 AzDropdownMenuRow(
                     text = if (entry.isChecked) entry.toggleOnText else entry.toggleOffText,
                     enabled = entry.enabled,
-                    textColor = effectiveTextColor(entry.textColor, entry.color),
+                    textColor = effectiveTextColor(entry.textColor, entry.color, accent),
                     onClick = {
                         navigate(entry.route)
                         entry.onToggle(!entry.isChecked)
@@ -745,7 +748,7 @@ private fun AzDropdownEntryItem(
                         },
                         toggleOnText = entry.toggleOnText,
                         toggleOffText = entry.toggleOffText,
-                        color = entry.color.takeOrElse { azAccent() },
+                        color = entry.color.takeOrElse { accent },
                         textColor = entry.textColor,
                         fillColor = entry.fillColor,
                         shape = entry.shape,
@@ -760,7 +763,7 @@ private fun AzDropdownEntryItem(
                 AzDropdownMenuRow(
                     text = entry.selectedOption,
                     enabled = entry.enabled,
-                    textColor = effectiveTextColor(entry.textColor, entry.color),
+                    textColor = effectiveTextColor(entry.textColor, entry.color, accent),
                     onClick = {
                         if (entry.options.isNotEmpty()) {
                             val next = entry.options[(entry.options.indexOf(entry.selectedOption) + 1).mod(entry.options.size)]
@@ -791,7 +794,7 @@ private fun AzDropdownEntryItem(
                                 dismiss()
                             }
                         },
-                        color = entry.color.takeOrElse { azAccent() },
+                        color = entry.color.takeOrElse { accent },
                         textColor = entry.textColor,
                         fillColor = entry.fillColor,
                         shape = entry.shape,
@@ -918,6 +921,12 @@ fun AzDropdownMenu(
     val maxPanelHeight = (LocalConfiguration.current.screenHeightDp * 0.8f).dp
     val panelWidth = if (config.design == AzDropdownDesign.RAIL) config.collapsedWidth else config.expandedWidth
 
+    // The panel's own two colours, resolved once for the whole drop-down so the rows, the divider and
+    // the footer are guaranteed to agree: the rail's opaque surface, and an accent that has been
+    // checked against it.
+    val panelColor = azPanelColor()
+    val panelAccent = azReadableOn(panelColor, azAccent())
+
     // Where the trigger ends up. AUTO lifts it into the screen-title row whenever there is a host to
     // put it in; a standalone drop-down (no AzHostActivityLayout) has no title row, so it stays inline.
     val titleHost = LocalAzNavHostScope.current as? AzNavHostScopeImpl
@@ -1008,11 +1017,15 @@ fun AzDropdownMenu(
             ) {
                 Surface(
                     // The host rail's panel colour when there is one, so a rail's own drop-down does
-                    // not arrive in the app theme's surface instead of the rail's.
-                    color = LocalAzRailPalette.current.surface
-                        .takeOrElse { MaterialTheme.colorScheme.surface },
+                    // not arrive in the app theme's surface instead of the rail's — and opaque either
+                    // way. A menu you can read the app's artwork through is not a menu (see
+                    // [azPanelColor]).
+                    color = panelColor,
                     shape = RoundedCornerShape(12.dp),
-                    tonalElevation = 2.dp,
+                    // Material's tonal elevation tints the surface toward the theme's primary. On a
+                    // panel that has just been told exactly what colour to be, that is the theme
+                    // reaching back in; the shadow alone lifts it off the app.
+                    tonalElevation = 0.dp,
                     shadowElevation = 8.dp
                 ) {
                     val scrollState = rememberScrollState()
@@ -1048,6 +1061,7 @@ fun AzDropdownMenu(
                                 entry = entry,
                                 config = config,
                                 navController = navController,
+                                accent = panelAccent,
                                 dismiss = dismiss,
                                 onBoundsCapture = { idx, rect -> entryBounds[idx] = rect },
                                 onDissolveTap = { idx, text ->
@@ -1066,9 +1080,10 @@ fun AzDropdownMenu(
                         }
                         // The expanded-menu design carries the rail's footer (About / Feedback / @HereLiesAz).
                         if (config.design == AzDropdownDesign.MENU && config.showFooter) {
-                            AzDivider(color = azAccent())
+                            AzDivider(color = panelAccent)
                             AzDropdownFooter(
                                 repoUrl = effectiveRepoUrl,
+                                footerColor = panelAccent,
                                 onAboutClick = if (config.inAppAbout && effectiveRepoUrl.isNotBlank()) {
                                     { dismiss(); showAbout = true }
                                 } else null,

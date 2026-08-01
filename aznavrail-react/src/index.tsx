@@ -35,10 +35,15 @@ export {
   AzRailPaletteContext,
   useAzAccent,
   useAzRailSurface,
+  useAzPanelColor,
   useAzRailPalette,
   usePublishRailPalette,
   publishRailPalette,
   resolveRailAccent,
+  azReadableOn,
+  azInkOn,
+  azContrastRatio,
+  AzChromeColors,
   AZ_ACCENT_FALLBACK,
 } from './AzRailPalette';
 export type { AzRailPalette } from './AzRailPalette';

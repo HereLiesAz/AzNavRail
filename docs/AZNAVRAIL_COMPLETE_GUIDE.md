@@ -206,8 +206,15 @@ val accent = LocalAzRailPalette.current.accent   // Color.Unspecified when no ra
 const accent = useAzAccent()                     // falls back to the library default
 ```
 
-The About reader additionally forces its ground **opaque**: `translucentBackground` supplies the
-hue, never the alpha, because a see-through full-screen reader is an unreadable one.
+The About reader and the drop-down's panel additionally force their ground **opaque**:
+`translucentBackground` supplies the hue, never the alpha, because a see-through full-screen reader
+is an unreadable one — and a menu you can read the app's artwork through is not a menu.
+
+Those panels also run a **legibility guard** over the accent they land on. A colour the library
+*chose* (the rail's accent, or the theme fallback behind it) is checked against the panel and swapped
+for plain ink when it fails WCAG's 3:1 large-text ratio. A colour **you** named on an item is never
+touched: if you pick the colour you get the colour; if you leave it to the library, the library owes
+you a legible one.
 
 ### B2. Kinetic Typography (`azKinetics`)
 
