@@ -1,5 +1,5 @@
 {
-  "version": 12,
+  "version": 13,
   "apps": [
     {
       "name": "GraffitiXR",
@@ -42,7 +42,7 @@
       "iconUrl": "guillotine_banner.png",
       "description": "An AI-Powered Non-Linear Video Editor",
       "github": "https://github.com/HereLiesAz/Guillotine",
-      "web": "https://hereliesaz.github.io/Guillotine/",
+      "web": "https://hereliesaz.com/guillotine/",
       "isPwa": false
     },
     {
