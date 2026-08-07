@@ -631,16 +631,16 @@ private fun DraggableRailItemWrapper(
         Modifier
     }
 
-    // The three highlights are three different questions about this item, answered separately.
+    // The two highlights are two different questions about this item, answered separately.
     // "Where you are": the item's route IS the current destination.
     val isRouteActive = item.route != null && item.route == currentDestination
-    // "What you touched": only meaningful for an item with no route of its own — a toggle, a cycler,
-    // an action. A routed item's highlight belongs to the destination, not to the tap.
-    val isFocused = item.route == null && lastTappedId == item.id
-    val isSelected = isRouteActive || isFocused
+    // A routeless item (toggle, cycler, action) that was last tapped stays visually active so the
+    // user knows which one they interacted with. This is the pre-existing behaviour.
+    val isLastTapped = item.route == null && lastTappedId == item.id
+    val isSelected = isRouteActive || isLastTapped
 
     val isClassifierActive = item.classifiers.any { scope.activeClassifiers.contains(it) }
-    val isVisuallyActive = isRouteActive || isClassifierActive
+    val isVisuallyActive = isRouteActive || isClassifierActive || isLastTapped
     // "Whatever the app says": never set by the library, only by azItemState / secondaryClassifiers.
     val isSecondaryActive = item.isSecondaryActive ||
         item.classifiers.any { scope.secondaryClassifiers.contains(it) }
@@ -679,7 +679,7 @@ private fun DraggableRailItemWrapper(
                     helpEnabled = helpEnabled,
                     dragModifier = dragModifier,
                     activeColor = scope.railAccent,
-                    isFocused = isFocused,
+                    isFocused = false,
                     isSecondaryActive = isSecondaryActive,
                     focusColor = scope.focusColor,
                     secondaryColor = scope.secondaryColor,
@@ -732,7 +732,7 @@ private fun DraggableRailItemWrapper(
                     helpEnabled = helpEnabled,
                     dragModifier = dragModifier,
                     activeColor = scope.railAccent,
-                    isFocused = isFocused,
+                    isFocused = false,
                     isSecondaryActive = isSecondaryActive,
                     focusColor = scope.focusColor,
                     secondaryColor = scope.secondaryColor,
@@ -870,7 +870,7 @@ private fun DraggableRailItemWrapper(
                     onItemClick = {},
                     helpEnabled = helpEnabled,
                     activeColor = scope.railAccent,
-                    isFocused = isFocused,
+                    isFocused = false,
                     isSecondaryActive = isSecondaryActive,
                     focusColor = scope.focusColor,
                     secondaryColor = scope.secondaryColor,

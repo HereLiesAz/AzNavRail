@@ -204,15 +204,18 @@ internal fun MenuItem(
     }
 
     val highlightColor = when {
-        isPressed -> effectiveFocusColor
         isSelected -> effectiveActiveColor
         secondaryLit -> effectiveSecondaryColor
         else -> effectiveActiveColor
     }
-    val backgroundColor = if ((isSelected || secondaryLit) && !isPressed) {
-        (item.fillColor ?: highlightColor).copy(alpha = 0.12f)
-    } else {
-        androidx.compose.ui.graphics.Color.Transparent
+    val backgroundColor = when {
+        isPressed && (isSelected || secondaryLit) ->
+            (item.fillColor ?: effectiveFocusColor).copy(alpha = 0.18f)
+        isSelected || secondaryLit ->
+            (item.fillColor ?: highlightColor).copy(alpha = 0.12f)
+        isPressed ->
+            (item.fillColor ?: effectiveFocusColor).copy(alpha = 0.08f)
+        else -> androidx.compose.ui.graphics.Color.Transparent
     }
 
     Box(

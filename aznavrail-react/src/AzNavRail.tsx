@@ -173,7 +173,6 @@ export function resolveHighlight(
   lastTappedId?: string | null
 ): string | undefined {
   const activeColor = (item as any).activeColor ?? cfg.activeColor;
-  const focusColor = (item as any).focusColor ?? cfg.focusColor ?? activeColor;
   const secondaryColor =
     (item as any).secondaryColor ?? cfg.secondaryColor ?? activeColor;
 
@@ -181,15 +180,12 @@ export function resolveHighlight(
     !!item.isChecked ||
     item.id === currentDestination ||
     (!!item.route && item.route === currentDestination) ||
-    classifierHit(item.classifiers, cfg.activeClassifiers);
-  // Focus is only meaningful for an item with no route of its own — a toggle, a cycler, an action.
-  // A routed item's highlight belongs to the destination, not to the tap.
-  const isFocused = !item.route && !!lastTappedId && lastTappedId === item.id;
+    classifierHit(item.classifiers, cfg.activeClassifiers) ||
+    (!item.route && !!lastTappedId && lastTappedId === item.id);
   const isSecondary =
     !!(item as any).secondary ||
     classifierHit(item.classifiers, cfg.secondaryClassifiers);
 
-  if (isFocused && focusColor) return focusColor;
   if (isActive && activeColor) return activeColor;
   if (isSecondary && secondaryColor) return secondaryColor;
   return item.color;
