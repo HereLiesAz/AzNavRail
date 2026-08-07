@@ -70,5 +70,6 @@ data class AzAdvancedConfig(
     val moreFromAzJsonUrl: String = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json",
     val moreFromAzRailItem: Boolean = false,
     val aboutRailItem: Boolean = true,
-    val dedupeAbout: Boolean = true
+    val dedupeAbout: Boolean = true,
+    val onTitleClick: ((String) -> Unit)? = null
 )

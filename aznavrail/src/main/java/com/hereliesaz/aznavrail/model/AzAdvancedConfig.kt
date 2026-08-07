@@ -48,6 +48,9 @@ import androidx.compose.ui.geometry.Rect
  *   and draws it in exactly one of them, so About never appears twice. The most deliberate placement
  *   wins: a developer-declared `azAboutRailItem`, then the rail's menu footer, then a drop-down's
  *   footer, then the automatic `?`. Set false to draw About wherever it is configured.
+ * @param onTitleClick Callback invoked when the user taps the screen title (the large bold text the
+ *   library renders from the active item's `text` or `screenTitle`). Receives the item ID of the
+ *   item whose title is showing. Null (the default) means the title is not clickable.
  */
 data class AzAdvancedConfig(
     val isLoading: Boolean = false,
@@ -69,5 +72,6 @@ data class AzAdvancedConfig(
     val moreFromAzJsonUrl: String = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json",
     val moreFromAzRailItem: Boolean = false,
     val aboutRailItem: Boolean = true,
-    val dedupeAbout: Boolean = true
+    val dedupeAbout: Boolean = true,
+    val onTitleClick: ((String) -> Unit)? = null
 )

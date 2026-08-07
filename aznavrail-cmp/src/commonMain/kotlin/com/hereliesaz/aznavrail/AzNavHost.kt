@@ -32,6 +32,7 @@ import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -458,9 +459,14 @@ fun AzHostActivityLayout(
                                 maxTiltDegrees = 0f,
                                 dockingSide = visualDockingSideProxy,
                             )
+                            val titleClickHandler = railScopeImpl.advancedConfig.onTitleClick
                             Text(
                                 text = currentTitle!!,
-                                modifier = titleKinetic,
+                                modifier = titleKinetic.then(
+                                    if (titleClickHandler != null && currentActiveItem != null)
+                                        Modifier.clickable { titleClickHandler(currentActiveItem.id) }
+                                    else Modifier
+                                ),
                                 style = MaterialTheme.typography.displayMedium
                                     .copy(fontWeight = FontWeight.Bold)
                                     .merge(railScopeImpl.titleTextStyle),
