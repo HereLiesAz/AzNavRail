@@ -48,6 +48,13 @@ data class CustomizationState(
     val appRepositoryUrl: String,
     val helpLineColors: List<Color>,
     val vibrate: Boolean,
+    /**
+     * The FOCUS highlight — what the user is touching. Unspecified reuses the active colour, which
+     * is how the rail has always looked.
+     */
+    val focusColor: Color = Color.Unspecified,
+    /** The SECONDARY highlight — a condition the app knows about, not a place the user is. */
+    val secondaryColor: Color = Color(0xFFFFB300),
     val headerIconSize: Dp = Dp.Unspecified,
     // New WP7 menu-drawer knobs.
     val dimBehindMenu: Boolean = false,

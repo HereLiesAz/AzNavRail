@@ -12,6 +12,8 @@ import {
 import { AzNavItem } from '../types';
 import { AzButton } from './AzButton';
 import { AzTextBox } from './AzTextBox';
+import { AzWindow } from './AzWindow';
+import { useAzAccent, AZ_ACCENT_FALLBACK } from '../AzRailPalette';
 
 /** Internal props for `DraggableRailItemWrapper`. */
 interface DraggableRailItemWrapperProps {
@@ -54,6 +56,7 @@ export const DraggableRailItemWrapper: React.FC<
   translucentBackground,
   size,
 }) => {
+  const railAccent = useAzAccent();
   const pan = useRef(new Animated.ValueXY()).current;
   const [isDragging, setIsDragging] = useState(false);
   const [showHiddenMenu, setShowHiddenMenu] = useState(false);
@@ -119,6 +122,9 @@ export const DraggableRailItemWrapper: React.FC<
     setShowHiddenMenu(true);
   };
 
+  // The window wears the rail's own accent, so a menu that came out of the rail looks like it did.
+  const accent = railAccent || AZ_ACCENT_FALLBACK;
+
   const renderHiddenMenu = () => {
     if (!showHiddenMenu || !item.hiddenMenu) return null;
 
@@ -133,14 +139,19 @@ export const DraggableRailItemWrapper: React.FC<
           activeOpacity={1}
           onPress={closeMenu}
         >
-          <View
-            style={[
-              styles.hiddenMenu,
-              { top: menuPosition.y, left: menuPosition.x },
-              translucentBackground
-                ? { backgroundColor: translucentBackground }
-                : {},
-            ]}
+          {/* The hidden menu is one of the library's windows, which is what gives it a grab bar,
+              a fold control and a close. A context menu that can hold a text field is exactly the
+              panel a user may need to move off whatever they are typing about, and folding it beats
+              dismissing and re-summoning it. */}
+          <AzWindow
+            accent={accent}
+            surfaceColor={translucentBackground || '#1A1A1F'}
+            onDismiss={closeMenu}
+            style={{
+              ...styles.hiddenMenu,
+              top: menuPosition.y,
+              left: menuPosition.x,
+            }}
           >
             {item.hiddenMenu.map((menuItem, i) => {
               if (menuItem.isInput) {
@@ -180,7 +191,7 @@ export const DraggableRailItemWrapper: React.FC<
                 </TouchableOpacity>
               );
             })}
-          </View>
+          </AzWindow>
         </TouchableOpacity>
       </Modal>
     );
@@ -227,10 +238,7 @@ const styles = StyleSheet.create({
   },
   hiddenMenu: {
     position: 'absolute',
-    backgroundColor: 'white',
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: '#6200ee', // Primary color ideally
+    // Fill, border and radius now come from AzWindow, which draws them in the rail's accent.
     padding: 8,
     minWidth: 150,
     elevation: 5,

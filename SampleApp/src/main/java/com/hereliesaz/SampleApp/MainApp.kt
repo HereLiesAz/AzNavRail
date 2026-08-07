@@ -133,6 +133,8 @@ fun MainApp() {
     // Per-host onExpandedChange demo: tracks individual host expansion states.
     val hostExpandedStates = remember { mutableStateMapOf<String, Boolean>() }
 
+    // The third highlight, driven entirely by the app: the "Armed" toggle below lights it.
+    var armed by remember { mutableStateOf(false) }
     // Help system state — drives azAdvanced(helpEnabled, helpList) and azConfig(activeClassifiers).
     var helpSystem by remember { mutableStateOf(HelpSystemState(autoInjectHelpEnabled = false, activeClassifiers = emptySet(), dismissCount = 0)) }
 
@@ -200,6 +202,9 @@ fun MainApp() {
             vibrate = customization.vibrate,
             displayAppName = customization.displayAppName,
             activeClassifiers = helpSystem.activeClassifiers,
+            // The declarative half of the secondary highlight: any item tagged "armed" wears it
+            // while the toggle below is on.
+            secondaryClassifiers = if (armed) setOf("armed") else emptySet(),
             expandedWidth = customization.expandedWidth,
             collapsedWidth = customization.collapsedWidth,
             railItemWidth = customization.railItemWidth,
@@ -213,7 +218,12 @@ fun MainApp() {
 
         azTheme(
             defaultShape = customization.defaultShape,
+            // The three highlights: where you are, what you are touching, and whatever the app
+            // decides. Focus is left at the theme colour here by default; secondary is amber
+            // because it reads as a condition rather than a place.
             activeColor = themeColor,
+            focusColor = customization.focusColor,
+            secondaryColor = customization.secondaryColor,
             headerIconShape = customization.headerIconShape,
             translucentBackground = customization.translucentBackground,
             helpLineColors = customization.helpLineColors,
@@ -539,6 +549,23 @@ fun MainApp() {
             isLoading = itemSyncing,
             badge = itemUnread.takeIf { it > 0 }?.toString(),
         )
+
+        // --- The third highlight (secondary) ---------------------------------------------------
+        // "Armed" is a condition, not a destination: the item is not where the user is and it is not
+        // what they are touching, so neither the active nor the focus highlight can say it. That is
+        // what the secondary highlight is for, and the app is the only thing that can light it.
+        azRailToggle(
+            id = "item-armed",
+            isChecked = armed,
+            toggleOnText = "Armed",
+            toggleOffText = "Safe",
+            info = "azItemState(secondary = …) + azHighlight — the third highlight, driven by the app.",
+            classifiers = setOf("armed"),
+            onClick = { armed = !armed },
+        )
+        azItemState(id = "item-armed", secondary = armed)
+        // …and this one item disagrees with the rail about what colour "armed" is.
+        azHighlight(id = "item-armed", secondary = customization.secondaryColor)
 
         // --- Popup bound to a rail item -------------------------------------------------------
         // No itemId, so it binds to whatever the user touched last and turns that item into the

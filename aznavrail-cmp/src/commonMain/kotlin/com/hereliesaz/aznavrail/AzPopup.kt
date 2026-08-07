@@ -277,6 +277,9 @@ internal fun AzPopupHost(
     }
 
     val dismiss = { popup.controller.dismiss() }
+    // Position and folded state live for as long as the popup does, and reset with each new request:
+    // a fresh popup arrives centred and open, wherever the last one was left.
+    val windowState = remember(request) { AzWindowState() }
     val scope = remember(request, handle) { AzPopupScopeImpl(request, handle, dismiss) }
 
     // The panel arrives rather than appearing: the scrim fades and the card rises and settles.
@@ -296,7 +299,10 @@ internal fun AzPopupHost(
             },
         contentAlignment = Alignment.Center,
     ) {
-        Surface(
+        // A popup is one of the library's windows, so it does what they all do: it can be dragged
+        // out of the way of whatever it is asking about, and folded to its bar instead of being
+        // dismissed outright when the user wants to look at the screen behind it without losing it.
+        AzWindow(
             modifier = Modifier
                 .padding(24.dp)
                 .widthIn(max = 420.dp)
@@ -310,18 +316,15 @@ internal fun AzPopupHost(
                 }
                 // Swallow taps on the panel itself so they don't reach the dismissing scrim.
                 .pointerInput(Unit) { detectTapGestures { } },
-            color = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(12.dp),
-            tonalElevation = 2.dp,
-            shadowElevation = 8.dp,
-            border = BorderStroke(
-                width = 2.dp,
-                color = when (request.kind) {
-                    AzPopupKind.INFO -> railScope.railAccent.takeOrElse { MaterialTheme.colorScheme.primary }
-                    AzPopupKind.NOTICE -> AzItemAlert.NOTICE.color()
-                    AzPopupKind.WARNING -> AzItemAlert.WARNING.color()
-                },
-            ),
+            // The body prints the request's own title; a second copy in the bar would be a stutter.
+            title = "",
+            state = windowState,
+            accent = when (request.kind) {
+                AzPopupKind.INFO -> railScope.railAccent.takeOrElse { MaterialTheme.colorScheme.primary }
+                AzPopupKind.NOTICE -> AzItemAlert.NOTICE.color()
+                AzPopupKind.WARNING -> AzItemAlert.WARNING.color()
+            },
+            onDismiss = dismiss,
         ) {
             Box(modifier = Modifier.padding(24.dp)) {
                 popup.content(scope)

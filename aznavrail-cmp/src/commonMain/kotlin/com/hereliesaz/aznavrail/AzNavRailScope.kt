@@ -24,6 +24,7 @@ import com.hereliesaz.aznavrail.model.AzExit
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.model.AzItemAlert
 import com.hereliesaz.aznavrail.model.AzItemConfig
+import com.hereliesaz.aznavrail.model.AzItemHighlight
 import com.hereliesaz.aznavrail.model.AzItemState
 import com.hereliesaz.aznavrail.model.AzUnattachedAnchor
 import com.hereliesaz.aznavrail.model.AzMenuItemAlignment
@@ -77,7 +78,11 @@ interface AzNavRailScope {
      * @param noMenu If true, disables the side menu drawer; all items are treated as rail items.
      * @param vibrate Whether to provide haptic feedback on interactions.
      * @param displayAppName If true, displays the app name in the header instead of the icon.
-     * @param activeClassifiers A set of strings used to highlight items programmatically.
+     * @param activeClassifiers A set of strings used to highlight items programmatically — any item
+     *   declaring a matching classifier wears the **active** highlight.
+     * @param secondaryClassifiers The same mechanism for the **secondary** highlight: any item
+     *   declaring a matching classifier wears it. The declarative counterpart to
+     *   `azItemState(id, secondary = true)`.
      * @param usePhysicalDocking If true, anchors the rail to the physical side of the device (rotates with device).
      * @param expandedWidth The width of the rail when expanded (menu visible).
      * @param collapsedWidth The width of the rail when collapsed.
@@ -89,7 +94,7 @@ interface AzNavRailScope {
      *   (`com.<owner>.<repo>` → `github.com/<owner>/<repo>`); set it only when the namespace doesn't
      *   match the repo. **Not required.**
      */
-    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 160.dp, collapsedWidth: Dp = 100.dp, railItemWidth: Dp = Dp.Unspecified, showFooter: Boolean = true, appRepositoryUrl: String = "", dimBehindMenu: Boolean = false, dimBehindMenuAlpha: Float = 0.4f, menuItemAlignment: AzMenuItemAlignment = AzMenuItemAlignment.SIDE, justifyMenuItems: Boolean = true)
+    fun azConfig(dockingSide: AzDockingSide = AzDockingSide.LEFT, packButtons: Boolean = false, noMenu: Boolean = false, vibrate: Boolean = false, displayAppName: Boolean = false, activeClassifiers: Set<String> = emptySet(), secondaryClassifiers: Set<String> = emptySet(), usePhysicalDocking: Boolean = false, expandedWidth: Dp = 160.dp, collapsedWidth: Dp = 100.dp, railItemWidth: Dp = Dp.Unspecified, showFooter: Boolean = true, appRepositoryUrl: String = "", dimBehindMenu: Boolean = false, dimBehindMenuAlpha: Float = 0.4f, menuItemAlignment: AzMenuItemAlignment = AzMenuItemAlignment.SIDE, justifyMenuItems: Boolean = true)
 
     /** When [noMenu] is true, indicates whether the stationary rail is folded up into the app icon. */
     var isFoldedUp: Boolean
@@ -97,7 +102,17 @@ interface AzNavRailScope {
     /**
      * Configures the visual theme of the rail.
      *
-     * @param activeColor The color used for active/selected items.
+     * @param activeColor The colour of the **active** highlight: the item whose route is the current
+     *   destination, or whose classifier is listed in `azConfig(activeClassifiers = …)`.
+     * @param focusColor The colour of the **focus** highlight: the item under the finger, and the
+     *   last-tapped item when it carries no route of its own. [Color.Unspecified] (the default)
+     *   reuses [activeColor], which is how the rail has always looked — set it only when you want
+     *   "where you are" and "what you are touching" to read differently.
+     * @param secondaryColor The colour of the **secondary** highlight — the third one, which the
+     *   library never lights on its own. It is yours: turn it on per item with
+     *   `azItemState(id, secondary = true)`, or declaratively with
+     *   `azConfig(secondaryClassifiers = …)`, for state only the app knows (syncing, armed, locked).
+     *   Override any of the three on a single item with [azHighlight].
      * @param defaultShape The default shape for buttons (Circle, Square, Rectangle, None).
      * @param headerIconShape The shape of the header icon (Circle, Rounded, None).
      * @param translucentBackground The background color for the rail and the panels the library drops
@@ -108,7 +123,7 @@ interface AzNavRailScope {
      * @param headerIconSize The exact diameter (width and height) of the app icon in the header.
      *   When [Dp.Unspecified] (the default) the icon sizes itself to the rail width as before.
      */
-    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.CIRCLE, headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE, translucentBackground: Color = Color.Unspecified, helpLineColors: List<Color> = emptyList(), headerIconSize: Dp = Dp.Unspecified)
+    fun azTheme(activeColor: Color = Color.Unspecified, defaultShape: AzButtonShape = AzButtonShape.CIRCLE, headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE, translucentBackground: Color = Color.Unspecified, helpLineColors: List<Color> = emptyList(), headerIconSize: Dp = Dp.Unspecified, focusColor: Color = Color.Unspecified, secondaryColor: Color = Color.Unspecified)
 
     /**
      * Configures AzNavRail's WP7-style **kinetic typography** — the staggered turnstile entrance/exit on
@@ -190,8 +205,13 @@ interface AzNavRailScope {
      *   default: About is how the user finds out what the app is, and burying it inside a menu the
      *   rail may not even have is how it goes unfound. Set false to drop it entirely, or declare
      *   your own with [azAboutRailItem] to place and style it yourself.
+     * @param dedupeAbout Whether the library de-duplicates the About affordance across every surface
+     *   that could offer one. True by default: with a drop-down menu on screen as well as the rail,
+     *   About would otherwise appear in both footers *and* on the `?` button. The most deliberate
+     *   placement wins — your own [azAboutRailItem], then the rail's menu footer, then a drop-down's
+     *   footer, then the automatic `?`.
      */
-    fun azAbout(inAppAbout: Boolean = true, moreFromAzEnabled: Boolean = true, moreFromAzJsonUrl: String = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json", moreRailItem: Boolean = false, aboutRailItem: Boolean = true)
+    fun azAbout(inAppAbout: Boolean = true, moreFromAzEnabled: Boolean = true, moreFromAzJsonUrl: String = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json", moreRailItem: Boolean = false, aboutRailItem: Boolean = true, dedupeAbout: Boolean = true)
 
     /**
      * Declares the rail's About (`?`) item **explicitly**, in the position you call it from.
@@ -608,14 +628,39 @@ interface AzNavRailScope {
      * @param isLoading Whether this item's button spins its own loading animation in place of its content.
      * @param alert Alert styling — a notice/warning redraws the item as a yellow, rounded-corner
      *   triangle outline. Usually set for you by an [com.hereliesaz.aznavrail.AzPopupController].
+     * @param secondary Whether this item wears the **secondary** highlight — the third highlight,
+     *   which the library never lights on its own. Its colour comes from `azTheme(secondaryColor =
+     *   …)`, or from [azHighlight] for this one item.
      */
     fun azItemState(
         id: String,
         badge: String? = null,
         persistentBadge: Boolean? = null,
         isLoading: Boolean? = null,
-        alert: AzItemAlert? = null
+        alert: AzItemAlert? = null,
+        secondary: Boolean? = null
     )
+
+    /**
+     * Overrides one item's highlight colours — the rail has three, and this is how a single item
+     * disagrees with the rail about any of them.
+     *
+     * ```
+     * azTheme(activeColor = Cyan, focusColor = White, secondaryColor = Amber)
+     * azRailItem(id = "record", text = "Rec")
+     * azHighlight(id = "record", active = Red)        // this one goes red when it is the live screen
+     * azItemState(id = "record", secondary = armed)   // and amber while merely armed
+     * ```
+     *
+     * Every parameter is null-by-default and null means "leave it to the rail", so setting one
+     * highlight never clears the other two. Unknown ids are ignored.
+     *
+     * @param id The id of the item to colour.
+     * @param active Colour for its **active** highlight (current destination / active classifier).
+     * @param focus Colour for its **focus** highlight (pressed, or last tapped with no route).
+     * @param secondary Colour for its **secondary** highlight (whatever the app decides it means).
+     */
+    fun azHighlight(id: String, active: Color? = null, focus: Color? = null, secondary: Color? = null)
 
     /**
      * Adds a Sub Item to a Host Item in the menu.
@@ -874,6 +919,12 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     val declaredItemStates = mutableMapOf<String, AzItemState>()
 
     /**
+     * Per-item highlight colours declared through [azHighlight], keyed by item id. Re-declared by
+     * the DSL on every pass, like [declaredItemStates].
+     */
+    val declaredHighlights = mutableMapOf<String, AzItemHighlight>()
+
+    /**
      * Per-item state pushed **imperatively** from an [com.hereliesaz.aznavrail.AzPopupController]'s
      * item handle. Survives [reset] (the DSL re-runs constantly and would otherwise wipe it on the
      * next frame) and wins over [declaredItemStates], because it represents something that happened
@@ -910,6 +961,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         onSliderChangeMap.clear()
         onSliderRangeChangeMap.clear()
         declaredItemStates.clear()
+        declaredHighlights.clear()
         statusPredicates.clear()
         guidanceEdges.clear()
         guidanceGoals.clear()
@@ -974,14 +1026,15 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
      * an item has to be re-applied afterwards or it lasts exactly one frame.
      */
     fun applyItemStates() {
-        if (declaredItemStates.isEmpty() && itemOverrides.isEmpty()) return
+        if (declaredItemStates.isEmpty() && itemOverrides.isEmpty() && declaredHighlights.isEmpty()) return
         fun decorate(item: AzNavItem): AzNavItem {
             val declared = declaredItemStates[item.id]
             val override = itemOverrides[item.id]
+            val highlight = declaredHighlights[item.id]
             // Nested-rail children are decorated too, so `azItemState` reaches items declared inside
             // a `nestedContent { … }` block — hence the recursion happens even when the parent
             // itself carries no state of its own.
-            if (declared == null && override == null) {
+            if (declared == null && override == null && highlight == null) {
                 val children = item.nestedRailItems ?: return item
                 return item.copy(nestedRailItems = children.map { decorate(it) })
             }
@@ -989,11 +1042,16 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
             val persistent = override?.persistentBadge ?: declared?.persistentBadge ?: item.persistentBadge
             val loading = override?.isLoading ?: declared?.isLoading ?: item.isLoading
             val alert = override?.alert ?: declared?.alert ?: item.alert
+            val secondary = override?.secondary ?: declared?.secondary ?: item.isSecondaryActive
             return item.copy(
                 badge = badge,
                 persistentBadge = persistent,
                 isLoading = loading,
                 alert = alert,
+                isSecondaryActive = secondary,
+                activeColor = highlight?.active ?: item.activeColor,
+                focusColor = highlight?.focus ?: item.focusColor,
+                secondaryColor = highlight?.secondary ?: item.secondaryColor,
                 nestedRailItems = item.nestedRailItems?.map { decorate(it) },
             )
         }
@@ -1033,6 +1091,8 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     var displayAppName: Boolean = false
     /** Set of classifier strings; items whose classifiers overlap are shown as active. */
     var activeClassifiers: Set<String> = emptySet()
+    /** Set of classifier strings; items whose classifiers overlap wear the **secondary** highlight. */
+    var secondaryClassifiers: Set<String> = emptySet()
     /** If true, the docking side tracks the physical device edge, adapting to rotation. */
     var usePhysicalDocking: Boolean = false
 
@@ -1050,6 +1110,17 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     // Theme
     /** Color applied to selected/active items and connecting lines. [Color.Unspecified] falls back to [MaterialTheme.colorScheme.primary]. */
     var activeColor: Color = Color.Unspecified
+    /**
+     * Colour of the **focus** highlight (pressed / last-tapped-with-no-route). [Color.Unspecified]
+     * reuses [activeColor], which is the rail's historical look.
+     */
+    var focusColor: Color = Color.Unspecified
+    /**
+     * Colour of the **secondary** highlight — the developer-driven third highlight. Lit per item via
+     * `azItemState(id, secondary = true)` or [secondaryClassifiers]. [Color.Unspecified] falls back
+     * to the rail accent, so the highlight still shows even when no colour was chosen for it.
+     */
+    var secondaryColor: Color = Color.Unspecified
     /** Default button shape; individual items can override this. */
     var defaultShape: AzButtonShape = AzButtonShape.CIRCLE // Restored: default is circle
     /** Shape applied to the app icon in the rail header. */
@@ -1101,13 +1172,14 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     var advancedConfig: AzAdvancedConfig = AzAdvancedConfig()
 
 
-    override fun azConfig(dockingSide: AzDockingSide, packButtons: Boolean, noMenu: Boolean, vibrate: Boolean, displayAppName: Boolean, activeClassifiers: Set<String>, usePhysicalDocking: Boolean, expandedWidth: Dp, collapsedWidth: Dp, railItemWidth: Dp, showFooter: Boolean, appRepositoryUrl: String, dimBehindMenu: Boolean, dimBehindMenuAlpha: Float, menuItemAlignment: AzMenuItemAlignment, justifyMenuItems: Boolean) {
+    override fun azConfig(dockingSide: AzDockingSide, packButtons: Boolean, noMenu: Boolean, vibrate: Boolean, displayAppName: Boolean, activeClassifiers: Set<String>, secondaryClassifiers: Set<String>, usePhysicalDocking: Boolean, expandedWidth: Dp, collapsedWidth: Dp, railItemWidth: Dp, showFooter: Boolean, appRepositoryUrl: String, dimBehindMenu: Boolean, dimBehindMenuAlpha: Float, menuItemAlignment: AzMenuItemAlignment, justifyMenuItems: Boolean) {
         this.dockingSide = dockingSide
         this.packButtons = packButtons
         this.noMenu = noMenu
         this.vibrate = vibrate
         this.displayAppName = displayAppName
         this.activeClassifiers = activeClassifiers
+        this.secondaryClassifiers = secondaryClassifiers
         this.usePhysicalDocking = usePhysicalDocking
         this.expandedWidth = expandedWidth
         this.collapsedWidth = collapsedWidth
@@ -1120,13 +1192,14 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         this.justifyMenuItems = justifyMenuItems
     }
 
-    override fun azAbout(inAppAbout: Boolean, moreFromAzEnabled: Boolean, moreFromAzJsonUrl: String, moreRailItem: Boolean, aboutRailItem: Boolean) {
+    override fun azAbout(inAppAbout: Boolean, moreFromAzEnabled: Boolean, moreFromAzJsonUrl: String, moreRailItem: Boolean, aboutRailItem: Boolean, dedupeAbout: Boolean) {
         this.advancedConfig = this.advancedConfig.copy(
             inAppAbout = inAppAbout,
             moreFromAzEnabled = moreFromAzEnabled,
             moreFromAzJsonUrl = moreFromAzJsonUrl,
             moreFromAzRailItem = moreRailItem,
-            aboutRailItem = aboutRailItem
+            aboutRailItem = aboutRailItem,
+            dedupeAbout = dedupeAbout
         )
     }
 
@@ -1180,8 +1253,10 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         guidanceGoals += com.hereliesaz.aznavrail.tutorial.AzGoal(id = id, target = target, label = label, autoStartWhen = autoStartWhen)
     }
 
-    override fun azTheme(activeColor: Color, defaultShape: AzButtonShape, headerIconShape: AzHeaderIconShape, translucentBackground: Color, helpLineColors: List<Color>, headerIconSize: Dp) {
+    override fun azTheme(activeColor: Color, defaultShape: AzButtonShape, headerIconShape: AzHeaderIconShape, translucentBackground: Color, helpLineColors: List<Color>, headerIconSize: Dp, focusColor: Color, secondaryColor: Color) {
         this.activeColor = activeColor
+        this.focusColor = focusColor
+        this.secondaryColor = secondaryColor
         this.defaultShape = defaultShape
         this.headerIconShape = headerIconShape
         this.translucentBackground = translucentBackground
@@ -1377,7 +1452,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         checkId(id)
         val nestedScope = AzNavRailScopeImpl(this.globalIdSet)
         nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, showFooter = this.showFooter, appRepositoryUrl = this.appRepositoryUrl)
-        nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape, translucentBackground = this.translucentBackground)
+        nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape, translucentBackground = this.translucentBackground, focusColor = this.focusColor, secondaryColor = this.secondaryColor)
         nestedScope.nestedContent()
 
         nestedScope.onClickMap.forEach { (k, v) ->
@@ -1575,12 +1650,22 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
             onClick = onClick ?: {})
     }
 
+    override fun azHighlight(id: String, active: Color?, focus: Color?, secondary: Color?) {
+        val existing = declaredHighlights[id]
+        declaredHighlights[id] = AzItemHighlight(
+            active = active ?: existing?.active,
+            focus = focus ?: existing?.focus,
+            secondary = secondary ?: existing?.secondary,
+        )
+    }
+
     override fun azItemState(
         id: String,
         badge: String?,
         persistentBadge: Boolean?,
         isLoading: Boolean?,
-        alert: AzItemAlert?
+        alert: AzItemAlert?,
+        secondary: Boolean?
     ) {
         val existing = declaredItemStates[id]
         declaredItemStates[id] = AzItemState(
@@ -1588,6 +1673,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
             persistentBadge = persistentBadge ?: existing?.persistentBadge,
             isLoading = isLoading ?: existing?.isLoading,
             alert = alert ?: existing?.alert,
+            secondary = secondary ?: existing?.secondary,
         )
     }
 
@@ -1699,7 +1785,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         val nestedItems = if (nestedContent != null) {
             val nestedScope = AzNavRailScopeImpl(this.globalIdSet)
             nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, showFooter = this.showFooter)
-            nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape, translucentBackground = this.translucentBackground)
+            nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape, translucentBackground = this.translucentBackground, focusColor = this.focusColor, secondaryColor = this.secondaryColor)
             nestedScope.nestedContent()
 
             nestedScope.onClickMap.forEach { (k, v) ->

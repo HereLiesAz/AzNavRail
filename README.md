@@ -23,6 +23,20 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 
 ---
 
+## 🆕 What's new
+
+The most recent additions, and where each is documented in full:
+
+| Feature | What it is | Section |
+| --- | --- | --- |
+| **Badges** | `azItemState(id, badge = "3")` drops a count on any item's corner — dissolving after a second, or `persistentBadge = true` to stay. Same call sets a **per-item spinner** and an **alert glyph**. | [Per-Item Badges & Loading](#per-item-badges--loading-azitemstate) |
+| **Three highlights** | An item can be lit three different ways — **active** (where you are), **focus** (what you are touching), and a **secondary** highlight that is entirely yours. `azTheme` sets the palette, `azHighlight` overrides it per item. | [The three highlights](#the-three-highlights-active-focus-secondary) |
+| **Windows that move and fold** | Every panel the library floats — popups, hidden menus — is an `AzWindow`: drag it by its bar, fold it to that bar, close it. | [Windows (`AzWindow`)](#windows-azwindow) |
+| **About, exactly once** | The library tracks every surface that offers an About affordance and draws it in only one of them, so a rail plus a drop-down no longer means About three times over. | [In-App About Reader](#in-app-about-reader) |
+| **About, already loaded** | The reader's docs and carousel are fetched in the background as the rail composes, so About opens populated instead of spinning. | [In-App About Reader](#in-app-about-reader) |
+
+---
+
 ## 🚀 Setup
 
 Add JitPack to your `settings.gradle.kts`:
@@ -516,6 +530,42 @@ Loading is **per item** — the button spins its own `AzLoad`, scaled to itself 
 colour, while the rest of the rail stays live. Null fields leave the item's existing value alone, so
 setting the badge does not clear the spinner.
 
+### The three highlights (active, focus, secondary)
+
+An item can be lit three ways, and they answer three different questions. Picking the right one is
+mostly a matter of answering the question the highlight is for:
+
+| Highlight | The question it answers | What lights it |
+| --- | --- | --- |
+| **Active** | *Where am I?* | The item's `route` **is** the current destination, or one of its `classifiers` is in `azConfig(activeClassifiers = …)`. |
+| **Focus** | *What am I touching?* | The item is pressed, or it was the last one tapped **and carries no route of its own** — a toggle, a cycler, an action. |
+| **Secondary** | *Whatever you decide.* | Only you: `azItemState(id, secondary = true)` or `azConfig(secondaryClassifiers = …)`. The library never lights it. |
+
+Set the palette once on the rail, and override any of the three on a single item:
+
+```kotlin
+azTheme(
+    activeColor = Color.Cyan,     // where you are
+    focusColor = Color.White,     // what you are touching  (unset = same as activeColor)
+    secondaryColor = Color(0xFFFFB300), // yours             (unset = the rail's accent)
+)
+
+azRailItem(id = "record", text = "Rec")
+azHighlight(id = "record", active = Color.Red)   // this one goes red when it is the live screen
+azItemState(id = "record", secondary = armed)    // …and amber while merely armed
+```
+
+**How to pick them.** `activeColor` is the loudest thing on the rail, because "where you are" is the
+one fact the rail exists to tell you — give it the app's accent. `focusColor` is a *transient*: it is
+on screen for as long as a finger is, so it wants contrast against the rail's own colour rather than
+a second hue competing with the accent. Leave it unset and focus simply reuses `activeColor`, which
+is how the rail has always looked. `secondaryColor` should be a colour that reads as *a condition*
+rather than *a place* — an amber for "armed", a green for "synced" — because the user will see it on
+an item that is emphatically not where they are.
+
+Precedence, when more than one applies at once: **focus** beats **active** beats **secondary**. A
+press is the most immediate thing happening, so it wins for as long as it lasts.
+
 ### Popups (`AzPopup`)
 
 An `AzPopup` is **bound to a rail item**, and the two share state both ways.
@@ -542,6 +592,36 @@ background job lands on whatever the user just did.
 A `AzPopupKind.NOTICE` / `WARNING` popup redraws its bound item as a **yellow, rounded-corner
 triangle outline** for as long as it is up, then restores it. The glyph is also available as an
 ordinary item shape, `AzButtonShape.TRIANGLE`.
+
+### Windows (`AzWindow`)
+
+Every panel this library floats over an app is a **window**, and they all behave the same way:
+
+- **It moves.** Drag the bar at its top and the window follows your finger, clamped so it can never
+  be pushed entirely off-screen. A panel that lands on top of the very thing it is asking about is
+  otherwise a dead end.
+- **It folds.** The bar's fold control collapses the window to just that bar — still where you left
+  it, still one tap from coming back. That is the difference between getting a panel out of the way
+  and having to throw it away and summon it again.
+- **It closes**, when whoever raised it gave it a way to.
+
+`AzPopup` is drawn in one. So is the **hidden menu** (`hiddenMenu { … }` on a reloc item) — which is
+the panel that most needed it, since it can hold a text field, and typing into a box you cannot move
+off the thing you are typing about is a poor arrangement.
+
+You can raise one yourself:
+
+```kotlin
+val panel = rememberAzWindowState()
+
+AzWindow(title = "Layers", state = panel, onDismiss = { showPanel = false }) {
+    Column(Modifier.padding(16.dp)) { /* anything */ }
+}
+```
+
+`AzWindowState` carries the window's position and folded state; hoist it (as above) when either has
+to outlive the window — a panel that reopens where the user left it. `movable = false` /
+`minimizable = false` drop the affordances for a window that genuinely shouldn't have them.
 
 ### Gestures the rail will and will not claim
 
@@ -783,6 +863,23 @@ The rail's **About (`?`)** item — and the drawer footer's **About** — open a
 - **Web** has no package namespace, so `appRepositoryUrl` is **required**; when it is unset the About
   entry is hidden.
 
+The reader's content is fetched **in the background as the rail composes** — the docs listing, the
+first document's markdown, and the More-from-Az manifest — so opening About shows the page rather
+than a spinner. A reader opened while a cold-start fetch is still in flight fills itself in the
+moment it lands. The bottom of the page carries **@HereLiesAz**, **Feedback** and **hereliesaz.com**: About is where someone goes to find out who made this, so that is where the way to
+reach them belongs.
+
+The carousel **snaps**. A flick hands focus to the next app or two and settles firmly onto it rather
+than coasting past a dozen; whatever the gesture leaves half-centred is pulled the rest of the way
+in; and tapping a card that isn't centred brings it to the centre.
+
+**About appears exactly once.** The library keeps track of every surface that could offer it — a
+`?` rail item you declared, the automatic `?`, the rail's expanded-menu footer, a drop-down menu's
+footer — and draws it only in the highest-ranked one, in that order. So an app with both a rail and a
+drop-down gets one About, in the rail's menu, instead of three. Turn it off with
+`azAbout(dedupeAbout = false)` (or `azConfig(dedupeAbout = false)` on a drop-down) to draw About
+wherever it is configured.
+
 The standalone `AzDropdownMenu` has no onscreen area, so its **About** opens as its own **full-screen**
 in-app reader (same namespace derivation; `inAppAbout = false` reverts to a browser link).
 
@@ -792,9 +889,11 @@ azConfig(/* appRepositoryUrl = "https://github.com/YourOrg/YourApp" */)  // opti
 azAbout(inAppAbout = true)   // default; set false to open the repo URL in a browser instead
 ```
 
-The rail itself always ends with an About (`?`) button — a real rail item, appended last, present
-whether or not the rail has a menu. It persists but it is not fixed: declare your own anywhere in the
-item order to move, restyle, or rename it, or drop it entirely.
+The rail ends with an About (`?`) button — a real rail item, appended last — whenever no other
+surface is already offering About. With de-duplication on (the default) that means a rail with an
+expanded-menu footer carries About there and drops the automatic `?`; a `noMenu` rail, which has no
+footer, keeps it. It persists but it is not fixed: declare your own anywhere in the item order to
+move, restyle, or rename it — a declared one outranks every other surface — or drop it entirely.
 
 ```kotlin
 azAboutRailItem(id = "about", text = "?", color = Color.White)  // yours, wherever you call it
@@ -817,6 +916,10 @@ const settings: AzNavRailSettings = {
 };
 ```
 
+- **Footer labels auto-size.** Every footer row (About / Feedback / @HereLiesAz / Undock) shrinks to
+  fit its width on one line, using the same binary-search sizing the rail's own buttons use, rather
+  than wrapping `@HereLiesAz` onto a second line and making the footer taller than the strip it is
+  pinned to.
 - **Caching & rate limit:** results are cached (ETag + 6h TTL) to stay well under GitHub's
   unauthenticated ~60 req/hr limit; when offline or rate-limited the reader shows the last cached copy.
 - **Public repos only** (unauthenticated GitHub API). Private repos won't resolve.

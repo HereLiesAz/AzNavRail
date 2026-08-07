@@ -157,9 +157,21 @@ fun azTheme(
     headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
     translucentBackground: Color = Color.Unspecified,
     helpLineColors: List<Color> = emptyList(),
-    headerIconSize: Dp = Dp.Unspecified
+    headerIconSize: Dp = Dp.Unspecified,
+    focusColor: Color = Color.Unspecified,
+    secondaryColor: Color = Color.Unspecified
 )
 ~~~
+
+* `focusColor`: `Color` — the **focus** highlight: the item under the finger, and the last-tapped
+  item when it carries no route of its own. `Unspecified` (default) reuses `activeColor`, which is
+  the rail's historical look; set it only when "where you are" and "what you are touching" should
+  read differently.
+* `secondaryColor`: `Color` — the **secondary** highlight, the third one, which the library never
+  lights on its own. Lit per item by `azItemState(id, secondary = true)` or declaratively by
+  `azConfig(secondaryClassifiers = …)`. `Unspecified` falls back to the rail accent, so the highlight
+  still shows when no colour was chosen for it.
+* Precedence when several apply at once: **focus** → **active** → **secondary**.
 
 * `headerIconSize`: `Dp` — exact diameter of the header app-icon. `Dp.Unspecified` (default) sizes
   the icon to the rail width (legacy behavior).
@@ -238,7 +250,8 @@ fun azAbout(
     moreFromAzEnabled: Boolean = true,
     moreFromAzJsonUrl: String = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json",
     moreRailItem: Boolean = false,
-    aboutRailItem: Boolean = true
+    aboutRailItem: Boolean = true,
+    dedupeAbout: Boolean = true
 )
 ~~~
 
@@ -246,6 +259,10 @@ fun azAbout(
   instead of opening the resolved repo in a browser. The repo is auto-derived from the app namespace
   on Android (`azConfig`'s `appRepositoryUrl` is an optional override); on web `appRepositoryUrl` is
   required (the About entry is hidden when it is unset).
+* `dedupeAbout` — draw the About affordance in exactly one surface. Every surface that could offer
+  one (a declared `azAboutRailItem`, the rail's menu footer, a drop-down menu's footer, the automatic
+  `?`) registers itself; only the highest-ranked of those draws it, in that order. False draws About
+  wherever it is configured.
 * `moreFromAzEnabled` — show the "More from Az" entry inside the About screen.
 * `moreFromAzJsonUrl` — raw URL of the link-only, CI-versioned `more-from-az.json` manifest.
 * `moreRailItem` — also pin a "More" item at the bottom of the collapsed rail that opens the carousel.
@@ -362,6 +379,33 @@ orientation vertical, because the rail is; everything else the host asked for is
 
 ### `AzButton`
 A circular or shaped button that automatically resizes text to fit.
+
+### `AzWindow`
+The library's floating window — the surface every panel it puts in front of the user is drawn in
+(`AzPopup`, the hidden menu), and available for your own panels.
+
+~~~kotlin
+@Composable
+fun AzWindow(
+    modifier: Modifier = Modifier,
+    title: String = "",
+    state: AzWindowState = rememberAzWindowState(),
+    accent: Color = azAccent(),
+    surfaceColor: Color = MaterialTheme.colorScheme.surface,
+    movable: Boolean = true,
+    minimizable: Boolean = true,
+    onDismiss: (() -> Unit)? = null,
+    content: @Composable () -> Unit,
+)
+~~~
+
+Every window **moves** (drag its bar; it is clamped so it can never be pushed entirely off-screen)
+and **folds** to that bar (the fold control), keeping its position. `onDismiss` adds a close control;
+null draws none.
+
+* `AzWindowState` — `offsetX` / `offsetY` / `minimized`, plus `resetPosition()`. Hoist it with
+  `rememberAzWindowState()` when the window's placement or folded state must outlive the window.
+* `AzWindowDefaults` — `Shape`, `ChromeHeight`.
 
 ---
 

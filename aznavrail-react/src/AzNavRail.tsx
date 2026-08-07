@@ -34,6 +34,12 @@ import { Easing as RNEasing } from 'react-native';
 import { AzEasing } from './types';
 import { AzNavRailDefaults, AzMotion } from './AzNavRailDefaults';
 import { AzButton } from './components/AzButton';
+import { AzFooterLabel } from './components/AzFooterLabel';
+import {
+  AzAboutSurface,
+  useAzAboutOwnership,
+} from './services/aboutPresence';
+import { useAzAboutWarmup } from './services/aboutPrefetch';
 import { AzToggle } from './components/AzToggle';
 import { AzCycler } from './components/AzCycler';
 import { RailMenuItem } from './components/RailMenuItem';
@@ -141,6 +147,54 @@ const FooterAccordion: React.FC<{
   );
 };
 
+/** True when `classifiers` overlaps `set` (which may be a Set or a plain array). */
+function classifierHit(
+  classifiers: Set<string> | string[] | undefined,
+  set: Set<string> | string[] | undefined
+): boolean {
+  if (!classifiers || !set) return false;
+  const haystack = Array.isArray(set) ? new Set(set) : set;
+  const list = Array.isArray(classifiers) ? classifiers : Array.from(classifiers);
+  return list.some((c) => haystack.has(c));
+}
+
+/**
+ * The colour a rail item is drawn in, resolving the three highlights.
+ *
+ * They answer three different questions — **active** ("where am I?"), **focus** ("what am I
+ * touching?") and **secondary** ("whatever the app decides") — and they outrank each other in that
+ * order reversed: a press is the most immediate thing happening, so focus wins for as long as it
+ * lasts, then active, then secondary. An item with none of them lit wears its own `color`.
+ */
+export function resolveHighlight(
+  item: AzNavItem,
+  cfg: any,
+  currentDestination?: string,
+  lastTappedId?: string | null
+): string | undefined {
+  const activeColor = (item as any).activeColor ?? cfg.activeColor;
+  const focusColor = (item as any).focusColor ?? cfg.focusColor ?? activeColor;
+  const secondaryColor =
+    (item as any).secondaryColor ?? cfg.secondaryColor ?? activeColor;
+
+  const isActive =
+    !!item.isChecked ||
+    item.id === currentDestination ||
+    (!!item.route && item.route === currentDestination) ||
+    classifierHit(item.classifiers, cfg.activeClassifiers);
+  // Focus is only meaningful for an item with no route of its own — a toggle, a cycler, an action.
+  // A routed item's highlight belongs to the destination, not to the tap.
+  const isFocused = !item.route && !!lastTappedId && lastTappedId === item.id;
+  const isSecondary =
+    !!(item as any).secondary ||
+    classifierHit(item.classifiers, cfg.secondaryClassifiers);
+
+  if (isFocused && focusColor) return focusColor;
+  if (isActive && activeColor) return activeColor;
+  if (isSecondary && secondaryColor) return secondaryColor;
+  return item.color;
+}
+
 const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   const {
     children,
@@ -172,6 +226,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     moreFromAzJsonUrl = 'https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json',
     moreRailItem = false,
     aboutRailItem = true,
+    dedupeAbout = true,
   } = props;
   const logInteraction = useCallback(
     (action: string, details?: string, item?: AzNavItem) => {
@@ -222,6 +277,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     moreFromAzJsonUrl: dslOverrides.moreFromAzJsonUrl ?? moreFromAzJsonUrl,
     moreRailItem: dslOverrides.moreRailItem ?? moreRailItem,
     aboutRailItem: dslOverrides.aboutRailItem ?? aboutRailItem,
+    dedupeAbout: dslOverrides.dedupeAbout ?? dedupeAbout,
   };
 
   const [isExpanded, setIsExpanded] = useState(
@@ -757,6 +813,10 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   // The colour this rail actually reads as, published to every other AzNavRail surface — a second
   // (floating) rail, a drop-down, the About reader, the Help overlay. Chrome belonging to the same
   // navigation system has to look like it.
+  // The last item the user tapped, which is what the FOCUS highlight follows for items that carry
+  // no route of their own.
+  const [lastTappedId, setLastTappedId] = useState<string | null>(null);
+
   const railAccent = useMemo(
     () => resolveRailAccent(config.activeColor, items),
     [config.activeColor, items]
@@ -764,6 +824,36 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   const railPalette = useMemo(
     () => ({ accent: railAccent, surface: config.translucentBackground }),
     [railAccent, config.translucentBackground]
+  );
+
+  // Who draws About. Every surface that could offer one registers itself; only the highest-ranked
+  // registration actually draws, so an app with a rail AND a drop-down doesn't show About three
+  // times over. A developer-declared `?` outranks everything and is never suppressed — it only
+  // suppresses others — which is why its ownership result is ignored.
+  const dedupeAboutEnabled = config.dedupeAbout !== false;
+  const hasExplicitAboutItem = items.some((i) => i.isAboutItem);
+  useAzAboutOwnership(
+    AzAboutSurface.RAIL_ITEM_EXPLICIT,
+    hasExplicitAboutItem,
+    dedupeAboutEnabled
+  );
+  const footerOwnsAbout = useAzAboutOwnership(
+    AzAboutSurface.RAIL_MENU_FOOTER,
+    !config.noMenu && config.showFooter !== false,
+    dedupeAboutEnabled
+  );
+  const autoAboutOwned = useAzAboutOwnership(
+    AzAboutSurface.RAIL_ITEM_AUTO,
+    config.aboutRailItem !== false && !hasExplicitAboutItem,
+    dedupeAboutEnabled
+  );
+
+  // Warm the About reader's content now, in the background, so opening it shows the page rather
+  // than a spinner. Cheap: cached, conditional requests that usually come back 304.
+  useAzAboutWarmup(
+    config.inAppAbout === false ? undefined : config.appRepositoryUrl,
+    config.moreFromAzEnabled !== false,
+    config.moreFromAzJsonUrl
   );
   // Context reaches this rail's own children; the published palette reaches its siblings — a second
   // floating rail, or anything the host draws outside `<AzNavRail>`.
@@ -788,11 +878,9 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       // identity on screen too: consumers (and these tests) can address any item by the id they
       // gave it, without knowing what it renders as.
       testID: item.id,
-      color:
-        overrideConfig.activeColor &&
-        (item.isChecked || item.id === currentDestination)
-          ? overrideConfig.activeColor
-          : item.color,
+      // The three highlights, in the order they outrank each other. Focus is about the gesture
+      // happening right now; active is about where the user is; secondary is whatever the app says.
+      color: resolveHighlight(item, overrideConfig, currentDestination, lastTappedId),
       shape: item.shape || overrideConfig.defaultShape,
       enabled: !item.disabled,
       style: {
@@ -880,6 +968,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
           selectedOption={item.selectedOption || ''}
           onCycle={() => {
             if (item.onClick) item.onClick();
+            setLastTappedId(item.id);
             logInteraction('Cycler cycled', item.text, item);
           }}
         />
@@ -896,6 +985,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
           toggleOffText={item.toggleOffText}
           onToggle={() => {
             if (item.onClick) item.onClick();
+            setLastTappedId(item.id);
             logInteraction('Toggle toggled', item.text, item);
           }}
         />
@@ -918,6 +1008,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
           content={item.content}
           hasCustomContent={!!item.content}
           onClick={() => {
+            setLastTappedId(item.id);
             logInteraction('Item clicked', item.text, item);
             // Reaching for any other rail item is the user leaving the About reader; only the
             // About item itself toggles it.
@@ -1095,46 +1186,28 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
         <View style={[styles.footer, { alignItems: 'center' }]}>
           <View style={[styles.divider, { backgroundColor: footerColor }]} />
           {enableRailDragging && (
-            <TouchableOpacity
+            <AzFooterLabel
+              text="Undock"
+              color={footerColor}
+              bold
               onPress={handleUndock}
               style={{ paddingVertical: 8 }}
-            >
-              <Text
-                style={[
-                  styles.menuItemText,
-                  { color: footerColor, fontWeight: 'bold' },
-                ]}
-              >{`Undock`}</Text>
-            </TouchableOpacity>
+            />
           )}
-          {!!config.appRepositoryUrl && (
-            <TouchableOpacity
-              onPress={handleAbout}
-              style={{ paddingVertical: 4 }}
-            >
-              <Text style={[styles.menuItemText, { color: footerColor }]}>
-                About
-              </Text>
-            </TouchableOpacity>
+          {!!config.appRepositoryUrl && footerOwnsAbout && (
+            <AzFooterLabel text="About" color={footerColor} onPress={handleAbout} />
           )}
-          <TouchableOpacity
+          <AzFooterLabel
+            text="Feedback"
+            color={footerColor}
             onPress={handleFeedback}
-            style={{ paddingVertical: 4 }}
-          >
-            <Text style={[styles.menuItemText, { color: footerColor }]}>
-              Feedback
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          />
+          <AzFooterLabel
+            text="@HereLiesAz"
+            color={footerColor}
             onPress={handleCredit}
             onLongPress={handleSecLocTrigger}
-            delayLongPress={500}
-            style={{ paddingVertical: 4 }}
-          >
-            <Text style={[styles.menuItemText, { color: footerColor }]}>
-              @HereLiesAz
-            </Text>
-          </TouchableOpacity>
+          />
         </View>
       </FooterAccordion>
     );
@@ -1150,8 +1223,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     // The rail strip ends with the About ("?") button — unless the developer declared their own
     // with `AzAboutRailItem`, in which case theirs stands where they put it. It persists; it is
     // not fixed. The drawer does not need one: its footer already carries About.
-    const wantsAbout = config.aboutRailItem !== false;
-    if (!wantsAbout || items.some((i) => i.isAboutItem)) return strip;
+    if (!autoAboutOwned) return strip;
     return [
       ...strip,
       {
@@ -1163,7 +1235,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
         shape: config.defaultShape,
       } as AzNavItem,
     ];
-  }, [items, config.noMenu, config.aboutRailItem, config.defaultShape]);
+  }, [items, config.noMenu, autoAboutOwned, config.defaultShape]);
   const menuItems = useMemo(() => {
     return items.filter((i) => !i.isSubItem);
   }, [items]);

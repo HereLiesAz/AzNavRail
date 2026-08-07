@@ -97,6 +97,17 @@ internal fun AzNavRailButton(
     shape: AzButtonShape = AzButtonShape.CIRCLE,
     enabled: Boolean = true,
     isSelected: Boolean = false,
+    /**
+     * Whether this button wears the **focus** highlight: the last-tapped item that carries no route
+     * of its own. A press always counts as focus too, whatever this says.
+     */
+    isFocused: Boolean = false,
+    /** Whether this button wears the **secondary** highlight — see [com.hereliesaz.aznavrail.model.AzHighlight]. */
+    isSecondaryActive: Boolean = false,
+    /** Colour of the focus highlight. Null reuses [activeColor]. */
+    focusColor: Color? = null,
+    /** Colour of the secondary highlight. Null reuses [activeColor]. */
+    secondaryColor: Color? = null,
     isLoading: Boolean = false,
     contentPadding: PaddingValues = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
     itemContent: Any? = null,
@@ -143,16 +154,24 @@ internal fun AzNavRailButton(
     val clippedModifier = finalModifier.clip(buttonShape)
 
     val disabledColor = color.copy(alpha = 0.38f)
-    val targetColor = if (isPressed || isSelected) activeColor else color
+    // The three highlights, in the order they outrank each other. Focus wins over active because it
+    // is about the gesture happening right now; active wins over secondary because where you are
+    // beats what the app happens to be doing; and the unhighlighted colour is the item's own.
+    val targetColor = when {
+        isPressed || isFocused -> focusColor ?: activeColor
+        isSelected -> activeColor
+        isSecondaryActive -> secondaryColor ?: activeColor
+        else -> color
+    }
     val finalColor = if (enabled) targetColor else disabledColor
 
     val computedFillColor = if (finalColor == Color.Black) Color.White else Color.Black
-    val computedActiveFillColor = if (activeColor == Color.Black) Color.White else Color.Black
+    val computedActiveFillColor = if (targetColor == Color.Black) Color.White else Color.Black
 
     val baseFillColor = fillColor ?: computedFillColor
     val activeFillColor = fillColor ?: computedActiveFillColor
 
-    val containerColor = if (isSelected && !isPressed) {
+    val containerColor = if ((isSelected || isFocused || isSecondaryActive) && !isPressed) {
         activeFillColor.copy(alpha = 0.12f)
     } else {
         baseFillColor.copy(alpha = 0.25f)

@@ -62,6 +62,12 @@ internal fun NestedRail(
     currentDestination: String?,
     activeColor: Color,
     activeClassifiers: Set<String>,
+    /** The rail's focus-highlight colour, passed down so nested items match the rail they came from. */
+    focusColor: Color? = null,
+    /** The rail's secondary-highlight colour. */
+    secondaryColor: Color? = null,
+    /** Classifiers that light a nested item's **secondary** highlight. */
+    secondaryClassifiers: Set<String> = emptySet(),
     onItemSelected: (AzNavItem) -> Unit,
     alignment: AzNestedRailAlignment,
     isRightDocked: Boolean,
@@ -92,7 +98,7 @@ internal fun NestedRail(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             items.filter { !it.isSubItem }.forEach { item ->
-                NestedItemWrapper(item, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, items, true, onHostExpandedChange)
+                NestedItemWrapper(item, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, items, true, onHostExpandedChange, focusColor, secondaryColor, secondaryClassifiers)
             }
         }
     } else {
@@ -103,7 +109,7 @@ internal fun NestedRail(
             verticalAlignment = Alignment.CenterVertically
         ) {
             items.filter { !it.isSubItem }.forEach { item ->
-                NestedItemWrapper(item, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, items, false, onHostExpandedChange)
+                NestedItemWrapper(item, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, items, false, onHostExpandedChange, focusColor, secondaryColor, secondaryClassifiers)
             }
         }
     }
@@ -121,7 +127,10 @@ private fun NestedItemWrapper(
     hostStates: MutableMap<String, Boolean>,
     allItems: List<AzNavItem>,
     isVerticalRail: Boolean,
-    onHostExpandedChange: ((String, Boolean) -> Unit)? = null
+    onHostExpandedChange: ((String, Boolean) -> Unit)? = null,
+    focusColor: Color? = null,
+    secondaryColor: Color? = null,
+    secondaryClassifiers: Set<String> = emptySet()
 ) {
     // Evict cached bounds when this nested item leaves composition (popup closes). Without
     // this the help overlay would later draw cards/lines for the now-invisible nested rail.
@@ -164,6 +173,10 @@ private fun NestedItemWrapper(
                 size = AzNavRailDefaults.ButtonWidth,
                 enabled = !item.disabled,
                 isSelected = (item.route != null && currentDestination == item.route) || item.classifiers.any { activeClassifiers.contains(it) },
+                isSecondaryActive = item.isSecondaryActive ||
+                    item.classifiers.any { secondaryClassifiers.contains(it) },
+                focusColor = item.focusColor ?: focusColor,
+                secondaryColor = item.secondaryColor ?: secondaryColor,
                 isLoading = item.isLoading,
                 itemContent = if (alert != null) null else item.content,
                 rotationDegrees = rotationDegrees
@@ -197,7 +210,7 @@ private fun NestedItemWrapper(
             if (isVerticalRail) {
                 // Vertical rail: sub-items continue the column
                 subItems.forEach { subItem ->
-                    NestedItemWrapper(subItem, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, allItems, isVerticalRail)
+                    NestedItemWrapper(subItem, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, allItems, isVerticalRail, null, focusColor, secondaryColor, secondaryClassifiers)
                 }
             } else {
                 // Horizontal rail: sub-items expand downward vertically
@@ -207,7 +220,7 @@ private fun NestedItemWrapper(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     subItems.forEach { subItem ->
-                        NestedItemWrapper(subItem, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, allItems, isVerticalRail)
+                        NestedItemWrapper(subItem, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, allItems, isVerticalRail, null, focusColor, secondaryColor, secondaryClassifiers)
                     }
                 }
             }

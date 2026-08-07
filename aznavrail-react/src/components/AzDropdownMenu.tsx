@@ -33,6 +33,9 @@ import {
 } from '../types';
 import { AzNavRailDefaults, AzMotion } from '../AzNavRailDefaults';
 import { AboutOverlay } from './AboutOverlay';
+import { AzFooterLabel } from './AzFooterLabel';
+import { AzAboutSurface, useAzAboutOwnership } from '../services/aboutPresence';
+import { useAzAboutWarmup } from '../services/aboutPrefetch';
 import { AzKineticItem, useAzClosing } from './AzKinetics';
 import { solveHybridJustify } from '../util/AzJustify';
 import { useAzAccent, useAzPanelColor, azReadableOn } from '../AzRailPalette';
@@ -90,6 +93,13 @@ export interface AzDropdownMenuProps {
   inAppAbout?: boolean;
   /** When true (default), the in-app About reader offers a "More from Az" carousel. */
   moreFromAzEnabled?: boolean;
+  /**
+   * When true (default) this footer drops its "About" row whenever a higher-ranked surface — a
+   * declared `AzAboutRailItem`, or a rail's own expanded-menu footer — is already offering one, so
+   * the app never shows About twice. False always draws it (and stops this menu suppressing
+   * anyone else's).
+   */
+  dedupeAbout?: boolean;
   /** Raw URL of the `more-from-az.json` manifest backing the carousel. */
   moreFromAzJsonUrl?: string;
   /** Optional controlled open-state. When omitted the menu manages its own. */
@@ -349,6 +359,7 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
   showFooter = true,
   appRepositoryUrl,
   inAppAbout = true,
+  dedupeAbout = true,
   moreFromAzEnabled = true,
   moreFromAzJsonUrl = 'https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json',
   expanded,
@@ -382,6 +393,21 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
   // Full-screen About reader reachable from the dropdown footer (parity with the rail). The
   // "More from Az" carousel is reachable from within AboutOverlay itself.
   const [showAbout, setShowAbout] = useState(false);
+
+  // Whether THIS menu is the surface that draws About. Claimed from the trigger's render (not the
+  // panel's) so the answer doesn't flip every time the panel opens and closes.
+  const ownsAbout = useAzAboutOwnership(
+    AzAboutSurface.DROPDOWN_FOOTER,
+    showFooter && design === AzDropdownDesign.MENU && !!appRepositoryUrl,
+    dedupeAbout
+  );
+
+  // Warm the reader's content in the background so the page opens populated, not spinning.
+  useAzAboutWarmup(
+    inAppAbout ? appRepositoryUrl : undefined,
+    moreFromAzEnabled,
+    moreFromAzJsonUrl
+  );
 
   const setOpen = (value: boolean) => {
     if (expanded === undefined) setInternalOpen(value);
@@ -551,6 +577,7 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
                   {design === AzDropdownDesign.MENU && showFooter && (
                     <AzDropdownFooter
                       panelAccent={panelAccent}
+                      showAbout={ownsAbout}
                       appRepositoryUrl={appRepositoryUrl}
                       inAppAbout={inAppAbout}
                       onInAppAbout={() => setShowAbout(true)}
@@ -588,6 +615,8 @@ const AzDropdownFooter: React.FC<{
   onInAppAbout?: () => void;
   /** The panel's resolved, legible accent — the same colour its item rows wear. */
   panelAccent: string;
+  /** False when a higher-ranked surface already offers About — see `aboutPresence`. */
+  showAbout?: boolean;
   visible?: boolean;
   menuItemCount?: number;
   staggerMs?: number;
@@ -597,6 +626,7 @@ const AzDropdownFooter: React.FC<{
   inAppAbout = true,
   onInAppAbout,
   panelAccent,
+  showAbout = true,
   visible = true,
   menuItemCount = 0,
   staggerMs = AzMotion.ItemStaggerMs,
@@ -651,36 +681,28 @@ const AzDropdownFooter: React.FC<{
       }}
     >
       <View style={styles.footer}>
-        {/* About is hidden entirely when no repository URL is configured. */}
-        {!!appRepositoryUrl && (
-          <TouchableOpacity
+        {/* About is hidden entirely when no repository URL is configured, and when a higher-ranked
+            surface is already offering one. */}
+        {!!appRepositoryUrl && showAbout && (
+          <AzFooterLabel
+            text="About"
+            color={panelAccent}
             onPress={onAbout}
             style={styles.footerRow}
-            accessibilityRole="button"
-          >
-            <Text style={[styles.footerText, { color: panelAccent }]}>
-              About
-            </Text>
-          </TouchableOpacity>
+          />
         )}
-        <TouchableOpacity
+        <AzFooterLabel
+          text="Feedback"
+          color={panelAccent}
           onPress={() => open('mailto:hereliesaz@gmail.com?subject=Feedback')}
           style={styles.footerRow}
-          accessibilityRole="button"
-        >
-          <Text style={[styles.footerText, { color: panelAccent }]}>
-            Feedback
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
+        />
+        <AzFooterLabel
+          text="@HereLiesAz"
+          color={panelAccent}
           onPress={() => open('https://instagram.com/HereLiesAz')}
           style={styles.footerRow}
-          accessibilityRole="button"
-        >
-          <Text style={[styles.footerText, { color: panelAccent }]}>
-            @HereLiesAz
-          </Text>
-        </TouchableOpacity>
+        />
       </View>
     </Animated.View>
   );

@@ -70,6 +70,11 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.internal.AboutOverlay
+import com.hereliesaz.aznavrail.internal.AZ_INSTAGRAM_URL
+import com.hereliesaz.aznavrail.internal.AzAboutRegistry
+import com.hereliesaz.aznavrail.internal.AzAboutSurface
+import com.hereliesaz.aznavrail.internal.AzFooterLabel
+import com.hereliesaz.aznavrail.internal.rememberAzAboutOwnership
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
 import com.hereliesaz.aznavrail.internal.AzSafeZones
 import com.hereliesaz.aznavrail.internal.azWindowSafeInsets
@@ -124,6 +129,10 @@ interface AzDropdownMenuScope {
      * @param inAppAbout When true (the default), the footer's "About" opens a full-screen, in-app
      *   markdown reader auto-generated from the host app's repo (the dropdown has no onscreen area,
      *   so it draws its own full-screen layer). When false, "About" opens the repo in a browser.
+     * @param dedupeAbout When true (the default) this footer drops its "About" row whenever a
+     *   higher-ranked surface — a developer-declared `?` rail item, or a rail's own expanded-menu
+     *   footer — is already offering one, so the app never shows About twice. Set false to always
+     *   draw it (and to stop this menu suppressing anyone else's).
      * @param appRepositoryUrl Optional explicit override for the host app's GitHub repository used by
      *   the "About" screen. Blank (the default) auto-derives it from the app namespace
      *   (`com.<owner>.<repo>` → `github.com/<owner>/<repo>`); never the AzNavRail library repo.
@@ -163,6 +172,7 @@ interface AzDropdownMenuScope {
         headerIconSize: Dp = 48.dp,
         showFooter: Boolean = true,
         inAppAbout: Boolean = true,
+        dedupeAbout: Boolean = true,
         appRepositoryUrl: String = "",
         itemTextStyle: TextStyle? = null,
         itemEntrance: AzEntrance = AzEntrance.Turnstile,
@@ -242,6 +252,7 @@ internal data class AzDropdownConfig(
     val headerIconSize: Dp = 48.dp,
     val showFooter: Boolean = true,
     val inAppAbout: Boolean = true,
+    val dedupeAbout: Boolean = true,
     val appRepositoryUrl: String = "",
     val itemTextStyle: TextStyle? = null,
     val itemEntrance: AzEntrance = AzEntrance.Turnstile,
@@ -329,6 +340,7 @@ private class AzDropdownMenuScopeImpl : AzDropdownMenuScope {
         headerIconSize: Dp,
         showFooter: Boolean,
         inAppAbout: Boolean,
+        dedupeAbout: Boolean,
         appRepositoryUrl: String,
         itemTextStyle: TextStyle?,
         itemEntrance: AzEntrance,
@@ -348,7 +360,7 @@ private class AzDropdownMenuScopeImpl : AzDropdownMenuScope {
     ) {
         config = AzDropdownConfig(
             design, dockingSide, vibrate, expandedWidth, collapsedWidth, headerIconShape, headerIconSize,
-            showFooter, inAppAbout, appRepositoryUrl, itemTextStyle, itemEntrance, entranceStaggerMs,
+            showFooter, inAppAbout, dedupeAbout, appRepositoryUrl, itemTextStyle, itemEntrance, entranceStaggerMs,
             entranceDurationMs, entranceEasing, entranceStartAngle, tiltOnPress, maxTiltDegrees, itemExit,
             dimBehindMenu, dimBehindMenuAlpha, menuItemAlignment, justifyMenuItems, trigger, triggerPlacement,
         )
@@ -515,6 +527,8 @@ private fun AzDropdownFooter(
     repoUrl: String,
     onAboutClick: (() -> Unit)?,
     footerColor: Color,
+    /** False when a higher-ranked surface already offers About — see [AzAboutRegistry]. */
+    showAbout: Boolean = true,
     visible: Boolean = true,
     menuItemCount: Int = 0,
     staggerMs: Int = AzMotion.ItemStaggerMs,
@@ -563,11 +577,11 @@ private fun AzDropdownFooter(
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = "About",
-            style = MaterialTheme.typography.titleLarge.copy(color = footerColor),
-            modifier = Modifier
-                .clickable {
+        if (showAbout) {
+            AzFooterLabel(
+                text = "About",
+                color = footerColor,
+                onClick = {
                     if (onAboutClick != null) {
                         onAboutClick()
                     } else {
@@ -580,37 +594,36 @@ private fun AzDropdownFooter(
                             } catch (e: Exception) {}
                         }
                     }
-                }
-                .padding(vertical = 4.dp)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
+                },
+                modifier = Modifier.padding(vertical = 4.dp),
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+        AzFooterLabel(
             text = "Feedback",
-            style = MaterialTheme.typography.titleLarge.copy(color = footerColor),
-            modifier = Modifier
-                .clickable {
-                    try {
-                        val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
-                            data = Uri.parse("mailto:hereliesaz@gmail.com")
-                            putExtra(Intent.EXTRA_SUBJECT, appName)
-                        }
-                        context.startActivity(Intent.createChooser(emailIntent, "Send feedback"))
-                    } catch (e: Exception) {}
-                }
-                .padding(vertical = 4.dp)
+            color = footerColor,
+            onClick = {
+                try {
+                    val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
+                        data = Uri.parse("mailto:hereliesaz@gmail.com")
+                        putExtra(Intent.EXTRA_SUBJECT, appName)
+                    }
+                    context.startActivity(Intent.createChooser(emailIntent, "Send feedback"))
+                } catch (e: Exception) {}
+            },
+            modifier = Modifier.padding(vertical = 4.dp),
         )
         Spacer(modifier = Modifier.height(16.dp))
-        Text(
+        AzFooterLabel(
             text = "@HereLiesAz",
             // Same accent as the other footer rows.
-            style = MaterialTheme.typography.titleLarge.copy(color = footerColor),
-            modifier = Modifier
-                .clickable {
-                    try {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://instagram.com/HereLiesAz")))
-                    } catch (e: Exception) {}
-                }
-                .padding(vertical = 4.dp)
+            color = footerColor,
+            onClick = {
+                try {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(AZ_INSTAGRAM_URL)))
+                } catch (e: Exception) {}
+            },
+            modifier = Modifier.padding(vertical = 4.dp),
         )
     }
 }
@@ -918,6 +931,14 @@ fun AzDropdownMenu(
             GithubDocsRepository.repoUrlFromPackage(context.packageName) ?: config.appRepositoryUrl
         }
     }
+    // Whether THIS menu is the surface that draws About. Claimed from the trigger's composition (not
+    // the panel's) so the answer doesn't flip every time the panel opens and closes.
+    val ownsAbout = rememberAzAboutOwnership(
+        surface = AzAboutSurface.DROPDOWN_FOOTER,
+        offered = config.showFooter && config.design == AzDropdownDesign.MENU,
+        dedupe = config.dedupeAbout,
+    )
+
     val maxPanelHeight = (LocalConfiguration.current.screenHeightDp * 0.8f).dp
     val panelWidth = if (config.design == AzDropdownDesign.RAIL) config.collapsedWidth else config.expandedWidth
 
@@ -1087,6 +1108,7 @@ fun AzDropdownMenu(
                                 onAboutClick = if (config.inAppAbout && effectiveRepoUrl.isNotBlank()) {
                                     { dismiss(); showAbout = true }
                                 } else null,
+                                showAbout = ownsAbout,
                                 visible = isOpen,
                                 menuItemCount = entries.size,
                                 staggerMs = config.entranceStaggerMs,

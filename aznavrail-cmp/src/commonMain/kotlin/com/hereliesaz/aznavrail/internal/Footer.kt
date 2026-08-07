@@ -5,13 +5,14 @@ import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -21,14 +22,81 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
+import androidx.compose.ui.unit.sp
 import com.hereliesaz.aznavrail.AzNavRailScopeImpl
 import com.hereliesaz.aznavrail.model.AzMotion
 import com.hereliesaz.aznavrail.model.AzEasing
+import com.hereliesaz.aznavrail.util.text.AutoSizeText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+/** Sizing bounds for the auto-shrinking footer labels. */
+internal object AzFooterDefaults {
+    /** Nothing in the footer is ever drawn larger than this, whatever the theme says. */
+    val MaxTextSize: TextUnit = 22.sp
+
+    /** The floor. A label that still doesn't fit at this size is clipped, not wrapped. */
+    val MinTextSize: TextUnit = 9.sp
+}
+
+/**
+ * One footer row, drawn with the same auto-sizing the rail's own buttons use.
+ *
+ * The footer is a fixed-width column at the bottom of a menu, and its longest label — `@HereLiesAz`
+ * — is the one that doesn't fit. Wrapping it to a second line makes the footer taller than the strip
+ * it is pinned to and reads as a typo. So the label shrinks to fit its row instead, exactly like a
+ * rail item's text does: one line, no wrap, binary-searched down from the theme's `titleLarge` until
+ * it fits.
+ */
+@Composable
+internal fun AzFooterLabel(
+    text: String,
+    color: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    fontWeight: FontWeight? = null,
+    onLongClick: (() -> Unit)? = null,
+) {
+    val base: TextStyle = MaterialTheme.typography.titleLarge
+    val maxTextSize = base.fontSize.takeIf { it.isSpecified } ?: AzFooterDefaults.MaxTextSize
+    // The row is as tall as one line of the largest permitted size; the text shrinks inside it.
+    val rowHeight = with(LocalDensity.current) { maxTextSize.toDp() } * 1.4f
+    val gestures = if (onLongClick != null) {
+        Modifier.pointerInput(onClick, onLongClick) {
+            detectTapGestures(onTap = { onClick() }, onLongPress = { onLongClick() })
+        }
+    } else {
+        Modifier.clickable { onClick() }
+    }
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(rowHeight)
+            .then(gestures),
+        contentAlignment = Alignment.Center,
+    ) {
+        AutoSizeText(
+            text = text,
+            style = base.copy(color = color, fontWeight = fontWeight ?: base.fontWeight),
+            modifier = Modifier.fillMaxSize(),
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Clip,
+            alignment = Alignment.Center,
+            maxTextSize = maxTextSize,
+            minTextSize = AzFooterDefaults.MinTextSize,
+            lineSpaceRatio = 1f,
+        )
+    }
+}
 
 /**
  * Renders the pinned footer strip shown at the bottom of the expanded menu.
@@ -50,6 +118,12 @@ internal fun Footer(
     repoUrl: String,
     footerColor: Color,
     onAboutClick: (() -> Unit)? = null,
+    /**
+     * Whether this footer is the surface that owns the About affordance. False when another surface
+     * (a developer-declared `?` rail item, another menu) is already offering it — see
+     * [AzAboutRegistry].
+     */
+    showAbout: Boolean = true,
     // Accordion-unfold controls. `visible` drives the anim; the delay is `(menuItemCount-1)*staggerMs`
     // so the footer begins the moment the LAST menu item begins its own kinetic entrance.
     visible: Boolean = true,
@@ -93,60 +167,67 @@ internal fun Footer(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (scope.advancedConfig.enableRailDragging || scope.advancedConfig.onUndock != null) {
-            Text(
+            AzFooterLabel(
                 text = "Undock",
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, color = footerColor),
-                modifier = Modifier
-                    .clickable { onUndock() }
-                    .padding(vertical = 8.dp),
+                color = footerColor,
+                fontWeight = FontWeight.Bold,
+                onClick = onUndock,
+                modifier = Modifier.padding(vertical = 8.dp),
             )
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        Text(
-            text = "About",
-            style = MaterialTheme.typography.titleLarge.copy(color = footerColor),
-            modifier = Modifier
-                .clickable {
+        if (showAbout) {
+            AzFooterLabel(
+                text = "About",
+                color = footerColor,
+                onClick = {
                     if (onAboutClick != null) {
                         onAboutClick()
                     } else {
                         if (repoUrl.isNotBlank()) runCatching { uriHandler.openUri(repoUrl) }
                     }
-                }
-                .padding(vertical = 4.dp),
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
+                },
+                modifier = Modifier.padding(vertical = 4.dp),
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+        AzFooterLabel(
             text = "Feedback",
-            style = MaterialTheme.typography.titleLarge.copy(color = footerColor),
-            modifier = Modifier
-                .clickable {
-                    runCatching {
-                        // Minimal URL-encoding of the subject so app names with spaces / query
-                        // separators don't produce a malformed mailto: URI on strict handlers.
-                        val subject = appName
-                            .replace("%", "%25").replace(" ", "%20")
-                            .replace("&", "%26").replace("#", "%23").replace("?", "%3F")
-                        uriHandler.openUri("mailto:hereliesaz@gmail.com?subject=$subject")
-                    }
+            color = footerColor,
+            onClick = {
+                runCatching {
+                    uriHandler.openUri(azFeedbackMailto(appName))
                 }
-                .padding(vertical = 4.dp),
+            },
+            modifier = Modifier.padding(vertical = 4.dp),
         )
         Spacer(modifier = Modifier.height(16.dp))
-        Text(
+        AzFooterLabel(
             text = "@HereLiesAz",
-            style = MaterialTheme.typography.titleLarge.copy(color = footerColor),
-            modifier = Modifier
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onTap = {
-                            runCatching { uriHandler.openUri("https://instagram.com/HereLiesAz") }
-                        },
-                        onLongPress = { onSecretClick?.invoke() },
-                    )
-                }
-                .padding(vertical = 4.dp),
+            color = footerColor,
+            onClick = { runCatching { uriHandler.openUri(AZ_INSTAGRAM_URL) } },
+            onLongClick = { onSecretClick?.invoke() },
+            modifier = Modifier.padding(vertical = 4.dp),
         )
     }
+}
+
+/** The author's page — the destination behind every `@HereLiesAz` row the library draws. */
+internal const val AZ_INSTAGRAM_URL = "https://instagram.com/HereLiesAz"
+
+/** The author's site — where the About page sends anyone who wants the rest of the work. */
+internal const val AZ_SITE_URL = "https://hereliesaz.com"
+
+/**
+ * The `mailto:` URI behind every "Feedback" row, with the app name as the subject.
+ *
+ * The subject is minimally URL-encoded so an app name containing spaces or query separators doesn't
+ * produce a malformed URI on strict handlers.
+ */
+internal fun azFeedbackMailto(appName: String): String {
+    val subject = appName
+        .replace("%", "%25").replace(" ", "%20")
+        .replace("&", "%26").replace("#", "%23").replace("?", "%3F")
+    return "mailto:hereliesaz@gmail.com?subject=$subject"
 }

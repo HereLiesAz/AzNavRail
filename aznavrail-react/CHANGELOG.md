@@ -1,5 +1,36 @@
 # Changelog
 
+## Unreleased — three highlights, one About, windows that move
+
+### Added
+- **Three highlights, not one.** An item can be lit three ways, and each answers a different
+  question: **active** (`activeColor`) is *where you are* — the current destination or an
+  `activeClassifiers` match; **focus** (`focusColor`) is *what you are touching* — the item just
+  tapped when it carries no route of its own; and **secondary** (`secondaryColor`) is *whatever the
+  app decides*, lit only by the app via an item's `secondary` prop or `secondaryClassifiers`. Focus
+  beats active beats secondary. Any item can override any of the three with its own `activeColor` /
+  `focusColor` / `secondaryColor`. `focusColor` left unset reuses `activeColor`, so nothing changes
+  for an app that doesn't ask for it.
+- **`<AzWindow>`** — the library's floating window, and the surface every panel it puts in front of
+  the user is now drawn in. It **moves** (drag its bar; clamped so it can never be lost off-screen)
+  and **folds** to that bar, keeping its position. The **hidden menu** is one, which matters most
+  for the panel that can hold a text field.
+- **`dedupeAbout`** (default true) draws the About affordance in exactly one surface even when
+  several could offer it. A declared `<AzAboutRailItem>` outranks the rail's menu footer, which
+  outranks a drop-down's footer, which outranks the automatic `?`.
+
+### Changed
+- **The About reader is loaded before it is opened.** Its docs listing, first document and
+  More-from-Az manifest are warmed in the background as the rail mounts, so the page opens populated
+  instead of spinning. A reader opened mid-flight fills in the moment the fetch lands.
+- **The About page ends with the author** — `@HereLiesAz`, Feedback and `hereliesaz.com`.
+- **The More-from-Az carousel sticks.** `disableIntervalMomentum` plus a settle pass means a flick
+  hands focus to the next app or two and lands ON a card rather than coasting between them.
+- **Footer labels auto-size.** Every footer row shrinks to one line rather than wrapping
+  `@HereLiesAz` onto a second and making the footer taller than the strip it is pinned to.
+- **The automatic `?` rail item now stands down** when a menu footer is already carrying About. A
+  `noMenu` rail (no footer) still gets it; `dedupeAbout={false}` restores the old behaviour.
+
 ## Unreleased — borderless shapes, About on the rail, and one palette for every surface
 
 ### Added

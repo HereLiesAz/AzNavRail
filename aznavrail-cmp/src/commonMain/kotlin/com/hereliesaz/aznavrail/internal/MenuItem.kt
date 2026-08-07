@@ -74,6 +74,12 @@ internal fun MenuItem(
     onBoundsCleared: ((String) -> Unit)? = null,
     helpEnabled: Boolean = false,
     activeColor: androidx.compose.ui.graphics.Color? = null,
+    /** Whether this row wears the **secondary** highlight — see [com.hereliesaz.aznavrail.model.AzHighlight]. */
+    isSecondaryActive: Boolean = false,
+    /** The rail's focus-highlight colour; the item's own wins over it. Null reuses the active colour. */
+    focusColor: androidx.compose.ui.graphics.Color? = null,
+    /** The rail's secondary-highlight colour; the item's own wins over it. */
+    secondaryColor: androidx.compose.ui.graphics.Color? = null,
     kineticModifier: Modifier = Modifier,
     textStyle: TextStyle? = null,
     dockingSide: AzDockingSide = AzDockingSide.LEFT,
@@ -173,21 +179,36 @@ internal fun MenuItem(
     // `Color.Unspecified` is a real value, not null, so `?:` alone would let an unset accent through
     // and paint the row in nothing. Resolve through the host rail's palette, then the theme.
     val railAccent = azAccent()
-    val effectiveActiveColor = (activeColor ?: Color.Unspecified).takeOrElse { railAccent }
+    val effectiveActiveColor =
+        (item.activeColor ?: activeColor ?: Color.Unspecified).takeOrElse { railAccent }
+    // A menu row has no border to recolour, so its highlight is the tint behind the words. Focus is
+    // the press itself here — a drawer row is gone the moment you let go of it.
+    val effectiveFocusColor =
+        (item.focusColor ?: focusColor ?: Color.Unspecified).takeOrElse { effectiveActiveColor }
+    val effectiveSecondaryColor =
+        (item.secondaryColor ?: secondaryColor ?: Color.Unspecified).takeOrElse { railAccent }
+    val secondaryLit = isSecondaryActive || item.isSecondaryActive
     val effectiveDefaultColor =
         (item.textColor ?: item.color ?: Color.Unspecified).takeOrElse { railAccent }
 
     // A menu row is type, not a button, so an alerted item can't become a triangle here — it takes
     // the same warning yellow instead, so the drawer and the rail agree about which item is flagged.
     val alertColor = item.alert?.color()
+    val litInk = if (secondaryLit && !isSelected) effectiveSecondaryColor else effectiveDefaultColor
     val textColor = if (isDisabled) {
-        (alertColor ?: effectiveDefaultColor).copy(alpha = 0.5f)
+        (alertColor ?: litInk).copy(alpha = 0.5f)
     } else {
-        alertColor ?: effectiveDefaultColor
+        alertColor ?: litInk
     }
 
-    val backgroundColor = if (isSelected && !isPressed) {
-        (item.fillColor ?: effectiveActiveColor).copy(alpha = 0.12f)
+    val highlightColor = when {
+        isPressed -> effectiveFocusColor
+        isSelected -> effectiveActiveColor
+        secondaryLit -> effectiveSecondaryColor
+        else -> effectiveActiveColor
+    }
+    val backgroundColor = if ((isSelected || secondaryLit) && !isPressed) {
+        (item.fillColor ?: highlightColor).copy(alpha = 0.12f)
     } else {
         androidx.compose.ui.graphics.Color.Transparent
     }

@@ -16,9 +16,13 @@ export * from './components/AzBottomSheet';
 export * from './components/AzBottomSheetInsetAware';
 export * from './components/AzFloatingRail';
 export * from './components/AboutOverlay';
+export * from './components/AzWindow';
+export * from './components/AzFooterLabel';
 export * from './components/MoreFromAzOverlay';
 export * from './components/useAzSheetController';
 export * from './services/githubDocs';
+export * from './services/aboutPresence';
+export * from './services/aboutPrefetch';
 export * from './services/moreFromAz';
 export * from './types';
 // `AzToggleProps` / `AzCyclerProps` are declared both as the DSL prop types in `./types` and as the

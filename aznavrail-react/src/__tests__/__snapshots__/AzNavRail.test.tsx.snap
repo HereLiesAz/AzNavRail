@@ -494,18 +494,24 @@ exports[`AzNavRail renders correctly when expanded 1`] = `
                 {
                   "opacity": 1,
                   "paddingVertical": 4,
+                  "width": "100%",
                 }
               }
             >
               <Text
+                adjustsFontSizeToFit={true}
+                ellipsizeMode="clip"
+                minimumFontScale={0.41}
+                numberOfLines={1}
                 style={
                   [
                     {
-                      "fontSize": 16,
-                    },
-                    {
                       "color": "#6200ee",
+                      "fontSize": 22,
+                      "fontWeight": "normal",
+                      "textAlign": "center",
                     },
+                    undefined,
                   ]
                 }
               >
@@ -544,18 +550,24 @@ exports[`AzNavRail renders correctly when expanded 1`] = `
                 {
                   "opacity": 1,
                   "paddingVertical": 4,
+                  "width": "100%",
                 }
               }
             >
               <Text
+                adjustsFontSizeToFit={true}
+                ellipsizeMode="clip"
+                minimumFontScale={0.41}
+                numberOfLines={1}
                 style={
                   [
                     {
-                      "fontSize": 16,
-                    },
-                    {
                       "color": "#6200ee",
+                      "fontSize": 22,
+                      "fontWeight": "normal",
+                      "textAlign": "center",
                     },
+                    undefined,
                   ]
                 }
               >
@@ -799,118 +811,6 @@ exports[`AzNavRail renders correctly with rail items 1`] = `
                   }
                 >
                   Home
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
-        <View
-          onLayout={[Function]}
-        >
-          <View
-            style={
-              {
-                "alignItems": "center",
-                "backgroundColor": "transparent",
-                "borderColor": "#6200ee",
-                "borderRadius": 36,
-                "borderWidth": 3,
-                "height": 72,
-                "justifyContent": "center",
-                "marginBottom": 8,
-                "opacity": 1,
-                "overflow": "hidden",
-                "width": 72,
-              }
-            }
-          >
-            <View
-              accessibilityLabel="?"
-              accessibilityRole="button"
-              accessibilityState={
-                {
-                  "busy": undefined,
-                  "checked": undefined,
-                  "disabled": false,
-                  "expanded": undefined,
-                  "selected": undefined,
-                }
-              }
-              accessibilityValue={
-                {
-                  "max": undefined,
-                  "min": undefined,
-                  "now": undefined,
-                  "text": undefined,
-                }
-              }
-              accessible={true}
-              collapsable={false}
-              focusable={true}
-              onClick={[Function]}
-              onResponderGrant={[Function]}
-              onResponderMove={[Function]}
-              onResponderRelease={[Function]}
-              onResponderTerminate={[Function]}
-              onResponderTerminationRequest={[Function]}
-              onStartShouldSetResponder={[Function]}
-              style={
-                {
-                  "alignItems": "center",
-                  "bottom": 0,
-                  "justifyContent": "center",
-                  "left": 0,
-                  "opacity": 1,
-                  "position": "absolute",
-                  "right": 0,
-                  "top": 0,
-                }
-              }
-              testID="AZ_AUTO_ABOUT_ID_INTERNAL"
-            >
-              <View
-                pointerEvents="none"
-                style={
-                  [
-                    {
-                      "bottom": 0,
-                      "left": 0,
-                      "position": "absolute",
-                      "right": 0,
-                      "top": 0,
-                    },
-                    {
-                      "backgroundColor": "rgba(0, 0, 0, 0.25)",
-                      "borderRadius": 36,
-                      "zIndex": -1,
-                    },
-                  ]
-                }
-              />
-              <View
-                style={
-                  {
-                    "alignItems": "center",
-                    "height": "100%",
-                    "justifyContent": "center",
-                    "padding": 8,
-                    "width": "100%",
-                  }
-                }
-              >
-                <Text
-                  adjustsFontSizeToFit={true}
-                  minimumFontScale={0.1}
-                  numberOfLines={1}
-                  style={
-                    {
-                      "color": "#6200ee",
-                      "fontWeight": "bold",
-                      "textAlign": "center",
-                    }
-                  }
-                >
-                  ?
                 </Text>
               </View>
             </View>

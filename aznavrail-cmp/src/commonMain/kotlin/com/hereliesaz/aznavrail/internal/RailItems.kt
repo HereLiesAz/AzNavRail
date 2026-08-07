@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -629,14 +631,19 @@ private fun DraggableRailItemWrapper(
         Modifier
     }
 
-    val isSelected = if (item.route != null) {
-        item.route == currentDestination
-    } else {
-        lastTappedId == item.id
-    }
+    // The three highlights are three different questions about this item, answered separately.
+    // "Where you are": the item's route IS the current destination.
+    val isRouteActive = item.route != null && item.route == currentDestination
+    // "What you touched": only meaningful for an item with no route of its own — a toggle, a cycler,
+    // an action. A routed item's highlight belongs to the destination, not to the tap.
+    val isFocused = item.route == null && lastTappedId == item.id
+    val isSelected = isRouteActive || isFocused
 
     val isClassifierActive = item.classifiers.any { scope.activeClassifiers.contains(it) }
-    val isVisuallyActive = isSelected || isClassifierActive
+    val isVisuallyActive = isRouteActive || isClassifierActive
+    // "Whatever the app says": never set by the library, only by azItemState / secondaryClassifiers.
+    val isSecondaryActive = item.isSecondaryActive ||
+        item.classifiers.any { scope.secondaryClassifiers.contains(it) }
 
     val accordionModifier = rememberAzAccordionModifier(
         index = index,
@@ -672,6 +679,10 @@ private fun DraggableRailItemWrapper(
                     helpEnabled = helpEnabled,
                     dragModifier = dragModifier,
                     activeColor = scope.railAccent,
+                    isFocused = isFocused,
+                    isSecondaryActive = isSecondaryActive,
+                    focusColor = scope.focusColor,
+                    secondaryColor = scope.secondaryColor,
                     rotationDegrees = rotationDegrees,
                     onSliderChange = { id, v -> scope.onSliderChangeMap[id]?.invoke(v) },
                     onSliderRangeChange = { id, r -> scope.onSliderRangeChangeMap[id]?.invoke(r) },
@@ -721,6 +732,10 @@ private fun DraggableRailItemWrapper(
                     helpEnabled = helpEnabled,
                     dragModifier = dragModifier,
                     activeColor = scope.railAccent,
+                    isFocused = isFocused,
+                    isSecondaryActive = isSecondaryActive,
+                    focusColor = scope.focusColor,
+                    secondaryColor = scope.secondaryColor,
                     rotationDegrees = rotationDegrees,
                     onSliderChange = { id, v -> scope.onSliderChangeMap[id]?.invoke(v) },
                     onSliderRangeChange = { id, r -> scope.onSliderRangeChangeMap[id]?.invoke(r) },
@@ -741,7 +756,10 @@ private fun DraggableRailItemWrapper(
                         items = item.nestedRailItems ?: emptyList(),
                         currentDestination = currentDestination,
                         activeColor = scope.railAccent,
+                        focusColor = scope.focusColor,
+                        secondaryColor = scope.secondaryColor,
                         activeClassifiers = scope.activeClassifiers,
+                        secondaryClassifiers = scope.secondaryClassifiers,
                         onItemSelected = { subItem ->
                             scope.onClickMap[subItem.id]?.invoke()
                             subItem.route?.let { navController?.navigate(it) }
@@ -779,7 +797,10 @@ private fun DraggableRailItemWrapper(
                         items = item.nestedRailItems ?: emptyList(),
                         currentDestination = currentDestination,
                         activeColor = scope.railAccent,
+                        focusColor = scope.focusColor,
+                        secondaryColor = scope.secondaryColor,
                         activeClassifiers = scope.activeClassifiers,
+                        secondaryClassifiers = scope.secondaryClassifiers,
                         onItemSelected = { subItem ->
                             scope.onClickMap[subItem.id]?.invoke()
                             subItem.route?.let { navController?.navigate(it) }
@@ -828,7 +849,11 @@ private fun DraggableRailItemWrapper(
                 },
                 backgroundColor = if (scope.translucentBackground != androidx.compose.ui.graphics.Color.Unspecified) scope.translucentBackground else AzTextBoxDefaults.getBackgroundColor(),
                 backgroundOpacity = AzTextBoxDefaults.getBackgroundOpacity(),
-                anchorWidth = itemWidths[item.id] ?: 0
+                anchorWidth = itemWidths[item.id] ?: 0,
+                // Open beside the item that raised it — the popup layer is now the whole window, so
+                // the vertical anchor has to be stated rather than inherited from the parent.
+                anchorTop = scope.itemBoundsCache[item.id]?.top?.toInt() ?: 0,
+                accent = scope.railAccent,
             )
         }
 
@@ -845,6 +870,10 @@ private fun DraggableRailItemWrapper(
                     onItemClick = {},
                     helpEnabled = helpEnabled,
                     activeColor = scope.railAccent,
+                    isFocused = isFocused,
+                    isSecondaryActive = isSecondaryActive,
+                    focusColor = scope.focusColor,
+                    secondaryColor = scope.secondaryColor,
                     rotationDegrees = rotationDegrees,
                     onSliderChange = { id, v -> scope.onSliderChangeMap[id]?.invoke(v) },
                     onSliderRangeChange = { id, r -> scope.onSliderRangeChangeMap[id]?.invoke(r) },
@@ -862,59 +891,96 @@ private fun HiddenMenuPopup(
     onInputSubmit: (com.hereliesaz.aznavrail.model.HiddenMenuItem, String) -> Unit,
     backgroundColor: androidx.compose.ui.graphics.Color,
     backgroundOpacity: Float,
-    anchorWidth: Int
+    anchorWidth: Int,
+    /** Window-space top of the item that raised the menu, so it opens beside that item. */
+    anchorTop: Int = 0,
+    /** The rail's accent, so the menu's window matches the rail it came out of. */
+    accent: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified,
 ) {
     // The hidden menu sizes itself to its content: input boxes are given an
     // explicit width so the text fields (not the popup) dictate the menu width.
     val menuItemWidth = 250.dp
 
+    // The menu is one of the library's windows, which is what gives it a grab bar, a fold control
+    // and a close: a context menu with a text field in it is something the user may well need to
+    // move off whatever they are typing about, and folding it beats dismissing and re-summoning it.
+    val windowState = com.hereliesaz.aznavrail.rememberAzWindowState()
+
     Popup(
-        alignment = androidx.compose.ui.Alignment.TopStart,
-        offset = IntOffset(x = anchorWidth, y = 0),
+        popupPositionProvider = AzHiddenMenuPositionProvider,
         onDismissRequest = onDismiss,
-        properties = PopupProperties(focusable = true)
+        properties = PopupProperties(focusable = true, dismissOnClickOutside = false)
     ) {
         val surfaceColor = MaterialTheme.colorScheme.surface
         val effectiveBg = if (backgroundColor == androidx.compose.ui.graphics.Color.Transparent) surfaceColor else backgroundColor
 
-        Column(
+        // The window floats in a full-screen layer so it can be dragged anywhere on the screen
+        // rather than being trapped in a popup measured to its own content. Taps on the empty part
+        // of that layer are what "outside" now means.
+        Box(
             modifier = Modifier
-                .width(IntrinsicSize.Max)
-                .background(effectiveBg.copy(alpha = backgroundOpacity))
-                .border(1.dp, MaterialTheme.colorScheme.primary)
-                .padding(8.dp)
+                .fillMaxSize()
+                .pointerInput(onDismiss) { detectTapGestures { onDismiss() } }
         ) {
-            items.forEach { menuItem ->
-                if (menuItem.isInput) {
-                    var text by remember { mutableStateOf(menuItem.initialValue) }
-                    com.hereliesaz.aznavrail.AzTextBox(
-                        modifier = Modifier.padding(8.dp).width(menuItemWidth),
-                        hint = menuItem.hint ?: "",
-                        value = text,
-                        onValueChange = { text = it },
-                        onSubmit = { value -> onInputSubmit(menuItem, value) },
-                        submitButtonContent = {
-                            Icon(
-                                imageVector = AzIcons.Check,
-                                contentDescription = "Submit",
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.onSurface
+            com.hereliesaz.aznavrail.AzWindow(
+                modifier = Modifier
+                    .align(androidx.compose.ui.Alignment.TopStart)
+                    .absoluteOffset { IntOffset(anchorWidth, anchorTop) }
+                    // Taps inside the window are the window's own business.
+                    .pointerInput(Unit) { detectTapGestures { } },
+                state = windowState,
+                accent = accent,
+                surfaceColor = effectiveBg.copy(alpha = backgroundOpacity),
+                onDismiss = onDismiss,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .width(IntrinsicSize.Max)
+                        .padding(8.dp)
+                ) {
+                    items.forEach { menuItem ->
+                        if (menuItem.isInput) {
+                            var text by remember { mutableStateOf(menuItem.initialValue) }
+                            com.hereliesaz.aznavrail.AzTextBox(
+                                modifier = Modifier.padding(8.dp).width(menuItemWidth),
+                                hint = menuItem.hint ?: "",
+                                value = text,
+                                onValueChange = { text = it },
+                                onSubmit = { value -> onInputSubmit(menuItem, value) },
+                                submitButtonContent = {
+                                    Icon(
+                                        imageVector = AzIcons.Check,
+                                        contentDescription = "Submit",
+                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.onSurface
+                                    )
+                                },
+                                outlineColor = MaterialTheme.colorScheme.onSurface
                             )
-                        },
-                        outlineColor = MaterialTheme.colorScheme.onSurface
-                    )
-                } else {
-                    Text(
-                        text = menuItem.text,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onItemClick(menuItem) }
-                            .padding(vertical = 8.dp, horizontal = 12.dp),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                        } else {
+                            Text(
+                                text = menuItem.text,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onItemClick(menuItem) }
+                                    .padding(vertical = 8.dp, horizontal = 12.dp),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
                 }
             }
         }
     }
+}
+
+/** Positions the hidden menu's [Popup] at the window origin; the window inside places itself. */
+private val AzHiddenMenuPositionProvider = object : androidx.compose.ui.window.PopupPositionProvider {
+    override fun calculatePosition(
+        anchorBounds: androidx.compose.ui.unit.IntRect,
+        windowSize: androidx.compose.ui.unit.IntSize,
+        layoutDirection: androidx.compose.ui.unit.LayoutDirection,
+        popupContentSize: androidx.compose.ui.unit.IntSize
+    ): IntOffset = IntOffset(0, 0)
 }

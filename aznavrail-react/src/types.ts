@@ -162,8 +162,23 @@ export interface AzNavRailSettings {
   infoScreen?: boolean;
   /** Called when the user dismisses the info screen overlay. */
   onDismissInfoScreen?: () => void;
-  /** Accent color applied to the currently active/selected item. */
+  /**
+   * Colour of the **active** highlight: the item whose route is the current destination, or whose
+   * classifier is listed in {@link activeClassifiers}. "Where you are."
+   */
   activeColor?: string;
+  /**
+   * Colour of the **focus** highlight: the item just tapped when it carries no route of its own —
+   * a toggle, a cycler, an action. "What you are touching." Unset reuses {@link activeColor}, which
+   * is how the rail has always looked.
+   */
+  focusColor?: string;
+  /**
+   * Colour of the **secondary** highlight — the third one, which the library never lights on its
+   * own. Turn it on per item with the item's `secondary` prop or with {@link secondaryClassifiers},
+   * for state only the app knows (syncing, armed, locked). Unset falls back to the rail accent.
+   */
+  secondaryColor?: string;
   /** When true, haptic feedback is triggered on drag start and long-press. */
   vibrate?: boolean;
   /** Shape of the header icon container. */
@@ -198,12 +213,21 @@ export interface AzNavRailSettings {
    * and style it yourself.
    */
   aboutRailItem?: boolean;
+  /**
+   * When true (default), the About affordance is drawn in exactly one surface even when several
+   * could offer it. The most deliberate placement wins: a declared `AzAboutRailItem`, then the
+   * rail's expanded-menu footer, then a drop-down menu's footer, then the automatic `?`. Set false
+   * to draw About wherever it is configured.
+   */
+  dedupeAbout?: boolean;
   /** Whether the help overlay feature is enabled. */
   helpEnabled?: boolean;
   /** When true, docking side follows the physical device edge rather than logical left/right. */
   usePhysicalDocking?: boolean;
-  /** Set of classifier strings; items whose classifiers match are highlighted or filtered. */
+  /** Set of classifier strings; items whose classifiers match wear the **active** highlight. */
   activeClassifiers?: Set<string>;
+  /** The same mechanism for the **secondary** highlight: matching items wear it. */
+  secondaryClassifiers?: Set<string>;
   /** Called with an item id and its on-screen bounds after each layout pass. */
   onItemGloballyPositioned?: (id: string, bounds: any) => void;
   /** Map of item id → help text shown in the info overlay (alternative to per-item `info` prop). */
@@ -377,6 +401,17 @@ export interface AzNavItem {
   // New properties for parity
   /** Classifier tags used to filter or highlight this item when `activeClassifiers` is set. */
   classifiers?: Set<string>;
+  /** Colour of this item's **active** highlight. Unset takes the rail's `activeColor`. */
+  activeColor?: string;
+  /** Colour of this item's **focus** highlight. Unset falls back to its active colour. */
+  focusColor?: string;
+  /** Colour of this item's **secondary** highlight. Unset takes the rail's `secondaryColor`. */
+  secondaryColor?: string;
+  /**
+   * Whether this item's **secondary** highlight is lit. Never set by the library — it is the app's
+   * to drive, for state only the app knows.
+   */
+  secondary?: boolean;
   /**
    * Custom content rendered inside the button instead of text. A React node (e.g. an `<Image>`
    * or a `react-native-svg` `<Svg>`) or an image source (`require()` id / `{ uri }`). Graphics
@@ -444,6 +479,17 @@ export interface AzNavItemProps {
   content?: any;
   /** Classifier tags used for filtering or highlighting with `activeClassifiers`. */
   classifiers?: Set<string>;
+  /** Colour of this item's **active** highlight. Unset takes the rail's `activeColor`. */
+  activeColor?: string;
+  /** Colour of this item's **focus** highlight. Unset falls back to its active colour. */
+  focusColor?: string;
+  /** Colour of this item's **secondary** highlight. Unset takes the rail's `secondaryColor`. */
+  secondaryColor?: string;
+  /**
+   * Whether this item's **secondary** highlight is lit. Never set by the library — it is the app's
+   * to drive, for state only the app knows (syncing, armed, locked).
+   */
+  secondary?: boolean;
 }
 
 /** Props for toggle-type DSL items (`AzRailToggle`, `AzMenuToggle`). */
