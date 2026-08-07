@@ -159,12 +159,13 @@ function classifierHit(
 }
 
 /**
- * The colour a rail item is drawn in, resolving the three highlights.
+ * The colour a rail item is drawn in, resolving the four highlights.
  *
- * They answer three different questions — **active** ("where am I?"), **focus** ("what am I
- * touching?") and **secondary** ("whatever the app decides") — and they outrank each other in that
- * order reversed: a press is the most immediate thing happening, so focus wins for as long as it
- * lasts, then active, then secondary. An item with none of them lit wears its own `color`.
+ * They answer four different questions — **active** ("where am I?"), **focus** ("what am I
+ * touching?"), **secondary** ("whatever the app decides") and **tertiary** (a second app-driven
+ * channel) — and they outrank each other in that order reversed: a press is the most immediate
+ * thing happening, so focus wins for as long as it lasts, then active, then secondary, then
+ * tertiary. An item with none of them lit wears its own `color`.
  */
 export function resolveHighlight(
   item: AzNavItem,
@@ -175,6 +176,8 @@ export function resolveHighlight(
   const activeColor = (item as any).activeColor ?? cfg.activeColor;
   const secondaryColor =
     (item as any).secondaryColor ?? cfg.secondaryColor ?? activeColor;
+  const tertiaryColor =
+    (item as any).tertiaryColor ?? cfg.tertiaryColor ?? activeColor;
 
   const isActive =
     !!item.isChecked ||
@@ -185,9 +188,13 @@ export function resolveHighlight(
   const isSecondary =
     !!(item as any).secondary ||
     classifierHit(item.classifiers, cfg.secondaryClassifiers);
+  const isTertiary =
+    !!(item as any).tertiary ||
+    classifierHit(item.classifiers, cfg.tertiaryClassifiers);
 
   if (isActive && activeColor) return activeColor;
   if (isSecondary && secondaryColor) return secondaryColor;
+  if (isTertiary && tertiaryColor) return tertiaryColor;
   return item.color;
 }
 
@@ -215,8 +222,10 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     // able to fire, however a developer configured the rail.
     focusColor,
     secondaryColor,
+    tertiaryColor,
     activeClassifiers,
     secondaryClassifiers,
+    tertiaryClassifiers,
     headerIconShape = AzHeaderIconShape.CIRCLE,
     translucentBackground,
     vibrate = false,
@@ -269,9 +278,12 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     activeColor: dslOverrides.activeColor ?? activeColor,
     focusColor: dslOverrides.focusColor ?? focusColor,
     secondaryColor: dslOverrides.secondaryColor ?? secondaryColor,
+    tertiaryColor: dslOverrides.tertiaryColor ?? tertiaryColor,
     activeClassifiers: dslOverrides.activeClassifiers ?? activeClassifiers,
     secondaryClassifiers:
       dslOverrides.secondaryClassifiers ?? secondaryClassifiers,
+    tertiaryClassifiers:
+      dslOverrides.tertiaryClassifiers ?? tertiaryClassifiers,
     headerIconShape: dslOverrides.headerIconShape ?? headerIconShape,
     translucentBackground:
       dslOverrides.translucentBackground ?? translucentBackground,

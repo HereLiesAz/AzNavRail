@@ -709,6 +709,8 @@ private fun DraggableRailItemWrapper(
     // "Whatever the app says": never set by the library, only by azItemState / secondaryClassifiers.
     val isSecondaryActive = item.isSecondaryActive ||
         item.classifiers.any { scope.secondaryClassifiers.contains(it) }
+    val isTertiaryActive = item.isTertiaryActive ||
+        item.classifiers.any { scope.tertiaryClassifiers.contains(it) }
 
     val accordionModifier = rememberAzAccordionModifier(
         index = index,
@@ -746,8 +748,10 @@ private fun DraggableRailItemWrapper(
                     activeColor = scope.railAccent,
                     isFocused = false,
                     isSecondaryActive = isSecondaryActive,
+                    isTertiaryActive = isTertiaryActive,
                     focusColor = scope.focusColor,
                     secondaryColor = scope.secondaryColor,
+                    tertiaryColor = scope.tertiaryColor,
                     rotationDegrees = rotationDegrees,
                     onSliderChange = { id, v -> scope.onSliderChangeMap[id]?.invoke(v) },
                     onSliderRangeChange = { id, r -> scope.onSliderRangeChangeMap[id]?.invoke(r) },
@@ -799,8 +803,10 @@ private fun DraggableRailItemWrapper(
                     activeColor = scope.railAccent,
                     isFocused = false,
                     isSecondaryActive = isSecondaryActive,
+                    isTertiaryActive = isTertiaryActive,
                     focusColor = scope.focusColor,
                     secondaryColor = scope.secondaryColor,
+                    tertiaryColor = scope.tertiaryColor,
                     rotationDegrees = rotationDegrees,
                     onSliderChange = { id, v -> scope.onSliderChangeMap[id]?.invoke(v) },
                     onSliderRangeChange = { id, r -> scope.onSliderRangeChangeMap[id]?.invoke(r) },
@@ -823,8 +829,10 @@ private fun DraggableRailItemWrapper(
                         activeColor = scope.railAccent,
                         focusColor = scope.focusColor,
                         secondaryColor = scope.secondaryColor,
+                        tertiaryColor = scope.tertiaryColor,
                         activeClassifiers = scope.activeClassifiers,
                         secondaryClassifiers = scope.secondaryClassifiers,
+                        tertiaryClassifiers = scope.tertiaryClassifiers,
                         onItemSelected = { subItem ->
                             scope.onClickMap[subItem.id]?.invoke()
                             subItem.route?.let { navController?.navigate(it) }
@@ -864,8 +872,10 @@ private fun DraggableRailItemWrapper(
                         activeColor = scope.railAccent,
                         focusColor = scope.focusColor,
                         secondaryColor = scope.secondaryColor,
+                        tertiaryColor = scope.tertiaryColor,
                         activeClassifiers = scope.activeClassifiers,
                         secondaryClassifiers = scope.secondaryClassifiers,
+                        tertiaryClassifiers = scope.tertiaryClassifiers,
                         onItemSelected = { subItem ->
                             scope.onClickMap[subItem.id]?.invoke()
                             subItem.route?.let { navController?.navigate(it) }
@@ -937,8 +947,10 @@ private fun DraggableRailItemWrapper(
                     activeColor = scope.railAccent,
                     isFocused = false,
                     isSecondaryActive = isSecondaryActive,
+                    isTertiaryActive = isTertiaryActive,
                     focusColor = scope.focusColor,
                     secondaryColor = scope.secondaryColor,
+                    tertiaryColor = scope.tertiaryColor,
                     rotationDegrees = rotationDegrees,
                     onSliderChange = { id, v -> scope.onSliderChangeMap[id]?.invoke(v) },
                     onSliderRangeChange = { id, r -> scope.onSliderRangeChangeMap[id]?.invoke(r) },

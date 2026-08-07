@@ -39,10 +39,20 @@ data class AzNavItem(
      */
     val secondaryColor: Color? = null,
     /**
+     * Colour for this item's **tertiary** highlight, a fourth developer-defined highlight tier.
+     * Null takes the rail's `azTheme(tertiaryColor = …)`. Inert unless [isTertiaryActive] is set.
+     */
+    val tertiaryColor: Color? = null,
+    /**
      * Whether the secondary highlight is currently lit. Set by `azItemState(id, secondary = true)`
      * or by a classifier listed in `azConfig(secondaryClassifiers = …)`. Never set by the library.
      */
     val isSecondaryActive: Boolean = false,
+    /**
+     * Whether the tertiary highlight is currently lit. Set by `azItemState(id, tertiary = true)`
+     * or by a classifier listed in `azConfig(tertiaryClassifiers = …)`. Never set by the library.
+     */
+    val isTertiaryActive: Boolean = false,
     val isToggle: Boolean = false,
     val isChecked: Boolean? = null,
     val toggleOnText: String = "",

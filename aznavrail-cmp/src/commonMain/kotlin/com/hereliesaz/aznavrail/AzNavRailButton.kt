@@ -108,6 +108,10 @@ internal fun AzNavRailButton(
     focusColor: Color? = null,
     /** Colour of the secondary highlight. Null reuses [activeColor]. */
     secondaryColor: Color? = null,
+    /** Whether this button wears the **tertiary** highlight — see [com.hereliesaz.aznavrail.model.AzHighlight]. */
+    isTertiaryActive: Boolean = false,
+    /** Colour of the tertiary highlight. Null reuses [activeColor]. */
+    tertiaryColor: Color? = null,
     isLoading: Boolean = false,
     contentPadding: PaddingValues = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
     itemContent: Any? = null,
@@ -161,6 +165,7 @@ internal fun AzNavRailButton(
         isPressed || isFocused -> focusColor ?: activeColor
         isSelected -> activeColor
         isSecondaryActive -> secondaryColor ?: activeColor
+        isTertiaryActive -> tertiaryColor ?: activeColor
         else -> color
     }
     val finalColor = if (enabled) targetColor else disabledColor
@@ -171,7 +176,7 @@ internal fun AzNavRailButton(
     val baseFillColor = fillColor ?: computedFillColor
     val activeFillColor = fillColor ?: computedActiveFillColor
 
-    val containerColor = if ((isSelected || isFocused || isSecondaryActive) && !isPressed) {
+    val containerColor = if ((isSelected || isFocused || isSecondaryActive || isTertiaryActive) && !isPressed) {
         activeFillColor.copy(alpha = 0.12f)
     } else {
         baseFillColor.copy(alpha = 0.25f)

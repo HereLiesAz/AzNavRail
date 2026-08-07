@@ -3,9 +3,9 @@ package com.hereliesaz.aznavrail.model
 import androidx.compose.ui.graphics.Color
 
 /**
- * The three highlights an item can wear.
+ * The four highlights an item can wear.
  *
- * They answer three different questions, which is why there are three of them and not one:
+ * They answer four different questions, which is why there are four of them and not one:
  *
  *  - [ACTIVE] — *where you are.* The item whose route is the current destination, or whose
  *    classifier is in `azConfig(activeClassifiers = …)`. At most one place in an app is the place
@@ -16,14 +16,18 @@ import androidx.compose.ui.graphics.Color
  *  - [SECONDARY] — *whatever you say it is.* The library never sets this one. It is for the state
  *    only the app knows: the item that is syncing, the layer that is locked, the tool that is armed.
  *    Turn it on with `azItemState(id, secondary = true)` or `azConfig(secondaryClassifiers = …)`.
+ *  - [TERTIARY] — *a fourth developer-defined highlight tier.* Like secondary, the library never
+ *    sets this one. It slots below secondary in precedence (focus > active > secondary > tertiary).
+ *    Turn it on with `azItemState(id, tertiary = true)` or `azConfig(tertiaryClassifiers = …)`.
  *
- * All three take their colour from [com.hereliesaz.aznavrail.AzNavRailScope.azTheme] by default and
+ * All four take their colour from [com.hereliesaz.aznavrail.AzNavRailScope.azTheme] by default and
  * can be overridden per item with [com.hereliesaz.aznavrail.AzNavRailScope.azHighlight].
  */
 enum class AzHighlight {
     ACTIVE,
     FOCUS,
     SECONDARY,
+    TERTIARY,
 }
 
 /**
@@ -36,4 +40,5 @@ data class AzItemHighlight(
     val active: Color? = null,
     val focus: Color? = null,
     val secondary: Color? = null,
+    val tertiary: Color? = null,
 )
