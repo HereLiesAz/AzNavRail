@@ -203,8 +203,8 @@ footer, then the automatic `?`. Set it false to draw About wherever it is config
 
 The reader's content is warmed in the background while the rail composes — the docs listing, the
 first document, and the More-from-Az manifest — so About opens populated rather than spinning. Its
-carousel snaps card-to-card, and the page ends with the same **Feedback** and **@HereLiesAz** rows as
-the menu footer.
+carousel snaps card-to-card, and the page ends with **@HereLiesAz**, **Feedback** and
+**hereliesaz.com**.
 
 The rail ends with an About (`?`) **rail item** whenever nothing else is already offering About —
 which is what a `noMenu` rail (no drawer, no footer) always is. With `dedupeAbout` on, a rail that

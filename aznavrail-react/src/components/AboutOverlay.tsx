@@ -329,6 +329,16 @@ export const AboutOverlay: React.FC<AboutOverlayProps> = ({
           <View style={[styles.divider, { backgroundColor: accent }]} />
           <View style={styles.pageFooter}>
             <AzFooterLabel
+              text="@HereLiesAz"
+              color={accent}
+              style={styles.pageFooterCell}
+              onPress={() =>
+                Linking.openURL('https://instagram.com/HereLiesAz').catch(
+                  () => {}
+                )
+              }
+            />
+            <AzFooterLabel
               text="Feedback"
               color={accent}
               style={styles.pageFooterCell}
@@ -344,16 +354,6 @@ export const AboutOverlay: React.FC<AboutOverlayProps> = ({
               style={styles.pageFooterCell}
               onPress={() =>
                 Linking.openURL('https://hereliesaz.com').catch(() => {})
-              }
-            />
-            <AzFooterLabel
-              text="@HereLiesAz"
-              color={accent}
-              style={styles.pageFooterCell}
-              onPress={() =>
-                Linking.openURL('https://instagram.com/HereLiesAz').catch(
-                  () => {}
-                )
               }
             />
           </View>

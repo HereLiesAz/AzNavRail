@@ -330,6 +330,12 @@ private fun AzAboutPageFooter(appName: String, accent: Color) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         AzFooterLabel(
+            text = "@HereLiesAz",
+            color = accent,
+            onClick = { runCatching { uriHandler.openUri(AZ_INSTAGRAM_URL) } },
+            modifier = Modifier.weight(1f),
+        )
+        AzFooterLabel(
             text = "Feedback",
             color = accent,
             onClick = { runCatching { uriHandler.openUri(azFeedbackMailto(appName)) } },
@@ -339,12 +345,6 @@ private fun AzAboutPageFooter(appName: String, accent: Color) {
             text = "hereliesaz.com",
             color = accent,
             onClick = { runCatching { uriHandler.openUri(AZ_SITE_URL) } },
-            modifier = Modifier.weight(1f),
-        )
-        AzFooterLabel(
-            text = "@HereLiesAz",
-            color = accent,
-            onClick = { runCatching { uriHandler.openUri(AZ_INSTAGRAM_URL) } },
             modifier = Modifier.weight(1f),
         )
     }

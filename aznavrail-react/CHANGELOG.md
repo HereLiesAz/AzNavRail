@@ -23,8 +23,7 @@
 - **The About reader is loaded before it is opened.** Its docs listing, first document and
   More-from-Az manifest are warmed in the background as the rail mounts, so the page opens populated
   instead of spinning. A reader opened mid-flight fills in the moment the fetch lands.
-- **The About page ends with the author** — Feedback, `hereliesaz.com` and `@HereLiesAz`, the same
-  rows the menu footer carries.
+- **The About page ends with the author** — `@HereLiesAz`, Feedback and `hereliesaz.com`.
 - **The More-from-Az carousel sticks.** `disableIntervalMomentum` plus a settle pass means a flick
   hands focus to the next app or two and lands ON a card rather than coasting between them.
 - **Footer labels auto-size.** Every footer row shrinks to one line rather than wrapping

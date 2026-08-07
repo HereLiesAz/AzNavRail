@@ -346,8 +346,8 @@ instead of showing a spinner for work that could have been done while the user w
 else. A reader opened mid-flight (cold start, slow network) fills itself in the moment the fetch
 lands. Everything still goes through the same ETag + 6h cache, so a warm start is usually a 304.
 
-**The page ends with the author.** Below the carousel sit the same **Feedback** and **@HereLiesAz**
-rows as the menu footer. About is where someone goes to find out who made this; making them close it
+**The page ends with the author.** Below the carousel sit **@HereLiesAz**, **Feedback** and
+**hereliesaz.com**. About is where someone goes to find out who made this; making them close it
 and hunt through a menu to say something about it would be a joke at their expense.
 
 **The carousel snaps.** A flick hands focus to the next app or two and settles onto it rather than

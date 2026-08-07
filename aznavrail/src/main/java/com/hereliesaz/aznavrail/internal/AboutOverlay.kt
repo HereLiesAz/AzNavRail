@@ -344,6 +344,12 @@ private fun AzAboutPageFooter(accent: Color) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         AzFooterLabel(
+            text = "@HereLiesAz",
+            color = accent,
+            onClick = { openUrl(context, AZ_INSTAGRAM_URL) },
+            modifier = Modifier.weight(1f),
+        )
+        AzFooterLabel(
             text = "Feedback",
             color = accent,
             onClick = {
@@ -362,12 +368,6 @@ private fun AzAboutPageFooter(accent: Color) {
             text = "hereliesaz.com",
             color = accent,
             onClick = { openUrl(context, AZ_SITE_URL) },
-            modifier = Modifier.weight(1f),
-        )
-        AzFooterLabel(
-            text = "@HereLiesAz",
-            color = accent,
-            onClick = { openUrl(context, AZ_INSTAGRAM_URL) },
             modifier = Modifier.weight(1f),
         )
     }

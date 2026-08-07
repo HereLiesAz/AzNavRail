@@ -866,8 +866,7 @@ The rail's **About (`?`)** item — and the drawer footer's **About** — open a
 The reader's content is fetched **in the background as the rail composes** — the docs listing, the
 first document's markdown, and the More-from-Az manifest — so opening About shows the page rather
 than a spinner. A reader opened while a cold-start fetch is still in flight fills itself in the
-moment it lands. The bottom of the page carries the same **Feedback** and **@HereLiesAz** rows as the
-menu footer: About is where someone goes to find out who made this, so that is where the way to
+moment it lands. The bottom of the page carries **@HereLiesAz**, **Feedback** and **hereliesaz.com**: About is where someone goes to find out who made this, so that is where the way to
 reach them belongs.
 
 The carousel **snaps**. A flick hands focus to the next app or two and settles firmly onto it rather
