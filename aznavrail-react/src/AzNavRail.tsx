@@ -214,6 +214,13 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     infoScreen = false,
     onDismissInfoScreen,
     activeColor,
+    // The three highlights' colours and classifier sets. Left undestructured here, these silently
+    // never reached `resolveHighlight` — every item rendered with only the ACTIVE highlight ever
+    // able to fire, however a developer configured the rail.
+    focusColor,
+    secondaryColor,
+    activeClassifiers,
+    secondaryClassifiers,
     headerIconShape = AzHeaderIconShape.CIRCLE,
     translucentBackground,
     vibrate = false,
@@ -264,6 +271,11 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     headerIconSize: dslOverrides.headerIconSize ?? headerIconSize,
     infoScreen: dslOverrides.infoScreen ?? infoScreen,
     activeColor: dslOverrides.activeColor ?? activeColor,
+    focusColor: dslOverrides.focusColor ?? focusColor,
+    secondaryColor: dslOverrides.secondaryColor ?? secondaryColor,
+    activeClassifiers: dslOverrides.activeClassifiers ?? activeClassifiers,
+    secondaryClassifiers:
+      dslOverrides.secondaryClassifiers ?? secondaryClassifiers,
     headerIconShape: dslOverrides.headerIconShape ?? headerIconShape,
     translucentBackground:
       dslOverrides.translucentBackground ?? translucentBackground,

@@ -31,7 +31,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -68,18 +73,65 @@ class AzWindowState(
     /** Measured size of the whole window, used to keep drags inside the screen. */
     internal var size: IntSize by mutableStateOf(IntSize.Zero)
 
-    /** Moves the window by a drag delta, keeping its title bar reachable. */
-    internal fun dragBy(dx: Float, dy: Float, bounds: IntSize) {
-        // Clamp so the window can be pushed to any edge but never entirely off it: at least a
-        // title-bar's worth stays inside on every side. A window you can lose is a window you have
-        // to reopen.
-        val keep = MIN_VISIBLE_PX
-        val maxX = (bounds.width - keep).toFloat()
-        val minX = -(size.width - keep).toFloat().coerceAtMost(0f)
-        val maxY = (bounds.height - keep).toFloat()
-        val minY = -(size.height - keep).toFloat().coerceAtMost(0f)
-        offsetX = (offsetX + dx).coerceIn(minX.coerceAtMost(maxX), maxX)
-        offsetY = (offsetY + dy).coerceIn(minY.coerceAtMost(maxY), maxY)
+    /**
+     * Where the parent placed the window's top-left, in container coordinates, *before* this
+     * state's offset is applied.
+     *
+     * The offset alone cannot be clamped: it is a displacement, and a displacement says nothing
+     * about where the window actually is. A window the parent centred and a window the parent
+     * pinned to a corner need completely different limits for the same offset. So the window
+     * reports its real position after every layout ([onPositioned]) and the drag maths works in
+     * absolute coordinates, converting back to an offset only at the end.
+     */
+    internal var anchorX: Float = 0f
+        private set
+    internal var anchorY: Float = 0f
+        private set
+
+    /** Records the window's measured size and the position its parent gave it. */
+    internal fun onPositioned(xInContainer: Float, yInContainer: Float, measured: IntSize) {
+        size = measured
+        // Where it sits now, minus what we moved it by, is where the parent put it.
+        anchorX = xInContainer - offsetX
+        anchorY = yInContainer - offsetY
+    }
+
+    /**
+     * Moves the window by a drag delta, keeping its grab bar on screen and reachable.
+     *
+     * Horizontally the window may be pushed off either edge until only [MIN_VISIBLE_PX] of it
+     * remains. Vertically the *bar* is the limit rather than the window: it lives along the top
+     * edge, so letting the top scroll past the bottom of the container would leave nothing to grab
+     * and no way back.
+     */
+    internal fun dragBy(dx: Float, dy: Float, bounds: IntSize, chromeHeightPx: Float) {
+        if (bounds.width <= 0 || bounds.height <= 0) return
+        val keep = MIN_VISIBLE_PX.toFloat()
+        val width = size.width.toFloat()
+
+        // Absolute position this drag is asking for.
+        val targetX = anchorX + offsetX + dx
+        val targetY = anchorY + offsetY + dy
+
+        // Horizontal: at least `keep` px of the window stays inside on both sides.
+        val minX = (keep - width).coerceAtMost(0f)
+        val maxX = (bounds.width - keep).coerceAtLeast(minX)
+        // Vertical: the whole bar stays inside, top and bottom.
+        val minY = 0f
+        val maxY = (bounds.height - chromeHeightPx).coerceAtLeast(minY)
+
+        offsetX = targetX.coerceIn(minX, maxX) - anchorX
+        offsetY = targetY.coerceIn(minY, maxY) - anchorY
+    }
+
+    /**
+     * Pulls the window back inside [bounds] after the container changed size — a rotation, a
+     * split-screen resize, a desktop window drag. Without this a window parked near the bottom in
+     * portrait is simply gone in landscape, bar and all.
+     */
+    internal fun clampInto(bounds: IntSize, chromeHeightPx: Float) {
+        if (bounds.width <= 0 || bounds.height <= 0) return
+        dragBy(0f, 0f, bounds, chromeHeightPx)
     }
 
     /** Returns the window to where its parent put it. */
@@ -151,11 +203,21 @@ fun AzWindow(
 ) {
     val resolvedAccent = accent.takeOrElse { MaterialTheme.colorScheme.primary }
     val containerSize = LocalWindowInfo.current.containerSize
+    val chromeHeightPx = with(LocalDensity.current) { AzWindowDefaults.ChromeHeight.toPx() }
+
+    // A container that changed size (rotation, split-screen, a resized desktop window) can leave a
+    // window parked outside it. Pull it back rather than stranding it.
+    LaunchedEffect(containerSize, chromeHeightPx) {
+        state.clampInto(containerSize, chromeHeightPx)
+    }
 
     Surface(
         modifier = modifier
             .offset { IntOffset(state.offsetX.roundToInt(), state.offsetY.roundToInt()) }
-            .onSizeChanged { state.size = it },
+            .onGloballyPositioned { coordinates ->
+                val position = coordinates.positionInWindow()
+                state.onPositioned(position.x, position.y, coordinates.size)
+            },
         shape = AzWindowDefaults.Shape,
         color = surfaceColor,
         border = BorderStroke(2.dp, resolvedAccent),
@@ -171,10 +233,36 @@ fun AzWindow(
                 minimizable = minimizable,
                 onDismiss = onDismiss,
                 containerSize = containerSize,
+                chromeHeightPx = chromeHeightPx,
             )
-            if (!state.minimized) {
-                content()
-            }
+            // Folding must not destroy what the window holds. The body stays in composition and is
+            // merely given no room, so a half-typed field in a hidden menu — the very thing this
+            // window exists to keep reachable — is still half-typed when the user unfolds it.
+            // Removing the content from the composition would discard every `remember` inside it,
+            // which is "throw it away and re-open it later" wearing a fold control's clothes.
+            AzCollapsible(collapsed = state.minimized, content = content)
+        }
+    }
+}
+
+/**
+ * Lays out [content] normally, or — when [collapsed] — measures it and reports no size, clipping it
+ * away without ever removing it from the composition.
+ */
+@Composable
+private fun AzCollapsible(collapsed: Boolean, content: @Composable () -> Unit) {
+    Layout(
+        content = { content() },
+        modifier = Modifier.clipToBounds(),
+    ) { measurables, constraints ->
+        val placeables = measurables.map { it.measure(constraints) }
+        val width = placeables.maxOfOrNull { it.width } ?: 0
+        val height = placeables.maxOfOrNull { it.height } ?: 0
+        if (collapsed) {
+            // Zero-height, but still placed: the nodes stay alive and keep their state.
+            layout(0, 0) { placeables.forEach { it.place(0, 0) } }
+        } else {
+            layout(width, height) { placeables.forEach { it.place(0, 0) } }
         }
     }
 }
@@ -202,12 +290,13 @@ private fun AzWindowChrome(
     minimizable: Boolean,
     onDismiss: (() -> Unit)?,
     containerSize: IntSize,
+    chromeHeightPx: Float,
 ) {
     val dragModifier = if (movable) {
-        Modifier.pointerInput(containerSize) {
+        Modifier.pointerInput(containerSize, chromeHeightPx) {
             detectDragGestures { change, dragAmount ->
                 change.consume()
-                state.dragBy(dragAmount.x, dragAmount.y, containerSize)
+                state.dragBy(dragAmount.x, dragAmount.y, containerSize, chromeHeightPx)
             }
         }
     } else {
