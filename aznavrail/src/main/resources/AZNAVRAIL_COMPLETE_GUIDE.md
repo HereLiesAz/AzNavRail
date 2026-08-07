@@ -141,11 +141,47 @@ Controls visual style defaults.
 ```kotlin
 azTheme(
     defaultShape = AzButtonShape.RECTANGLE, // Default shape for all items
-    activeColor = MaterialTheme.colorScheme.primary, // Color for active state
+    activeColor = MaterialTheme.colorScheme.primary, // The ACTIVE highlight
+    focusColor = Color.White,               // The FOCUS highlight (unset = same as activeColor)
+    secondaryColor = Color(0xFFFFB300),     // The SECONDARY highlight (unset = the rail accent)
     translucentBackground = Color.Black.copy(alpha = 0.5f), // Set the background color for menus/overlays!
     headerIconSize = 48.dp                  // Exact app-icon diameter (Dp.Unspecified = size to rail width)
 )
 ```
+
+#### The three highlights
+
+An item can be lit three ways. They are three separate colours because they answer three separate
+questions, and an app that answers all three with one colour has told the user nothing:
+
+| Highlight | The question | What lights it |
+| --- | --- | --- |
+| **Active** (`activeColor`) | *Where am I?* | the item's `route` **is** the current destination, or one of its `classifiers` is in `azConfig(activeClassifiers = …)` |
+| **Focus** (`focusColor`) | *What am I touching?* | the item is pressed, or it was the last one tapped **and carries no route of its own** — a toggle, a cycler, an action |
+| **Secondary** (`secondaryColor`) | *Whatever you decide* | only you: `azItemState(id, secondary = true)`, or `azConfig(secondaryClassifiers = …)` |
+
+**Choosing them.** `activeColor` is the loudest thing on the rail, because "where you are" is the one
+fact the rail exists to tell you — give it the app's accent. `focusColor` is a transient: it is on
+screen only while a finger is, so it wants contrast against the rail's own colour rather than a
+second hue competing with the accent; leaving it `Unspecified` reuses `activeColor`, which is how the
+rail has always looked and is a perfectly good answer. `secondaryColor` should read as *a condition*
+rather than *a place* — an amber for "armed", a green for "synced" — because the user will meet it on
+an item that is emphatically not where they are.
+
+When more than one applies at once: **focus** beats **active** beats **secondary**. A press is the
+most immediate thing happening, and it lasts only as long as the press.
+
+Any single item can disagree with the rail about any of the three:
+
+```kotlin
+azRailItem(id = "record", text = "Rec")
+azHighlight(id = "record", active = Color.Red)   // red when it is the live screen
+azItemState(id = "record", secondary = armed)    // amber while merely armed
+```
+
+`azHighlight` is applied after the whole DSL block runs (like `azItemState`), so declaration order is
+irrelevant, `null` fields leave the rail's colour in place, and unknown ids are ignored. Nested-rail
+children inherit the rail's palette, and `secondaryClassifiers` reaches them too.
 
 **React Implementation:**
 ```tsx
@@ -285,12 +321,43 @@ azAbout(
     moreFromAzEnabled = true,   // offer the "More from Az" carousel inside the reader
     moreRailItem = false,       // also pin a "More" item at the bottom of the rail
     aboutRailItem = true,       // end the rail with the built-in About ("?") item
+    dedupeAbout = true,         // …and draw About in exactly ONE surface, never two
 )
 ```
 
-**About is on the RAIL, not only in the drawer.** The rail ends with an About (`?`) **rail item** in
-every mode — including `noMenu` rails, which have no drawer footer to put it in. It persists, but it
-is not fixed:
+**About appears exactly once.** An app can offer About from several places at the same time — the
+`?` rail item, the expanded menu's footer, a drop-down menu's footer — and left alone it will offer
+it from all of them, which is how "About" ends up on screen three times over. The library keeps a
+registry of every surface that *could* draw it and lets only the highest-ranked one actually do so:
+
+1. a `azAboutRailItem` you declared yourself — nothing outranks a decision made on purpose;
+2. the rail's expanded-menu footer;
+3. a drop-down menu's footer;
+4. the automatic `?` rail item, which the library added on its own and is first to give way.
+
+Registration is by *availability*, not visibility — a drop-down claims its footer as soon as the
+drop-down exists, not when its panel opens — so the answer is stable and nothing blinks in and out as
+panels come and go. `dedupeAbout = false` (on the rail's `azAbout`, or a drop-down's `azConfig`) opts
+out: that surface always draws its own About and stops suppressing anyone else's.
+
+**The reader is loaded before it is opened.** As the rail composes it warms the docs listing, the
+first document's markdown, and the More-from-Az manifest in the background, so About opens populated
+instead of showing a spinner for work that could have been done while the user was doing something
+else. A reader opened mid-flight (cold start, slow network) fills itself in the moment the fetch
+lands. Everything still goes through the same ETag + 6h cache, so a warm start is usually a 304.
+
+**The page ends with the author.** Below the carousel sit the same **Feedback** and **@HereLiesAz**
+rows as the menu footer. About is where someone goes to find out who made this; making them close it
+and hunt through a menu to say something about it would be a joke at their expense.
+
+**The carousel snaps.** A flick hands focus to the next app or two and settles onto it rather than
+coasting past a dozen; a gesture that ends between two cards is pulled the rest of the way to the
+nearer one; and tapping an off-centre card brings it to the centre.
+
+**About is on the RAIL when nothing else has it.** The rail ends with an About (`?`) **rail item**
+whenever no higher-ranked surface is offering one — always the case for a `noMenu` rail, which has no
+drawer footer to put it in. When the rail does have a footer, that footer carries About and the
+automatic `?` stands down (see de-duplication below). It persists, but it is not fixed:
 
 ```kotlin
 azAboutRailItem(id = "about", text = "?", color = Color.White, info = "What this app is")
@@ -725,6 +792,7 @@ azItemState(
     id = "sync",
     isLoading = syncing,                                   // this item spins its own animation
     badge = pending.takeIf { it > 0 }?.toString(),          // and carries its own badge
+    secondary = queued,                                     // …and wears the secondary highlight
 )
 ```
 
@@ -1396,3 +1464,43 @@ alerts.show(kind = AzPopupKind.WARNING, title = "Offline", message = "Changes ar
 
 `azPopup(controller)` with no body renders the built-in title/message/OK panel;
 `azPopup(controller, dismissOnOutsideTap = false)` makes it modal.
+
+## 12. Windows (`AzWindow`)
+
+Every panel this library floats over an app is a **window**, and they all behave the same way. An
+`AzPopup` is drawn in one. So is the **hidden menu** a reloc item raises. And you can raise one
+yourself for anything else.
+
+```kotlin
+val panel = rememberAzWindowState()
+
+AzWindow(title = "Layers", state = panel, onDismiss = { showPanel = false }) {
+    Column(Modifier.padding(16.dp)) { /* anything */ }
+}
+```
+
+**It moves.** Drag the bar across the top and the window follows your finger, clamped so that a
+title-bar's worth always stays on screen — a window you can lose is a window you have to re-open. A
+panel that lands on top of the very thing it is asking about is otherwise a dead end, and the user's
+only way out of it is to dismiss the panel and lose whatever they had typed into it.
+
+**It folds.** The bar's fold control collapses the window to just that bar: still where the user left
+it, still one tap from coming back, with the screen behind it visible again. That is the difference
+between getting a panel out of the way and having to throw it away and summon it a second time.
+
+**It closes**, when whoever raised it gave it a way to (`onDismiss`).
+
+| Parameter | Meaning |
+| --- | --- |
+| `title` | Shown in the bar. Blank draws a bare bar — right when the body already has a heading. |
+| `state` | `AzWindowState`: `offsetX`/`offsetY`/`minimized`, plus `resetPosition()`. Hoist it when placement or folded state has to outlive the window. |
+| `accent` | Border and chrome colour. Defaults to the rail's accent, so a window matches the rail that raised it. |
+| `surfaceColor` | Panel fill. Defaults to the theme surface. |
+| `movable` / `minimizable` | Drop either affordance for a window that genuinely shouldn't have it. |
+| `onDismiss` | Close handler; null draws no close control. |
+
+**The hidden menu is one of these.** `hiddenMenu { … }` on a reloc item opens in a window rather than
+a bare popup, which matters most for the menu that can hold a text field: typing into a box you
+cannot move off the thing you are typing about is a poor arrangement. It opens beside the item that
+raised it, and from there it is the user's to move, fold, or close. Tapping outside it still
+dismisses it.

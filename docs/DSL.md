@@ -20,7 +20,8 @@ fun azConfig(
     noMenu: Boolean = false,
     vibrate: Boolean = false,
     displayAppName: Boolean = false,
-    activeClassifiers: Set<String> = emptySet(),
+    activeClassifiers: Set<String> = emptySet(),      // items with a matching classifier read as ACTIVE
+    secondaryClassifiers: Set<String> = emptySet(),   // …and these wear the SECONDARY highlight
     usePhysicalDocking: Boolean = false,
     expandedWidth: Dp = 160.dp,
     collapsedWidth: Dp = 100.dp,
@@ -68,8 +69,43 @@ fun azTheme(
     headerIconShape: AzHeaderIconShape = AzHeaderIconShape.CIRCLE,
     translucentBackground: Color = Color.Unspecified,
     helpLineColors: List<Color> = emptyList(),
-    headerIconSize: Dp = Dp.Unspecified
+    headerIconSize: Dp = Dp.Unspecified,
+    focusColor: Color = Color.Unspecified,      // the FOCUS highlight; unset = same as activeColor
+    secondaryColor: Color = Color.Unspecified   // the SECONDARY highlight; unset = the rail accent
 )
+~~~
+
+**The three highlights.** An item can be lit three ways, and each answers a different question:
+
+| Highlight | Question | Lit by |
+| --- | --- | --- |
+| `activeColor` | *Where am I?* | the item's `route` is the current destination, or a classifier in `activeClassifiers` |
+| `focusColor` | *What am I touching?* | a press, or being the last-tapped item **with no route of its own** |
+| `secondaryColor` | *Whatever you decide* | only you — `azItemState(id, secondary = true)` or `secondaryClassifiers` |
+
+Focus beats active beats secondary when more than one applies. Override any of the three for a single
+item with [`azHighlight`](#azhighlight).
+
+### `azHighlight`
+Overrides one item's highlight colours.
+
+~~~kotlin
+fun azHighlight(
+    id: String,
+    active: Color? = null,
+    focus: Color? = null,
+    secondary: Color? = null,
+)
+~~~
+
+Null means "leave it to the rail", so setting one highlight never clears the other two. Unknown ids
+are ignored — like `azItemState`, it is applied after the whole DSL block runs, so declaration order
+is irrelevant.
+
+~~~kotlin
+azRailItem(id = "record", text = "Rec")
+azHighlight(id = "record", active = Color.Red)
+azItemState(id = "record", secondary = armed)
 ~~~
 
 `defaultShape` accepts `CIRCLE`, `SQUARE`, `RECTANGLE`, `TRIANGLE`, and the borderless family —
@@ -155,14 +191,26 @@ fun azAbout(
     moreFromAzEnabled: Boolean = true, // show the "More from Az" entry in the About screen
     moreFromAzJsonUrl: String = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json",
     moreRailItem: Boolean = false,     // also pin a "More" item at the bottom of the rail
-    aboutRailItem: Boolean = true      // end the rail with the built-in About ("?") item
+    aboutRailItem: Boolean = true,     // end the rail with the built-in About ("?") item
+    dedupeAbout: Boolean = true        // draw About in exactly one surface, never two
 )
 ~~~
 
-The rail ends with an About (`?`) **rail item** in every mode — not only in the drawer's footer,
-which a `noMenu` rail does not have. It persists but it is not fixed: `azAboutRailItem(...)` declares
-your own anywhere in the item order and suppresses the automatic one, and `aboutRailItem = false`
-drops it. Tapping it toggles the reader; tapping any other rail or menu item, or the app icon, closes
+`dedupeAbout` is what stops About appearing three times in an app that has both a rail and a
+drop-down. Every surface that could offer one registers itself, and only the highest-ranked draws it:
+a `azAboutRailItem` you declared, then the rail's expanded-menu footer, then a drop-down menu's
+footer, then the automatic `?`. Set it false to draw About wherever it is configured.
+
+The reader's content is warmed in the background while the rail composes — the docs listing, the
+first document, and the More-from-Az manifest — so About opens populated rather than spinning. Its
+carousel snaps card-to-card, and the page ends with the same **Feedback** and **@HereLiesAz** rows as
+the menu footer.
+
+The rail ends with an About (`?`) **rail item** whenever nothing else is already offering About —
+which is what a `noMenu` rail (no drawer, no footer) always is. With `dedupeAbout` on, a rail that
+does have a menu footer carries About there instead and drops the automatic `?`. It persists but it
+is not fixed: `azAboutRailItem(...)` declares your own anywhere in the item order, outranks every
+other surface, and suppresses the automatic one; `aboutRailItem = false` drops it. Tapping it toggles the reader; tapping any other rail or menu item, or the app icon, closes
 it. The reader never covers the rail's own gutter, so the app icon stays reachable behind it.
 
 The About reader auto-discovers the markdown docs (root + `docs/`) of the resolved repo via the GitHub
@@ -294,7 +342,8 @@ The following functions are used to define the rail structure.
 * `azRailSubCycler(id, hostId, options, selectedOption, route, color, shape, disabled, disabledOptions, screenTitle, info, onClick)`
 * `azRailRelocItem(id, hostId, text, route, content, color, shape, disabled, screenTitle, info, classifiers, onFocus, onClick, onRelocate, forceHiddenMenuOpen, onHiddenMenuDismiss) { ... }`
 * `azUnattachedHostItem(id, text, anchor, route, content, color, shape, disabled, screenTitle, info, classifiers, menuText, textColor, fillColor, badge, persistentBadge, isLoading, initiallyExpanded, expandWhen, onExpandedChange, onClick)` — a rail host drawn **outside** the rail strip, at an `AzUnattachedAnchor` (`OPPOSITE` / `BOTTOM` / `FLOATING`). Sub-items attach by `hostId` as usual and unfold beneath it; the host and its whole subtree leave both the rail and the drawer.
-* `azItemState(id, badge, persistentBadge, isLoading, alert)` — decorates an **already-declared** item of any kind by id. Applied after the whole DSL block runs, so declaration order is irrelevant; `null` fields leave the item's existing value alone.
+* `azItemState(id, badge, persistentBadge, isLoading, alert, secondary)` — decorates an **already-declared** item of any kind by id. Applied after the whole DSL block runs, so declaration order is irrelevant; `null` fields leave the item's existing value alone. `secondary = true` lights the item's **secondary highlight** (see [`azTheme`](#aztheme)).
+* `azHighlight(id, active, focus, secondary)` — overrides that item's three highlight **colours**.
 
 > **Every** item builder above also accepts `badge`, `persistentBadge` and `isLoading` (per-item
 > loading spins that item's own `AzLoad`, tinted to its colour, while the rest of the rail stays

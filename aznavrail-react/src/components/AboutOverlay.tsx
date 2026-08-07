@@ -20,8 +20,10 @@ import AzMarkdownNative from './AzMarkdownNative';
 import { AzButton } from './AzButton';
 import { AzLoad } from './AzLoad';
 import { AzButtonShape } from '../types';
-import { listDocs, fetchDoc, AzDocEntry } from '../services/githubDocs';
-import { fetchMoreFromAz, AzMoreFromApp } from '../services/moreFromAz';
+import { AzDocEntry } from '../services/githubDocs';
+import { AzMoreFromApp } from '../services/moreFromAz';
+import { azAboutPrefetch } from '../services/aboutPrefetch';
+import { AzFooterLabel } from './AzFooterLabel';
 import { useAzAccent, AZ_ACCENT_FALLBACK } from '../AzRailPalette';
 
 /**
@@ -110,15 +112,34 @@ export const AboutOverlay: React.FC<AboutOverlayProps> = ({
     return () => sub.remove();
   }, [selected, onDismiss]);
 
+  // The reader reads what the rail warmed in the background (see `aboutPrefetch`) rather than
+  // starting its own fetch and making the user watch it. A page opened while a cold-start fetch is
+  // still in flight fills itself in the moment it lands.
   useEffect(() => {
     let active = true;
-    listDocs(repoUrl)
-      .then(
-        (r) =>
-          active &&
-          setState({ status: 'loaded', entries: r.entries, offline: r.offline })
-      )
-      .catch(() => active && setState({ status: 'error' }));
+    const apply = () => {
+      const warmed = azAboutPrefetch.docsFor(repoUrl);
+      if (!active || !warmed) return false;
+      setState({
+        status: 'loaded',
+        entries: warmed.entries,
+        offline: warmed.offline,
+      });
+      return true;
+    };
+    if (!apply()) {
+      const unsubscribe = azAboutPrefetch.subscribe(apply);
+      azAboutPrefetch
+        .warmDocs(repoUrl)
+        .then(() => {
+          if (active && !apply()) setState({ status: 'error' });
+        })
+        .catch(() => active && setState({ status: 'error' }));
+      return () => {
+        active = false;
+        unsubscribe();
+      };
+    }
     return () => {
       active = false;
     };
@@ -130,10 +151,21 @@ export const AboutOverlay: React.FC<AboutOverlayProps> = ({
       return;
     }
     let active = true;
-    setBody(null);
-    fetchDoc(selected).then(
-      (b) => active && setBody(b ?? '_Could not load this document._')
-    );
+    // The warmed body when there is one (the first doc always is), so the common case renders on
+    // the frame the row is tapped.
+    const warmed = azAboutPrefetch.bodyFor(selected);
+    setBody(warmed);
+    if (warmed) return;
+    azAboutPrefetch
+      .warmDoc(selected)
+      .then(
+        () =>
+          active &&
+          setBody(
+            azAboutPrefetch.bodyFor(selected) ??
+              '_Could not load this document._'
+          )
+      );
     return () => {
       active = false;
     };
@@ -145,8 +177,20 @@ export const AboutOverlay: React.FC<AboutOverlayProps> = ({
       return;
     }
     let active = true;
-    fetchMoreFromAz(moreFromAzJsonUrl)
-      .then((r) => active && setMoreApps(r?.apps ?? []))
+    const warmed = azAboutPrefetch.moreAppsFor(moreFromAzJsonUrl);
+    if (warmed) {
+      setMoreApps(warmed);
+      return () => {
+        active = false;
+      };
+    }
+    azAboutPrefetch
+      .warmMoreFromAz(moreFromAzJsonUrl)
+      .then(
+        () =>
+          active &&
+          setMoreApps(azAboutPrefetch.moreAppsFor(moreFromAzJsonUrl) ?? [])
+      )
       .catch(() => active && setMoreApps([]));
     return () => {
       active = false;
@@ -277,6 +321,42 @@ export const AboutOverlay: React.FC<AboutOverlayProps> = ({
               <MoreFromAzHeroCarousel apps={moreApps} accent={accent} />
             </View>
           )}
+
+          {/* The page ends where every other surface in this library ends: a way to write to the
+              author, and the author. About is where someone goes to find out who made this, so
+              making them close it and hunt through a menu for that would be a joke at their
+              expense. */}
+          <View style={[styles.divider, { backgroundColor: accent }]} />
+          <View style={styles.pageFooter}>
+            <AzFooterLabel
+              text="Feedback"
+              color={accent}
+              style={styles.pageFooterCell}
+              onPress={() =>
+                Linking.openURL(
+                  'mailto:hereliesaz@gmail.com?subject=Feedback'
+                ).catch(() => {})
+              }
+            />
+            <AzFooterLabel
+              text="hereliesaz.com"
+              color={accent}
+              style={styles.pageFooterCell}
+              onPress={() =>
+                Linking.openURL('https://hereliesaz.com').catch(() => {})
+              }
+            />
+            <AzFooterLabel
+              text="@HereLiesAz"
+              color={accent}
+              style={styles.pageFooterCell}
+              onPress={() =>
+                Linking.openURL('https://instagram.com/HereLiesAz').catch(
+                  () => {}
+                )
+              }
+            />
+          </View>
         </>
       )}
     </Animated.View>
@@ -313,6 +393,32 @@ const MoreFromAzHeroCarousel: React.FC<{
     if (idx !== activeIndex) setActiveIndex(idx);
   };
 
+  /** Pulls whatever the gesture left half-centred the rest of the way in. */
+  const onSettle = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offset = e.nativeEvent.contentOffset.x;
+    const idx = Math.max(
+      0,
+      Math.min(apps.length - 1, Math.round(offset / snapInterval))
+    );
+    const drift = Math.abs(offset - idx * snapInterval);
+    if (drift > 1) {
+      listRef.current?.scrollToOffset({
+        offset: idx * snapInterval,
+        animated: true,
+      });
+    }
+    if (idx !== activeIndex) setActiveIndex(idx);
+  };
+
+  /** Tapping a card that isn't centred brings it to the centre. */
+  const centerOn = (index: number) => {
+    listRef.current?.scrollToOffset({
+      offset: index * snapInterval,
+      animated: true,
+    });
+    setActiveIndex(index);
+  };
+
   return (
     <View style={styles.flex}>
       <View style={{ height: CAROUSEL_ROW_HEIGHT, justifyContent: 'center' }}>
@@ -322,6 +428,12 @@ const MoreFromAzHeroCarousel: React.FC<{
           horizontal
           showsHorizontalScrollIndicator={false}
           snapToInterval={snapInterval}
+          snapToAlignment="start"
+          // One flick should hand focus to the next app or two, not spin the row past a dozen:
+          // `disableIntervalMomentum` stops the fling at the neighbouring card instead of letting
+          // momentum carry it, which is what makes the carousel land ON an app rather than between.
+          disableIntervalMomentum
+          onMomentumScrollEnd={onSettle}
           decelerationRate="fast"
           keyExtractor={(_, i) => String(i)}
           contentContainerStyle={{
@@ -350,11 +462,7 @@ const MoreFromAzHeroCarousel: React.FC<{
                       item.webUrl || item.playStoreUrl || item.githubUrl;
                     if (url) Linking.openURL(url).catch(() => {});
                   } else {
-                    listRef.current?.scrollToOffset({
-                      offset: index * snapInterval,
-                      animated: true,
-                    });
-                    setActiveIndex(index);
+                    centerOn(index);
                   }
                 }}
                 style={[
@@ -470,6 +578,8 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   half: { flex: 1 },
   divider: { height: 1, marginVertical: 8 },
+  pageFooter: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  pageFooterCell: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center' },
   title: { flex: 1, fontSize: 30, fontWeight: 'bold', marginHorizontal: 8 },
   icon: { fontSize: 22, paddingHorizontal: 6 },

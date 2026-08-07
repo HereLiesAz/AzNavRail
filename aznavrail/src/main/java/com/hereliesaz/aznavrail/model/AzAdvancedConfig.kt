@@ -43,6 +43,11 @@ import androidx.compose.ui.geometry.Rect
  *   that opens the "More from Az" carousel directly (independent of the About screen).
  * @param aboutRailItem When true (default), the rail ends with a built-in About (`?`) rail item,
  *   unless the developer declared their own with `azAboutRailItem`.
+ * @param dedupeAbout When true (default), the library keeps track of every surface that offers an
+ *   About affordance — the `?` rail item, the expanded menu's footer, a drop-down menu's footer —
+ *   and draws it in exactly one of them, so About never appears twice. The most deliberate placement
+ *   wins: a developer-declared `azAboutRailItem`, then the rail's menu footer, then a drop-down's
+ *   footer, then the automatic `?`. Set false to draw About wherever it is configured.
  */
 data class AzAdvancedConfig(
     val isLoading: Boolean = false,
@@ -63,5 +68,6 @@ data class AzAdvancedConfig(
     val moreFromAzEnabled: Boolean = true,
     val moreFromAzJsonUrl: String = "https://raw.githubusercontent.com/HereLiesAz/AzNavRail/main/more-from-az.json",
     val moreFromAzRailItem: Boolean = false,
-    val aboutRailItem: Boolean = true
+    val aboutRailItem: Boolean = true,
+    val dedupeAbout: Boolean = true
 )

@@ -70,7 +70,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import coil3.compose.rememberAsyncImagePainter
+import com.hereliesaz.aznavrail.internal.AzAboutSurface
 import com.hereliesaz.aznavrail.internal.AzNavRailDefaults
+import com.hereliesaz.aznavrail.internal.rememberAzAboutOwnership
 import com.hereliesaz.aznavrail.internal.CyclerTransientState
 import com.hereliesaz.aznavrail.internal.Footer
 import com.hereliesaz.aznavrail.internal.MenuItem
@@ -81,6 +83,7 @@ import com.hereliesaz.aznavrail.internal.rememberAzHaptics
 import com.hereliesaz.aznavrail.internal.rememberAzOverlayLauncher
 import com.hereliesaz.aznavrail.model.AzExit
 import com.hereliesaz.aznavrail.internal.SecretScreens
+import com.hereliesaz.aznavrail.service.AzAboutWarmup
 import com.hereliesaz.aznavrail.service.GithubDocsRepository
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
@@ -284,9 +287,40 @@ fun AzNavRail(
     // declared their own with `azAboutRailItem`, in which case theirs stands where they put it. It
     // persists; it is not fixed.
     val hasExplicitAboutItem = scope.navItems.any { it.isAboutItem }
-    val autoAboutItem = if (scope.advancedConfig.aboutRailItem && !hasExplicitAboutItem) {
+    val dedupeAbout = scope.advancedConfig.dedupeAbout
+
+    // Who draws About. Every surface that could offer one registers itself; only the highest-ranked
+    // registration actually draws, so an app with a rail AND a drop-down doesn't show About three
+    // times over. A developer-declared `?` outranks everything and is never suppressed — it only
+    // suppresses others — which is why its ownership result is ignored.
+    rememberAzAboutOwnership(
+        surface = AzAboutSurface.RAIL_ITEM_EXPLICIT,
+        offered = hasExplicitAboutItem,
+        dedupe = dedupeAbout,
+    )
+    val footerOwnsAbout = rememberAzAboutOwnership(
+        surface = AzAboutSurface.RAIL_MENU_FOOTER,
+        offered = scope.showFooter && !scope.noMenu,
+        dedupe = dedupeAbout,
+    )
+    val autoAboutItemOwned = rememberAzAboutOwnership(
+        surface = AzAboutSurface.RAIL_ITEM_AUTO,
+        offered = scope.advancedConfig.aboutRailItem && !hasExplicitAboutItem,
+        dedupe = dedupeAbout,
+    )
+    val autoAboutItem = if (autoAboutItemOwned) {
         AzNavItem.About(id = AzNavRailDefaults.AUTO_ABOUT_ID, shape = scope.defaultShape)
     } else null
+
+    // Warm the About reader's content now, in the background, so opening it shows the page rather
+    // than a spinner. Cheap: cached, conditional requests that usually come back 304.
+    if (scope.advancedConfig.inAppAbout) {
+        AzAboutWarmup(
+            repoUrl = effectiveRepoUrl,
+            moreFromAzEnabled = scope.advancedConfig.moreFromAzEnabled,
+            moreFromAzJsonUrl = scope.advancedConfig.moreFromAzJsonUrl,
+        )
+    }
 
     /** Opens the About reader (or the repo in a browser), and closes it again on a second tap. */
     val toggleAbout: () -> Unit = {
@@ -986,6 +1020,7 @@ fun AzNavRail(
                                 onAboutClick = if (scope.advancedConfig.inAppAbout) {
                                     { isExpanded = false; hostScope?.showAbout() }
                                 } else null,
+                                showAbout = footerOwnsAbout,
                                 visible = isExpanded,
                                 menuItemCount = footerMenuCount,
                                 staggerMs = scope.entranceStaggerMs,
@@ -1197,6 +1232,10 @@ private fun MenuItemNode(
         navController = navController,
         isSelected = (item.route != null && item.route == currentDestination) ||
                 item.classifiers.any { scope.activeClassifiers.contains(it) },
+        isSecondaryActive = item.isSecondaryActive ||
+                item.classifiers.any { scope.secondaryClassifiers.contains(it) },
+        focusColor = scope.focusColor,
+        secondaryColor = scope.secondaryColor,
         onClick = {
             scope.lastTouchedItemId = item.id
             haptics.commit()

@@ -16,6 +16,7 @@ import os
 import re
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 
 MANIFEST = "more-from-az.json"
@@ -93,6 +94,23 @@ def app_links_from_input(raw):
     return extract_urls(raw)
 
 
+def absolutize(url, base):
+    """Resolve a possibly-relative URL against the page it was found on.
+
+    `og:image` is often written relative ("guillotine_banner.png"), which is legal in the document
+    and useless once it has been copied into a manifest an app loads elsewhere."""
+    if not url:
+        return url
+    if url.startswith(("http://", "https://", "data:")):
+        return url
+    if url.startswith("//"):
+        return "https:" + url
+    try:
+        return urllib.parse.urljoin(base, url)
+    except Exception:
+        return url
+
+
 def og(html, prop):
     """Extract an OpenGraph content value, tolerant of attribute order; decodes basic entities."""
     a = re.search(r"""<meta[^>]+property=["']og:%s["'][^>]+content=["']([^"']*)["']""" % prop, html, re.I)
@@ -144,7 +162,7 @@ def resolve_play(url):
         return None
     return {
         "name": re.sub(r" - Apps on Google Play$", "", title).strip(),
-        "iconUrl": og(html, "image") or "",
+        "iconUrl": absolutize(og(html, "image"), url) or "",
         "description": og(html, "description") or "",
         "play": url,
     }
@@ -159,7 +177,7 @@ def resolve_web(url):
         return None
     return {
         "name": title,
-        "iconUrl": og(html, "image") or "",
+        "iconUrl": absolutize(og(html, "image"), url) or "",
         "description": og(html, "description") or "",
         "web": url,
         "isPwa": detect_pwa(html),
@@ -173,6 +191,8 @@ def _head_ok(url):
 
 
 # Standard Android launcher-icon paths, densities from highest to lowest, webp first for size.
+# Both the classic `app/` module layout and the Compose Multiplatform `composeApp/` one, whose
+# Android target keeps its resources under `src/androidMain/res` rather than `src/main/res`.
 _LAUNCHER_ICON_PATHS = [
     "app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
     "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
@@ -181,7 +201,57 @@ _LAUNCHER_ICON_PATHS = [
     "app/src/main/res/mipmap-xhdpi/ic_launcher.webp",
     "app/src/main/res/mipmap-xhdpi/ic_launcher.png",
     "app/src/main/res/mipmap-hdpi/ic_launcher.png",
+    "composeApp/src/androidMain/res/mipmap-xxxhdpi/ic_launcher.webp",
+    "composeApp/src/androidMain/res/mipmap-xxxhdpi/ic_launcher.png",
+    "composeApp/src/androidMain/res/mipmap-xxhdpi/ic_launcher.webp",
+    "composeApp/src/androidMain/res/mipmap-xxhdpi/ic_launcher.png",
 ]
+
+# Compose Multiplatform apps that ship no Android target — desktop-only, web-only, iOS-only — have
+# no mipmap directory at all. Their icon lives in `composeResources`, in the desktop packaging
+# resources, or in the iOS asset catalogue. Filename stems, in the order CMP templates use them.
+_CMP_ICON_STEMS = ["icon", "app_icon", "ic_launcher", "launcher", "logo", "AppIcon"]
+
+# Directory prefixes a CMP icon is found under, most specific first. Joined with the stems above
+# during the tree walk; `composeResources/drawable` is where `Res.drawable.icon` resolves from.
+_CMP_ICON_DIRS = [
+    "composeresources/drawable",
+    "composeresources/files",
+    "jvmmain/resources",
+    "desktopmain/resources",
+    "jsmain/resources",
+    "wasmjsmain/resources",
+    "appicon.appiconset",
+    "assets.xcassets",
+]
+
+_ICON_EXTS = (".png", ".webp")
+
+
+def _cmp_icon_score(path):
+    """Rank a candidate CMP icon path. Lower is better; None means "not an icon".
+
+    Ranking is by *where* it was found (a composeResources drawable outranks a desktop packaging
+    resource outranks an iOS asset-catalogue slice) and then by *what* it is called, so a repo
+    holding both `icon.png` and `logo.png` yields the launcher icon rather than a wordmark."""
+    lower = path.lower()
+    if not lower.endswith(_ICON_EXTS):
+        return None
+    name = lower.rsplit("/", 1)[-1]
+    stem = name.rsplit(".", 1)[0]
+    stem_rank = next(
+        (i for i, s in enumerate(_CMP_ICON_STEMS) if stem == s.lower() or stem.startswith(s.lower() + "-")),
+        None,
+    )
+    if stem_rank is None:
+        return None
+    dir_rank = next((i for i, d in enumerate(_CMP_ICON_DIRS) if d in lower), None)
+    if dir_rank is None:
+        return None
+    # iOS asset catalogues hold a dozen sizes of the same image; prefer the largest by filename,
+    # which for the standard `AppIcon.appiconset` naming sorts last (…-1024, …@3x).
+    ios_bonus = -1 if ("1024" in name or "@3x" in name) else 0
+    return (dir_rank, stem_rank, ios_bonus, len(path))
 
 # Common banner names (either / or). Case-sensitive lookup — GitHub raw is case-sensitive.
 _BANNER_NAMES = [
@@ -231,6 +301,21 @@ def resolve_repo_icon(owner, repo, branch):
         candidates.sort(key=density_key)
         if candidates:
             return f"{raw_root}/{candidates[0]}"
+
+        # Compose Multiplatform layouts: no mipmap dir to walk, because there may be no Android
+        # target at all. The icon is a composeResources drawable, a desktop packaging resource, or a
+        # slice of the iOS asset catalogue — all of them ordinary files in the tree.
+        cmp_candidates = []
+        for entry in tree:
+            path = (entry.get("path") or "") if isinstance(entry, dict) else ""
+            if not path or entry.get("type") != "blob":
+                continue
+            score = _cmp_icon_score(path)
+            if score is not None:
+                cmp_candidates.append((score, path))
+        if cmp_candidates:
+            cmp_candidates.sort()
+            return f"{raw_root}/{cmp_candidates[0][1]}"
 
         # Adaptive-icon fallback: parse foreground drawable name from the XML.
         for entry in tree:
@@ -314,12 +399,16 @@ def resolve_github(github_url):
         app["web"] = home
         app["isPwa"] = detect_pwa(whtml) if ws == 200 else False
         if not app["iconUrl"] and ws == 200:
-            app["iconUrl"] = og(whtml, "image") or ""
+            app["iconUrl"] = absolutize(og(whtml, "image"), home) or ""
 
     # Repo fallback for the icon — walk the launcher-icon paths and adaptive-icon xml. Runs whenever
     # Play/website resolvers left the iconUrl blank; also runs when the current value is the owner's
     # avatar (which the runtime blocks) so we replace it with something usable.
-    if not app["iconUrl"] or "avatars.githubusercontent.com" in app["iconUrl"]:
+    if (
+        not app["iconUrl"]
+        or not app["iconUrl"].startswith(("http://", "https://"))
+        or "avatars.githubusercontent.com" in app["iconUrl"]
+    ):
         repo_icon = resolve_repo_icon(owner, repo, branch)
         if repo_icon:
             app["iconUrl"] = repo_icon

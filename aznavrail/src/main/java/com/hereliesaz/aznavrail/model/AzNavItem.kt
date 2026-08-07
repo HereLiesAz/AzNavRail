@@ -58,6 +58,28 @@ data class AzNavItem(
     val screenTitle: String? = null,
     val isRailItem: Boolean,
     val color: @RawValue Color? = null,
+    /**
+     * Colour for this item's **active** highlight — the one it wears when its route is the current
+     * destination or one of its classifiers is active. Null takes the rail's own
+     * (`azTheme(activeColor = …)`, then the rail accent). Set with `azHighlight(id, active = …)`.
+     */
+    val activeColor: @RawValue Color? = null,
+    /**
+     * Colour for this item's **focus** highlight — pressed, or last tapped when it carries no route.
+     * Null falls back to [activeColor], which is the library's historical behaviour: focus and
+     * active looked identical until they were told apart.
+     */
+    val focusColor: @RawValue Color? = null,
+    /**
+     * Colour for this item's **secondary** highlight, the one the app drives itself. Null takes the
+     * rail's `azTheme(secondaryColor = …)`. Inert unless [isSecondaryActive] is set.
+     */
+    val secondaryColor: @RawValue Color? = null,
+    /**
+     * Whether the secondary highlight is currently lit. Set by `azItemState(id, secondary = true)`
+     * or by a classifier listed in `azConfig(secondaryClassifiers = …)`. Never set by the library.
+     */
+    val isSecondaryActive: Boolean = false,
     val textColor: @RawValue Color? = null,
     val fillColor: @RawValue Color? = null,
     val isToggle: Boolean = false,

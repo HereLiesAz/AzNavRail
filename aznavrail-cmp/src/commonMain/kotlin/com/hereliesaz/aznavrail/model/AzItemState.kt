@@ -14,4 +14,9 @@ data class AzItemState(
     val persistentBadge: Boolean? = null,
     val isLoading: Boolean? = null,
     val alert: AzItemAlert? = null,
+    /**
+     * Whether the item's **secondary** highlight is lit — the third highlight, the one the library
+     * never sets on its own. See [AzHighlight].
+     */
+    val secondary: Boolean? = null,
 )

@@ -168,13 +168,22 @@ A host item can auto-expand its sub-items reactively.
 | Per-item badge / loading (`azItemState`) | ✅ | ✅ | ❌ not ported |
 | Popups (`azPopup`) + warning triangle | ✅ | ✅ | ❌ not ported |
 | Pinned "More from Az" rail item | ✅ | ✅ | ✅ |
+| Three highlights (active / focus / secondary) | ✅ | ✅ | ✅ |
+| Per-item highlight colours | ✅ `azHighlight` | ✅ `azHighlight` | ✅ item props |
+| About de-duplication across surfaces | ✅ | ✅ | ✅ |
+| About content warmed in the background | ✅ | ✅ | ✅ |
+| Auto-sizing footer labels | ✅ | ✅ | ✅ |
+| Floating windows (`AzWindow`) — movable + minimizable | ✅ | ✅ | ✅ |
+| Hidden menu drawn in a window | ✅ | ✅ | ✅ |
 | System overlay (`overlayService`) | ✅ | Android target only | ❌ n/a |
 | Dissolve overlay on item tap | ✅ | ❌ not ported | ❌ |
 | Unit tests | ✅ | ✅ (DSL-level only) | ✅ |
 
 ## Known gaps
 
-- **The React port lags the Kotlin modules.** The four features added in this cycle are Kotlin-only.
+- **The React port lags the Kotlin modules** on the features marked "not ported" above. The features
+  added in this cycle — the three highlights, About de-duplication and warm-up, the auto-sizing
+  footer, and `AzWindow` — landed on all three at once, but the older gaps remain.
   `aznavrail-react` is versioned separately (`package.json`) from the Gradle artifact, so the two do
   not move together.
 - **The `@Az` annotations and KSP processor now exist** (`:aznavrail-annotations`,

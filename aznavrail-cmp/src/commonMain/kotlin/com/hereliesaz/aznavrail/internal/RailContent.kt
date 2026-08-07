@@ -70,6 +70,14 @@ internal fun RailContent(
     helpEnabled: Boolean = false,
     dragModifier: Modifier = Modifier,
     activeColor: androidx.compose.ui.graphics.Color? = null,
+    /** Whether this item currently wears the **focus** highlight (last tapped, no route of its own). */
+    isFocused: Boolean = false,
+    /** Whether this item currently wears the **secondary** highlight (app-driven). */
+    isSecondaryActive: Boolean = false,
+    /** The rail's focus-highlight colour; the item's own [AzNavItem.focusColor] wins over it. */
+    focusColor: androidx.compose.ui.graphics.Color? = null,
+    /** The rail's secondary-highlight colour; the item's own [AzNavItem.secondaryColor] wins over it. */
+    secondaryColor: androidx.compose.ui.graphics.Color? = null,
     rotationDegrees: Float = 0f,
     /** Reports a slider item's new value. Null for every rail that declares no slider. */
     onSliderChange: ((String, Float) -> Unit)? = null,
@@ -188,13 +196,24 @@ internal fun RailContent(
         val alertColor = liveAlertColor ?: lastAlertColor.value
         val morphedColor = if (alertProgress <= 0f || alertColor == null) baseColor
             else lerp(baseColor, alertColor, alertProgress)
+        // Each highlight resolves item-first, then rail, then the rail's accent — so an item can
+        // disagree with the rail about one highlight without having to restate the other two.
+        val resolvedActive = if (alertProgress > 0f && alertColor != null) morphedColor
+            else (item.activeColor ?: activeColor ?: Color.Unspecified).takeOrElse { railAccent }
+        val resolvedFocus = (item.focusColor ?: focusColor ?: Color.Unspecified)
+            .takeOrElse { resolvedActive }
+        val resolvedSecondary = (item.secondaryColor ?: secondaryColor ?: Color.Unspecified)
+            .takeOrElse { railAccent }
         AzNavRailButton(
             onClick = finalOnClick,
             text = textToShow,
             modifier = Modifier,
             color = morphedColor,
-            activeColor = if (alertProgress > 0f && alertColor != null) morphedColor
-                else (activeColor ?: Color.Unspecified).takeOrElse { railAccent },
+            activeColor = resolvedActive,
+            isFocused = isFocused,
+            isSecondaryActive = isSecondaryActive || item.isSecondaryActive,
+            focusColor = resolvedFocus,
+            secondaryColor = resolvedSecondary,
             textColor = if (alertProgress > 0f && alertColor != null) morphedColor else item.textColor,
             fillColor = item.fillColor,
             size = buttonSize,

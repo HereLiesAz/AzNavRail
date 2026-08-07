@@ -63,11 +63,24 @@ private fun DemoHost() {
     var unread by remember { mutableIntStateOf(3) }
     var dark by remember { mutableStateOf(true) }
     var grid by remember { mutableStateOf(false) }
+    // The third highlight is the app's to drive; nothing in the library ever lights it.
+    var armed by remember { mutableStateOf(false) }
 
     AzHostActivityLayout(navController = navController) {
         // `vibrate` turns on the haptic vocabulary: every commit answers, not just FAB activation.
-        azConfig(vibrate = true)
+        azConfig(
+            vibrate = true,
+            // The declarative half of the secondary highlight: every item tagged "armed" wears it
+            // while the toggle below is on.
+            secondaryClassifiers = if (armed) setOf("armed") else emptySet(),
+        )
         azAdvanced(enableRailDragging = true)
+
+        // The three highlights, each answering a different question. Active is where you are; focus
+        // is what you are touching (left unset here, so it reuses the active colour, which is how
+        // the rail has always looked); secondary is a condition only this app knows about, so it
+        // gets an amber rather than a second navigation colour.
+        azTheme(secondaryColor = Color(0xFFFFB300))
 
         // --- Ordinary rail items ---------------------------------------------------------------
         // Every item is drawn in the same white, so the rail *reads* as white — and that is the
@@ -120,6 +133,18 @@ private fun DemoHost() {
                 message = "Changes are queued and will sync when the connection returns.",
             )
         }
+
+        // --- The third highlight ----------------------------------------------------------------
+        // "Armed" is a condition, not a destination. It is not where the user is (active) and not
+        // what they are touching (focus), so it takes the highlight that exists for exactly that.
+        azRailToggle(
+            id = "armed",
+            isChecked = armed,
+            toggleOnText = "Armed",
+            toggleOffText = "Safe",
+            classifiers = setOf("armed"),
+        ) { armed = !armed }
+        azItemState(id = "armed", secondary = armed)
 
         azMenuItem(id = "settings", text = "Settings", screenTitle = "Settings") {}
 

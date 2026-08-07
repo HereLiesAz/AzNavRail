@@ -101,6 +101,10 @@ function App() {
   })
 
   const themeColor = '#6200EE'
+  // The third highlight is the app's to drive; the library never lights it. "Armed" is a condition,
+  // not a destination — not where the user is, not what they are touching — which is precisely the
+  // gap the secondary highlight fills.
+  const [armed, setArmed] = useState(false)
 
   return (
     <AzHostActivityLayout
@@ -124,6 +128,10 @@ function App() {
       appRepositoryUrl={customization.appRepositoryUrl}
       vibrate={customization.vibrate}
       activeClassifiers={customization.activeClassifiers}
+      // The declarative half of the secondary highlight: any item tagged "armed" wears it.
+      secondaryClassifiers={armed ? new Set(['armed']) : new Set<string>()}
+      secondaryColor="#FFB300"
+
       headerIconSize={customization.headerIconSize || undefined}
       inAppAbout
       moreFromAzEnabled
@@ -184,6 +192,19 @@ function App() {
         toggleOffText="Unpacked"
         info="Toggle to pack items together or space them out."
         onClick={() => setPackRailButtons((v) => !v)}
+      />
+
+      {/* The third highlight — driven entirely by this app, not by navigation. */}
+      <AzRailToggle
+        id="armed"
+        text="Armed"
+        isChecked={armed}
+        toggleOnText="Armed"
+        toggleOffText="Safe"
+        classifiers={new Set(['armed'])}
+        secondary={armed}
+        info="The SECONDARY highlight: a condition the app knows about, not a place the user is."
+        onClick={() => setArmed((v) => !v)}
       />
 
       {/* AzButtonShape showcase — one rail item per value */}

@@ -5,6 +5,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.FlingBehavior
+import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,9 +32,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -51,8 +55,7 @@ import com.hereliesaz.aznavrail.AzNavRailScopeImpl
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDocEntry
 import com.hereliesaz.aznavrail.model.AzMoreFromApp
-import com.hereliesaz.aznavrail.service.GithubDocsRepository
-import com.hereliesaz.aznavrail.service.MoreFromAzRepository
+import com.hereliesaz.aznavrail.service.AzAboutPrefetch
 import com.hereliesaz.aznavrail.AzButton
 import com.hereliesaz.aznavrail.AzDivider
 import com.hereliesaz.aznavrail.AzLoad
@@ -117,6 +120,8 @@ internal fun AboutOverlay(
     onDismiss: () -> Unit,
 ) {
     val uriHandler = LocalUriHandler.current
+    // The app's own name — the subject line of the feedback mail the page's footer sends.
+    val appName = rememberEffectiveAppMeta().name
     // The reader wears the rail's colour, not the app theme's. `activeColor` when the developer set
     // one; failing that, the colour the rail's own items are drawn in. A theme-primary fallback is
     // how the reader ended up as near-invisible grey-on-black beside a white rail.
@@ -134,24 +139,30 @@ internal fun AboutOverlay(
 
     AzBackHandler(enabled = true) { if (selected != null) selected = null else onDismiss() }
 
-    val docs by produceState<DocsUi>(initialValue = DocsUi.Loading, repoUrl) {
-        value = GithubDocsRepository.listDocs(repoUrl).fold(
-            onSuccess = { DocsUi.Loaded(it.entries, it.rateLimitedOrOffline) },
-            onFailure = { DocsUi.Error },
-        )
+    // The reader reads the content the rail warmed in the background (see [AzAboutPrefetch]) rather
+    // than starting its own fetch and making the user watch it. `warmedDocs` is snapshot state, so a
+    // page opened while the warm-up is still in flight fills itself in the moment it lands.
+    val warmedDocs = AzAboutPrefetch.docsFor(repoUrl)
+    var docsFailed by remember(repoUrl) { mutableStateOf(false) }
+    LaunchedEffect(repoUrl) {
+        // A no-op when the warm-up already ran; the fallback path when it didn't (or failed).
+        runCatching { AzAboutPrefetch.warmDocs(repoUrl) }
+        docsFailed = AzAboutPrefetch.docsFor(repoUrl) == null
+    }
+    val docs: DocsUi = when {
+        warmedDocs != null -> DocsUi.Loaded(warmedDocs.entries, warmedDocs.rateLimitedOrOffline)
+        docsFailed -> DocsUi.Error
+        else -> DocsUi.Loading
     }
 
-    // Fetch More-from-Az apps for the bottom-half carousel. We render eagerly so the developer can
-    // scroll the carousel while a doc is loading in the top half.
-    val moreApps by produceState<List<AzMoreFromApp>?>(
-        initialValue = null,
-        scope.advancedConfig.moreFromAzEnabled,
-        scope.advancedConfig.moreFromAzJsonUrl,
-    ) {
-        value = if (scope.advancedConfig.moreFromAzEnabled) {
-            MoreFromAzRepository.fetch(scope.advancedConfig.moreFromAzJsonUrl)
-                .getOrNull()?.apps ?: emptyList()
-        } else emptyList()
+    // Same story for the bottom-half carousel: read what was warmed, and only fetch here if nothing
+    // was. Null still means "not here yet" and draws the spinner.
+    val moreFromAzEnabled = scope.advancedConfig.moreFromAzEnabled
+    val moreFromAzUrl = scope.advancedConfig.moreFromAzJsonUrl
+    val moreApps: List<AzMoreFromApp>? =
+        if (!moreFromAzEnabled) emptyList() else AzAboutPrefetch.moreAppsFor(moreFromAzUrl)
+    LaunchedEffect(moreFromAzEnabled, moreFromAzUrl) {
+        if (moreFromAzEnabled) runCatching { AzAboutPrefetch.warmMoreFromAz(moreFromAzUrl) }
     }
 
     // Drag-down-to-dismiss. A full-screen reader that can only be left through one 24dp icon is a
@@ -281,7 +292,7 @@ internal fun AboutOverlay(
                 }
 
                 // BOTTOM HALF — More-from-Az focused-hero carousel + active-app info panel.
-                if (scope.advancedConfig.moreFromAzEnabled) {
+                if (moreFromAzEnabled) {
                     Spacer(Modifier.height(12.dp))
                     AzDivider(color = accent)
                     Spacer(Modifier.height(8.dp))
@@ -292,16 +303,61 @@ internal fun AboutOverlay(
                         )
                     }
                 }
+
+                // The page ends where every other surface in this library ends: a way to write to
+                // the author, and the author. The About page is where someone goes to find out who
+                // made this and how to complain about it — making them close it and hunt through a
+                // menu for that would be a joke at their expense.
+                AzAboutPageFooter(appName = appName, accent = accent)
             }
         }
     }
 }
 
+/**
+ * The About page's own footer: Feedback and @HereLiesAz, side by side, auto-sized like the menu
+ * footer's rows.
+ */
+@Composable
+private fun AzAboutPageFooter(appName: String, accent: Color) {
+    val uriHandler = LocalUriHandler.current
+    Spacer(Modifier.height(12.dp))
+    AzDivider(color = accent)
+    Spacer(Modifier.height(4.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        AzFooterLabel(
+            text = "Feedback",
+            color = accent,
+            onClick = { runCatching { uriHandler.openUri(azFeedbackMailto(appName)) } },
+            modifier = Modifier.weight(1f),
+        )
+        AzFooterLabel(
+            text = "hereliesaz.com",
+            color = accent,
+            onClick = { runCatching { uriHandler.openUri(AZ_SITE_URL) } },
+            modifier = Modifier.weight(1f),
+        )
+        AzFooterLabel(
+            text = "@HereLiesAz",
+            color = accent,
+            onClick = { runCatching { uriHandler.openUri(AZ_INSTAGRAM_URL) } },
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
 @Composable
 private fun DocReader(entry: AzDocEntry, accent: Color) {
-    val uriHandler = LocalUriHandler.current
-    val body by produceState<String?>(initialValue = null, entry.path) {
-        value = GithubDocsRepository.fetchDoc(entry).getOrNull() ?: "_Could not load this document._"
+    // The warmed body when there is one (the first doc always is), so the common case renders on the
+    // frame the row is tapped.
+    val body by produceState<String?>(initialValue = AzAboutPrefetch.bodyFor(entry), entry.path) {
+        if (value != null) return@produceState
+        runCatching { AzAboutPrefetch.warmDoc(entry) }
+        value = AzAboutPrefetch.bodyFor(entry) ?: "_Could not load this document._"
     }
     val current = body
     if (current == null) {
@@ -358,6 +414,32 @@ private val HERO_MEDIUM = 96.dp
 private val HERO_SMALL = 64.dp
 private val HERO_SPACING = 12.dp
 
+/** How far off-centre a settled card may sit before the row pulls it in. */
+private const val SETTLE_TOLERANCE_PX = 2
+
+/**
+ * Fraction of a fling's velocity the carousel actually acts on.
+ *
+ * The carousel is a focus list, not a scroller: one flick should hand focus to the next app or two,
+ * and the card should arrive with some weight rather than gliding. Damping the incoming velocity
+ * before the snap behaviour sees it is what produces both — a shorter search for a landing card, and
+ * a shorter, firmer settle onto it.
+ */
+private const val FLING_DAMPING = 0.22f
+
+/** Wraps [delegate] so it only ever sees [FLING_DAMPING] of the velocity the user actually threw. */
+private class AzStickyFlingBehavior(
+    private val delegate: FlingBehavior,
+    private val damping: Float,
+) : FlingBehavior {
+    override suspend fun ScrollScope.performFling(initialVelocity: Float): Float =
+        with(delegate) { performFling(initialVelocity * damping) }
+}
+
+@Composable
+private fun rememberAzStickyFling(delegate: FlingBehavior): FlingBehavior =
+    remember(delegate) { AzStickyFlingBehavior(delegate, FLING_DAMPING) }
+
 /**
  * Horizontal LazyRow with center-snap fling and per-item scaling. Sizes derive from each item's
  * distance from the row's visual center:
@@ -382,7 +464,12 @@ private fun MoreFromAzHeroCarousel(
         }
         else -> {
             val listState = rememberLazyListState()
-            val fling = rememberSnapFlingBehavior(lazyListState = listState)
+            // A flick should move the carousel a card or two, not spin it. The snap behaviour picks
+            // the landing card; damping the velocity on the way in decides how far it is allowed to
+            // look for one. Undamped, this row coasted past a dozen apps on one flick and the "focus"
+            // the design is built around never had a chance to land on anything.
+            val fling = rememberAzStickyFling(rememberSnapFlingBehavior(lazyListState = listState))
+            val carouselScope = rememberCoroutineScope()
             val uriHandler = LocalUriHandler.current
 
             // Active index = the item whose center is closest to the row's visual center.
@@ -396,6 +483,25 @@ private fun MoreFromAzHeroCarousel(
                 }
             }
             val activeApp = apps.getOrNull(activeIndex)
+
+            // Settle. When the gesture ends anywhere between two cards, the nearest one is pulled
+            // fully into the centre instead of being left hanging half off the edge — the row always
+            // comes to rest ON an app, never between two.
+            LaunchedEffect(listState, apps.size) {
+                snapshotFlow { listState.isScrollInProgress }
+                    .collect { scrolling ->
+                        if (scrolling) return@collect
+                        val info = listState.layoutInfo
+                        val viewportCenter = (info.viewportStartOffset + info.viewportEndOffset) / 2
+                        val nearest = info.visibleItemsInfo.minByOrNull {
+                            abs((it.offset + it.size / 2) - viewportCenter)
+                        } ?: return@collect
+                        val drift = abs((nearest.offset + nearest.size / 2) - viewportCenter)
+                        // Already centred (within a hair) — leave it alone, or this re-triggers itself.
+                        if (drift <= SETTLE_TOLERANCE_PX) return@collect
+                        runCatching { listState.animateScrollToItem(nearest.index) }
+                    }
+            }
 
             Column(Modifier.fillMaxSize()) {
                 BoxWithConstraints(Modifier.fillMaxWidth().height(HERO_LARGE + 24.dp)) {
@@ -425,8 +531,10 @@ private fun MoreFromAzHeroCarousel(
                                     if (index == activeIndex) {
                                         apps[index].primaryUrl?.let { openUrl(uriHandler, it) }
                                     } else {
-                                        // Tapping a non-center card would ideally scroll it to center; the
-                                        // snapping-fling behavior will pull it in on the next drag.
+                                        // Tapping a card off-centre brings it to the centre. It was
+                                        // already the obvious meaning of the tap; it just used to do
+                                        // nothing and wait for a drag.
+                                        carouselScope.launch { listState.animateScrollToItem(index) }
                                     }
                                 },
                             )
