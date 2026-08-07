@@ -79,6 +79,10 @@ internal fun RailContent(
     focusColor: androidx.compose.ui.graphics.Color? = null,
     /** The rail's secondary-highlight colour; the item's own [AzNavItem.secondaryColor] wins over it. */
     secondaryColor: androidx.compose.ui.graphics.Color? = null,
+    /** Whether this item currently wears the **tertiary** highlight (app-driven, below secondary). */
+    isTertiaryActive: Boolean = false,
+    /** The rail's tertiary-highlight colour; the item's own [AzNavItem.tertiaryColor] wins over it. */
+    tertiaryColor: androidx.compose.ui.graphics.Color? = null,
     rotationDegrees: Float = 0f,
     /** Reports a slider item's new value. Null for every rail that declares no slider. */
     onSliderChange: ((String, Float) -> Unit)? = null,
@@ -225,6 +229,8 @@ internal fun RailContent(
             .takeOrElse { resolvedActive }
         val resolvedSecondary = (item.secondaryColor ?: secondaryColor ?: Color.Unspecified)
             .takeOrElse { railAccent }
+        val resolvedTertiary = (item.tertiaryColor ?: tertiaryColor ?: Color.Unspecified)
+            .takeOrElse { railAccent }
         AzNavRailButton(
             onClick = finalOnClick,
             text = textToShow,
@@ -233,8 +239,10 @@ internal fun RailContent(
             activeColor = resolvedActive,
             isFocused = isFocused,
             isSecondaryActive = isSecondaryActive || item.isSecondaryActive,
+            isTertiaryActive = isTertiaryActive || item.isTertiaryActive,
             focusColor = resolvedFocus,
             secondaryColor = resolvedSecondary,
+            tertiaryColor = resolvedTertiary,
             textColor = if (alertProgress > 0f && alertColor != null) morphedColor else item.textColor,
             fillColor = item.fillColor,
             size = buttonSize,

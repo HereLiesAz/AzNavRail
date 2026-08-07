@@ -19,4 +19,9 @@ data class AzItemState(
      * never sets on its own. See [AzHighlight].
      */
     val secondary: Boolean? = null,
+    /**
+     * Whether the item's **tertiary** highlight is lit — the fourth highlight, the one the library
+     * never sets on its own. See [AzHighlight].
+     */
+    val tertiary: Boolean? = null,
 )

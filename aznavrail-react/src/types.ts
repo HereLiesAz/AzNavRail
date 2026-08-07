@@ -179,6 +179,11 @@ export interface AzNavRailSettings {
    * for state only the app knows (syncing, armed, locked). Unset falls back to the rail accent.
    */
   secondaryColor?: string;
+  /**
+   * Colour of the **tertiary** highlight — the fourth one, a second app-driven channel. Works
+   * exactly like secondary but at a lower priority. Unset falls back to the rail accent.
+   */
+  tertiaryColor?: string;
   /** When true, haptic feedback is triggered on drag start and long-press. */
   vibrate?: boolean;
   /** Shape of the header icon container. */
@@ -228,6 +233,8 @@ export interface AzNavRailSettings {
   activeClassifiers?: Set<string>;
   /** The same mechanism for the **secondary** highlight: matching items wear it. */
   secondaryClassifiers?: Set<string>;
+  /** The same mechanism for the **tertiary** highlight: matching items wear it. */
+  tertiaryClassifiers?: Set<string>;
   /** Called with an item id and its on-screen bounds after each layout pass. */
   onItemGloballyPositioned?: (id: string, bounds: any) => void;
   /** Map of item id → help text shown in the info overlay (alternative to per-item `info` prop). */
@@ -412,6 +419,10 @@ export interface AzNavItem {
    * to drive, for state only the app knows.
    */
   secondary?: boolean;
+  /** Colour of this item's **tertiary** highlight. Unset takes the rail's `tertiaryColor`. */
+  tertiaryColor?: string;
+  /** Whether this item's **tertiary** highlight is lit. A second app-driven channel. */
+  tertiary?: boolean;
   /**
    * Custom content rendered inside the button instead of text. A React node (e.g. an `<Image>`
    * or a `react-native-svg` `<Svg>`) or an image source (`require()` id / `{ uri }`). Graphics
@@ -490,6 +501,10 @@ export interface AzNavItemProps {
    * to drive, for state only the app knows (syncing, armed, locked).
    */
   secondary?: boolean;
+  /** Colour of this item's **tertiary** highlight. Unset takes the rail's `tertiaryColor`. */
+  tertiaryColor?: string;
+  /** Whether this item's **tertiary** highlight is lit. A second app-driven channel. */
+  tertiary?: boolean;
 }
 
 /** Props for toggle-type DSL items (`AzRailToggle`, `AzMenuToggle`). */

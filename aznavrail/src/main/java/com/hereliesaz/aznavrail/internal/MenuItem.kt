@@ -78,10 +78,14 @@ internal fun MenuItem(
     activeColor: androidx.compose.ui.graphics.Color? = null,
     /** Whether this row wears the **secondary** highlight — see [com.hereliesaz.aznavrail.model.AzHighlight]. */
     isSecondaryActive: Boolean = false,
+    /** Whether this row wears the **tertiary** highlight — see [com.hereliesaz.aznavrail.model.AzHighlight]. */
+    isTertiaryActive: Boolean = false,
     /** The rail's focus-highlight colour; the item's own wins over it. Null reuses the active colour. */
     focusColor: androidx.compose.ui.graphics.Color? = null,
     /** The rail's secondary-highlight colour; the item's own wins over it. */
     secondaryColor: androidx.compose.ui.graphics.Color? = null,
+    /** The rail's tertiary-highlight colour; the item's own wins over it. */
+    tertiaryColor: androidx.compose.ui.graphics.Color? = null,
     kineticModifier: Modifier = Modifier,
     textStyle: TextStyle? = null,
     dockingSide: AzDockingSide = AzDockingSide.LEFT,
@@ -189,14 +193,21 @@ internal fun MenuItem(
         (item.focusColor ?: focusColor ?: Color.Unspecified).takeOrElse { effectiveActiveColor }
     val effectiveSecondaryColor =
         (item.secondaryColor ?: secondaryColor ?: Color.Unspecified).takeOrElse { railAccent }
+    val effectiveTertiaryColor =
+        (item.tertiaryColor ?: tertiaryColor ?: Color.Unspecified).takeOrElse { railAccent }
     val secondaryLit = isSecondaryActive || item.isSecondaryActive
+    val tertiaryLit = isTertiaryActive || item.isTertiaryActive
     val effectiveDefaultColor =
         (item.textColor ?: item.color ?: Color.Unspecified).takeOrElse { railAccent }
 
     // A menu row is type, not a button, so an alerted item can't become a triangle here — it takes
     // the same warning yellow instead, so the drawer and the rail agree about which item is flagged.
     val alertColor = item.alert?.color()
-    val litInk = if (secondaryLit && !isSelected) effectiveSecondaryColor else effectiveDefaultColor
+    val litInk = when {
+        secondaryLit && !isSelected -> effectiveSecondaryColor
+        tertiaryLit && !isSelected -> effectiveTertiaryColor
+        else -> effectiveDefaultColor
+    }
     val textColor = if (isDisabled) {
         (alertColor ?: litInk).copy(alpha = 0.5f)
     } else {
@@ -204,15 +215,19 @@ internal fun MenuItem(
     }
 
     val highlightColor = when {
-        isPressed -> effectiveFocusColor
         isSelected -> effectiveActiveColor
         secondaryLit -> effectiveSecondaryColor
+        tertiaryLit -> effectiveTertiaryColor
         else -> effectiveActiveColor
     }
-    val backgroundColor = if ((isSelected || secondaryLit) && !isPressed) {
-        (item.fillColor ?: highlightColor).copy(alpha = 0.12f)
-    } else {
-        androidx.compose.ui.graphics.Color.Transparent
+    val backgroundColor = when {
+        isPressed && (isSelected || secondaryLit || tertiaryLit) ->
+            (item.fillColor ?: effectiveFocusColor).copy(alpha = 0.18f)
+        isSelected || secondaryLit || tertiaryLit ->
+            (item.fillColor ?: highlightColor).copy(alpha = 0.12f)
+        isPressed ->
+            (item.fillColor ?: effectiveFocusColor).copy(alpha = 0.08f)
+        else -> androidx.compose.ui.graphics.Color.Transparent
     }
 
     Box(

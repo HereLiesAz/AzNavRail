@@ -159,12 +159,13 @@ function classifierHit(
 }
 
 /**
- * The colour a rail item is drawn in, resolving the three highlights.
+ * The colour a rail item is drawn in, resolving the four highlights.
  *
- * They answer three different questions — **active** ("where am I?"), **focus** ("what am I
- * touching?") and **secondary** ("whatever the app decides") — and they outrank each other in that
- * order reversed: a press is the most immediate thing happening, so focus wins for as long as it
- * lasts, then active, then secondary. An item with none of them lit wears its own `color`.
+ * They answer four different questions — **active** ("where am I?"), **focus** ("what am I
+ * touching?"), **secondary** ("whatever the app decides") and **tertiary** (a second app-driven
+ * channel) — and they outrank each other in that order reversed: a press is the most immediate
+ * thing happening, so focus wins for as long as it lasts, then active, then secondary, then
+ * tertiary. An item with none of them lit wears its own `color`.
  */
 export function resolveHighlight(
   item: AzNavItem,
@@ -173,25 +174,27 @@ export function resolveHighlight(
   lastTappedId?: string | null
 ): string | undefined {
   const activeColor = (item as any).activeColor ?? cfg.activeColor;
-  const focusColor = (item as any).focusColor ?? cfg.focusColor ?? activeColor;
   const secondaryColor =
     (item as any).secondaryColor ?? cfg.secondaryColor ?? activeColor;
+  const tertiaryColor =
+    (item as any).tertiaryColor ?? cfg.tertiaryColor ?? activeColor;
 
   const isActive =
     !!item.isChecked ||
     item.id === currentDestination ||
     (!!item.route && item.route === currentDestination) ||
-    classifierHit(item.classifiers, cfg.activeClassifiers);
-  // Focus is only meaningful for an item with no route of its own — a toggle, a cycler, an action.
-  // A routed item's highlight belongs to the destination, not to the tap.
-  const isFocused = !item.route && !!lastTappedId && lastTappedId === item.id;
+    classifierHit(item.classifiers, cfg.activeClassifiers) ||
+    (!item.route && !!lastTappedId && lastTappedId === item.id);
   const isSecondary =
     !!(item as any).secondary ||
     classifierHit(item.classifiers, cfg.secondaryClassifiers);
+  const isTertiary =
+    !!(item as any).tertiary ||
+    classifierHit(item.classifiers, cfg.tertiaryClassifiers);
 
-  if (isFocused && focusColor) return focusColor;
   if (isActive && activeColor) return activeColor;
   if (isSecondary && secondaryColor) return secondaryColor;
+  if (isTertiary && tertiaryColor) return tertiaryColor;
   return item.color;
 }
 
@@ -214,6 +217,15 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     infoScreen = false,
     onDismissInfoScreen,
     activeColor,
+    // The three highlights' colours and classifier sets. Left undestructured here, these silently
+    // never reached `resolveHighlight` — every item rendered with only the ACTIVE highlight ever
+    // able to fire, however a developer configured the rail.
+    focusColor,
+    secondaryColor,
+    tertiaryColor,
+    activeClassifiers,
+    secondaryClassifiers,
+    tertiaryClassifiers,
     headerIconShape = AzHeaderIconShape.CIRCLE,
     translucentBackground,
     vibrate = false,
@@ -264,6 +276,14 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     headerIconSize: dslOverrides.headerIconSize ?? headerIconSize,
     infoScreen: dslOverrides.infoScreen ?? infoScreen,
     activeColor: dslOverrides.activeColor ?? activeColor,
+    focusColor: dslOverrides.focusColor ?? focusColor,
+    secondaryColor: dslOverrides.secondaryColor ?? secondaryColor,
+    tertiaryColor: dslOverrides.tertiaryColor ?? tertiaryColor,
+    activeClassifiers: dslOverrides.activeClassifiers ?? activeClassifiers,
+    secondaryClassifiers:
+      dslOverrides.secondaryClassifiers ?? secondaryClassifiers,
+    tertiaryClassifiers:
+      dslOverrides.tertiaryClassifiers ?? tertiaryClassifiers,
     headerIconShape: dslOverrides.headerIconShape ?? headerIconShape,
     translucentBackground:
       dslOverrides.translucentBackground ?? translucentBackground,

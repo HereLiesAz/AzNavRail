@@ -1160,8 +1160,11 @@ private fun MenuItemNode(
         },
         isSecondaryActive = item.isSecondaryActive ||
                 item.classifiers.any { scope.secondaryClassifiers.contains(it) },
+        isTertiaryActive = item.isTertiaryActive ||
+                item.classifiers.any { scope.tertiaryClassifiers.contains(it) },
         focusColor = scope.focusColor,
         secondaryColor = scope.secondaryColor,
+        tertiaryColor = scope.tertiaryColor,
         onClick = {
             scope.lastTouchedItemId = item.id
             haptics.commit()
