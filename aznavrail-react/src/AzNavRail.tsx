@@ -35,10 +35,7 @@ import { AzEasing } from './types';
 import { AzNavRailDefaults, AzMotion } from './AzNavRailDefaults';
 import { AzButton } from './components/AzButton';
 import { AzFooterLabel } from './components/AzFooterLabel';
-import {
-  AzAboutSurface,
-  useAzAboutOwnership,
-} from './services/aboutPresence';
+import { AzAboutSurface, useAzAboutOwnership } from './services/aboutPresence';
 import { useAzAboutWarmup } from './services/aboutPrefetch';
 import { AzToggle } from './components/AzToggle';
 import { AzCycler } from './components/AzCycler';
@@ -88,6 +85,15 @@ interface AzNavRailProps extends AzNavRailSettings {
   initiallyExpanded?: boolean;
   /** Disables the swipe gesture that expands the rail when the user swipes from the edge. */
   disableSwipeToOpen?: boolean;
+  /**
+   * Controls the rail's expanded/collapsed state directly, mirroring `AzDropdownMenu`'s
+   * controlled/uncontrolled `expanded` pattern. When set (including `false`), the rail is fully
+   * controlled by the caller — every internal toggle path (header tap, swipe, outside-tap
+   * dismiss, an item's `collapseOnClick`, etc.) still calls `onExpandedChange` so the caller can
+   * react, but this component's own state no longer drives what's rendered. Omit (default) for
+   * today's uncontrolled behavior, seeded once by `initiallyExpanded`.
+   */
+  expanded?: boolean;
   /** Called whenever the rail transitions between collapsed and expanded states. */
   onExpandedChange?: (expanded: boolean) => void;
   /** Called whenever any rail item is interacted with. Receives the action name, an optional detail string, and the interacted item (if applicable). */
@@ -154,7 +160,9 @@ function classifierHit(
 ): boolean {
   if (!classifiers || !set) return false;
   const haystack = Array.isArray(set) ? new Set(set) : set;
-  const list = Array.isArray(classifiers) ? classifiers : Array.from(classifiers);
+  const list = Array.isArray(classifiers)
+    ? classifiers
+    : Array.from(classifiers);
   return list.some((c) => haystack.has(c));
 }
 
@@ -204,6 +212,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     navController: _navController,
     currentDestination,
     initiallyExpanded = false,
+    expanded: controlledExpanded,
     displayAppNameInHeader = true,
     expandedRailWidth = AzNavRailDefaults.ExpandedRailWidth,
     collapsedRailWidth = AzNavRailDefaults.CollapsedRailWidth,
@@ -300,8 +309,22 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     dedupeAbout: dslOverrides.dedupeAbout ?? dedupeAbout,
   };
 
-  const [isExpanded, setIsExpanded] = useState(
+  // Controlled/uncontrolled `expanded`, mirroring `AzDropdownMenu`'s `expanded ?? internalOpen`
+  // pattern: `controlledExpanded === undefined` is the (default) uncontrolled path — identical to
+  // today's behavior — and any other value hands the rail's rendered state to the caller, while
+  // every internal toggle path still notifies via `onExpandedChange` so a controlling caller can
+  // react.
+  const [internalExpanded, setInternalExpanded] = useState(
     initiallyExpanded && !config.noMenu
+  );
+  const isExpanded =
+    controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
+  const setIsExpanded = useCallback(
+    (value: boolean) => {
+      if (controlledExpanded === undefined) setInternalExpanded(value);
+      onExpandedChange?.(value);
+    },
+    [controlledExpanded, onExpandedChange]
   );
   const [showAbout, setShowAbout] = useState(false);
   const [showMoreFromAz, setShowMoreFromAz] = useState(false);
@@ -372,6 +395,25 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     return map;
   }, [items]);
 
+  // id -> item lookup, used to find a sub-item's host (e.g. to tell whether a tapped child belongs
+  // to a nested-rail popup rather than an inline host expansion).
+  const itemById = useMemo(() => {
+    const map: Record<string, AzNavItem> = {};
+    items.forEach((item) => {
+      map[item.id] = item;
+    });
+    return map;
+  }, [items]);
+
+  // Feature 1 (reflectSelectionInParent): which child is currently "the selection" for a
+  // nested-rail host, keyed by host id. Owned by the rail itself so it survives DSL re-declaration
+  // the same way `hostStates`/cycler state does — the DSL re-runs registration on every render, but
+  // this state lives above that and is never cleared by it.
+  const [selectedChildByHost, setSelectedChildByHost] = useState<
+    Record<string, string>
+  >({});
+  const selectedChildSeenRef = useRef<Record<string, boolean>>({});
+
   const railWidthAnim = useRef(
     new Animated.Value(
       initiallyExpanded ? expandedRailWidth : collapsedRailWidth
@@ -431,7 +473,26 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   const applyAutoExpansions = useCallback(() => {
     const updates: Record<string, boolean> = {};
     let changed = false;
+    // Feature 4.3: nested rails reuse the identical rising/falling-edge machinery, but drive the
+    // single `nestedRailVisible` id rather than a per-host boolean map, so at most one transition
+    // is applied per pass (the same "user wins" contract still holds per-item via
+    // `expandWhenSeenRef`, which is keyed by item id and shared with the host loop below — ids are
+    // unique across all items, so hosts and nested rails never collide in it).
+    let nestedRailAction: { open: boolean; id: string } | null = null;
     itemsRef.current.forEach((item) => {
+      if (item.isNestedRail) {
+        if (typeof item.expandWhen === 'function') {
+          const now = !!item.expandWhen();
+          const before = expandWhenSeenRef.current[item.id];
+          if (before === undefined) {
+            if (now) nestedRailAction = { open: true, id: item.id };
+          } else if (before !== now) {
+            nestedRailAction = { open: now, id: item.id };
+          }
+          expandWhenSeenRef.current[item.id] = now;
+        }
+        return;
+      }
       if (!item.isHost) return;
       // Per-host initiallyExpanded: rising-edge auto-expand, once.
       if (
@@ -458,16 +519,25 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
         expandWhenSeenRef.current[item.id] = now;
       }
     });
-    if (!changed) return;
-    setHostStates((prev) => {
-      let differs = false;
-      for (const k in updates)
-        if (prev[k] !== updates[k]) {
-          differs = true;
-          break;
-        }
-      return differs ? { ...prev, ...updates } : prev;
-    });
+    if (changed) {
+      setHostStates((prev) => {
+        let differs = false;
+        for (const k in updates)
+          if (prev[k] !== updates[k]) {
+            differs = true;
+            break;
+          }
+        return differs ? { ...prev, ...updates } : prev;
+      });
+    }
+    if (nestedRailAction) {
+      const action = nestedRailAction as { open: boolean; id: string };
+      if (action.open) {
+        setNestedRailVisible(action.id);
+      } else {
+        setNestedRailVisible((prev) => (prev === action.id ? null : prev));
+      }
+    }
   }, []);
 
   // After every render: React-state/prop-driven conditions are caught here immediately.
@@ -479,6 +549,28 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     const t = setInterval(applyAutoExpansions, 300);
     return () => clearInterval(t);
   }, [applyAutoExpansions]);
+
+  // Feature 1 (reflectSelectionInParent): seed `selectedChildByHost` from a developer-supplied
+  // `item.selectedChildId` on first appearance only — the same rising-edge-once semantics as
+  // `initiallyExpanded`, so a later DSL re-render with a different `selectedChildId` doesn't fight
+  // a user's own subsequent tap.
+  useEffect(() => {
+    items.forEach((item) => {
+      if (
+        item.isNestedRail &&
+        item.reflectSelectionInParent &&
+        item.selectedChildId
+      ) {
+        if (selectedChildSeenRef.current[item.id] !== true) {
+          selectedChildSeenRef.current[item.id] = true;
+          const seedId = item.selectedChildId;
+          setSelectedChildByHost((prev) =>
+            prev[item.id] ? prev : { ...prev, [item.id]: seedId }
+          );
+        }
+      }
+    });
+  }, [items]);
 
   // Status-driven guidance runs in its own isolated <AzGuidanceLayer> (rendered below) so its engine
   // state never re-renders this host — keeping the rail's item-registry effect timing untouched.
@@ -563,9 +655,14 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     }).start();
   }, [isExpanded, config.expandedRailWidth, config.collapsedRailWidth]);
 
+  // Every subsequent change to `isExpanded` is now notified directly from `setIsExpanded` at each
+  // toggle site (required so a CONTROLLED caller is notified even when the derived `isExpanded`
+  // doesn't itself change until the caller reacts). This mount-only effect preserves the original
+  // uncontrolled behavior of also notifying once with the initial value.
   useEffect(() => {
     onExpandedChange?.(isExpanded);
-  }, [isExpanded, onExpandedChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     items.forEach((item) => {
@@ -837,6 +934,27 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   // no route of their own.
   const [lastTappedId, setLastTappedId] = useState<string | null>(null);
 
+  /**
+   * Known pre-existing gap fixed as part of Feature 1: neither the popup nor a tapped child ever
+   * closed the popup on its own — only a backdrop tap did. Called whenever a non-host child of a
+   * nested rail is tapped (from any of `renderRailItem`'s item-kind branches): records the tap as
+   * that host's `selectedChildId` when `reflectSelectionInParent` is on, then closes the popup
+   * unless the host opted into `keepNestedRailOpen`.
+   */
+  const recordNestedRailSelection = useCallback(
+    (host: AzNavItem, child: AzNavItem) => {
+      if (host.reflectSelectionInParent && !child.isHost) {
+        setSelectedChildByHost((prev) =>
+          prev[host.id] === child.id ? prev : { ...prev, [host.id]: child.id }
+        );
+      }
+      if (!host.keepNestedRailOpen) {
+        setNestedRailVisible(null);
+      }
+    },
+    []
+  );
+
   const railAccent = useMemo(
     () => resolveRailAccent(config.activeColor, items),
     [config.activeColor, items]
@@ -893,6 +1011,11 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     const isExpandedHost = hostStates[item.id] || false;
     const subItems = subItemsMap[item.id] || [];
     const isRect = item.shape === AzButtonShape.RECTANGLE;
+    // Feature 1: this item's host, when it is a non-host child of a nested rail (i.e. rendered
+    // either as a top-level item's own popup content, or — since `renderRailItem` is reused
+    // verbatim inside `AzNestedRailPopup`'s `renderItem` — as the popup's own child rows).
+    const hostItem = item.hostId ? itemById[item.hostId] : undefined;
+    const isNestedRailChild = !!(hostItem && hostItem.isNestedRail);
     const commonProps = {
       // A rail item's declared id is its identity everywhere else in this library, so it is its
       // identity on screen too: consumers (and these tests) can address any item by the id they
@@ -900,7 +1023,12 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       testID: item.id,
       // The three highlights, in the order they outrank each other. Focus is about the gesture
       // happening right now; active is about where the user is; secondary is whatever the app says.
-      color: resolveHighlight(item, overrideConfig, currentDestination, lastTappedId),
+      color: resolveHighlight(
+        item,
+        overrideConfig,
+        currentDestination,
+        lastTappedId
+      ),
       shape: item.shape || overrideConfig.defaultShape,
       enabled: !item.disabled,
       style: {
@@ -953,6 +1081,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
           <AzButton
             {...commonProps}
             fillColor={item.fillColor}
+            translucentBackgroundColor={item.translucentBackgroundColor}
             text={item.text}
             content={item.content}
             hasCustomContent={!!item.content}
@@ -984,12 +1113,15 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
           key={item.id}
           {...commonProps}
           fillColor={item.fillColor}
+          translucentBackgroundColor={item.translucentBackgroundColor}
           options={item.options || []}
           selectedOption={item.selectedOption || ''}
           onCycle={() => {
             if (item.onClick) item.onClick();
             setLastTappedId(item.id);
             logInteraction('Cycler cycled', item.text, item);
+            if (isNestedRailChild && hostItem)
+              recordNestedRailSelection(hostItem, item);
           }}
         />
       );
@@ -1000,6 +1132,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
           key={item.id}
           {...commonProps}
           fillColor={item.fillColor}
+          translucentBackgroundColor={item.translucentBackgroundColor}
           isChecked={item.isChecked || false}
           toggleOnText={item.toggleOnText}
           toggleOffText={item.toggleOffText}
@@ -1007,10 +1140,47 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
             if (item.onClick) item.onClick();
             setLastTappedId(item.id);
             logInteraction('Toggle toggled', item.text, item);
+            if (isNestedRailChild && hostItem)
+              recordNestedRailSelection(hostItem, item);
           }}
         />
       );
     }
+
+    // Feature 1: when this nested-rail host has `reflectSelectionInParent`, its button mirrors the
+    // currently selected child's text/content, a tap invokes that child directly (the popup does
+    // NOT open), and a long-press opens the popup instead — the shape/color/fillColor above are
+    // still resolved from the HOST item's own `commonProps`/`fillColor`, unaffected.
+    const reflectSelection = !!(
+      item.isNestedRail && item.reflectSelectionInParent
+    );
+    const nestedRailNonHostChildren = reflectSelection
+      ? subItems.filter((sub) => !sub.isHost)
+      : [];
+    const selectedChildIdForHost = selectedChildByHost[item.id];
+    const selectedChild = reflectSelection
+      ? (selectedChildIdForHost &&
+          nestedRailNonHostChildren.find(
+            (c) => c.id === selectedChildIdForHost
+          )) ||
+        nestedRailNonHostChildren[0]
+      : undefined;
+
+    const openNestedRailPopup = () => {
+      setNestedRailVisible(item.id);
+      // Use actual bounds if available
+      const bounds = itemBounds[item.id];
+      if (bounds) {
+        setAnchorPosition(bounds);
+      } else {
+        setAnchorPosition({
+          x: 0,
+          y: _index * 60 + headerHeight,
+          width: config.collapsedRailWidth,
+          height: 48,
+        });
+      }
+    };
 
     return (
       <View
@@ -1024,37 +1194,61 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
         <AzButton
           {...commonProps}
           fillColor={item.fillColor}
-          text={item.text}
-          content={item.content}
-          hasCustomContent={!!item.content}
+          translucentBackgroundColor={item.translucentBackgroundColor}
+          text={
+            reflectSelection && selectedChild ? selectedChild.text : item.text
+          }
+          content={
+            reflectSelection && selectedChild
+              ? (selectedChild.content ?? item.content)
+              : item.content
+          }
+          hasCustomContent={
+            !!(reflectSelection && selectedChild
+              ? (selectedChild.content ?? item.content)
+              : item.content)
+          }
           onClick={() => {
-            setLastTappedId(item.id);
-            logInteraction('Item clicked', item.text, item);
-            // Reaching for any other rail item is the user leaving the About reader; only the
-            // About item itself toggles it.
-            if (item.isAboutItem) {
-              toggleAbout();
-            } else {
-              dismissFooterScreens();
-            }
-            if (item.isNestedRail) {
-              setNestedRailVisible(item.id);
-              // Use actual bounds if available
-              const bounds = itemBounds[item.id];
-              if (bounds) {
-                setAnchorPosition(bounds);
-              } else {
-                setAnchorPosition({
-                  x: 0,
-                  y: _index * 60 + headerHeight,
-                  width: config.collapsedRailWidth,
-                  height: 48,
-                });
+            if (reflectSelection) {
+              // Invoke the selected child's action directly, exactly as if the user had tapped
+              // it inside the (closed) popup — the popup itself must NOT open.
+              if (selectedChild) {
+                setLastTappedId(selectedChild.id);
+                logInteraction(
+                  'Item clicked',
+                  selectedChild.text,
+                  selectedChild
+                );
+                dismissFooterScreens();
+                if (selectedChild.onClick) selectedChild.onClick();
+                if (selectedChild.collapseOnClick && !config.noMenu)
+                  setIsExpanded(false);
               }
+            } else {
+              setLastTappedId(item.id);
+              logInteraction('Item clicked', item.text, item);
+              // Reaching for any other rail item is the user leaving the About reader; only the
+              // About item itself toggles it.
+              if (item.isAboutItem) {
+                toggleAbout();
+              } else {
+                dismissFooterScreens();
+              }
+              if (item.isNestedRail) {
+                openNestedRailPopup();
+              }
+              if (item.onClick) item.onClick();
+              if (item.collapseOnClick && !config.noMenu) setIsExpanded(false);
             }
-            if (item.onClick) item.onClick();
-            if (item.collapseOnClick && !config.noMenu) setIsExpanded(false);
+            // Known pre-existing gap fixed by Feature 1: tapping a child inside an open nested
+            // rail's popup now closes the popup (unless the host set `keepNestedRailOpen`), and
+            // records the selection when the host reflects it. Never fires for the host's own
+            // tap above (`item.hostId` is unset for the host itself).
+            if (isNestedRailChild && hostItem) {
+              recordNestedRailSelection(hostItem, item);
+            }
           }}
+          onLongPress={reflectSelection ? openNestedRailPopup : undefined}
         />
       </View>
     );
@@ -1215,7 +1409,11 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
             />
           )}
           {!!config.appRepositoryUrl && footerOwnsAbout && (
-            <AzFooterLabel text="About" color={footerColor} onPress={handleAbout} />
+            <AzFooterLabel
+              text="About"
+              color={footerColor}
+              onPress={handleAbout}
+            />
           )}
           <AzFooterLabel
             text="Feedback"

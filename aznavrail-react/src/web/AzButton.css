@@ -4,11 +4,13 @@
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  border-style: solid;
-  border-width: 2px;
+  border: none;
   background-color: transparent;
   padding: 0;
-  overflow: hidden;
+  /* No `overflow: hidden` here: the stroke is an `outline` (see AzButton.jsx), and outline painted
+     outside an element that also clips its own overflow is inconsistently handled cross-browser —
+     clipping instead lives on `.az-button-fill` below, which has no reason to paint outside its own
+     rounded box in the first place. */
   transition: opacity 0.2s;
 }
 
@@ -64,7 +66,19 @@
   height: 48px;
 }
 
+/* Feature 2: covers the button's full box (edge-to-edge, including its padding), independent of
+   the outline drawn on `.az-button` itself — so the fill never overlaps the stroke and never
+   shrinks away from the padded shapes' edges the way it would if it lived on a padding-respecting
+   flow child instead. */
+.az-button-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
 .az-button-content {
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;

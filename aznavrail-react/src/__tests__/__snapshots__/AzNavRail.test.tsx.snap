@@ -781,7 +781,11 @@ exports[`AzNavRail renders correctly with rail items 1`] = `
                     },
                     {
                       "backgroundColor": "rgba(0, 0, 0, 0.25)",
-                      "borderRadius": 36,
+                      "borderRadius": 33,
+                      "bottom": 3,
+                      "left": 3,
+                      "right": 3,
+                      "top": 3,
                       "zIndex": -1,
                     },
                   ]

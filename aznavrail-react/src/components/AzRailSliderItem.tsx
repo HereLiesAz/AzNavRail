@@ -50,6 +50,7 @@ export const AzRailSliderItem: React.FC<AzRailSliderItemProps> = ({
         color={color}
         textColor={item.textColor}
         fillColor={item.fillColor}
+        translucentBackgroundColor={item.translucentBackgroundColor}
         shape={item.shape}
         size={buttonSize}
         enabled={enabled}

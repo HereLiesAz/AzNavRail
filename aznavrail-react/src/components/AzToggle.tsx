@@ -17,6 +17,8 @@ export interface AzToggleProps {
   color?: string;
   /** Background fill color inside the button shape. */
   fillColor?: string;
+  /** Exact translucent fill color (alpha included), overriding `fillColor` and the default fill. */
+  translucentBackgroundColor?: string;
   /** Button shape. */
   shape?: AzButtonShape;
   /** Optional style merged into the container. */
@@ -41,6 +43,7 @@ export const AzToggle: React.FC<AzToggleProps> = ({
   toggleOffText,
   color,
   fillColor,
+  translucentBackgroundColor,
   shape,
   style,
   disabled,
@@ -55,6 +58,7 @@ export const AzToggle: React.FC<AzToggleProps> = ({
       onClick={onToggle}
       color={color}
       fillColor={fillColor}
+      translucentBackgroundColor={translucentBackgroundColor}
       shape={shape}
       style={style}
       enabled={!disabled}
