@@ -135,6 +135,16 @@ fun AzNavRail(
     initiallyExpanded: Boolean = false,
     disableSwipeToOpen: Boolean = false,
     onExpandedChange: ((Boolean) -> Unit)? = null,
+    /**
+     * Optional controlled open-state for the rail's menu drawer. When null (the default) the rail
+     * manages its own state, seeded by [initiallyExpanded] — today's exact behaviour. When non-null,
+     * the caller owns whether the drawer is open; every internal path that would otherwise toggle it
+     * (app-icon tap, swipe, outside-tap-to-dismiss, item `collapseOnClick`, undock, etc.) still calls
+     * [onExpandedChange] so a controlling caller can react, but the drawer's actual open/closed state
+     * always reflects this value on the next recomposition. Mirrors [AzDropdownMenu]'s `expanded`
+     * parameter.
+     */
+    expanded: Boolean? = null,
     providedScope: AzNavRailScopeImpl? = null,
     orientation: AzOrientation = AzOrientation.Vertical,
     visualDockingSide: AzDockingSide = AzDockingSide.LEFT,
@@ -197,7 +207,16 @@ fun AzNavRail(
     // and the drawer both have to skip them.
     val unattachedIds = remember(scope.navItems.toList()) { azUnattachedSubtreeIds(scope.navItems) }
 
-    var isExpanded by remember { mutableStateOf(if (scope.noMenu) false else initiallyExpanded) }
+    var internalExpanded by remember { mutableStateOf(if (scope.noMenu) false else initiallyExpanded) }
+    // Controlled/uncontrolled pattern mirroring `AzDropdownMenu`'s `expanded ?: internalOpen`: when
+    // the caller passes a non-null `expanded`, it always wins on every recomposition; `setIsExpanded`
+    // is the single path every internal gesture below routes through, so it only ever mutates the
+    // internal fallback while the rail is uncontrolled — a controlled rail's actual state can only
+    // change by the caller changing `expanded`. `onExpandedChange` fires either way, via the
+    // `LaunchedEffect(isExpanded)` below, since that observes the resulting value regardless of who
+    // changed it.
+    val isExpanded = expanded ?: internalExpanded
+    val setIsExpanded: (Boolean) -> Unit = { value -> if (expanded == null) internalExpanded = value }
     var isFloating by remember { mutableStateOf(false) }
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
@@ -327,9 +346,27 @@ fun AzNavRail(
                     flow { while (true) { emit(cond()); delay(300) } },
                 ).distinctUntilChanged().collect { conditionNow ->
                     val before = expandWhenSeen[id]
+                    // `expandWhen` is shared, rising/falling-edge machinery for two different kinds
+                    // of "open": a host item's inline sub-items (`hostStates`) and a nested rail's
+                    // popup (`scope.nestedRailOpenId`, the single source of truth for which nested
+                    // rail is open). Which one this `id` drives depends on what kind of item declared
+                    // the `expandWhen` — a nested rail's own id, or an ordinary host's.
+                    val isNestedRailTarget = scope.navItems.any { it.id == id && it.isNestedRail }
                     if (before == null) {
-                        if (conditionNow) hostStates[id] = true
-                    } else if (before != conditionNow) hostStates[id] = conditionNow
+                        if (conditionNow) {
+                            if (isNestedRailTarget) scope.nestedRailOpenId = id else hostStates[id] = true
+                        }
+                    } else if (before != conditionNow) {
+                        if (isNestedRailTarget) {
+                            if (conditionNow) {
+                                scope.nestedRailOpenId = id
+                            } else if (scope.nestedRailOpenId == id) {
+                                scope.nestedRailOpenId = null
+                            }
+                        } else {
+                            hostStates[id] = conditionNow
+                        }
+                    }
                     expandWhenSeen[id] = conditionNow
                 }
             }
@@ -406,7 +443,7 @@ fun AzNavRail(
             } else if (scope.noMenu) {
                 scope.isFoldedUp = !scope.isFoldedUp
             } else {
-                isExpanded = !isExpanded
+                setIsExpanded(!isExpanded)
             }
             if (scope.vibrate) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         }
@@ -477,7 +514,7 @@ fun AzNavRail(
                     .matchParentSize()
                     .then(scrimPadding)
                     .background(scrimColor)
-                    .pointerInput(Unit) { detectTapGestures(onTap = { isExpanded = false }) })
+                    .pointerInput(Unit) { detectTapGestures(onTap = { setIsExpanded(false) }) })
         }
 
         Box(
@@ -522,7 +559,7 @@ fun AzNavRail(
                                     val absY = kotlin.math.abs(dragAmount.y)
                                     if (scope.advancedConfig.enableRailDragging && absY > 20 && absY > absX) {
                                         change.consume()
-                                        isFloating = true; isExpanded = false; offsetX = 0f; offsetY =
+                                        isFloating = true; setIsExpanded(false); offsetX = 0f; offsetY =
                                             screenHeightPx * 0.1f; showFloatingButtons =
                                             false; wasFloatingOpenBeforeDrag = false
                                         if (scope.vibrate) haptic.performHapticFeedback(
@@ -541,7 +578,7 @@ fun AzNavRail(
                                         }
                                         if (opening || closing) {
                                             change.consume()
-                                            isExpanded = opening
+                                            setIsExpanded(opening)
                                         }
                                     }
                                 }
@@ -595,7 +632,7 @@ fun AzNavRail(
                                     if (scope.advancedConfig.enableRailDragging) {
                                         isFloating = !isFloating
                                         if (isFloating) {
-                                            isExpanded = false; offsetY = screenHeightPx * 0.1f
+                                            setIsExpanded(false); offsetY = screenHeightPx * 0.1f
                                         } else {
                                             offsetX = 0f; offsetY = 0f
                                         }
@@ -700,7 +737,7 @@ fun AzNavRail(
                                         hostStates = hostStates,
                                         showHelpOverlay = showHelpOverlay,
                                         onToggleHelp = { toggleHelpOverlay(it) },
-                                        onCollapseMenu = { isExpanded = false },
+                                        onCollapseMenu = { setIsExpanded(false) },
                                         onDissolveTap = { itemId, text ->
                                             scope.itemBoundsCache[itemId]?.let {
                                                 // Hand it to the host: by the time this animates,
@@ -780,7 +817,7 @@ fun AzNavRail(
                                             // Reaching for any other rail item is the user leaving
                                             // the About reader; only About itself toggles it.
                                             if (item.isAboutItem) toggleAbout() else dismissFooterScreens()
-                                            if (item.collapseOnClick && !scope.noMenu) isExpanded = false
+                                            if (item.collapseOnClick && !scope.noMenu) setIsExpanded(false)
                                         },
                                         hostStates = hostStates,
                                         packRailButtons = isFloating || scope.packButtons,
@@ -822,7 +859,7 @@ fun AzNavRail(
                                             // Reaching for any other rail item is the user leaving
                                             // the About reader; only About itself toggles it.
                                             if (item.isAboutItem) toggleAbout() else dismissFooterScreens()
-                                            if (item.collapseOnClick && !scope.noMenu) isExpanded = false
+                                            if (item.collapseOnClick && !scope.noMenu) setIsExpanded(false)
                                         },
                                         hostStates = hostStates,
                                         packRailButtons = isFloating || scope.packButtons,
@@ -882,7 +919,7 @@ fun AzNavRail(
                                     appName = appName,
                                     onToggle = { toggleExpanded() },
                                     onUndock = {
-                                        isFloating = true; isExpanded = false; offsetY =
+                                        isFloating = true; setIsExpanded(false); offsetY =
                                         screenHeightPx * 0.1f; scope.advancedConfig.onUndock?.invoke()
                                     },
                                     onSecretClick = onSecretClick,
@@ -890,7 +927,7 @@ fun AzNavRail(
                                     repoUrl = effectiveRepoUrl,
                                     footerColor = scope.railAccent,
                                     onAboutClick = if (scope.advancedConfig.inAppAbout) {
-                                        { isExpanded = false; hostScope?.showAbout() }
+                                        { setIsExpanded(false); hostScope?.showAbout() }
                                     } else null,
                                     showAbout = footerOwnsAbout,
                                     visible = isExpanded,
@@ -906,7 +943,7 @@ fun AzNavRail(
                                     appName = appName,
                                     onToggle = { toggleExpanded() },
                                     onUndock = {
-                                        isFloating = true; isExpanded = false; offsetY =
+                                        isFloating = true; setIsExpanded(false); offsetY =
                                         screenHeightPx * 0.1f; scope.advancedConfig.onUndock?.invoke()
                                     },
                                     onSecretClick = onSecretClick,
@@ -914,7 +951,7 @@ fun AzNavRail(
                                     repoUrl = effectiveRepoUrl,
                                     footerColor = scope.railAccent,
                                     onAboutClick = if (scope.advancedConfig.inAppAbout) {
-                                        { isExpanded = false; hostScope?.showAbout() }
+                                        { setIsExpanded(false); hostScope?.showAbout() }
                                     } else null,
                                     showAbout = footerOwnsAbout,
                                     visible = isExpanded,

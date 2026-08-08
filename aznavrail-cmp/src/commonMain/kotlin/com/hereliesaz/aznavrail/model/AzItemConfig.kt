@@ -22,6 +22,10 @@ import androidx.compose.ui.graphics.Color
  * @param color Border/icon color override.
  * @param textColor Text color override.
  * @param fillColor Translucent fill color override.
+ * @param translucentBackgroundColor Verbatim (alpha-included) fill color override for this item's
+ *   button background — bypasses the rail's hardcoded fill-alpha computation entirely when set. Not
+ *   to be confused with the rail-level `azTheme(translucentBackground = …)`, which styles panels/
+ *   overlays, not individual buttons.
  * @param shape Button shape override; falls back to the scope's [com.hereliesaz.aznavrail.AzNavRailScopeImpl.defaultShape].
  */
 data class AzItemConfig(
@@ -39,6 +43,7 @@ data class AzItemConfig(
     val color: Color? = null,
     val textColor: Color? = null,
     val fillColor: Color? = null,
+    val translucentBackgroundColor: Color? = null,
     val shape: AzButtonShape? = null,
     /**
      * Host items only: auto-expand the first time the host appears (user can

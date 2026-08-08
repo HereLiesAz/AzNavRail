@@ -17,6 +17,12 @@ import kotlinx.parcelize.RawValue
  * @param color The color for the rail button's border and base state.
  * @param textColor The color for the text (overrides color).
  * @param fillColor The color for the shape's translucent fill.
+ * @param translucentBackgroundColor When non-null, used *verbatim* (its own alpha included) as this
+ *   item's button fill, bypassing the library's hardcoded `0.12f`/`0.25f` alpha computation over
+ *   [fillColor]. Distinct from the rail-level `azTheme(translucentBackground = …)`, which only
+ *   styles full-panel surfaces (About reader, More-from-Az, hidden-menu box) and never an
+ *   individual button; this styles one item's own button fill, alpha included. Null (the default)
+ *   is today's exact behaviour.
  * @param isToggle If `true`, this item behaves like a toggle.
  * @param isChecked The current checked state of the toggle.
  * @param toggleOnText The text to display when the toggle is on.
@@ -44,6 +50,19 @@ import kotlinx.parcelize.RawValue
  * @param isNestedRail If `true`, this item triggers a nested rail popup.
  * @param nestedRailAlignment The alignment of the nested rail.
  * @param nestedRailItems The list of items within the nested rail.
+ * @param reflectSelectionInParent When `true` on an [isNestedRail] item, the parent button's
+ *   displayed `text`/`menuText`/`content` are derived from the currently selected child (see
+ *   [selectedChildId]) instead of the parent's own declared label — only the label/content swap,
+ *   the parent's own `color`/`shape`/`fillColor` are unaffected. A tap on the parent then fires the
+ *   selected child's own action directly instead of opening the popup; a long-press opens the popup
+ *   instead. Default `false` is pixel-for-pixel today's behaviour: tap always opens the popup.
+ * @param selectedChildId The id of the currently "selected" child in this [isNestedRail] item's
+ *   [nestedRailItems], consulted only when [reflectSelectionInParent] is `true`. Only a direct,
+ *   non-host child may be selected — a host child can still be tapped to expand/collapse as normal,
+ *   it just never becomes the parent's displayed selection. Null falls back to the first non-host
+ *   child in [nestedRailItems]. Set here to choose the initial selection; the library then tracks
+ *   subsequent taps itself (survives recomposition the same way `itemOverrides` does), so a later
+ *   change to this DSL value after first appearance does not fight the user's own taps.
  * @param isHelpItem If `true`, clicking this item toggles the Help/Info overlay.
  */
 @Parcelize
@@ -93,6 +112,7 @@ data class AzNavItem(
     val isTertiaryActive: Boolean = false,
     val textColor: @RawValue Color? = null,
     val fillColor: @RawValue Color? = null,
+    val translucentBackgroundColor: @RawValue Color? = null,
     val isToggle: Boolean = false,
     val isChecked: Boolean? = null,
     val toggleOnText: String = "",
@@ -127,6 +147,8 @@ data class AzNavItem(
     val isNestedRail: Boolean = false,
     val nestedRailAlignment: AzNestedRailAlignment? = null,
     val nestedRailItems: List<AzNavItem>? = null,
+    val reflectSelectionInParent: Boolean = false,
+    val selectedChildId: String? = null,
     val isHelpItem: Boolean = false,
     /**
      * True for the rail's About affordance — the trailing `?` button. It opens the in-app About

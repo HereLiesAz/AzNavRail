@@ -1,7 +1,6 @@
 // FILE: ./aznavrail/src/main/java/com/hereliesaz/aznavrail/AzNavRailButton.kt
 package com.hereliesaz.aznavrail
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -14,6 +13,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,11 +28,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.drawOutline
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -66,7 +71,11 @@ import com.hereliesaz.aznavrail.util.text.AutoSizeText
  * @param color Base border/icon color (unselected state).
  * @param activeColor Color used when the button is pressed or selected.
  * @param textColor Overrides computed text/icon color.
- * @param fillColor Overrides the translucent fill color for the button background.
+ * @param fillColor Overrides the *hue* of the translucent fill color for the button background; its
+ *   alpha is still overridden by the rail's own computed 0.12f/0.25f selected/base split.
+ * @param backgroundColor Verbatim (alpha-included) fill color override — when non-null, used AS-IS
+ *   for the button's fill, bypassing the [fillColor]-hue-plus-computed-alpha logic entirely
+ *   regardless of selected/focused/pressed state. Backs [com.hereliesaz.aznavrail.model.AzNavItem.translucentBackgroundColor].
  * @param colors Unused Material [ButtonColors] slot (reserved for future compatibility).
  * @param shape Determines the geometric shape of the button.
  * @param enabled Whether the button can be interacted with.
@@ -93,6 +102,7 @@ internal fun AzNavRailButton(
     activeColor: Color = MaterialTheme.colorScheme.primary,
     textColor: Color? = null,
     fillColor: Color? = null,
+    backgroundColor: Color? = null,
     colors: ButtonColors? = null,
     shape: AzButtonShape = AzButtonShape.CIRCLE,
     enabled: Boolean = true,
@@ -155,8 +165,6 @@ internal fun AzNavRailButton(
         rotationZ = -rotationDegrees
     }
 
-    val clippedModifier = finalModifier.clip(buttonShape)
-
     val disabledColor = color.copy(alpha = 0.38f)
     // The three highlights, in the order they outrank each other. Focus wins over active because it
     // is about the gesture happening right now; active wins over secondary because where you are
@@ -176,7 +184,11 @@ internal fun AzNavRailButton(
     val baseFillColor = fillColor ?: computedFillColor
     val activeFillColor = fillColor ?: computedActiveFillColor
 
-    val containerColor = if ((isSelected || isFocused || isSecondaryActive || isTertiaryActive) && !isPressed) {
+    // `backgroundColor` (verbatim, alpha included) bypasses the computed 0.12f/0.25f split
+    // entirely, regardless of state — see `AzNavItem.translucentBackgroundColor`.
+    val containerColor = if (backgroundColor != null) {
+        backgroundColor
+    } else if ((isSelected || isFocused || isSecondaryActive || isTertiaryActive) && !isPressed) {
         activeFillColor.copy(alpha = 0.12f)
     } else {
         baseFillColor.copy(alpha = 0.25f)
@@ -195,58 +207,91 @@ internal fun AzNavRailButton(
         Modifier
     }
 
-    Surface(
-        shape = buttonShape,
-        color = containerColor,
-        contentColor = finalColor,
-        border = if (shape.isBorderless) null else BorderStroke(3.dp, finalColor),
-        modifier = clippedModifier
+    // The fill (Surface, clipped to buttonShape) and the outline (a separate, unclipped layer drawn
+    // on top) live in an outer Box that carries the button's real, unclipped layout bounds — click
+    // handling, semantics, and position reporting all attach here, exactly as they did on the old
+    // single clipped Surface, so hit-testing and reported bounds are unchanged.
+    //
+    // The outline is drawn OUTSIDE the fill (CSS `outline` semantics, not `border`): Compose's
+    // border()/BorderStroke always centers a stroke ON the shape's path, and clipping the same
+    // element to that path (as the old code did) threw away the outward half, so the stroke used to
+    // read as entirely inside the shape. Instead we compute the shape's outline for a size inflated
+    // by half the stroke width on every side, then stroke THAT path (centered, so it spans from the
+    // true edge out to strokeWidth beyond it) — the ring lands entirely outside the fill, touching it
+    // but never overlapping it. Compose does not clip a child's drawing to its own layout bounds
+    // unless something upstream clips it, and nothing here does, so the ring can bleed into the
+    // rail's inter-item spacing without reserving extra layout space — the button's measured
+    // footprint (and therefore rail spacing) is unchanged.
+    Box(
+        modifier = finalModifier
             .onGloballyPositioned { coordinates ->
                 onGloballyPositioned?.invoke(coordinates.boundsInWindow())
             }
             .semantics { contentDescription = text }
             .then(clickableModifier)
     ) {
-        Box(
-            // If itemContent is present (Color/Img), we force 0 padding to Fill/Crop. Otherwise, apply text padding.
-            // A triangle's usable area is its lower half, so its content is nudged down off the apex.
-            modifier = when {
-                itemContent != null -> Modifier
-                shape.baseShape == AzButtonShape.TRIANGLE -> Modifier.padding(contentPadding).padding(top = size * 0.25f)
-                else -> Modifier.padding(contentPadding)
-            },
-            contentAlignment = Alignment.Center
+        Surface(
+            shape = buttonShape,
+            color = containerColor,
+            contentColor = finalColor,
+            border = null,
+            modifier = Modifier.matchParentSize().clip(buttonShape)
         ) {
             Box(
-                modifier = Modifier.alpha(if (isLoading) 0f else 1f),
+                // If itemContent is present (Color/Img), we force 0 padding to Fill/Crop. Otherwise, apply text padding.
+                // A triangle's usable area is its lower half, so its content is nudged down off the apex.
+                modifier = when {
+                    itemContent != null -> Modifier
+                    shape.baseShape == AzButtonShape.TRIANGLE -> Modifier.padding(contentPadding).padding(top = size * 0.25f)
+                    else -> Modifier.padding(contentPadding)
+                },
                 contentAlignment = Alignment.Center
             ) {
-                if (itemContent != null) {
-                    ItemContentRenderer(itemContent, finalTextColor, enabled)
-                } else {
-                    AutoSizeText(
-                        text = text,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            textAlign = TextAlign.Center,
-                            color = finalTextColor
-                        ),
-                        modifier = Modifier.fillMaxSize(),
-                        maxLines = if (text.contains("\n")) Int.MAX_VALUE else 1,
-                        softWrap = false,
-                        alignment = Alignment.Center,
-                        lineSpaceRatio = 0.9f
-                    )
+                Box(
+                    modifier = Modifier.alpha(if (isLoading) 0f else 1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (itemContent != null) {
+                        ItemContentRenderer(itemContent, finalTextColor, enabled)
+                    } else {
+                        AutoSizeText(
+                            text = text,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                textAlign = TextAlign.Center,
+                                color = finalTextColor
+                            ),
+                            modifier = Modifier.fillMaxSize(),
+                            maxLines = if (text.contains("\n")) Int.MAX_VALUE else 1,
+                            softWrap = false,
+                            alignment = Alignment.Center,
+                            lineSpaceRatio = 0.9f
+                        )
+                    }
+                }
+                // Each button spins its own spinner, scaled to the button rather than the full-screen
+                // default, and tinted to the item's own colour so a loading item still reads as itself.
+                if (isLoading) {
+                    val spinnerSize = when (shape.baseShape) {
+                        AzButtonShape.RECTANGLE -> 28.dp
+                        else -> size * 0.6f
+                    }
+                    AzLoad(size = spinnerSize, color = finalColor)
                 }
             }
-            // Each button spins its own spinner, scaled to the button rather than the full-screen
-            // default, and tinted to the item's own colour so a loading item still reads as itself.
-            if (isLoading) {
-                val spinnerSize = when (shape.baseShape) {
-                    AzButtonShape.RECTANGLE -> 28.dp
-                    else -> size * 0.6f
-                }
-                AzLoad(size = spinnerSize, color = finalColor)
-            }
+        }
+        if (!shape.isBorderless) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .drawBehind {
+                        val strokeWidthPx = 3.dp.toPx()
+                        val inflatedSize = Size(size.width + strokeWidthPx, size.height + strokeWidthPx)
+                        val outline = buttonShape.createOutline(inflatedSize, layoutDirection, this)
+                        translate(left = -strokeWidthPx / 2f, top = -strokeWidthPx / 2f) {
+                            drawOutline(outline = outline, color = finalColor, style = Stroke(width = strokeWidthPx))
+                        }
+                    }
+            )
         }
     }
 }

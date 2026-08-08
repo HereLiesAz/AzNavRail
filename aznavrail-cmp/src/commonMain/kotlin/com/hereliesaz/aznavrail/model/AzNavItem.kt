@@ -22,6 +22,17 @@ data class AzNavItem(
     val textColor: Color? = null,
     val fillColor: Color? = null,
     /**
+     * Verbatim (alpha-included) translucent fill color for this item's own button background.
+     * When set, this is used AS-IS for the button's `containerColor` — bypassing the rail's
+     * hardcoded fill-alpha computation (`0.12f`/`0.25f`) entirely, regardless of selected/focused/
+     * pressed state. Null (the default) preserves today's computed-alpha behavior.
+     *
+     * Not to be confused with the rail-level `azTheme(translucentBackground = …)`, which styles
+     * full-panel surfaces (About reader, More-from-Az, hidden-menu text box) — this field styles one
+     * item's own button fill only.
+     */
+    val translucentBackgroundColor: Color? = null,
+    /**
      * Colour for this item's **active** highlight — the one it wears when its route is the current
      * destination or one of its classifiers is active. Null takes the rail's own
      * (`azTheme(activeColor = …)`, then the rail accent). Set with `azHighlight(id, active = …)`.
@@ -87,6 +98,20 @@ data class AzNavItem(
     val isNestedRail: Boolean = false,
     val nestedRailAlignment: AzNestedRailAlignment? = null,
     val nestedRailItems: List<AzNavItem>? = null,
+    /**
+     * When true, the nested-rail host button's displayed text/content is derived from whichever
+     * non-host child in [nestedRailItems] is currently "selected" (see [selectedChildId]), and a
+     * plain tap on the host fires that selected child's own action directly instead of opening the
+     * popup — a long-press opens the popup instead. Default false preserves today's behaviour
+     * exactly: tap always opens the popup, the host shows its own declared text/content.
+     */
+    val reflectSelectionInParent: Boolean = false,
+    /**
+     * The id of the currently "selected" child within this [isNestedRail] item's [nestedRailItems],
+     * consulted only when [reflectSelectionInParent] is true. Parallels [selectedOption], the
+     * analogous field cyclers use. Null falls back to the first non-host child at render time.
+     */
+    val selectedChildId: String? = null,
     val isHelpItem: Boolean = false,
     /**
      * True for the rail's About affordance — the trailing `?` button. It opens the in-app About
@@ -156,6 +181,7 @@ data class AzNavItem(
             color: Color? = null,
             textColor: Color? = null,
             fillColor: Color? = null,
+            translucentBackgroundColor: Color? = null,
             shape: AzButtonShape? = null,
             badge: String? = null,
             persistentBadge: Boolean = false,
@@ -170,6 +196,7 @@ data class AzNavItem(
             color = color,
             textColor = textColor,
             fillColor = fillColor,
+            translucentBackgroundColor = translucentBackgroundColor,
             shape = shape,
             badge = badge,
             persistentBadge = persistentBadge,
@@ -189,6 +216,7 @@ data class AzNavItem(
             color: Color? = null,
             textColor: Color? = null,
             fillColor: Color? = null,
+            translucentBackgroundColor: Color? = null,
             shape: AzButtonShape? = null,
             info: String? = null,
             badge: String? = null,
@@ -205,6 +233,7 @@ data class AzNavItem(
             color = color,
             textColor = textColor,
             fillColor = fillColor,
+            translucentBackgroundColor = translucentBackgroundColor,
             shape = shape,
             badge = badge,
             persistentBadge = persistentBadge,
