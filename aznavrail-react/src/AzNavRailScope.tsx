@@ -47,6 +47,10 @@ const useAzItem = (item: AzNavItem) => {
       prev.menuToggleOffText === item.menuToggleOffText &&
       prev.textColor === item.textColor &&
       prev.fillColor === item.fillColor &&
+      prev.translucentBackgroundColor === item.translucentBackgroundColor &&
+      prev.reflectSelectionInParent === item.reflectSelectionInParent &&
+      prev.selectedChildId === item.selectedChildId &&
+      prev.keepNestedRailOpen === item.keepNestedRailOpen &&
       // Compare arrays
       JSON.stringify(prev.options) === JSON.stringify(item.options) &&
       JSON.stringify(prev.menuOptions) === JSON.stringify(item.menuOptions) &&
@@ -896,6 +900,11 @@ export const AzAdvanced: React.FC<any> = (props) => {
 
 /**
  * Declares a rail item that opens a secondary popup rail when tapped; child DSL items populate the popup.
+ *
+ * Pass `reflectSelectionInParent` to have this button mirror its currently selected child's
+ * text/content instead — a tap then invokes that child directly and a long-press opens the popup.
+ * Pass `expandWhen` to drive the popup's open/closed state programmatically, the same
+ * rising/falling-edge contract as a host item's `expandWhen`.
  *
  * @example
  * ```tsx

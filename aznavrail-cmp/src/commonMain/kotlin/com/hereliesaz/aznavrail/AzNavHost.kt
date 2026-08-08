@@ -285,6 +285,12 @@ fun AzHostActivityLayout(
     initiallyExpanded: Boolean = false,
     disableSwipeToOpen: Boolean = false,
     onExpandedChange: ((Boolean) -> Unit)? = null,
+    /**
+     * Optional controlled expand/collapse state for the rail, forwarded verbatim to
+     * [AzNavRail]'s own `expanded` param — see its KDoc for the full controlled/uncontrolled
+     * contract. Null (the default) leaves the rail fully uncontrolled, identical to today.
+     */
+    expanded: Boolean? = null,
     pagesEnabled: Boolean = true,
     content: AzNavHostScope.() -> Unit,
 ): AzGuidanceController {
@@ -517,6 +523,7 @@ fun AzHostActivityLayout(
                 initiallyExpanded = initiallyExpanded,
                 disableSwipeToOpen = disableSwipeToOpen,
                 onExpandedChange = onExpandedChange,
+                expanded = expanded,
                 providedScope = railScope,
                 orientation = orientation,
                 visualDockingSide = visualDockingSideProxy,

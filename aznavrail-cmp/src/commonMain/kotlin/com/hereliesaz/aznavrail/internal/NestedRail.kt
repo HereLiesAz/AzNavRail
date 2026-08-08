@@ -175,6 +175,7 @@ private fun NestedItemWrapper(
                 activeColor = alert?.color() ?: activeColor,
                 textColor = if (alert != null) alert.color() else item.textColor,
                 fillColor = item.fillColor,
+                backgroundColor = item.translucentBackgroundColor,
                 shape = if (alert != null) AzButtonShape.TRIANGLE else (item.shape ?: AzButtonShape.CIRCLE),
                 size = AzNavRailDefaults.ButtonWidth,
                 enabled = !item.disabled,

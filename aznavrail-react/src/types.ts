@@ -340,6 +340,13 @@ export interface AzNavItem {
   textColor?: string;
   /** Background fill color inside the button shape. */
   fillColor?: string;
+  /**
+   * Exact translucent fill color (alpha included) for this item's button background, bypassing
+   * the hardcoded default-fill alpha computation used when neither this nor `fillColor` is set.
+   * Distinct from the rail-level `AzNavRailSettings.translucentBackground`, which styles panels/
+   * overlays, not individual button fills.
+   */
+  translucentBackgroundColor?: string;
   /** True when this item is a two-state toggle button. */
   isToggle: boolean;
   /** Current checked state for toggle items. */
@@ -381,6 +388,9 @@ export interface AzNavItem {
   /**
    * Reactive condition: when the return value transitions false→true the host auto-expands;
    * true→false auto-collapses. Not serialisable — lives only in the runtime item object.
+   * When set on an `isNestedRail` item instead of a host, it drives the nested-rail popup's own
+   * open/closed state the same way (rising edge opens, falling edge closes), reusing the same
+   * "user wins" semantics: a manual dismissal is not fought until the next false→true transition.
    */
   expandWhen?: () => boolean;
   /** When `true`, the host is expanded the first time it appears (one-shot). */
@@ -431,8 +441,26 @@ export interface AzNavItem {
   content?: any;
   /** True when this item opens a nested-rail popup when tapped. */
   isNestedRail?: boolean;
-  /** When true, the nested-rail popup remains open until explicitly dismissed. */
+  /**
+   * When true, tapping a child inside this item's nested-rail popup does not close the popup
+   * (today's default closes it, unless this is set). Read from the nested-rail HOST item.
+   */
   keepNestedRailOpen?: boolean;
+  /**
+   * When true, this nested-rail host's displayed text/content mirrors the currently selected
+   * child (see `selectedChildId`) instead of the host's own declared text/content, and a tap on
+   * the host invokes that child's action directly instead of opening the popup — a long-press
+   * opens the popup instead. Default false: pixel-identical to today (tap always opens the
+   * popup, the host shows its own text/content). Only direct, non-host children of the nested
+   * rail are eligible to become the selection.
+   */
+  reflectSelectionInParent?: boolean;
+  /**
+   * The nested-rail child currently mirrored on the host button when `reflectSelectionInParent`
+   * is true. Parallels the existing `selectedOption` field used by cyclers. Unset falls back to
+   * the first non-host child in the popup's item list.
+   */
+  selectedChildId?: string;
   /** True when this item was declared via `AzHelpRailItem` or `AzHelpSubItem`. */
   isHelpItem?: boolean;
   /**
@@ -478,6 +506,12 @@ export interface AzNavItemProps {
   textColor?: string;
   /** Background fill color inside the button shape. */
   fillColor?: string;
+  /**
+   * Exact translucent fill color (alpha included), bypassing the hardcoded default-fill alpha
+   * used when neither this nor `fillColor` is set. Distinct from the rail-level
+   * `AzNavRailSettings.translucentBackground`, which styles panels/overlays, not button fills.
+   */
+  translucentBackgroundColor?: string;
   /** Button shape; overrides the rail-level `defaultShape` if set. */
   shape?: AzButtonShape;
   /** Help text shown for this item in the info overlay. */
@@ -591,6 +625,26 @@ export interface AzNestedRailProps extends AzNavItemProps {
   alignment?: AzNestedRailAlignment;
   /** Child DSL item declarations that populate the nested-rail popup. */
   children: React.ReactNode;
+  /**
+   * When true, this host's button mirrors the currently selected child's text/content and a tap
+   * invokes that child directly; long-press opens the popup instead of a tap. Default false
+   * (today's behavior: tap always opens the popup).
+   */
+  reflectSelectionInParent?: boolean;
+  /**
+   * Initial selected child id, applied once on first appearance (like `initiallyExpanded`) —
+   * seeds which child `reflectSelectionInParent` mirrors before the user taps one. A later DSL
+   * change to this prop does not fight a subsequent user tap.
+   */
+  selectedChildId?: string;
+  /** When true, tapping a child inside the popup does not close it. Default false. */
+  keepNestedRailOpen?: boolean;
+  /**
+   * Reactive condition controlling the popup's own open/closed state directly: a false→true
+   * transition opens it, true→false closes it, with the same "user wins" semantics as host
+   * `expandWhen` — a manual dismissal is not fought until the next false→true transition.
+   */
+  expandWhen?: () => boolean;
 }
 
 /** Builder scope passed to the `hiddenMenu` function prop of `AzRailRelocItemProps` for defining menu entries declaratively. */
@@ -695,6 +749,11 @@ export interface AzItemConfig {
   textColor?: string;
   /** Background fill color inside the button shape. */
   fillColor?: string;
+  /**
+   * Exact translucent fill color (alpha included), bypassing the hardcoded default-fill alpha.
+   * Distinct from the rail-level `AzNavRailSettings.translucentBackground`.
+   */
+  translucentBackgroundColor?: string;
   /** Button shape. */
   shape?: AzButtonShape;
 }

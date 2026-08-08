@@ -28,6 +28,8 @@ const AzNavRailButton = ({
     id,
     disabled,
     content,
+    fillColor,
+    translucentBackgroundColor,
   } = item;
 
   const fitTextRef = useFitText();
@@ -87,6 +89,10 @@ const AzNavRailButton = ({
   const shapeClass = item.shape
     ? item.shape.toLowerCase().replace(/_/g, '-')
     : 'circle';
+  const isNoneShape =
+    item.shape === 'NONE' ||
+    item.shape === 'NONE_SQUARE' ||
+    item.shape === 'NONE_CIRCLE';
 
   const isReactNode = content && React.isValidElement(content);
 
@@ -99,7 +105,12 @@ const AzNavRailButton = ({
     lowerColor === 'black' || lowerColor === '#000000' || lowerColor === '#000'
       ? 'rgba(255, 255, 255, 0.25)'
       : 'rgba(0, 0, 0, 0.25)';
-  const finalFillColor = item.fillColor || computedFillColor;
+  // `translucentBackgroundColor` is an exact, alpha-included override — it wins over `fillColor`
+  // and the hardcoded default-fill alpha alike, since it exists specifically to bypass both. It is
+  // distinct from the rail-level `translucentBackground` setting, which styles panels/overlays,
+  // not individual button fills.
+  const finalFillColor =
+    translucentBackgroundColor || fillColor || computedFillColor;
 
   const wrapperRef = React.useRef(null);
 
@@ -115,8 +126,14 @@ const AzNavRailButton = ({
         className={`az-nav-rail-button ${shapeClass} ${!isInteractive ? 'disabled' : ''}`}
         onClick={handleClick}
         style={{
-          borderColor: effectiveColor,
-          backgroundColor: finalFillColor,
+          // Feature 2: the stroke is an `outline`, not a `border` — CSS defines `outline` as
+          // painted outside the border-box without affecting layout or the background paint
+          // order, so it never overlaps `.az-nav-rail-button-fill` below it (which carries the
+          // actual fill and is inset exactly to the button's own box, edge to edge).
+          outlineStyle: isNoneShape ? 'none' : 'solid',
+          outlineWidth: isNoneShape ? 0 : '2px',
+          outlineColor: effectiveColor,
+          outlineOffset: 0,
           opacity: isInteractive ? 1 : 0.5,
           cursor: isInteractive ? 'pointer' : 'default',
           width: '64px',
@@ -125,57 +142,61 @@ const AzNavRailButton = ({
           height: '64px',
           minHeight: '64px',
           maxHeight: '64px',
-          overflow: 'hidden',
           ...style,
         }}
         disabled={!isInteractive}
         {...ariaProps}
       >
-        {content ? (
-          isReactNode ? (
-            content
+        <div
+          className="az-nav-rail-button-fill"
+          style={{ backgroundColor: finalFillColor }}
+        >
+          {content ? (
+            isReactNode ? (
+              content
+            ) : (
+              <div
+                className="button-content-wrapper"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {typeof content === 'string' &&
+                (content.startsWith('http') ||
+                  content.startsWith('/') ||
+                  content.startsWith('data:')) ? (
+                  <img
+                    src={content}
+                    alt=""
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      borderRadius: 'inherit',
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      backgroundColor: content,
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: 'inherit',
+                    }}
+                  />
+                )}
+              </div>
+            )
           ) : (
-            <div
-              className="button-content-wrapper"
-              style={{
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              {typeof content === 'string' &&
-              (content.startsWith('http') ||
-                content.startsWith('/') ||
-                content.startsWith('data:')) ? (
-                <img
-                  src={content}
-                  alt=""
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    borderRadius: 'inherit',
-                  }}
-                />
-              ) : (
-                <div
-                  style={{
-                    backgroundColor: content,
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: 'inherit',
-                  }}
-                />
-              )}
-            </div>
-          )
-        ) : (
-          <span className="button-text" ref={textRef}>
-            {textToShow}
-          </span>
-        )}
+            <span className="button-text" ref={textRef}>
+              {textToShow}
+            </span>
+          )}
+        </div>
       </button>
     </div>
   );

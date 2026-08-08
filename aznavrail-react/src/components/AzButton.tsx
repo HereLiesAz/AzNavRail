@@ -18,10 +18,21 @@ export interface AzButtonProps {
   text: string;
   /** Called when the button is pressed. */
   onClick: () => void;
+  /**
+   * Called on a long-press (500ms), same idiom as the header icon and reloc items elsewhere in
+   * this library. Omit for no long-press behavior (today's default).
+   */
+  onLongPress?: () => void;
   /** Border and default text color. */
   color?: string;
   /** Background fill color drawn inside the button shape. */
   fillColor?: string;
+  /**
+   * Exact translucent fill color (alpha included), used verbatim in place of `fillColor` and the
+   * hardcoded default-fill alpha computation. Distinct from the rail-level
+   * `AzNavRailSettings.translucentBackground`, which styles panels/overlays, not button fills.
+   */
+  translucentBackgroundColor?: string;
   /** Overrides the text color independently of the border color. */
   textColor?: string;
   /** Shape of the button container. */
@@ -54,8 +65,10 @@ export interface AzButtonProps {
 export const AzButton: React.FC<AzButtonProps> = ({
   text,
   onClick,
+  onLongPress,
   color = '#6200ee', // Default primary color
   fillColor,
+  translucentBackgroundColor,
   textColor,
   shape = AzButtonShape.CIRCLE,
   style,
@@ -91,9 +104,16 @@ export const AzButton: React.FC<AzButtonProps> = ({
     return undefined;
   }, [badge, persistentBadge]);
 
+  // Feature 2: the stroke must read as drawn OUTSIDE the fill, never overlapping it. RN's border
+  // is drawn just inside the declared box (border-box-equivalent), so instead of inflating the
+  // box outward (which would grow the rail's layout footprint), the FILL is inset by the stroke
+  // width on every side below and the box itself is left exactly as before — the stroke ring now
+  // sits in the space that used to be "inside the stroke," touching the fill but never covering it.
+  const strokeWidth = isNone ? 0 : 3;
+
   const containerStyle: ViewStyle = {
     borderColor: isNone ? 'transparent' : color,
-    borderWidth: isNone ? 0 : 3,
+    borderWidth: strokeWidth,
     backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
@@ -110,7 +130,10 @@ export const AzButton: React.FC<AzButtonProps> = ({
       ? 'rgba(255, 255, 255, 0.25)'
       : 'rgba(0, 0, 0, 0.25)';
 
-  const actualFillColor = fillColor || defaultFillColor;
+  // `translucentBackgroundColor` is an exact, alpha-included override — it wins over `fillColor`
+  // and the hardcoded default-fill alpha alike, since it exists specifically to bypass both.
+  const actualFillColor =
+    translucentBackgroundColor || fillColor || defaultFillColor;
 
   const isCustomContent = hasCustomContent || !!customContentNode;
 
@@ -174,6 +197,8 @@ export const AzButton: React.FC<AzButtonProps> = ({
     <View style={containerStyle}>
       <TouchableOpacity
         onPress={onClick}
+        onLongPress={onLongPress}
+        delayLongPress={500}
         disabled={!enabled || isLoading}
         style={[
           StyleSheet.absoluteFill,
@@ -188,9 +213,16 @@ export const AzButton: React.FC<AzButtonProps> = ({
           style={[
             StyleSheet.absoluteFill,
             {
+              top: strokeWidth,
+              left: strokeWidth,
+              right: strokeWidth,
+              bottom: strokeWidth,
               backgroundColor: actualFillColor,
               zIndex: -1,
-              borderRadius: containerStyle.borderRadius,
+              borderRadius: Math.max(
+                0,
+                ((containerStyle.borderRadius as number) || 0) - strokeWidth
+              ),
             },
           ]}
           pointerEvents="none"

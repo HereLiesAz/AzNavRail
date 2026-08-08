@@ -18,6 +18,8 @@ export interface AzCyclerProps {
   color?: string;
   /** Background fill color inside the button shape. */
   fillColor?: string;
+  /** Exact translucent fill color (alpha included), overriding `fillColor` and the default fill. */
+  translucentBackgroundColor?: string;
   /** Button shape. */
   shape?: AzButtonShape;
   /** Optional style merged into the container. */
@@ -46,6 +48,7 @@ export const AzCycler: React.FC<AzCyclerProps> = ({
   onCycle,
   color,
   fillColor,
+  translucentBackgroundColor,
   shape,
   style,
   disabled,
@@ -108,6 +111,7 @@ export const AzCycler: React.FC<AzCyclerProps> = ({
       onClick={handlePress}
       color={color}
       fillColor={fillColor}
+      translucentBackgroundColor={translucentBackgroundColor}
       shape={shape}
       style={style}
       enabled={!disabled}

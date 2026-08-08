@@ -22,6 +22,8 @@ import androidx.compose.ui.graphics.Color
  * @param color Border/icon color override.
  * @param textColor Text color override.
  * @param fillColor Translucent fill color override.
+ * @param translucentBackgroundColor When non-null, used verbatim (own alpha included) as this
+ *   item's button fill instead of the computed [fillColor] alpha. See [AzNavItem.translucentBackgroundColor].
  * @param shape Button shape override; falls back to the scope's [com.hereliesaz.aznavrail.AzNavRailScopeImpl.defaultShape].
  */
 data class AzItemConfig(
@@ -39,6 +41,7 @@ data class AzItemConfig(
     val color: Color? = null,
     val textColor: Color? = null,
     val fillColor: Color? = null,
+    val translucentBackgroundColor: Color? = null,
     val shape: AzButtonShape? = null,
     /**
      * Host items only: auto-expand the first time the host appears (user can

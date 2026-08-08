@@ -365,6 +365,8 @@ class AzNavHostScopeImpl(
  * @param disableSwipeToOpen Disable swipe-to-open gesture for the rail menu.
  * @param onExpandedChange Called whenever the rail transitions between collapsed and expanded states.
  *   Receives `true` when the rail expands and `false` when it collapses.
+ * @param expanded Optional controlled open-state, forwarded to [AzNavRail]'s own `expanded`
+ *   parameter. Null (the default) is 100% today's uncontrolled behaviour.
  * @param pagesEnabled Whether the pages Z-ordering system is active (default `true`). When on, the
  *   `page` of every [AzNavHostScope.onscreen] / [AzNavHostScope.background] item is honoured and
  *   forced — items with no explicit page share the default page `0f`. When off, items render in
@@ -381,6 +383,12 @@ fun AzHostActivityLayout(
     initiallyExpanded: Boolean = false,
     disableSwipeToOpen: Boolean = false,
     onExpandedChange: ((Boolean) -> Unit)? = null,
+    /**
+     * Optional controlled open-state for the rail's menu drawer, forwarded verbatim to
+     * [AzNavRail]'s own `expanded` parameter. Null (the default) keeps today's uncontrolled
+     * behaviour, seeded by [initiallyExpanded].
+     */
+    expanded: Boolean? = null,
     pagesEnabled: Boolean = true,
     content: AzNavHostScope.() -> Unit
 ): AzGuidanceController {
@@ -655,6 +663,7 @@ fun AzHostActivityLayout(
                 initiallyExpanded = initiallyExpanded,
                 disableSwipeToOpen = disableSwipeToOpen,
                 onExpandedChange = onExpandedChange,
+                expanded = expanded,
                 providedScope = railScope,
                 orientation = orientation,
                 visualDockingSide = visualDockingSideProxy,

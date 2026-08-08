@@ -65,6 +65,13 @@ internal fun RailContent(
     onRailCyclerClick: (AzNavItem) -> Unit,
     onItemClick: () -> Unit,
     onHostClick: () -> Unit = {},
+    /**
+     * Long-press handler. Only ever supplied for a nested-rail host with
+     * `reflectSelectionInParent = true` — wired to open the popup, since a plain tap on that item is
+     * repurposed to fire the selected child's action directly. Null (the default, and every other
+     * item) means no long-press affordance, matching today's behaviour exactly.
+     */
+    onLongClick: (() -> Unit)? = null,
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
     onBoundsCalculated: ((String, Rect) -> Unit)? = null,
     onBoundsCleared: ((String) -> Unit)? = null,
@@ -94,9 +101,16 @@ internal fun RailContent(
     // (floating / unattached) rail match the rail already on screen instead of the app's palette.
     val railAccent = azAccent()
 
+    // A nested-rail host with `reflectSelectionInParent` shows the currently-selected (non-host)
+    // child's text/content instead of its own — icon/color/shape stay the parent's own, only the
+    // inner label/content swap. Falls back to the item's own text/content when there is no eligible
+    // child (nothing selected yet AND the nested rail is empty) — see `resolveReflectedChild`.
+    val reflectedChild = item.resolveReflectedChild()
+
     val textToShow = when {
         item.isToggle -> if (item.isChecked == true) item.toggleOnText else item.toggleOffText
         item.isCycler -> item.selectedOption ?: ""
+        reflectedChild != null -> reflectedChild.text
         else -> item.text
     }
 
@@ -245,6 +259,7 @@ internal fun RailContent(
             tertiaryColor = resolvedTertiary,
             textColor = if (alertProgress > 0f && alertColor != null) morphedColor else item.textColor,
             fillColor = item.fillColor,
+            backgroundColor = item.translucentBackgroundColor,
             size = buttonSize,
             shape = baseShape,
             shapeOverride = if (alertProgress > 0f) AzAlertMorphShape(baseShape, alertProgress) else null,
@@ -252,11 +267,30 @@ internal fun RailContent(
             isSelected = isSelected,
             isLoading = item.isLoading,
             // The item's own content fades out as the triangle takes over, rather than vanishing
-            // the instant the alert lands.
-            itemContent = if (alertProgress >= 0.5f) null else item.content,
+            // the instant the alert lands. A reflect-enabled nested-rail host shows its selected
+            // child's content instead of its own (see `reflectedChild` above).
+            itemContent = if (alertProgress >= 0.5f) null else (reflectedChild?.content ?: item.content),
+            onLongClick = onLongClick,
             rotationDegrees = rotationDegrees
         )
     }
+}
+
+/**
+ * Resolves the currently "selected" child of a nested-rail host declared with
+ * `reflectSelectionInParent = true` — used both to derive what the parent button displays
+ * ([RailContent]) and to know which child's action a plain tap on the parent should fire directly
+ * ([RailItems]). Only non-host entries in [AzNavItem.nestedRailItems] are eligible (a host child can
+ * still be tapped to expand/collapse inline, but never becomes the displayed selection): falls back
+ * to the first non-host entry when [AzNavItem.selectedChildId] is unset or names a host; returns
+ * null when [AzNavItem.reflectSelectionInParent] is false, this isn't a nested rail, or the nested
+ * rail has no eligible children (the parent's own text/content is used instead).
+ */
+internal fun AzNavItem.resolveReflectedChild(): AzNavItem? {
+    if (!isNestedRail || !reflectSelectionInParent) return null
+    val children = nestedRailItems ?: return null
+    return children.firstOrNull { it.id == selectedChildId && !it.isHost }
+        ?: children.firstOrNull { !it.isHost }
 }
 
 /**
