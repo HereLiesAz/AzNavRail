@@ -106,6 +106,7 @@ internal fun AzRailSliderItem(
                 activeColor = color,
                 textColor = item.textColor,
                 fillColor = item.fillColor,
+                backgroundColor = item.translucentBackgroundColor,
                 size = buttonSize,
                 shape = item.shape ?: com.hereliesaz.aznavrail.model.AzButtonShape.CIRCLE,
                 enabled = enabled,

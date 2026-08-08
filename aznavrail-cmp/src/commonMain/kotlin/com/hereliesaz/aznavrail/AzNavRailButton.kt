@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -35,8 +34,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.drawOutline
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
@@ -284,8 +283,13 @@ internal fun AzNavRailButton(
                 modifier = Modifier
                     .matchParentSize()
                     .drawBehind {
+                        // Qualified `this.size` (the DrawScope's own draw-area size, in px) because
+                        // the enclosing `AzNavRailButton`'s `size: Dp` parameter would otherwise
+                        // shadow it — an unqualified `size` here resolves to that outer Dp, not this
+                        // draw scope's Size.
                         val strokeWidthPx = 3.dp.toPx()
-                        val inflatedSize = Size(size.width + strokeWidthPx, size.height + strokeWidthPx)
+                        val drawSize = this.size
+                        val inflatedSize = Size(drawSize.width + strokeWidthPx, drawSize.height + strokeWidthPx)
                         val outline = buttonShape.createOutline(inflatedSize, layoutDirection, this)
                         translate(left = -strokeWidthPx / 2f, top = -strokeWidthPx / 2f) {
                             drawOutline(outline = outline, color = finalColor, style = Stroke(width = strokeWidthPx))

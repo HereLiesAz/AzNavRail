@@ -55,9 +55,26 @@ are easy to navigate.
   condition acts again only on the next false→true edge. Lambdas are stored in
   `expandWhenMap` (not on `AzNavItem`) and tracked via `snapshotFlow` on Android and via a
   no-deps `useEffect` on React. Use `initiallyExpanded` for a one-shot expand on first
-  appearance; use `expandWhen` for ongoing reactive control.
+  appearance; use `expandWhen` for ongoing reactive control. `azNestedRail` also accepts
+  `expandWhen`, reusing this exact mechanism and the same `expandWhenMap`/edge-detection effect:
+  the only difference is that a nested-rail id writes `nestedRailOpenId` (rising edge sets it to
+  the item's own id, falling edge clears it if it is still the open one) instead of `hostStates`,
+  so a nested rail's popup can be driven open/closed programmatically with the identical
+  rising/falling-edge, first-observation, and "user wins" semantics documented above. On React
+  (`aznavrail-react`), `expandWhen` lives directly on the registered item (`AzNavItem.expandWhen`
+  in `types.ts`, spread through by every DSL builder including `AzNestedRail`) rather than a side
+  map, and is evaluated in `AzNavRail.tsx`'s/`AzNavRail.jsx`'s existing edge-detection effect
+  (post-render + a 300ms poll fallback for non-React-state conditions); a nested-rail item's
+  `expandWhen` there drives RN's single `nestedRailVisible` state / web's `nestedRailVisibleId`
+  state the same way a host's drives `hostStates`, sharing the same edge-tracking ref so a manual
+  popup dismissal is not fought until the next false→true transition.
 
-- **Nested Rails (`azNestedRail`)**: This is a distinct feature from Host Items. A Nested Rail opens a separate **popup overlay** adjacent to the parent item instead of expanding inline. It supports `VERTICAL` (column) and `HORIZONTAL` (row) alignment.
+- **Nested Rails (`azNestedRail`)**: This is a distinct feature from Host Items. A Nested Rail opens a separate **popup overlay** adjacent to the parent item instead of expanding inline. It supports `VERTICAL` (column) and `HORIZONTAL` (row) alignment. Optional `reflectSelectionInParent` (default `false`) makes the parent button itself stand in for whichever (non-host) child was last selected: the parent's text/content mirror that child's (its own color/shape/fillColor are untouched), a plain tap fires the selected child's action directly instead of opening the popup, and a long-press opens the popup instead (the plain-tap behavior when `reflectSelectionInParent` is `false`). The selection is tracked by `AzNavItem.selectedChildId` / a `hostId → selectedChildId` scope map that survives DSL re-declaration, seeded once from a developer-supplied initial value the same way `initiallyExpanded` seeds a host. `azNestedRail` also accepts `expandWhen` for programmatic open/close of the popup itself — see "Reactive Expansion" above. On React (`aznavrail-react`, both the RN and web builds), tapping a
+  (non-host) nested-rail child now also closes the popup afterward — unless the host's
+  `keepNestedRailOpen` is set — closing a gap where only a backdrop tap ever dismissed it; the
+  `selectedChildId` map and the close-on-select logic live in the rail's own state
+  (`AzNavRail.tsx`'s `selectedChildByHost` / the equivalent in `AzNavRail.jsx`), not on the DSL
+  item itself, so they survive re-registration the same way `hostStates` does.
 
 - **Orientation Handling**: The rail supports two modes:
     1.  **Default**: Anchored to the screen/view side (e.g., Left side of the window).

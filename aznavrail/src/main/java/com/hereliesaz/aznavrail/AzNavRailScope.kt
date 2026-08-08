@@ -411,7 +411,7 @@ interface AzNavRailScope {
      * @param keepNestedRailOpen If true, the nested rail remains open until the parent item is tapped again.
      * @param nestedContent DSL block to define the items within the nested rail.
      */
-    fun azNestedRail(id: String, text: String = "", route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, alignment: AzNestedRailAlignment = AzNestedRailAlignment.VERTICAL, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, translucentBackgroundColor: Color? = null, badge: String? = null, persistentBadge: Boolean = false, isLoading: Boolean = false, onFocus: (() -> Unit)? = null, keepNestedRailOpen: Boolean = false, nestedContent: AzNavRailScope.() -> Unit)
+    fun azNestedRail(id: String, text: String = "", route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, alignment: AzNestedRailAlignment = AzNestedRailAlignment.VERTICAL, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, translucentBackgroundColor: Color? = null, badge: String? = null, persistentBadge: Boolean = false, isLoading: Boolean = false, onFocus: (() -> Unit)? = null, keepNestedRailOpen: Boolean = false, reflectSelectionInParent: Boolean = false, selectedChildId: String? = null, expandWhen: (() -> Boolean)? = null, nestedContent: AzNavRailScope.() -> Unit)
 
     /**
      * Adds a toggle switch item to the menu.
@@ -950,6 +950,12 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     val itemBoundsCache = mutableStateMapOf<String, Rect>()
     /** Transient selected options for cyclers during the debounce window. */
     val transientCyclerOptions = mutableStateMapOf<String, String>()
+    /**
+     * The currently-selected child id per nested-rail host with `reflectSelectionInParent = true`
+     * (hostId -> childId). Survives [reset] for the same reason [itemOverrides] does: the DSL
+     * re-runs every recomposition and would otherwise wipe a tap the user just made.
+     */
+    val selectedNestedChildMap: androidx.compose.runtime.snapshots.SnapshotStateMap<String, String> = mutableStateMapOf()
     /** Active [NavController], set externally by [AzHostActivityLayout]. */
     var navController: NavController? = null
     /** The ID of the nested rail currently open as a popup, or null if none. */
@@ -1462,7 +1468,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         addItem(id = id, text = text, menuText = menuText, config = AzItemConfig(isLoading = isLoading, classifiers = classifiers, route = route, screenTitle = screenTitle, info = info, isRailItem = true, disabled = disabled, onFocus = onFocus, content = content, color = color, textColor = textColor, fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor, shape = shape, badge = badge, persistentBadge = persistentBadge), onClick = onClick ?: {})
     }
 
-    override fun azNestedRail(id: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, alignment: AzNestedRailAlignment, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, translucentBackgroundColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean, onFocus: (() -> Unit)?, keepNestedRailOpen: Boolean, nestedContent: AzNavRailScope.() -> Unit) {
+    override fun azNestedRail(id: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, alignment: AzNestedRailAlignment, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, translucentBackgroundColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean, onFocus: (() -> Unit)?, keepNestedRailOpen: Boolean, reflectSelectionInParent: Boolean, selectedChildId: String?, expandWhen: (() -> Boolean)?, nestedContent: AzNavRailScope.() -> Unit) {
         checkId(id)
         val nestedScope = AzNavRailScopeImpl(this.globalIdSet)
         nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, secondaryClassifiers = this.secondaryClassifiers, tertiaryClassifiers = this.tertiaryClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, railItemWidth = this.railItemWidth, showFooter = this.showFooter, appRepositoryUrl = this.appRepositoryUrl)
@@ -1479,14 +1485,24 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         nestedScope.onRelocateMap.forEach { (k, v) -> onRelocateMap[k] = v }
 
         if (onFocus != null) onFocusMap[id] = onFocus
+        if (expandWhen != null) expandWhenMap[id] = expandWhen
+
+        // Seed the "selected child" once, on first appearance only — same rising-edge-once semantics
+        // as `initiallyExpanded`: a later DSL-declared `selectedChildId` never fights a tap the user
+        // already made, because `selectedNestedChildMap` survives `reset()` (see its declaration).
+        if (selectedChildId != null && !selectedNestedChildMap.containsKey(id)) {
+            selectedNestedChildMap[id] = selectedChildId
+        }
 
         navItems.add(
-            AzNavItem(badge = badge, persistentBadge = persistentBadge, isLoading = isLoading, 
+            AzNavItem(badge = badge, persistentBadge = persistentBadge, isLoading = isLoading,
                 id = id, text = text, menuText = menuText, route = route, isRailItem = true, isNestedRail = true,
                 nestedRailAlignment = alignment, nestedRailItems = nestedScope.navItems.toList(),
                 disabled = disabled, screenTitle = screenTitle ?: text,
                 info = info, classifiers = classifiers, content = content, color = color, textColor = textColor, fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor, shape = shape,
-                keepNestedRailOpen = keepNestedRailOpen
+                keepNestedRailOpen = keepNestedRailOpen,
+                reflectSelectionInParent = reflectSelectionInParent,
+                selectedChildId = selectedNestedChildMap[id],
             )
         )
     }

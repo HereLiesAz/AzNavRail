@@ -766,8 +766,22 @@ private fun DraggableRailItemWrapper(
                     onClick = {
                         scope.onFocusMap[item.id]?.invoke()
                         if (item.isNestedRail) {
-                            onNestedRailToggle(if (scope.nestedRailOpenId == item.id) null else item.id)
-                            scope.onClickMap[item.id]?.invoke()
+                            if (item.reflectSelectionInParent) {
+                                // A plain tap fires the SELECTED CHILD's own action directly — exactly
+                                // as if the user had tapped it inside the (closed) popup — instead of
+                                // opening the popup. Long-press (wired below) opens the popup instead.
+                                val selectedChild = item.resolveReflectedChild()
+                                if (selectedChild != null) {
+                                    scope.onClickMap[selectedChild.id]?.invoke()
+                                    selectedChild.route?.let { navController?.navigate(it) }
+                                    onItemSelected(selectedChild)
+                                    scope.advancedConfig.onInteraction?.invoke(selectedChild.id, selectedChild)
+                                }
+                            } else {
+                                onNestedRailToggle(if (scope.nestedRailOpenId == item.id) null else item.id)
+                                scope.onClickMap[item.id]?.invoke()
+                                scope.advancedConfig.onInteraction?.invoke(item.id, item)
+                            }
                         } else {
                             if (scope.nestedRailOpenId != null) {
                                 val openItem = scope.navItems.find { it.id == scope.nestedRailOpenId }
@@ -785,9 +799,17 @@ private fun DraggableRailItemWrapper(
                                     scope.onClickMap[item.id]?.invoke()
                                 }
                             }
+                            scope.advancedConfig.onInteraction?.invoke(item.id, item)
                         }
-                        scope.advancedConfig.onInteraction?.invoke(item.id, item)
                     },
+                    onLongClick = if (item.isNestedRail && item.reflectSelectionInParent) {
+                        {
+                            // Same toggle a plain tap performs today when `reflectSelectionInParent`
+                            // is false — long-press is simply where that behaviour moved to.
+                            scope.onFocusMap[item.id]?.invoke()
+                            onNestedRailToggle(if (scope.nestedRailOpenId == item.id) null else item.id)
+                        }
+                    } else null,
                     onRailCyclerClick = onRailCyclerClick,
                     onItemClick = { onItemSelected(item) },
                     onHostClick = {
@@ -834,6 +856,14 @@ private fun DraggableRailItemWrapper(
                         secondaryClassifiers = scope.secondaryClassifiers,
                         tertiaryClassifiers = scope.tertiaryClassifiers,
                         onItemSelected = { subItem ->
+                            // Record the tapped (non-host — NestedItemWrapper only calls
+                            // onItemSelected for non-host items) child as the new selection so the
+                            // parent's own displayed text/content updates on the next render. Written
+                            // to the scope's survive-`reset()` map, not the item directly, since the
+                            // DSL rebuilds `item` from scratch every recomposition.
+                            if (item.reflectSelectionInParent) {
+                                scope.selectedNestedChildMap[item.id] = subItem.id
+                            }
                             scope.onClickMap[subItem.id]?.invoke()
                             subItem.route?.let { navController?.navigate(it) }
                             onItemSelected(subItem)
@@ -877,6 +907,14 @@ private fun DraggableRailItemWrapper(
                         secondaryClassifiers = scope.secondaryClassifiers,
                         tertiaryClassifiers = scope.tertiaryClassifiers,
                         onItemSelected = { subItem ->
+                            // Record the tapped (non-host — NestedItemWrapper only calls
+                            // onItemSelected for non-host items) child as the new selection so the
+                            // parent's own displayed text/content updates on the next render. Written
+                            // to the scope's survive-`reset()` map, not the item directly, since the
+                            // DSL rebuilds `item` from scratch every recomposition.
+                            if (item.reflectSelectionInParent) {
+                                scope.selectedNestedChildMap[item.id] = subItem.id
+                            }
                             scope.onClickMap[subItem.id]?.invoke()
                             subItem.route?.let { navController?.navigate(it) }
                             onItemSelected(subItem)
