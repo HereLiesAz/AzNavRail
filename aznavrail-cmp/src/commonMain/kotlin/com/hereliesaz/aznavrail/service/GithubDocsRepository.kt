@@ -1,5 +1,6 @@
 package com.hereliesaz.aznavrail.service
 
+import com.hereliesaz.aznavrail.model.AzAuthorProfile
 import com.hereliesaz.aznavrail.model.AzDocEntry
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -179,5 +180,20 @@ object GithubDocsRepository {
         val res = AzHttpCache.get(entry.downloadUrl)
             ?: return Result.failure(IllegalStateException("Could not load ${entry.path}"))
         return Result.success(res.body)
+    }
+
+    /** The library author's GitHub login — the subject of the About page's author header. */
+    private const val AUTHOR_LOGIN = "HereLiesAz"
+
+    /**
+     * Fetches the author's GitHub profile (avatar + bio) for the About page's author header, via the
+     * public GitHub users API. Cached the same way doc bodies are.
+     */
+    suspend fun fetchAuthorProfile(): Result<AzAuthorProfile> {
+        val res = AzHttpCache.get("https://api.github.com/users/$AUTHOR_LOGIN")
+            ?: return Result.failure(IllegalStateException("Could not load author profile"))
+        val obj = runCatching { json.parseToJsonElement(res.body) as? JsonObject }.getOrNull()
+            ?: return Result.failure(IllegalStateException("Malformed author profile"))
+        return Result.success(AzAuthorProfile(avatarUrl = obj.str("avatar_url") ?: "", bio = obj.str("bio")))
     }
 }

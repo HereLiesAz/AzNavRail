@@ -1,9 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './AboutOverlay.css';
 import AzMarkdownWeb from './AzMarkdownWeb';
-import { listDocs, fetchDoc } from '../services/githubDocs';
+import { listDocs, fetchDoc, fetchAuthorProfile } from '../services/githubDocs';
 import { fetchMoreFromAz } from '../services/moreFromAz';
 import { useAzAccent, AZ_ACCENT_FALLBACK } from '../AzRailPalette';
+
+/** Where the About page's tip button sends anyone who wants to leave one. */
+const AZ_DONATE_URL = 'https://paypal.me/HereLiesAz';
+
+/** The free-forever pitch shown above the tip button. */
+const AZ_TIP_PITCH =
+  'Every single one of my apps is available on Github in full, without ads or conditions of ' +
+  'any kind, for free and forever. But I never say no to just a the-tip.';
 
 /**
  * The reader's own palette — dark ground, light ink, in every theme. It is a full-screen surface the
@@ -16,11 +24,14 @@ const AZ_ABOUT_INK = '#ececf0';
 /**
  * In-app About reader for the web.
  *
- * Layout is two vertically-stacked halves:
- *  - **Top half** — auto-generated table of contents of the repo's markdown docs.
- *  - **Bottom half** — a focused-hero More-from-Az carousel with a size pattern
+ * Layout is vertically stacked, each section sharing the screen equally:
+ *  - **Docs** — auto-generated table of contents of the repo's markdown docs.
+ *  - **More from Az** (when enabled) — a focused-hero carousel with a size pattern
  *    (small · medium · LARGE · medium · small) and the active app's banner (when the repo has
  *    `docs/banner.*`), name, description, and link buttons.
+ *  - **Tip jar, author, and contact** — the free-forever pitch and tip button, the author's GitHub
+ *    avatar/name/bio (fetched live from the GitHub users API), and the @HereLiesAz/Feedback/website
+ *    links, stacked in large type. Scrolls independently of the sections above it.
  */
 export default function AboutOverlay({
   repoUrl,
@@ -52,6 +63,7 @@ export default function AboutOverlay({
   const [selected, setSelected] = useState(null);
   const [docBody, setDocBody] = useState(null);
   const [moreApps, setMoreApps] = useState(null);
+  const [authorProfile, setAuthorProfile] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -98,6 +110,16 @@ export default function AboutOverlay({
       active = false;
     };
   }, [moreFromAzEnabled, moreFromAzJsonUrl]);
+
+  useEffect(() => {
+    let active = true;
+    fetchAuthorProfile()
+      .then((profile) => active && setAuthorProfile(profile))
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <div
@@ -175,7 +197,7 @@ export default function AboutOverlay({
             )}
           </div>
 
-          {/* BOTTOM HALF — More-from-Az focused-hero carousel + active-app info. */}
+          {/* MIDDLE — More-from-Az focused-hero carousel + active-app info ("the app links"). */}
           {moreFromAzEnabled && (
             <div className="az-about-half">
               <hr
@@ -185,9 +207,102 @@ export default function AboutOverlay({
               <MoreFromAzHeroCarousel apps={moreApps} accent={accent} />
             </div>
           )}
+
+          {/* BOTTOM — the tip pitch, the author, and the way to reach them. Scrolls on its own so it
+              always has room for all three regardless of how much the sections above claim; the page
+              ends where every other surface in this library ends: a way to write to the author, and
+              the author. About is where someone goes to find out who made this, so making them hunt
+              through a menu for that would be a joke at their expense. */}
+          <hr
+            className="az-about-divider"
+            style={{ borderTopColor: accent, color: accent }}
+          />
+          <div className="az-about-footer-section">
+            <AzTipJar accent={accent} />
+            <div className="az-about-tip-gap" />
+            <AzAuthorHeader accent={accent} profile={authorProfile} />
+            <hr
+              className="az-about-divider"
+              style={{ borderTopColor: accent, color: accent }}
+            />
+            <div className="az-about-page-footer">
+              <AzAboutFooterLink
+                text="@HereLiesAz"
+                color={accent}
+                href="https://instagram.com/HereLiesAz"
+              />
+              <AzAboutFooterLink
+                text="Feedback"
+                color={accent}
+                href="mailto:hereliesaz@gmail.com?subject=Feedback"
+              />
+              <AzAboutFooterLink
+                text="hereliesaz.com"
+                color={accent}
+                href="https://hereliesaz.com"
+              />
+            </div>
+          </div>
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * The free-forever pitch and its tip button — sits between the app carousel and the author header,
+ * where "here's more of my work" naturally turns into "here's how you can thank me for it".
+ */
+function AzTipJar({ accent }) {
+  return (
+    <div className="az-about-tipjar">
+      <p className="az-about-tip-text">{AZ_TIP_PITCH}</p>
+      <button
+        className="az-about-tip-button"
+        style={{ borderColor: accent, color: accent }}
+        onClick={() =>
+          window.open(AZ_DONATE_URL, '_blank', 'noopener,noreferrer')
+        }
+      >
+        Leave a Tip
+      </button>
+    </div>
+  );
+}
+
+/**
+ * The author header: GitHub avatar, name, and bio. The avatar and bio are fetched live from the
+ * GitHub users API rather than baked in, so this stays current with no release needed; the name is
+ * fixed — it is always "Az" regardless of what GitHub's `name` field says.
+ */
+function AzAuthorHeader({ accent, profile }) {
+  return (
+    <div className="az-about-author">
+      <div className="az-about-author-avatar" style={{ borderColor: accent }}>
+        {profile?.avatarUrl ? (
+          <img src={profile.avatarUrl} alt="Az" />
+        ) : (
+          <span style={{ color: accent }}>AZ</span>
+        )}
+      </div>
+      <div className="az-about-author-name">Az</div>
+      {profile?.bio && <p className="az-about-author-bio">{profile.bio}</p>}
+    </div>
+  );
+}
+
+/** One big, centered link row in the About page's own footer — see `AboutOverlay`. */
+function AzAboutFooterLink({ text, color, href }) {
+  return (
+    <a
+      className="az-about-footer-link"
+      style={{ color }}
+      href={href}
+      target={href.startsWith('mailto:') ? undefined : '_blank'}
+      rel={href.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
+    >
+      {text}
+    </a>
   );
 }
 

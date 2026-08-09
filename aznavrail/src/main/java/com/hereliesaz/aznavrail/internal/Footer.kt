@@ -107,6 +107,9 @@ internal const val AZ_INSTAGRAM_URL = "https://instagram.com/HereLiesAz"
 /** The author's site — where the About page sends anyone who wants the rest of the work. */
 internal const val AZ_SITE_URL = "https://hereliesaz.com"
 
+/** Where the About page's tip button sends anyone who wants to leave one. */
+internal const val AZ_DONATE_URL = "https://paypal.me/HereLiesAz"
+
 /**
  * Renders the pinned footer strip shown at the bottom of the expanded menu.
  *

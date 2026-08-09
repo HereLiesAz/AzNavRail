@@ -20,10 +20,9 @@ import AzMarkdownNative from './AzMarkdownNative';
 import { AzButton } from './AzButton';
 import { AzLoad } from './AzLoad';
 import { AzButtonShape } from '../types';
-import { AzDocEntry } from '../services/githubDocs';
+import { AzAuthorProfile, AzDocEntry } from '../services/githubDocs';
 import { AzMoreFromApp } from '../services/moreFromAz';
 import { azAboutPrefetch } from '../services/aboutPrefetch';
-import { AzFooterLabel } from './AzFooterLabel';
 import { useAzAccent, AZ_ACCENT_FALLBACK } from '../AzRailPalette';
 
 /**
@@ -50,6 +49,14 @@ const AZ_ABOUT_DISMISS_THRESHOLD = 140;
 /** Grows the header glyphs' touch targets to something a finger can actually find. */
 const AZ_ABOUT_HIT_SLOP = { top: 12, bottom: 12, left: 12, right: 12 };
 
+/** Where the About page's tip button sends anyone who wants to leave one. */
+const AZ_DONATE_URL = 'https://paypal.me/HereLiesAz';
+
+/** The free-forever pitch shown above the tip button. */
+const AZ_TIP_PITCH =
+  'Every single one of my apps is available on Github in full, without ads or conditions of ' +
+  'any kind, for free and forever. But I never say no to just a the-tip.';
+
 interface AboutOverlayProps {
   repoUrl: string;
   settings?: { activeColor?: string; translucentBackground?: string };
@@ -72,10 +79,13 @@ const CAROUSEL_ROW_HEIGHT = HERO_LARGE + 24;
 /**
  * In-app About reader.
  *
- * Layout is two vertically-stacked halves:
- *  - **Top half** — auto-generated table of contents of the app's markdown docs.
- *  - **Bottom half** — a focused-hero "More from Az" carousel (small · medium · LARGE · medium · small)
- *    with the active app's banner (when present), name, description, and link buttons under it.
+ * Layout is vertically stacked, each section sharing the screen equally:
+ *  - **Docs** — auto-generated table of contents of the app's markdown docs.
+ *  - **More from Az** (when enabled) — a focused-hero carousel (small · medium · LARGE · medium ·
+ *    small) with the active app's banner (when present), name, description, and link buttons.
+ *  - **Tip jar, author, and contact** — the free-forever pitch and tip button, the author's GitHub
+ *    avatar/name/bio, and the @HereLiesAz/Feedback/website links, stacked in large type. Scrolls
+ *    independently of the sections above it.
  */
 export const AboutOverlay: React.FC<AboutOverlayProps> = ({
   repoUrl,
@@ -99,6 +109,9 @@ export const AboutOverlay: React.FC<AboutOverlayProps> = ({
   const [selected, setSelected] = useState<AzDocEntry | null>(null);
   const [body, setBody] = useState<string | null>(null);
   const [moreApps, setMoreApps] = useState<AzMoreFromApp[] | null>(null);
+  const [authorProfile, setAuthorProfile] = useState<AzAuthorProfile | null>(
+    azAboutPrefetch.authorProfile
+  );
 
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -196,6 +209,16 @@ export const AboutOverlay: React.FC<AboutOverlayProps> = ({
       active = false;
     };
   }, [moreFromAzEnabled, moreFromAzJsonUrl]);
+
+  // The author profile (avatar + bio), fetched live from GitHub. Read whatever was already warmed,
+  // subscribe for it landing mid-flight, and kick off the fetch if nothing warmed it yet.
+  useEffect(() => {
+    const apply = () => setAuthorProfile(azAboutPrefetch.authorProfile);
+    apply();
+    const unsubscribe = azAboutPrefetch.subscribe(apply);
+    void azAboutPrefetch.warmAuthorProfile();
+    return unsubscribe;
+  }, []);
 
   // Drag-down-to-dismiss. A full-screen reader that can only be left through one small glyph is a
   // room with a keyhole for a door; this gives the whole surface a way out. The sheet follows the
@@ -314,7 +337,7 @@ export const AboutOverlay: React.FC<AboutOverlayProps> = ({
             )}
           </View>
 
-          {/* BOTTOM HALF — focused-hero More-from-Az carousel + active-app info panel. */}
+          {/* MIDDLE — focused-hero More-from-Az carousel + active-app info panel ("the app links"). */}
           {moreFromAzEnabled && (
             <View style={styles.half}>
               <View style={[styles.divider, { backgroundColor: accent }]} />
@@ -322,46 +345,107 @@ export const AboutOverlay: React.FC<AboutOverlayProps> = ({
             </View>
           )}
 
-          {/* The page ends where every other surface in this library ends: a way to write to the
-              author, and the author. About is where someone goes to find out who made this, so
-              making them close it and hunt through a menu for that would be a joke at their
-              expense. */}
+          {/* BOTTOM — the tip pitch, the author, and the way to reach them. Scrolls on its own so it
+              always has room for all three regardless of how much the sections above claim; the page
+              ends where every other surface in this library ends: a way to write to the author, and
+              the author. About is where someone goes to find out who made this, so making them hunt
+              through a menu for that would be a joke at their expense. */}
           <View style={[styles.divider, { backgroundColor: accent }]} />
-          <View style={styles.pageFooter}>
-            <AzFooterLabel
-              text="@HereLiesAz"
-              color={accent}
-              style={styles.pageFooterCell}
-              onPress={() =>
-                Linking.openURL('https://instagram.com/HereLiesAz').catch(
-                  () => {}
-                )
-              }
-            />
-            <AzFooterLabel
-              text="Feedback"
-              color={accent}
-              style={styles.pageFooterCell}
-              onPress={() =>
-                Linking.openURL(
-                  'mailto:hereliesaz@gmail.com?subject=Feedback'
-                ).catch(() => {})
-              }
-            />
-            <AzFooterLabel
-              text="hereliesaz.com"
-              color={accent}
-              style={styles.pageFooterCell}
-              onPress={() =>
-                Linking.openURL('https://hereliesaz.com').catch(() => {})
-              }
-            />
-          </View>
+          <ScrollView
+            style={styles.half}
+            contentContainerStyle={styles.footerScroll}
+          >
+            <AzTipJar accent={accent} />
+            <View style={styles.tipToAuthorGap} />
+            <AzAuthorHeader accent={accent} profile={authorProfile} />
+            <View style={[styles.divider, { backgroundColor: accent }]} />
+            <View style={styles.pageFooter}>
+              <AzAboutFooterLink
+                text="@HereLiesAz"
+                color={accent}
+                onPress={() =>
+                  Linking.openURL('https://instagram.com/HereLiesAz').catch(
+                    () => {}
+                  )
+                }
+              />
+              <AzAboutFooterLink
+                text="Feedback"
+                color={accent}
+                onPress={() =>
+                  Linking.openURL(
+                    'mailto:hereliesaz@gmail.com?subject=Feedback'
+                  ).catch(() => {})
+                }
+              />
+              <AzAboutFooterLink
+                text="hereliesaz.com"
+                color={accent}
+                onPress={() =>
+                  Linking.openURL('https://hereliesaz.com').catch(() => {})
+                }
+              />
+            </View>
+          </ScrollView>
         </>
       )}
     </Animated.View>
   );
 };
+
+/**
+ * The free-forever pitch and its tip button — sits between the app carousel and the author header,
+ * where "here's more of my work" naturally turns into "here's how you can thank me for it".
+ */
+const AzTipJar: React.FC<{ accent: string }> = ({ accent }) => (
+  <View style={styles.tipJar}>
+    <Text style={styles.tipText}>{AZ_TIP_PITCH}</Text>
+    <View style={styles.tipButtonGap} />
+    <AzButton
+      text="Leave a Tip"
+      color={accent}
+      shape={AzButtonShape.RECTANGLE}
+      onClick={() => Linking.openURL(AZ_DONATE_URL).catch(() => {})}
+    />
+  </View>
+);
+
+/**
+ * The author header: GitHub avatar, name, and bio. The avatar and bio are fetched live from the
+ * GitHub users API (see `azAboutPrefetch.warmAuthorProfile`) rather than baked in, so this stays
+ * current with no release needed; the name is fixed — it is always "Az" regardless of what GitHub's
+ * `name` field says.
+ */
+const AzAuthorHeader: React.FC<{
+  accent: string;
+  profile: AzAuthorProfile | null;
+}> = ({ accent, profile }) => (
+  <View style={styles.authorHeader}>
+    <View style={[styles.authorAvatar, { borderColor: accent }]}>
+      {profile?.avatarUrl ? (
+        <Image
+          source={{ uri: profile.avatarUrl }}
+          style={styles.authorAvatarImage}
+        />
+      ) : (
+        <Text style={[styles.authorAvatarFallback, { color: accent }]}>AZ</Text>
+      )}
+    </View>
+    <Text style={styles.authorName}>Az</Text>
+    {!!profile?.bio && <Text style={styles.authorBio}>{profile.bio}</Text>}
+  </View>
+);
+
+/** One big, centered link row in the About page's own footer — see `AboutOverlay`. */
+const AzAboutFooterLink: React.FC<{
+  text: string;
+  color: string;
+  onPress: () => void;
+}> = ({ text, color, onPress }) => (
+  <TouchableOpacity onPress={onPress} style={styles.footerLinkRow}>
+    <Text style={[styles.footerLinkText, { color }]}>{text}</Text>
+  </TouchableOpacity>
+);
 
 const MoreFromAzHeroCarousel: React.FC<{
   apps: AzMoreFromApp[] | null;
@@ -578,8 +662,44 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   half: { flex: 1 },
   divider: { height: 1, marginVertical: 8 },
-  pageFooter: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  pageFooterCell: { flex: 1 },
+  footerScroll: { paddingVertical: 16 },
+  tipJar: { alignItems: 'center' },
+  tipText: {
+    color: AzAboutColors.InkMuted,
+    fontSize: 17,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  tipButtonGap: { height: 14 },
+  tipToAuthorGap: { height: 28 },
+  authorHeader: { alignItems: 'center' },
+  authorAvatar: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  authorAvatarImage: { width: '100%', height: '100%' },
+  authorAvatarFallback: { fontSize: 28, fontWeight: 'bold' },
+  authorName: {
+    color: AzAboutColors.Ink,
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginTop: 14,
+  },
+  authorBio: {
+    color: AzAboutColors.InkMuted,
+    fontSize: 17,
+    textAlign: 'center',
+    marginTop: 6,
+    lineHeight: 24,
+  },
+  pageFooter: { alignItems: 'center', gap: 22, marginTop: 4 },
+  footerLinkRow: { paddingVertical: 4 },
+  footerLinkText: { fontSize: 24, fontWeight: '600' },
   header: { flexDirection: 'row', alignItems: 'center' },
   title: { flex: 1, fontSize: 30, fontWeight: 'bold', marginHorizontal: 8 },
   icon: { fontSize: 22, paddingHorizontal: 6 },
