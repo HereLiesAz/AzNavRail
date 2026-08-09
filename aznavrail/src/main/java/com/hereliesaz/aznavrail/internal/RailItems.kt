@@ -885,7 +885,8 @@ private fun DraggableRailItemWrapper(
                         rotationDegrees = rotationDegrees,
                         onHostExpandedChange = { id, expanded ->
                             scope.onExpandedChangeMap[id]?.invoke(expanded)
-                        }
+                        },
+                        itemSize = if (scope.railItemWidth.isSpecified) scope.railItemWidth else AzNavRailDefaults.ButtonWidth
                     )
                 }
             } else {
@@ -936,7 +937,8 @@ private fun DraggableRailItemWrapper(
                         rotationDegrees = rotationDegrees,
                         onHostExpandedChange = { id, expanded ->
                             scope.onExpandedChangeMap[id]?.invoke(expanded)
-                        }
+                        },
+                        itemSize = if (scope.railItemWidth.isSpecified) scope.railItemWidth else AzNavRailDefaults.ButtonWidth
                     )
                 }
             }
