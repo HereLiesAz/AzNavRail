@@ -39,3 +39,15 @@ data class AzMoreFromApp(
     /** Optional banner (docs/banner.* in the app's repo) shown at the top of the app's info panel. */
     val bannerUrl: String? = null,
 )
+
+/**
+ * The library author's own GitHub profile, shown in the About page's author header. Fetched live
+ * from the GitHub users API rather than baked in, so it stays current with no release needed.
+ *
+ * @param avatarUrl The author's GitHub avatar image URL. Blank when the fetch failed.
+ * @param bio The author's GitHub profile bio, or null when unset or the fetch failed.
+ */
+data class AzAuthorProfile(
+    val avatarUrl: String,
+    val bio: String?,
+)

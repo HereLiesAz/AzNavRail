@@ -409,6 +409,19 @@ entries before CI bakes). Do NOT reintroduce per-app runtime resolution in the r
 (avoids the unauthenticated GitHub rate limit and web CORS). The carousel is built from the rail's
 own components (`AzButton`, `AzLoad`, `AzDivider`, `AutoSizeText`) and tokens so it matches the rail.
 
+Below the More-from-Az carousel, the About page ends with three sections, each rendered by
+`AboutOverlay.kt` (mirrored on Android and CMP): `AzTipJar` (the free-forever pitch, verbatim: "Every
+single one of my apps is available on Github in full, without ads or conditions of any kind, for free
+and forever. But I never say no to just a the-tip." — plus a "Leave a Tip" button opening
+`AZ_DONATE_URL`, `Footer.kt`'s `https://paypal.me/HereLiesAz`); `AzAuthorHeader` (a circular GitHub
+avatar, the fixed name "Az", and a bio — avatar and bio are fetched live from
+`https://api.github.com/users/HereLiesAz` via `GithubDocsRepository.fetchAuthorProfile` /
+`AzAboutPrefetch.warmAuthorProfile`, never baked in); and `AzAboutPageFooter` (the @HereLiesAz /
+Feedback / hereliesaz.com links, stacked vertically in large type — not the compact side-by-side row
+the drawer's own `Footer.kt` uses for the same three destinations). This whole bottom stretch scrolls
+independently of the docs TOC and the carousel above it, so it always has room for all three sections
+regardless of screen size.
+
 INVARIANT — do not break: the bake commit is made as `github-actions[bot]` with a `[skip ci]`
 message. The `[skip ci]` is load-bearing: it stops the bake commit from re-triggering both that
 workflow and `android-sample-build.yml` (which also has `paths-ignore` for `more-from-az.json` and

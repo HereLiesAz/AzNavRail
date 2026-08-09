@@ -29,6 +29,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -55,10 +56,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.hereliesaz.aznavrail.AzNavRailScopeImpl
+import com.hereliesaz.aznavrail.model.AzAuthorProfile
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzDocEntry
 import com.hereliesaz.aznavrail.model.AzMoreFromApp
@@ -112,12 +115,15 @@ private object AzAboutColors {
 /**
  * Full-screen, themed in-app About reader.
  *
- * Layout is two vertically-stacked halves:
- *  - **Top half** — auto-generated table of contents of the app's markdown docs (`.md` files in the
- *    repo root and `docs/`). Selecting a row swaps in the [DocReader] inline.
- *  - **Bottom half** — a **focus-based "More from Az" carousel** with a 5-item size pattern
+ * Layout is vertically stacked, each section sharing the screen equally with [Modifier.weight]:
+ *  - **Docs** — auto-generated table of contents of the app's markdown docs (`.md` files in the repo
+ *    root and `docs/`). Selecting a row swaps in the [DocReader] inline.
+ *  - **More from Az** (when enabled) — a **focus-based carousel** with a 5-item size pattern
  *    (small · medium · LARGE · medium · small). The LARGE (center-most) item is the currently active
  *    app; its banner (when present), name, description, and link buttons are rendered below the row.
+ *  - **Tip jar, author, and contact** — the free-forever pitch and tip button ([AzTipJar]), the
+ *    author's GitHub avatar/name/bio ([AzAuthorHeader]), and the @HereLiesAz/Feedback/website links
+ *    ([AzAboutPageFooter]). This section scrolls independently so it always has room for all three.
  */
 @Composable
 internal fun AboutOverlay(
@@ -300,7 +306,7 @@ internal fun AboutOverlay(
                     }
                 }
 
-                // BOTTOM HALF — More-from-Az focused-hero carousel + active-app info panel.
+                // MIDDLE — More-from-Az focused-hero carousel + active-app info panel ("the app links").
                 if (moreFromAzEnabled) {
                     Spacer(Modifier.height(12.dp))
                     AzDivider(color = accent)
@@ -313,19 +319,116 @@ internal fun AboutOverlay(
                     }
                 }
 
-                // The page ends where every other surface in this library ends: a way to write to
-                // the author, and the author. The About page is where someone goes to find out who
-                // made this and how to complain about it — making them close it and hunt through a
-                // menu for that would be a joke at their expense.
-                AzAboutPageFooter(accent = accent)
+                // BOTTOM — the tip pitch, the author, and the way to reach them. Scrolls on its own
+                // so it always has room for all three regardless of how much the panes above claim;
+                // the page ends where every other surface in this library ends: a way to write to the
+                // author, and the author. The About page is where someone goes to find out who made
+                // this and how to complain about it — making them hunt through a menu for that would
+                // be a joke at their expense.
+                Spacer(Modifier.height(12.dp))
+                AzDivider(color = accent)
+                Box(Modifier.weight(1f).fillMaxWidth()) {
+                    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                        Spacer(Modifier.height(16.dp))
+                        AzTipJar(accent = accent)
+                        Spacer(Modifier.height(28.dp))
+                        AzAuthorHeader(accent = accent)
+                        AzAboutPageFooter(accent = accent)
+                    }
+                }
             }
         }
     }
 }
 
 /**
- * The About page's own footer: Feedback and @HereLiesAz, side by side, auto-sized like the menu
- * footer's rows.
+ * The free-forever pitch and its tip button — sits between the app carousel and the author header,
+ * where "here's more of my work" naturally turns into "here's how you can thank me for it".
+ */
+@Composable
+private fun AzTipJar(accent: Color) {
+    val context = LocalContext.current
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = "Every single one of my apps is available on Github in full, without ads or " +
+                "conditions of any kind, for free and forever. But I never say no to just a the-tip.",
+            style = MaterialTheme.typography.bodyLarge,
+            color = AzAboutColors.InkMuted,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(14.dp))
+        AzButton(
+            onClick = { openUrl(context, AZ_DONATE_URL) },
+            text = "Leave a Tip",
+            color = accent,
+            activeColor = accent,
+            shape = AzButtonShape.RECTANGLE,
+        )
+    }
+}
+
+/**
+ * The author header: GitHub avatar, name, and bio. The avatar and bio are fetched live from the
+ * GitHub users API (see [AzAboutPrefetch.warmAuthorProfile]) rather than baked in, so this stays
+ * current with no release needed; the name is fixed — it is always "Az" regardless of what GitHub's
+ * `name` field says.
+ */
+@Composable
+private fun AzAuthorHeader(accent: Color) {
+    val context = LocalContext.current
+    LaunchedEffect(Unit) { runCatching { AzAboutPrefetch.warmAuthorProfile(context) } }
+    val profile: AzAuthorProfile? = AzAboutPrefetch.authorProfile
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(88.dp)
+                .clip(CircleShape)
+                .border(2.dp, accent, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            val avatarUrl = profile?.avatarUrl
+            if (!avatarUrl.isNullOrBlank()) {
+                Image(
+                    painter = rememberAsyncImagePainter(avatarUrl),
+                    contentDescription = "Az",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize().clip(CircleShape),
+                )
+            } else {
+                Text("AZ", style = MaterialTheme.typography.headlineMedium, color = accent)
+            }
+        }
+        Spacer(Modifier.height(14.dp))
+        Text(
+            text = "Az",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = AzAboutColors.Ink,
+        )
+        val bio = profile?.bio
+        if (!bio.isNullOrBlank()) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = bio,
+                style = MaterialTheme.typography.bodyLarge,
+                color = AzAboutColors.InkMuted,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+/**
+ * The About page's own footer: @HereLiesAz, Feedback, and hereliesaz.com, stacked so each gets the
+ * full width to be set in large type — the reader has already stepped aside into a full page for
+ * this; three cramped columns of small text would undersell the invitation.
  */
 @Composable
 private fun AzAboutPageFooter(accent: Color) {
@@ -335,21 +438,20 @@ private fun AzAboutPageFooter(accent: Color) {
             context.applicationInfo.loadLabel(context.packageManager).toString()
         }.getOrDefault(context.packageName)
     }
-    Spacer(Modifier.height(12.dp))
+    Spacer(Modifier.height(20.dp))
     AzDivider(color = accent)
-    Spacer(Modifier.height(4.dp))
-    Row(
+    Spacer(Modifier.height(20.dp))
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(22.dp),
     ) {
-        AzFooterLabel(
+        AzAboutFooterLink(
             text = "@HereLiesAz",
             color = accent,
             onClick = { openUrl(context, AZ_INSTAGRAM_URL) },
-            modifier = Modifier.weight(1f),
         )
-        AzFooterLabel(
+        AzAboutFooterLink(
             text = "Feedback",
             color = accent,
             onClick = {
@@ -362,15 +464,25 @@ private fun AzAboutPageFooter(accent: Color) {
                 } catch (_: Exception) {
                 }
             },
-            modifier = Modifier.weight(1f),
         )
-        AzFooterLabel(
+        AzAboutFooterLink(
             text = "hereliesaz.com",
             color = accent,
             onClick = { openUrl(context, AZ_SITE_URL) },
-            modifier = Modifier.weight(1f),
         )
     }
+}
+
+/** One big, centered link row in the About page's own footer — see [AzAboutPageFooter]. */
+@Composable
+private fun AzAboutFooterLink(text: String, color: Color, onClick: () -> Unit) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.headlineSmall,
+        fontWeight = FontWeight.SemiBold,
+        color = color,
+        modifier = Modifier.clickable { onClick() }.padding(vertical = 4.dp),
+    )
 }
 
 @Composable
