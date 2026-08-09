@@ -170,3 +170,35 @@ export async function fetchDoc(entry: AzDocEntry): Promise<string | null> {
   const res = await cachedGet(entry.downloadUrl);
   return res?.body ?? null;
 }
+
+/**
+ * The library author's own GitHub profile, shown in the About page's author header. Fetched live
+ * from the GitHub users API rather than baked in, so it stays current with no release needed.
+ */
+export interface AzAuthorProfile {
+  /** The author's GitHub avatar image URL. Empty when the fetch failed. */
+  avatarUrl: string;
+  /** The author's GitHub profile bio, or null when unset or the fetch failed. */
+  bio: string | null;
+}
+
+/** The library author's GitHub login — the subject of the About page's author header. */
+const AUTHOR_LOGIN = 'HereLiesAz';
+
+/**
+ * Fetches the author's GitHub profile (avatar + bio) for the About page's author header, via the
+ * public GitHub users API. Cached the same way doc bodies are.
+ */
+export async function fetchAuthorProfile(): Promise<AzAuthorProfile | null> {
+  const res = await cachedGet(`https://api.github.com/users/${AUTHOR_LOGIN}`);
+  if (!res) return null;
+  try {
+    const obj = JSON.parse(res.body);
+    return {
+      avatarUrl: typeof obj.avatar_url === 'string' ? obj.avatar_url : '',
+      bio: typeof obj.bio === 'string' && obj.bio.trim() ? obj.bio : null,
+    };
+  } catch {
+    return null;
+  }
+}

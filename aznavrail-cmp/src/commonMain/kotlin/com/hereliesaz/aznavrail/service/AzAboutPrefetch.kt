@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.hereliesaz.aznavrail.model.AzAuthorProfile
 import com.hereliesaz.aznavrail.model.AzDocEntry
 import com.hereliesaz.aznavrail.model.AzMoreFromApp
 import kotlinx.coroutines.sync.Mutex
@@ -39,6 +40,11 @@ object AzAboutPrefetch {
 
     /** Doc bodies warmed ahead of a tap, keyed by [AzDocEntry.downloadUrl]. */
     private val bodies = mutableMapOf<String, String>()
+
+    /** The author's GitHub profile (avatar + bio), warmed for the About page's author header. */
+    var authorProfile: AzAuthorProfile? by mutableStateOf(null)
+        private set
+    private var authorProfileWarmed = false
 
     private val lock = Mutex()
 
@@ -94,6 +100,21 @@ object AzAboutPrefetch {
         }
     }
 
+    /**
+     * Fetches the author's GitHub profile (avatar + bio) for the About page's author header.
+     *
+     * Idempotent for the process lifetime: the profile doesn't vary per repo or per app, so it is
+     * fetched at most once regardless of how many times this is called.
+     */
+    suspend fun warmAuthorProfile() {
+        lock.withLock { if (authorProfileWarmed) return }
+        val profile = GithubDocsRepository.fetchAuthorProfile().getOrNull()
+        lock.withLock {
+            authorProfileWarmed = true
+            if (profile != null) authorProfile = profile
+        }
+    }
+
     /** Drops everything warmed. Test seam; nothing in the library calls it. */
     fun clear() {
         docsRepoUrl = null
@@ -101,6 +122,8 @@ object AzAboutPrefetch {
         moreUrl = null
         moreApps = null
         bodies.clear()
+        authorProfile = null
+        authorProfileWarmed = false
     }
 }
 
@@ -121,5 +144,8 @@ internal fun AzAboutWarmup(
     }
     LaunchedEffect(moreFromAzEnabled, moreFromAzJsonUrl) {
         if (moreFromAzEnabled) runCatching { AzAboutPrefetch.warmMoreFromAz(moreFromAzJsonUrl) }
+    }
+    LaunchedEffect(Unit) {
+        runCatching { AzAboutPrefetch.warmAuthorProfile() }
     }
 }

@@ -1,9 +1,11 @@
 package com.hereliesaz.aznavrail.service
 
 import android.content.Context
+import com.hereliesaz.aznavrail.model.AzAuthorProfile
 import com.hereliesaz.aznavrail.model.AzDocEntry
 import com.hereliesaz.aznavrail.service.GithubDocsRepository.listDocs
 import org.json.JSONArray
+import org.json.JSONObject
 
 /**
  * Discovers and fetches the markdown documentation of a GitHub repository for the in-app About
@@ -174,5 +176,25 @@ object GithubDocsRepository {
         val res = AzHttpCache.get(context, entry.downloadUrl)
             ?: return Result.failure(IllegalStateException("Could not load ${entry.path}"))
         return Result.success(res.body)
+    }
+
+    /** The library author's GitHub login — the subject of the About page's author header. */
+    private const val AUTHOR_LOGIN = "HereLiesAz"
+
+    /**
+     * Fetches the author's GitHub profile (avatar + bio) for the About page's author header, via the
+     * public GitHub users API. Cached the same way doc bodies are.
+     */
+    suspend fun fetchAuthorProfile(context: Context): Result<AzAuthorProfile> {
+        val res = AzHttpCache.get(context, "https://api.github.com/users/$AUTHOR_LOGIN")
+            ?: return Result.failure(IllegalStateException("Could not load author profile"))
+        val obj = runCatching { JSONObject(res.body) }.getOrNull()
+            ?: return Result.failure(IllegalStateException("Malformed author profile"))
+        return Result.success(
+            AzAuthorProfile(
+                avatarUrl = obj.optString("avatar_url").takeIf { it.isNotBlank() } ?: "",
+                bio = obj.optString("bio").takeIf { it.isNotBlank() },
+            )
+        )
     }
 }

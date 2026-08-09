@@ -1,5 +1,12 @@
 import { useEffect } from 'react';
-import { AzDocEntry, DocsResult, listDocs, fetchDoc } from './githubDocs';
+import {
+  AzAuthorProfile,
+  AzDocEntry,
+  DocsResult,
+  listDocs,
+  fetchDoc,
+  fetchAuthorProfile,
+} from './githubDocs';
 import { AzMoreFromApp, fetchMoreFromAz } from './moreFromAz';
 
 /**
@@ -20,6 +27,8 @@ class AzAboutPrefetch {
   private moreUrl: string | null = null;
   private moreApps: AzMoreFromApp[] | null = null;
   private bodies = new Map<string, string>();
+  private authorProfileValue: AzAuthorProfile | null = null;
+  private authorProfileWarmed = false;
   private inFlight = new Map<string, Promise<unknown>>();
   private listeners = new Set<() => void>();
 
@@ -48,6 +57,11 @@ class AzAboutPrefetch {
   /** The warmed markdown for `entry`, or null when it wasn't among the ones warmed ahead. */
   bodyFor(entry: AzDocEntry): string | null {
     return this.bodies.get(entry.downloadUrl) ?? null;
+  }
+
+  /** The author's warmed GitHub profile (avatar + bio), or null when not fetched yet / failed. */
+  get authorProfile(): AzAuthorProfile | null {
+    return this.authorProfileValue;
   }
 
   /**
@@ -121,6 +135,36 @@ class AzAboutPrefetch {
     await run;
   }
 
+  /**
+   * Fetches the author's GitHub profile (avatar + bio) for the About page's author header.
+   *
+   * Idempotent for the session lifetime: the profile doesn't vary per repo or per app, so it is
+   * fetched at most once regardless of how many times this is called.
+   */
+  async warmAuthorProfile(): Promise<void> {
+    if (this.authorProfileWarmed) return;
+    const key = 'authorProfile';
+    const existing = this.inFlight.get(key);
+    if (existing) {
+      await existing;
+      return;
+    }
+    const run = fetchAuthorProfile()
+      .then((profile) => {
+        this.authorProfileWarmed = true;
+        if (profile) {
+          this.authorProfileValue = profile;
+          this.emit();
+        }
+      })
+      .catch(() => {
+        this.authorProfileWarmed = true;
+      })
+      .finally(() => this.inFlight.delete(key));
+    this.inFlight.set(key, run);
+    await run;
+  }
+
   /** Drops everything warmed. Test seam; nothing in the library calls it. */
   clear(): void {
     this.docsRepoUrl = null;
@@ -128,6 +172,8 @@ class AzAboutPrefetch {
     this.moreUrl = null;
     this.moreApps = null;
     this.bodies.clear();
+    this.authorProfileValue = null;
+    this.authorProfileWarmed = false;
     this.emit();
   }
 }
@@ -152,4 +198,7 @@ export function useAzAboutWarmup(
     if (moreFromAzEnabled && moreFromAzJsonUrl)
       void azAboutPrefetch.warmMoreFromAz(moreFromAzJsonUrl);
   }, [moreFromAzEnabled, moreFromAzJsonUrl]);
+  useEffect(() => {
+    void azAboutPrefetch.warmAuthorProfile();
+  }, []);
 }

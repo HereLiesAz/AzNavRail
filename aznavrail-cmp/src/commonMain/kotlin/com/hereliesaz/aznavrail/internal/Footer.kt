@@ -219,6 +219,9 @@ internal const val AZ_INSTAGRAM_URL = "https://instagram.com/HereLiesAz"
 /** The author's site — where the About page sends anyone who wants the rest of the work. */
 internal const val AZ_SITE_URL = "https://hereliesaz.com"
 
+/** Where the About page's tip button sends anyone who wants to leave one. */
+internal const val AZ_DONATE_URL = "https://paypal.me/HereLiesAz"
+
 /**
  * The `mailto:` URI behind every "Feedback" row, with the app name as the subject.
  *
