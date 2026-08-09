@@ -168,7 +168,8 @@ internal fun AzUnattachedRail(
             UnattachedStack(
                 hosts = hosts,
                 modifier = Modifier
-                    .align(if (railOnLeft) Alignment.TopEnd else Alignment.TopStart)
+                    .fillMaxSize()
+                    .wrapContentSize(if (railOnLeft) Alignment.TopEnd else Alignment.TopStart)
                     .padding(top = safeInset, bottom = safeInset),
                 scope = scope,
                 navController = navController,
@@ -184,7 +185,8 @@ internal fun AzUnattachedRail(
             UnattachedStack(
                 hosts = hosts,
                 modifier = Modifier
-                    .align(if (railOnLeft) Alignment.BottomEnd else Alignment.BottomStart)
+                    .fillMaxSize()
+                    .wrapContentSize(if (railOnLeft) Alignment.BottomEnd else Alignment.BottomStart)
                     .padding(top = safeInset, bottom = safeInset),
                 scope = scope,
                 navController = navController,
