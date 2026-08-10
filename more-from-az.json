@@ -1,5 +1,5 @@
 {
-  "version": 13,
+  "version": 14,
   "apps": [
     {
       "name": "GraffitiXR",
@@ -39,9 +39,10 @@
     },
     {
       "name": "Guillotine",
-      "iconUrl": "guillotine_banner.png",
+      "iconUrl": "https://play-lh.googleusercontent.com/1dM5Lu2ZVxSWl19psk-GNxQGgOxNCnYXjFm39Ln_R8YWIn3xbawthPDwnNRML4DaOwsLDaKeL0VIRM9d6Fff",
       "description": "An AI-Powered Non-Linear Video Editor",
       "github": "https://github.com/HereLiesAz/Guillotine",
+      "play": "https://play.google.com/store/apps/details?id=com.hereliesaz.guillotine",
       "web": "https://hereliesaz.com/guillotine/",
       "isPwa": false
     },
