@@ -38,7 +38,9 @@ dependencies {
     // The High-Inference API: `@Az` annotations + the processor that turns them into an AzGraph.
     implementation(project(":aznavrail-annotations"))
     ksp(project(":aznavrail-processor"))
+    ksp(libs.compose.destinations.ksp)
     implementation(project(":aznavrail"))
+    implementation(libs.compose.destinations.core)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)

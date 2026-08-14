@@ -5,9 +5,55 @@ on:
     paths-ignore:
       - 'more-from-az.json'
       - '**/*.md'
+  pull_request:
+    paths-ignore:
+      - 'more-from-az.json'
+      - '**/*.md'
 
 jobs:
+  ux-analysis:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Test UX analyzer
+      run: python .github/scripts/test_compose_destinations_ux.py
+
+    - name: Generate UX code-scanning report
+      run: >-
+        python .github/scripts/compose_destinations_ux.py SampleApp/src/main --root .
+        --format sarif --output build/reports/compose-destinations-ux.sarif --fail-on none
+
+    - name: Add UX annotations and job summary
+      run: >-
+        python .github/scripts/compose_destinations_ux.py SampleApp/src/main --root .
+        --format github --summary "$GITHUB_STEP_SUMMARY" --fail-on none
+
+    - name: Upload UX report to code scanning
+      if: >-
+        always() &&
+        (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: build/reports/compose-destinations-ux.sarif
+        category: compose-destinations-ux
+
+    - name: Upload UX report artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: compose-destinations-ux-report
+        path: build/reports/compose-destinations-ux.sarif
+
+    - name: Enforce UX errors
+      run: python .github/scripts/compose_destinations_ux.py SampleApp/src/main --root . --fail-on error
+
   build:
+    needs: ux-analysis
     runs-on: ubuntu-latest
 
     steps:
