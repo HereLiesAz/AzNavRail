@@ -34,7 +34,11 @@ NAVIGATION = re.compile(
     re.MULTILINE,
 )
 ERROR_NAME = re.compile(r"(?:Error|Failure|Timeout|Denied|Unavailable|Invalid|Expired)", re.IGNORECASE)
-ESCAPE = re.compile(r"\b(?:skip|support|cancel|close|back|popBackStack|navigateUp|retry|exit)\b", re.IGNORECASE)
+_ESCAPE_WORD = r"(?:skip|support|cancel|close|back|popBackStack|navigateUp|retry|exit)"
+# An escape must look like an actual invocation or callback reference (`retry()`, `nav::navigateUp`),
+# not merely the word appearing anywhere -- a label like `Text("Retry")` is not an escape action.
+ESCAPE = re.compile(rf"\b{_ESCAPE_WORD}\b\s*\(|::{_ESCAPE_WORD}\b", re.IGNORECASE)
+PACKAGE = re.compile(r"^\s*package\s+([\w.]+)", re.MULTILINE)
 
 RULES = {
     "orphaned-error-state": ("Orphaned error state", "error"),
@@ -109,49 +113,263 @@ def _block(source: str, opening_index: int, opening: str = "{", closing: str = "
     return source[opening_index + 1:end] if end >= 0 else ""
 
 
+def _strip_noncode(source: str) -> str:
+    """Blank string/char literals and comments so keyword regexes never match inside them."""
+    result: list[str] = []
+    quote: str | None = None
+    escaped = False
+    index = 0
+    length = len(source)
+    while index < length:
+        char = source[index]
+        pair = source[index:index + 2]
+        if quote:
+            result.append("\n" if char == "\n" else " ")
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = None
+            index += 1
+            continue
+        if pair == "//":
+            newline = source.find("\n", index + 2)
+            end = length if newline == -1 else newline
+            result.append(" " * (end - index))
+            index = end
+            continue
+        if pair == "/*":
+            end = source.find("*/", index + 2)
+            end = length if end == -1 else end + 2
+            result.append("".join("\n" if ch == "\n" else " " for ch in source[index:end]))
+            index = end
+            continue
+        if char in {'"', "'"}:
+            quote = char
+            result.append(" ")
+            index += 1
+            continue
+        result.append(char)
+        index += 1
+    return "".join(result)
+
+
+def _has_escape(text: str) -> bool:
+    return bool(ESCAPE.search(_strip_noncode(text)))
+
+
+def _branch_body(body: str, start: int) -> str:
+    """Return a `when` branch's code, starting just after its `->`.
+
+    Stops at the next sibling branch (a `->` at the same nesting depth) or at the point the
+    branch's own brackets close back past where it started, whichever comes first.
+    """
+    depth = 0
+    quote: str | None = None
+    escaped = False
+    index = start
+    length = len(body)
+    while index < length:
+        char = body[index]
+        pair = body[index:index + 2]
+        if quote:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = None
+            index += 1
+            continue
+        if pair == "//":
+            newline = body.find("\n", index + 2)
+            index = length if newline == -1 else newline
+            continue
+        if pair == "/*":
+            end = body.find("*/", index + 2)
+            index = length if end == -1 else end + 2
+            continue
+        if char in {'"', "'"}:
+            quote = char
+        elif char in "({[":
+            depth += 1
+        elif char in ")}]":
+            if depth == 0:
+                break
+            depth -= 1
+        elif depth == 0 and pair == "->" and index != start:
+            break
+        index += 1
+    return body[start:index]
+
+
+def _expression_body(source: str, start: int) -> str:
+    """Return an expression-bodied function's code, starting just after its `=`.
+
+    An expression body (`fun Home() = HomeScreen()`) has no braces to bound it, so instead of
+    borrowing the next `{` found anywhere later in the file (which either drops the destination
+    entirely or steals an unrelated function's block), scan forward and stop at the first
+    unmatched closing bracket or a newline/`;` reached at zero nesting depth -- the point the
+    statement actually ends.
+    """
+    depth = 0
+    quote: str | None = None
+    escaped = False
+    index = start
+    length = len(source)
+    while index < length:
+        char = source[index]
+        pair = source[index:index + 2]
+        if quote:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = None
+            index += 1
+            continue
+        if pair == "//":
+            newline = source.find("\n", index + 2)
+            index = length if newline == -1 else newline
+            continue
+        if pair == "/*":
+            end = source.find("*/", index + 2)
+            index = length if end == -1 else end + 2
+            continue
+        if char in {'"', "'"}:
+            quote = char
+        elif char in "({[":
+            depth += 1
+        elif char in ")}]":
+            if depth == 0:
+                break
+            depth -= 1
+        elif depth == 0 and char in {"\n", ";"}:
+            break
+        index += 1
+    return source[start:index]
+
+
 def _type_name(raw: str) -> str:
-    return raw.rstrip("?").split("<", 1)[0].rsplit(".", 1)[-1]
+    # Keep any qualifier the source actually wrote (`checkout.State`, not just `State`) -- collapsing
+    # it away is what lets same-named sealed/enum types from different packages collide below.
+    return raw.rstrip("?").split("<", 1)[0]
+
+
+def _enum_values(declarations: str) -> set[str]:
+    """Return only the leading identifier of each top-level enum entry.
+
+    A blind `findall` over the whole declarations text also matches constructor-argument
+    references such as `Color.RED` in `YES(Color.RED), NO(Color.BLUE)`; walk the text instead so
+    only the identifier immediately after the start of the text or a top-level comma counts.
+    """
+    values: set[str] = set()
+    depth = 0
+    index = 0
+    length = len(declarations)
+    expect_entry = True
+    while index < length:
+        char = declarations[index]
+        if char in "([{":
+            depth += 1
+        elif char in ")]}":
+            depth = max(0, depth - 1)
+        elif depth == 0 and char == ",":
+            expect_entry = True
+            index += 1
+            continue
+        elif depth == 0 and expect_entry and not char.isspace():
+            match = re.match(r"[A-Z][A-Z0-9_]*\b", declarations[index:])
+            if match and match.group(0) != "TODO":
+                values.add(match.group(0))
+            expect_entry = False
+            if match:
+                index += match.end()
+                continue
+        index += 1
+    return values
+
+
+def _index_types(table: dict[str, set[str]], declarations: list[tuple[str, str | None, set[str]]]) -> None:
+    """Key each declaration by its package-qualified name, plus a bare-name alias when that bare
+    name is unambiguous across the analyzed sources.
+
+    Two distinct sealed/enum types sharing a bare name (e.g. `checkout.State` and `profile.State`)
+    must never be pooled under one shared bucket -- so the unqualified alias is only registered
+    when exactly one declaration claims that bare name.
+    """
+    bare_counts: dict[str, int] = {}
+    for name, _package, _values in declarations:
+        bare_counts[name] = bare_counts.get(name, 0) + 1
+    for name, package, values in declarations:
+        table[f"{package}.{name}" if package else name] = values
+        if bare_counts[name] == 1:
+            table[name] = values
 
 
 def parse_sources(paths: Iterable[Path]) -> tuple[dict[str, set[str]], dict[str, set[str]], dict[str, Destination]]:
     """Parse enum values, sealed-state variants, and destination functions."""
-    enums: dict[str, set[str]] = {}
-    states: dict[str, set[str]] = {}
     destinations: dict[str, Destination] = {}
-    sources: list[tuple[Path, str]] = []
+    sources: list[tuple[Path, str, str | None]] = []
+    enum_declarations: list[tuple[str, str | None, set[str]]] = []
+    state_declarations: list[tuple[str, str | None, set[str]]] = []
     for path in paths:
         source = path.read_text(encoding="utf-8")
-        sources.append((path, source))
+        package_match = PACKAGE.search(source)
+        package = package_match.group(1) if package_match else None
+        sources.append((path, source, package))
         for match in ENUM.finditer(source):
             body = _block(source, source.find("{", match.start()))
             declarations = body.split(";", 1)[0]
-            enums[match.group(1)] = {
-                token for token in re.findall(r"\b[A-Z][A-Z0-9_]*\b", declarations)
-                if token not in {"TODO"}
-            }
+            enum_declarations.append((match.group(1), package, _enum_values(declarations)))
         for match in SEALED.finditer(source):
             line_end = source.find("\n", match.end())
             body_open = source.find("{", match.end(), len(source) if line_end < 0 else line_end)
             body = _block(source, body_open) if body_open >= 0 else ""
-            states[match.group(1)] = {child.group(1) for child in STATE_CHILD.finditer(body)}
+            state_declarations.append((match.group(1), package, {child.group(1) for child in STATE_CHILD.finditer(body)}))
 
     # Sealed implementations are often siblings rather than lexically nested. Resolve these only
-    # after collecting every sealed type so declarations can live in separate source files.
-    for _, source in sources:
-        for state in states:
-            implementation = re.compile(
-                rf"\b(?:data\s+)?(?:object|class)\s+(\w+)[^\n{{}}]*:\s*[^\n{{}}]*\b{re.escape(state)}\b"
-            )
-            states[state].update(match.group(1) for match in implementation.finditer(source))
-
-    for path, source in sources:
-        for match in DESTINATION.finditer(source):
-            params_open = source.find("(", match.start())
-            params_close = _matching(source, params_open, "(", ")")
-            body_open = source.find("{", params_close)
-            if params_close < 0 or body_open < 0:
+    # after collecting every sealed type, scoped to sources sharing that type's package -- so two
+    # same-named sealed types declared in different packages never pool each other's variants.
+    for name, package, variants in state_declarations:
+        implementation = re.compile(
+            rf"\b(?:data\s+)?(?:object|class)\s+(\w+)[^\n{{}}]*:\s*[^\n{{}}]*\b{re.escape(name)}\b"
+        )
+        for _, source, source_package in sources:
+            if source_package != package:
                 continue
-            body = _block(source, body_open)
+            variants.update(match.group(1) for match in implementation.finditer(source))
+
+    enums: dict[str, set[str]] = {}
+    states: dict[str, set[str]] = {}
+    _index_types(enums, enum_declarations)
+    _index_types(states, state_declarations)
+
+    for path, source, _package in sources:
+        for match in DESTINATION.finditer(source):
+            # `match` already consumed the function's own opening paren (the pattern ends in a
+            # literal `\(`) -- searching the source again for the next `(` from match.start()
+            # would instead find an argumented `@Destination(...)`'s own paren when present.
+            params_open = match.end() - 1
+            params_close = _matching(source, params_open, "(", ")")
+            if params_close < 0:
+                continue
+            after_params = source[params_close + 1:]
+            return_type = re.match(r"\s*:\s*[\w.<>?]+", after_params)
+            skip = return_type.end() if return_type else 0
+            stripped = after_params[skip:].lstrip()
+            skip += len(after_params[skip:]) - len(stripped)
+            body_start = params_close + 1 + skip
+            if stripped.startswith("{"):
+                body = _block(source, body_start)
+            elif stripped.startswith("="):
+                body = _expression_body(source, body_start + 1)
+            else:
+                # No block or expression body found (e.g. an `expect`/abstract declaration) --
+                # nothing to analyze.
+                continue
             parameters = {name: _type_name(kind) for name, kind in PARAMETER.findall(source[params_open + 1:params_close])}
             destination = Destination(
                 name=match.group(1),
@@ -172,22 +390,42 @@ def analyze(paths: Iterable[Path], root: Path) -> list[Finding]:
     findings: list[Finding] = []
     for destination in destinations.values():
         relative = str(destination.file.relative_to(root))
-        error_states = sorted(
-            f"{kind}.{variant}"
+        error_variants = [
+            (kind, variant)
             for kind in destination.parameters.values()
             for variant in states.get(kind, set())
             if ERROR_NAME.search(variant)
-        )
-        if error_states and not destination.edges and not ESCAPE.search(destination.body):
+        ]
+        orphaned = []
+        for kind, variant in error_variants:
+            # Scope the escape/exit check to the specific `when` branch handling this error state
+            # when one exists, so an escape action anywhere else in the function (including an
+            # unrelated success branch) can't mask a genuinely trapped error branch.
+            arrow = re.search(rf"\b(?:{re.escape(kind)}\.)?{re.escape(variant)}\b\s*->", destination.body)
+            if arrow:
+                branch = _branch_body(destination.body, arrow.end())
+                has_edge = bool(NAVIGATION.search(branch))
+            else:
+                branch = destination.body
+                has_edge = bool(destination.edges)
+            if not has_edge and not _has_escape(branch):
+                orphaned.append(f"{kind}.{variant}")
+        if orphaned:
             findings.append(Finding(
                 "orphaned-error-state", "error", relative, destination.line,
-                f"{destination.name} accepts {', '.join(error_states)} but exposes no retry, back, escape, or outgoing direction.",
+                f"{destination.name} accepts {', '.join(sorted(orphaned))} but exposes no retry, back, escape, or outgoing direction.",
             ))
         for parameter, kind in destination.parameters.items():
             values = enums.get(kind)
             if not values or not re.search(rf"\bwhen\s*\(\s*{re.escape(parameter)}\s*\)", destination.body):
                 continue
-            handled = {value for value in values if re.search(rf"\b(?:{re.escape(kind)}\.)?{re.escape(value)}\b\s*->", destination.body)}
+            handled = {
+                value for value in values
+                if re.search(
+                    rf"\b(?:{re.escape(kind)}\.)?{re.escape(value)}\b(?:\s*,\s*(?:{re.escape(kind)}\.)?\w+\b)*\s*->",
+                    destination.body,
+                )
+            }
             missing = sorted(values - handled)
             if missing:
                 findings.append(Finding(
@@ -196,9 +434,10 @@ def analyze(paths: Iterable[Path], root: Path) -> list[Finding]:
                 ))
 
     graph = {name: {edge for edge in item.edges if edge in destinations} for name, item in destinations.items()}
-    for component in _closed_cycles(graph):
+    full_edges = {name: item.edges for name, item in destinations.items()}
+    for component in _closed_cycles(graph, full_edges):
         members = [destinations[name] for name in sorted(component)]
-        if any(ESCAPE.search(member.body) for member in members):
+        if any(_has_escape(member.body) for member in members):
             continue
         first = members[0]
         findings.append(Finding(
@@ -224,8 +463,16 @@ def analyze(paths: Iterable[Path], root: Path) -> list[Finding]:
     return sorted(findings, key=lambda item: (item.file, item.line, item.rule))
 
 
-def _closed_cycles(graph: dict[str, set[str]]) -> list[set[str]]:
-    """Return strongly connected components that are cycles with no external edge."""
+def _closed_cycles(graph: dict[str, set[str]], full_edges: dict[str, set[str]] | None = None) -> list[set[str]]:
+    """Return strongly connected components that are cycles with no external edge.
+
+    `graph` is used to walk reachability, so it must only contain edges to other known
+    destinations (Tarjan's algorithm indexes into it by target). `full_edges` -- the destination's
+    *unfiltered* edge set, including targets outside the analyzed source set entirely -- is used
+    for the closure check instead, so an edge to a destination declared in another module the
+    caller didn't pass in still counts as a real way out rather than being silently dropped.
+    """
+    edges_for_closure = full_edges if full_edges is not None else graph
     index = 0
     stack: list[str] = []
     indices: dict[str, int] = {}
@@ -255,7 +502,7 @@ def _closed_cycles(graph: dict[str, set[str]]) -> list[set[str]]:
             if member == node:
                 break
         is_cycle = len(component) > 1 or any(member in graph[member] for member in component)
-        is_closed = not any(target not in component for member in component for target in graph[member])
+        is_closed = not any(target not in component for member in component for target in edges_for_closure[member])
         if is_cycle and is_closed:
             result.append(component)
 
@@ -263,6 +510,15 @@ def _closed_cycles(graph: dict[str, set[str]]) -> list[set[str]]:
         if node not in indices:
             visit(node)
     return result
+
+
+def has_any_destination(paths: Iterable[Path]) -> bool:
+    """Return whether any of the given files declares an `@Destination` composable.
+
+    A run over paths with none is a no-op that trivially "passes" -- distinguishing that case
+    lets callers refuse to treat an empty analysis as a clean report.
+    """
+    return any(DESTINATION.search(path.read_text(encoding="utf-8")) for path in paths)
 
 
 def kotlin_files(inputs: list[Path]) -> list[Path]:
@@ -318,7 +574,7 @@ def github_annotations(findings: list[Finding]) -> str:
     )
 
 
-def markdown_summary(findings: list[Finding]) -> str:
+def markdown_summary(findings: list[Finding], found_any_destination: bool = True) -> str:
     """Render a compact GitHub step summary with severity totals and findings."""
     errors = sum(finding.severity == "error" for finding in findings)
     warnings = sum(finding.severity == "warning" for finding in findings)
@@ -328,6 +584,12 @@ def markdown_summary(findings: list[Finding]) -> str:
         f"**{errors} errors · {warnings} warnings**",
         "",
     ]
+    if not found_any_destination:
+        lines.append(
+            "_No `@Destination`-annotated composables were found in the analyzed paths -- "
+            "there was nothing for this report to check._"
+        )
+        lines.append("")
     if not findings:
         lines.append("No UX graph defects found.")
     else:
@@ -349,9 +611,23 @@ def main(argv: list[str] | None = None) -> int:
         "--fail-on", choices=("error", "warning", "none"), default="error",
         help="Lowest severity that returns status 1; default: error",
     )
+    parser.add_argument(
+        "--require-destinations", action="store_true",
+        help=(
+            "Also return status 1 if no @Destination-annotated composables were found in the "
+            "given paths -- otherwise an empty analysis silently reports as clean."
+        ),
+    )
     args = parser.parse_args(argv)
     root = args.root.resolve()
-    findings = analyze(kotlin_files(args.paths), root)
+    files = kotlin_files(args.paths)
+    found_any_destination = has_any_destination(files)
+    if not found_any_destination:
+        sys.stderr.write(
+            "compose_destinations_ux: no @Destination-annotated composables were found in the "
+            "given paths -- there is nothing to analyze.\n"
+        )
+    findings = analyze(files, root)
     if args.format == "json":
         report = json.dumps([finding.as_dict() for finding in findings], indent=2) + "\n"
     elif args.format == "sarif":
@@ -371,9 +647,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.summary:
         args.summary.parent.mkdir(parents=True, exist_ok=True)
         with args.summary.open("a", encoding="utf-8") as summary_file:
-            summary_file.write(markdown_summary(findings))
+            summary_file.write(markdown_summary(findings, found_any_destination))
     threshold = SEVERITY_RANK[args.fail_on]
-    return int(any(SEVERITY_RANK[finding.severity] >= threshold for finding in findings))
+    failed = any(SEVERITY_RANK[finding.severity] >= threshold for finding in findings)
+    if args.require_destinations and not found_any_destination:
+        failed = True
+    return int(failed)
 
 
 if __name__ == "__main__":

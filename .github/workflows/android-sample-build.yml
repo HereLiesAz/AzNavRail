@@ -50,7 +50,9 @@ jobs:
         path: build/reports/compose-destinations-ux.sarif
 
     - name: Enforce UX errors
-      run: python .github/scripts/compose_destinations_ux.py SampleApp/src/main --root . --fail-on error
+      run: >-
+        python .github/scripts/compose_destinations_ux.py SampleApp/src/main --root .
+        --fail-on error --require-destinations
 
   build:
     needs: ux-analysis
