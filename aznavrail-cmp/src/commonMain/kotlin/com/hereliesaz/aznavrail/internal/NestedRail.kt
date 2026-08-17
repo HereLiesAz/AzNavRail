@@ -16,8 +16,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,9 +35,11 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.geometry.Rect
 import com.hereliesaz.aznavrail.azAccent
 import com.hereliesaz.aznavrail.AzNavRailButton
+import com.hereliesaz.aznavrail.AzTextBoxDefaults
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.model.AzNavItem
 import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
+import com.hereliesaz.aznavrail.model.HiddenMenuItem
 
 /**
  * Renders a secondary popup rail anchored beside a parent [AzNavItem].
@@ -80,7 +85,19 @@ internal fun NestedRail(
     onItemGloballyPositioned: ((String, androidx.compose.ui.geometry.Rect) -> Unit)? = null,
     rotationDegrees: Float = 0f,
     onHostExpandedChange: ((String, Boolean) -> Unit)? = null,
-    itemSize: Dp = AzNavRailDefaults.ButtonWidth
+    itemSize: Dp = AzNavRailDefaults.ButtonWidth,
+    /** The id of the nested item whose hidden menu is currently open, if any. */
+    hiddenMenuOpenId: String? = null,
+    /** Invoked with a nested item's id to open its hidden menu (long-press). */
+    onMenuOpen: ((String) -> Unit)? = null,
+    /** Invoked to close whichever nested item's hidden menu is open. */
+    onHiddenMenuDismiss: (() -> Unit)? = null,
+    /** Invoked when a hidden-menu list entry is tapped. */
+    onHiddenMenuItemClick: ((HiddenMenuItem) -> Unit)? = null,
+    /** Invoked when a hidden-menu input entry is submitted. */
+    onHiddenMenuInputSubmit: ((HiddenMenuItem, String) -> Unit)? = null,
+    /** Background colour for a nested item's hidden menu; [Color.Unspecified] uses the library default. */
+    hiddenMenuBackgroundColor: Color = Color.Unspecified
 ) {
     // Window size in px → 80% caps in Dp (LocalConfiguration is Android-only).
     val density = LocalDensity.current
@@ -104,7 +121,7 @@ internal fun NestedRail(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             items.filter { !it.isSubItem }.forEach { item ->
-                NestedItemWrapper(item, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, items, true, onHostExpandedChange, focusColor, secondaryColor, secondaryClassifiers, tertiaryColor, tertiaryClassifiers, itemSize)
+                NestedItemWrapper(item, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, items, true, onHostExpandedChange, focusColor, secondaryColor, secondaryClassifiers, tertiaryColor, tertiaryClassifiers, itemSize, hiddenMenuOpenId, onMenuOpen, onHiddenMenuDismiss, onHiddenMenuItemClick, onHiddenMenuInputSubmit, hiddenMenuBackgroundColor)
             }
         }
     } else {
@@ -115,7 +132,7 @@ internal fun NestedRail(
             verticalAlignment = Alignment.CenterVertically
         ) {
             items.filter { !it.isSubItem }.forEach { item ->
-                NestedItemWrapper(item, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, items, false, onHostExpandedChange, focusColor, secondaryColor, secondaryClassifiers, tertiaryColor, tertiaryClassifiers, itemSize)
+                NestedItemWrapper(item, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, items, false, onHostExpandedChange, focusColor, secondaryColor, secondaryClassifiers, tertiaryColor, tertiaryClassifiers, itemSize, hiddenMenuOpenId, onMenuOpen, onHiddenMenuDismiss, onHiddenMenuItemClick, onHiddenMenuInputSubmit, hiddenMenuBackgroundColor)
             }
         }
     }
@@ -139,28 +156,36 @@ private fun NestedItemWrapper(
     secondaryClassifiers: Set<String> = emptySet(),
     tertiaryColor: Color? = null,
     tertiaryClassifiers: Set<String> = emptySet(),
-    itemSize: Dp = AzNavRailDefaults.ButtonWidth
+    itemSize: Dp = AzNavRailDefaults.ButtonWidth,
+    hiddenMenuOpenId: String? = null,
+    onMenuOpen: ((String) -> Unit)? = null,
+    onHiddenMenuDismiss: (() -> Unit)? = null,
+    onHiddenMenuItemClick: ((HiddenMenuItem) -> Unit)? = null,
+    onHiddenMenuInputSubmit: ((HiddenMenuItem, String) -> Unit)? = null,
+    hiddenMenuBackgroundColor: Color = Color.Unspecified
 ) {
     // Evict cached bounds when this nested item leaves composition (popup closes). Without
     // this the help overlay would later draw cards/lines for the now-invisible nested rail.
     DisposableEffect(item.id) {
         onDispose { onItemGloballyPositioned?.invoke(item.id, Rect.Zero) }
     }
+    // Window-space bounds of this item's button, kept locally so its hidden menu (opened via
+    // long-press below) can anchor itself without needing the top-level item-bounds cache.
+    var itemBounds by remember { mutableStateOf(Rect.Zero) }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         androidx.compose.foundation.layout.Box(modifier = Modifier.onGloballyPositioned { coords ->
             // positionInWindow + size so the bounds stay logical (unclipped) when the popup
             // is scrolled. See the matching comment in RailContent.kt.
             val pos = coords.positionInWindow()
             val size = coords.size
-            onItemGloballyPositioned?.invoke(
-                item.id,
-                Rect(
-                    left = pos.x,
-                    top = pos.y,
-                    right = pos.x + size.width,
-                    bottom = pos.y + size.height,
-                ),
+            val bounds = Rect(
+                left = pos.x,
+                top = pos.y,
+                right = pos.x + size.width,
+                bottom = pos.y + size.height,
             )
+            itemBounds = bounds
+            onItemGloballyPositioned?.invoke(item.id, bounds)
         }) {
             val alert = item.alert
             AzNavRailButton(
@@ -173,6 +198,9 @@ private fun NestedItemWrapper(
                         onItemSelected(item)
                     }
                 },
+                onLongClick = if (!item.hiddenMenuItems.isNullOrEmpty()) {
+                    { onMenuOpen?.invoke(item.id) }
+                } else null,
                 text = item.text,
                 color = alert?.color() ?: item.color ?: azAccent(),
                 activeColor = alert?.color() ?: activeColor,
@@ -218,12 +246,37 @@ private fun NestedItemWrapper(
             }
         }
 
+        if (hiddenMenuOpenId == item.id && !item.hiddenMenuItems.isNullOrEmpty()) {
+            HiddenMenuPopup(
+                items = item.hiddenMenuItems,
+                onDismiss = {
+                    item.onHiddenMenuDismiss?.invoke()
+                    onHiddenMenuDismiss?.invoke()
+                },
+                onItemClick = { menuItem ->
+                    onHiddenMenuItemClick?.invoke(menuItem)
+                    item.onHiddenMenuDismiss?.invoke()
+                    onHiddenMenuDismiss?.invoke()
+                },
+                onInputSubmit = { menuItem, value ->
+                    onHiddenMenuInputSubmit?.invoke(menuItem, value)
+                    item.onHiddenMenuDismiss?.invoke()
+                    onHiddenMenuDismiss?.invoke()
+                },
+                backgroundColor = if (hiddenMenuBackgroundColor != Color.Unspecified) hiddenMenuBackgroundColor else AzTextBoxDefaults.getBackgroundColor(),
+                backgroundOpacity = AzTextBoxDefaults.getBackgroundOpacity(),
+                anchorWidth = itemBounds.right.toInt(),
+                anchorTop = itemBounds.top.toInt(),
+                accent = activeColor,
+            )
+        }
+
         if (item.isHost && hostStates[item.id] == true) {
             val subItems = allItems.filter { it.hostId == item.id && it.isSubItem }
             if (isVerticalRail) {
                 // Vertical rail: sub-items continue the column
                 subItems.forEach { subItem ->
-                    NestedItemWrapper(subItem, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, allItems, isVerticalRail, null, focusColor, secondaryColor, secondaryClassifiers, tertiaryColor, tertiaryClassifiers, itemSize)
+                    NestedItemWrapper(subItem, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, allItems, isVerticalRail, null, focusColor, secondaryColor, secondaryClassifiers, tertiaryColor, tertiaryClassifiers, itemSize, hiddenMenuOpenId, onMenuOpen, onHiddenMenuDismiss, onHiddenMenuItemClick, onHiddenMenuInputSubmit, hiddenMenuBackgroundColor)
                 }
             } else {
                 // Horizontal rail: sub-items expand downward vertically
@@ -233,7 +286,7 @@ private fun NestedItemWrapper(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     subItems.forEach { subItem ->
-                        NestedItemWrapper(subItem, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, allItems, isVerticalRail, null, focusColor, secondaryColor, secondaryClassifiers, tertiaryColor, tertiaryClassifiers, itemSize)
+                        NestedItemWrapper(subItem, currentDestination, activeColor, activeClassifiers, onItemSelected, rotationDegrees, onItemGloballyPositioned, hostStates, allItems, isVerticalRail, null, focusColor, secondaryColor, secondaryClassifiers, tertiaryColor, tertiaryClassifiers, itemSize, hiddenMenuOpenId, onMenuOpen, onHiddenMenuDismiss, onHiddenMenuItemClick, onHiddenMenuInputSubmit, hiddenMenuBackgroundColor)
                     }
                 }
             }
