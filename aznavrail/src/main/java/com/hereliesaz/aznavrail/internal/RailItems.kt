@@ -886,7 +886,18 @@ private fun DraggableRailItemWrapper(
                         onHostExpandedChange = { id, expanded ->
                             scope.onExpandedChangeMap[id]?.invoke(expanded)
                         },
-                        itemSize = if (scope.railItemWidth.isSpecified) scope.railItemWidth else AzNavRailDefaults.ButtonWidth
+                        itemSize = if (scope.railItemWidth.isSpecified) scope.railItemWidth else AzNavRailDefaults.ButtonWidth,
+                        hiddenMenuOpenId = hiddenMenuOpenId,
+                        onMenuOpen = onMenuOpen,
+                        onHiddenMenuDismiss = onHiddenMenuDismiss,
+                        onHiddenMenuItemClick = { menuItem ->
+                            scope.hiddenMenuOnClickMap[menuItem.id]?.invoke()
+                            menuItem.route?.let { navController?.navigate(it) }
+                        },
+                        onHiddenMenuInputSubmit = { menuItem, value ->
+                            scope.hiddenMenuOnValueChangeMap[menuItem.id]?.invoke(value)
+                        },
+                        hiddenMenuBackgroundColor = scope.translucentBackground,
                     )
                 }
             } else {
@@ -938,7 +949,18 @@ private fun DraggableRailItemWrapper(
                         onHostExpandedChange = { id, expanded ->
                             scope.onExpandedChangeMap[id]?.invoke(expanded)
                         },
-                        itemSize = if (scope.railItemWidth.isSpecified) scope.railItemWidth else AzNavRailDefaults.ButtonWidth
+                        itemSize = if (scope.railItemWidth.isSpecified) scope.railItemWidth else AzNavRailDefaults.ButtonWidth,
+                        hiddenMenuOpenId = hiddenMenuOpenId,
+                        onMenuOpen = onMenuOpen,
+                        onHiddenMenuDismiss = onHiddenMenuDismiss,
+                        onHiddenMenuItemClick = { menuItem ->
+                            scope.hiddenMenuOnClickMap[menuItem.id]?.invoke()
+                            menuItem.route?.let { navController?.navigate(it) }
+                        },
+                        onHiddenMenuInputSubmit = { menuItem, value ->
+                            scope.hiddenMenuOnValueChangeMap[menuItem.id]?.invoke(value)
+                        },
+                        hiddenMenuBackgroundColor = scope.translucentBackground,
                     )
                 }
             }
@@ -1001,7 +1023,7 @@ private fun DraggableRailItemWrapper(
 }
 
 @Composable
-private fun HiddenMenuPopup(
+internal fun HiddenMenuPopup(
     items: List<com.hereliesaz.aznavrail.model.HiddenMenuItem>,
     onDismiss: () -> Unit,
     onItemClick: (com.hereliesaz.aznavrail.model.HiddenMenuItem) -> Unit,
@@ -1093,7 +1115,7 @@ private fun HiddenMenuPopup(
 }
 
 /** Positions the hidden menu's [Popup] at the window origin; the window inside places itself. */
-private val AzHiddenMenuPositionProvider = object : androidx.compose.ui.window.PopupPositionProvider {
+internal val AzHiddenMenuPositionProvider = object : androidx.compose.ui.window.PopupPositionProvider {
     override fun calculatePosition(
         anchorBounds: androidx.compose.ui.unit.IntRect,
         windowSize: androidx.compose.ui.unit.IntSize,
