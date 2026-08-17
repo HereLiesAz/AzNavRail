@@ -1,4 +1,4 @@
-package com.hereliesaz.SampleApp.screens
+package com.hereliesaz.sampleapp.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

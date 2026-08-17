@@ -1,4 +1,4 @@
-package com.hereliesaz.SampleApp
+package com.hereliesaz.sampleapp
 
 import android.util.Log
 import androidx.compose.foundation.background
@@ -41,20 +41,20 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.hereliesaz.SampleApp.screens.BottomSheetDemoScreen
-import com.hereliesaz.SampleApp.screens.CustomizationDemoScreen
-import com.hereliesaz.SampleApp.screens.CustomizationState
-import com.hereliesaz.SampleApp.screens.FabOverlayDemoScreen
-import com.hereliesaz.SampleApp.screens.FabOverlayState
-import com.hereliesaz.SampleApp.screens.FormShowcaseScreen
-import com.hereliesaz.SampleApp.screens.HelpSystemDemoScreen
-import com.hereliesaz.SampleApp.screens.HelpSystemState
-import com.hereliesaz.SampleApp.screens.HiddenMenuDemoScreen
-import com.hereliesaz.SampleApp.screens.HiddenMenuDemoState
-import com.hereliesaz.SampleApp.screens.LegacyRailDemoScreen
-import com.hereliesaz.SampleApp.screens.ShowcaseHomeScreen
-import com.hereliesaz.SampleApp.screens.StandaloneWidgetsScreen
-import com.hereliesaz.SampleApp.screens.TutorialDemoScreen
+import com.hereliesaz.sampleapp.screens.BottomSheetDemoScreen
+import com.hereliesaz.sampleapp.screens.CustomizationDemoScreen
+import com.hereliesaz.sampleapp.screens.CustomizationState
+import com.hereliesaz.sampleapp.screens.FabOverlayDemoScreen
+import com.hereliesaz.sampleapp.screens.FabOverlayState
+import com.hereliesaz.sampleapp.screens.FormShowcaseScreen
+import com.hereliesaz.sampleapp.screens.HelpSystemDemoScreen
+import com.hereliesaz.sampleapp.screens.HelpSystemState
+import com.hereliesaz.sampleapp.screens.HiddenMenuDemoScreen
+import com.hereliesaz.sampleapp.screens.HiddenMenuDemoState
+import com.hereliesaz.sampleapp.screens.LegacyRailDemoScreen
+import com.hereliesaz.sampleapp.screens.ShowcaseHomeScreen
+import com.hereliesaz.sampleapp.screens.StandaloneWidgetsScreen
+import com.hereliesaz.sampleapp.screens.TutorialDemoScreen
 import com.hereliesaz.aznavrail.AzHostActivityLayout
 import kotlinx.coroutines.launch
 import com.hereliesaz.aznavrail.AzNavHost
@@ -115,7 +115,7 @@ fun MainApp() {
                 displayAppName = false,
                 showFooter = true,
                 // Blank → the About page auto-derives the repo from this app's namespace
-                // (com.hereliesaz.SampleApp → github.com/hereliesaz/SampleApp). The Customization
+                // (com.hereliesaz.sampleapp → github.com/hereliesaz/SampleApp). The Customization
                 // screen can override it to demo the optional explicit URL.
                 appRepositoryUrl = "",
                 helpLineColors = emptyList(),

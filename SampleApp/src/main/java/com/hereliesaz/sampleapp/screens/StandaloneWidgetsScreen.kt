@@ -1,4 +1,4 @@
-package com.hereliesaz.SampleApp.screens
+package com.hereliesaz.sampleapp.screens
 
 import android.util.Log
 import androidx.compose.foundation.background
@@ -36,9 +36,14 @@ import com.hereliesaz.aznavrail.AzToggle
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.util.EqualWidthLayout
 import com.hereliesaz.aznavrail.util.text.AutoSizeText
+import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
 
 private const val TAG = "StandaloneWidgetsScreen"
 
+// Compose Destinations pilot -- see the comment on FormShowcaseScreen for why this
+// argument-free leaf, and its route, are unchanged from the existing manual registration.
+@Destination<RootGraph>(route = "standalone-widgets")
 @Composable
 fun StandaloneWidgetsScreen() {
     Column(

@@ -1,4 +1,4 @@
-package com.hereliesaz.SampleApp.screens
+package com.hereliesaz.sampleapp.screens
 
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
@@ -35,9 +35,20 @@ import com.hereliesaz.aznavrail.AzForm
 import com.hereliesaz.aznavrail.AzTextBox
 import com.hereliesaz.aznavrail.AzTextBoxDefaults
 import com.hereliesaz.aznavrail.model.AzButtonShape
+import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
 
 private const val TAG = "FormShowcaseScreen"
 
+// Compose Destinations pilot (see docs/superpowers/plans/2026-08-14-compose-destinations-integration.md,
+// Phase 2): an argument-free leaf screen, so it needs no manual composable call or state
+// threading to become a real KSP-generated destination. The route matches the existing manual
+// `composable("forms") { FormShowcaseScreen() }` registration in MainApp.kt exactly -- both
+// currently coexist; migrating the runtime graph to route through the generated destination is
+// later work per the plan's Phase 2 exit gate. `start = true` satisfies the generated RootGraph's
+// own requirement for a start route -- it says nothing about the real app's actual start
+// destination, which remains "showcase-home" via AzNavHost, untouched.
+@Destination<RootGraph>(route = "forms", start = true)
 @Composable
 fun FormShowcaseScreen() {
     var suggestionLimit by remember { mutableFloatStateOf(3f) }

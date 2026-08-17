@@ -1,4 +1,4 @@
-package com.hereliesaz.SampleApp
+package com.hereliesaz.sampleapp
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity

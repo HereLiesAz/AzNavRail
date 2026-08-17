@@ -1,4 +1,4 @@
-package com.hereliesaz.SampleApp.screens
+package com.hereliesaz.sampleapp.screens
 
 import android.app.Activity
 import android.content.Context
@@ -23,7 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.hereliesaz.SampleApp.SampleOverlayService
+import com.hereliesaz.sampleapp.SampleOverlayService
 import com.hereliesaz.aznavrail.AzButton
 import com.hereliesaz.aznavrail.AzToggle
 import com.hereliesaz.aznavrail.model.AzButtonShape

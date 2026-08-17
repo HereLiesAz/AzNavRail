@@ -1,4 +1,4 @@
-package com.hereliesaz.SampleApp.screens
+package com.hereliesaz.sampleapp.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -76,7 +76,7 @@ private val helpLinePalettes = listOf(
     "Warm" to listOf(Color(0xFFEF6C00), Color(0xFFD32F2F), Color(0xFFC2185B)),
 )
 // The first choice (empty string) is the default: the About page auto-derives the repo from the
-// app's namespace (com.hereliesaz.SampleApp → github.com/hereliesaz/SampleApp). The remaining
+// app's namespace (com.hereliesaz.sampleapp → github.com/hereliesaz/SampleApp). The remaining
 // entries demonstrate the OPTIONAL explicit override.
 private val repoChoices = listOf(
     "Auto (from namespace)" to "",

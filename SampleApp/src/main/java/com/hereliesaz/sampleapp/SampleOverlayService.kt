@@ -1,4 +1,4 @@
-package com.hereliesaz.SampleApp
+package com.hereliesaz.sampleapp
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column

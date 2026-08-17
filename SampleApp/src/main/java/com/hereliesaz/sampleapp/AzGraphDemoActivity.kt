@@ -1,4 +1,4 @@
-package com.hereliesaz.SampleApp
+package com.hereliesaz.sampleapp
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
