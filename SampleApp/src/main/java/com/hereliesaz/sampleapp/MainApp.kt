@@ -55,6 +55,9 @@ import com.hereliesaz.sampleapp.screens.LegacyRailDemoScreen
 import com.hereliesaz.sampleapp.screens.ShowcaseHomeScreen
 import com.hereliesaz.sampleapp.screens.StandaloneWidgetsScreen
 import com.hereliesaz.sampleapp.screens.TutorialDemoScreen
+import com.ramcosta.composedestinations.generated.destinations.FormsDestination
+import com.ramcosta.composedestinations.generated.destinations.LegacyDestination
+import com.ramcosta.composedestinations.generated.destinations.StandaloneWidgetsDestination
 import com.hereliesaz.aznavrail.AzHostActivityLayout
 import kotlinx.coroutines.launch
 import com.hereliesaz.aznavrail.AzNavHost
@@ -935,7 +938,11 @@ fun MainApp() {
                 composable("help-system") {
                     HelpSystemDemoScreen(state = helpSystem, onChange = { helpSystem = it })
                 }
-                composable("forms") { FormShowcaseScreen() }
+                // Route strings for these three come from the generated Destination objects
+                // (the compose-destinations pilot -- see FormShowcaseScreen's KDoc) rather than
+                // being duplicated as literals here, so an annotation's `route` staying in sync
+                // with the rail/menu route it must match is checked at compile time.
+                composable(FormsDestination.route) { FormShowcaseScreen() }
                 composable("hidden-menus") {
                     HiddenMenuDemoScreen(
                         state = HiddenMenuDemoState(
@@ -947,8 +954,8 @@ fun MainApp() {
                         ),
                     )
                 }
-                composable("standalone-widgets") { StandaloneWidgetsScreen() }
-                composable("legacy") { LegacyRailDemoScreen() }
+                composable(StandaloneWidgetsDestination.route) { StandaloneWidgetsScreen() }
+                composable(LegacyDestination.route) { LegacyRailDemoScreen() }
 
                 // Preserved legacy routes so old menu/rail items still navigate.
                 composable("menu-host") { ScreenContent("Menu Host Screen") }
