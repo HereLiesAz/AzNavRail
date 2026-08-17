@@ -1,5 +1,5 @@
 {
-  "version": 14,
+  "version": 15,
   "apps": [
     {
       "name": "GraffitiXR",
@@ -94,7 +94,9 @@
       "name": "BluSnu",
       "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/BluSnu/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
       "description": "",
-      "github": "https://github.com/HereLiesAz/BluSnu"
+      "github": "https://github.com/HereLiesAz/BluSnu",
+      "web": "https://hereliesaz.github.io/BluSnu/",
+      "isPwa": false
     },
     {
       "name": "Liperty",
