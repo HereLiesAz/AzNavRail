@@ -778,6 +778,10 @@ azUnattachedHostItem(id = "layers", text = "Layers", anchor = AzUnattachedAnchor
 azRailSubItem(id = "layer-1", hostId = "layers", text = "Base") { select(0) }
 ```
 
+`azRailRelocItem` (see §5) attaches to an unattached host's `hostId` the same way — a Procreate-style
+layers panel is exactly this: each layer row is an `azRailRelocItem` under an `azUnattachedHostItem`.
+Tap-to-activate and long-press-to-open-hidden-menu both work; drag-to-reorder does not — see §5's note.
+
 
 ### Per-item badges, loading and alerts (`azItemState`)
 
@@ -825,6 +829,11 @@ azRailRelocItem(
     listItem(text = "Action 1", onClick = { })
 }
 ```
+
+**`hostId` may name a rail host or an `azUnattachedHostItem` (§4)** — tap-to-activate (`onClick`) and
+long-press-to-open-hidden-menu work identically either way. Drag-to-reorder is only wired for the rail
+strip, though: under an unattached host, `onRelocate` never fires (that stack's linear layout has no
+reorder gesture of its own).
 
 ---
 

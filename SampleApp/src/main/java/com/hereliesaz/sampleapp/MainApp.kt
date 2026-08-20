@@ -619,6 +619,19 @@ fun MainApp() {
         azRailSubItem(id = "unattached-layer-over", hostId = "unattached-layers", text = "Over") {
             Log.d(TAG, "Unattached: Over layer clicked")
         }
+        // A relocatable layer row under an unattached host — the exact shape of a Procreate-style
+        // layers panel. Tap-to-select and long-press-to-open-hidden-menu both work here; drag-to-
+        // reorder does not (see the KDoc on `azRailRelocItem`'s `onRelocate` parameter).
+        azRailRelocItem(
+            id = "unattached-layer-detail",
+            hostId = "unattached-layers",
+            text = "Detail",
+            info = "azRailRelocItem under an unattached host — tap selects it, long-press opens its hidden menu.",
+            onClick = { hiddenLastAction = "unattached-layer-detail → selected" },
+        ) {
+            listItem(text = "Duplicate") { hiddenLastAction = "unattached-layer-detail → Duplicate" }
+            listItem(text = "Delete") { hiddenLastAction = "unattached-layer-detail → Delete" }
+        }
 
         // expandWhen demo toggle — lives in the menu so it doesn't clutter the rail.
         // Toggling On triggers a false→true edge on azRailHostItem("rail-host"), causing it
