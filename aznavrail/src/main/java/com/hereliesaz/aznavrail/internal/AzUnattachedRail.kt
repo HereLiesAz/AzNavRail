@@ -1,5 +1,7 @@
 package com.hereliesaz.aznavrail.internal
 
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,11 +22,16 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -32,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.AzNavRailScopeImpl
+import com.hereliesaz.aznavrail.AzTextBoxDefaults
 import com.hereliesaz.aznavrail.model.AzMotion
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzNavItem
@@ -98,6 +106,12 @@ internal fun AzUnattachedRail(
     val initiallyExpandedSeen = remember { mutableMapOf<String, Boolean>() }
     val expandWhenSeen = remember { mutableMapOf<String, Boolean>() }
     val cyclerJobs = remember { mutableStateMapOf<String, Job>() }
+
+    // A relocatable item's hidden menu (long-press), shared across every anchor stack — only one can
+    // be open at a time, same as the rail strip.
+    var hiddenMenuOpenId by remember { mutableStateOf<String?>(null) }
+    val onMenuOpen: (String) -> Unit = { id -> hiddenMenuOpenId = id }
+    val onHiddenMenuDismiss: () -> Unit = { hiddenMenuOpenId = null }
 
     val subtreeIds = remember(scope.navItems.toList()) { azUnattachedSubtreeIds(scope.navItems) }
 
@@ -178,6 +192,9 @@ internal fun AzUnattachedRail(
                 buttonSize = buttonSize,
                 spacingDp = spacing,
                 onCyclerClick = onCyclerClick,
+                hiddenMenuOpenId = hiddenMenuOpenId,
+                onMenuOpen = onMenuOpen,
+                onHiddenMenuDismiss = onHiddenMenuDismiss,
             )
         }
 
@@ -195,6 +212,9 @@ internal fun AzUnattachedRail(
                 buttonSize = buttonSize,
                 spacingDp = spacing,
                 onCyclerClick = onCyclerClick,
+                hiddenMenuOpenId = hiddenMenuOpenId,
+                onMenuOpen = onMenuOpen,
+                onHiddenMenuDismiss = onHiddenMenuDismiss,
             )
         }
 
@@ -270,6 +290,9 @@ internal fun AzUnattachedRail(
                 buttonSize = buttonSize,
                 spacingDp = spacing,
                 onCyclerClick = onCyclerClick,
+                hiddenMenuOpenId = hiddenMenuOpenId,
+                onMenuOpen = onMenuOpen,
+                onHiddenMenuDismiss = onHiddenMenuDismiss,
             )
         }
     }
@@ -287,6 +310,12 @@ private fun UnattachedStack(
     buttonSize: Dp,
     spacingDp: Dp,
     onCyclerClick: (AzNavItem) -> Unit,
+    /** The id of the relocatable item whose hidden menu is currently open, if any. */
+    hiddenMenuOpenId: String?,
+    /** Invoked with a relocatable item's id to open its hidden menu (long-press). */
+    onMenuOpen: (String) -> Unit,
+    /** Invoked to close whichever relocatable item's hidden menu is open. */
+    onHiddenMenuDismiss: () -> Unit,
 ) {
     Column(
         modifier = modifier,
@@ -302,6 +331,9 @@ private fun UnattachedStack(
                 hostStates = hostStates,
                 buttonSize = buttonSize,
                 onCyclerClick = onCyclerClick,
+                hiddenMenuOpenId = hiddenMenuOpenId,
+                onMenuOpen = onMenuOpen,
+                onHiddenMenuDismiss = onHiddenMenuDismiss,
             )
         }
     }
@@ -320,12 +352,41 @@ private fun UnattachedNode(
     hostStates: MutableMap<String, Boolean>,
     buttonSize: Dp,
     onCyclerClick: (AzNavItem) -> Unit,
+    hiddenMenuOpenId: String?,
+    onMenuOpen: (String) -> Unit,
+    onHiddenMenuDismiss: () -> Unit,
 ) {
     // A cycler shows its transient option while the commit window is still running, exactly as it
     // does on the rail.
     val displayItem =
         if (item.isCycler) item.copy(selectedOption = scope.transientCyclerOptions[item.id] ?: item.selectedOption)
         else item
+
+    // `RailContent` unconditionally nulls a relocatable item's `onClick`, expecting tap/long-press to
+    // be detected by an externally-supplied `dragModifier` instead (see `RailItems.kt`'s own gesture
+    // for the rail strip). Without one here, a relocatable item under an unattached host rendered but
+    // was 100% inert to touch. Drag-to-reorder is deliberately not replicated — see the KDoc on
+    // `azRailRelocItem`'s `onRelocate` parameter — but tap and long-press-to-open-hidden-menu are.
+    val dragModifier = if (item.isRelocItem) {
+        rememberRelocTapGestureModifier(
+            item = item,
+            vibrateOnLongPress = scope.vibrate,
+            onTap = {
+                scope.onFocusMap[item.id]?.invoke()
+                scope.lastTouchedItemId = item.id
+                scope.onClickMap[item.id]?.invoke()
+                scope.advancedConfig.onInteraction?.invoke(item.id, item)
+            },
+            onLongPress = {
+                if (!item.hiddenMenuItems.isNullOrEmpty()) {
+                    scope.onFocusMap[item.id]?.invoke()
+                    onMenuOpen(item.id)
+                }
+            },
+        )
+    } else {
+        Modifier
+    }
 
     RailContent(
         defaultShape = scope.defaultShape,
@@ -349,9 +410,40 @@ private fun UnattachedNode(
         onBoundsCalculated = { id, bounds -> scope.itemBoundsCache[id] = bounds },
         onBoundsCleared = { id -> scope.itemBoundsCache.remove(id) },
         activeColor = scope.railAccent,
+        dragModifier = dragModifier,
         onSliderChange = { id, v -> scope.onSliderChangeMap[id]?.invoke(v) },
         onSliderRangeChange = { id, r -> scope.onSliderRangeChangeMap[id]?.invoke(r) },
     )
+
+    if (item.isRelocItem && hiddenMenuOpenId == item.id && !item.hiddenMenuItems.isNullOrEmpty()) {
+        val bounds = scope.itemBoundsCache[item.id] ?: Rect.Zero
+        HiddenMenuPopup(
+            items = item.hiddenMenuItems,
+            onDismiss = {
+                item.onHiddenMenuDismiss?.invoke()
+                onHiddenMenuDismiss()
+            },
+            onItemClick = { menuItem ->
+                scope.hiddenMenuOnClickMap[menuItem.id]?.invoke()
+                menuItem.route?.let { navController?.navigate(it) }
+                item.onHiddenMenuDismiss?.invoke()
+                onHiddenMenuDismiss()
+            },
+            onInputSubmit = { menuItem, value ->
+                scope.hiddenMenuOnValueChangeMap[menuItem.id]?.invoke(value)
+                item.onHiddenMenuDismiss?.invoke()
+                onHiddenMenuDismiss()
+            },
+            backgroundColor = if (scope.translucentBackground != Color.Unspecified) scope.translucentBackground else AzTextBoxDefaults.getBackgroundColor(),
+            backgroundOpacity = AzTextBoxDefaults.getBackgroundOpacity(),
+            // Window-space right edge, not just the item's own width: unlike the rail strip (docked
+            // flush to the screen edge, so its items' width IS their right-edge x), an unattached
+            // item can sit anywhere the anchor puts it. Same reasoning as `NestedItemWrapper`.
+            anchorWidth = bounds.right.toInt(),
+            anchorTop = bounds.top.toInt(),
+            accent = scope.railAccent,
+        )
+    }
 
     if (item.isHost && hostStates[item.id] == true) {
         // Every child, not just the rail-flavoured ones: an unattached host is removed from
@@ -379,7 +471,77 @@ private fun UnattachedNode(
                     hostStates = hostStates,
                     buttonSize = buttonSize,
                     onCyclerClick = onCyclerClick,
+                    hiddenMenuOpenId = hiddenMenuOpenId,
+                    onMenuOpen = onMenuOpen,
+                    onHiddenMenuDismiss = onHiddenMenuDismiss,
                 )
+            }
+        }
+    }
+}
+
+/**
+ * Detects a plain tap (fires [onTap]) vs. a long-press (fires [onLongPress]) on a relocatable item
+ * rendered outside the rail strip. Mirrors the tap/long-press split `RailItems.kt`'s own
+ * `dragModifier` performs for reloc items in the rail — minus the drag-to-reorder branch, which does
+ * not apply here (see the KDoc on `azRailRelocItem`'s `onRelocate` parameter).
+ */
+@Composable
+private fun rememberRelocTapGestureModifier(
+    item: AzNavItem,
+    vibrateOnLongPress: Boolean,
+    onTap: () -> Unit,
+    onLongPress: () -> Unit,
+): Modifier {
+    val coroutineScope = rememberCoroutineScope()
+    val hapticFeedback = LocalHapticFeedback.current
+    val viewConfiguration = LocalViewConfiguration.current
+    return Modifier.pointerInput(item.id) {
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false)
+            val longPressTimeout = viewConfiguration.longPressTimeoutMillis
+
+            var isLongPress = false
+            val longPressJob = coroutineScope.launch {
+                delay(longPressTimeout)
+                isLongPress = true
+                if (vibrateOnLongPress) {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                }
+                onLongPress()
+            }
+
+            var hasMoved = false
+            var gestureCompletedSuccessfully = false
+
+            try {
+                val pointerId = down.id
+                while (true) {
+                    val event = awaitPointerEvent()
+                    val change = event.changes.firstOrNull { it.id == pointerId } ?: break
+
+                    val changedToUp = !change.pressed && change.previousPressed
+                    if (changedToUp) {
+                        change.consume()
+                        gestureCompletedSuccessfully = true
+                        break
+                    }
+
+                    if (!isLongPress) {
+                        val positionChange = change.position - change.previousPosition
+                        if (positionChange != Offset.Zero &&
+                            (change.position - down.position).getDistance() > viewConfiguration.touchSlop
+                        ) {
+                            hasMoved = true
+                            longPressJob.cancel()
+                        }
+                    }
+                }
+            } finally {
+                longPressJob.cancel()
+                if (!isLongPress && !hasMoved && gestureCompletedSuccessfully) {
+                    onTap()
+                }
             }
         }
     }

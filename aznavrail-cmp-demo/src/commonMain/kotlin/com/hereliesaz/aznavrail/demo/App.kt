@@ -65,6 +65,7 @@ private fun DemoHost() {
     var grid by remember { mutableStateOf(false) }
     // The third highlight is the app's to drive; nothing in the library ever lights it.
     var armed by remember { mutableStateOf(false) }
+    var lastLayerAction by remember { mutableStateOf("(none)") }
 
     AzHostActivityLayout(navController = navController) {
         // `vibrate` turns on the haptic vocabulary: every commit answers, not just FAB activation.
@@ -182,6 +183,18 @@ private fun DemoHost() {
         )
         azRailSubItem(id = "layer-base", hostId = "layers", text = "Base") {}
         azRailSubItem(id = "layer-over", hostId = "layers", text = "Over") {}
+        // A relocatable layer row under an unattached host — tap selects it, long-press opens its
+        // hidden menu. Drag-to-reorder is not wired here; see the KDoc on `azRailRelocItem`'s
+        // `onRelocate` parameter.
+        azRailRelocItem(
+            id = "layer-detail",
+            hostId = "layers",
+            text = "Detail",
+            onClick = { lastLayerAction = "Detail selected" },
+        ) {
+            listItem(text = "Duplicate") { lastLayerAction = "Detail → Duplicate" }
+            listItem(text = "Delete") { lastLayerAction = "Detail → Delete" }
+        }
 
         // --- Popup bound to the rail -----------------------------------------------------------
         azPopup(alerts)
@@ -198,6 +211,10 @@ private fun DemoHost() {
                 )
                 Text(
                     text = "Drag the floating Tools host anywhere; it comes back there.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = "Layers → Detail last action: $lastLayerAction",
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }

@@ -263,6 +263,21 @@ multiplatform-settings on CMP, SharedPreferences on Android) so it survives rota
 Rendered by `internal/AzUnattachedRail.kt`, which owns its own `hostStates` (the rail's map does not cover it) and
 re-implements the same rising-edge `initiallyExpanded` / `expandWhen` contract.
 
+`azRailRelocItem` under an unattached host used to be completely unclickable: `RailContent`'s `finalOnClick`
+unconditionally nulls a reloc item's `onClick`, expecting an externally-supplied `dragModifier` to detect the tap
+instead — `RailItems.kt` builds one for the rail strip, but `AzUnattachedRail.kt`'s `UnattachedNode` never supplied
+one, so a reloc item rendered (correctly styled, correctly badged) but no gesture was ever wired to it. Fixed by
+giving `UnattachedNode` its own `rememberRelocTapGestureModifier` — the same tap-vs-long-press split
+`RailItems.kt`'s `dragModifier` performs, minus the drag-to-reorder branch — passed in as `RailContent`'s
+`dragModifier`, plus `hiddenMenuOpenId` state threaded down through `UnattachedStack`/`UnattachedNode` so
+long-press opens a `HiddenMenuPopup` the same way the rail strip does. Drag-to-reorder is deliberately **not**
+replicated (the linear stack has no reorder gesture of its own): `onRelocate` is a documented no-op when `hostId`
+names an unattached host, both in the `azRailRelocItem` KDoc and in `docs/CAPABILITIES_AND_LIMITATIONS.md`. Mirror
+any further change here in `aznavrail-cmp/.../internal/AzUnattachedRail.kt` — the two files are near-identical,
+diverging only in platform APIs (`LocalConfiguration`/`LocalContext` vs `LocalWindowInfo`, `.fillMaxSize().wrapContentSize(...)`
+vs `.align(...)`, `AzUnattachedStore.load(context)` vs `AzUnattachedStore.load()`). `aznavrail-react` has no
+unattached-host feature at all yet, so this bug and fix do not apply there.
+
 Per-item badges + loading: every item builder accepts `badge` / `persistentBadge` / `isLoading`, and **any**
 already-declared item can be decorated by id with `azItemState(id, badge, persistentBadge, isLoading, alert)` —
 applied after the whole DSL runs (alongside `applyRelocReorders`), so declaration order is irrelevant and null

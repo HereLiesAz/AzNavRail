@@ -516,6 +516,10 @@ azRailSubToggle(
 ) { grid = !grid }
 ```
 
+`azRailRelocItem` attaches by `hostId` here too — a Procreate-style layers panel is exactly this: each
+layer row is an `azRailRelocItem(hostId = "tools")`. Tap and long-press-to-open-hidden-menu both work;
+drag-to-reorder does not (`onRelocate` only fires when `hostId` names a rail host — see below).
+
 ### Per-Item Badges & Loading (`azItemState`)
 
 Every item builder takes `badge` / `persistentBadge` / `isLoading`, and **any** declared item — rail,
@@ -1004,6 +1008,10 @@ azRailRelocItem(
     inputItem("Rename", initialValue = "Item 1") { newName -> /* ... */ }
 }
 ~~~
+
+`hostId` may also name an `azUnattachedHostItem` (Android/CMP only — see below); tap and
+long-press-to-open-hidden-menu work the same way there, but `onRelocate` only fires when `hostId`
+names a rail host, since an unattached host's stack has no drag-to-reorder gesture of its own.
 
 
 **React Implementation:**
