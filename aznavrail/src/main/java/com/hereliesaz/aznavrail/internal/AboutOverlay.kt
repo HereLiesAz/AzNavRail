@@ -51,6 +51,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.res.painterResource
+import com.hereliesaz.aznavrail.R
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -422,6 +425,16 @@ private fun AzAuthorHeader(accent: Color) {
                 textAlign = TextAlign.Center,
             )
         }
+        Spacer(Modifier.height(14.dp))
+        // The brush-stroke "A" mark — the same signature used across hereliesaz.github.io and
+        // its own /admin PWA — as a quiet watermark under the author identity, not a competing
+        // logo lockup.
+        Image(
+            painter = painterResource(R.drawable.ic_az_signature),
+            contentDescription = null,
+            colorFilter = ColorFilter.tint(AzAboutColors.InkMuted),
+            modifier = Modifier.height(28.dp),
+        )
     }
 }
 

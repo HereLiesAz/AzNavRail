@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Backdrop for the adaptive launcher icon (mipmap-anydpi-v26/ic_launcher.xml)
+         behind the AzNavRail brush-stroke mark. -->
+    <color name="ic_launcher_background">#0A0A0A</color>
+</resources>
