@@ -539,7 +539,15 @@ private fun rememberRelocTapGestureModifier(
                 }
             } finally {
                 longPressJob.cancel()
-                if (!isLongPress && !hasMoved && gestureCompletedSuccessfully) {
+                // Fires on an ordinary quick tap, and also on a press held past the long-press
+                // threshold that had no hidden menu to open for it (`onLongPress` is a no-op in that
+                // case — see the call site's own `hiddenMenuItems` guard) — from the user's
+                // perspective the latter is still just a slow tap, not a gesture to discard silently.
+                // A press that legitimately opened a hidden menu is left alone: that menu is now the
+                // interaction the user is looking at.
+                if (!hasMoved && gestureCompletedSuccessfully &&
+                    (!isLongPress || item.hiddenMenuItems.isNullOrEmpty())
+                ) {
                     onTap()
                 }
             }

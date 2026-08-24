@@ -55,6 +55,38 @@ class AzUnattachedRelocItemClickTest {
     }
 
     @Test
+    fun `holding a reloc item with no hidden menu past the long-press timeout still fires its onClick`() {
+        var clicked = false
+
+        composeTestRule.setContent {
+            val navController = rememberNavController()
+            AzHostActivityLayout(navController = navController) {
+                azUnattachedHostItem(
+                    id = "host",
+                    text = "Host",
+                    anchor = AzUnattachedAnchor.OPPOSITE,
+                    initiallyExpanded = true,
+                )
+                azRailRelocItem(id = "item1", hostId = "host", text = "Item 1", onClick = { clicked = true })
+                onscreen { }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+
+        // A held-but-stationary press must still register as a tap, not vanish silently — see
+        // `RailRelocItemLongPressClickTest` for the equivalent bug in the docked rail's own gesture.
+        composeTestRule.onNodeWithContentDescription("Item 1").performTouchInput { longClick() }
+        composeTestRule.waitForIdle()
+
+        assertTrue(
+            "Holding a reloc item with no hidden menu past the long-press timeout (without " +
+                "dragging) must still fire its onClick, exactly as an ordinary quick tap would.",
+            clicked
+        )
+    }
+
+    @Test
     fun `long-press on a reloc item under an unattached host opens its hidden menu`() {
         var actionClicked = false
 

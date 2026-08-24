@@ -586,7 +586,9 @@ private fun DraggableRailItemWrapper(
                             hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                         }
                         scope.onFocusMap[item.id]?.invoke()
-                        onMenuOpen(item.id)
+                        if (!item.hiddenMenuItems.isNullOrEmpty()) {
+                            onMenuOpen(item.id)
+                        }
                         // onDragStart(item.id) -- Deferred until movement
                     }
 
@@ -657,12 +659,20 @@ private fun DraggableRailItemWrapper(
                         }
                     } finally {
                         longPressJob.cancel()
-                        if (isLongPress) {
-                            if (dragStarted) {
-                                onDragEnd()
-                                scope.advancedConfig.onInteraction?.invoke(item.id, item)
-                            }
-                        } else if (!hasMoved && gestureCompletedSuccessfully) {
+                        if (dragStarted) {
+                            onDragEnd()
+                            scope.advancedConfig.onInteraction?.invoke(item.id, item)
+                        } else if (
+                            gestureCompletedSuccessfully && !hasMoved &&
+                            (!isLongPress || item.hiddenMenuItems.isNullOrEmpty())
+                        ) {
+                            // Reaches here two ways: an ordinary quick tap (`!isLongPress`), or a
+                            // press held past the long-press threshold that never turned into a drag
+                            // and had no hidden menu to show for it (`item.hiddenMenuItems` empty) —
+                            // from the user's perspective the latter is still just a slow tap, not a
+                            // gesture that should be silently discarded. Only a press that legitimately
+                            // opened a hidden menu (checked above) is left alone here, since that menu
+                            // is now the interaction the user is looking at.
                             val isRouteSelected =
                                 item.route != null && item.route == currentDestination
                             val isIdSelected = lastTappedId == item.id
