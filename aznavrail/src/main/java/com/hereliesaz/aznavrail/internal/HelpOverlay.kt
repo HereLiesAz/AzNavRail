@@ -111,7 +111,6 @@ internal fun HelpOverlay(
             .fillMaxSize()
             .onGloballyPositioned { overlayBounds = it.boundsInWindow() }
             // No dark scrim — the overlay shows cards and connector lines over the live UI.
-            .clickable(onClick = onDismiss) // Background tap to dismiss
             .drawBehind {
                 val strokeWidth = 4.dp
 
@@ -161,6 +160,16 @@ internal fun HelpOverlay(
                 }
             }
     ) {
+        // Background tap to dismiss, confined to the area right of the rail's own gutter — the
+        // same reasoning as the rail's own scrim (see AzNavRail's "inset to exclude the rail"
+        // comment): a full-screen listener here would sit on top of the rail's own scroll gesture
+        // and swallow every drag over the strip, leaving the rail unscrollable while help is open.
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = dynamicStartPadding)
+                .clickable(onClick = onDismiss)
+        )
         Column(
             modifier = Modifier
                 .fillMaxSize()
