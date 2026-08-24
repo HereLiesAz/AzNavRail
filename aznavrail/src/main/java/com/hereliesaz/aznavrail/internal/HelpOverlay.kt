@@ -1,6 +1,5 @@
 package com.hereliesaz.aznavrail.internal
 
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,6 +15,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -23,7 +23,6 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.azAccent
 import com.hereliesaz.aznavrail.LocalAzSafeZones
@@ -32,12 +31,45 @@ import com.hereliesaz.aznavrail.model.AzNavItem
 import androidx.compose.foundation.BorderStroke
 
 /**
+ * The four points of an elbow connector from a rail item to its help card: out of the item, into a
+ * vertical lane confined to the gutter between the rail and the cards, then straight into the card.
+ *
+ * Confining the vertical travel to `[gutterStartX, gutterEndX]` — never past `gutterEndX`, which is
+ * where card content begins — is what keeps a line from ever crossing *over* an unrelated card. A
+ * straight diagonal from item to card does not have this property: rail buttons are compact and
+ * evenly spaced while cards are tall and vary with their text, so by the Nth item the card can sit
+ * far below where a raw diagonal from that item's position would put it, and that diagonal sweeps
+ * straight through every card in between — which reads as a card's border being crossed by another
+ * card, not as a connector line, once there are enough items for the divergence to add up.
+ *
+ * [laneFraction] (0..1) spreads different items' vertical segments across the gutter width instead
+ * of stacking them all on one x, so lines fanning out to different cards stay visually separable
+ * from each other (they may still cross *each other* in the gutter — only crossing a card's own
+ * interior is what this routing eliminates).
+ */
+internal fun computeConnectorElbow(
+    itemBounds: Rect,
+    cardBounds: Rect,
+    gutterStartX: Float,
+    gutterEndX: Float,
+    laneFraction: Float,
+): List<Offset> {
+    val start = Offset(itemBounds.right, itemBounds.center.y)
+    val end = Offset(cardBounds.left, cardBounds.center.y)
+    val safeGutterEnd = gutterEndX.coerceAtLeast(gutterStartX)
+    val laneX = (gutterStartX + (safeGutterEnd - gutterStartX) * laneFraction.coerceIn(0f, 1f))
+        .coerceIn(gutterStartX, safeGutterEnd)
+    return listOf(start, Offset(laneX, start.y), Offset(laneX, end.y), end)
+}
+
+/**
  * Full-screen overlay that draws connecting lines from rail items to their help cards.
  *
  * Only items that have non-blank [AzNavItem.info], a matching entry in [helpList], or an
- * associated tutorial are shown. Tapping a card expands it; tapping the background dismisses
- * the overlay. If a nested rail is open, the help list shows only the nested items and the
- * start-padding is widened to avoid covering the popup.
+ * associated tutorial are shown. Cards always show their full explanation text (wrapped, not
+ * truncated) and the card list scrolls when it outgrows the viewport. Tapping the background
+ * dismisses the overlay. If a nested rail is open, the help list shows only the nested items and
+ * the start-padding is widened to avoid covering the popup.
  *
  * @param items All items configured in the current rail scope.
  * @param helpLineColors Custom line colors cycling through per-item; defaults to rainbow palette.
@@ -78,7 +110,6 @@ internal fun HelpOverlay(
     val density = LocalDensity.current
 
     val cardBoundsCache = remember { mutableStateMapOf<String, Rect>() }
-    var expandedItemId by remember { mutableStateOf<String?>(null) }
 
     // Overlay viewport in window coordinates, set from onGloballyPositioned on the root Box.
     // Used to suppress cards whose rail item is **provably** offscreen. Anything we don't have
@@ -122,22 +153,41 @@ internal fun HelpOverlay(
                 // has been measured (cardsViewportBounds = Rect.Zero).
                 val viewport = cardsViewportBounds
                 val clipped = viewport != Rect.Zero && viewport.width > 0f && viewport.height > 0f
+                val gutterEndX = viewport.takeIf { clipped }?.left
+                val laneCount = visibleItemsWithInfo.size
 
-                val drawLines: androidx.compose.ui.graphics.drawscope.DrawScope.() -> Unit = {
+                val drawLines: DrawScope.() -> Unit = {
                     visibleItemsWithInfo.forEachIndexed { index, item ->
                         val drawColor = colorPalette[index % colorPalette.size]
                         val itemBounds = itemBoundsCache[item.id]
                         val cardBounds = cardBoundsCache[item.id]
 
                         if (itemBounds != null && cardBounds != null) {
-                            val start = Offset(itemBounds.right, itemBounds.center.y)
-                            val end = Offset(cardBounds.left, cardBounds.center.y)
-                            drawLine(
-                                color = drawColor,
-                                start = start,
-                                end = end,
-                                strokeWidth = strokeWidth.toPx()
-                            )
+                            // Route through the gutter (never through a card) once the cards
+                            // viewport is known; a raw diagonal is the only option before that
+                            // first measurement lands, same as the old behaviour.
+                            val points = if (gutterEndX != null && gutterEndX > itemBounds.right) {
+                                computeConnectorElbow(
+                                    itemBounds = itemBounds,
+                                    cardBounds = cardBounds,
+                                    gutterStartX = itemBounds.right,
+                                    gutterEndX = gutterEndX,
+                                    laneFraction = (index + 1f) / (laneCount + 1f),
+                                )
+                            } else {
+                                listOf(
+                                    Offset(itemBounds.right, itemBounds.center.y),
+                                    Offset(cardBounds.left, cardBounds.center.y),
+                                )
+                            }
+                            for (i in 0 until points.size - 1) {
+                                drawLine(
+                                    color = drawColor,
+                                    start = points[i],
+                                    end = points[i + 1],
+                                    strokeWidth = strokeWidth.toPx()
+                                )
+                            }
                         }
                     }
                 }
@@ -176,13 +226,10 @@ internal fun HelpOverlay(
         ) {
             Spacer(modifier = Modifier.height(16.dp)) // Equivalent to top contentPadding
             visibleItemsWithInfo.forEachIndexed { index, item ->
-                val isExpanded = expandedItemId == item.id
                 val cardColor = colorPalette[index % colorPalette.size]
 
                 androidx.compose.material3.Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .animateContentSize(),
+                    modifier = Modifier.fillMaxWidth(),
                     color = MaterialTheme.colorScheme.surface,
                     shape = RectangleShape,
                     border = BorderStroke(2.dp, cardColor)
@@ -205,9 +252,6 @@ internal fun HelpOverlay(
                                 bottom = pos.y + size.height,
                             )
                         }
-                        .clickable {
-                            expandedItemId = if (isExpanded) null else item.id
-                        }
                         .padding(16.dp)
                 ) {
                     Text(
@@ -225,13 +269,14 @@ internal fun HelpOverlay(
                         else -> null
                     }
 
+                    // The explanation is the entire point of the card, so it always wraps to as
+                    // many lines as it needs — no ellipsis, no tap-to-reveal. The overlay is
+                    // already vertically scrollable; that is where the extra height goes.
                     if (!infoText.isNullOrBlank()) {
                         Text(
                             text = infoText,
                             color = MaterialTheme.colorScheme.onSurface,
                             style = MaterialTheme.typography.bodyLarge,
-                            maxLines = if (isExpanded) Int.MAX_VALUE else 1,
-                            overflow = TextOverflow.Ellipsis
                         )
                     }
                     if (!listText.isNullOrBlank()) {
@@ -242,14 +287,8 @@ internal fun HelpOverlay(
                             text = listText,
                             color = MaterialTheme.colorScheme.onSurface,
                             style = MaterialTheme.typography.bodyLarge,
-                            maxLines = if (isExpanded) Int.MAX_VALUE else 1,
-                            overflow = TextOverflow.Ellipsis
                         )
                     }
-                    // No "Tap to collapse" caption. The card is already clickable and the text it
-                    // reveals is the affordance: one line means there is more, many lines means you
-                    // are looking at all of it. A card that has to label its own tap target is the
-                    // sign explaining the sign.
                 }
                 }
             }
