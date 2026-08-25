@@ -46,6 +46,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -224,7 +225,7 @@ internal fun AzNavRailButton(
             .onGloballyPositioned { coordinates ->
                 onGloballyPositioned?.invoke(coordinates.boundsInWindow())
             }
-            .semantics { contentDescription = text }
+            .semantics { contentDescription = text; this.selected = isSelected }
             .then(clickableModifier)
     ) {
         Surface(
