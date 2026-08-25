@@ -760,11 +760,33 @@ host exists only at its anchor.
 | `BOTTOM` | The bottom of the screen, on the side opposite the rail. |
 | `FLOATING` | Free-floating and **draggable**, with its position **persisted** across launches. |
 
-Declare several unattached hosts sharing an anchor and they **stack into a column**, spaced exactly
-as they would have been in the rail (and packed when `packButtons` is on). The `FLOATING` stack
-drags as one unit; its position is stored as a fraction of the window, so it survives rotation and
-lands sensibly on a different screen size, and it is clamped to the same 10%–90% vertical safe zone
-FAB mode uses.
+`OPPOSITE` and `BOTTOM` hosts sharing an anchor **stack into a fixed column**, spaced exactly as they
+would have been in the rail (and packed when `packButtons` is on) — same as always.
+
+`FLOATING` hosts are different: **each one floats and docks independently** rather than sharing one
+stack:
+
+- **Screen-edge docking.** Dragging a `FLOATING` host near the top, bottom, or the vertical edge
+  opposite the main rail snaps it to that edge. Several hosts docked to the same edge line up
+  adjacent to one another (in the order they were dropped) instead of overlapping, and one of them
+  expanding its sub-items pushes the ones after it along that edge to make room.
+- **Rail-to-rail docking.** Dragging one `FLOATING` host flush against the right or bottom edge of
+  another attaches it there instead of the screen, forming a small grid that moves as a unit.
+  Capped at **two columns** side by side, and per column at however many hosts can stack with every
+  one of them fully expanded at once without running off-screen — a drop that would exceed that is
+  refused, and the host stays free-floating at the drop point instead.
+- **Group dragging.** A host with at least one other host attached to it grows a thin grab bar above
+  its own content, spanning its column's top row; dragging the bar drags the whole group at once.
+  Dragging any single host directly (bar or no bar) always detaches it from whatever it was attached
+  to first; anything attached *below* it keeps following it to its new spot.
+- **Nested-rail popups.** A host in the left-hand column of a two-column group opens its own
+  nested-rail popups further left; the right-hand column opens them further right, so neither ever
+  opens over the other column.
+
+A host's own resting spot (which edge it's docked to, or its free position) is persisted as a
+fraction of the window, so it survives rotation and lands sensibly on a different screen size.
+Rail-to-rail attachments are **not** persisted across launches — cold-starting the app reopens every
+host wherever it was resting on its own, before it was last attached to anything.
 
 ```kotlin
 azUnattachedHostItem(id = "tools", text = "Tools", anchor = AzUnattachedAnchor.FLOATING)

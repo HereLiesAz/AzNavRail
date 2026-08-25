@@ -165,6 +165,7 @@ A host item can auto-expand its sub-items reactively.
 | :--- | :--- | :--- | :--- |
 | Drop-down trigger set + title-row placement | ✅ | ✅ | ❌ not ported |
 | Unattached hosts (`azUnattachedHostItem`) | ✅ | ✅ | ❌ not ported |
+| Floating-host screen-edge & rail-to-rail docking | ✅ | ✅ | ❌ n/a (no unattached hosts) |
 | Per-item badge / loading (`azItemState`) | ✅ | ✅ | ❌ not ported |
 | Popups (`azPopup`) + warning triangle | ✅ | ✅ | ❌ not ported |
 | Pinned "More from Az" rail item | ✅ | ✅ | ✅ |
@@ -205,6 +206,13 @@ A host item can auto-expand its sub-items reactively.
   `onRelocate` never fires, since that stack's linear layout has no reorder gesture of its own. The
   React port has no unattached-host feature at all yet (see the parity table above), so this does not
   apply there.
+- **`FLOATING` unattached hosts now dock independently** (`aznavrail` and `aznavrail-cmp`) instead of
+  sharing a single draggable stack: each one can be dragged to the top, bottom, or opposite screen
+  edge, or flush against another `FLOATING` host to attach to it (capped at two columns side by side,
+  and per column at whatever fits with everything fully expanded at once). A host with at least one
+  other host attached to it grows a grab bar for dragging the whole group. Rail-to-rail attachments
+  are not persisted across launches — only each host's own resting spot is; see
+  `AZNAVRAIL_COMPLETE_GUIDE.md` §4.
 
 ---
 

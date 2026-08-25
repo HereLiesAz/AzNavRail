@@ -160,7 +160,9 @@ private fun DemoHost() {
         )
 
         // --- Unattached hosts ------------------------------------------------------------------
-        // A rail host that lives outside the rail: draggable, and its position is remembered.
+        // A rail host that lives outside the rail: draggable, and its position is remembered. It
+        // docks independently — to a screen edge, or flush against another FLOATING host (like
+        // "swatches" below) to attach into a group with a shared grab bar.
         azUnattachedHostItem(
             id = "tools",
             text = "Tools",
@@ -175,7 +177,17 @@ private fun DemoHost() {
             toggleOffText = "Grid Off",
         ) { grid = !grid }
 
-        // A second host, anchored bottom-opposite, stacking its own children beneath it.
+        // A second independent FLOATING host, purely to demonstrate rail-to-rail docking: drag it
+        // flush against "Tools" above to attach the two into one draggable group.
+        azUnattachedHostItem(
+            id = "swatches",
+            text = "Colors",
+            anchor = AzUnattachedAnchor.FLOATING,
+        )
+        azRailSubItem(id = "swatch-a", hostId = "swatches", text = "Red") {}
+        azRailSubItem(id = "swatch-b", hostId = "swatches", text = "Blue") {}
+
+        // A third host, anchored bottom-opposite, stacking its own children beneath it.
         azUnattachedHostItem(
             id = "layers",
             text = "Layers",
