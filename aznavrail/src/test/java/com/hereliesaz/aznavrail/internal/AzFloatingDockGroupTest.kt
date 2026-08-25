@@ -90,6 +90,21 @@ class AzFloatingDockGroupTest {
         composeTestRule.waitForIdle()
 
         val density = composeTestRule.density
+
+        // Both hosts default to flush against the real screen edge (opposite the main rail) at the
+        // top of the screen (`y == minY`). Move A away from every edge — horizontally AND
+        // vertically — before docking B onto it: dragging B to sit flush against an edge-docked A
+        // would need touch coordinates beyond the window's own bounds (which a synthetic touch
+        // injection can't reliably target), and leaving A's y at the exact top-edge snap threshold
+        // makes the B-onto-A drag below coincidentally ALSO look like a top-edge dock, racing against
+        // the intended rail-to-rail attach depending on how much of the gesture touch-slop consumes.
+        composeTestRule.onNodeWithContentDescription("A").performTouchInput {
+            down(center)
+            repeat(5) { i -> moveTo(center + Offset(-200f, 300f) * ((i + 1) / 5f)) }
+            up()
+        }
+        composeTestRule.waitForIdle()
+
         val boundsA = composeTestRule.onNodeWithContentDescription("A").getUnclippedBoundsInRoot()
         val boundsB = composeTestRule.onNodeWithContentDescription("B").getUnclippedBoundsInRoot()
 
