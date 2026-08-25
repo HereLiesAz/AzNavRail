@@ -72,6 +72,9 @@ import {
   edgeStepKey,
 } from './guidance/AzGuidance';
 import { AzInstructionOverlay } from './components/AzInstructionOverlay';
+import { AzUnattachedRail } from './components/AzUnattachedRail';
+import { resolveHighlight } from './highlight';
+export { resolveHighlight };
 
 /** Props for the `AzNavRail` component, extending all `AzNavRailSettings` options. */
 interface AzNavRailProps extends AzNavRailSettings {
@@ -154,59 +157,6 @@ const FooterAccordion: React.FC<{
     </Animated.View>
   );
 };
-
-/** True when `classifiers` overlaps `set` (which may be a Set or a plain array). */
-function classifierHit(
-  classifiers: Set<string> | string[] | undefined,
-  set: Set<string> | string[] | undefined
-): boolean {
-  if (!classifiers || !set) return false;
-  const haystack = Array.isArray(set) ? new Set(set) : set;
-  const list = Array.isArray(classifiers)
-    ? classifiers
-    : Array.from(classifiers);
-  return list.some((c) => haystack.has(c));
-}
-
-/**
- * The colour a rail item is drawn in, resolving the four highlights.
- *
- * They answer four different questions — **active** ("where am I?"), **focus** ("what am I
- * touching?"), **secondary** ("whatever the app decides") and **tertiary** (a second app-driven
- * channel) — and they outrank each other in that order reversed: a press is the most immediate
- * thing happening, so focus wins for as long as it lasts, then active, then secondary, then
- * tertiary. An item with none of them lit wears its own `color`.
- */
-export function resolveHighlight(
-  item: AzNavItem,
-  cfg: any,
-  currentDestination?: string,
-  lastTappedId?: string | null
-): string | undefined {
-  const activeColor = (item as any).activeColor ?? cfg.activeColor;
-  const secondaryColor =
-    (item as any).secondaryColor ?? cfg.secondaryColor ?? activeColor;
-  const tertiaryColor =
-    (item as any).tertiaryColor ?? cfg.tertiaryColor ?? activeColor;
-
-  const isActive =
-    !!item.isChecked ||
-    item.id === currentDestination ||
-    (!!item.route && item.route === currentDestination) ||
-    classifierHit(item.classifiers, cfg.activeClassifiers) ||
-    (!item.route && !!lastTappedId && lastTappedId === item.id);
-  const isSecondary =
-    !!(item as any).secondary ||
-    classifierHit(item.classifiers, cfg.secondaryClassifiers);
-  const isTertiary =
-    !!(item as any).tertiary ||
-    classifierHit(item.classifiers, cfg.tertiaryClassifiers);
-
-  if (isActive && activeColor) return activeColor;
-  if (isSecondary && secondaryColor) return secondaryColor;
-  if (isTertiary && tertiaryColor) return tertiaryColor;
-  return item.color;
-}
 
 const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   const {
@@ -1451,8 +1401,11 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     // Only the top-level items are listed here; `renderRailItem`'s host branch renders each
     // expanded host's sub-items inline and recurses for sub-hosts, so hosts nest to any depth
     // without this list having to be flattened (which would otherwise double-render sub-items).
+    // Unattached hosts (`AzUnattachedHostItem`) never appear in the rail strip — they draw
+    // themselves via `<AzUnattachedRail>` instead. Their sub-items never need excluding
+    // separately: they only render as children of their (excluded) host's own branch below.
     const strip = items.filter(
-      (i) => !i.isSubItem && (config.noMenu || i.isRailItem)
+      (i) => !i.isSubItem && !i.isUnattached && (config.noMenu || i.isRailItem)
     );
     // The rail strip ends with the About ("?") button — unless the developer declared their own
     // with `AzAboutRailItem`, in which case theirs stands where they put it. It persists; it is
@@ -1471,7 +1424,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     ];
   }, [items, config.noMenu, autoAboutOwned, config.defaultShape]);
   const menuItems = useMemo(() => {
-    return items.filter((i) => !i.isSubItem);
+    return items.filter((i) => !i.isSubItem && !i.isUnattached);
   }, [items]);
 
   // — Kinetic typography (WP7). Defaults animate; opt out via settings (itemEntrance: None, …). —
@@ -1732,6 +1685,20 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
                 translucentBackground: config.translucentBackground,
               }}
               onDismiss={() => setShowMoreFromAz(false)}
+            />
+          )}
+
+          {/* Unattached hosts (`AzUnattachedHostItem`) draw themselves here — outside the rail
+                strip and the drawer, wherever their `AzUnattachedAnchor` puts them. Cleared
+                alongside the rest of the interactive surface while a footer screen is open, same
+                as the guidance layer below. */}
+          {!showAbout && !showMoreFromAz && (
+            <AzUnattachedRail
+              items={items}
+              config={config}
+              currentDestination={currentDestination}
+              buttonSize={activeButtonSize}
+              railAccent={railAccent || AZ_ACCENT_FALLBACK}
             />
           )}
 

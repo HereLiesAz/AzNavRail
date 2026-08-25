@@ -3,6 +3,18 @@
 ## Unreleased — three highlights, one About, windows that move
 
 ### Added
+- **`AzUnattachedHostItem` and floating-host docking** — ports Android/CMP's unattached-rail-host
+  system. Declare `<AzUnattachedHostItem id="tools" anchor={AzUnattachedAnchor.FLOATING} />` (its
+  sub-items use the existing `AzRailSubItem`/`AzRailSubToggle`/`AzRailRelocItem`/etc. DSL, pointed at
+  it by `hostId`, exactly like a rail host) and it draws itself outside the rail strip and the
+  drawer. `OPPOSITE`/`BOTTOM` stack into a fixed column; `FLOATING` drags via `PanResponder`, snaps
+  to a screen edge, docks flush against another `FLOATING` host to form a shared-drag group (capped
+  at two columns, each column capped at however many hosts fit fully expanded — an over-capacity
+  drop is refused, not evicted), and grows a grab bar above a group's column-top host. A `FLOATING`
+  host's screen-edge dock/position persists per host id; rail-to-rail attachments deliberately do
+  not, matching Kotlin. Two small, cosmetic-only divergences (independent "last tapped" tracking and
+  nested-rail-open state, rather than one scope-wide flag shared with the rail strip) are documented
+  in `KNOWN_GAPS.md`.
 - **`AzPopup`** — ports Android/CMP's popup system: `useAzPopupController()` +
   `<AzPopup controller={...}>`, raised with `controller.show({ itemId, kind, title, message })`.
   `AzPopupKind.NOTICE`/`WARNING` flag the bound rail item via the new `AzItemAlert` (`isLoading`

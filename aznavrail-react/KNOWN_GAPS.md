@@ -70,17 +70,31 @@ accepts `AzDropdownTriggerPlacement` for source parity, but `AUTO` and `TITLE` b
 resolve to `INLINE` — the trigger always renders where the component is declared. Revisit this if/
 when a React `AzHostActivityLayout` equivalent is built.
 
-## Unattached hosts (`azUnattachedHostItem`) and floating-host docking
+## Unattached hosts (`AzUnattachedHostItem`) and floating-host docking
 
-Android/CMP support a rail host that lives outside the main rail (`AzUnattachedAnchor.OPPOSITE` /
-`BOTTOM` / `FLOATING`), including — for `FLOATING` — dragging to any screen edge, docking flush
-against another floating host to form a shared-drag group (capped at two columns, each column
-capped at however many rails fit fully expanded), and a grab bar above a group's top rail.
+Ported. `AzUnattachedHostItem` (`src/AzNavRailScope.tsx`) declares a rail host that lives outside
+the rail strip and the drawer; `<AzUnattachedRail>` (`src/components/AzUnattachedRail.tsx`, wired
+automatically inside `<AzNavRail>`, same as Android/CMP's own internal composable of the same name)
+draws it wherever its `AzUnattachedAnchor` puts it. `OPPOSITE`/`BOTTOM` hosts stack into a fixed
+column; `FLOATING` hosts drag via `PanResponder`, snap to a screen edge, dock flush against another
+`FLOATING` host to form a shared-drag group (capped at two columns, each column capped at however
+many hosts fit fully expanded — an over-capacity drop is refused, not evicted), and grow a grab bar
+above a group's column-top host. A `FLOATING` host's own screen-edge dock/position/priority persist
+per host id (`src/services/unattachedFloatingStore.ts`, mirroring Kotlin's `AzUnattachedStore`);
+rail-to-rail attachments deliberately do not, matching Kotlin's own documented reasoning. The
+drag/dock/attach geometry itself (`src/services/floatingDockMath.ts`) is a line-for-line port of the
+Kotlin private functions in `AzUnattachedRail.kt` and is unit-tested directly — see
+`floatingDockMath.test.ts`'s own doc comment for why (React Native's gesture responder system has no
+synthetic-touch injection the way Compose's `performTouchInput` does, unlike the Kotlin test suite
+this ports).
 
-None of this exists in `aznavrail-react` yet. `<AzFloatingRail>` is only a bare draggable overlay
-(the `AzNavRailWindowService` stand-in described above) — it has no concept of a host declared
-inside the rail's own item list, no screen-edge snapping, and no rail-to-rail grouping. Porting
-this is tracked as a separate, larger effort.
+Two small, deliberate divergences, both because React's `AzNavRailContext` has no
+`AzHostActivityLayout`-equivalent shared scope-wide flag for a composable to reach into (the same
+reason the popup system's two divergences exist, below): an unattached item's "last tapped" focus
+highlight, and an unattached nested rail's open/closed state, are tracked independently of the main
+rail strip's own (Kotlin shares one scope-wide flag for each across every surface). Cosmetic only —
+each surface renders a disjoint set of items, so there is nothing for the two trackers to disagree
+about in practice.
 
 ## Popups (`AzPopup`, `AzPopupKind`) — two divergences from Android/CMP
 

@@ -566,6 +566,36 @@ export interface AzNavItem {
   nestedRailItems?: AzNavItem[];
   /** Settings overrides applied only to this item's nested-rail popup. */
   nestedRailSettings?: any;
+  /**
+   * True for a host declared with `AzUnattachedHostItem` — it does not live in the rail strip or
+   * the expanded menu; it draws itself (and unfolds its own sub-items) wherever `unattachedAnchor`
+   * puts it instead. See `components/AzUnattachedRail.tsx`.
+   */
+  isUnattached?: boolean;
+  /** Where an `isUnattached` host parks itself. Unset on every ordinary item. */
+  unattachedAnchor?: AzUnattachedAnchor;
+}
+
+/**
+ * Where an **unattached host rail item** (`AzUnattachedHostItem`) parks itself.
+ *
+ * An unattached host is a rail host item that does not live in the `<AzNavRail>` strip or its
+ * expanded menu. It is drawn as its own free-standing button somewhere else on the screen; tapping
+ * it unfolds its sub-items (declared the usual way, with `hostId` pointing at it) beneath it,
+ * exactly as they would have unfolded inside the rail. Several unattached hosts sharing an anchor
+ * stack into a column, again exactly as they would have stacked in the rail.
+ */
+export enum AzUnattachedAnchor {
+  /** The bottom of the screen, on the side opposite the rail. */
+  BOTTOM = 'BOTTOM',
+  /** The side opposite the rail, at the same height the rail's own items start. */
+  OPPOSITE = 'OPPOSITE',
+  /**
+   * Free-floating and draggable. The stack's position is persisted, so it comes back where the
+   * user left it on the next launch. It is clamped to the same 10%-90% vertical safe zone the
+   * rail's FAB mode uses.
+   */
+  FLOATING = 'FLOATING',
 }
 
 /** Base props shared by all DSL item-declaration components (e.g. `AzRailItem`, `AzMenuItem`). */
@@ -675,6 +705,15 @@ export interface AzHostItemProps extends AzNavItemProps {
   initiallyExpanded?: boolean;
   /** Called when this host item expands or collapses due to a user tap. Receives `true` on expand, `false` on collapse. */
   onExpandedChange?: (expanded: boolean) => void;
+}
+
+/**
+ * Props for `AzUnattachedHostItem` — a rail host that lives outside the rail strip. See
+ * `AzUnattachedAnchor` for what each anchor does.
+ */
+export interface AzUnattachedHostItemProps extends AzHostItemProps {
+  /** Where this host parks itself. Defaults to `AzUnattachedAnchor.OPPOSITE`. */
+  anchor?: AzUnattachedAnchor;
 }
 
 /** Props for sub-item DSL components — an item nested under a host. */
