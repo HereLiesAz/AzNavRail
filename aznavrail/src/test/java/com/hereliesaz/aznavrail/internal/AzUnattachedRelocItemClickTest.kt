@@ -87,6 +87,72 @@ class AzUnattachedRelocItemClickTest {
     }
 
     @Test
+    fun `a realistically-timed quick tap fires onClick under the OPPOSITE anchor`() {
+        var clicked = false
+
+        composeTestRule.setContent {
+            val navController = rememberNavController()
+            AzHostActivityLayout(navController = navController) {
+                azUnattachedHostItem(
+                    id = "host",
+                    text = "Host",
+                    anchor = AzUnattachedAnchor.OPPOSITE,
+                    initiallyExpanded = true,
+                )
+                azRailRelocItem(id = "item1", hostId = "host", text = "Item 1", onClick = { clicked = true })
+                onscreen { }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+
+        // A realistically-timed down/up pair (well under the long-press timeout), driven through
+        // performTouchInput rather than the synthetic performClick(), to exercise the same
+        // awaitEachGesture code path a real quick tap does.
+        composeTestRule.onNodeWithContentDescription("Item 1").performTouchInput {
+            down(center)
+            advanceEventTime(60)
+            up()
+        }
+        composeTestRule.waitForIdle()
+
+        assertTrue("A realistically-timed quick tap should fire onClick under OPPOSITE", clicked)
+    }
+
+    @Test
+    fun `a realistically-timed quick tap fires onClick under the FLOATING anchor`() {
+        var clicked = false
+
+        composeTestRule.setContent {
+            val navController = rememberNavController()
+            AzHostActivityLayout(navController = navController) {
+                azUnattachedHostItem(
+                    id = "host",
+                    text = "Host",
+                    anchor = AzUnattachedAnchor.FLOATING,
+                    initiallyExpanded = true,
+                )
+                azRailRelocItem(id = "item1", hostId = "host", text = "Item 1", onClick = { clicked = true })
+                onscreen { }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+
+        // Same as above, but under FLOATING, which wraps the whole stack in an additional
+        // `detectDragGestures` pointerInput for repositioning — verifying that ancestor gesture
+        // detector does not swallow a plain tap on a reloc item nested inside it.
+        composeTestRule.onNodeWithContentDescription("Item 1").performTouchInput {
+            down(center)
+            advanceEventTime(60)
+            up()
+        }
+        composeTestRule.waitForIdle()
+
+        assertTrue("A realistically-timed quick tap should fire onClick under FLOATING", clicked)
+    }
+
+    @Test
     fun `long-press on a reloc item under an unattached host opens its hidden menu`() {
         var actionClicked = false
 

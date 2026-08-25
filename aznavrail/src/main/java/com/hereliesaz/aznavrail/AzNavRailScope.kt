@@ -1106,12 +1106,31 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     var vibrate: Boolean = false
     /** If true, the header area shows the app name instead of the app icon. */
     var displayAppName: Boolean = false
-    /** Set of classifier strings; items whose classifiers overlap are shown as active. */
-    var activeClassifiers: Set<String> = emptySet()
+    /**
+     * Set of classifier strings; items whose classifiers overlap are shown as active.
+     *
+     * Backed by snapshot state (not a plain `var`, unlike most of this scope's other properties):
+     * [AzNavRailScopeImpl] is a large, mutable, compiler-inferred-*unstable* class, so a composable
+     * that reads this value is never guaranteed to be re-invoked just because [azConfig] mutated it —
+     * whether it re-runs depends on whether some ANCESTOR happens to re-execute *and* not get skipped
+     * on the way down, which callers of `providedScope` (`AzHostActivityLayout`, most apps) generally
+     * do not. Without real snapshot state, a call to `azConfig(activeClassifiers = …)` from ordinary
+     * Compose state (the norm — see the KDoc on [AzNavRailScope.azConfig]) updated this field
+     * correctly, but every composable that reads it for its "isSelected" computation (`RailContent`'s
+     * callers in `RailItems.kt` and `AzUnattachedRail.kt`) kept skipping and drawing the *previous*
+     * value — the classifier's highlight then only ever appeared to update on an UNRELATED
+     * recomposition that happened not to be skipped, such as a press (`isPressed`, real snapshot
+     * state read deep inside `AzNavRailButton`) — which is a different question from `isSelected`
+     * entirely, but produces a similar-looking highlight and made the bug read as "only lit up while
+     * pressed." Snapshot state sidesteps parameter-stability/skipping altogether: whichever
+     * composable's body actually reads `.value` here is invalidated directly the moment this changes,
+     * regardless of what its ancestors decided.
+     */
+    var activeClassifiers: Set<String> by mutableStateOf(emptySet())
     /** Set of classifier strings; items whose classifiers overlap wear the **secondary** highlight. */
-    var secondaryClassifiers: Set<String> = emptySet()
+    var secondaryClassifiers: Set<String> by mutableStateOf(emptySet())
     /** Set of classifier strings; items whose classifiers overlap wear the **tertiary** highlight. */
-    var tertiaryClassifiers: Set<String> = emptySet()
+    var tertiaryClassifiers: Set<String> by mutableStateOf(emptySet())
     /** If true, the docking side tracks the physical device edge, adapting to rotation. */
     var usePhysicalDocking: Boolean = false
 
