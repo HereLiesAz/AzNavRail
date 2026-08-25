@@ -1,9 +1,8 @@
 package com.hereliesaz.aznavrail.internal
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,7 +33,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -349,8 +347,16 @@ private fun UnattachedNode(
         defaultShape = scope.defaultShape,
         item = displayItem,
         navController = navController,
+        // Highlight parity with the rail strip (`RailItems.kt`'s `isVisuallyActive`). The
+        // route/classifier halves were already here; the LAST-TAPPED half was not, and its absence
+        // is why tapping an unattached routeless item (a toggle, a cycler, an action, a reloc item)
+        // produced no visible change at all: nothing in this subtree read any snapshot state that
+        // the tap wrote, so the composable was never even invalidated, let alone redrawn active.
+        // `scope.lastTouchedItemId` is real snapshot state and is already written by both tap paths
+        // below, so reading it here both supplies the highlight and forces the invalidation.
         isSelected = (item.route != null && item.route == currentDestination) ||
-            item.classifiers.any { scope.activeClassifiers.contains(it) },
+            item.classifiers.any { scope.activeClassifiers.contains(it) } ||
+            (item.route == null && scope.lastTouchedItemId == item.id),
         buttonSize = buttonSize,
         onClick = {
             scope.lastTouchedItemId = item.id
@@ -374,6 +380,16 @@ private fun UnattachedNode(
         onBoundsCalculated = { id, bounds -> scope.itemBoundsCache[id] = bounds },
         onBoundsCleared = { id -> scope.itemBoundsCache.remove(id) },
         activeColor = scope.railAccent,
+        // Also absent until now: an unattached item could never wear the focus/secondary/tertiary
+        // highlights at all, no matter what `azItemState` or `secondaryClassifiers` said.
+        isFocused = item.route == null && scope.lastTouchedItemId == item.id,
+        isSecondaryActive = item.isSecondaryActive ||
+            item.classifiers.any { scope.secondaryClassifiers.contains(it) },
+        isTertiaryActive = item.isTertiaryActive ||
+            item.classifiers.any { scope.tertiaryClassifiers.contains(it) },
+        focusColor = scope.focusColor,
+        secondaryColor = scope.secondaryColor,
+        tertiaryColor = scope.tertiaryColor,
         dragModifier = dragModifier,
         onSliderChange = { id, v -> scope.onSliderChangeMap[id]?.invoke(v) },
         onSliderRangeChange = { id, r -> scope.onSliderRangeChangeMap[id]?.invoke(r) },
@@ -539,6 +555,21 @@ private fun UnattachedNode(
  * rendered outside the rail strip. Mirrors the tap/long-press split `RailItems.kt`'s own
  * `dragModifier` performs for reloc items in the rail — minus the drag-to-reorder branch, which does
  * not apply here (see the KDoc on `azRailRelocItem`'s `onRelocate` parameter).
+ *
+ * Built on Foundation's own [detectTapGestures] rather than a hand-rolled `awaitEachGesture` state
+ * machine (an earlier version of this function, and the one the Android `aznavrail` module carried
+ * until the same fix): a real-device report had quick taps on a reloc item under an unattached host
+ * silently doing nothing — registering only as a long press — while the byte-for-byte-equivalent-
+ * looking logic in `RailItems.kt`'s `dragModifier` (already fixed once, in PR #529, for the sister bug
+ * of a long-held tap being swallowed) kept working. Two full reading passes over both implementations
+ * found no discrepancy, which is itself suspicious: a hand-rolled `awaitPointerEvent()` loop tracking
+ * its own `pointerId`, "has this exceeded touch slop", and a separately-launched
+ * `delay(longPressTimeout)` coroutine racing the gesture loop's own coroutine is exactly the shape of
+ * code most likely to have a real-device-only timing/consumption bug that doesn't show up under
+ * synthetic, deterministic touch injection in tests. `detectTapGestures` is Compose Foundation's own
+ * tested implementation of this exact disambiguation (used everywhere `Modifier.combinedClickable`
+ * is), so routing through it here removes an entire custom state machine as a suspect, whether or not
+ * it was the actual cause.
  */
 @Composable
 private fun rememberRelocTapGestureModifier(
@@ -547,57 +578,26 @@ private fun rememberRelocTapGestureModifier(
     onTap: () -> Unit,
     onLongPress: () -> Unit,
 ): Modifier {
-    val coroutineScope = rememberCoroutineScope()
     val hapticFeedback = LocalHapticFeedback.current
-    val viewConfiguration = LocalViewConfiguration.current
-    return Modifier.pointerInput(item.id) {
-        awaitEachGesture {
-            val down = awaitFirstDown(requireUnconsumed = false)
-            val longPressTimeout = viewConfiguration.longPressTimeoutMillis
-
-            var isLongPress = false
-            val longPressJob = coroutineScope.launch {
-                delay(longPressTimeout)
-                isLongPress = true
+    return Modifier.pointerInput(item.id, item.hiddenMenuItems.isNullOrEmpty()) {
+        detectTapGestures(
+            onTap = { onTap() },
+            onLongPress = {
                 if (vibrateOnLongPress) {
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                 }
                 onLongPress()
-            }
-
-            var hasMoved = false
-            var gestureCompletedSuccessfully = false
-
-            try {
-                val pointerId = down.id
-                while (true) {
-                    val event = awaitPointerEvent()
-                    val change = event.changes.firstOrNull { it.id == pointerId } ?: break
-
-                    val changedToUp = !change.pressed && change.previousPressed
-                    if (changedToUp) {
-                        change.consume()
-                        gestureCompletedSuccessfully = true
-                        break
-                    }
-
-                    if (!isLongPress) {
-                        val positionChange = change.position - change.previousPosition
-                        if (positionChange != Offset.Zero &&
-                            (change.position - down.position).getDistance() > viewConfiguration.touchSlop
-                        ) {
-                            hasMoved = true
-                            longPressJob.cancel()
-                        }
-                    }
-                }
-            } finally {
-                longPressJob.cancel()
-                if (!isLongPress && !hasMoved && gestureCompletedSuccessfully) {
+                // A press held past the long-press threshold with no hidden menu to open for it is,
+                // from the user's perspective, still just a slow tap, not a gesture to discard
+                // silently — `detectTapGestures` itself never calls `onTap` once `onLongPress` has
+                // fired, so that has to happen here instead (see PR #529's equivalent fix in
+                // `RailItems.kt`'s own `dragModifier`). A press that legitimately opened a hidden menu
+                // is left alone: that menu is now the interaction the user is looking at.
+                if (item.hiddenMenuItems.isNullOrEmpty()) {
                     onTap()
                 }
-            }
-        }
+            },
+        )
     }
 }
 
