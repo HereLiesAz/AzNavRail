@@ -1,3 +1,5 @@
+import type React from 'react';
+
 /** Shape variant applied to an AzButton or nav-rail item icon. */
 export enum AzButtonShape {
   /** Circular border, equal width and height. */
@@ -110,6 +112,62 @@ export enum AzDropdownDesign {
   RAIL = 'rail',
   /** Expanded-menu look: full-width labeled rows, constrained to the expanded menu width (≈160). */
   MENU = 'menu',
+}
+
+/**
+ * What the user taps to open an `AzDropdownMenu`.
+ *
+ * In AzNavRail tradition the trigger is not a free child slot — it is one of the sanctioned shapes
+ * below. The default is `MoreVert` (the three vertical dots), so a drop-down declared with no
+ * configuration reads as a menu affordance rather than as the app's launcher icon.
+ */
+export type AzDropdownTrigger =
+  /** The Material "more" glyph — three vertical dots. The default. */
+  | { kind: 'MoreVert' }
+  /** The hamburger glyph (three stacked bars). */
+  | { kind: 'Hamburger' }
+  /**
+   * The host app's launcher icon, drawn exactly like the rail's header. This was the only trigger
+   * before triggers were configurable; pass it to keep that look.
+   */
+  | { kind: 'AppIcon' }
+  /** A word (or two) that hosts the menu, drawn in the panel's accent. */
+  | { kind: 'Text'; text: string }
+  /**
+   * A developer-supplied icon. `model` accepts a React node, or an image URI string rendered via
+   * `Image`.
+   */
+  | { kind: 'Icon'; model: React.ReactNode | string };
+
+/** Factories for the `AzDropdownTrigger` variants — mirrors the Kotlin sealed-interface call sites. */
+export const AzDropdownTrigger = {
+  MoreVert: { kind: 'MoreVert' } as AzDropdownTrigger,
+  Hamburger: { kind: 'Hamburger' } as AzDropdownTrigger,
+  AppIcon: { kind: 'AppIcon' } as AzDropdownTrigger,
+  Text: (text: string): AzDropdownTrigger => ({ kind: 'Text', text }),
+  Icon: (model: React.ReactNode | string): AzDropdownTrigger => ({
+    kind: 'Icon',
+    model,
+  }),
+};
+
+/** Where an `AzDropdownMenu`'s trigger is drawn. */
+export enum AzDropdownTriggerPlacement {
+  /**
+   * `TITLE` when the drop-down is declared inside an `AzHostActivityLayout`'s `onscreen` block (the
+   * usual case), `INLINE` otherwise. The default.
+   *
+   * React has no host-activity title row to lift into yet (`AzHostActivityLayout` is Android/CMP
+   * only — see `KNOWN_GAPS.md`), so this currently always resolves to `INLINE`.
+   */
+  AUTO = 'AUTO',
+  /**
+   * The trigger is lifted out of the call site and drawn next to the big screen title. Not yet
+   * reachable in React: falls back to `INLINE`. See `KNOWN_GAPS.md`.
+   */
+  TITLE = 'TITLE',
+  /** The trigger is drawn where the component is rendered, like any other widget. */
+  INLINE = 'INLINE',
 }
 
 /** General orientation flag used by layout helpers. */

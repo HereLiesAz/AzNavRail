@@ -58,6 +58,37 @@ per-shape masking and arrowheads aren't portable on React Native). The resolved 
 on the controller (`currentInstructions[i].resolvedShape`), so a host that wants a pixel-accurate
 highlight can draw it itself via `<AzGuideRenderer>` or by observing the snapshot.
 
+## Drop-down trigger title-row placement (`AzDropdownTriggerPlacement.TITLE`)
+
+Android/CMP's `AzHostActivityLayout` draws a big screen-boundary title, and any `AzDropdownMenu`
+declared inside its `onscreen { ... }` block can lift its trigger out of the call site to sit next
+to that title (`AzDropdownTriggerPlacement.TITLE`, the effective default there). Several drop-downs
+hosted this way line their triggers up beside each other in declaration order.
+
+React has no equivalent host-activity layout with a title row to lift into. `AzDropdownMenu`
+accepts `AzDropdownTriggerPlacement` for source parity, but `AUTO` and `TITLE` both currently
+resolve to `INLINE` — the trigger always renders where the component is declared. Revisit this if/
+when a React `AzHostActivityLayout` equivalent is built.
+
+## Unattached hosts (`azUnattachedHostItem`) and floating-host docking
+
+Android/CMP support a rail host that lives outside the main rail (`AzUnattachedAnchor.OPPOSITE` /
+`BOTTOM` / `FLOATING`), including — for `FLOATING` — dragging to any screen edge, docking flush
+against another floating host to form a shared-drag group (capped at two columns, each column
+capped at however many rails fit fully expanded), and a grab bar above a group's top rail.
+
+None of this exists in `aznavrail-react` yet. `<AzFloatingRail>` is only a bare draggable overlay
+(the `AzNavRailWindowService` stand-in described above) — it has no concept of a host declared
+inside the rail's own item list, no screen-edge snapping, and no rail-to-rail grouping. Porting
+this is tracked as a separate, larger effort.
+
+## Popups (`azPopup`, `AzPopupKind`)
+
+Android/CMP can raise a `NOTICE` or `WARNING` popup bound to a rail item (or to whatever was tapped
+last), redrawing that item as a rounded-corner warning triangle for as long as the popup is open.
+No `AzPopupKind`/popup-controller equivalent exists in `aznavrail-react` yet. Tracked as a separate
+effort alongside the unattached-host port above.
+
 ## `AzActivity` / `AzGraphInterface`
 
 The Android library exposes an `AzActivity` base class plus a KSP-generated

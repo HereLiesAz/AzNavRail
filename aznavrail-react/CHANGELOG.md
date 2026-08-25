@@ -3,6 +3,12 @@
 ## Unreleased — three highlights, one About, windows that move
 
 ### Added
+- **`AzDropdownTrigger`** — the trigger is no longer hardcoded to the app-icon look. Pass
+  `trigger={AzDropdownTrigger.MoreVert}` (the new default — the three-dot glyph, matching Android/
+  CMP), `.Hamburger`, `.AppIcon` (the old look), `.Text('Filter')`, or `.Icon(node | uri)` to
+  `<AzDropdownMenu>`. `triggerPlacement` is accepted for source parity with Android/CMP's
+  `AzDropdownTriggerPlacement`, but always resolves to `INLINE`: React has no host-activity title
+  row to lift a `TITLE` trigger into yet (see `KNOWN_GAPS.md`).
 - **Three highlights, not one.** An item can be lit three ways, and each answers a different
   question: **active** (`activeColor`) is *where you are* — the current destination or an
   `activeClassifiers` match; **focus** (`focusColor`) is *what you are touching* — the item just

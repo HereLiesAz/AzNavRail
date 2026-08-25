@@ -194,6 +194,10 @@ const JustifiedWebDropdownLine = ({ line, justify, rowRef, textAlign }) => {
  * @param {number} [props.collapsedWidth=100] - Panel width in the rail design.
  * @param {'CIRCLE'|'ROUNDED'|'SQUARE'} [props.headerIconShape='CIRCLE'] - App-icon clip shape.
  * @param {number} [props.headerIconSize=48] - App-icon trigger diameter (px).
+ * @param {{kind: string, text?: string, model?: any}} [props.trigger] - What the user taps to open
+ *   the menu. Defaults to the `MoreVert` glyph; pass `{kind: 'Text', text: 'Filter'}`,
+ *   `{kind: 'Icon', model: <node or image URL>}`, `{kind: 'Hamburger'}`, or `{kind: 'AppIcon'}` for
+ *   the launcher-icon look (the pre-trigger default). Mirrors `AzDropdownTrigger` from `types.ts`.
  * @param {boolean} [props.expanded] - Optional controlled open-state.
  * @param {function} [props.onExpandedChange]
  * @param {function} [props.onNavigate] - Called with an item's `route` before its callback.
@@ -212,6 +216,7 @@ const AzDropdownMenu = ({
   collapsedWidth = 100,
   headerIconShape = 'CIRCLE',
   headerIconSize = 48,
+  trigger = { kind: 'MoreVert' },
   showFooter = true,
   appRepositoryUrl,
   inAppAbout = true,
@@ -321,6 +326,43 @@ const AzDropdownMenu = ({
         ? headerIconSize / 2
         : 0;
 
+  const renderTrigger = () => {
+    switch (trigger.kind) {
+      case 'Hamburger':
+        return <span style={{ fontSize: 20, lineHeight: 1 }}>{'☰'}</span>;
+      case 'Text':
+        return (
+          <span style={{ fontSize: 16, fontWeight: 600 }}>{trigger.text}</span>
+        );
+      case 'Icon':
+        return typeof trigger.model === 'string' ? (
+          <img
+            src={trigger.model}
+            alt=""
+            style={{ width: headerIconSize, height: headerIconSize }}
+          />
+        ) : (
+          trigger.model
+        );
+      case 'AppIcon':
+        return (
+          <img
+            src="/app-icon.png"
+            alt="App Icon"
+            className="az-dropdown-menu-app-icon"
+            style={{
+              width: headerIconSize,
+              height: headerIconSize,
+              borderRadius: triggerRadius,
+            }}
+          />
+        );
+      case 'MoreVert':
+      default:
+        return <span style={{ fontSize: 22, lineHeight: 1 }}>{'⋮'}</span>;
+    }
+  };
+
   return (
     <div className="az-dropdown-menu" ref={rootRef}>
       <button
@@ -328,22 +370,19 @@ const AzDropdownMenu = ({
         ref={triggerRef}
         className="az-dropdown-menu-trigger"
         style={{
-          width: headerIconSize,
-          height: headerIconSize,
-          borderRadius: triggerRadius,
+          minWidth: headerIconSize,
+          minHeight: headerIconSize,
+          borderRadius: trigger.kind === 'AppIcon' ? triggerRadius : 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
         aria-label="Menu"
         aria-haspopup="menu"
         aria-expanded={isOpen}
         onClick={toggle}
       >
-        {/* The app icon — drawn like the rail header, clipped to the configured shape/size. */}
-        <img
-          src="/app-icon.png"
-          alt="App Icon"
-          className="az-dropdown-menu-app-icon"
-          style={{ borderRadius: triggerRadius }}
-        />
+        {renderTrigger()}
       </button>
       {isOpen && dimBehindMenu && (
         <div
