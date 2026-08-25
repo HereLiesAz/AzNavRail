@@ -17,6 +17,8 @@ export * from './components/AzBottomSheetInsetAware';
 export * from './components/AzFloatingRail';
 export * from './components/AboutOverlay';
 export * from './components/AzWindow';
+export * from './components/AzPopup';
+export * from './services/itemOverrides';
 export * from './components/AzFooterLabel';
 export * from './components/MoreFromAzOverlay';
 export * from './components/useAzSheetController';

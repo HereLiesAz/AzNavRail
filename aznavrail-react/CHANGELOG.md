@@ -3,6 +3,13 @@
 ## Unreleased — three highlights, one About, windows that move
 
 ### Added
+- **`AzPopup`** — ports Android/CMP's popup system: `useAzPopupController()` +
+  `<AzPopup controller={...}>`, raised with `controller.show({ itemId, kind, title, message })`.
+  `AzPopupKind.NOTICE`/`WARNING` flag the bound rail item via the new `AzItemAlert` (`isLoading`
+  and `badge` are also now first-class `AzNavItem` fields, writable through the popup's item
+  handle). Two behaviors necessarily diverge from Kotlin — no "last touched item" fallback, and the
+  item handle is write-only — and the alert visual is an accent-colour override rather than a true
+  triangle outline; all documented in `KNOWN_GAPS.md`.
 - **`AzDropdownTrigger`** — the trigger is no longer hardcoded to the app-icon look. Pass
   `trigger={AzDropdownTrigger.MoreVert}` (the new default — the three-dot glyph, matching Android/
   CMP), `.Hamburger`, `.AppIcon` (the old look), `.Text('Filter')`, or `.Icon(node | uri)` to

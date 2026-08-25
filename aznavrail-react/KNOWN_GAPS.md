@@ -82,12 +82,25 @@ None of this exists in `aznavrail-react` yet. `<AzFloatingRail>` is only a bare 
 inside the rail's own item list, no screen-edge snapping, and no rail-to-rail grouping. Porting
 this is tracked as a separate, larger effort.
 
-## Popups (`azPopup`, `AzPopupKind`)
+## Popups (`AzPopup`, `AzPopupKind`) — two divergences from Android/CMP
 
-Android/CMP can raise a `NOTICE` or `WARNING` popup bound to a rail item (or to whatever was tapped
-last), redrawing that item as a rounded-corner warning triangle for as long as the popup is open.
-No `AzPopupKind`/popup-controller equivalent exists in `aznavrail-react` yet. Tracked as a separate
-effort alongside the unattached-host port above.
+`AzPopup`/`AzPopupController`/`AzPopupKind`/`AzItemAlert` are ported (`src/components/AzPopup.tsx`),
+built on the existing `AzWindow`. Two things differ from Android/CMP, both because React has no
+`AzHostActivityLayout`-equivalent shared scope object for a popup (a sibling of the rail, not a
+descendant) to reach into:
+
+- **No "last touched item" fallback.** `AzPopupController.show({...})` requires an explicit
+  `itemId` to bind to an item; Kotlin's `itemId: null` falls back to the rail's last-tapped item.
+  React's `AzNavRailScope` does not publish that id to siblings.
+- **No read side on the item handle.** `AzPopupItemHandle` here is write-only (`setBadge`/
+  `setLoading`/`setAlert`/`clear`) — there is no `item: AzNavItem?` to read the bound item's
+  current declared state back out of, for the same sibling-scope reason above.
+
+Additionally, the alert visual itself is an approximation: Android/CMP redraw the flagged item as a
+rounded-corner **triangle** outline (`AzButtonShape.TRIANGLE`); React has no vector-path rendering
+dependency to draw an arbitrary polygon stroke, so `AzItemAlert` instead overrides the item's
+existing shape with the alert's accent colour. Revisit if a vector-drawing dependency (e.g.
+`react-native-svg`) is ever added to the package.
 
 ## `AzActivity` / `AzGraphInterface`
 

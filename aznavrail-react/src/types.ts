@@ -170,6 +170,34 @@ export enum AzDropdownTriggerPlacement {
   INLINE = 'INLINE',
 }
 
+/**
+ * The alert styling applied to the rail item that raised an `AzPopup`.
+ *
+ * Both levels mark the item as wanting attention — a warning-yellow accent override, differing only
+ * in shade — and both revert the moment the popup is dismissed.
+ *
+ * Android/CMP redraw the item as a rounded-corner triangle outline (`AzButtonShape.TRIANGLE`).
+ * React has no vector-path rendering dependency to draw an arbitrary polygon stroke, so this level
+ * is approximated with an accent-colour override on the item's existing shape rather than a true
+ * triangle — see `KNOWN_GAPS.md`.
+ */
+export enum AzItemAlert {
+  /** Informational. Drawn in a softer amber. */
+  NOTICE = 'NOTICE',
+  /** Something is wrong. Drawn in a full, saturated warning yellow. */
+  WARNING = 'WARNING',
+}
+
+/** The accent colour an `AzItemAlert` level draws its item in. */
+export function azItemAlertColor(alert: AzItemAlert): string {
+  switch (alert) {
+    case AzItemAlert.NOTICE:
+      return '#FFC107';
+    case AzItemAlert.WARNING:
+      return '#FFD400';
+  }
+}
+
 /** General orientation flag used by layout helpers. */
 export enum AzOrientation {
   /** Components arranged in a column. */
@@ -386,6 +414,10 @@ export interface AzNavItem {
   badge?: string;
   /** Whether the badge should remain permanently visible (true) or dissolve after 1 second (false). */
   persistentBadge?: boolean;
+  /** Spins this item's own loading animation, independent of the rail-wide `isLoading` overlay. */
+  isLoading?: boolean;
+  /** Marks the item as wanting attention — see `AzItemAlert`. Usually driven by an `AzPopup`. */
+  alert?: AzItemAlert;
   /** Navigation route string associated with this item. */
   route?: string;
   /** Screen title displayed in the host layout header when this item is active. */
@@ -597,6 +629,10 @@ export interface AzNavItemProps {
   tertiaryColor?: string;
   /** Whether this item's **tertiary** highlight is lit. A second app-driven channel. */
   tertiary?: boolean;
+  /** Spins this item's own loading animation, independent of the rail-wide `isLoading` overlay. */
+  isLoading?: boolean;
+  /** Marks the item as wanting attention — see `AzItemAlert`. Usually driven by an `AzPopup`. */
+  alert?: AzItemAlert;
 }
 
 /** Props for toggle-type DSL items (`AzRailToggle`, `AzMenuToggle`). */

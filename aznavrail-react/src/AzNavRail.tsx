@@ -28,7 +28,9 @@ import {
   AzNestedRailAlignment,
   AzEntrance,
   AzExit,
+  azItemAlertColor,
 } from './types';
+import { useItemOverrides } from './services/itemOverrides';
 import { AzKineticItem, useAzClosing } from './components/AzKinetics';
 import { Easing as RNEasing } from 'react-native';
 import { AzEasing } from './types';
@@ -934,6 +936,11 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   // no route of their own.
   const [lastTappedId, setLastTappedId] = useState<string | null>(null);
 
+  // Per-item state an `AzPopup` writes in from outside the rail's own declared items — badge,
+  // loading, and the alert flag that marks an item as wanting attention while a popup bound to it
+  // is open. See `services/itemOverrides`.
+  const itemOverrides = useItemOverrides();
+
   /**
    * Known pre-existing gap fixed as part of Feature 1: neither the popup nor a tapped child ever
    * closed the popup on its own — only a backdrop tap did. Called whenever a non-host child of a
@@ -1016,19 +1023,27 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     // verbatim inside `AzNestedRailPopup`'s `renderItem` — as the popup's own child rows).
     const hostItem = item.hostId ? itemById[item.hostId] : undefined;
     const isNestedRailChild = !!(hostItem && hostItem.isNestedRail);
+    // An `AzPopup` bound to this item writes badge/loading/alert in from outside the rail's own
+    // declared items (see `services/itemOverrides`). Overridden fields win while the override
+    // lasts; anything it doesn't touch falls back to what the DSL declared.
+    const override = itemOverrides.get(item.id);
+    const alert = override?.alert ?? item.alert;
     const commonProps = {
       // A rail item's declared id is its identity everywhere else in this library, so it is its
       // identity on screen too: consumers (and these tests) can address any item by the id they
       // gave it, without knowing what it renders as.
       testID: item.id,
-      // The three highlights, in the order they outrank each other. Focus is about the gesture
-      // happening right now; active is about where the user is; secondary is whatever the app says.
-      color: resolveHighlight(
-        item,
-        overrideConfig,
-        currentDestination,
-        lastTappedId
-      ),
+      // The three highlights, in the order they outrank each other, EXCEPT an alert always wins:
+      // an item flagged by a popup is asking for attention, which outranks any highlight it might
+      // otherwise be wearing.
+      color: alert
+        ? azItemAlertColor(alert)
+        : resolveHighlight(
+            item,
+            overrideConfig,
+            currentDestination,
+            lastTappedId
+          ),
       shape: item.shape || overrideConfig.defaultShape,
       enabled: !item.disabled,
       style: {
@@ -1039,8 +1054,9 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
               : AzNavRailDefaults.RailContentVerticalArrangement) * sizeRatio,
       },
       size: activeButtonSize,
-      badge: item.badge,
-      persistentBadge: item.persistentBadge,
+      badge: override?.badge ?? item.badge,
+      persistentBadge: override?.persistentBadge ?? item.persistentBadge,
+      isLoading: override?.isLoading ?? item.isLoading ?? false,
     };
 
     // A slider item unfolds where it stands. Nothing opens over the rail and nothing moves the
