@@ -52,3 +52,6 @@ aznavrail-react/lib/
 # Python bytecode cache
 __pycache__/
 *.pyc
+
+# Isolated git worktrees created for background agent work (each is its own nested checkout)
+.claude/worktrees/
