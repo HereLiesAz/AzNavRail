@@ -2,7 +2,8 @@ package com.hereliesaz.aznavrail.internal
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +34,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -41,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import com.hereliesaz.aznavrail.AzNavRailScopeImpl
 import com.hereliesaz.aznavrail.AzTextBoxDefaults
@@ -317,27 +320,27 @@ private fun UnattachedNode(
         if (item.isCycler) item.copy(selectedOption = scope.transientCyclerOptions[item.id] ?: item.selectedOption)
         else item
 
-    // `RailContent` unconditionally nulls a relocatable item's `onClick`, expecting tap/long-press to
-    // be detected by an externally-supplied `dragModifier` instead (see `RailItems.kt`'s own gesture
-    // for the rail strip). Without one here, a relocatable item under an unattached host rendered but
-    // was 100% inert to touch. Drag-to-reorder is deliberately not replicated — see the KDoc on
-    // `azRailRelocItem`'s `onRelocate` parameter — but tap and long-press-to-open-hidden-menu are.
+    // Reloc items under unattached hosts use the same long-press-then-drag contract as
+    // reloc items in the docked rail. A quick tap still clicks; a stationary long press still
+    // opens the hidden menu (or counts as a slow tap when there is no menu). On FLOATING hosts,
+    // moving before the long-press threshold keeps moving the host itself instead.
     val dragModifier = if (item.isRelocItem) {
-        rememberRelocTapGestureModifier(
+        rememberUnattachedRelocGestureModifier(
             item = item,
-            vibrateOnLongPress = scope.vibrate,
+            scope = scope,
             onTap = {
                 scope.onFocusMap[item.id]?.invoke()
                 scope.lastTouchedItemId = item.id
                 scope.onClickMap[item.id]?.invoke()
                 scope.advancedConfig.onInteraction?.invoke(item.id, item)
             },
-            onLongPress = {
+            onMenuOpen = {
                 if (!item.hiddenMenuItems.isNullOrEmpty()) {
                     scope.onFocusMap[item.id]?.invoke()
                     onMenuOpen(item.id)
                 }
             },
+            onMenuDismiss = onHiddenMenuDismiss,
         )
     } else {
         Modifier
@@ -556,54 +559,118 @@ private fun UnattachedNode(
 }
 
 /**
- * Detects a plain tap (fires [onTap]) vs. a long-press (fires [onLongPress]) on a relocatable item
- * rendered outside the rail strip. Mirrors the tap/long-press split `RailItems.kt`'s own
- * `dragModifier` performs for reloc items in the rail — minus the drag-to-reorder branch, which does
- * not apply here (see the KDoc on `azRailRelocItem`'s `onRelocate` parameter).
- *
- * Built on Foundation's own [detectTapGestures] rather than a hand-rolled `awaitEachGesture` state
- * machine (an earlier version of this function, and the one the Android `aznavrail` module carried
- * until the same fix): a real-device report had quick taps on a reloc item under an unattached host
- * silently doing nothing — registering only as a long press — while the byte-for-byte-equivalent-
- * looking logic in `RailItems.kt`'s `dragModifier` (already fixed once, in PR #529, for the sister bug
- * of a long-held tap being swallowed) kept working. Two full reading passes over both implementations
- * found no discrepancy, which is itself suspicious: a hand-rolled `awaitPointerEvent()` loop tracking
- * its own `pointerId`, "has this exceeded touch slop", and a separately-launched
- * `delay(longPressTimeout)` coroutine racing the gesture loop's own coroutine is exactly the shape of
- * code most likely to have a real-device-only timing/consumption bug that doesn't show up under
- * synthetic, deterministic touch injection in tests. `detectTapGestures` is Compose Foundation's own
- * tested implementation of this exact disambiguation (used everywhere `Modifier.combinedClickable`
- * is), so routing through it here removes an entire custom state machine as a suspect, whether or not
- * it was the actual cause.
+ * Tap / hidden-menu / reorder gesture for a reloc item rendered under an unattached host.
+ * A child consumes movement only after long-press reorder has begun, allowing a FLOATING
+ * host's immediate-drag detector to win when the user moves before the long-press threshold.
  */
 @Composable
-private fun rememberRelocTapGestureModifier(
+private fun rememberUnattachedRelocGestureModifier(
     item: AzNavItem,
-    vibrateOnLongPress: Boolean,
+    scope: AzNavRailScopeImpl,
     onTap: () -> Unit,
-    onLongPress: () -> Unit,
+    onMenuOpen: () -> Unit,
+    onMenuDismiss: () -> Unit,
 ): Modifier {
     val hapticFeedback = LocalHapticFeedback.current
-    return Modifier.pointerInput(item.id, item.hiddenMenuItems.isNullOrEmpty()) {
-        detectTapGestures(
-            onTap = { onTap() },
-            onLongPress = {
-                if (vibrateOnLongPress) {
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+    val viewConfiguration = LocalViewConfiguration.current
+    val coroutineScope = rememberCoroutineScope()
+    var dragOffsetY by remember(item.id) { mutableStateOf(0f) }
+    var isDragging by remember(item.id) { mutableStateOf(false) }
+
+    return Modifier
+        .offset { IntOffset(0, dragOffsetY.roundToInt()) }
+        .zIndex(if (isDragging) 1f else 0f)
+        .pointerInput(item.id, item.hiddenMenuItems.isNullOrEmpty()) {
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false)
+                val longPressTimeout = viewConfiguration.longPressTimeoutMillis
+                var isLongPress = false
+                var movedBeforeLongPress = false
+                var dragStarted = false
+                var completed = false
+                var totalDragY = 0f
+                var targetIndex = scope.navItems.indexOfFirst { it.id == item.id }
+
+                val longPressJob = coroutineScope.launch {
+                    delay(longPressTimeout)
+                    isLongPress = true
+                    if (scope.vibrate) hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                    scope.onFocusMap[item.id]?.invoke()
+                    if (!item.hiddenMenuItems.isNullOrEmpty()) onMenuOpen()
                 }
-                onLongPress()
-                // A press held past the long-press threshold with no hidden menu to open for it is,
-                // from the user's perspective, still just a slow tap, not a gesture to discard
-                // silently — `detectTapGestures` itself never calls `onTap` once `onLongPress` has
-                // fired, so that has to happen here instead (see PR #529's equivalent fix in
-                // `RailItems.kt`'s own `dragModifier`). A press that legitimately opened a hidden menu
-                // is left alone: that menu is now the interaction the user is looking at.
-                if (item.hiddenMenuItems.isNullOrEmpty()) {
-                    onTap()
+
+                try {
+                    val pointerId = down.id
+                    var currentPosition = down.position
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        val change = event.changes.firstOrNull { it.id == pointerId } ?: break
+                        if (!change.pressed && change.previousPressed) {
+                            change.consume()
+                            completed = true
+                            break
+                        }
+
+                        val positionChange = change.position - change.previousPosition
+                        if (positionChange != Offset.Zero) {
+                            if (!isLongPress) {
+                                if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
+                                    movedBeforeLongPress = true
+                                    longPressJob.cancel()
+                                }
+                            } else {
+                                change.consume()
+                                if (!dragStarted && (change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
+                                    dragStarted = true
+                                    isDragging = true
+                                    onMenuDismiss()
+                                    targetIndex = scope.navItems.indexOfFirst { it.id == item.id }
+                                }
+                                if (dragStarted) {
+                                    val dragY = (change.position - currentPosition).y
+                                    totalDragY += dragY
+                                    dragOffsetY = totalDragY
+                                    RelocItemHandler.calculateTargetIndex(
+                                        items = scope.navItems,
+                                        draggedItemId = item.id,
+                                        currentDragOffset = totalDragY,
+                                        itemBounds = scope.itemBoundsCache,
+                                        isVertical = true,
+                                    )?.let { targetIndex = it }
+                                }
+                            }
+                        }
+                        currentPosition = change.position
+                    }
+                } finally {
+                    longPressJob.cancel()
+                    if (dragStarted) {
+                        val currentIndex = scope.navItems.indexOfFirst { it.id == item.id }
+                        if (currentIndex != -1 && targetIndex != -1 && currentIndex != targetIndex) {
+                            RelocItemHandler.updateOrder(scope.navItems, item.id, targetIndex)
+                            item.hostId?.let { hostId ->
+                                scope.savedRelocOrders[hostId] = scope.navItems
+                                    .filter { it.isRelocItem && it.hostId == hostId }
+                                    .map { it.id }
+                            }
+                            scope.onRelocateMap[item.id]?.invoke(
+                                currentIndex,
+                                targetIndex,
+                                scope.navItems.map { it.id },
+                            )
+                        }
+                        dragOffsetY = 0f
+                        isDragging = false
+                        scope.advancedConfig.onInteraction?.invoke(item.id, item)
+                    } else if (
+                        completed && !movedBeforeLongPress &&
+                        (!isLongPress || item.hiddenMenuItems.isNullOrEmpty())
+                    ) {
+                        onTap()
+                    }
                 }
-            },
-        )
-    }
+            }
+        }
 }
 
 // ---------------------------------------------------------------------------------------------

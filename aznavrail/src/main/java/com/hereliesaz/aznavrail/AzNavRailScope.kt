@@ -766,10 +766,10 @@ interface AzNavRailScope {
      * Adds a Relocatable Item to a Host Item in the rail.
      * This item supports drag-and-drop reordering within its cluster.
      *
-     * Tap-to-activate and long-press-to-open-hidden-menu work identically whether [hostId] names a
-     * rail host or an [AzNavRailScope.azUnattachedHostItem]. Drag-to-reorder, however, is only wired
-     * for the rail strip: under an unattached host [onRelocate] never fires, since that stack's linear
-     * layout has no reorder gesture of its own.
+     * Tap-to-activate, long-press-to-open-hidden-menu, and long-press-drag reordering work
+     * identically whether [hostId] names a rail host or an [AzNavRailScope.azUnattachedHostItem].
+     * For a FLOATING unattached host, moving before the long-press threshold still moves the host;
+     * hold the reloc item past that threshold before moving to reorder the item instead.
      *
      * @param id Unique identifier.
      * @param hostId The ID of the parent Host Item.
@@ -785,7 +785,7 @@ interface AzNavRailScope {
      * @param onFocus Focus callback.
      * @param onClick Click callback (selection).
      * @param onRelocate Callback invoked when the item is moved. Provides old index, new index, and the
-     *   new ID order. Never invoked for an item hosted under an `azUnattachedHostItem` — see above.
+     *   new ID order, including when hosted under an `azUnattachedHostItem`.
      * @param nestedRailAlignment The alignment of the nested rail (VERTICAL or HORIZONTAL).
      * @param nestedContent DSL block to define the items within the nested rail.
      * @param keepNestedRailOpen If true, the nested rail remains open until the parent item is tapped again.

@@ -1,5 +1,6 @@
 package com.hereliesaz.aznavrail.internal
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -9,6 +10,8 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.navigation.compose.rememberNavController
 import com.hereliesaz.aznavrail.AzHostActivityLayout
 import com.hereliesaz.aznavrail.model.AzUnattachedAnchor
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -187,4 +190,56 @@ class AzUnattachedRelocItemClickTest {
 
         assertTrue("Tapping the hidden menu's list item should fire its own onClick", actionClicked)
     }
+
+    @Test
+    fun `long-press dragging a reloc item reorders it inside a FLOATING unattached host`() {
+        var relocatedFrom: Int? = null
+        var relocatedTo: Int? = null
+        var orderAfterDrop: List<String>? = null
+
+        composeTestRule.setContent {
+            val navController = rememberNavController()
+            AzHostActivityLayout(navController = navController) {
+                azUnattachedHostItem(
+                    id = "host",
+                    text = "Host",
+                    anchor = AzUnattachedAnchor.FLOATING,
+                    initiallyExpanded = true,
+                )
+                azRailRelocItem(
+                    id = "item1",
+                    hostId = "host",
+                    text = "Item 1",
+                    onRelocate = { from, to, order ->
+                        relocatedFrom = from
+                        relocatedTo = to
+                        orderAfterDrop = order
+                    },
+                )
+                azRailRelocItem(id = "item2", hostId = "host", text = "Item 2")
+                onscreen { }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithContentDescription("Item 1").performTouchInput {
+            down(center)
+            advanceEventTime(700)
+            moveBy(Offset(0f, 96f))
+            advanceEventTime(32)
+            up()
+        }
+        composeTestRule.waitForIdle()
+
+        assertNotNull("A long-press drag under FLOATING must invoke onRelocate", orderAfterDrop)
+        assertNotNull("Relocation must report its source index", relocatedFrom)
+        assertNotNull("Relocation must report its destination index", relocatedTo)
+        assertEquals(relocatedFrom!! + 1, relocatedTo)
+        val order = orderAfterDrop!!
+        assertTrue(
+            "Dragged item must land after its sibling in the emitted order; got $order",
+            order.indexOf("item2") < order.indexOf("item1"),
+        )
+    }
+
 }
