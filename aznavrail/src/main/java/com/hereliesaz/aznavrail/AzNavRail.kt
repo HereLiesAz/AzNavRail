@@ -91,6 +91,7 @@ import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 import com.hereliesaz.aznavrail.model.AzOrientation
 import com.hereliesaz.aznavrail.service.AzAboutWarmup
 import com.hereliesaz.aznavrail.service.GithubDocsRepository
+import com.hereliesaz.aznavrail.tutorial.AzEscortOverlay
 import com.hereliesaz.aznavrail.tutorial.AzGuideHighlight
 import com.hereliesaz.aznavrail.tutorial.AzInstructionOverlay
 import com.hereliesaz.aznavrail.tutorial.LocalAzGuidanceController
@@ -1107,15 +1108,26 @@ fun AzNavRail(
         LaunchedEffect(snapshots, guidanceController) { guidanceController.publishCurrent(snapshots) }
 
         if (!guidanceSuppressed) {
-            AzInstructionOverlay(
-                resolved = frame.resolved,
-                itemBoundsCache = scope.itemBoundsCache,
-                accent = scope.railAccent.takeOrElse { MaterialTheme.colorScheme.primary },
-                activeItemId = guidanceActiveItemId,
-                targets = scope.guidanceTargets,
-                controller = guidanceController,
-                renderSlot = scope.guidanceRenderer
-            )
+            val accent = scope.railAccent.takeOrElse { MaterialTheme.colorScheme.primary }
+            when (scope.advancedConfig.guidanceStyle) {
+                com.hereliesaz.aznavrail.tutorial.AzGuidanceStyle.Escort -> AzEscortOverlay(
+                    resolved = frame.resolved,
+                    itemBoundsCache = scope.itemBoundsCache,
+                    accent = accent,
+                    activeItemId = guidanceActiveItemId,
+                    targets = scope.guidanceTargets,
+                    controller = guidanceController,
+                )
+                com.hereliesaz.aznavrail.tutorial.AzGuidanceStyle.Callout -> AzInstructionOverlay(
+                    resolved = frame.resolved,
+                    itemBoundsCache = scope.itemBoundsCache,
+                    accent = accent,
+                    activeItemId = guidanceActiveItemId,
+                    targets = scope.guidanceTargets,
+                    controller = guidanceController,
+                    renderSlot = scope.guidanceRenderer
+                )
+            }
         }
     } else {
         LaunchedEffect(guidanceController) { guidanceController.publishCurrent(emptyList()) }
