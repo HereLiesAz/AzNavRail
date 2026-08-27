@@ -12,6 +12,8 @@ import {
   AzRailRelocItemProps,
   AzNestedRailProps,
   AzNestedRailAlignment,
+  AzUnattachedAnchor,
+  AzUnattachedHostItemProps,
   HiddenMenuScope,
   AzSliderConfig,
   AzSliderVariant,
@@ -462,6 +464,40 @@ export const AzMenuHostItem: React.FC<AzHostItemProps> = (props) => {
     isExpanded: false,
     toggleOnText: '',
     toggleOffText: '',
+  });
+  return null;
+};
+
+/**
+ * Declares a rail host that lives outside the rail strip and the expanded menu — it draws itself
+ * (and unfolds its own sub-items, declared the usual way with `hostId` pointing at it) wherever
+ * `anchor` puts it instead. See `AzUnattachedAnchor` and `<AzUnattachedRail>`.
+ *
+ * @example
+ * ```tsx
+ * <AzUnattachedHostItem id="tools" text="Tools" anchor={AzUnattachedAnchor.FLOATING} />
+ * <AzRailSubItem id="measure" hostId="tools" text="Measure" onClick={measure} />
+ * ```
+ */
+export const AzUnattachedHostItem: React.FC<AzUnattachedHostItemProps> = (
+  props
+) => {
+  useAzItem({
+    ...props,
+    isRailItem: true,
+    isHost: true,
+    isSubItem: false,
+    isToggle: false,
+    isCycler: false,
+    isDivider: false,
+    collapseOnClick: false,
+    shape: props.shape || AzButtonShape.CIRCLE,
+    disabled: props.disabled || false,
+    isExpanded: false,
+    toggleOnText: '',
+    toggleOffText: '',
+    isUnattached: true,
+    unattachedAnchor: props.anchor ?? AzUnattachedAnchor.OPPOSITE,
   });
   return null;
 };

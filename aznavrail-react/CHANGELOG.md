@@ -3,6 +3,31 @@
 ## Unreleased — three highlights, one About, windows that move
 
 ### Added
+- **`AzUnattachedHostItem` and floating-host docking** — ports Android/CMP's unattached-rail-host
+  system. Declare `<AzUnattachedHostItem id="tools" anchor={AzUnattachedAnchor.FLOATING} />` (its
+  sub-items use the existing `AzRailSubItem`/`AzRailSubToggle`/`AzRailRelocItem`/etc. DSL, pointed at
+  it by `hostId`, exactly like a rail host) and it draws itself outside the rail strip and the
+  drawer. `OPPOSITE`/`BOTTOM` stack into a fixed column; `FLOATING` drags via `PanResponder`, snaps
+  to a screen edge, docks flush against another `FLOATING` host to form a shared-drag group (capped
+  at two columns, each column capped at however many hosts fit fully expanded — an over-capacity
+  drop is refused, not evicted), and grows a grab bar above a group's column-top host. A `FLOATING`
+  host's screen-edge dock/position persists per host id; rail-to-rail attachments deliberately do
+  not, matching Kotlin. Two small, cosmetic-only divergences (independent "last tapped" tracking and
+  nested-rail-open state, rather than one scope-wide flag shared with the rail strip) are documented
+  in `KNOWN_GAPS.md`.
+- **`AzPopup`** — ports Android/CMP's popup system: `useAzPopupController()` +
+  `<AzPopup controller={...}>`, raised with `controller.show({ itemId, kind, title, message })`.
+  `AzPopupKind.NOTICE`/`WARNING` flag the bound rail item via the new `AzItemAlert` (`isLoading`
+  and `badge` are also now first-class `AzNavItem` fields, writable through the popup's item
+  handle). Two behaviors necessarily diverge from Kotlin — no "last touched item" fallback, and the
+  item handle is write-only — and the alert visual is an accent-colour override rather than a true
+  triangle outline; all documented in `KNOWN_GAPS.md`.
+- **`AzDropdownTrigger`** — the trigger is no longer hardcoded to the app-icon look. Pass
+  `trigger={AzDropdownTrigger.MoreVert}` (the new default — the three-dot glyph, matching Android/
+  CMP), `.Hamburger`, `.AppIcon` (the old look), `.Text('Filter')`, or `.Icon(node | uri)` to
+  `<AzDropdownMenu>`. `triggerPlacement` is accepted for source parity with Android/CMP's
+  `AzDropdownTriggerPlacement`, but always resolves to `INLINE`: React has no host-activity title
+  row to lift a `TITLE` trigger into yet (see `KNOWN_GAPS.md`).
 - **Three highlights, not one.** An item can be lit three ways, and each answers a different
   question: **active** (`activeColor`) is *where you are* — the current destination or an
   `activeClassifiers` match; **focus** (`focusColor`) is *what you are touching* — the item just

@@ -588,13 +588,16 @@ fun MainApp() {
         azPopup(alerts)
 
         // --- Unattached hosts ------------------------------------------------------------------
-        // Rail hosts drawn outside the rail strip. FLOATING is draggable and remembers where it was
-        // dropped; BOTTOM parks at the bottom of the side opposite the rail.
+        // Rail hosts drawn outside the rail strip. FLOATING hosts each float and dock
+        // independently: drag one to a screen edge to pin it there, or flush against another
+        // FLOATING host (like "unattached-swatches" below) to attach it and drag the pair as a
+        // group. BOTTOM parks at the bottom of the side opposite the rail, same as always.
         azUnattachedHostItem(
             id = "unattached-tools",
             text = "Tools",
             anchor = com.hereliesaz.aznavrail.model.AzUnattachedAnchor.FLOATING,
-            info = "azUnattachedHostItem(anchor = FLOATING) — drag it anywhere; its position persists.",
+            info = "azUnattachedHostItem(anchor = FLOATING) — drag it to a screen edge to dock it, " +
+                "or flush against \"Colors\" to attach the two into a draggable group.",
         )
         azRailSubItem(id = "unattached-measure", hostId = "unattached-tools", text = "Measure") {
             Log.d(TAG, "Unattached: Measure clicked")
@@ -606,6 +609,21 @@ fun MainApp() {
             toggleOnText = "Grid On",
             toggleOffText = "Grid Off",
         ) { toolsGrid = !toolsGrid }
+
+        // A second independent FLOATING host, purely to demonstrate rail-to-rail docking: drag it
+        // flush against "Tools" above to attach the two into one draggable group with a grab bar.
+        azUnattachedHostItem(
+            id = "unattached-swatches",
+            text = "Colors",
+            anchor = com.hereliesaz.aznavrail.model.AzUnattachedAnchor.FLOATING,
+            info = "A second azUnattachedHostItem(anchor = FLOATING) — drag it next to \"Tools\" to dock them together.",
+        )
+        azRailSubItem(id = "unattached-swatch-a", hostId = "unattached-swatches", text = "Red") {
+            Log.d(TAG, "Unattached: Red swatch clicked")
+        }
+        azRailSubItem(id = "unattached-swatch-b", hostId = "unattached-swatches", text = "Blue") {
+            Log.d(TAG, "Unattached: Blue swatch clicked")
+        }
 
         azUnattachedHostItem(
             id = "unattached-layers",
