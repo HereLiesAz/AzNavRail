@@ -1,0 +1,291 @@
+from pathlib import Path
+
+FILES = [
+    Path("aznavrail/src/main/java/com/hereliesaz/aznavrail/internal/AzUnattachedRail.kt"),
+    Path("aznavrail-cmp/src/commonMain/kotlin/com/hereliesaz/aznavrail/internal/AzUnattachedRail.kt"),
+]
+
+drag_block = '''    // Reloc items under unattached hosts use the same long-press-then-drag contract as
+    // reloc items in the docked rail. A quick tap still clicks; a stationary long press still
+    // opens the hidden menu (or counts as a slow tap when there is no menu). On FLOATING hosts,
+    // moving before the long-press threshold keeps moving the host itself instead.
+    val dragModifier = if (item.isRelocItem) {
+        rememberUnattachedRelocGestureModifier(
+            item = item,
+            scope = scope,
+            onTap = {
+                scope.onFocusMap[item.id]?.invoke()
+                scope.lastTouchedItemId = item.id
+                scope.onClickMap[item.id]?.invoke()
+                scope.advancedConfig.onInteraction?.invoke(item.id, item)
+            },
+            onMenuOpen = {
+                if (!item.hiddenMenuItems.isNullOrEmpty()) {
+                    scope.onFocusMap[item.id]?.invoke()
+                    onMenuOpen(item.id)
+                }
+            },
+            onMenuDismiss = onHiddenMenuDismiss,
+        )
+    } else {
+        Modifier
+    }'''
+
+helper = r'''/**
+ * Tap / hidden-menu / reorder gesture for a reloc item rendered under an unattached host.
+ * A child consumes movement only after long-press reorder has begun, allowing a FLOATING
+ * host's immediate-drag detector to win when the user moves before the long-press threshold.
+ */
+@Composable
+private fun rememberUnattachedRelocGestureModifier(
+    item: AzNavItem,
+    scope: AzNavRailScopeImpl,
+    onTap: () -> Unit,
+    onMenuOpen: () -> Unit,
+    onMenuDismiss: () -> Unit,
+): Modifier {
+    val hapticFeedback = LocalHapticFeedback.current
+    val viewConfiguration = LocalViewConfiguration.current
+    val coroutineScope = rememberCoroutineScope()
+    var dragOffsetY by remember(item.id) { mutableStateOf(0f) }
+    var isDragging by remember(item.id) { mutableStateOf(false) }
+
+    return Modifier
+        .offset { IntOffset(0, dragOffsetY.roundToInt()) }
+        .zIndex(if (isDragging) 1f else 0f)
+        .pointerInput(item.id, item.hiddenMenuItems.isNullOrEmpty()) {
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false)
+                val longPressTimeout = viewConfiguration.longPressTimeoutMillis
+                var isLongPress = false
+                var movedBeforeLongPress = false
+                var dragStarted = false
+                var completed = false
+                var totalDragY = 0f
+                var targetIndex = scope.navItems.indexOfFirst { it.id == item.id }
+
+                val longPressJob = coroutineScope.launch {
+                    delay(longPressTimeout)
+                    isLongPress = true
+                    if (scope.vibrate) hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                    scope.onFocusMap[item.id]?.invoke()
+                    if (!item.hiddenMenuItems.isNullOrEmpty()) onMenuOpen()
+                }
+
+                try {
+                    val pointerId = down.id
+                    var currentPosition = down.position
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        val change = event.changes.firstOrNull { it.id == pointerId } ?: break
+                        if (!change.pressed && change.previousPressed) {
+                            change.consume()
+                            completed = true
+                            break
+                        }
+
+                        val positionChange = change.position - change.previousPosition
+                        if (positionChange != Offset.Zero) {
+                            if (!isLongPress) {
+                                if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
+                                    movedBeforeLongPress = true
+                                    longPressJob.cancel()
+                                }
+                            } else {
+                                change.consume()
+                                if (!dragStarted && (change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
+                                    dragStarted = true
+                                    isDragging = true
+                                    onMenuDismiss()
+                                    targetIndex = scope.navItems.indexOfFirst { it.id == item.id }
+                                }
+                                if (dragStarted) {
+                                    val dragY = (change.position - currentPosition).y
+                                    totalDragY += dragY
+                                    dragOffsetY = totalDragY
+                                    RelocItemHandler.calculateTargetIndex(
+                                        items = scope.navItems,
+                                        draggedItemId = item.id,
+                                        currentDragOffset = totalDragY,
+                                        itemBounds = scope.itemBoundsCache,
+                                        isVertical = true,
+                                    )?.let { targetIndex = it }
+                                }
+                            }
+                        }
+                        currentPosition = change.position
+                    }
+                } finally {
+                    longPressJob.cancel()
+                    if (dragStarted) {
+                        val currentIndex = scope.navItems.indexOfFirst { it.id == item.id }
+                        if (currentIndex != -1 && targetIndex != -1 && currentIndex != targetIndex) {
+                            RelocItemHandler.updateOrder(scope.navItems, item.id, targetIndex)
+                            item.hostId?.let { hostId ->
+                                scope.savedRelocOrders[hostId] = scope.navItems
+                                    .filter { it.isRelocItem && it.hostId == hostId }
+                                    .map { it.id }
+                            }
+                            scope.onRelocateMap[item.id]?.invoke(
+                                currentIndex,
+                                targetIndex,
+                                scope.navItems.map { it.id },
+                            )
+                        }
+                        dragOffsetY = 0f
+                        isDragging = false
+                        scope.advancedConfig.onInteraction?.invoke(item.id, item)
+                    } else if (
+                        completed && !movedBeforeLongPress &&
+                        (!isLongPress || item.hiddenMenuItems.isNullOrEmpty())
+                    ) {
+                        onTap()
+                    }
+                }
+            }
+        }
+}
+
+// ---------------------------------------------------------------------------------------------
+// FLOATING'''
+
+for path in FILES:
+    s = path.read_text()
+    s = s.replace(
+        "import androidx.compose.foundation.gestures.detectTapGestures\n",
+        "import androidx.compose.foundation.gestures.awaitEachGesture\nimport androidx.compose.foundation.gestures.awaitFirstDown\n",
+        1,
+    )
+    if "import androidx.compose.ui.platform.LocalViewConfiguration\n" not in s:
+        s = s.replace(
+            "import androidx.compose.ui.platform.LocalHapticFeedback\n",
+            "import androidx.compose.ui.platform.LocalHapticFeedback\nimport androidx.compose.ui.platform.LocalViewConfiguration\n",
+            1,
+        )
+    if "import androidx.compose.ui.zIndex\n" not in s:
+        s = s.replace(
+            "import androidx.compose.ui.window.PopupProperties\n",
+            "import androidx.compose.ui.window.PopupProperties\nimport androidx.compose.ui.zIndex\n",
+            1,
+        )
+
+    start = s.index("    // `RailContent` unconditionally nulls a relocatable item's `onClick`")
+    end = s.index("\n\n    RailContent(", start)
+    s = s[:start] + drag_block + s[end:]
+
+    helper_start = s.index("/**\n * Detects a plain tap", end)
+    helper_end = s.index("// ---------------------------------------------------------------------------------------------\n// FLOATING", helper_start)
+    s = s[:helper_start] + helper + s[helper_end + len("// ---------------------------------------------------------------------------------------------\n// FLOATING"):]
+    path.write_text(s)
+
+test = Path("aznavrail/src/test/java/com/hereliesaz/aznavrail/internal/AzUnattachedRelocItemClickTest.kt")
+t = test.read_text()
+if "import androidx.compose.ui.geometry.Offset\n" not in t:
+    t = t.replace(
+        "package com.hereliesaz.aznavrail.internal\n\n",
+        "package com.hereliesaz.aznavrail.internal\n\nimport androidx.compose.ui.geometry.Offset\n",
+        1,
+    )
+if "import org.junit.Assert.assertEquals\n" not in t:
+    t = t.replace(
+        "import org.junit.Assert.assertTrue\n",
+        "import org.junit.Assert.assertEquals\nimport org.junit.Assert.assertNotNull\nimport org.junit.Assert.assertTrue\n",
+        1,
+    )
+new_test = r'''
+    @Test
+    fun `long-press dragging a reloc item reorders it inside a FLOATING unattached host`() {
+        var relocatedFrom: Int? = null
+        var relocatedTo: Int? = null
+        var orderAfterDrop: List<String>? = null
+
+        composeTestRule.setContent {
+            val navController = rememberNavController()
+            AzHostActivityLayout(navController = navController) {
+                azUnattachedHostItem(
+                    id = "host",
+                    text = "Host",
+                    anchor = AzUnattachedAnchor.FLOATING,
+                    initiallyExpanded = true,
+                )
+                azRailRelocItem(
+                    id = "item1",
+                    hostId = "host",
+                    text = "Item 1",
+                    onRelocate = { from, to, order ->
+                        relocatedFrom = from
+                        relocatedTo = to
+                        orderAfterDrop = order
+                    },
+                )
+                azRailRelocItem(id = "item2", hostId = "host", text = "Item 2")
+                onscreen { }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithContentDescription("Item 1").performTouchInput {
+            down(center)
+            advanceEventTime(700)
+            moveBy(Offset(0f, 96f))
+            advanceEventTime(32)
+            up()
+        }
+        composeTestRule.waitForIdle()
+
+        assertNotNull("A long-press drag under FLOATING must invoke onRelocate", orderAfterDrop)
+        assertNotNull("Relocation must report its source index", relocatedFrom)
+        assertNotNull("Relocation must report its destination index", relocatedTo)
+        assertEquals(relocatedFrom!! + 1, relocatedTo)
+        val order = orderAfterDrop!!
+        assertTrue(
+            "Dragged item must land after its sibling in the emitted order; got $order",
+            order.indexOf("item2") < order.indexOf("item1"),
+        )
+    }
+'''
+if "long-press dragging a reloc item reorders it inside a FLOATING unattached host" not in t:
+    i = t.rfind("\n}")
+    t = t[:i] + "\n" + new_test + t[i:]
+test.write_text(t)
+
+for path in [
+    Path("aznavrail/src/main/java/com/hereliesaz/aznavrail/AzNavRailScope.kt"),
+    Path("aznavrail-cmp/src/commonMain/kotlin/com/hereliesaz/aznavrail/AzNavRailScope.kt"),
+]:
+    s = path.read_text()
+    old = """     * Tap-to-activate and long-press-to-open-hidden-menu work identically whether [hostId] names a
+     * rail host or an [AzNavRailScope.azUnattachedHostItem]. Drag-to-reorder, however, is only wired
+     * for the rail strip: under an unattached host [onRelocate] never fires, since that stack's linear
+     * layout has no reorder gesture of its own.
+"""
+    new = """     * Tap-to-activate, long-press-to-open-hidden-menu, and long-press-drag reordering work
+     * identically whether [hostId] names a rail host or an [AzNavRailScope.azUnattachedHostItem].
+     * For a FLOATING unattached host, moving before the long-press threshold still moves the host;
+     * hold the reloc item past that threshold before moving to reorder the item instead.
+"""
+    if old not in s:
+        raise RuntimeError(f"{path}: stale azRailRelocItem KDoc not found")
+    s = s.replace(old, new, 1)
+    s = s.replace(
+        "     *   new ID order. Never invoked for an item hosted under an `azUnattachedHostItem` — see above.\n",
+        "     *   new ID order, including when hosted under an `azUnattachedHostItem`.\n",
+        1,
+    )
+    path.write_text(s)
+
+cap = Path("docs/CAPABILITIES_AND_LIMITATIONS.md")
+s = cap.read_text()
+old = """- **Relocatable items under an unattached host don't support drag-to-reorder.** `azRailRelocItem`
+  attaches to an `azUnattachedHostItem`'s `hostId` the same way it attaches to a rail host, and gets
+  full tap-to-activate and long-press-to-open-hidden-menu support there (`aznavrail` and
+  `aznavrail-cmp`; previously such an item was completely unclickable — tapping it did nothing at
+  all). Drag-to-reorder is only wired for the rail strip, though: under an unattached host,
+  `onRelocate` never fires, since that stack's linear layout has no reorder gesture of its own. The
+  React port has no unattached-host feature at all yet (see the parity table above), so this does not
+  apply there.
+"""
+if old not in s:
+    raise RuntimeError("CAPABILITIES stale reloc gap block not found")
+s = s.replace(old, "", 1)
+cap.write_text(s)
