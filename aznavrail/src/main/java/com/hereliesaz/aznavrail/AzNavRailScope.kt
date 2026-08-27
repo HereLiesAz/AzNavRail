@@ -181,8 +181,11 @@ interface AzNavRailScope {
      * @param secLoc Optional developer configuration key to enable the Secret Screens.
      * @param secLocPort The network port used for the location history sync server. Defaults to 10203.
      * @param helpList An optional map of Item ID to help text.
+     * @param guidanceStyle Which renderer draws routed guidance instructions: a callout card near the
+     *   target (default), or an [com.hereliesaz.aznavrail.tutorial.AzGuidanceStyle.Escort] halo that
+     *   travels to the target directly, with no visible text.
      */
-    fun azAdvanced(isLoading: Boolean = false, helpEnabled: Boolean = false, onDismissHelp: (() -> Unit)? = null, overlayService: Class<out android.app.Service>? = null, onUndock: (() -> Unit)? = null, enableRailDragging: Boolean = false, onRailDrag: ((Float, Float) -> Unit)? = null, onOverlayDrag: ((Float, Float) -> Unit)? = null, onItemGloballyPositioned: ((String, Rect) -> Unit)? = null, secLoc: String? = null, secLocPort: Int = 10203, helpList: Map<String, Any> = emptyMap(), onInteraction: ((String, com.hereliesaz.aznavrail.model.AzNavItem) -> Unit)? = null, autoGuidanceEdges: Boolean = false, onTitleClick: ((String) -> Unit)? = null)
+    fun azAdvanced(isLoading: Boolean = false, helpEnabled: Boolean = false, onDismissHelp: (() -> Unit)? = null, overlayService: Class<out android.app.Service>? = null, onUndock: (() -> Unit)? = null, enableRailDragging: Boolean = false, onRailDrag: ((Float, Float) -> Unit)? = null, onOverlayDrag: ((Float, Float) -> Unit)? = null, onItemGloballyPositioned: ((String, Rect) -> Unit)? = null, secLoc: String? = null, secLocPort: Int = 10203, helpList: Map<String, Any> = emptyMap(), onInteraction: ((String, com.hereliesaz.aznavrail.model.AzNavItem) -> Unit)? = null, autoGuidanceEdges: Boolean = false, onTitleClick: ((String) -> Unit)? = null, guidanceStyle: com.hereliesaz.aznavrail.tutorial.AzGuidanceStyle = com.hereliesaz.aznavrail.tutorial.AzGuidanceStyle.Callout)
 
     /**
      * Configures the built-in **About** screen and the **"More from Az"** carousel.
@@ -1336,7 +1339,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         this.titleTextStyle = titleTextStyle
     }
 
-    override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, secLoc: String?, secLocPort: Int, helpList: Map<String, Any>, onInteraction: ((String, AzNavItem) -> Unit)?, autoGuidanceEdges: Boolean, onTitleClick: ((String) -> Unit)?) {
+    override fun azAdvanced(isLoading: Boolean, helpEnabled: Boolean, onDismissHelp: (() -> Unit)?, overlayService: Class<out android.app.Service>?, onUndock: (() -> Unit)?, enableRailDragging: Boolean, onRailDrag: ((Float, Float) -> Unit)?, onOverlayDrag: ((Float, Float) -> Unit)?, onItemGloballyPositioned: ((String, Rect) -> Unit)?, secLoc: String?, secLocPort: Int, helpList: Map<String, Any>, onInteraction: ((String, AzNavItem) -> Unit)?, autoGuidanceEdges: Boolean, onTitleClick: ((String) -> Unit)?, guidanceStyle: com.hereliesaz.aznavrail.tutorial.AzGuidanceStyle) {
         this.advancedConfig = this.advancedConfig.copy(
             isLoading = isLoading,
             helpEnabled = helpEnabled,
@@ -1352,7 +1355,8 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
             helpList = if (helpList.isNotEmpty()) helpList else this.advancedConfig.helpList,
             onInteraction = onInteraction ?: this.advancedConfig.onInteraction,
             autoGuidanceEdges = autoGuidanceEdges,
-            onTitleClick = onTitleClick ?: this.advancedConfig.onTitleClick
+            onTitleClick = onTitleClick ?: this.advancedConfig.onTitleClick,
+            guidanceStyle = guidanceStyle,
         )
     }
 

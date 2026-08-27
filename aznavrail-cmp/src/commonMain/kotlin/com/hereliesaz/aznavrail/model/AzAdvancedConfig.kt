@@ -1,6 +1,7 @@
 package com.hereliesaz.aznavrail.model
 
 import androidx.compose.ui.geometry.Rect
+import com.hereliesaz.aznavrail.tutorial.AzGuidanceStyle
 
 /**
  * Aggregated advanced settings for the rail, populated by [com.hereliesaz.aznavrail.AzNavRailScope.azAdvanced]
@@ -49,6 +50,9 @@ import androidx.compose.ui.geometry.Rect
  *   and draws it in exactly one of them, so About never appears twice. The most deliberate placement
  *   wins: a developer-declared `azAboutRailItem`, then the rail's menu footer, then a drop-down's
  *   footer, then the automatic `?`. Set false to draw About wherever it is configured.
+ * @param guidanceStyle Which renderer draws routed guidance instructions: [AzGuidanceStyle.Callout]
+ *   (default, a card near the target) or [AzGuidanceStyle.Escort] (a halo that travels to the target
+ *   directly, with no visible text). Same engine and graph either way.
  */
 data class AzAdvancedConfig(
     val isLoading: Boolean = false,
@@ -71,5 +75,6 @@ data class AzAdvancedConfig(
     val moreFromAzRailItem: Boolean = false,
     val aboutRailItem: Boolean = true,
     val dedupeAbout: Boolean = true,
-    val onTitleClick: ((String) -> Unit)? = null
+    val onTitleClick: ((String) -> Unit)? = null,
+    val guidanceStyle: AzGuidanceStyle = AzGuidanceStyle.Callout,
 )
