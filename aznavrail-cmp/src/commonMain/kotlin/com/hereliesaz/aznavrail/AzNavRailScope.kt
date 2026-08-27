@@ -779,10 +779,10 @@ interface AzNavRailScope {
      * Adds a Relocatable Item to a Host Item in the rail.
      * This item supports drag-and-drop reordering within its cluster.
      *
-     * Tap-to-activate and long-press-to-open-hidden-menu work identically whether [hostId] names a
-     * rail host or an [AzNavRailScope.azUnattachedHostItem]. Drag-to-reorder, however, is only wired
-     * for the rail strip: under an unattached host [onRelocate] never fires, since that stack's linear
-     * layout has no reorder gesture of its own.
+     * Tap-to-activate, long-press-to-open-hidden-menu, and long-press-drag reordering work
+     * identically whether [hostId] names a rail host or an [AzNavRailScope.azUnattachedHostItem].
+     * For a FLOATING unattached host, moving before the long-press threshold still moves the host;
+     * hold the reloc item past that threshold before moving to reorder the item instead.
      *
      * @param id Unique identifier.
      * @param hostId The ID of the parent Host Item.
@@ -798,7 +798,7 @@ interface AzNavRailScope {
      * @param onFocus Focus callback.
      * @param onClick Click callback (selection).
      * @param onRelocate Callback invoked when the item is moved. Provides old index, new index, and the
-     *   new ID order. Never invoked for an item hosted under an `azUnattachedHostItem` — see above.
+     *   new ID order, including when hosted under an `azUnattachedHostItem`.
      * @param nestedRailAlignment The alignment of the nested rail (VERTICAL or HORIZONTAL).
      * @param nestedContent DSL block to define the items within the nested rail.
      * @param keepNestedRailOpen If true, the nested rail remains open until the parent item is tapped again.
@@ -1129,12 +1129,31 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     var vibrate: Boolean = false
     /** If true, the header area shows the app name instead of the app icon. */
     var displayAppName: Boolean = false
-    /** Set of classifier strings; items whose classifiers overlap are shown as active. */
-    var activeClassifiers: Set<String> = emptySet()
+    /**
+     * Set of classifier strings; items whose classifiers overlap are shown as active.
+     *
+     * Backed by snapshot state (not a plain `var`, unlike most of this scope's other properties):
+     * [AzNavRailScopeImpl] is a large, mutable, compiler-inferred-*unstable* class, so a composable
+     * that reads this value is never guaranteed to be re-invoked just because [azConfig] mutated it —
+     * whether it re-runs depends on whether some ANCESTOR happens to re-execute *and* not get skipped
+     * on the way down, which callers of `providedScope` (`AzHostActivityLayout`, most apps) generally
+     * do not. Without real snapshot state, a call to `azConfig(activeClassifiers = …)` from ordinary
+     * Compose state (the norm — see the KDoc on [AzNavRailScope.azConfig]) updated this field
+     * correctly, but every composable that reads it for its "isSelected" computation (`RailContent`'s
+     * callers in `RailItems.kt` and `AzUnattachedRail.kt`) kept skipping and drawing the *previous*
+     * value — the classifier's highlight then only ever appeared to update on an UNRELATED
+     * recomposition that happened not to be skipped, such as a press (`isPressed`, real snapshot
+     * state read deep inside `AzNavRailButton`) — which is a different question from `isSelected`
+     * entirely, but produces a similar-looking highlight and made the bug read as "only lit up while
+     * pressed." Snapshot state sidesteps parameter-stability/skipping altogether: whichever
+     * composable's body actually reads `.value` here is invalidated directly the moment this changes,
+     * regardless of what its ancestors decided.
+     */
+    var activeClassifiers: Set<String> by mutableStateOf(emptySet())
     /** Set of classifier strings; items whose classifiers overlap wear the **secondary** highlight. */
-    var secondaryClassifiers: Set<String> = emptySet()
+    var secondaryClassifiers: Set<String> by mutableStateOf(emptySet())
     /** Set of classifier strings; items whose classifiers overlap wear the **tertiary** highlight. */
-    var tertiaryClassifiers: Set<String> = emptySet()
+    var tertiaryClassifiers: Set<String> by mutableStateOf(emptySet())
     /** If true, the docking side tracks the physical device edge, adapting to rotation. */
     var usePhysicalDocking: Boolean = false
 

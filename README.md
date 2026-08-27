@@ -505,7 +505,18 @@ nest to any depth. The host and its whole subtree leave both the rail strip and 
 | `AzUnattachedAnchor.BOTTOM` | Bottom of the screen, opposite side. |
 | `AzUnattachedAnchor.FLOATING` | Draggable; its position is persisted across launches. |
 
-Several hosts sharing an anchor stack into a column with the rail's own spacing.
+`OPPOSITE`/`BOTTOM` hosts sharing an anchor stack into a fixed column with the rail's own spacing.
+`FLOATING` hosts each float and dock independently instead:
+
+- Drag one near the top, bottom, or the edge opposite the rail to snap it to that edge; several
+  docked to the same edge line up adjacent instead of overlapping.
+- Drag one flush against another's right or bottom edge to attach it there instead, forming a small
+  grid (capped at two columns, and per column at however many fit fully expanded without running
+  off-screen) that moves as a unit — a host with a group attached grows a grab bar above it.
+- A host in the left column of a pair opens its own nested-rail popups further left; the right
+  column opens them further right.
+
+Each host's own resting spot is persisted per-launch; rail-to-rail attachments are not.
 
 ```kotlin
 azUnattachedHostItem(id = "tools", text = "Tools", anchor = AzUnattachedAnchor.FLOATING)

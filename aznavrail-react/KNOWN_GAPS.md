@@ -58,6 +58,64 @@ per-shape masking and arrowheads aren't portable on React Native). The resolved 
 on the controller (`currentInstructions[i].resolvedShape`), so a host that wants a pixel-accurate
 highlight can draw it itself via `<AzGuideRenderer>` or by observing the snapshot.
 
+## Drop-down trigger title-row placement (`AzDropdownTriggerPlacement.TITLE`)
+
+Android/CMP's `AzHostActivityLayout` draws a big screen-boundary title, and any `AzDropdownMenu`
+declared inside its `onscreen { ... }` block can lift its trigger out of the call site to sit next
+to that title (`AzDropdownTriggerPlacement.TITLE`, the effective default there). Several drop-downs
+hosted this way line their triggers up beside each other in declaration order.
+
+React has no equivalent host-activity layout with a title row to lift into. `AzDropdownMenu`
+accepts `AzDropdownTriggerPlacement` for source parity, but `AUTO` and `TITLE` both currently
+resolve to `INLINE` — the trigger always renders where the component is declared. Revisit this if/
+when a React `AzHostActivityLayout` equivalent is built.
+
+## Unattached hosts (`AzUnattachedHostItem`) and floating-host docking
+
+Ported. `AzUnattachedHostItem` (`src/AzNavRailScope.tsx`) declares a rail host that lives outside
+the rail strip and the drawer; `<AzUnattachedRail>` (`src/components/AzUnattachedRail.tsx`, wired
+automatically inside `<AzNavRail>`, same as Android/CMP's own internal composable of the same name)
+draws it wherever its `AzUnattachedAnchor` puts it. `OPPOSITE`/`BOTTOM` hosts stack into a fixed
+column; `FLOATING` hosts drag via `PanResponder`, snap to a screen edge, dock flush against another
+`FLOATING` host to form a shared-drag group (capped at two columns, each column capped at however
+many hosts fit fully expanded — an over-capacity drop is refused, not evicted), and grow a grab bar
+above a group's column-top host. A `FLOATING` host's own screen-edge dock/position/priority persist
+per host id (`src/services/unattachedFloatingStore.ts`, mirroring Kotlin's `AzUnattachedStore`);
+rail-to-rail attachments deliberately do not, matching Kotlin's own documented reasoning. The
+drag/dock/attach geometry itself (`src/services/floatingDockMath.ts`) is a line-for-line port of the
+Kotlin private functions in `AzUnattachedRail.kt` and is unit-tested directly — see
+`floatingDockMath.test.ts`'s own doc comment for why (React Native's gesture responder system has no
+synthetic-touch injection the way Compose's `performTouchInput` does, unlike the Kotlin test suite
+this ports).
+
+Two small, deliberate divergences, both because React's `AzNavRailContext` has no
+`AzHostActivityLayout`-equivalent shared scope-wide flag for a composable to reach into (the same
+reason the popup system's two divergences exist, below): an unattached item's "last tapped" focus
+highlight, and an unattached nested rail's open/closed state, are tracked independently of the main
+rail strip's own (Kotlin shares one scope-wide flag for each across every surface). Cosmetic only —
+each surface renders a disjoint set of items, so there is nothing for the two trackers to disagree
+about in practice.
+
+## Popups (`AzPopup`, `AzPopupKind`) — two divergences from Android/CMP
+
+`AzPopup`/`AzPopupController`/`AzPopupKind`/`AzItemAlert` are ported (`src/components/AzPopup.tsx`),
+built on the existing `AzWindow`. Two things differ from Android/CMP, both because React has no
+`AzHostActivityLayout`-equivalent shared scope object for a popup (a sibling of the rail, not a
+descendant) to reach into:
+
+- **No "last touched item" fallback.** `AzPopupController.show({...})` requires an explicit
+  `itemId` to bind to an item; Kotlin's `itemId: null` falls back to the rail's last-tapped item.
+  React's `AzNavRailScope` does not publish that id to siblings.
+- **No read side on the item handle.** `AzPopupItemHandle` here is write-only (`setBadge`/
+  `setLoading`/`setAlert`/`clear`) — there is no `item: AzNavItem?` to read the bound item's
+  current declared state back out of, for the same sibling-scope reason above.
+
+Additionally, the alert visual itself is an approximation: Android/CMP redraw the flagged item as a
+rounded-corner **triangle** outline (`AzButtonShape.TRIANGLE`); React has no vector-path rendering
+dependency to draw an arbitrary polygon stroke, so `AzItemAlert` instead overrides the item's
+existing shape with the alert's accent colour. Revisit if a vector-drawing dependency (e.g.
+`react-native-svg`) is ever added to the package.
+
 ## `AzActivity` / `AzGraphInterface`
 
 The Android library exposes an `AzActivity` base class plus a KSP-generated

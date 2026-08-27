@@ -1,3 +1,5 @@
+import type React from 'react';
+
 /** Shape variant applied to an AzButton or nav-rail item icon. */
 export enum AzButtonShape {
   /** Circular border, equal width and height. */
@@ -110,6 +112,90 @@ export enum AzDropdownDesign {
   RAIL = 'rail',
   /** Expanded-menu look: full-width labeled rows, constrained to the expanded menu width (≈160). */
   MENU = 'menu',
+}
+
+/**
+ * What the user taps to open an `AzDropdownMenu`.
+ *
+ * In AzNavRail tradition the trigger is not a free child slot — it is one of the sanctioned shapes
+ * below. The default is `MoreVert` (the three vertical dots), so a drop-down declared with no
+ * configuration reads as a menu affordance rather than as the app's launcher icon.
+ */
+export type AzDropdownTrigger =
+  /** The Material "more" glyph — three vertical dots. The default. */
+  | { kind: 'MoreVert' }
+  /** The hamburger glyph (three stacked bars). */
+  | { kind: 'Hamburger' }
+  /**
+   * The host app's launcher icon, drawn exactly like the rail's header. This was the only trigger
+   * before triggers were configurable; pass it to keep that look.
+   */
+  | { kind: 'AppIcon' }
+  /** A word (or two) that hosts the menu, drawn in the panel's accent. */
+  | { kind: 'Text'; text: string }
+  /**
+   * A developer-supplied icon. `model` accepts a React node, or an image URI string rendered via
+   * `Image`.
+   */
+  | { kind: 'Icon'; model: React.ReactNode | string };
+
+/** Factories for the `AzDropdownTrigger` variants — mirrors the Kotlin sealed-interface call sites. */
+export const AzDropdownTrigger = {
+  MoreVert: { kind: 'MoreVert' } as AzDropdownTrigger,
+  Hamburger: { kind: 'Hamburger' } as AzDropdownTrigger,
+  AppIcon: { kind: 'AppIcon' } as AzDropdownTrigger,
+  Text: (text: string): AzDropdownTrigger => ({ kind: 'Text', text }),
+  Icon: (model: React.ReactNode | string): AzDropdownTrigger => ({
+    kind: 'Icon',
+    model,
+  }),
+};
+
+/** Where an `AzDropdownMenu`'s trigger is drawn. */
+export enum AzDropdownTriggerPlacement {
+  /**
+   * `TITLE` when the drop-down is declared inside an `AzHostActivityLayout`'s `onscreen` block (the
+   * usual case), `INLINE` otherwise. The default.
+   *
+   * React has no host-activity title row to lift into yet (`AzHostActivityLayout` is Android/CMP
+   * only — see `KNOWN_GAPS.md`), so this currently always resolves to `INLINE`.
+   */
+  AUTO = 'AUTO',
+  /**
+   * The trigger is lifted out of the call site and drawn next to the big screen title. Not yet
+   * reachable in React: falls back to `INLINE`. See `KNOWN_GAPS.md`.
+   */
+  TITLE = 'TITLE',
+  /** The trigger is drawn where the component is rendered, like any other widget. */
+  INLINE = 'INLINE',
+}
+
+/**
+ * The alert styling applied to the rail item that raised an `AzPopup`.
+ *
+ * Both levels mark the item as wanting attention — a warning-yellow accent override, differing only
+ * in shade — and both revert the moment the popup is dismissed.
+ *
+ * Android/CMP redraw the item as a rounded-corner triangle outline (`AzButtonShape.TRIANGLE`).
+ * React has no vector-path rendering dependency to draw an arbitrary polygon stroke, so this level
+ * is approximated with an accent-colour override on the item's existing shape rather than a true
+ * triangle — see `KNOWN_GAPS.md`.
+ */
+export enum AzItemAlert {
+  /** Informational. Drawn in a softer amber. */
+  NOTICE = 'NOTICE',
+  /** Something is wrong. Drawn in a full, saturated warning yellow. */
+  WARNING = 'WARNING',
+}
+
+/** The accent colour an `AzItemAlert` level draws its item in. */
+export function azItemAlertColor(alert: AzItemAlert): string {
+  switch (alert) {
+    case AzItemAlert.NOTICE:
+      return '#FFC107';
+    case AzItemAlert.WARNING:
+      return '#FFD400';
+  }
 }
 
 /** General orientation flag used by layout helpers. */
@@ -328,6 +414,10 @@ export interface AzNavItem {
   badge?: string;
   /** Whether the badge should remain permanently visible (true) or dissolve after 1 second (false). */
   persistentBadge?: boolean;
+  /** Spins this item's own loading animation, independent of the rail-wide `isLoading` overlay. */
+  isLoading?: boolean;
+  /** Marks the item as wanting attention — see `AzItemAlert`. Usually driven by an `AzPopup`. */
+  alert?: AzItemAlert;
   /** Navigation route string associated with this item. */
   route?: string;
   /** Screen title displayed in the host layout header when this item is active. */
@@ -476,6 +566,36 @@ export interface AzNavItem {
   nestedRailItems?: AzNavItem[];
   /** Settings overrides applied only to this item's nested-rail popup. */
   nestedRailSettings?: any;
+  /**
+   * True for a host declared with `AzUnattachedHostItem` — it does not live in the rail strip or
+   * the expanded menu; it draws itself (and unfolds its own sub-items) wherever `unattachedAnchor`
+   * puts it instead. See `components/AzUnattachedRail.tsx`.
+   */
+  isUnattached?: boolean;
+  /** Where an `isUnattached` host parks itself. Unset on every ordinary item. */
+  unattachedAnchor?: AzUnattachedAnchor;
+}
+
+/**
+ * Where an **unattached host rail item** (`AzUnattachedHostItem`) parks itself.
+ *
+ * An unattached host is a rail host item that does not live in the `<AzNavRail>` strip or its
+ * expanded menu. It is drawn as its own free-standing button somewhere else on the screen; tapping
+ * it unfolds its sub-items (declared the usual way, with `hostId` pointing at it) beneath it,
+ * exactly as they would have unfolded inside the rail. Several unattached hosts sharing an anchor
+ * stack into a column, again exactly as they would have stacked in the rail.
+ */
+export enum AzUnattachedAnchor {
+  /** The bottom of the screen, on the side opposite the rail. */
+  BOTTOM = 'BOTTOM',
+  /** The side opposite the rail, at the same height the rail's own items start. */
+  OPPOSITE = 'OPPOSITE',
+  /**
+   * Free-floating and draggable. The stack's position is persisted, so it comes back where the
+   * user left it on the next launch. It is clamped to the same 10%-90% vertical safe zone the
+   * rail's FAB mode uses.
+   */
+  FLOATING = 'FLOATING',
 }
 
 /** Base props shared by all DSL item-declaration components (e.g. `AzRailItem`, `AzMenuItem`). */
@@ -539,6 +659,10 @@ export interface AzNavItemProps {
   tertiaryColor?: string;
   /** Whether this item's **tertiary** highlight is lit. A second app-driven channel. */
   tertiary?: boolean;
+  /** Spins this item's own loading animation, independent of the rail-wide `isLoading` overlay. */
+  isLoading?: boolean;
+  /** Marks the item as wanting attention — see `AzItemAlert`. Usually driven by an `AzPopup`. */
+  alert?: AzItemAlert;
 }
 
 /** Props for toggle-type DSL items (`AzRailToggle`, `AzMenuToggle`). */
@@ -581,6 +705,15 @@ export interface AzHostItemProps extends AzNavItemProps {
   initiallyExpanded?: boolean;
   /** Called when this host item expands or collapses due to a user tap. Receives `true` on expand, `false` on collapse. */
   onExpandedChange?: (expanded: boolean) => void;
+}
+
+/**
+ * Props for `AzUnattachedHostItem` — a rail host that lives outside the rail strip. See
+ * `AzUnattachedAnchor` for what each anchor does.
+ */
+export interface AzUnattachedHostItemProps extends AzHostItemProps {
+  /** Where this host parks itself. Defaults to `AzUnattachedAnchor.OPPOSITE`. */
+  anchor?: AzUnattachedAnchor;
 }
 
 /** Props for sub-item DSL components — an item nested under a host. */

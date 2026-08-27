@@ -8,6 +8,7 @@ import React, {
 import {
   View,
   Text,
+  Image,
   Modal,
   Pressable,
   TouchableOpacity,
@@ -26,6 +27,8 @@ import {
   AzButtonShape,
   AzDockingSide,
   AzDropdownDesign,
+  AzDropdownTrigger,
+  AzDropdownTriggerPlacement,
   AzEasing,
   AzEntrance,
   AzExit,
@@ -75,10 +78,23 @@ export interface AzDropdownMenuProps {
   expandedWidth?: number;
   /** Panel width (px) in the RAIL design. */
   collapsedWidth?: number;
-  /** Clip shape for the app-icon trigger (mirrors the rail's `headerIconShape`). */
+  /** Clip shape for the `AppIcon` trigger (mirrors the rail's `headerIconShape`). */
   headerIconShape?: AzHeaderIconShape;
-  /** Diameter (px) of the app-icon trigger (mirrors the rail's `headerIconSize`). */
+  /** Diameter (px) of the `AppIcon` trigger (mirrors the rail's `headerIconSize`). */
   headerIconSize?: number;
+  /**
+   * What the user taps to open the menu. Defaults to `AzDropdownTrigger.MoreVert` — the three
+   * vertical dots. Pass `AzDropdownTrigger.Text('Filter')` for a word, `AzDropdownTrigger.Icon(...)`
+   * for your own glyph/image, `AzDropdownTrigger.Hamburger` for the bars, or
+   * `AzDropdownTrigger.AppIcon` for the launcher icon (the pre-trigger default).
+   */
+  trigger?: AzDropdownTrigger;
+  /**
+   * Where that trigger is drawn. React has no host-activity title row to lift a trigger into yet
+   * (see `KNOWN_GAPS.md`), so `AUTO` and `TITLE` both currently resolve to `INLINE` — the trigger
+   * always renders at the call site.
+   */
+  triggerPlacement?: AzDropdownTriggerPlacement;
   /** Whether the MENU design shows the rail's footer (About / Feedback / @HereLiesAz). */
   showFooter?: boolean;
   /**
@@ -356,6 +372,8 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
   collapsedWidth = AzNavRailDefaults.CollapsedRailWidth,
   headerIconShape = AzHeaderIconShape.CIRCLE,
   headerIconSize = AzNavRailDefaults.HeaderIconSize,
+  trigger = AzDropdownTrigger.MoreVert,
+  triggerPlacement: _triggerPlacement = AzDropdownTriggerPlacement.AUTO,
   showFooter = true,
   appRepositoryUrl,
   inAppAbout = true,
@@ -473,10 +491,58 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
     entranceDurationMs
   );
 
+  const renderTriggerContent = () => {
+    switch (trigger.kind) {
+      case 'MoreVert':
+        return (
+          <Text style={{ fontSize: 22, color: panelAccent, lineHeight: 22 }}>
+            {'⋮'}
+          </Text>
+        );
+      case 'Hamburger':
+        return (
+          <Text style={{ fontSize: 20, color: panelAccent, lineHeight: 20 }}>
+            {'☰'}
+          </Text>
+        );
+      case 'Text':
+        return (
+          <Text
+            style={{ fontSize: 16, color: panelAccent, fontWeight: '600' }}
+            numberOfLines={1}
+          >
+            {trigger.text}
+          </Text>
+        );
+      case 'Icon':
+        return typeof trigger.model === 'string' ? (
+          <Image
+            source={{ uri: trigger.model }}
+            style={{ width: triggerSize, height: triggerSize }}
+            resizeMode="contain"
+          />
+        ) : (
+          (trigger.model as React.ReactNode)
+        );
+      case 'AppIcon':
+      default:
+        // The launcher-icon look — drawn like the rail's header icon (gray placeholder).
+        return (
+          <View
+            style={{
+              width: triggerSize,
+              height: triggerSize,
+              borderRadius: triggerRadius,
+              backgroundColor: 'gray',
+              overflow: 'hidden',
+            }}
+          />
+        );
+    }
+  };
+
   return (
     <View style={style}>
-      {/* The app-icon trigger — drawn like the rail's header icon (gray placeholder), clipped to the
-          configured shape/size. */}
       <TouchableOpacity
         ref={triggerRef as React.RefObject<any>}
         onPress={() => (isOpen ? setOpen(false) : openMenu())}
@@ -486,17 +552,16 @@ export const AzDropdownMenu: React.FC<AzDropdownMenuProps> = ({
         <View
           testID="az-dropdown-trigger"
           style={{
-            // Automatic breathing room around the app-icon trigger (parity with the rail header).
+            // Automatic breathing room around the trigger (parity with the rail header).
             margin: 8,
-            width: triggerSize,
-            height: triggerSize,
-            borderRadius: triggerRadius,
-            backgroundColor: 'gray',
+            minWidth: triggerSize,
+            minHeight: triggerSize,
             alignItems: 'center',
             justifyContent: 'center',
-            overflow: 'hidden',
           }}
-        />
+        >
+          {renderTriggerContent()}
+        </View>
       </TouchableOpacity>
 
       {rendered && (

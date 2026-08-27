@@ -2,10 +2,15 @@ import React from 'react';
 import { Dimensions } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { AzDropdownMenu, AzDropdownItem } from '../components/AzDropdownMenu';
-import { AzDockingSide, AzDropdownDesign, AzHeaderIconShape } from '../types';
+import {
+  AzDockingSide,
+  AzDropdownDesign,
+  AzDropdownTrigger,
+  AzHeaderIconShape,
+} from '../types';
 
 describe('AzDropdownMenu', () => {
-  it('is closed initially and opens when the app-icon trigger is pressed', async () => {
+  it('is closed initially and opens when the trigger is pressed', async () => {
     const { queryByText, getByLabelText } = await render(
       <AzDropdownMenu>
         <AzDropdownItem text="Settings" onClick={() => {}} />
@@ -111,19 +116,38 @@ describe('AzDropdownMenu', () => {
     );
   });
 
-  it('applies a configurable app-icon size and shape to the trigger', async () => {
+  it('applies a configurable app-icon size and shape to the AppIcon trigger', async () => {
     const { getByTestId } = await render(
       <AzDropdownMenu
+        trigger={AzDropdownTrigger.AppIcon}
         headerIconSize={72}
         headerIconShape={AzHeaderIconShape.ROUNDED}
       >
         <AzDropdownItem text="Profile" onClick={() => {}} />
       </AzDropdownMenu>
     );
-    const style = getByTestId('az-dropdown-trigger').props.style;
-    expect(style.width).toBe(72);
-    expect(style.height).toBe(72);
-    expect(style.borderRadius).toBe(8); // ROUNDED → 8
+    const inner = getByTestId('az-dropdown-trigger').props.children.props;
+    expect(inner.style.width).toBe(72);
+    expect(inner.style.height).toBe(72);
+    expect(inner.style.borderRadius).toBe(8); // ROUNDED → 8
+  });
+
+  it('defaults to the MoreVert trigger', async () => {
+    const { queryByText } = await render(
+      <AzDropdownMenu>
+        <AzDropdownItem text="Settings" onClick={() => {}} />
+      </AzDropdownMenu>
+    );
+    expect(queryByText('⋮')).not.toBeNull();
+  });
+
+  it('renders a Text trigger with the given label', async () => {
+    const { queryByText } = await render(
+      <AzDropdownMenu trigger={AzDropdownTrigger.Text('View')}>
+        <AzDropdownItem text="Grid" onClick={() => {}} />
+      </AzDropdownMenu>
+    );
+    expect(queryByText('View')).not.toBeNull();
   });
 
   it('shows the rail footer in the MENU design by default', async () => {

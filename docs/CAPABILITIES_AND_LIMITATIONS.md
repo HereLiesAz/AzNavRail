@@ -165,6 +165,7 @@ A host item can auto-expand its sub-items reactively.
 | :--- | :--- | :--- | :--- |
 | Drop-down trigger set + title-row placement | ✅ | ✅ | ❌ not ported |
 | Unattached hosts (`azUnattachedHostItem`) | ✅ | ✅ | ❌ not ported |
+| Floating-host screen-edge & rail-to-rail docking | ✅ | ✅ | ❌ n/a (no unattached hosts) |
 | Per-item badge / loading (`azItemState`) | ✅ | ✅ | ❌ not ported |
 | Popups (`azPopup`) + warning triangle | ✅ | ✅ | ❌ not ported |
 | Pinned "More from Az" rail item | ✅ | ✅ | ✅ |
@@ -197,14 +198,13 @@ A host item can auto-expand its sub-items reactively.
 - **The physical-docking 180° rule is a product choice, not physics.** Docked LEFT and turned upside
   down, the rail stays on the LEFT even though the device's physical-left edge is then on the
   screen's right. `AzRailLayoutHelper` and its test both encode the documented rule.
-- **Relocatable items under an unattached host don't support drag-to-reorder.** `azRailRelocItem`
-  attaches to an `azUnattachedHostItem`'s `hostId` the same way it attaches to a rail host, and gets
-  full tap-to-activate and long-press-to-open-hidden-menu support there (`aznavrail` and
-  `aznavrail-cmp`; previously such an item was completely unclickable — tapping it did nothing at
-  all). Drag-to-reorder is only wired for the rail strip, though: under an unattached host,
-  `onRelocate` never fires, since that stack's linear layout has no reorder gesture of its own. The
-  React port has no unattached-host feature at all yet (see the parity table above), so this does not
-  apply there.
+- **`FLOATING` unattached hosts now dock independently** (`aznavrail` and `aznavrail-cmp`) instead of
+  sharing a single draggable stack: each one can be dragged to the top, bottom, or opposite screen
+  edge, or flush against another `FLOATING` host to attach to it (capped at two columns side by side,
+  and per column at whatever fits with everything fully expanded at once). A host with at least one
+  other host attached to it grows a grab bar for dragging the whole group. Rail-to-rail attachments
+  are not persisted across launches — only each host's own resting spot is; see
+  `AZNAVRAIL_COMPLETE_GUIDE.md` §4.
 
 ---
 

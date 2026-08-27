@@ -18,6 +18,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.fillMaxSize
@@ -50,6 +53,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -582,7 +586,9 @@ private fun DraggableRailItemWrapper(
                             hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                         }
                         scope.onFocusMap[item.id]?.invoke()
-                        onMenuOpen(item.id)
+                        if (!item.hiddenMenuItems.isNullOrEmpty()) {
+                            onMenuOpen(item.id)
+                        }
                         // onDragStart(item.id) -- Deferred until movement
                     }
 
@@ -653,12 +659,20 @@ private fun DraggableRailItemWrapper(
                         }
                     } finally {
                         longPressJob.cancel()
-                        if (isLongPress) {
-                            if (dragStarted) {
-                                onDragEnd()
-                                scope.advancedConfig.onInteraction?.invoke(item.id, item)
-                            }
-                        } else if (!hasMoved && gestureCompletedSuccessfully) {
+                        if (dragStarted) {
+                            onDragEnd()
+                            scope.advancedConfig.onInteraction?.invoke(item.id, item)
+                        } else if (
+                            gestureCompletedSuccessfully && !hasMoved &&
+                            (!isLongPress || item.hiddenMenuItems.isNullOrEmpty())
+                        ) {
+                            // Reaches here two ways: an ordinary quick tap (`!isLongPress`), or a
+                            // press held past the long-press threshold that never turned into a drag
+                            // and had no hidden menu to show for it (`item.hiddenMenuItems` empty) —
+                            // from the user's perspective the latter is still just a slow tap, not a
+                            // gesture that should be silently discarded. Only a press that legitimately
+                            // opened a hidden menu (checked above) is left alone here, since that menu
+                            // is now the interaction the user is looking at.
                             val isRouteSelected =
                                 item.route != null && item.route == currentDestination
                             val isIdSelected = lastTappedId == item.id
@@ -991,6 +1005,8 @@ private fun DraggableRailItemWrapper(
                 // the vertical anchor has to be stated rather than inherited from the parent.
                 anchorTop = scope.itemBoundsCache[item.id]?.top?.toInt() ?: 0,
                 accent = scope.railAccent,
+                railDockingSide = scope.dockingSide,
+                railWidth = scope.collapsedWidth,
             )
         }
 
@@ -1035,6 +1051,10 @@ internal fun HiddenMenuPopup(
     anchorTop: Int = 0,
     /** The rail's accent, so the menu's window matches the rail it came out of. */
     accent: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified,
+    /** The docking side of the rail that raised this menu, so it can be kept clear of that rail. */
+    railDockingSide: AzDockingSide = AzDockingSide.LEFT,
+    /** The collapsed width of the rail that raised this menu, so its gutter can be built as an obstruction. */
+    railWidth: Dp = 0.dp,
 ) {
     // The hidden menu sizes itself to its content: input boxes are given an
     // explicit width so the text fields (not the popup) dictate the menu width.
@@ -1044,6 +1064,32 @@ internal fun HiddenMenuPopup(
     // and a close: a context menu with a text field in it is something the user may well need to
     // move off whatever they are typing about, and folding it beats dismissing and re-summoning it.
     val windowState = com.hereliesaz.aznavrail.rememberAzWindowState()
+
+    // The rail's own strip is chrome this popup layer draws over, so the window is never allowed to
+    // land — or be dragged — back underneath it, on open or afterward. Only the vertical rail cases
+    // build a rect; a horizontal rail is rarer here and better left unconstrained than guessed wrong.
+    val density = LocalDensity.current
+    val containerSize = LocalWindowInfo.current.containerSize
+    val railObstruction = remember(railDockingSide, railWidth, containerSize, density) {
+        val railWidthPx = with(density) { railWidth.toPx() }
+        when (railDockingSide) {
+            AzDockingSide.LEFT -> Rect(0f, 0f, railWidthPx, containerSize.height.toFloat())
+            AzDockingSide.RIGHT -> Rect(
+                containerSize.width - railWidthPx,
+                0f,
+                containerSize.width.toFloat(),
+                containerSize.height.toFloat(),
+            )
+        }
+    }
+
+    // The menu sizes itself to its content, but never past what is actually left on screen: the
+    // window's own chrome bar plus a margin, capped overall at 80% of the screen height. Past that
+    // it scrolls internally instead of overflowing off-screen with items below the fold unreachable.
+    val maxMenuHeight = with(density) {
+        val chromeHeightPx = com.hereliesaz.aznavrail.AzWindowDefaults.ChromeHeight.toPx()
+        ((containerSize.height * 0.8f) - chromeHeightPx).coerceAtLeast(0f).toDp()
+    }
 
     Popup(
         popupPositionProvider = AzHiddenMenuPositionProvider,
@@ -1071,10 +1117,13 @@ internal fun HiddenMenuPopup(
                 accent = accent,
                 surfaceColor = effectiveBg.copy(alpha = backgroundOpacity),
                 onDismiss = onDismiss,
+                obstruction = railObstruction,
             ) {
                 Column(
                     modifier = Modifier
                         .width(IntrinsicSize.Max)
+                        .heightIn(max = maxMenuHeight)
+                        .verticalScroll(rememberScrollState())
                         .padding(8.dp)
                 ) {
                     items.forEach { menuItem ->
