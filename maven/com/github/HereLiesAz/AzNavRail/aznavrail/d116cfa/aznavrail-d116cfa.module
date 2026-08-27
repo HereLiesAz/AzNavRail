@@ -1,0 +1,197 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.github.HereLiesAz.AzNavRail",
+    "module": "aznavrail",
+    "version": "d116cfa",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.6.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "io.coil-kt",
+          "module": "coil-compose",
+          "version": {
+            "requires": "2.7.0"
+          }
+        },
+        {
+          "group": "androidx.navigation",
+          "module": "navigation-compose",
+          "version": {
+            "requires": "2.9.8"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.4.10"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "aznavrail-d116cfa.aar",
+          "url": "aznavrail-d116cfa.aar",
+          "size": 1661078,
+          "sha512": "d4a60c190b2854d68d2ff54009fc9b82da423f450d6b58f54bafdc000c61f19a4637e8b66569628080b961286e2e247d1dcb336559a3748b7ea2e5cadd340d0c",
+          "sha256": "b4085b89605b59b826287c51d70bc51bc5c45bda0e179b8ed465f85b4efa4ac9",
+          "sha1": "d696d91a6a4fc75f08638e3c7fce0cbeec9ea3d0",
+          "md5": "2ba2e97e3ed5d8bde2b46ffd806e2cd5"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-parcelize-runtime",
+          "version": {
+            "requires": "2.4.10"
+          }
+        },
+        {
+          "group": "androidx.core",
+          "module": "core-ktx",
+          "version": {
+            "requires": "1.19.0"
+          }
+        },
+        {
+          "group": "androidx.compose",
+          "module": "compose-bom",
+          "version": {
+            "requires": "2026.06.01"
+          },
+          "attributes": {
+            "org.gradle.category": "platform"
+          }
+        },
+        {
+          "group": "androidx.compose.ui",
+          "module": "ui"
+        },
+        {
+          "group": "androidx.compose.ui",
+          "module": "ui-graphics"
+        },
+        {
+          "group": "androidx.compose.ui",
+          "module": "ui-tooling-preview"
+        },
+        {
+          "group": "androidx.compose.material3",
+          "module": "material3",
+          "version": {
+            "requires": "1.5.0-alpha24"
+          }
+        },
+        {
+          "group": "androidx.compose.foundation",
+          "module": "foundation"
+        },
+        {
+          "group": "androidx.compose.foundation",
+          "module": "foundation-layout"
+        },
+        {
+          "group": "androidx.compose.animation",
+          "module": "animation-core"
+        },
+        {
+          "group": "androidx.compose.material",
+          "module": "material-icons-extended"
+        },
+        {
+          "group": "androidx.compose.ui",
+          "module": "ui",
+          "version": {
+            "requires": "1.11.4"
+          }
+        },
+        {
+          "group": "androidx.activity",
+          "module": "activity-compose",
+          "version": {
+            "requires": "1.13.0"
+          }
+        },
+        {
+          "group": "io.coil-kt",
+          "module": "coil-compose",
+          "version": {
+            "requires": "2.7.0"
+          }
+        },
+        {
+          "group": "androidx.navigation",
+          "module": "navigation-compose",
+          "version": {
+            "requires": "2.9.8"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.4.10"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "aznavrail-d116cfa.aar",
+          "url": "aznavrail-d116cfa.aar",
+          "size": 1661078,
+          "sha512": "d4a60c190b2854d68d2ff54009fc9b82da423f450d6b58f54bafdc000c61f19a4637e8b66569628080b961286e2e247d1dcb336559a3748b7ea2e5cadd340d0c",
+          "sha256": "b4085b89605b59b826287c51d70bc51bc5c45bda0e179b8ed465f85b4efa4ac9",
+          "sha1": "d696d91a6a4fc75f08638e3c7fce0cbeec9ea3d0",
+          "md5": "2ba2e97e3ed5d8bde2b46ffd806e2cd5"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseSourcePublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "aznavrail-d116cfa-sources.jar",
+          "url": "aznavrail-d116cfa-sources.jar",
+          "size": 291025,
+          "sha512": "a19698a8a1186e608ccc0870cdd483c4e7e3df07431c36485fba46597db117e2cbd2269be1f6f0a4e13d04a696c443dd9500b5be849d579395cce0da1d852c87",
+          "sha256": "4164cc805790ca6ef70f5e833ff433b23e8b303ae7819ebd8b2848b08ed6aed5",
+          "sha1": "aadbf83d77eb087b3ed6ca6efaeb4e8d66398971",
+          "md5": "07218a129adc0b437246464693dac3f8"
+        }
+      ]
+    }
+  ]
+}
