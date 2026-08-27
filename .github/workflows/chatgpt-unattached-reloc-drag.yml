@@ -1,0 +1,328 @@
+name: Apply unattached reloc drag fix
+
+on:
+  push:
+    branches: [ "chatgpt/unattached-reloc-drag" ]
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chatgpt/unattached-reloc-drag
+          fetch-depth: 0
+
+      - name: Patch Android and CMP unattached reloc gestures
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          FILES = [
+              Path('aznavrail/src/main/java/com/hereliesaz/aznavrail/internal/AzUnattachedRail.kt'),
+              Path('aznavrail-cmp/src/commonMain/kotlin/com/hereliesaz/aznavrail/internal/AzUnattachedRail.kt'),
+          ]
+
+          new_drag_block = '''    // Reloc items under unattached hosts use the same long-press-then-drag contract as reloc
+              // items in the docked rail. A quick tap still clicks; a stationary long press still opens the
+              // hidden menu (or counts as a slow tap when there is no menu); movement after the long-press
+              // threshold drags the item within its own host's reloc cluster. The floating host's own
+              // immediate-drag gesture remains available: move before the long-press threshold and the host,
+              // not the child, wins the gesture.
+              val dragModifier = if (item.isRelocItem) {
+                  rememberUnattachedRelocGestureModifier(
+                      item = item,
+                      scope = scope,
+                      onTap = {
+                          scope.onFocusMap[item.id]?.invoke()
+                          scope.lastTouchedItemId = item.id
+                          scope.onClickMap[item.id]?.invoke()
+                          scope.advancedConfig.onInteraction?.invoke(item.id, item)
+                      },
+                      onMenuOpen = {
+                          if (!item.hiddenMenuItems.isNullOrEmpty()) {
+                              scope.onFocusMap[item.id]?.invoke()
+                              onMenuOpen(item.id)
+                          }
+                      },
+                      onMenuDismiss = onHiddenMenuDismiss,
+                  )
+              } else {
+                  Modifier
+              }
+          '''
+
+          new_helper = r'''/**
+           * Gesture for a relocatable item rendered under an unattached host.
+           *
+           * The semantics deliberately match the docked rail's reloc gesture:
+           *
+           * - quick tap -> click;
+           * - stationary long press -> hidden menu, or a slow click when no hidden menu exists;
+           * - long press followed by movement past touch slop -> reorder within the item's own host.
+           *
+           * On FLOATING hosts, a movement that starts *before* the long-press threshold is left
+           * unconsumed so the host's own immediate drag gesture can move the whole rail. Once this child
+           * has legitimately entered reorder mode, it consumes movement so the ancestor floating-host
+           * drag detector cancels rather than moving the rail and the row at the same time. Civilization
+           * survives another afternoon.
+           */
+          @Composable
+          private fun rememberUnattachedRelocGestureModifier(
+              item: AzNavItem,
+              scope: AzNavRailScopeImpl,
+              onTap: () -> Unit,
+              onMenuOpen: () -> Unit,
+              onMenuDismiss: () -> Unit,
+          ): Modifier {
+              val hapticFeedback = LocalHapticFeedback.current
+              val viewConfiguration = LocalViewConfiguration.current
+              val coroutineScope = rememberCoroutineScope()
+              var dragOffsetY by remember(item.id) { mutableStateOf(0f) }
+              var isDragging by remember(item.id) { mutableStateOf(false) }
+
+              return Modifier
+                  .offset { IntOffset(0, dragOffsetY.roundToInt()) }
+                  .zIndex(if (isDragging) 1f else 0f)
+                  .pointerInput(item.id, item.hiddenMenuItems.isNullOrEmpty()) {
+                      awaitEachGesture {
+                          val down = awaitFirstDown(requireUnconsumed = false)
+                          val longPressTimeout = viewConfiguration.longPressTimeoutMillis
+                          var isLongPress = false
+                          var hasMovedBeforeLongPress = false
+                          var dragStarted = false
+                          var gestureCompletedSuccessfully = false
+                          var totalDragY = 0f
+                          var targetIndex = scope.navItems.indexOfFirst { it.id == item.id }
+
+                          val longPressJob = coroutineScope.launch {
+                              delay(longPressTimeout)
+                              isLongPress = true
+                              if (scope.vibrate) {
+                                  hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                              }
+                              scope.onFocusMap[item.id]?.invoke()
+                              if (!item.hiddenMenuItems.isNullOrEmpty()) onMenuOpen()
+                          }
+
+                          try {
+                              val pointerId = down.id
+                              var currentPosition = down.position
+
+                              while (true) {
+                                  val event = awaitPointerEvent()
+                                  val change = event.changes.firstOrNull { it.id == pointerId } ?: break
+
+                                  val changedToUp = !change.pressed && change.previousPressed
+                                  if (changedToUp) {
+                                      change.consume()
+                                      gestureCompletedSuccessfully = true
+                                      break
+                                  }
+
+                                  val positionChange = change.position - change.previousPosition
+                                  if (positionChange != Offset.Zero) {
+                                      if (!isLongPress) {
+                                          if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
+                                              hasMovedBeforeLongPress = true
+                                              longPressJob.cancel()
+                                          }
+                                      } else {
+                                          // Main-pass child consumption makes a FLOATING host's ancestor
+                                          // drag detector stand down once this gesture becomes a row reorder.
+                                          change.consume()
+
+                                          if (!dragStarted &&
+                                              (change.position - down.position).getDistance() > viewConfiguration.touchSlop
+                                          ) {
+                                              dragStarted = true
+                                              isDragging = true
+                                              onMenuDismiss()
+                                              targetIndex = scope.navItems.indexOfFirst { it.id == item.id }
+                                          }
+
+                                          if (dragStarted) {
+                                              val dragY = (change.position - currentPosition).y
+                                              totalDragY += dragY
+                                              dragOffsetY = totalDragY
+                                              RelocItemHandler.calculateTargetIndex(
+                                                  items = scope.navItems,
+                                                  draggedItemId = item.id,
+                                                  currentDragOffset = totalDragY,
+                                                  itemBounds = scope.itemBoundsCache,
+                                                  isVertical = true,
+                                              )?.let { targetIndex = it }
+                                          }
+                                      }
+                                  }
+                                  currentPosition = change.position
+                              }
+                          } finally {
+                              longPressJob.cancel()
+
+                              if (dragStarted) {
+                                  val currentIndex = scope.navItems.indexOfFirst { it.id == item.id }
+                                  if (currentIndex != -1 && targetIndex != -1 && currentIndex != targetIndex) {
+                                      RelocItemHandler.updateOrder(scope.navItems, item.id, targetIndex)
+                                      item.hostId?.let { hostId ->
+                                          scope.savedRelocOrders[hostId] = scope.navItems
+                                              .filter { it.isRelocItem && it.hostId == hostId }
+                                              .map { it.id }
+                                      }
+                                      val currentOrder = scope.navItems.map { it.id }
+                                      scope.onRelocateMap[item.id]?.invoke(currentIndex, targetIndex, currentOrder)
+                                  }
+                                  dragOffsetY = 0f
+                                  isDragging = false
+                                  scope.advancedConfig.onInteraction?.invoke(item.id, item)
+                              } else if (
+                                  gestureCompletedSuccessfully && !hasMovedBeforeLongPress &&
+                                  (!isLongPress || item.hiddenMenuItems.isNullOrEmpty())
+                              ) {
+                                  onTap()
+                              }
+                          }
+                      }
+                  }
+          }
+
+          // ---------------------------------------------------------------------------------------------
+          // FLOATING'''
+
+          for path in FILES:
+              s = path.read_text()
+              s = s.replace(
+                  'import androidx.compose.foundation.gestures.detectTapGestures\n',
+                  'import androidx.compose.foundation.gestures.awaitEachGesture\nimport androidx.compose.foundation.gestures.awaitFirstDown\n',
+                  1,
+              )
+              if 'import androidx.compose.ui.platform.LocalViewConfiguration\n' not in s:
+                  anchor = 'import androidx.compose.ui.platform.LocalHapticFeedback\n'
+                  if anchor not in s:
+                      raise SystemExit(f'{path}: LocalHapticFeedback import anchor missing')
+                  s = s.replace(anchor, anchor + 'import androidx.compose.ui.platform.LocalViewConfiguration\n', 1)
+              if 'import androidx.compose.ui.zIndex\n' not in s:
+                  anchor = 'import androidx.compose.ui.window.PopupProperties\n'
+                  if anchor not in s:
+                      raise SystemExit(f'{path}: PopupProperties import anchor missing')
+                  s = s.replace(anchor, anchor + 'import androidx.compose.ui.zIndex\n', 1)
+
+              block_start = s.find('    // `RailContent` unconditionally nulls a relocatable item\'s `onClick`')
+              if block_start < 0:
+                  raise SystemExit(f'{path}: reloc drag block start missing')
+              block_end = s.find('\n\n    RailContent(', block_start)
+              if block_end < 0:
+                  raise SystemExit(f'{path}: reloc drag block end missing')
+              s = s[:block_start] + new_drag_block + s[block_end:]
+
+              helper_start = s.find('/**\n * Detects a plain tap', block_end)
+              if helper_start < 0:
+                  raise SystemExit(f'{path}: old helper start missing')
+              helper_end = s.find('// ---------------------------------------------------------------------------------------------\n// FLOATING', helper_start)
+              if helper_end < 0:
+                  raise SystemExit(f'{path}: old helper end missing')
+              s = s[:helper_start] + new_helper + s[helper_end + len('// ---------------------------------------------------------------------------------------------\n// FLOATING'):]
+              path.write_text(s)
+
+          test_path = Path('aznavrail/src/test/java/com/hereliesaz/aznavrail/internal/AzUnattachedRelocItemClickTest.kt')
+          t = test_path.read_text()
+          if 'import androidx.compose.ui.geometry.Offset\n' not in t:
+              t = t.replace('package com.hereliesaz.aznavrail.internal\n\n', 'package com.hereliesaz.aznavrail.internal\n\nimport androidx.compose.ui.geometry.Offset\n', 1)
+          if 'import org.junit.Assert.assertEquals\n' not in t:
+              t = t.replace('import org.junit.Assert.assertTrue\n', 'import org.junit.Assert.assertEquals\nimport org.junit.Assert.assertNotNull\nimport org.junit.Assert.assertTrue\n', 1)
+
+          new_test = r'''
+              @Test
+              fun `long-press dragging a reloc item reorders it inside a FLOATING unattached host`() {
+                  var relocatedFrom: Int? = null
+                  var relocatedTo: Int? = null
+                  var orderAfterDrop: List<String>? = null
+
+                  composeTestRule.setContent {
+                      val navController = rememberNavController()
+                      AzHostActivityLayout(navController = navController) {
+                          azUnattachedHostItem(
+                              id = "host",
+                              text = "Host",
+                              anchor = AzUnattachedAnchor.FLOATING,
+                              initiallyExpanded = true,
+                          )
+                          azRailRelocItem(
+                              id = "item1",
+                              hostId = "host",
+                              text = "Item 1",
+                              onRelocate = { from, to, order ->
+                                  relocatedFrom = from
+                                  relocatedTo = to
+                                  orderAfterDrop = order
+                              },
+                          )
+                          azRailRelocItem(id = "item2", hostId = "host", text = "Item 2")
+                          onscreen { }
+                      }
+                  }
+
+                  composeTestRule.waitForIdle()
+
+                  composeTestRule.onNodeWithContentDescription("Item 1").performTouchInput {
+                      down(center)
+                      advanceEventTime(700)
+                      moveBy(Offset(0f, 96f))
+                      advanceEventTime(32)
+                      up()
+                  }
+                  composeTestRule.waitForIdle()
+
+                  assertNotNull("A long-press drag under FLOATING must invoke onRelocate", orderAfterDrop)
+                  assertEquals(0, relocatedFrom)
+                  assertEquals(1, relocatedTo)
+                  val order = orderAfterDrop!!
+                  assertTrue(
+                      "Dragged item must land after its sibling in the emitted order; got $order",
+                      order.indexOf("item2") < order.indexOf("item1"),
+                  )
+              }
+          '''
+          insertion = t.rfind('\n}')
+          if insertion < 0:
+              raise SystemExit('test class closing brace missing')
+          if 'long-press dragging a reloc item reorders it inside a FLOATING unattached host' not in t:
+              t = t[:insertion] + '\n' + new_test + t[insertion:]
+          test_path.write_text(t)
+          PY
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Test Android library
+        run: |
+          chmod +x gradlew
+          ./gradlew :aznavrail:testDebugUnitTest :SampleApp:assembleDebug
+
+      - name: Compile Compose Multiplatform ports
+        run: |
+          ./gradlew \
+            :aznavrail-cmp:compileCommonMainKotlinMetadata \
+            :aznavrail-cmp:compileDebugKotlinAndroid \
+            :aznavrail-cmp:desktopMainClasses \
+            :aznavrail-cmp:compileKotlinWasmJs
+
+      - name: Commit tested fix
+        shell: bash
+        run: |
+          rm .github/workflows/chatgpt-unattached-reloc-drag.yml
+          git config user.name 'ChatGPT'
+          git config user.email '103241502+HereLiesAz@users.noreply.github.com'
+          git add -A
+          git commit -m 'Enable reloc drag-reorder under unattached hosts [skip ci]'
+          git push origin HEAD:chatgpt/unattached-reloc-drag
