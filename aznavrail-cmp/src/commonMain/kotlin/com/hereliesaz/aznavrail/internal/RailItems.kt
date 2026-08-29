@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -104,9 +105,11 @@ internal fun RailItems(
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
     helpEnabled: Boolean = false,
     rotationDegrees: Float = 0f,
+    orientation: com.hereliesaz.aznavrail.model.AzOrientation = com.hereliesaz.aznavrail.model.AzOrientation.Vertical,
     isRailOpen: Boolean = true,
     railItemsCount: Int = items.size
 ) {
+    val isHorizontal = orientation == com.hereliesaz.aznavrail.model.AzOrientation.Horizontal
     val density = LocalDensity.current
     val topLevelItems = items.filter { !it.isSubItem }
     val itemsToRender =
@@ -225,48 +228,99 @@ internal fun RailItems(
     }
 
     Box(modifier = dismissNestedRailOnTap) {
-        Column {
-            itemsToRender.forEachIndexed { index, item ->
-                key(item.id) {
-                    if (item.isRailItem) {
-                        RailItemNode(
-                            item = item,
-                            scope = scope,
-                            navController = navController,
-                            currentDestination = currentDestination,
-                            buttonSize = buttonSize,
-                            onRailCyclerClick = onRailCyclerClick,
-                            onItemSelected = onItemSelected,
-                            hostStates = hostStates,
-                            onClickOverride = onClickOverride,
-                            onItemGloballyPositioned = onItemGloballyPositioned,
-                            helpEnabled = helpEnabled,
-                            draggedItemId = draggedItemId,
-                            dragOffset = dragOffset,
-                            currentDropTargetIndex = currentDropTargetIndex,
-                            onDragStart = onDragStart,
-                            onDragEnd = onDragEnd,
-                            onDragDelta = onDragDelta,
-                            onDragTargetChange = onDragTargetChange,
-                            onMenuOpen = onMenuOpen,
-                            itemHeights = itemHeights,
-                            onHeightReported = onHeightReported,
-                            itemWidths = itemWidths,
-                            onWidthReported = onWidthReported,
-                            coroutineScope = coroutineScope,
-                            hiddenMenuOpenId = hiddenMenuOpenId,
-                            onHiddenMenuDismiss = onHiddenMenuDismiss,
-                            lastTappedId = lastTappedId,
-                            onUpdateLastTappedId = onUpdateLastTappedId,
-                            snappingOffsets = snappingOffsets,
-                            visualDockingSide = visualDockingSide,
-                            rotationDegrees = rotationDegrees,
-                            index = index,
-                            count = railItemsCount,
-                            isRailOpen = isRailOpen
-                        )
-                    } else {
-                        Spacer(modifier = Modifier.height(AzNavRailDefaults.RailContentSpacerHeight))
+        if (isHorizontal) {
+            Row {
+                itemsToRender.forEachIndexed { index, item ->
+                    key(item.id) {
+                        if (item.isRailItem) {
+                            RailItemNode(
+                                item = item,
+                                scope = scope,
+                                navController = navController,
+                                currentDestination = currentDestination,
+                                buttonSize = buttonSize,
+                                onRailCyclerClick = onRailCyclerClick,
+                                onItemSelected = onItemSelected,
+                                hostStates = hostStates,
+                                onClickOverride = onClickOverride,
+                                onItemGloballyPositioned = onItemGloballyPositioned,
+                                helpEnabled = helpEnabled,
+                                draggedItemId = draggedItemId,
+                                dragOffset = dragOffset,
+                                currentDropTargetIndex = currentDropTargetIndex,
+                                onDragStart = onDragStart,
+                                onDragEnd = onDragEnd,
+                                onDragDelta = onDragDelta,
+                                onDragTargetChange = onDragTargetChange,
+                                onMenuOpen = onMenuOpen,
+                                itemHeights = itemHeights,
+                                onHeightReported = onHeightReported,
+                                itemWidths = itemWidths,
+                                onWidthReported = onWidthReported,
+                                coroutineScope = coroutineScope,
+                                hiddenMenuOpenId = hiddenMenuOpenId,
+                                onHiddenMenuDismiss = onHiddenMenuDismiss,
+                                lastTappedId = lastTappedId,
+                                onUpdateLastTappedId = onUpdateLastTappedId,
+                                snappingOffsets = snappingOffsets,
+                                visualDockingSide = visualDockingSide,
+                                rotationDegrees = rotationDegrees,
+                                orientation = orientation,
+                                index = index,
+                                count = railItemsCount,
+                                isRailOpen = isRailOpen
+                            )
+                        } else {
+                            Spacer(modifier = Modifier.width(AzNavRailDefaults.RailContentSpacerHeight))
+                        }
+                    }
+                }
+            }
+        } else {
+            Column {
+                itemsToRender.forEachIndexed { index, item ->
+                    key(item.id) {
+                        if (item.isRailItem) {
+                            RailItemNode(
+                                item = item,
+                                scope = scope,
+                                navController = navController,
+                                currentDestination = currentDestination,
+                                buttonSize = buttonSize,
+                                onRailCyclerClick = onRailCyclerClick,
+                                onItemSelected = onItemSelected,
+                                hostStates = hostStates,
+                                onClickOverride = onClickOverride,
+                                onItemGloballyPositioned = onItemGloballyPositioned,
+                                helpEnabled = helpEnabled,
+                                draggedItemId = draggedItemId,
+                                dragOffset = dragOffset,
+                                currentDropTargetIndex = currentDropTargetIndex,
+                                onDragStart = onDragStart,
+                                onDragEnd = onDragEnd,
+                                onDragDelta = onDragDelta,
+                                onDragTargetChange = onDragTargetChange,
+                                onMenuOpen = onMenuOpen,
+                                itemHeights = itemHeights,
+                                onHeightReported = onHeightReported,
+                                itemWidths = itemWidths,
+                                onWidthReported = onWidthReported,
+                                coroutineScope = coroutineScope,
+                                hiddenMenuOpenId = hiddenMenuOpenId,
+                                onHiddenMenuDismiss = onHiddenMenuDismiss,
+                                lastTappedId = lastTappedId,
+                                onUpdateLastTappedId = onUpdateLastTappedId,
+                                snappingOffsets = snappingOffsets,
+                                visualDockingSide = visualDockingSide,
+                                rotationDegrees = rotationDegrees,
+                                orientation = orientation,
+                                index = index,
+                                count = railItemsCount,
+                                isRailOpen = isRailOpen
+                            )
+                        } else {
+                            Spacer(modifier = Modifier.height(AzNavRailDefaults.RailContentSpacerHeight))
+                        }
                     }
                 }
             }
@@ -314,6 +368,7 @@ private fun RailItemNode(
     snappingOffsets: Map<String, Animatable<Float, androidx.compose.animation.core.AnimationVector1D>>,
     visualDockingSide: AzDockingSide,
     rotationDegrees: Float = 0f,
+    orientation: com.hereliesaz.aznavrail.model.AzOrientation = com.hereliesaz.aznavrail.model.AzOrientation.Vertical,
     index: Int = 0,
     count: Int = 0,
     isRailOpen: Boolean = true
@@ -352,13 +407,14 @@ private fun RailItemNode(
         nestedRailOpenId = scope.nestedRailOpenId,
         onNestedRailToggle = { scope.nestedRailOpenId = it },
         rotationDegrees = rotationDegrees,
+        orientation = orientation,
         index = index,
         count = count,
         isRailOpen = isRailOpen
     )
 
     AnimatedVisibility(visible = item.isHost && (hostStates[item.id] ?: false)) {
-        Column {
+        val subContent = @Composable {
             val subItems = scope.navItems.filter { it.hostId == item.id && it.isRailItem }
             subItems.forEach { subItem ->
                 key(subItem.id) {
@@ -394,6 +450,7 @@ private fun RailItemNode(
                         snappingOffsets = snappingOffsets,
                         visualDockingSide = visualDockingSide,
                         rotationDegrees = rotationDegrees,
+                        orientation = orientation,
                         index = index,
                         count = count,
                         isRailOpen = isRailOpen
@@ -401,6 +458,8 @@ private fun RailItemNode(
                 }
             }
         }
+        if (orientation == com.hereliesaz.aznavrail.model.AzOrientation.Horizontal) Row { subContent() }
+        else Column { subContent() }
     }
 }
 
@@ -439,10 +498,12 @@ private fun DraggableRailItemWrapper(
     nestedRailOpenId: String?,
     onNestedRailToggle: (String?) -> Unit,
     rotationDegrees: Float = 0f,
+    orientation: com.hereliesaz.aznavrail.model.AzOrientation = com.hereliesaz.aznavrail.model.AzOrientation.Vertical,
     index: Int = 0,
     count: Int = 0,
     isRailOpen: Boolean = true
 ) {
+    val isHorizontal = orientation == com.hereliesaz.aznavrail.model.AzOrientation.Horizontal
     val isDragging = draggedItemId == item.id
     var visualOffsetY by remember { mutableStateOf(0.dp) }
 
@@ -527,7 +588,9 @@ private fun DraggableRailItemWrapper(
                         hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                     }
                     scope.onFocusMap[item.id]?.invoke()
-                    onMenuOpen(item.id)
+                    if (!item.hiddenMenuItems.isNullOrEmpty()) {
+                        onMenuOpen(item.id)
+                    }
                     // onDragStart(item.id) -- Deferred until movement
                 }
 
@@ -604,12 +667,20 @@ private fun DraggableRailItemWrapper(
                     }
                 } finally {
                     longPressJob.cancel()
-                    if (isLongPress) {
-                        if (dragStarted) {
-                            onDragEnd()
-                            scope.advancedConfig.onInteraction?.invoke(item.id, item)
-                        }
-                    } else if (!hasMoved && gestureCompletedSuccessfully) {
+                    if (dragStarted) {
+                        onDragEnd()
+                        scope.advancedConfig.onInteraction?.invoke(item.id, item)
+                    } else if (
+                        gestureCompletedSuccessfully && !hasMoved &&
+                        (!isLongPress || item.hiddenMenuItems.isNullOrEmpty())
+                    ) {
+                        // Reaches here two ways: an ordinary quick tap (`!isLongPress`), or a press
+                        // held past the long-press threshold that never turned into a drag and had no
+                        // hidden menu to show for it (`item.hiddenMenuItems` empty) — from the user's
+                        // perspective the latter is still just a slow tap, not a gesture that should be
+                        // silently discarded. Only a press that legitimately opened a hidden menu
+                        // (checked above) is left alone here, since that menu is now the interaction
+                        // the user is looking at.
                         val isRouteSelected = item.route != null && item.route == currentDestination
                         val isIdSelected = lastTappedId == item.id
 
@@ -666,7 +737,7 @@ private fun DraggableRailItemWrapper(
         index = index,
         count = count,
         visible = isRailOpen,
-        isHorizontal = false,
+        isHorizontal = isHorizontal,
         staggerMs = scope.entranceStaggerMs,
         durationMs = scope.entranceDurationMs,
         baseRotationZ = rotationDegrees

@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -570,6 +571,8 @@ fun AzNavRail(
     val canSwipeMenu = !disableSwipeToOpen && !scope.noMenu
     val railHandlesDrags = isFloating || scope.advancedConfig.enableRailDragging || canSwipeMenu
 
+    val isHorizontal = orientation == AzOrientation.Horizontal
+
     val sizeModifier = if (isFloating || (scope.noMenu && scope.isFoldedUp)) {
         // Enforce max height/width in FAB mode to ensure it fits within 10-90% safe zone
         val maxFabSize = screenHeightDp * 0.8f
@@ -952,15 +955,13 @@ fun AzNavRail(
                             }
                             val totalItemSize = displayItems.filter(isItemVisible)
                                 .sumOf { (activeButtonSize.value + (if (scope.packButtons || isFloating) 0f else AzNavRailDefaults.RailContentVerticalArrangement.value)).toDouble() }.dp
-                            val availableSize = maxHeight
+                            val availableSize = if (isHorizontal) maxWidth else maxHeight
                             val isScrollable = totalItemSize > (availableSize * 0.65f)
-                            val scrollModifier = if (isScrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .then(scrollModifier),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
+                            val scrollModifier = if (isScrollable) {
+                                if (isHorizontal) Modifier.horizontalScroll(rememberScrollState())
+                                else Modifier.verticalScroll(rememberScrollState())
+                            } else Modifier
+                            val railStripContent: @Composable () -> Unit = {
                                 RailItems(
                                     items = railStripItems,
                                     scope = scope,
@@ -1009,6 +1010,7 @@ fun AzNavRail(
                                     onItemGloballyPositioned = scope.advancedConfig.onItemGloballyPositioned,
                                     helpEnabled = showHelpOverlay,
                                     rotationDegrees = rotationDegrees,
+                                    orientation = orientation,
                                     isRailOpen = isRailOpen,
                                     railItemsCount = railItemsCount
                                 )
@@ -1025,6 +1027,25 @@ fun AzNavRail(
                                         activeColor = moreColor,
                                         shape = scope.defaultShape
                                     )
+                                }
+                            }
+                            if (isHorizontal) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .then(scrollModifier),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    railStripContent()
+                                }
+                            } else {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .then(scrollModifier),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    railStripContent()
                                 }
                             }
                         }
