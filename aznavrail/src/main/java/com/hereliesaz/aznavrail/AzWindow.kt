@@ -209,7 +209,8 @@ class AzWindowState(
      * full-height rail — which touches both `y=0` and `y=bounds.height` by construction, regardless
      * of which side it's docked on — as also constraining Y, corrupting the window's vertical bound.
      * A rect that is neither a full-height nor a full-width strip is ignored, since there is no
-     * single side to define "clear of it" from. [verticalExtent] is the window's own extent along
+     * single side to define "clear of it" from. A degenerate rect that is *both* (i.e. it covers
+     * the entire container) narrows both axes. [verticalExtent] is the window's own extent along
      * the axis checked against a full-width obstruction — the full window height from
      * [settleFullyOnscreen], just the chrome bar's height from [dragBy] (which only guarantees the
      * bar, not the whole window, stays clear).
@@ -232,10 +233,14 @@ class AzWindowState(
         for (obstruction in obstructions) {
             val isFullHeight = obstruction.top <= 0f && obstruction.bottom >= bounds.height
             val isFullWidth = obstruction.left <= 0f && obstruction.right >= bounds.width
+            // Independent ifs, not else-if: a degenerate obstruction that is both a full-height
+            // and a full-width strip (i.e. it covers the entire container) needs both axes
+            // narrowed, not just whichever classification happened to be checked first.
             if (isFullHeight) {
                 if (obstruction.left <= 0f) newMinX = newMinX.coerceAtLeast(obstruction.right)
                 if (obstruction.right >= bounds.width) newMaxX = newMaxX.coerceAtMost(obstruction.left - width)
-            } else if (isFullWidth) {
+            }
+            if (isFullWidth) {
                 if (obstruction.top <= 0f) newMinY = newMinY.coerceAtLeast(obstruction.bottom)
                 if (obstruction.bottom >= bounds.height) newMaxY = newMaxY.coerceAtMost(obstruction.top - verticalExtent)
             }

@@ -149,7 +149,10 @@ class AzBottomSheetWindowHost(
         // addView() sees non-null params and can resize the window.
         sheetView = composeView
         sheetParams = params
-        wm.addView(composeView, params)
+        // Guarded like every other WindowManager call in this class (updateViewLayout/removeView
+        // below): SYSTEM_ALERT_WINDOW can be revoked live from Settings while this is attaching, and
+        // addView is the one call here that wasn't wrapped.
+        runCatching { wm.addView(composeView, params) }
         // Kick an initial dispatch so the overlay window picks up insets without waiting for a
         // system change (rotation, IME, etc.).
         ViewCompat.requestApplyInsets(composeView)

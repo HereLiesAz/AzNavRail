@@ -1103,6 +1103,7 @@ private fun FloatingDockGroup(
                             onDragStart = { beginDrag(host.id) },
                             onDrag = { dragBy(host.id, it) },
                             onDragEnd = { endDrag(host.id) },
+                            onDragCancel = { endDrag(host.id) },
                         )
                     }
                     Box(
@@ -1141,6 +1142,12 @@ private fun FloatingDockGroup(
                                     onDragStart = { beginDrag(host.id) },
                                     onDrag = { change, amount -> change.consume(); dragBy(host.id, amount) },
                                     onDragEnd = { endDrag(host.id) },
+                                    // A cancelled gesture (an ancestor scrollable steals the arena, an
+                                    // edge back-gesture intercepts, a system dialog pops over the
+                                    // finger) never reaches onDragEnd — without this, `st.dragging`
+                                    // stays true forever and the rail freezes at its raw, unclamped
+                                    // liveDragOffset (see `resolvedPosition`), potentially off-screen.
+                                    onDragCancel = { endDrag(host.id) },
                                 )
                             },
                     ) {
@@ -1178,6 +1185,7 @@ private fun FloatingGrabBar(
     onDragStart: () -> Unit,
     onDrag: (Offset) -> Unit,
     onDragEnd: () -> Unit,
+    onDragCancel: () -> Unit,
 ) {
     val density = LocalDensity.current
     val widthDp = with(density) { widthPx.toDp() }
@@ -1192,6 +1200,7 @@ private fun FloatingGrabBar(
                     onDragStart = { onDragStart() },
                     onDrag = { change, amount -> change.consume(); onDrag(amount) },
                     onDragEnd = { onDragEnd() },
+                    onDragCancel = { onDragCancel() },
                 )
             },
     )

@@ -27,6 +27,7 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.hereliesaz.aznavrail.internal.AzNavRailLogger
 import com.hereliesaz.aznavrail.internal.azAllowDisplayCutout
 import kotlin.math.roundToInt
 
@@ -203,7 +204,13 @@ abstract class AzNavRailWindowService : Service(), LifecycleOwner, SavedStateReg
             }
         }
 
-        windowManager?.addView(composeView, windowParams)
+        // SYSTEM_ALERT_WINDOW can be revoked live from Settings while this service is running, and
+        // the window token can otherwise go stale — either throws (BadTokenException/
+        // SecurityException) straight out of addView. Guarded like every other WindowManager call
+        // in the sibling AzBottomSheetWindowHost, so a revoked permission logs instead of crashing
+        // whatever started this service.
+        runCatching { windowManager?.addView(composeView, windowParams) }
+            .onFailure { AzNavRailLogger.e("AzNavRailWindowService", "Failed to attach overlay window: $it") }
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
     }
@@ -226,7 +233,9 @@ abstract class AzNavRailWindowService : Service(), LifecycleOwner, SavedStateReg
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         if (composeView != null) {
-            windowManager?.removeView(composeView)
+            // Guarded too: harmless if addView above never actually succeeded (nothing to remove),
+            // and avoids a second crash cascading from the first.
+            runCatching { windowManager?.removeView(composeView) }
         }
         store.clear()
         super.onDestroy()

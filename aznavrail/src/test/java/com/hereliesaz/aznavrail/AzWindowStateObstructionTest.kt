@@ -81,4 +81,26 @@ class AzWindowStateObstructionTest {
         assertEquals(300f, absX, 0f)
         assertEquals(60f, absY, 0f)
     }
+
+    @Test
+    fun fullScreenObstruction_narrowsBothAxes() {
+        // A degenerate rect that is simultaneously full-height and full-width (covers the entire
+        // container) must narrow both axes, not just whichever classification is checked first.
+        val state = freshWindow(x = 300f, y = 300f)
+        val fullScreen = Rect(
+            left = 0f,
+            top = 0f,
+            right = containerSize.width.toFloat(),
+            bottom = containerSize.height.toFloat(),
+        )
+
+        state.clampInto(containerSize, chromeHeightPx, listOf(fullScreen))
+
+        val absX = state.offsetX + state.anchorX
+        val absY = state.offsetY + state.anchorY
+        // There is nowhere valid on either axis; both collapse to the single point the min/max
+        // coercion converges on.
+        assertEquals(containerSize.width.toFloat(), absX, 0f)
+        assertEquals(containerSize.height.toFloat(), absY, 0f)
+    }
 }

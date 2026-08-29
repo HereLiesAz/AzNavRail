@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -110,8 +111,13 @@ object AzTextBoxDefaults {
  * @param multiline Whether the text box supports multiple lines and expands vertically.
  * @param secret Whether the text box is a password field (masked input).
  * @param isError Whether the input is in an error state.
- * @param keyboardOptions Custom keyboard configuration.
- * @param keyboardActions Custom keyboard actions.
+ * @param keyboardOptions Custom keyboard configuration. Left at its default, and [multiline] is
+ *   false, the IME action is coerced to [ImeAction.Done] so the keyboard actually offers a "Done"
+ *   key for [onSubmit] to be wired to.
+ * @param keyboardActions Custom keyboard actions. Left at its default, "Done" is wired to invoke
+ *   [onSubmit] with the current text. A caller that supplies its own [keyboardActions] (as [AzForm]
+ *   does, to chain focus between fields) is responsible for invoking [onSubmit] itself if it wants
+ *   keyboard-driven submission — this default wiring is skipped so it doesn't fight a custom action.
  * @param leadingIcon An optional composable to display at the start of the text box.
  * @param trailingIcon An optional composable to display at the end of the text box (before system icons).
  * @param enabled Whether the text box is enabled and interactive.
@@ -121,7 +127,8 @@ object AzTextBoxDefaults {
  * @param showClearButton Whether to show the clear/reveal button.
  * @param focusRequester An optional [androidx.compose.ui.focus.FocusRequester] to control focus programmatically.
  * @param submitButtonContent Optional content for a built-in submit button.
- * @param onSubmit A callback invoked when the submit button is clicked or "Done" is pressed on the keyboard.
+ * @param onSubmit A callback invoked when the submit button is clicked, or when the keyboard's
+ *   "Done" action fires and [keyboardActions] was left at its default (see [keyboardActions]).
  *
  * @see AzForm
  * @see AzTextBoxDefaults
@@ -205,6 +212,30 @@ fun AzTextBox(
         }
     }
 
+    val handleSubmit: () -> Unit = {
+        onSubmit(text)
+        if (!secret) {
+            HistoryManager.addEntry(text, historyContext)
+        }
+        if (onValueChange == null) {
+            onTextChange("")
+        }
+    }
+
+    // Only auto-wire "Done" when the caller hasn't customized keyboardOptions/keyboardActions —
+    // AzForm supplies its own (onNext/onSend, chaining focus between fields) and would otherwise
+    // have this default wiring fight its own submit handling.
+    val effectiveKeyboardOptions = if (!multiline && keyboardOptions.imeAction == ImeAction.Unspecified) {
+        keyboardOptions.copy(imeAction = ImeAction.Done)
+    } else {
+        keyboardOptions
+    }
+    val effectiveKeyboardActions = if (keyboardActions == KeyboardActions.Default) {
+        KeyboardActions(onDone = { handleSubmit() })
+    } else {
+        keyboardActions
+    }
+
     Box(modifier = modifier) {
         Row(
             modifier = Modifier
@@ -240,8 +271,8 @@ fun AzTextBox(
                     singleLine = !multiline,
                     cursorBrush = SolidColor(effectiveColor),
                     visualTransformation = if (secret && !isPasswordVisible) PasswordVisualTransformation() else VisualTransformation.None,
-                    keyboardOptions = keyboardOptions,
-                    keyboardActions = keyboardActions,
+                    keyboardOptions = effectiveKeyboardOptions,
+                    keyboardActions = effectiveKeyboardActions,
                     enabled = enabled
                 ) { innerTextField ->
                     Row(
@@ -310,15 +341,7 @@ fun AzTextBox(
                 CompositionLocalProvider(LocalContentColor provides effectiveTextColor) {
                     Box(
                         modifier = Modifier
-                            .then(if (enabled) Modifier.clickable {
-                                onSubmit(text)
-                                if (!secret) {
-                                    HistoryManager.addEntry(text, historyContext)
-                                }
-                                if (onValueChange == null) {
-                                    onTextChange("")
-                                }
-                            } else Modifier)
+                            .then(if (enabled) Modifier.clickable { handleSubmit() } else Modifier)
                             .then(
                                 if (!outlined) {
                                     Modifier.border(1.dp, effectiveColor, RectangleShape)
