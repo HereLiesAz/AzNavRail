@@ -22,10 +22,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.foundation.text.KeyboardActions
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
@@ -118,5 +121,49 @@ class AzTextBoxTest {
 
         // However, the callback SHOULD be fired with the expected new text
         assertEquals("Updated", capturedValue)
+    }
+
+    @Test
+    fun azTextBox_pressingDoneKey_invokesOnSubmit() {
+        var submittedValue: String? = null
+        composeTestRule.setContent {
+            AzTextBox(
+                value = null,
+                onValueChange = {},
+                onSubmit = { submittedValue = it },
+                hint = "Hint"
+            )
+        }
+
+        composeTestRule.onNodeWithTag("Hint").performTextInput("Hello")
+        composeTestRule.onNodeWithTag("Hint").performImeAction()
+        composeTestRule.waitForIdle()
+
+        assertEquals("Hello", submittedValue)
+    }
+
+    @Test
+    fun azTextBox_withCustomKeyboardActions_doesNotAutoWireDoneToOnSubmit() {
+        // A caller supplying its own keyboardActions (as AzForm does, to chain focus between
+        // fields) must keep full control of the Done/Next/Send action — the default wiring must
+        // not fight it.
+        var submittedValue: String? = null
+        var customActionFired = false
+        composeTestRule.setContent {
+            AzTextBox(
+                value = null,
+                onValueChange = {},
+                onSubmit = { submittedValue = it },
+                keyboardActions = KeyboardActions(onDone = { customActionFired = true }),
+                hint = "Hint"
+            )
+        }
+
+        composeTestRule.onNodeWithTag("Hint").performTextInput("Hello")
+        composeTestRule.onNodeWithTag("Hint").performImeAction()
+        composeTestRule.waitForIdle()
+
+        assertEquals(true, customActionFired)
+        assertNull(submittedValue)
     }
 }

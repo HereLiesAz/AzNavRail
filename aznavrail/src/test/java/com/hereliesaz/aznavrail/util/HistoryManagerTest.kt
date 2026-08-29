@@ -108,6 +108,24 @@ class HistoryManagerTest {
     }
 
     @Test
+    fun addEntry_onContextNeverQueriedThisRun_preservesExistingPersistedHistory() = runBlocking {
+        // Simulates history persisted by a previous app run for a context that getSuggestions has
+        // never been called for yet this run (so it isn't in the in-memory `histories` map). Before
+        // the fix, addEntry seeded an empty in-memory list for it and its save then truncated the
+        // file to just the one new entry, silently destroying the pre-existing history below.
+        val freshContext = "neverQueriedYet"
+        val freshFile = File(context.filesDir, "az_text_box_history_$freshContext.txt")
+        freshFile.writeText("old-entry-1\nold-entry-2\n")
+
+        HistoryManager.addEntry("new-entry", freshContext)
+
+        val suggestions = HistoryManager.getSuggestions("", freshContext)
+        assertTrue(suggestions.contains("old-entry-1"))
+        assertTrue(suggestions.contains("old-entry-2"))
+        assertEquals("new-entry", suggestions.first())
+    }
+
+    @Test
     fun namespacedHistory_isolatesSuggestions() = runBlocking {
         // Add entries to two different contexts
         HistoryManager.addEntry("user_search_1", "users")

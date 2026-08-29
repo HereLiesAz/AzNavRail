@@ -210,14 +210,21 @@ fun AzNavRail(
 
     var internalExpanded by remember { mutableStateOf(if (scope.noMenu) false else initiallyExpanded) }
     // Controlled/uncontrolled pattern mirroring `AzDropdownMenu`'s `expanded ?: internalOpen`: when
-    // the caller passes a non-null `expanded`, it always wins on every recomposition; `setIsExpanded`
-    // is the single path every internal gesture below routes through, so it only ever mutates the
-    // internal fallback while the rail is uncontrolled — a controlled rail's actual state can only
-    // change by the caller changing `expanded`. `onExpandedChange` fires either way, via the
-    // `LaunchedEffect(isExpanded)` below, since that observes the resulting value regardless of who
-    // changed it.
+    // the caller passes a non-null `expanded`, it always wins on every recomposition, and every
+    // internal gesture below routes through `setIsExpanded` — while uncontrolled, that mutates the
+    // internal fallback (picked up by `isExpanded` on the next recomposition, which the
+    // `LaunchedEffect(isExpanded)` below then reports via `onExpandedChange`); while controlled,
+    // `internalExpanded` isn't read by `isExpanded` at all, so mutating it would do nothing —
+    // `setIsExpanded` instead calls `onExpandedChange` directly, since that's the only way a
+    // controlled caller can learn the user tried to toggle the rail.
     val isExpanded = expanded ?: internalExpanded
-    val setIsExpanded: (Boolean) -> Unit = { value -> if (expanded == null) internalExpanded = value }
+    val setIsExpanded: (Boolean) -> Unit = { value ->
+        if (expanded == null) {
+            internalExpanded = value
+        } else {
+            onExpandedChange?.invoke(value)
+        }
+    }
     var isFloating by remember { mutableStateOf(false) }
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
@@ -830,6 +837,21 @@ fun AzNavRail(
                                         isRailOpen = isRailOpen,
                                         railItemsCount = railItemsCount
                                     )
+
+                                    // Optional pinned "More" rail item that opens the More-from-Az
+                                    // carousel — see the matching block in the vertical branch below.
+                                    if (scope.advancedConfig.moreFromAzRailItem &&
+                                        scope.advancedConfig.moreFromAzEnabled && !isFloating
+                                    ) {
+                                        val moreColor = scope.railAccent.takeOrElse { MaterialTheme.colorScheme.primary }
+                                        AzButton(
+                                            onClick = { hostScope?.showMoreFromAz() },
+                                            text = "More",
+                                            color = moreColor,
+                                            activeColor = moreColor,
+                                            shape = scope.defaultShape
+                                        )
+                                    }
                                 }
                             } else {
                                 Column(
@@ -856,6 +878,7 @@ fun AzNavRail(
                                             // Remember who was touched last: a notice/warning popup
                                             // raised without an explicit source claims this item.
                                             scope.lastTouchedItemId = item.id
+                                            azHaptics.commit()
                                             if (item.isHelpItem) toggleHelpOverlay(item.id)
                                             // Reaching for any other rail item is the user leaving
                                             // the About reader; only About itself toggles it.

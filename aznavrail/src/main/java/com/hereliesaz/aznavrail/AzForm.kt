@@ -142,10 +142,12 @@ fun AzForm(
 
     Column(modifier = modifier) {
         scope.entries.forEachIndexed { index, entry ->
-            // Determine ImeAction
+            // Determine ImeAction. `KeyboardOptions.Default.imeAction` is `ImeAction.Unspecified`,
+            // not `ImeAction.Default` — that's the actual sentinel a caller who hasn't overridden
+            // `imeAction` leaves behind, so it's what "unset" has to be compared against here.
             val defaultImeAction = if (index == scope.entries.lastIndex) ImeAction.Send else ImeAction.Next
-            val imeAction = if (entry.keyboardOptions.imeAction == ImeAction.Default) {
-                if (keyboardOptions.imeAction == ImeAction.Default) defaultImeAction else keyboardOptions.imeAction
+            val imeAction = if (entry.keyboardOptions.imeAction == ImeAction.Unspecified) {
+                if (keyboardOptions.imeAction == ImeAction.Unspecified) defaultImeAction else keyboardOptions.imeAction
             } else {
                 entry.keyboardOptions.imeAction
             }

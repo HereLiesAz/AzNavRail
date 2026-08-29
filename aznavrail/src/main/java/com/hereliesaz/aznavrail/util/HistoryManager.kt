@@ -135,12 +135,36 @@ object HistoryManager {
         if (!isInitialized || text.isBlank() || maxSizeBytes == 0) return
 
         synchronized(histories) {
+            // getSuggestions lazy-loads from disk the first time a context is touched; addEntry
+            // must do the same, or a context nothing has queried yet gets seeded with an empty
+            // in-memory list right here, and the save below then truncates the on-disk file to
+            // just this one entry — destroying whatever history was already persisted for it.
+            if (!histories.containsKey(safeContext)) {
+                loadHistorySync(safeContext)
+            }
             val history = histories.getOrPut(safeContext) { mutableListOf() }
             history.remove(text)
             history.add(0, text)
         }
         coroutineScope.launch {
             saveHistory(safeContext)
+        }
+    }
+
+    /**
+     * Synchronous counterpart to [loadHistory], for [addEntry]'s non-suspend call path. Must be
+     * called while holding the [histories] monitor. Deliberately skips [fileMutex] — going through
+     * it would require making [addEntry] itself suspend, a breaking API change — so a concurrent
+     * async [saveHistory] for the same context can in principle race this read; the practical
+     * impact is bounded to a stale/partial read of a small, best-effort autocomplete history file.
+     */
+    private fun loadHistorySync(historyContext: String) {
+        val historyFile = getHistoryFile(historyContext) ?: return
+        if (!historyFile.exists()) return
+        try {
+            histories[historyContext] = historyFile.useLines(Charsets.UTF_8) { it.toMutableList() }
+        } catch (e: IOException) {
+            // Silently ignore, no history will be loaded — matches loadHistory's own handling.
         }
     }
 
