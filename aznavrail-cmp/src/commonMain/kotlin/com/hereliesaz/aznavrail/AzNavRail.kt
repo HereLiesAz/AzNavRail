@@ -897,7 +897,11 @@ fun AzNavRail(
                         } else {
                             attachedItems
                         }
-                        val topLevelItems = displayItems.filter { !it.isSubItem }
+                        val orderedItems =
+                            if (reverseLayout) displayItems.reversed() else displayItems
+                        val orderedRailItems =
+                            if (reverseLayout) railStripItems.reversed() else railStripItems
+                        val topLevelItems = orderedItems.filter { !it.isSubItem }
                         // Keep the menu composed through the staggered exit so items can turnstile out as the
                         // rail collapses (mirrors the entrance overlapping the expand). itemExit=None => the
                         // legacy instant teardown.
@@ -918,7 +922,7 @@ fun AzNavRail(
                                 topLevelItems.forEachIndexed { index, item ->
                                     MenuItemNode(
                                         item = item,
-                                        allItems = displayItems,
+                                        allItems = orderedItems,
                                         navController = effectiveNavController,
                                         currentDestination = actualCurrentDestination,
                                         scope = scope,
@@ -953,7 +957,7 @@ fun AzNavRail(
                                     visible
                                 }
                             }
-                            val totalItemSize = displayItems.filter(isItemVisible)
+                            val totalItemSize = orderedRailItems.filter(isItemVisible)
                                 .sumOf { (activeButtonSize.value + (if (scope.packButtons || isFloating) 0f else AzNavRailDefaults.RailContentVerticalArrangement.value)).toDouble() }.dp
                             val availableSize = if (isHorizontal) maxWidth else maxHeight
                             val isScrollable = totalItemSize > (availableSize * 0.65f)
@@ -963,7 +967,7 @@ fun AzNavRail(
                             } else Modifier
                             val railStripContent: @Composable () -> Unit = {
                                 RailItems(
-                                    items = railStripItems,
+                                    items = orderedRailItems,
                                     scope = scope,
                                     navController = effectiveNavController,
                                     currentDestination = actualCurrentDestination,
