@@ -11,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import com.hereliesaz.aznavrail.AzHostActivityLayout
 import com.hereliesaz.aznavrail.model.AzUnattachedAnchor
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -240,6 +241,95 @@ class AzUnattachedRelocItemClickTest {
             "Dragged item must land after its sibling in the emitted order; got $order",
             order.indexOf("item2") < order.indexOf("item1"),
         )
+    }
+
+    @Test
+    fun `dragging a reloc item immediately after selecting it reorders under OPPOSITE without any hold`() {
+        var relocatedFrom: Int? = null
+        var relocatedTo: Int? = null
+
+        composeTestRule.setContent {
+            val navController = rememberNavController()
+            AzHostActivityLayout(navController = navController) {
+                azUnattachedHostItem(
+                    id = "host",
+                    text = "Host",
+                    anchor = AzUnattachedAnchor.OPPOSITE,
+                    initiallyExpanded = true,
+                )
+                azRailRelocItem(
+                    id = "item1",
+                    hostId = "host",
+                    text = "Item 1",
+                    onRelocate = { from, to, _ -> relocatedFrom = from; relocatedTo = to },
+                )
+                azRailRelocItem(id = "item2", hostId = "host", text = "Item 2")
+                onscreen { }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+
+        // Step 1: an ordinary quick tap selects "Item 1".
+        composeTestRule.onNodeWithContentDescription("Item 1").performTouchInput {
+            down(center)
+            advanceEventTime(60)
+            up()
+        }
+        composeTestRule.waitForIdle()
+
+        // Step 2: a second press on the now-selected item drags it immediately, well under the
+        // system long-press timeout, and must still reorder it.
+        composeTestRule.onNodeWithContentDescription("Item 1").performTouchInput {
+            down(center)
+            advanceEventTime(16)
+            moveBy(Offset(0f, 96f))
+            advanceEventTime(16)
+            up()
+        }
+        composeTestRule.waitForIdle()
+
+        assertNotNull(
+            "A tap-then-immediate-drag on a selected reloc item must reorder it under OPPOSITE",
+            relocatedFrom,
+        )
+        assertEquals(relocatedFrom!! + 1, relocatedTo)
+    }
+
+    @Test
+    fun `dragging a not-yet-selected reloc item immediately does not reorder it under FLOATING`() {
+        var relocated = false
+
+        composeTestRule.setContent {
+            val navController = rememberNavController()
+            AzHostActivityLayout(navController = navController) {
+                azUnattachedHostItem(
+                    id = "host",
+                    text = "Host",
+                    anchor = AzUnattachedAnchor.FLOATING,
+                    initiallyExpanded = true,
+                )
+                azRailRelocItem(id = "item1", hostId = "host", text = "Item 1", onRelocate = { _, _, _ -> relocated = true })
+                azRailRelocItem(id = "item2", hostId = "host", text = "Item 2")
+                onscreen { }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+
+        // Nothing has selected "Item 1" yet, so an immediate drag (well under the long-press
+        // timeout) must not reorder it — this is the FLOATING host's own drag detector's chance to
+        // win instead, exactly as it did before the reloc item was ever selected.
+        composeTestRule.onNodeWithContentDescription("Item 1").performTouchInput {
+            down(center)
+            advanceEventTime(16)
+            moveBy(Offset(0f, 96f))
+            advanceEventTime(16)
+            up()
+        }
+        composeTestRule.waitForIdle()
+
+        assertFalse("An unselected reloc item must not drag-reorder on a quick, un-held press", relocated)
     }
 
 }
