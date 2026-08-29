@@ -568,6 +568,7 @@ private fun DraggableRailItemWrapper(
     val hapticFeedback = LocalHapticFeedback.current
     val viewConfiguration = LocalViewConfiguration.current
     val nestedRailOpenIdState = rememberUpdatedState(nestedRailOpenId)
+    val lastTappedIdState = rememberUpdatedState(lastTappedId)
 
     val dragModifier = if (item.isRelocItem && !helpEnabled) {
         Modifier
@@ -575,6 +576,16 @@ private fun DraggableRailItemWrapper(
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
                     val longPressTimeout = viewConfiguration.longPressTimeoutMillis
+
+                    // An item the user already selected with a previous tap (`lastTappedId`, the same
+                    // state that drives its "last tapped" highlight) skips the hold-then-drag contract
+                    // entirely: this press is a tap-and-drag — movement past touch slop starts
+                    // reordering immediately, with no dwell time. This is what keeps the hidden menu's
+                    // long-press and the reorder-drag from racing each other on the SAME press: on a
+                    // not-yet-selected item only the long-press timer can ever open the menu or arm a
+                    // drag (unchanged below); the immediate-drag fast path only ever applies to a press
+                    // that lands on the item the user just selected.
+                    val preSelected = lastTappedIdState.value == item.id
 
                     var longPressJob: Job? = null
                     var isLongPress = false
@@ -593,8 +604,7 @@ private fun DraggableRailItemWrapper(
                     }
 
                     var totalDragY = 0f
-                    var hasMoved = false // Moved before long press
-                    var hasDragged = false // Moved after long press
+                    var hasMoved = false // Moved before long press, on a not-yet-selected item
                     var dragStarted = false // Officially started dragging
                     var gestureCompletedSuccessfully = false
 
@@ -617,40 +627,48 @@ private fun DraggableRailItemWrapper(
 
                             val positionChange = change.position - change.previousPosition
                             if (positionChange != Offset.Zero) {
-                                if (!isLongPress) {
-                                    if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
-                                        hasMoved = true
-                                        longPressJob.cancel()
-                                    }
-                                } else {
-                                    change.consume()
-
-                                    if (!dragStarted) {
-                                        if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
+                                val distance = (change.position - down.position).getDistance()
+                                if (!dragStarted) {
+                                    if (preSelected) {
+                                        if (distance > viewConfiguration.touchSlop) {
+                                            longPressJob.cancel()
+                                            change.consume()
+                                            dragStarted = true
+                                            onHiddenMenuDismiss()
+                                            onDragStart(item.id)
+                                        }
+                                    } else if (!isLongPress) {
+                                        if (distance > viewConfiguration.touchSlop) {
+                                            hasMoved = true
+                                            longPressJob.cancel()
+                                        }
+                                    } else {
+                                        change.consume()
+                                        if (distance > viewConfiguration.touchSlop) {
                                             dragStarted = true
                                             onHiddenMenuDismiss()
                                             onDragStart(item.id)
                                         }
                                     }
+                                }
 
-                                    if (dragStarted) {
-                                        val dragY = (change.position - currentPosition).y
-                                        totalDragY += dragY
-                                        onDragDelta(dragY)
-                                        hasDragged = true
+                                if (dragStarted) {
+                                    change.consume()
+                                    val dragY = (change.position - currentPosition).y
+                                    totalDragY += dragY
+                                    onDragDelta(dragY)
 
-                                        val currentIdx =
-                                            scope.navItems.indexOfFirst { it.id == item.id }
-                                        if (currentIdx != -1) {
-                                            val target = RelocItemHandler.calculateTargetIndex(
-                                                items = scope.navItems,
-                                                draggedItemId = item.id,
-                                                currentDragOffset = totalDragY,
-                                                itemHeights = itemHeightsState.value
-                                            )
-                                            if (target != null && target != currentDropTargetIndex) {
-                                                onDragTargetChange(target)
-                                            }
+                                    val currentIdx =
+                                        scope.navItems.indexOfFirst { it.id == item.id }
+                                    if (currentIdx != -1) {
+                                        val target = RelocItemHandler.calculateTargetIndex(
+                                            items = scope.navItems,
+                                            draggedItemId = item.id,
+                                            currentDragOffset = totalDragY,
+                                            itemHeights = itemHeightsState.value
+                                        )
+                                        if (target != null && target != currentDropTargetIndex) {
+                                            onDragTargetChange(target)
                                         }
                                     }
                                 }

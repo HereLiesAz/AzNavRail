@@ -565,8 +565,13 @@ private fun UnattachedNode(
 
 /**
  * Tap / hidden-menu / reorder gesture for a reloc item rendered under an unattached host.
- * A child consumes movement only after long-press reorder has begun, allowing a FLOATING
- * host's immediate-drag detector to win when the user moves before the long-press threshold.
+ *
+ * On a not-yet-selected item this mirrors the docked rail's own contract: a child consumes movement
+ * only after long-press reorder has begun, so a FLOATING host's immediate-drag detector still wins
+ * when the user moves before the long-press threshold. Once the item IS selected (the previous tap
+ * landed on it — [AzNavRailScopeImpl.lastTouchedItemId]), the hold is skipped entirely: this next
+ * press is a tap-and-drag, and movement past touch slop starts reordering immediately, consuming the
+ * gesture before the FLOATING host's own drag detector sees it.
  */
 @Composable
 private fun rememberUnattachedRelocGestureModifier(
@@ -589,6 +594,7 @@ private fun rememberUnattachedRelocGestureModifier(
             awaitEachGesture {
                 val down = awaitFirstDown(requireUnconsumed = false)
                 val longPressTimeout = viewConfiguration.longPressTimeoutMillis
+                val preSelected = scope.lastTouchedItemId == item.id
                 var isLongPress = false
                 var movedBeforeLongPress = false
                 var dragStarted = false
@@ -618,31 +624,44 @@ private fun rememberUnattachedRelocGestureModifier(
 
                         val positionChange = change.position - change.previousPosition
                         if (positionChange != Offset.Zero) {
-                            if (!isLongPress) {
-                                if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
-                                    movedBeforeLongPress = true
-                                    longPressJob.cancel()
+                            val distance = (change.position - down.position).getDistance()
+                            if (!dragStarted) {
+                                if (preSelected) {
+                                    if (distance > viewConfiguration.touchSlop) {
+                                        longPressJob.cancel()
+                                        change.consume()
+                                        dragStarted = true
+                                        isDragging = true
+                                        onMenuDismiss()
+                                        targetIndex = scope.navItems.indexOfFirst { it.id == item.id }
+                                    }
+                                } else if (!isLongPress) {
+                                    if (distance > viewConfiguration.touchSlop) {
+                                        movedBeforeLongPress = true
+                                        longPressJob.cancel()
+                                    }
+                                } else {
+                                    change.consume()
+                                    if (distance > viewConfiguration.touchSlop) {
+                                        dragStarted = true
+                                        isDragging = true
+                                        onMenuDismiss()
+                                        targetIndex = scope.navItems.indexOfFirst { it.id == item.id }
+                                    }
                                 }
-                            } else {
+                            }
+                            if (dragStarted) {
                                 change.consume()
-                                if (!dragStarted && (change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
-                                    dragStarted = true
-                                    isDragging = true
-                                    onMenuDismiss()
-                                    targetIndex = scope.navItems.indexOfFirst { it.id == item.id }
-                                }
-                                if (dragStarted) {
-                                    val dragY = (change.position - currentPosition).y
-                                    totalDragY += dragY
-                                    dragOffsetY = totalDragY
-                                    RelocItemHandler.calculateTargetIndex(
-                                        items = scope.navItems,
-                                        draggedItemId = item.id,
-                                        currentDragOffset = totalDragY,
-                                        itemBounds = scope.itemBoundsCache,
-                                        isVertical = true,
-                                    )?.let { targetIndex = it }
-                                }
+                                val dragY = (change.position - currentPosition).y
+                                totalDragY += dragY
+                                dragOffsetY = totalDragY
+                                RelocItemHandler.calculateTargetIndex(
+                                    items = scope.navItems,
+                                    draggedItemId = item.id,
+                                    currentDragOffset = totalDragY,
+                                    itemBounds = scope.itemBoundsCache,
+                                    isVertical = true,
+                                )?.let { targetIndex = it }
                             }
                         }
                         currentPosition = change.position

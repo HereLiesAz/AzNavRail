@@ -1,5 +1,6 @@
 package com.hereliesaz.aznavrail.internal
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -8,7 +9,9 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.navigation.compose.rememberNavController
 import com.hereliesaz.aznavrail.AzHostActivityLayout
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -90,5 +93,82 @@ class RailRelocItemLongPressClickTest {
         composeTestRule.waitForIdle()
 
         assertTrue("Tapping the hidden menu's list item should still fire its own onClick.", actionClicked)
+    }
+
+    @Test
+    fun `dragging a reloc item immediately after selecting it reorders without any hold`() {
+        var relocatedFrom: Int? = null
+        var relocatedTo: Int? = null
+
+        composeTestRule.setContent {
+            val navController = rememberNavController()
+            AzHostActivityLayout(navController = navController) {
+                azRailHostItem(id = "host", text = "Host", initiallyExpanded = true)
+                azRailRelocItem(
+                    id = "item1",
+                    hostId = "host",
+                    text = "Item 1",
+                    onRelocate = { from, to, _ -> relocatedFrom = from; relocatedTo = to },
+                )
+                azRailRelocItem(id = "item2", hostId = "host", text = "Item 2")
+                onscreen { }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+
+        // Step 1: an ordinary quick tap selects "Item 1" (same tap that would fire its onClick).
+        composeTestRule.onNodeWithContentDescription("Item 1").performTouchInput {
+            down(center)
+            advanceEventTime(60)
+            up()
+        }
+        composeTestRule.waitForIdle()
+
+        // Step 2: a SECOND press on the now-selected item drags it immediately — well under the
+        // system long-press timeout — and must still reorder it. The hold-then-drag contract only
+        // ever applied to the FIRST (selecting) press.
+        composeTestRule.onNodeWithContentDescription("Item 1").performTouchInput {
+            down(center)
+            advanceEventTime(16)
+            moveBy(Offset(0f, 96f))
+            advanceEventTime(16)
+            up()
+        }
+        composeTestRule.waitForIdle()
+
+        assertNotNull("A tap-then-immediate-drag on a selected reloc item must reorder it", relocatedFrom)
+        assertEquals(relocatedFrom!! + 1, relocatedTo)
+    }
+
+    @Test
+    fun `dragging a not-yet-selected reloc item immediately does not reorder it`() {
+        var relocated = false
+
+        composeTestRule.setContent {
+            val navController = rememberNavController()
+            AzHostActivityLayout(navController = navController) {
+                azRailHostItem(id = "host", text = "Host", initiallyExpanded = true)
+                azRailRelocItem(id = "item1", hostId = "host", text = "Item 1", onRelocate = { _, _, _ -> relocated = true })
+                azRailRelocItem(id = "item2", hostId = "host", text = "Item 2")
+                onscreen { }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+
+        // Nothing has selected "Item 1" yet, so an immediate drag (well under the long-press
+        // timeout) must NOT reorder it — the item must be selected first. This is what keeps this
+        // fast path from racing the hidden-menu's own long-press on a fresh press.
+        composeTestRule.onNodeWithContentDescription("Item 1").performTouchInput {
+            down(center)
+            advanceEventTime(16)
+            moveBy(Offset(0f, 96f))
+            advanceEventTime(16)
+            up()
+        }
+        composeTestRule.waitForIdle()
+
+        assertFalse("An unselected reloc item must not drag-reorder on a quick, un-held press", relocated)
     }
 }
