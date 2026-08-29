@@ -1522,7 +1522,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
     override fun azNestedRail(id: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, alignment: AzNestedRailAlignment, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, translucentBackgroundColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean, onFocus: (() -> Unit)?, keepNestedRailOpen: Boolean, reflectSelectionInParent: Boolean, selectedChildId: String?, expandWhen: (() -> Boolean)?, nestedContent: AzNavRailScope.() -> Unit) {
         checkId(id)
         val nestedScope = AzNavRailScopeImpl(this.globalIdSet)
-        nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, secondaryClassifiers = this.secondaryClassifiers, tertiaryClassifiers = this.tertiaryClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, showFooter = this.showFooter, appRepositoryUrl = this.appRepositoryUrl)
+        nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, secondaryClassifiers = this.secondaryClassifiers, tertiaryClassifiers = this.tertiaryClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, railItemWidth = this.railItemWidth, showFooter = this.showFooter, appRepositoryUrl = this.appRepositoryUrl)
         nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape, translucentBackground = this.translucentBackground, focusColor = this.focusColor, secondaryColor = this.secondaryColor, tertiaryColor = this.tertiaryColor)
         nestedScope.nestedContent()
 
@@ -1868,7 +1868,7 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
 
         val nestedItems = if (nestedContent != null) {
             val nestedScope = AzNavRailScopeImpl(this.globalIdSet)
-            nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, secondaryClassifiers = this.secondaryClassifiers, tertiaryClassifiers = this.tertiaryClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, showFooter = this.showFooter)
+            nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, secondaryClassifiers = this.secondaryClassifiers, tertiaryClassifiers = this.tertiaryClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, railItemWidth = this.railItemWidth, showFooter = this.showFooter)
             nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape, translucentBackground = this.translucentBackground, focusColor = this.focusColor, secondaryColor = this.secondaryColor, tertiaryColor = this.tertiaryColor)
             nestedScope.nestedContent()
 
