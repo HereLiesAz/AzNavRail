@@ -202,12 +202,17 @@ class AzWindowState(
 
     /**
      * Narrows an already-computed `(minX, maxX, minY, maxY)` window bound so the window also stays
-     * clear of every rect in [obstructions] on whichever edge(s) of [bounds] it touches — one docked
-     * to the left edge raises `minX` to clear it, one docked to the top raises `minY`, and so on. A
-     * rect touching no edge of [bounds] is ignored, since there is no side to define "clear of it"
-     * from. [verticalExtent] is the window's own extent along the axis checked against a top/bottom
-     * obstruction — the full window height from [settleFullyOnscreen], just the chrome bar's height
-     * from [dragBy] (which only guarantees the bar, not the whole window, stays clear).
+     * clear of every rect in [obstructions]. Each obstruction is classified first — a full-height
+     * strip (spanning from `y=0` to `y=bounds.height`, e.g. a left/right-docked rail) only narrows
+     * the X range, and a full-width strip (spanning `x=0` to `x=bounds.width`, e.g. a top/bottom
+     * toolbar) only narrows the Y range. Testing the four edges independently instead would treat a
+     * full-height rail — which touches both `y=0` and `y=bounds.height` by construction, regardless
+     * of which side it's docked on — as also constraining Y, corrupting the window's vertical bound.
+     * A rect that is neither a full-height nor a full-width strip is ignored, since there is no
+     * single side to define "clear of it" from. [verticalExtent] is the window's own extent along
+     * the axis checked against a full-width obstruction — the full window height from
+     * [settleFullyOnscreen], just the chrome bar's height from [dragBy] (which only guarantees the
+     * bar, not the whole window, stays clear).
      */
     private fun narrowForObstruction(
         obstructions: List<Rect>,
@@ -225,10 +230,15 @@ class AzWindowState(
         var newMinY = minY
         var newMaxY = maxY
         for (obstruction in obstructions) {
-            if (obstruction.left <= 0f) newMinX = newMinX.coerceAtLeast(obstruction.right)
-            if (obstruction.right >= bounds.width) newMaxX = newMaxX.coerceAtMost(obstruction.left - width)
-            if (obstruction.top <= 0f) newMinY = newMinY.coerceAtLeast(obstruction.bottom)
-            if (obstruction.bottom >= bounds.height) newMaxY = newMaxY.coerceAtMost(obstruction.top - verticalExtent)
+            val isFullHeight = obstruction.top <= 0f && obstruction.bottom >= bounds.height
+            val isFullWidth = obstruction.left <= 0f && obstruction.right >= bounds.width
+            if (isFullHeight) {
+                if (obstruction.left <= 0f) newMinX = newMinX.coerceAtLeast(obstruction.right)
+                if (obstruction.right >= bounds.width) newMaxX = newMaxX.coerceAtMost(obstruction.left - width)
+            } else if (isFullWidth) {
+                if (obstruction.top <= 0f) newMinY = newMinY.coerceAtLeast(obstruction.bottom)
+                if (obstruction.bottom >= bounds.height) newMaxY = newMaxY.coerceAtMost(obstruction.top - verticalExtent)
+            }
         }
         // A rail wider/taller than the container (or a degenerate rect) can invert the range;
         // collapse to a single point rather than leave min > max for `coerceIn` to throw on.
