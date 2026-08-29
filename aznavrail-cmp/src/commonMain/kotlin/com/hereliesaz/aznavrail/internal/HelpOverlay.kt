@@ -16,6 +16,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -29,6 +30,38 @@ import com.hereliesaz.aznavrail.LocalAzSafeZones
 import com.hereliesaz.aznavrail.model.AzNavItem
 
 import androidx.compose.foundation.BorderStroke
+
+/**
+ * The four points of an elbow connector from a rail item to its help card: out of the item, into a
+ * vertical lane confined to the gutter between the rail and the cards, then straight into the card.
+ *
+ * Confining the vertical travel to `[gutterStartX, gutterEndX]` — never past `gutterEndX`, which is
+ * where card content begins — is what keeps a line from ever crossing *over* an unrelated card. A
+ * straight diagonal from item to card does not have this property: rail buttons are compact and
+ * evenly spaced while cards are tall and vary with their text, so by the Nth item the card can sit
+ * far below where a raw diagonal from that item's position would put it, and that diagonal sweeps
+ * straight through every card in between — which reads as a card's border being crossed by another
+ * card, not as a connector line, once there are enough items for the divergence to add up.
+ *
+ * [laneFraction] (0..1) spreads different items' vertical segments across the gutter width instead
+ * of stacking them all on one x, so lines fanning out to different cards stay visually separable
+ * from each other (they may still cross *each other* in the gutter — only crossing a card's own
+ * interior is what this routing eliminates).
+ */
+internal fun computeConnectorElbow(
+    itemBounds: Rect,
+    cardBounds: Rect,
+    gutterStartX: Float,
+    gutterEndX: Float,
+    laneFraction: Float,
+): List<Offset> {
+    val start = Offset(itemBounds.right, itemBounds.center.y)
+    val end = Offset(cardBounds.left, cardBounds.center.y)
+    val safeGutterEnd = gutterEndX.coerceAtLeast(gutterStartX)
+    val laneX = (gutterStartX + (safeGutterEnd - gutterStartX) * laneFraction.coerceIn(0f, 1f))
+        .coerceIn(gutterStartX, safeGutterEnd)
+    return listOf(start, Offset(laneX, start.y), Offset(laneX, end.y), end)
+}
 
 /**
  * Full-screen overlay that draws connecting lines from rail items to their help cards.
@@ -110,7 +143,6 @@ internal fun HelpOverlay(
             .fillMaxSize()
             .onGloballyPositioned { overlayBounds = it.boundsInWindow() }
             // No dark scrim — the overlay shows cards and connector lines over the live UI.
-            .clickable(onClick = onDismiss) // Background tap to dismiss
             .drawBehind {
                 val strokeWidth = 4.dp
 
@@ -121,22 +153,41 @@ internal fun HelpOverlay(
                 // has been measured (cardsViewportBounds = Rect.Zero).
                 val viewport = cardsViewportBounds
                 val clipped = viewport != Rect.Zero && viewport.width > 0f && viewport.height > 0f
+                val gutterEndX = viewport.takeIf { clipped }?.left
+                val laneCount = visibleItemsWithInfo.size
 
-                val drawLines: androidx.compose.ui.graphics.drawscope.DrawScope.() -> Unit = {
+                val drawLines: DrawScope.() -> Unit = {
                     visibleItemsWithInfo.forEachIndexed { index, item ->
                         val drawColor = colorPalette[index % colorPalette.size]
                         val itemBounds = itemBoundsCache[item.id]
                         val cardBounds = cardBoundsCache[item.id]
 
                         if (itemBounds != null && cardBounds != null) {
-                            val start = Offset(itemBounds.right, itemBounds.center.y)
-                            val end = Offset(cardBounds.left, cardBounds.center.y)
-                            drawLine(
-                                color = drawColor,
-                                start = start,
-                                end = end,
-                                strokeWidth = strokeWidth.toPx()
-                            )
+                            // Route through the gutter (never through a card) once the cards
+                            // viewport is known; a raw diagonal is the only option before that
+                            // first measurement lands, same as the old behaviour.
+                            val points = if (gutterEndX != null && gutterEndX > itemBounds.right) {
+                                computeConnectorElbow(
+                                    itemBounds = itemBounds,
+                                    cardBounds = cardBounds,
+                                    gutterStartX = itemBounds.right,
+                                    gutterEndX = gutterEndX,
+                                    laneFraction = (index + 1f) / (laneCount + 1f),
+                                )
+                            } else {
+                                listOf(
+                                    Offset(itemBounds.right, itemBounds.center.y),
+                                    Offset(cardBounds.left, cardBounds.center.y),
+                                )
+                            }
+                            for (i in 0 until points.size - 1) {
+                                drawLine(
+                                    color = drawColor,
+                                    start = points[i],
+                                    end = points[i + 1],
+                                    strokeWidth = strokeWidth.toPx()
+                                )
+                            }
                         }
                     }
                 }
@@ -160,6 +211,16 @@ internal fun HelpOverlay(
                 }
             }
     ) {
+        // Background tap to dismiss, confined to the area right of the rail's own gutter — the
+        // same reasoning as the rail's own scrim (see AzNavRail's "inset to exclude the rail"
+        // comment): a full-screen listener here would sit on top of the rail's own scroll gesture
+        // and swallow every drag over the strip, leaving the rail unscrollable while help is open.
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = dynamicStartPadding)
+                .clickable(onClick = onDismiss)
+        )
         Column(
             modifier = Modifier
                 .fillMaxSize()

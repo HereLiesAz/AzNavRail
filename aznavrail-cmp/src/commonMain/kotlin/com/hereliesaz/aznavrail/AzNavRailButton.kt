@@ -279,7 +279,12 @@ internal fun AzNavRailButton(
                 }
             }
         }
-        if (!shape.isBorderless) {
+        // `isBorderless` only suppresses the RESTING-state border. A highlighted borderless button
+        // (selected/focused/pressed/secondary/tertiary) still grows this ring — otherwise a button
+        // whose content is full-bleed (Bitmap/drawable, which fills the whole surface with no
+        // padding) has no visible reaction to its highlight state at all.
+        val isHighlighted = isSelected || isFocused || isPressed || isSecondaryActive || isTertiaryActive
+        if (!shape.isBorderless || isHighlighted) {
             Box(
                 modifier = Modifier
                     .matchParentSize()
