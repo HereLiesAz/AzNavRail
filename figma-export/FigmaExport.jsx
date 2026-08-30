@@ -45,16 +45,16 @@ const FigmaExport = () => {
       <div className="component-row">
         <h2>AzToggle</h2>
         <AzToggle
-          text="Wi-Fi (Off)"
+          label="Wi-Fi (Off)"
           color="#6200ee"
-          isChecked={false}
-          onCheckChanged={() => {}}
+          value={false}
+          onValueChange={() => {}}
         />
         <AzToggle
-          text="Wi-Fi (On)"
+          label="Wi-Fi (On)"
           color="#6200ee"
-          isChecked={true}
-          onCheckChanged={() => {}}
+          value={true}
+          onValueChange={() => {}}
         />
       </div>
 
