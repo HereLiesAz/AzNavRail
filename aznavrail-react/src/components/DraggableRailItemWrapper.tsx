@@ -8,11 +8,12 @@ import {
   Text,
   Modal,
   Linking,
+  Dimensions,
 } from 'react-native';
-import { AzNavItem } from '../types';
+import { AzNavItem, AzDockingSide } from '../types';
 import { AzButton } from './AzButton';
 import { AzTextBox } from './AzTextBox';
-import { AzWindow } from './AzWindow';
+import { AzWindow, AzWindowObstruction } from './AzWindow';
 import { useAzAccent, AZ_ACCENT_FALLBACK } from '../AzRailPalette';
 import { isSafeExternalUrl } from '../util/AzSafeUrl';
 
@@ -38,6 +39,10 @@ interface DraggableRailItemWrapperProps {
   translucentBackground?: string;
   /** Optional size for the button. */
   size?: number;
+  /** The docking side of the parent rail, so the hidden menu window can be kept clear of it. */
+  dockingSide?: AzDockingSide;
+  /** The parent rail's collapsed width, used with `dockingSide` to build its obstruction rect. */
+  railWidth?: number;
 }
 
 /**
@@ -56,8 +61,28 @@ export const DraggableRailItemWrapper: React.FC<
   style,
   translucentBackground,
   size,
+  dockingSide,
+  railWidth,
 }) => {
   const railAccent = useAzAccent();
+  // The rail's own strip is chrome this hidden menu draws over, so the window it opens in is never
+  // allowed to land — or be dragged — back underneath it. Only built when the caller told us which
+  // edge the rail is docked to and how wide its collapsed strip is; a rail whose docking isn't
+  // known is left unconstrained rather than guessed wrong.
+  const railObstruction: AzWindowObstruction | undefined =
+    dockingSide != null && railWidth
+      ? (() => {
+          const screen = Dimensions.get('window');
+          return dockingSide === AzDockingSide.RIGHT
+            ? {
+                left: screen.width - railWidth,
+                top: 0,
+                right: screen.width,
+                bottom: screen.height,
+              }
+            : { left: 0, top: 0, right: railWidth, bottom: screen.height };
+        })()
+      : undefined;
   const pan = useRef(new Animated.ValueXY()).current;
   const [isDragging, setIsDragging] = useState(false);
   const [showHiddenMenu, setShowHiddenMenu] = useState(false);
@@ -148,6 +173,7 @@ export const DraggableRailItemWrapper: React.FC<
             accent={accent}
             surfaceColor={translucentBackground || '#1A1A1F'}
             onDismiss={closeMenu}
+            obstruction={railObstruction}
             style={{
               ...styles.hiddenMenu,
               top: menuPosition.y,

@@ -57,6 +57,90 @@ export function offscreenFraction(
   return Math.min(1, Math.max(0, 1 - (visibleWidth * visibleHeight) / area));
 }
 
+/**
+ * A rect (screen/container px coordinates) an `AzWindow` is kept clear of, on top of the screen
+ * bounds it is already clamped to — e.g. a docked rail's own gutter. Mirrors the Kotlin/Compose
+ * `AzWindowState`'s `Rect` obstruction param, and is classified the same way: only a *full-height*
+ * strip (`top <= 0 && bottom >= screenHeight`, e.g. a left/right-docked rail) narrows the window's
+ * X range, and only a *full-width* strip (`left <= 0 && right >= screenWidth`, e.g. a top/bottom
+ * bar) narrows its Y range — a rect touching no edge is ignored, since there is no side to define
+ * "clear of it" from.
+ */
+export interface AzWindowObstruction {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+/**
+ * True when a `width` x `height` rect at (`left`, `top`) overlaps any rect in `obstructions` at
+ * all. Mirrors `AzWindowState.overlapsObstruction` — used by the abandonment timer to decide
+ * whether a window resting on a rail (even if fully onscreen) still needs rescuing.
+ */
+export function overlapsAnyObstruction(
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+  obstructions: readonly AzWindowObstruction[]
+): boolean {
+  if (obstructions.length === 0) return false;
+  const right = left + width;
+  const bottom = top + height;
+  return obstructions.some(
+    (o) => o.left < right && o.right > left && o.top < bottom && o.bottom > top
+  );
+}
+
+/**
+ * Narrows an already-computed `(minX, maxX, minY, maxY)` window bound so the window also stays
+ * clear of every rect in `obstructions` — see `AzWindowObstruction` for the full-height/full-width
+ * classification rule this applies. `verticalExtent` is the window's own extent along the axis
+ * checked against a full-width obstruction: the full window height when settling fully onscreen,
+ * just `AzWindowDefaults.minVisible` while a live drag only guarantees that much stays clear (the
+ * same guarantee `minX`/`maxX` already make on the horizontal edges). Mirrors
+ * `AzWindowState.narrowForObstruction`.
+ */
+export function narrowForObstructions(
+  obstructions: readonly AzWindowObstruction[],
+  screenWidth: number,
+  screenHeight: number,
+  width: number,
+  verticalExtent: number,
+  minX: number,
+  maxX: number,
+  minY: number,
+  maxY: number
+): { minX: number; maxX: number; minY: number; maxY: number } {
+  if (obstructions.length === 0) return { minX, maxX, minY, maxY };
+  let newMinX = minX;
+  let newMaxX = maxX;
+  let newMinY = minY;
+  let newMaxY = maxY;
+  for (const o of obstructions) {
+    const isFullHeight = o.top <= 0 && o.bottom >= screenHeight;
+    const isFullWidth = o.left <= 0 && o.right >= screenWidth;
+    // Independent ifs, not else-if: a degenerate obstruction that is both a full-height and a
+    // full-width strip (i.e. it covers the entire screen) needs both axes narrowed, not just
+    // whichever classification happened to be checked first.
+    if (isFullHeight) {
+      if (o.left <= 0) newMinX = Math.max(newMinX, o.right);
+      if (o.right >= screenWidth) newMaxX = Math.min(newMaxX, o.left - width);
+    }
+    if (isFullWidth) {
+      if (o.top <= 0) newMinY = Math.max(newMinY, o.bottom);
+      if (o.bottom >= screenHeight)
+        newMaxY = Math.min(newMaxY, o.top - verticalExtent);
+    }
+  }
+  // A rail wider/taller than the screen (or a degenerate rect) can invert the range; collapse to
+  // a single point rather than leave min > max for the later clamp to misbehave on.
+  if (newMinX > newMaxX) newMaxX = newMinX;
+  if (newMinY > newMaxY) newMaxY = newMinY;
+  return { minX: newMinX, maxX: newMaxX, minY: newMinY, maxY: newMaxY };
+}
+
 export interface AzWindowProps {
   /** Shown in the grab bar. Blank draws a bare bar — right when the body has a heading already. */
   title?: string;
@@ -72,6 +156,17 @@ export interface AzWindowProps {
   initiallyMinimized?: boolean;
   /** Close handler; omit to draw no close control. */
   onDismiss?: () => void;
+  /**
+   * An additional rect (screen px coordinates) the window is kept clear of, on top of the screen
+   * bounds it is already clamped to. Meant for chrome this library itself draws on top of the
+   * window, such as a docked rail — pass a rect covering the rail's own gutter so the window can
+   * never land or be dragged fully underneath it. Only the edge(s) the rect touches are enforced;
+   * see `AzWindowObstruction`. For more than one rect use `obstructions` instead — both are
+   * honoured together.
+   */
+  obstruction?: AzWindowObstruction;
+  /** Like `obstruction` but for any number of rects at once. */
+  obstructions?: readonly AzWindowObstruction[];
   /** Applied to the window surface — use it to place the window. */
   style?: ViewStyle;
   testID?: string;
@@ -98,6 +193,8 @@ export const AzWindow: React.FC<AzWindowProps> = ({
   minimizable = true,
   initiallyMinimized = false,
   onDismiss,
+  obstruction,
+  obstructions = [],
   style,
   testID,
   children,
@@ -119,6 +216,15 @@ export const AzWindow: React.FC<AzWindowProps> = ({
   // callback each render never leaves a stale one captured in an already-scheduled timer.
   const onDismissRef = useRef(onDismiss);
   onDismissRef.current = onDismiss;
+  // Same reasoning as `onDismissRef`: `obstruction`/`obstructions` can change every render (a
+  // rail's own width/position moving), so the drag handlers below — created once by `useMemo` —
+  // read the always-current combined list through a ref rather than closing over a stale one.
+  const allObstructions = obstruction
+    ? [...obstructions, obstruction]
+    : obstructions;
+  const obstructionsRef =
+    useRef<readonly AzWindowObstruction[]>(allObstructions);
+  obstructionsRef.current = allObstructions;
 
   const clearAbandonTimer = () => {
     if (abandonTimer.current != null) {
@@ -127,49 +233,73 @@ export const AzWindow: React.FC<AzWindowProps> = ({
     }
   };
 
-  // Checks whether the window is currently off the screen edge at all and, if so, (re)starts the
-  // grace period before this library rescues it. Called after every settle point — the initial
-  // layout, a drag's release or cancellation — never while a drag is actively in progress. Calling
-  // it again (from a fresh drag starting) cancels whatever countdown was already running, which is
-  // what "touch it again and it resets" means here.
+  // Checks whether the window is currently off the screen edge, or resting on an obstruction it
+  // should never occupy, and if so (re)starts the grace period before this library rescues it.
+  // Called after every settle point — the initial layout, a drag's release or cancellation — never
+  // while a drag is actively in progress. Calling it again (from a fresh drag starting) cancels
+  // whatever countdown was already running, which is what "touch it again and it resets" means.
   const scheduleAbandonmentCheck = () => {
     clearAbandonTimer();
     const win = Dimensions.get('window');
+    const left = anchor.current.x + offset.current.x;
+    const top = anchor.current.y + offset.current.y;
     const fraction = offscreenFraction(
-      anchor.current.x + offset.current.x,
-      anchor.current.y + offset.current.y,
+      left,
+      top,
       size.current.width,
       size.current.height,
       win.width,
       win.height
     );
-    if (fraction <= 0) return;
+    const obstructed = overlapsAnyObstruction(
+      left,
+      top,
+      size.current.width,
+      size.current.height,
+      obstructionsRef.current
+    );
+    if (fraction <= 0 && !obstructed) return;
     abandonTimer.current = setTimeout(() => {
       abandonTimer.current = null;
       const win2 = Dimensions.get('window');
+      const currentLeft = anchor.current.x + offset.current.x;
+      const currentTop = anchor.current.y + offset.current.y;
       const currentFraction = offscreenFraction(
-        anchor.current.x + offset.current.x,
-        anchor.current.y + offset.current.y,
+        currentLeft,
+        currentTop,
         size.current.width,
         size.current.height,
         win2.width,
         win2.height
       );
-      if (currentFraction <= 0) return;
+      const stillObstructed = overlapsAnyObstruction(
+        currentLeft,
+        currentTop,
+        size.current.width,
+        size.current.height,
+        obstructionsRef.current
+      );
+      if (currentFraction <= 0 && !stillObstructed) return;
       if (currentFraction >= AzWindowDefaults.nearlyGoneFraction) {
         onDismissRef.current?.();
         return;
       }
-      // Pull the window fully back onscreen — not merely the `minVisible` sliver a live drag
-      // guarantees — the same way `AzWindowState.settleFullyOnscreen` does on the Kotlin side.
-      const targetX = Math.min(
-        Math.max(anchor.current.x + offset.current.x, 0),
-        Math.max(win2.width - size.current.width, 0)
-      );
-      const targetY = Math.min(
-        Math.max(anchor.current.y + offset.current.y, 0),
+      // Pull the window fully back onscreen (and clear of every obstruction) — not merely the
+      // `minVisible` sliver a live drag guarantees — the same way `AzWindowState.settleFullyOnscreen`
+      // does on the Kotlin side.
+      const { minX, maxX, minY, maxY } = narrowForObstructions(
+        obstructionsRef.current,
+        win2.width,
+        win2.height,
+        size.current.width,
+        size.current.height,
+        0,
+        Math.max(win2.width - size.current.width, 0),
+        0,
         Math.max(win2.height - size.current.height, 0)
       );
+      const targetX = Math.min(maxX, Math.max(minX, currentLeft));
+      const targetY = Math.min(maxY, Math.max(minY, currentTop));
       offset.current = {
         x: targetX - anchor.current.x,
         y: targetY - anchor.current.y,
@@ -193,9 +323,24 @@ export const AzWindow: React.FC<AzWindowProps> = ({
     const maxX = Math.max(win.width - keep, minX);
     const minY = -Math.max(size.current.height - keep, 0);
     const maxY = Math.max(win.height - keep, minY);
+    const bounds = narrowForObstructions(
+      obstructionsRef.current,
+      win.width,
+      win.height,
+      size.current.width,
+      keep,
+      minX,
+      maxX,
+      minY,
+      maxY
+    );
     offset.current = {
-      x: Math.min(maxX, Math.max(minX, targetX)) - anchor.current.x,
-      y: Math.min(maxY, Math.max(minY, targetY)) - anchor.current.y,
+      x:
+        Math.min(bounds.maxX, Math.max(bounds.minX, targetX)) -
+        anchor.current.x,
+      y:
+        Math.min(bounds.maxY, Math.max(bounds.minY, targetY)) -
+        anchor.current.y,
     };
   };
 
@@ -212,17 +357,35 @@ export const AzWindow: React.FC<AzWindowProps> = ({
           if (!movable) return;
           const win = Dimensions.get('window');
           const keep = AzWindowDefaults.minVisible;
-          // Clamp so the window can be pushed to any edge but never entirely off it: at least a
-          // title-bar's worth stays inside on every side. A window you can lose is a window you
-          // have to reopen.
+          // Clamp so the window can be pushed to any edge but never entirely off it — and, if the
+          // caller passed an obstruction (a docked rail's own gutter), never dragged fully under
+          // it either: at least a title-bar's worth stays inside on every side, and clear of the
+          // obstruction. A window you can lose is a window you have to reopen.
           const targetX = anchor.current.x + offset.current.x + gesture.dx;
           const targetY = anchor.current.y + offset.current.y + gesture.dy;
           const minX = -Math.max(size.current.width - keep, 0);
           const maxX = Math.max(win.width - keep, minX);
           const minY = -Math.max(size.current.height - keep, 0);
           const maxY = Math.max(win.height - keep, minY);
-          const clampedX = Math.min(maxX, Math.max(minX, targetX));
-          const clampedY = Math.min(maxY, Math.max(minY, targetY));
+          const bounds = narrowForObstructions(
+            obstructionsRef.current,
+            win.width,
+            win.height,
+            size.current.width,
+            keep,
+            minX,
+            maxX,
+            minY,
+            maxY
+          );
+          const clampedX = Math.min(
+            bounds.maxX,
+            Math.max(bounds.minX, targetX)
+          );
+          const clampedY = Math.min(
+            bounds.maxY,
+            Math.max(bounds.minY, targetY)
+          );
           pan.setValue({
             x: clampedX - anchor.current.x,
             y: clampedY - anchor.current.y,
@@ -332,7 +495,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   grip: { marginRight: 8 },
-  gripBar: { width: 18, height: 2, borderRadius: 1, marginVertical: 1.5, opacity: 0.55 },
+  gripBar: {
+    width: 18,
+    height: 2,
+    borderRadius: 1,
+    marginVertical: 1.5,
+    opacity: 0.55,
+  },
   title: { flex: 1, fontSize: 13, fontWeight: 'bold' },
   control: {
     width: AzWindowDefaults.chromeHeight,
