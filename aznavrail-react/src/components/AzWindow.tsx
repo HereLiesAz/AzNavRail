@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -18,7 +18,44 @@ export const AzWindowDefaults = {
   chromeHeight: 36,
   /** How much of the window is always kept on screen, however far it is dragged. */
   minVisible: 96,
+  /**
+   * How long an off-screen window is left alone, once released and untouched, before this
+   * library rescues it — pulling it back onscreen, or dismissing it if there's basically nothing
+   * left to grab. Touching the window (dragging it again) restarts this wait from zero.
+   */
+  abandonedGraceMs: 5000,
+  /**
+   * How much of a window's own area must be outside the screen before the abandonment timer
+   * decides there is nothing left worth pulling back — and dismisses the window instead.
+   */
+  nearlyGoneFraction: 0.9,
 } as const;
+
+/**
+ * Fraction of a `width` x `height` rect at (`left`, `top`) that lies outside the `screenWidth` x
+ * `screenHeight` screen — `0` when fully onscreen, `1` when there is no overlap at all. Lets the
+ * abandonment timer tell "just drifted past an edge" apart from "essentially gone."
+ */
+export function offscreenFraction(
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+  screenWidth: number,
+  screenHeight: number
+): number {
+  const area = width * height;
+  if (area <= 0) return 0;
+  const visibleWidth = Math.max(
+    0,
+    Math.min(left + width, screenWidth) - Math.max(left, 0)
+  );
+  const visibleHeight = Math.max(
+    0,
+    Math.min(top + height, screenHeight) - Math.max(top, 0)
+  );
+  return Math.min(1, Math.max(0, 1 - (visibleWidth * visibleHeight) / area));
+}
 
 export interface AzWindowProps {
   /** Shown in the grab bar. Blank draws a bare bar — right when the body has a heading already. */
@@ -77,11 +114,100 @@ export const AzWindow: React.FC<AzWindowProps> = ({
   // that repositions the window (rotation, a resized container) keeps a correct anchor.
   const anchor = useRef({ x: 0, y: 0 });
   const viewRef = useRef<View>(null);
+  const abandonTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Read inside the timeout below instead of `onDismiss` directly, so a caller passing a fresh
+  // callback each render never leaves a stale one captured in an already-scheduled timer.
+  const onDismissRef = useRef(onDismiss);
+  onDismissRef.current = onDismiss;
+
+  const clearAbandonTimer = () => {
+    if (abandonTimer.current != null) {
+      clearTimeout(abandonTimer.current);
+      abandonTimer.current = null;
+    }
+  };
+
+  // Checks whether the window is currently off the screen edge at all and, if so, (re)starts the
+  // grace period before this library rescues it. Called after every settle point — the initial
+  // layout, a drag's release or cancellation — never while a drag is actively in progress. Calling
+  // it again (from a fresh drag starting) cancels whatever countdown was already running, which is
+  // what "touch it again and it resets" means here.
+  const scheduleAbandonmentCheck = () => {
+    clearAbandonTimer();
+    const win = Dimensions.get('window');
+    const fraction = offscreenFraction(
+      anchor.current.x + offset.current.x,
+      anchor.current.y + offset.current.y,
+      size.current.width,
+      size.current.height,
+      win.width,
+      win.height
+    );
+    if (fraction <= 0) return;
+    abandonTimer.current = setTimeout(() => {
+      abandonTimer.current = null;
+      const win2 = Dimensions.get('window');
+      const currentFraction = offscreenFraction(
+        anchor.current.x + offset.current.x,
+        anchor.current.y + offset.current.y,
+        size.current.width,
+        size.current.height,
+        win2.width,
+        win2.height
+      );
+      if (currentFraction <= 0) return;
+      if (currentFraction >= AzWindowDefaults.nearlyGoneFraction) {
+        onDismissRef.current?.();
+        return;
+      }
+      // Pull the window fully back onscreen — not merely the `minVisible` sliver a live drag
+      // guarantees — the same way `AzWindowState.settleFullyOnscreen` does on the Kotlin side.
+      const targetX = Math.min(
+        Math.max(anchor.current.x + offset.current.x, 0),
+        Math.max(win2.width - size.current.width, 0)
+      );
+      const targetY = Math.min(
+        Math.max(anchor.current.y + offset.current.y, 0),
+        Math.max(win2.height - size.current.height, 0)
+      );
+      offset.current = {
+        x: targetX - anchor.current.x,
+        y: targetY - anchor.current.y,
+      };
+      pan.setValue(offset.current);
+    }, AzWindowDefaults.abandonedGraceMs);
+  };
+
+  useEffect(() => clearAbandonTimer, []);
+
+  // Commits the same clamped value the last move already rendered — not the raw, unclamped
+  // gesture accumulation — so a drag that ended pinned against an edge doesn't leave `offset`
+  // holding a value the window was never actually shown at. Shared by a normal release and a
+  // stolen-touch termination, which both need the identical commit.
+  const commitRelease = (dx: number, dy: number) => {
+    const win = Dimensions.get('window');
+    const keep = AzWindowDefaults.minVisible;
+    const targetX = anchor.current.x + offset.current.x + dx;
+    const targetY = anchor.current.y + offset.current.y + dy;
+    const minX = -Math.max(size.current.width - keep, 0);
+    const maxX = Math.max(win.width - keep, minX);
+    const minY = -Math.max(size.current.height - keep, 0);
+    const maxY = Math.max(win.height - keep, minY);
+    offset.current = {
+      x: Math.min(maxX, Math.max(minX, targetX)) - anchor.current.x,
+      y: Math.min(maxY, Math.max(minY, targetY)) - anchor.current.y,
+    };
+  };
 
   const panResponder = useMemo(
     () =>
       PanResponder.create({
         onMoveShouldSetPanResponder: () => movable,
+        onPanResponderGrant: () => {
+          // The window can never be allowed to disappear while a finger is still on it — cancel
+          // any pending rescue the moment a new drag starts, gesture or otherwise.
+          clearAbandonTimer();
+        },
         onPanResponderMove: (_evt, gesture) => {
           if (!movable) return;
           const win = Dimensions.get('window');
@@ -103,23 +229,23 @@ export const AzWindow: React.FC<AzWindowProps> = ({
           });
         },
         onPanResponderRelease: (_evt, gesture) => {
-          // Commit the same clamped value the last move already rendered — not the raw,
-          // unclamped accumulation — so a drag that ended pinned against an edge doesn't leave
-          // `offset` holding a value the window was never actually shown at.
-          const win = Dimensions.get('window');
-          const keep = AzWindowDefaults.minVisible;
-          const targetX = anchor.current.x + offset.current.x + gesture.dx;
-          const targetY = anchor.current.y + offset.current.y + gesture.dy;
-          const minX = -Math.max(size.current.width - keep, 0);
-          const maxX = Math.max(win.width - keep, minX);
-          const minY = -Math.max(size.current.height - keep, 0);
-          const maxY = Math.max(win.height - keep, minY);
-          offset.current = {
-            x: Math.min(maxX, Math.max(minX, targetX)) - anchor.current.x,
-            y: Math.min(maxY, Math.max(minY, targetY)) - anchor.current.y,
-          };
+          commitRelease(gesture.dx, gesture.dy);
+          scheduleAbandonmentCheck();
+        },
+        // The touch can be stolen mid-drag (a parent scroll view, another gesture). Whatever the
+        // window's position was at that moment still has to be committed the same way a normal
+        // release commits it — left uncommitted, the visible `pan` position and `offset.current`
+        // would quietly diverge — and the abandonment timer still has to get its chance to run.
+        onPanResponderTerminate: (_evt, gesture) => {
+          commitRelease(gesture.dx, gesture.dy);
+          scheduleAbandonmentCheck();
         },
       }),
+    // `clearAbandonTimer`/`commitRelease`/`scheduleAbandonmentCheck` deliberately excluded: they
+    // are new function objects every render but read only refs, so a stale closure is never
+    // actually stale — including them would recreate the responder (and risk a gesture already in
+    // progress) on every render instead of only when `movable`/`pan` change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [movable, pan]
   );
 
@@ -137,6 +263,10 @@ export const AzWindow: React.FC<AzWindowProps> = ({
             x: pageX - offset.current.x,
             y: pageY - offset.current.y,
           };
+          // A window can open already off-screen (placed by the caller's `style` near an edge) —
+          // give it the same grace-period rescue a drag's release does, rather than leaving it
+          // stranded until the user happens to find and drag it.
+          scheduleAbandonmentCheck();
         });
       }}
       style={[

@@ -48,7 +48,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
+
+/**
+ * How long an off-screen or obstruction-overlapping window is left alone, once released and
+ * untouched, before this library rescues it. See the `AzWindow` composable's abandonment-timer
+ * `LaunchedEffect` for the full rule: dragging it again — or anything else that moves it — restarts
+ * this wait from zero.
+ */
+private const val AZ_WINDOW_ABANDONED_GRACE_MS = 5000L
+
+/**
+ * How much of a window's own area must be outside the screen before the abandonment timer decides
+ * there is nothing left worth pulling back — and dismisses the window instead.
+ */
+private const val AZ_WINDOW_NEARLY_GONE_FRACTION = 0.9f
 
 /**
  * Position and folded/unfolded state of one [AzWindow].
@@ -175,10 +190,10 @@ class AzWindowState(
     /**
      * Pulls the window **fully** inside [bounds] (and clear of [obstructions]) — not merely the
      * [MIN_VISIBLE_PX] sliver [dragBy] guarantees while a drag is in progress. Meant to be called
-     * once a drag settles (see [AzWindow]'s `snapFullyOnscreen` param) or the first time the window's
-     * real position is known (its initial placement), not on every frame of a drag in progress —
-     * always enforcing full containment mid-drag would make it impossible to park a window mostly
-     * off-screen on purpose.
+     * once an abandoned drag's grace period runs out (see [AzWindow]'s abandonment-timer
+     * `LaunchedEffect`) or the first time the window's real position is known (its initial
+     * placement), not on every frame of a drag in progress — always enforcing full containment
+     * mid-drag would make it impossible to park a window mostly off-screen on purpose.
      */
     internal fun settleFullyOnscreen(bounds: IntSize, chromeHeightPx: Float, obstructions: List<Rect> = emptyList()) {
         if (bounds.width <= 0 || bounds.height <= 0) return
@@ -254,6 +269,35 @@ class AzWindowState(
 
     private data class DragBounds(val minX: Float, val maxX: Float, val minY: Float, val maxY: Float)
 
+    /**
+     * Fraction of the window's own area that currently lies outside [bounds] — `0f` when it is
+     * fully onscreen, `1f` when it has no overlap with [bounds] at all. Lets a caller tell "just
+     * drifted past an edge" apart from "essentially gone," without caring which edge(s) it left by.
+     */
+    internal fun offscreenFraction(bounds: IntSize): Float {
+        val width = size.width.toFloat()
+        val height = size.height.toFloat()
+        val area = width * height
+        if (area <= 0f || bounds.width <= 0 || bounds.height <= 0) return 0f
+        val left = anchorX + offsetX
+        val top = anchorY + offsetY
+        val visibleWidth = (minOf(left + width, bounds.width.toFloat()) - maxOf(left, 0f)).coerceAtLeast(0f)
+        val visibleHeight = (minOf(top + height, bounds.height.toFloat()) - maxOf(top, 0f)).coerceAtLeast(0f)
+        return (1f - (visibleWidth * visibleHeight) / area).coerceIn(0f, 1f)
+    }
+
+    /** True when the window's current bounds overlap any rect in [obstructions] at all. */
+    internal fun overlapsObstruction(obstructions: List<Rect>): Boolean {
+        if (obstructions.isEmpty()) return false
+        val width = size.width.toFloat()
+        val height = size.height.toFloat()
+        val left = anchorX + offsetX
+        val top = anchorY + offsetY
+        val right = left + width
+        val bottom = top + height
+        return obstructions.any { it.left < right && it.right > left && it.top < bottom && it.bottom > top }
+    }
+
     /** Returns the window to where its parent put it. */
     fun resetPosition() {
         offsetX = 0f
@@ -317,15 +361,9 @@ fun rememberAzWindowState(
  *   rails/toolbars) use [obstructions] instead — both are honoured together.
  * @param obstructions Like [obstruction] but for any number of rects at once — e.g. every other
  *   docked rail/toolbar on screen the window should never land or be dragged underneath.
- * @param snapFullyOnscreen When true, releasing a drag pulls the window **fully** back inside the
- *   screen (and clear of [obstruction]/[obstructions]) instead of only guaranteeing the
- *   [AzWindowState]-internal 96px sliver stays reachable while dragging. Off by default, since
- *   always forcing full containment isn't every host's preferred feel — some want a window parkable
- *   mostly off-screen. The window's *initial* placement is always fully clamped on open, regardless
- *   of this flag — only mid-drag and post-drag behavior differ.
- * @param onDragEnd Called with the window's resulting offset each time a drag gesture ends (after
- *   [snapFullyOnscreen] has been applied, if enabled) — e.g. to persist the position, or to react to
- *   the user having moved the window without polling [state] on every frame.
+ * @param onDragEnd Called with the window's resulting offset each time a drag gesture ends — e.g.
+ *   to persist the position, or to react to the user having moved the window without polling
+ *   [state] on every frame.
  * @param content The window's body. Not composed while minimized.
  */
 @Composable
@@ -340,7 +378,6 @@ fun AzWindow(
     onDismiss: (() -> Unit)? = null,
     obstruction: Rect? = null,
     obstructions: List<Rect> = emptyList(),
-    snapFullyOnscreen: Boolean = false,
     onDragEnd: ((Offset) -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
@@ -348,11 +385,35 @@ fun AzWindow(
     val containerSize = LocalWindowInfo.current.containerSize
     val chromeHeightPx = with(LocalDensity.current) { AzWindowDefaults.ChromeHeight.toPx() }
     val allObstructions = if (obstruction != null) obstructions + obstruction else obstructions
+    var isDragging by remember { mutableStateOf(false) }
 
     // A container that changed size (rotation, split-screen, a resized desktop window) can leave a
     // window parked outside it. Pull it back rather than stranding it.
     LaunchedEffect(containerSize, chromeHeightPx, allObstructions) {
         state.clampInto(containerSize, chromeHeightPx, allObstructions)
+    }
+
+    // A dragged-then-abandoned window is never yanked around while the finger is still on it — this
+    // effect does nothing at all while `isDragging` is true — and is never snapped back or dismissed
+    // the instant a drag ends either, however far off it landed: every one of `state.offsetX`,
+    // `state.offsetY`, `isDragging`, `containerSize` and `allObstructions` changing (a new drag
+    // starting among them) cancels this coroutine before its `delay` finishes, which is what "touch
+    // it again and the countdown restarts" actually means here. Only once the window has sat off the
+    // screen edge or on top of an obstruction, completely untouched, for a full
+    // [AZ_WINDOW_ABANDONED_GRACE_MS] does this act — pulling it back if there is still something to
+    // grab, or standing in for the close button if there is, for all practical purposes, nothing
+    // left onscreen to find it by.
+    LaunchedEffect(isDragging, state.offsetX, state.offsetY, containerSize, allObstructions) {
+        if (isDragging) return@LaunchedEffect
+        val offscreen = state.offscreenFraction(containerSize)
+        val obstructed = state.overlapsObstruction(allObstructions)
+        if (offscreen <= 0f && !obstructed) return@LaunchedEffect
+        delay(AZ_WINDOW_ABANDONED_GRACE_MS)
+        if (state.offscreenFraction(containerSize) >= AZ_WINDOW_NEARLY_GONE_FRACTION) {
+            onDismiss?.invoke()
+        } else {
+            state.settleFullyOnscreen(containerSize, chromeHeightPx, allObstructions)
+        }
     }
 
     Surface(
@@ -387,7 +448,7 @@ fun AzWindow(
                 containerSize = containerSize,
                 chromeHeightPx = chromeHeightPx,
                 obstruction = allObstructions,
-                snapFullyOnscreen = snapFullyOnscreen,
+                onDragStateChange = { isDragging = it },
                 onDragEnd = onDragEnd,
             )
             // Folding must not destroy what the window holds. The body stays in composition and is
@@ -447,18 +508,18 @@ private fun AzWindowChrome(
     containerSize: IntSize,
     chromeHeightPx: Float,
     obstruction: List<Rect>,
-    snapFullyOnscreen: Boolean,
+    onDragStateChange: (Boolean) -> Unit,
     onDragEnd: ((Offset) -> Unit)?,
 ) {
     val dragModifier = if (movable) {
-        Modifier.pointerInput(containerSize, chromeHeightPx, obstruction, snapFullyOnscreen) {
+        Modifier.pointerInput(containerSize, chromeHeightPx, obstruction) {
             detectDragGestures(
+                onDragStart = { onDragStateChange(true) },
                 onDragEnd = {
-                    if (snapFullyOnscreen) {
-                        state.settleFullyOnscreen(containerSize, chromeHeightPx, obstruction)
-                    }
+                    onDragStateChange(false)
                     onDragEnd?.invoke(Offset(state.offsetX, state.offsetY))
                 },
+                onDragCancel = { onDragStateChange(false) },
             ) { change, dragAmount ->
                 change.consume()
                 state.dragBy(dragAmount.x, dragAmount.y, containerSize, chromeHeightPx, obstruction)
