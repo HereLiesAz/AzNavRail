@@ -920,7 +920,12 @@ fun AzNavRail(
                                     .verticalScroll(scrollState)
                             ) {
                                 topLevelItems.forEachIndexed { index, item ->
-                                    MenuItemNode(
+                                    // The tapped entry's slot is held open (empty) while its label
+                                    // travels out of the menu, so the label never animates in two
+                                    // places at once.
+                                    hostScope?.dissolving?.takeIf { it.itemId == item.id }?.let {
+                                        Spacer(Modifier.height(with(density) { it.bounds.height.toDp() }))
+                                    } ?: MenuItemNode(
                                         item = item,
                                         allItems = orderedItems,
                                         navController = effectiveNavController,
@@ -930,6 +935,20 @@ fun AzNavRail(
                                         showHelpOverlay = showHelpOverlay,
                                         onToggleHelp = { toggleHelpOverlay(it) },
                                         onCollapseMenu = { setExpanded(false) },
+                                        onDissolveTap = { itemId, text ->
+                                            scope.itemBoundsCache[itemId]?.let {
+                                                // Hand it to the host: by the time this animates,
+                                                // this menu is gone, and the label has to cross the
+                                                // whole window.
+                                                hostScope?.dissolve(
+                                                    com.hereliesaz.aznavrail.internal.DissolveState(
+                                                        itemId,
+                                                        text,
+                                                        it
+                                                    )
+                                                )
+                                            }
+                                        },
                                         index = index,
                                         count = topLevelItems.size,
                                         visible = isExpanded,
@@ -1274,6 +1293,7 @@ private fun MenuItemNode(
     showHelpOverlay: Boolean,
     onToggleHelp: (String?) -> Unit,
     onCollapseMenu: () -> Unit,
+    onDissolveTap: (itemId: String, text: String) -> Unit = { _, _ -> },
     index: Int,
     count: Int,
     visible: Boolean,
@@ -1349,6 +1369,7 @@ private fun MenuItemNode(
         // place where the tap becomes a menu-close decision.
         onItemClick = {
             if (item.collapseOnClick) {
+                onDissolveTap(item.id, item.menuText ?: item.text)
                 onCollapseMenu()
             }
         },
@@ -1384,6 +1405,7 @@ private fun MenuItemNode(
                 showHelpOverlay = showHelpOverlay,
                 onToggleHelp = onToggleHelp,
                 onCollapseMenu = onCollapseMenu,
+                onDissolveTap = onDissolveTap,
                 index = childIndex,
                 count = children.size,
                 visible = visible,
