@@ -94,6 +94,16 @@ interface AzNavHostScope : AzNavRailScope {
     val dockingSide: AzDockingSide
 
     /**
+     * The rail's current on-screen width (its `azConfig`-configured `collapsedWidth`) — the gutter
+     * this host reserves for it along [dockingSide].
+     *
+     * Combined with [dockingSide] this is enough to build an obstruction rect for something else
+     * this library draws over the rail's own edge, e.g. `AzWindow`'s `obstruction` param: a rect
+     * spanning the full container height, [railWidth] wide, flush against the [dockingSide] edge.
+     */
+    val railWidth: Dp
+
+    /**
      * Adds a background layer behind the main content. Backgrounds form their own "book" of pages
      * beneath the onscreen book. [weight] breaks Z-ties within a [page]; a **higher** page draws
      * further back. Honoured only when the host's `pagesEnabled` is `true`.
@@ -169,6 +179,7 @@ class AzNavHostScopeImpl(
     private var _navController: NavHostController? = null
     override val navController: NavHostController? get() = _navController
     override val dockingSide: AzDockingSide get() = railScope.dockingSide
+    override val railWidth: Dp get() = railScope.collapsedWidth
 
     val backgrounds = mutableListOf<AzBackgroundItem>()
     val onscreenItems = mutableListOf<AzOnscreenItem>()

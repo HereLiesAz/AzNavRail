@@ -28,6 +28,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.input.pointer.pointerInput
@@ -74,6 +76,16 @@ class AzWindowState(
     internal var size: IntSize by mutableStateOf(IntSize.Zero)
 
     /**
+     * Whether this window has ever been pulled fully onscreen. Set the first time [AzWindow] learns
+     * the window's real position and size, so a window that opens off-screen (e.g. a long-press menu
+     * placed beside whatever raised it, near a screen edge) is clamped fully into view immediately —
+     * not only after the user finds and drags it. Unlike [settleFullyOnscreen] itself, this only ever
+     * fires once per window instance; later container-size changes are handled by [clampInto] instead,
+     * which preserves an intentional off-screen park.
+     */
+    internal var hasSettledInitial: Boolean = false
+
+    /**
      * Where the parent placed the window's top-left, in container coordinates, *before* this
      * state's offset is applied.
      *
@@ -97,14 +109,36 @@ class AzWindowState(
     }
 
     /**
+     * Moves the window directly to the given offset — the same coordinate space as
+     * [AzWindowState]'s `initialOffsetX`/`initialOffsetY` constructor params (a displacement from
+     * wherever the window's parent placed it), and the same space [offsetX]/[offsetY] report.
+     *
+     * Unlike [dragBy] this is not clamped against screen bounds or an obstruction: it is meant for a
+     * host that already knows exactly where it wants the window (restoring a saved position,
+     * snapping it beside another panel), not for live gesture input. A host that wants the move
+     * clamped too can follow it with [clampInto].
+     */
+    fun moveTo(x: Float, y: Float) {
+        offsetX = x
+        offsetY = y
+    }
+
+    /**
      * Moves the window by a drag delta, keeping its grab bar on screen and reachable.
      *
      * Horizontally the window may be pushed off either edge until only [MIN_VISIBLE_PX] of it
      * remains. Vertically the *bar* is the limit rather than the window: it lives along the top
      * edge, so letting the top scroll past the bottom of the container would leave nothing to grab
      * and no way back.
+     *
+     * @param obstructions Additional rects (in the same container coordinates as [bounds], e.g. a
+     *   docked nav rail's own strip, or several sibling rails/toolbars) the window is kept clear of,
+     *   on top of [bounds] itself. Only honoured on the edge(s) a given rect actually touches — one
+     *   docked to the left edge pushes the window's minimum X inward, one docked to the top pushes
+     *   its minimum Y down, and so on; a rect touching no edge of [bounds] is ignored, since there is
+     *   no side to define "clear of it" from.
      */
-    internal fun dragBy(dx: Float, dy: Float, bounds: IntSize, chromeHeightPx: Float) {
+    internal fun dragBy(dx: Float, dy: Float, bounds: IntSize, chromeHeightPx: Float, obstructions: List<Rect> = emptyList()) {
         if (bounds.width <= 0 || bounds.height <= 0) return
         val keep = MIN_VISIBLE_PX.toFloat()
         val width = size.width.toFloat()
@@ -120,19 +154,104 @@ class AzWindowState(
         val minY = 0f
         val maxY = (bounds.height - chromeHeightPx).coerceAtLeast(minY)
 
-        offsetX = targetX.coerceIn(minX, maxX) - anchorX
-        offsetY = targetY.coerceIn(minY, maxY) - anchorY
+        val (clampedMinX, clampedMaxX, clampedMinY, clampedMaxY) =
+            narrowForObstruction(obstructions, bounds, width, chromeHeightPx, minX, maxX, minY, maxY)
+
+        offsetX = targetX.coerceIn(clampedMinX, clampedMaxX) - anchorX
+        offsetY = targetY.coerceIn(clampedMinY, clampedMaxY) - anchorY
     }
 
     /**
-     * Pulls the window back inside [bounds] after the container changed size — a rotation, a
-     * split-screen resize, a desktop window drag. Without this a window parked near the bottom in
-     * portrait is simply gone in landscape, bar and all.
+     * Pulls the window back inside [bounds] (and clear of [obstructions]) after the container changed
+     * size — a rotation, a split-screen resize, a desktop window drag. Without this a window parked
+     * near the bottom in portrait is simply gone in landscape, bar and all.
      */
-    internal fun clampInto(bounds: IntSize, chromeHeightPx: Float) {
+    internal fun clampInto(bounds: IntSize, chromeHeightPx: Float, obstructions: List<Rect> = emptyList()) {
         if (bounds.width <= 0 || bounds.height <= 0) return
-        dragBy(0f, 0f, bounds, chromeHeightPx)
+        dragBy(0f, 0f, bounds, chromeHeightPx, obstructions)
     }
+
+    /**
+     * Pulls the window **fully** inside [bounds] (and clear of [obstructions]) — not merely the
+     * [MIN_VISIBLE_PX] sliver [dragBy] guarantees while a drag is in progress. Meant to be called
+     * once a drag settles (see [AzWindow]'s `snapFullyOnscreen` param) or the first time the window's
+     * real position is known (its initial placement), not on every frame of a drag in progress —
+     * always enforcing full containment mid-drag would make it impossible to park a window mostly
+     * off-screen on purpose.
+     */
+    internal fun settleFullyOnscreen(bounds: IntSize, chromeHeightPx: Float, obstructions: List<Rect> = emptyList()) {
+        if (bounds.width <= 0 || bounds.height <= 0) return
+        val width = size.width.toFloat()
+        val height = size.height.toFloat()
+
+        val targetX = anchorX + offsetX
+        val targetY = anchorY + offsetY
+
+        val minX = 0f
+        val maxX = (bounds.width - width).coerceAtLeast(minX)
+        val minY = 0f
+        val maxY = (bounds.height - height).coerceAtLeast(minY)
+
+        val (clampedMinX, clampedMaxX, clampedMinY, clampedMaxY) =
+            narrowForObstruction(obstructions, bounds, width, height, minX, maxX, minY, maxY)
+
+        offsetX = targetX.coerceIn(clampedMinX, clampedMaxX) - anchorX
+        offsetY = targetY.coerceIn(clampedMinY, clampedMaxY) - anchorY
+    }
+
+    /**
+     * Narrows an already-computed `(minX, maxX, minY, maxY)` window bound so the window also stays
+     * clear of every rect in [obstructions]. Each obstruction is classified first — a full-height
+     * strip (spanning from `y=0` to `y=bounds.height`, e.g. a left/right-docked rail) only narrows
+     * the X range, and a full-width strip (spanning `x=0` to `x=bounds.width`, e.g. a top/bottom
+     * toolbar) only narrows the Y range. Testing the four edges independently instead would treat a
+     * full-height rail — which touches both `y=0` and `y=bounds.height` by construction, regardless
+     * of which side it's docked on — as also constraining Y, corrupting the window's vertical bound.
+     * A rect that is neither a full-height nor a full-width strip is ignored, since there is no
+     * single side to define "clear of it" from. A degenerate rect that is *both* (i.e. it covers
+     * the entire container) narrows both axes. [verticalExtent] is the window's own extent along
+     * the axis checked against a full-width obstruction — the full window height from
+     * [settleFullyOnscreen], just the chrome bar's height from [dragBy] (which only guarantees the
+     * bar, not the whole window, stays clear).
+     */
+    private fun narrowForObstruction(
+        obstructions: List<Rect>,
+        bounds: IntSize,
+        width: Float,
+        verticalExtent: Float,
+        minX: Float,
+        maxX: Float,
+        minY: Float,
+        maxY: Float,
+    ): DragBounds {
+        if (obstructions.isEmpty()) return DragBounds(minX, maxX, minY, maxY)
+        var newMinX = minX
+        var newMaxX = maxX
+        var newMinY = minY
+        var newMaxY = maxY
+        for (obstruction in obstructions) {
+            val isFullHeight = obstruction.top <= 0f && obstruction.bottom >= bounds.height
+            val isFullWidth = obstruction.left <= 0f && obstruction.right >= bounds.width
+            // Independent ifs, not else-if: a degenerate obstruction that is both a full-height
+            // and a full-width strip (i.e. it covers the entire container) needs both axes
+            // narrowed, not just whichever classification happened to be checked first.
+            if (isFullHeight) {
+                if (obstruction.left <= 0f) newMinX = newMinX.coerceAtLeast(obstruction.right)
+                if (obstruction.right >= bounds.width) newMaxX = newMaxX.coerceAtMost(obstruction.left - width)
+            }
+            if (isFullWidth) {
+                if (obstruction.top <= 0f) newMinY = newMinY.coerceAtLeast(obstruction.bottom)
+                if (obstruction.bottom >= bounds.height) newMaxY = newMaxY.coerceAtMost(obstruction.top - verticalExtent)
+            }
+        }
+        // A rail wider/taller than the container (or a degenerate rect) can invert the range;
+        // collapse to a single point rather than leave min > max for `coerceIn` to throw on.
+        if (newMinX > newMaxX) newMaxX = newMinX
+        if (newMinY > newMaxY) newMaxY = newMinY
+        return DragBounds(newMinX, newMaxX, newMinY, newMaxY)
+    }
+
+    private data class DragBounds(val minX: Float, val maxX: Float, val minY: Float, val maxY: Float)
 
     /** Returns the window to where its parent put it. */
     fun resetPosition() {
@@ -187,6 +306,24 @@ fun rememberAzWindowState(
  * @param movable Whether the grab bar drags the window.
  * @param minimizable Whether the grab bar offers the fold control.
  * @param onDismiss Close handler; null draws no close control.
+ * @param obstruction An additional rect (in window/container px coordinates — e.g. from
+ *   [androidx.compose.ui.layout.positionInWindow] on the obstruction's own layout) the window is
+ *   kept clear of, on top of the screen bounds it is already clamped to. Meant for chrome this
+ *   library itself draws on top of the window, such as a docked [AzNavRail] — pass a rect covering
+ *   the rail's own gutter so the window can never land or be dragged fully underneath it. Only the
+ *   edge(s) the rect touches are enforced; see [AzWindowState.dragBy]. For more than one rect
+ *   (several sibling rails/toolbars) use [obstructions] instead — both are honoured together.
+ * @param obstructions Like [obstruction] but for any number of rects at once — e.g. every other
+ *   docked rail/toolbar on screen the window should never land or be dragged underneath.
+ * @param snapFullyOnscreen When true, releasing a drag pulls the window **fully** back inside the
+ *   screen (and clear of [obstruction]/[obstructions]) instead of only guaranteeing the
+ *   [AzWindowState]-internal 96px sliver stays reachable while dragging. Off by default, since
+ *   always forcing full containment isn't every host's preferred feel — some want a window parkable
+ *   mostly off-screen. The window's *initial* placement is always fully clamped on open, regardless
+ *   of this flag — only mid-drag and post-drag behavior differ.
+ * @param onDragEnd Called with the window's resulting offset each time a drag gesture ends (after
+ *   [snapFullyOnscreen] has been applied, if enabled) — e.g. to persist the position, or to react to
+ *   the user having moved the window without polling [state] on every frame.
  * @param content The window's body. Not composed while minimized.
  */
 @Composable
@@ -199,16 +336,21 @@ fun AzWindow(
     movable: Boolean = true,
     minimizable: Boolean = true,
     onDismiss: (() -> Unit)? = null,
+    obstruction: Rect? = null,
+    obstructions: List<Rect> = emptyList(),
+    snapFullyOnscreen: Boolean = false,
+    onDragEnd: ((Offset) -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     val resolvedAccent = accent.takeOrElse { MaterialTheme.colorScheme.primary }
     val containerSize = LocalWindowInfo.current.containerSize
     val chromeHeightPx = with(LocalDensity.current) { AzWindowDefaults.ChromeHeight.toPx() }
+    val allObstructions = if (obstruction != null) obstructions + obstruction else obstructions
 
     // A container that changed size (rotation, split-screen, a resized desktop window) can leave a
     // window parked outside it. Pull it back rather than stranding it.
-    LaunchedEffect(containerSize, chromeHeightPx) {
-        state.clampInto(containerSize, chromeHeightPx)
+    LaunchedEffect(containerSize, chromeHeightPx, allObstructions) {
+        state.clampInto(containerSize, chromeHeightPx, allObstructions)
     }
 
     Surface(
@@ -217,6 +359,14 @@ fun AzWindow(
             .onGloballyPositioned { coordinates ->
                 val position = coordinates.positionInWindow()
                 state.onPositioned(position.x, position.y, coordinates.size)
+                // The very first time the window's real position/size are known, force it fully
+                // onscreen: a window can open anchored beside whatever raised it (e.g. a long-press
+                // menu beside a rail item near a screen edge), and nothing before this point has ever
+                // clamped that placement against the actual screen bounds.
+                if (!state.hasSettledInitial) {
+                    state.hasSettledInitial = true
+                    state.settleFullyOnscreen(containerSize, chromeHeightPx, allObstructions)
+                }
             },
         shape = AzWindowDefaults.Shape,
         color = surfaceColor,
@@ -234,6 +384,9 @@ fun AzWindow(
                 onDismiss = onDismiss,
                 containerSize = containerSize,
                 chromeHeightPx = chromeHeightPx,
+                obstruction = allObstructions,
+                snapFullyOnscreen = snapFullyOnscreen,
+                onDragEnd = onDragEnd,
             )
             // Folding must not destroy what the window holds. The body stays in composition and is
             // merely given no room, so a half-typed field in a hidden menu — the very thing this
@@ -291,12 +444,22 @@ private fun AzWindowChrome(
     onDismiss: (() -> Unit)?,
     containerSize: IntSize,
     chromeHeightPx: Float,
+    obstruction: List<Rect>,
+    snapFullyOnscreen: Boolean,
+    onDragEnd: ((Offset) -> Unit)?,
 ) {
     val dragModifier = if (movable) {
-        Modifier.pointerInput(containerSize, chromeHeightPx) {
-            detectDragGestures { change, dragAmount ->
+        Modifier.pointerInput(containerSize, chromeHeightPx, obstruction, snapFullyOnscreen) {
+            detectDragGestures(
+                onDragEnd = {
+                    if (snapFullyOnscreen) {
+                        state.settleFullyOnscreen(containerSize, chromeHeightPx, obstruction)
+                    }
+                    onDragEnd?.invoke(Offset(state.offsetX, state.offsetY))
+                },
+            ) { change, dragAmount ->
                 change.consume()
-                state.dragBy(dragAmount.x, dragAmount.y, containerSize, chromeHeightPx)
+                state.dragBy(dragAmount.x, dragAmount.y, containerSize, chromeHeightPx, obstruction)
             }
         }
     } else {
