@@ -44,6 +44,7 @@ import {
   topRowWidthPx,
 } from '../services/floatingDockMath';
 import { AzUnattachedFloatingStore } from '../services/unattachedFloatingStore';
+import { isSafeExternalUrl } from '../util/AzSafeUrl';
 
 /** Config the unattached layer needs from the rail's own settings. */
 export interface AzUnattachedRailConfig {
@@ -676,7 +677,7 @@ const HiddenMenuWindow: React.FC<{
                 shape={AzButtonShape.NONE}
                 onClick={() => {
                   menuItem.onClick?.();
-                  if (menuItem.route) {
+                  if (menuItem.route && isSafeExternalUrl(menuItem.route)) {
                     Linking.openURL(menuItem.route).catch(() => {});
                   }
                   onDismiss();

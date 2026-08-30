@@ -24,6 +24,7 @@ import { AzAuthorProfile, AzDocEntry } from '../services/githubDocs';
 import { AzMoreFromApp } from '../services/moreFromAz';
 import { azAboutPrefetch } from '../services/aboutPrefetch';
 import { useAzAccent, AZ_ACCENT_FALLBACK } from '../AzRailPalette';
+import { isSafeExternalUrl } from '../util/AzSafeUrl';
 
 /**
  * The About reader's own palette: dark ground, light ink, in every theme.
@@ -544,7 +545,9 @@ const MoreFromAzHeroCarousel: React.FC<{
                   if (isActive) {
                     const url =
                       item.webUrl || item.playStoreUrl || item.githubUrl;
-                    if (url) Linking.openURL(url).catch(() => {});
+                    if (url && isSafeExternalUrl(url)) {
+                      Linking.openURL(url).catch(() => {});
+                    }
                   } else {
                     centerOn(index);
                   }
@@ -584,7 +587,7 @@ const ActiveAppPanel: React.FC<{ app: AzMoreFromApp; accent: string }> = ({
   accent,
 }) => {
   const open = (u?: string) => {
-    if (!u) return;
+    if (!u || !isSafeExternalUrl(u)) return;
     Linking.openURL(u).catch(() => {});
   };
   return (

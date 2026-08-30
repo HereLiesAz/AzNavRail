@@ -69,6 +69,14 @@ export const AzWindow: React.FC<AzWindowProps> = ({
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const offset = useRef({ x: 0, y: 0 });
   const size = useRef({ width: 0, height: 0 });
+  // The window's own on-screen position *before* any drag offset — i.e. wherever the caller placed
+  // it via `style`. The clamp has to work in absolute screen coordinates (anchor + offset), or a
+  // window placed away from the origin is clamped as if it sat at (0, 0): dragged left, it could
+  // vanish off the real left edge long before `offset.x` reached its clamp bound, and dragged right
+  // it could be stopped well short of the real right edge. Re-measured on every layout so a caller
+  // that repositions the window (rotation, a resized container) keeps a correct anchor.
+  const anchor = useRef({ x: 0, y: 0 });
+  const viewRef = useRef<View>(null);
 
   const panResponder = useMemo(
     () =>
@@ -81,18 +89,34 @@ export const AzWindow: React.FC<AzWindowProps> = ({
           // Clamp so the window can be pushed to any edge but never entirely off it: at least a
           // title-bar's worth stays inside on every side. A window you can lose is a window you
           // have to reopen.
-          const maxX = win.width - keep;
-          const minX = Math.min(0, -(size.current.width - keep));
-          const maxY = win.height - keep;
-          const minY = Math.min(0, -(size.current.height - keep));
-          const x = Math.min(maxX, Math.max(minX, offset.current.x + gesture.dx));
-          const y = Math.min(maxY, Math.max(minY, offset.current.y + gesture.dy));
-          pan.setValue({ x, y });
+          const targetX = anchor.current.x + offset.current.x + gesture.dx;
+          const targetY = anchor.current.y + offset.current.y + gesture.dy;
+          const minX = -Math.max(size.current.width - keep, 0);
+          const maxX = Math.max(win.width - keep, minX);
+          const minY = -Math.max(size.current.height - keep, 0);
+          const maxY = Math.max(win.height - keep, minY);
+          const clampedX = Math.min(maxX, Math.max(minX, targetX));
+          const clampedY = Math.min(maxY, Math.max(minY, targetY));
+          pan.setValue({
+            x: clampedX - anchor.current.x,
+            y: clampedY - anchor.current.y,
+          });
         },
         onPanResponderRelease: (_evt, gesture) => {
+          // Commit the same clamped value the last move already rendered — not the raw,
+          // unclamped accumulation — so a drag that ended pinned against an edge doesn't leave
+          // `offset` holding a value the window was never actually shown at.
+          const win = Dimensions.get('window');
+          const keep = AzWindowDefaults.minVisible;
+          const targetX = anchor.current.x + offset.current.x + gesture.dx;
+          const targetY = anchor.current.y + offset.current.y + gesture.dy;
+          const minX = -Math.max(size.current.width - keep, 0);
+          const maxX = Math.max(win.width - keep, minX);
+          const minY = -Math.max(size.current.height - keep, 0);
+          const maxY = Math.max(win.height - keep, minY);
           offset.current = {
-            x: offset.current.x + gesture.dx,
-            y: offset.current.y + gesture.dy,
+            x: Math.min(maxX, Math.max(minX, targetX)) - anchor.current.x,
+            y: Math.min(maxY, Math.max(minY, targetY)) - anchor.current.y,
           };
         },
       }),
@@ -101,12 +125,19 @@ export const AzWindow: React.FC<AzWindowProps> = ({
 
   return (
     <Animated.View
+      ref={viewRef}
       testID={testID}
       onLayout={(e) => {
         size.current = {
           width: e.nativeEvent.layout.width,
           height: e.nativeEvent.layout.height,
         };
+        viewRef.current?.measureInWindow((pageX, pageY) => {
+          anchor.current = {
+            x: pageX - offset.current.x,
+            y: pageY - offset.current.y,
+          };
+        });
       }}
       style={[
         styles.window,

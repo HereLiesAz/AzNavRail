@@ -237,7 +237,19 @@ export function computeAutoEdges(
   });
   for (const item of items) {
     if (item.isDivider) continue;
-    const visibleFrom = item.isRailItem ? 'az.app.ready' : 'az.rail.expanded';
+    // A sub-item never renders at all — in the menu, or inline in the collapsed strip even when it
+    // is itself `isRailItem` — until its host is expanded (see `AzNavRail`'s `subItemsMap`/
+    // `hostStates`-gated recursion). Gating it on `isRailItem` alone instead, as if it were reachable
+    // as soon as the app is ready, produced an edge pointing at an item that was not on screen yet:
+    // the guidance overlay would spotlight it (or route a tutorial step to it) while it sat inside a
+    // still-collapsed host, unreachable. `az.host.<hostId>.expanded` is exactly the status the
+    // `isHost` branch below already arms once that host's own edge is taken, so this chains through
+    // BFS the same way a multi-level host nesting would.
+    const visibleFrom = item.hostId
+      ? `az.host.${item.hostId}.expanded`
+      : item.isRailItem
+        ? 'az.app.ready'
+        : 'az.rail.expanded';
     const highlight: AzGuideHighlight = { type: 'Item', id: item.id };
     const tap = tapLabel(item.text || item.id);
     if (item.isHost) {
