@@ -12,6 +12,7 @@ import {
 import { AzLoad } from './AzLoad';
 import { fetchMoreFromAz, AzMoreFromApp } from '../services/moreFromAz';
 import { useAzAccent, AZ_ACCENT_FALLBACK } from '../AzRailPalette';
+import { isSafeExternalUrl } from '../util/AzSafeUrl';
 
 interface MoreFromAzOverlayProps {
   jsonUrl: string;
@@ -58,7 +59,8 @@ export const MoreFromAzOverlay: React.FC<MoreFromAzOverlayProps> = ({
     };
   }, [jsonUrl]);
 
-  const open = (url?: string) => url && Linking.openURL(url).catch(() => {});
+  const open = (url?: string) =>
+    url && isSafeExternalUrl(url) && Linking.openURL(url).catch(() => {});
 
   return (
     <View style={[styles.overlay, { backgroundColor: surface }]}>

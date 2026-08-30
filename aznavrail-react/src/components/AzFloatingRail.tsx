@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Modal,
   PanResponder,
@@ -74,24 +74,45 @@ export function AzFloatingRail(
     initialY = 80,
     style,
   } = props;
-  const offsetRef = useRef({ x: initialX, y: initialY });
+  // `offsetRef` is the always-current authoritative position, read from `onPanResponderGrant` so a
+  // second drag anchors off where the first one actually ended rather than a closure captured when
+  // the (deliberately stable) PanResponder was created. `offset` state exists only to force the
+  // re-render `offsetRef` alone — a plain ref mutation — could never trigger.
+  const [offset, setOffset] = useState({ x: initialX, y: initialY });
+  const offsetRef = useRef(offset);
+  const dragStartRef = useRef(offset);
   const containerRef = useRef<View | null>(null);
+
+  const moveTo = (x: number, y: number) => {
+    offsetRef.current = { x, y };
+    setOffset({ x, y });
+  };
 
   const panResponder: PanResponderInstance = React.useMemo(
     () =>
       PanResponder.create({
         onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: () => {
+          dragStartRef.current = offsetRef.current;
+        },
         onPanResponderMove: (_e, gesture) => {
+          moveTo(
+            dragStartRef.current.x + gesture.dx,
+            dragStartRef.current.y + gesture.dy
+          );
           onDrag?.(gesture.dx, gesture.dy);
         },
         onPanResponderRelease: (_e, gesture) => {
-          offsetRef.current = {
-            x: offsetRef.current.x + gesture.dx,
-            y: offsetRef.current.y + gesture.dy,
-          };
+          moveTo(
+            dragStartRef.current.x + gesture.dx,
+            dragStartRef.current.y + gesture.dy
+          );
           onDragEnd?.();
         },
       }),
+    // Deliberately stable across drags: everything it needs beyond onDrag/onDragEnd (`moveTo`
+    // included) is read from refs at call time, so recreating it — and risking a gesture already in
+    // progress — is never necessary just because the position changed.
     [onDrag, onDragEnd]
   );
 
@@ -101,11 +122,7 @@ export function AzFloatingRail(
     <View
       ref={containerRef}
       {...panResponder.panHandlers}
-      style={[
-        styles.rail,
-        { left: offsetRef.current.x, top: offsetRef.current.y },
-        style,
-      ]}
+      style={[styles.rail, { left: offset.x, top: offset.y }, style]}
     >
       {children}
     </View>
