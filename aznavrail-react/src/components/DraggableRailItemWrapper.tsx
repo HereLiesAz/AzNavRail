@@ -14,6 +14,7 @@ import { AzButton } from './AzButton';
 import { AzTextBox } from './AzTextBox';
 import { AzWindow } from './AzWindow';
 import { useAzAccent, AZ_ACCENT_FALLBACK } from '../AzRailPalette';
+import { isSafeExternalUrl } from '../util/AzSafeUrl';
 
 /** Internal props for `DraggableRailItemWrapper`. */
 interface DraggableRailItemWrapperProps {
@@ -179,7 +180,7 @@ export const DraggableRailItemWrapper: React.FC<
                   style={styles.hiddenMenuItem}
                   onPress={() => {
                     if (menuItem.onClick) menuItem.onClick();
-                    if (menuItem.route) {
+                    if (menuItem.route && isSafeExternalUrl(menuItem.route)) {
                       Linking.openURL(menuItem.route).catch((err) =>
                         console.error("Couldn't open URL", err)
                       );

@@ -42,6 +42,7 @@ import { useAzAboutWarmup } from '../services/aboutPrefetch';
 import { AzKineticItem, useAzClosing } from './AzKinetics';
 import { solveHybridJustify } from '../util/AzJustify';
 import { useAzAccent, useAzPanelColor, azReadableOn } from '../AzRailPalette';
+import { isSafeExternalUrl } from '../util/AzSafeUrl';
 
 const DROPDOWN_BASE_FONT_PX = 16;
 
@@ -700,11 +701,7 @@ const AzDropdownFooter: React.FC<{
   // Only open safe schemes — this also runs on the web via react-native-web, where a `javascript:`
   // URL would otherwise execute.
   const open = (url: string) => {
-    const isSafe =
-      url.startsWith('http://') ||
-      url.startsWith('https://') ||
-      url.startsWith('mailto:');
-    if (isSafe) Linking.openURL(url).catch(() => {});
+    if (isSafeExternalUrl(url)) Linking.openURL(url).catch(() => {});
   };
   const onAbout = () => {
     if (!appRepositoryUrl) return;

@@ -138,6 +138,12 @@ export const AzInstructionOverlay: React.FC<Props> = ({
               onTap={
                 tappable && onAdvance ? () => onAdvance(stepKey) : undefined
               }
+              accessibilityLabel={calloutAccessibilityLabel(r)}
+              accessibilityHint={
+                tappable
+                  ? 'Double tap to continue.'
+                  : 'Guidance is showing. Use the skip action to dismiss it.'
+              }
               style={{
                 position: 'absolute',
                 left: rect.left,
@@ -170,14 +176,41 @@ const center = (r: AzShapeBounds) => ({
   y: r.top + r.height / 2,
 });
 
-/** A callout wrapper: a swipe past a threshold cancels guidance; a clean tap advances an info step. */
+/** What a screen reader announces for one callout: its instruction, plus step position if paged. */
+function calloutAccessibilityLabel(r: ResolvedInstruction): string {
+  const { title, text } = r.instruction;
+  const label = title ? `${title}. ${text}` : text;
+  return r.stepTotal > 1
+    ? `${label}. Step ${r.stepIndex + 1} of ${r.stepTotal}.`
+    : label;
+}
+
+/**
+ * A callout wrapper: a swipe past a threshold cancels guidance; a clean tap advances an info step.
+ *
+ * Both are raw touch gestures a screen reader intercepts for its own navigation, so neither is
+ * reachable once VoiceOver/TalkBack is running — this exposes the same two actions through the
+ * accessibility tree instead: `onAccessibilityTap` mirrors the platform's own double-tap-to-activate
+ * for the tap-to-advance case, and a custom "Skip guidance" action (surfaced to TalkBack's action
+ * menu, and to VoiceOver via the standard two-finger "magic tap") mirrors the swipe-to-dismiss case.
+ */
 const CalloutGesture: React.FC<{
   onSwipe: () => void;
   onTap?: () => void;
+  accessibilityLabel: string;
+  accessibilityHint: string;
   style: ViewStyle;
   onLayout: (e: LayoutChangeEvent) => void;
   children: React.ReactNode;
-}> = ({ onSwipe, onTap, style, onLayout, children }) => {
+}> = ({
+  onSwipe,
+  onTap,
+  accessibilityLabel,
+  accessibilityHint,
+  style,
+  onLayout,
+  children,
+}) => {
   const onSwipeRef = useRef(onSwipe);
   onSwipeRef.current = onSwipe;
   const onTapRef = useRef(onTap);
@@ -195,7 +228,22 @@ const CalloutGesture: React.FC<{
     })
   ).current;
   return (
-    <View {...handlers.panHandlers} style={style} onLayout={onLayout}>
+    <View
+      {...handlers.panHandlers}
+      style={style}
+      onLayout={onLayout}
+      accessible
+      accessibilityRole={onTap ? 'button' : 'text'}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
+      accessibilityLiveRegion="polite"
+      onAccessibilityTap={onTap}
+      onMagicTap={onSwipe}
+      accessibilityActions={[{ name: 'skip', label: 'Skip guidance' }]}
+      onAccessibilityAction={(e) => {
+        if (e.nativeEvent.actionName === 'skip') onSwipe();
+      }}
+    >
       {children}
     </View>
   );

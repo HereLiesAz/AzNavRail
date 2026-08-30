@@ -74,6 +74,7 @@ import {
 import { AzInstructionOverlay } from './components/AzInstructionOverlay';
 import { AzUnattachedRail } from './components/AzUnattachedRail';
 import { resolveHighlight } from './highlight';
+import { isSafeExternalUrl } from './util/AzSafeUrl';
 export { resolveHighlight };
 
 /** Props for the `AzNavRail` component, extending all `AzNavRailSettings` options. */
@@ -333,6 +334,27 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     },
     [config]
   );
+
+  // `itemBounds` only ever grows via `handleItemLayout` — an item that stops rendering (a host
+  // collapses its sub-items, `items` itself shrinks) never gets its entry removed. Left alone, the
+  // guidance/help overlay can go on spotlighting a rect from an item that no longer exists,
+  // pointing at wherever that item used to be instead of at anything currently on screen. Prune down
+  // to whatever `items` still declares whenever it changes.
+  useEffect(() => {
+    const validIds = new Set(items.map((item) => item.id));
+    setItemBounds((prev) => {
+      const next: Record<string, any> = {};
+      let changed = false;
+      for (const id of Object.keys(prev)) {
+        if (validIds.has(id)) {
+          next[id] = prev[id];
+        } else {
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [items]);
 
   const subItemsMap = useMemo(() => {
     const map: Record<string, AzNavItem[]> = {};
@@ -858,10 +880,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       setShowAbout((prev) => !prev);
     } else if (config.appRepositoryUrl) {
       // Only follow safe web URLs — on react-native-web a `javascript:` URL would otherwise execute.
-      const isSafe =
-        config.appRepositoryUrl.startsWith('http://') ||
-        config.appRepositoryUrl.startsWith('https://');
-      if (isSafe) {
+      if (isSafeExternalUrl(config.appRepositoryUrl)) {
         Linking.openURL(config.appRepositoryUrl).catch((e) =>
           console.error('Could not open About', e)
         );
@@ -1831,6 +1850,17 @@ const AzGuidanceLayer: React.FC<{
   // Auto-advance + reactive step-cursor sync; and de-dup: once a shown hop's `to` is reached, consume it
   // so that hop is never re-shown (even if the user later undoes the action).
   const pendingConsume = useRef<Set<string>>(new Set());
+  // `consumedStatuses` only ever shrinks back to empty via disable(), the global skip(), or
+  // resetGuidance() — every one of them a "wipe the de-dup bookkeeping" operation. `pendingConsume`
+  // exists purely to repopulate that same bookkeeping, so it has to be wiped in lockstep: without
+  // this, a status that was already true before the reset gets fed straight back through on the very
+  // next render (it is still in `pendingConsume` and still in `activeStatuses`), re-consuming itself
+  // and making the reset a no-op for anything the app's state hadn't independently changed.
+  useEffect(() => {
+    if (guidance.consumedStatuses.size === 0) {
+      pendingConsume.current.clear();
+    }
+  }, [guidance.consumedStatuses]);
   useEffect(() => {
     if (!guidance.enabled) return;
     frame.reachedGoals.forEach((g) => guidance.markReached(g));

@@ -142,6 +142,15 @@ export const RailMenuItem: React.FC<RailMenuItemProps> = ({
     return undefined;
   }, [item.badge, item.persistentBadge]);
 
+  // The cycler debounce below fires `item.onClick` up to a second after the tap. Without this the
+  // timer outlives a menu item that closed or unmounted in the meantime (the menu collapsed, the
+  // rail item list re-filtered) and still fires the click against whatever is left of its closure.
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
   const handlePress = () => {
     if (item.isHost) {
       onToggleHost();

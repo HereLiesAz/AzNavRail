@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text, View, Linking, StyleSheet } from 'react-native';
 import { AzAboutColors } from './AboutOverlay';
+import { isSafeExternalUrl } from '../util/AzSafeUrl';
 
 /**
  * A tiny dependency-free Markdown renderer for the React Native About reader, themed to AzNavRail.
@@ -54,7 +55,9 @@ function renderInline(text: string, accent: string): React.ReactNode[] {
         <Text
           key={k}
           style={[styles.link, { color: accent }]}
-          onPress={() => Linking.openURL(url).catch(() => {})}
+          onPress={() => {
+            if (isSafeExternalUrl(url)) Linking.openURL(url).catch(() => {});
+          }}
         >
           {m[12]}
         </Text>
