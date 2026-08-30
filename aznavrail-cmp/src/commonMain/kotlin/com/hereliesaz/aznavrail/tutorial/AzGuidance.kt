@@ -44,7 +44,7 @@ class AzGuidanceController(
     val completedGoals: List<String> get() = _completed
 
     private val _dismissed = mutableStateListOf<String>().apply { addAll(initialDismissed) }
-    /** Goal ids the user skipped, so a skipped tutorial is never shown again this session. */
+    /** Goal ids the user skipped (persisted), so a skipped tutorial is never shown again until reset. */
     val dismissedGoals: List<String> get() = _dismissed
     fun isDismissed(goalId: String): Boolean = goalId in _dismissed
 
@@ -56,7 +56,7 @@ class AzGuidanceController(
     /** Mark [status] consumed (idempotent). Called by the rail when a shown hop's `to` becomes true. */
     internal fun consume(status: String) { if (status !in _consumed) _consumed.add(status) }
 
-    // --- Paged-edge step cursor (transient; only goal completion persists) ---
+    // --- Paged-edge step cursor (transient — completion and dismissal persist, this does not) ---
     private val _stepCursor = mutableStateMapOf<String, Int>()
     /** Current step index for the paged edge identified by [key] (see `AzEdge.stepKey()`). */
     fun stepIndex(key: String): Int = _stepCursor[key] ?: 0

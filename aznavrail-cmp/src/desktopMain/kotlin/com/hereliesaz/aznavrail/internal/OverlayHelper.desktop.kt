@@ -6,7 +6,5 @@ package com.hereliesaz.aznavrail.internal
 internal actual object OverlayHelper {
     actual fun launch(context: Any?, serviceClass: Any?) {
         // Desktop does not require permission requests or Android service launching.
-        // Overlays on desktop are spawned implicitly by rendering an AzOverlayHost,
-        // or can be customized if needed.
     }
 }
