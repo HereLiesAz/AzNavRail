@@ -18,17 +18,6 @@ figma.ui.onmessage = async (msg) => {
       return node;
     }
 
-    // Helper to create Auto Layout frame
-    function createAutoLayout(name: string, direction: "HORIZONTAL" | "VERTICAL") {
-      const frame = figma.createFrame();
-      frame.name = name;
-      frame.layoutMode = direction;
-      frame.primaryAxisSizingMode = "AUTO";
-      frame.counterAxisSizingMode = "AUTO";
-      frame.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1 } }];
-      return frame;
-    }
-
     // --- Generate AzNavRailButton Component ---
     const azRailBtnDefault = figma.createComponent();
     azRailBtnDefault.name = "AzNavRailButton / Default";
