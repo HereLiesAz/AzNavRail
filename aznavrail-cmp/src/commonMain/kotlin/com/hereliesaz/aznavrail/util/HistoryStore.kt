@@ -12,8 +12,6 @@ import kotlinx.coroutines.sync.withLock
  * backed by `azCacheSettings`, maintaining the same call surface.
  */
 import com.hereliesaz.aznavrail.service.azCacheSettings
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 internal object HistoryStore {
@@ -35,18 +33,23 @@ internal object HistoryStore {
     /**
      * Records a submitted value at the front of the history for [historyContext].
      * No-ops when [text] is blank or the suggestion limit is 0.
+     *
+     * Suspends rather than launching its own detached job: a caller (necessarily inside some
+     * `CoroutineScope`, e.g. one bound to the composition) controls where and when this actually
+     * runs, so it lands on the same dispatcher queue as a subsequent [getSuggestions] call — the
+     * write is guaranteed visible to a suggestions query issued right after, matching the Android
+     * sibling's synchronous `HistoryManager.addEntry`. A detached `GlobalScope` launch here would
+     * race an immediately-following `getSuggestions` call on an unrelated dispatcher.
      */
-    fun addEntry(text: String, historyContext: String?) {
+    suspend fun addEntry(text: String, historyContext: String?) {
         val ctx = historyContext ?: DEFAULT_HISTORY_CONTEXT
         if (text.isBlank() || maxSuggestions == 0) return
-        GlobalScope.launch {
-            mutex.withLock {
-                ensureLoaded(ctx)
-                val list = histories.getOrPut(ctx) { mutableListOf() }
-                list.remove(text)
-                list.add(0, text)
-                azCacheSettings.putString("az_history_$ctx", Json.encodeToString(list))
-            }
+        mutex.withLock {
+            ensureLoaded(ctx)
+            val list = histories.getOrPut(ctx) { mutableListOf() }
+            list.remove(text)
+            list.add(0, text)
+            azCacheSettings.putString("az_history_$ctx", Json.encodeToString(list))
         }
     }
 

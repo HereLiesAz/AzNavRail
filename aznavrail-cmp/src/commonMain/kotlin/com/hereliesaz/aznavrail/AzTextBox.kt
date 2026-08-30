@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,6 +52,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.hereliesaz.aznavrail.util.HistoryStore
 import com.hereliesaz.aznavrail.internal.AzIcons
+import kotlinx.coroutines.launch
 
 /**
  * Object holding global defaults for [AzTextBox].
@@ -187,6 +189,8 @@ fun AzTextBox(
         textColor ?: outlineColor
     }
 
+    val coroutineScope = rememberCoroutineScope()
+
     LaunchedEffect(suggestionLimit) {
         HistoryStore.updateSettings(suggestionLimit)
     }
@@ -307,7 +311,14 @@ fun AzTextBox(
                             .then(if (enabled) Modifier.clickable {
                                 onSubmit(text)
                                 if (!secret) {
-                                    HistoryStore.addEntry(text, historyContext)
+                                    // Launched on this composition's own scope (not a detached
+                                    // GlobalScope job) so it lands on the same dispatcher queue as
+                                    // the `LaunchedEffect(text)` above: a suggestions query issued
+                                    // right after this submit sees the just-added entry, matching
+                                    // the Android sibling's synchronous `HistoryManager.addEntry`.
+                                    coroutineScope.launch {
+                                        HistoryStore.addEntry(text, historyContext)
+                                    }
                                 }
                                 if (onValueChange == null) {
                                     onTextChange("")
