@@ -33,12 +33,22 @@ jobs:
       uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
 
     - name: Build with Gradle
-      run: ./gradlew build
+      # JITPACK=true excludes SampleApp and the CMP demo from the project entirely (see
+      # settings.gradle.kts) — neither is a published artifact, and SampleApp's release-variant
+      # R8/multidex mergeDexRelease is the single heaviest task in this whole build, having
+      # previously exhausted a build VM's disk mid-release for no publishable benefit. `assemble`
+      # rather than `build` also skips `check`, which would otherwise pull in aznavrail-cmp's
+      # wasmJs test target and its Node.js download — a download `PREFER_SETTINGS` repository mode
+      # has no settings-level repository for, failing outright regardless of SampleApp/the demo.
+      run: ./gradlew assemble
+      env:
+        JITPACK: true
 
     # The USERNAME and TOKEN need to correspond to the credentials environment variables used in
     # the publishing section of your build.gradle
     - name: Publish to GitHub Packages
       run: ./gradlew publish
       env:
+        JITPACK: true
         USERNAME: ${{ github.actor }}
         TOKEN: ${{ secrets.GITHUB_TOKEN }}
