@@ -7,11 +7,13 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -437,7 +439,12 @@ fun AzWindow(
         tonalElevation = 2.dp,
         shadowElevation = 8.dp,
     ) {
-        Column {
+        // Bounded to the chrome/body's own intrinsic width, not the ancestor's — otherwise the
+        // chrome row's fillMaxWidth() (needed to let its title stretch between the fixed-size grip
+        // and controls) would inherit whatever loose max width a screen-filling ancestor (e.g. a
+        // hidden-menu Popup's fillMaxSize Box) hands down, stretching the whole window edge to edge
+        // regardless of how little its content actually needs.
+        Column(modifier = Modifier.width(IntrinsicSize.Max)) {
             AzWindowChrome(
                 title = title,
                 accent = resolvedAccent,
