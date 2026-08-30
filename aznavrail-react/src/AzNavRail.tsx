@@ -1056,6 +1056,8 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
           offsetY={itemOffsets.current[item.id] || new Animated.Value(0)}
           style={commonProps.style}
           translucentBackground={config.translucentBackground}
+          dockingSide={overrideConfig.dockingSide}
+          railWidth={overrideConfig.collapsedRailWidth}
         />
       );
     }
