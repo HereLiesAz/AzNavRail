@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performTouchInput
 import androidx.navigation.compose.rememberNavController
+import androidx.test.core.app.ApplicationProvider
 import com.hereliesaz.aznavrail.AzHostActivityLayout
 import com.hereliesaz.aznavrail.model.AzUnattachedAnchor
 import org.junit.Assert.assertTrue
@@ -134,6 +135,40 @@ class AzFloatingDockGroupTest {
         assertTrue(
             "Docked rail B should start right where A's stack ends, not floating independently",
             kotlin.math.abs(newBoundsB.left.value - newBoundsA.right.value) < 32f,
+        )
+    }
+
+    @Test
+    fun `a FLOATING host docked OPPOSITE stacks below a fixed OPPOSITE host, including its expanded sub-items`() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        // Pre-seed the floating host's persisted resting spot so it renders already docked to the
+        // OPPOSITE edge, instead of choreographing a fragile drag-to-edge gesture.
+        AzUnattachedStore.saveFloating(
+            context, "floatingHost", AzFloatingSave(AzFloatingDock.OPPOSITE, 0f, 0f),
+        )
+
+        composeTestRule.setContent {
+            val navController = rememberNavController()
+            AzHostActivityLayout(navController = navController) {
+                azUnattachedHostItem(
+                    id = "fixedHost", text = "Fixed", anchor = AzUnattachedAnchor.OPPOSITE, initiallyExpanded = true,
+                )
+                azRailRelocItem(id = "fixedChild", hostId = "fixedHost", text = "Child", onClick = {})
+                azUnattachedHostItem(id = "floatingHost", text = "Floating", anchor = AzUnattachedAnchor.FLOATING)
+                onscreen { }
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        val childBounds = composeTestRule
+            .onNodeWithContentDescription("Child", useUnmergedTree = true)
+            .getUnclippedBoundsInRoot()
+        val floatingBounds = composeTestRule.onNodeWithContentDescription("Floating").getUnclippedBoundsInRoot()
+
+        assertTrue(
+            "A FLOATING host docked OPPOSITE should stack below the fixed OPPOSITE stack's fully " +
+                "unfolded sub-items, not overlap them",
+            floatingBounds.top.value >= childBounds.bottom.value - 1f,
         )
     }
 }

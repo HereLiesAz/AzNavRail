@@ -188,6 +188,13 @@ internal fun AzUnattachedRail(
 
     val byAnchor = unattached.groupBy { it.unattachedAnchor ?: AzUnattachedAnchor.OPPOSITE }
 
+    // Live footprint of the two fixed (non-FLOATING) stacks, so a FLOATING rail docking to the same
+    // screen edge below can reserve room instead of landing on top of them — see the `onSizeChanged`
+    // wiring below and its use in `FloatingDockGroup`'s `edgeDockedPosition`. Zero when the anchor has
+    // no hosts, which correctly reserves no room at all.
+    var oppositeStackSize by remember { mutableStateOf(IntSize.Zero) }
+    var bottomStackSize by remember { mutableStateOf(IntSize.Zero) }
+
     Box(modifier = modifier.fillMaxSize()) {
         byAnchor[AzUnattachedAnchor.OPPOSITE]?.let { hosts ->
             UnattachedStack(
@@ -208,6 +215,7 @@ internal fun AzUnattachedRail(
                 // This stack sits at the corner opposite the main rail, so a nested-rail popup opens
                 // back toward the rail (away from the screen edge) exactly like the rail's own items.
                 popupOpensLeft = railOnLeft,
+                onSizeChanged = { oppositeStackSize = it },
             )
         }
 
@@ -228,6 +236,7 @@ internal fun AzUnattachedRail(
                 onMenuOpen = onMenuOpen,
                 onHiddenMenuDismiss = onHiddenMenuDismiss,
                 popupOpensLeft = railOnLeft,
+                onSizeChanged = { bottomStackSize = it },
             )
         }
 
@@ -247,6 +256,8 @@ internal fun AzUnattachedRail(
                 railOnLeft = railOnLeft,
                 screenWidthPx = screenWidthPx,
                 screenHeightPx = screenHeightPx,
+                oppositeStackHeightPx = oppositeStackSize.height.toFloat(),
+                bottomStackWidthPx = bottomStackSize.width.toFloat(),
             )
         }
     }
@@ -272,9 +283,16 @@ private fun UnattachedStack(
     onHiddenMenuDismiss: () -> Unit,
     /** Whether a nested-rail popup opened from this stack should open to the left of its parent. */
     popupOpensLeft: Boolean,
+    /**
+     * Reports this stack's own rendered footprint (host rows plus whatever sub-items are currently
+     * unfolded beneath them) after every layout pass, so a FLOATING rail docking to the same screen
+     * edge can reserve room instead of landing on top of it. Fires on every recomposition that
+     * changes the stack's size, including a host expanding or collapsing.
+     */
+    onSizeChanged: (IntSize) -> Unit = {},
 ) {
     Column(
-        modifier = modifier,
+        modifier = modifier.onGloballyPositioned { onSizeChanged(it.size) },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(spacingDp),
     ) {
@@ -780,6 +798,10 @@ private fun FloatingDockGroup(
     railOnLeft: Boolean,
     screenWidthPx: Float,
     screenHeightPx: Float,
+    /** Live rendered height of the fixed (non-FLOATING) `OPPOSITE`-anchor stack, 0 if it has no hosts. */
+    oppositeStackHeightPx: Float,
+    /** Live rendered width of the fixed (non-FLOATING) `BOTTOM`-anchor stack, 0 if it has no hosts. */
+    bottomStackWidthPx: Float,
 ) {
     val density = LocalDensity.current
     val spacingPx = with(density) { spacingDp.roundToPx() }
@@ -936,7 +958,20 @@ private fun FloatingDockGroup(
         val siblings = rootsOnEdge(edge)
         val myIndex = siblings.indexOf(id)
         if (myIndex < 0) return Offset.Zero
-        val startPx = if (edge == FloatingDock.OPPOSITE) minY else edgeStartPx
+        // A fixed (non-FLOATING) stack shares this exact corner with a FLOATING dock of the same
+        // name: `OPPOSITE` always (both anchor to the same top corner opposite the main rail), and
+        // `BOTTOM` only when the main rail is docked right (both anchor bottom-left in that case —
+        // see AzUnattachedRail's BottomStart/BottomEnd choice). Reserving the fixed stack's own
+        // rendered extent — which already reflects any of its own hosts' unfolded sub-items, since
+        // it's measured live — makes a FLOATING rail stack beside it instead of underneath it.
+        val startPx = when (edge) {
+            FloatingDock.OPPOSITE ->
+                minY + if (oppositeStackHeightPx > 0f) oppositeStackHeightPx + spacingPx else 0f
+            FloatingDock.BOTTOM ->
+                if (!railOnLeft && bottomStackWidthPx > 0f) edgeStartPx + bottomStackWidthPx + spacingPx
+                else edgeStartPx
+            else -> edgeStartPx
+        }
         var along = startPx
         for (i in 0 until myIndex) {
             val extent = clusterExtent(siblings[i])
