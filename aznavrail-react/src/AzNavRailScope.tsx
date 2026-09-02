@@ -28,9 +28,24 @@ export const AzNavRailContext = React.createContext<{
   hasItem: (id: string) => boolean;
 } | null>(null);
 
-const useAzItem = (item: AzNavItem) => {
+/**
+ * What every DSL item component actually builds before registering: an `AzNavItem`, except
+ * `hiddenMenu` is still in its raw DSL shape (an array of label/action pairs, or a
+ * `HiddenMenuScope` builder function) rather than the resolved `HiddenMenuItem[]` the registry
+ * expects — `useAzItem` resolves it once, centrally, so every item type gets the hidden menu for
+ * free without each component re-implementing the resolution.
+ */
+type RawAzItem = Omit<AzNavItem, 'hiddenMenu'> & {
+  hiddenMenu?: AzNavItemProps['hiddenMenu'];
+};
+
+const useAzItem = (rawItem: RawAzItem) => {
   const context = useContext(AzNavRailContext);
   const previousItem = useRef<AzNavItem | null>(null);
+  const item: AzNavItem = {
+    ...rawItem,
+    hiddenMenu: resolveHiddenMenu(rawItem.id, rawItem.hiddenMenu),
+  };
 
   useEffect(() => {
     if (!context) return;
@@ -104,6 +119,79 @@ const useAzItem = (item: AzNavItem) => {
   }, [context, item.id]);
 
   return null;
+};
+
+/**
+ * Resolves a DSL `hiddenMenu` prop (an array of simple label/action pairs, or a builder function
+ * using `HiddenMenuScope`) into the flat `HiddenMenuItem[]` the runtime `AzNavItem` expects.
+ * Shared by every item component that accepts `hiddenMenu` — the hidden menu is not a
+ * reloc-item-only affordance, so this is not just `AzRailRelocItem`'s concern.
+ */
+const resolveHiddenMenu = (
+  id: string,
+  hiddenMenu: AzNavItemProps['hiddenMenu']
+): any[] => {
+  const hiddenMenuItems: any[] = [];
+  if (!hiddenMenu) return hiddenMenuItems;
+
+  if (typeof hiddenMenu === 'function') {
+    const scope: HiddenMenuScope = {
+      listItem: (text, action) => {
+        if (typeof action === 'string') {
+          hiddenMenuItems.push({
+            id: `${id}_hidden_item_${hiddenMenuItems.length}`,
+            text,
+            route: action,
+          });
+        } else {
+          hiddenMenuItems.push({
+            id: `${id}_hidden_item_${hiddenMenuItems.length}`,
+            text,
+            onClick: action,
+          });
+        }
+      },
+      inputItem: (hint: string, arg2: any, arg3?: any) => {
+        let initialValue = '';
+        let onValueChange: (value: string) => void;
+
+        if (typeof arg2 === 'string') {
+          initialValue = arg2;
+          if (typeof arg3 !== 'function') {
+            console.warn(
+              'inputItem requires an onValueChange function callback.'
+            );
+            onValueChange = () => {};
+          } else {
+            onValueChange = arg3;
+          }
+        } else if (typeof arg2 === 'function') {
+          onValueChange = arg2;
+        } else {
+          console.warn(
+            'inputItem requires an onValueChange function callback.'
+          );
+          onValueChange = () => {};
+        }
+        hiddenMenuItems.push({
+          id: `${id}_hidden_input_${hiddenMenuItems.length}`,
+          text: '',
+          isInput: true,
+          hint,
+          initialValue,
+          onValueChange,
+        });
+      },
+    };
+    hiddenMenu(scope);
+    return hiddenMenuItems;
+  }
+
+  return hiddenMenu.map((item, i) => ({
+    id: `${id}_hidden_item_${i}`,
+    text: item.text,
+    onClick: item.onClick,
+  }));
 };
 
 // --- Component Wrappers ---
@@ -786,67 +874,6 @@ export const AzMenuSubCycler: React.FC<AzSubCyclerProps> = (props) => {
  * ```
  */
 export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
-  let hiddenMenuItems: any[] = [];
-  if (props.hiddenMenu) {
-    if (typeof props.hiddenMenu === 'function') {
-      const scope: HiddenMenuScope = {
-        listItem: (text, action) => {
-          if (typeof action === 'string') {
-            hiddenMenuItems.push({
-              id: `${props.id}_hidden_item_${hiddenMenuItems.length}`,
-              text,
-              route: action,
-            });
-          } else {
-            hiddenMenuItems.push({
-              id: `${props.id}_hidden_item_${hiddenMenuItems.length}`,
-              text,
-              onClick: action,
-            });
-          }
-        },
-        inputItem: (hint: string, arg2: any, arg3?: any) => {
-          let initialValue = '';
-          let onValueChange: (value: string) => void;
-
-          if (typeof arg2 === 'string') {
-            initialValue = arg2;
-            if (typeof arg3 !== 'function') {
-              console.warn(
-                'inputItem requires an onValueChange function callback.'
-              );
-              onValueChange = () => {};
-            } else {
-              onValueChange = arg3;
-            }
-          } else if (typeof arg2 === 'function') {
-            onValueChange = arg2;
-          } else {
-            console.warn(
-              'inputItem requires an onValueChange function callback.'
-            );
-            onValueChange = () => {};
-          }
-          hiddenMenuItems.push({
-            id: `${props.id}_hidden_input_${hiddenMenuItems.length}`,
-            text: '',
-            isInput: true,
-            hint,
-            initialValue,
-            onValueChange,
-          });
-        },
-      };
-      props.hiddenMenu(scope);
-    } else {
-      hiddenMenuItems = props.hiddenMenu.map((item, i) => ({
-        id: `${props.id}_hidden_item_${i}`,
-        text: item.text,
-        onClick: item.onClick,
-      }));
-    }
-  }
-
   useAzItem({
     ...props,
     text: props.text || '',
@@ -863,7 +890,6 @@ export const AzRailRelocItem: React.FC<AzRailRelocItemProps> = (props) => {
     isExpanded: false,
     toggleOnText: '',
     toggleOffText: '',
-    hiddenMenu: hiddenMenuItems,
     forceHiddenMenuOpen: props.forceHiddenMenuOpen,
     onHiddenMenuDismiss: props.onHiddenMenuDismiss,
     nestedRailAlignment:

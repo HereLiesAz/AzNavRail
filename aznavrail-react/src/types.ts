@@ -494,7 +494,7 @@ export interface AzNavItem {
   // Reloc Item properties
   /** True when this item participates in drag-to-reorder within its host cluster. */
   isRelocItem?: boolean;
-  /** Resolved hidden-menu entries shown on long-press for reloc items. */
+  /** Resolved hidden-menu entries shown on long-press. Not reloc-exclusive — any item may carry one. */
   hiddenMenu?: HiddenMenuItem[];
   /** When true, the hidden menu is shown immediately without requiring a long-press. */
   forceHiddenMenuOpen?: boolean;
@@ -663,6 +663,18 @@ export interface AzNavItemProps {
   isLoading?: boolean;
   /** Marks the item as wanting attention — see `AzItemAlert`. Usually driven by an `AzPopup`. */
   alert?: AzItemAlert;
+  /**
+   * Hidden-menu definition: either an array of simple label/action pairs, or a builder function
+   * using `HiddenMenuScope`. Opened by long-pressing this item — available on any rail item, not
+   * just `AzRailRelocItem`.
+   */
+  hiddenMenu?:
+    | { text: string; onClick: () => void }[]
+    | ((scope: HiddenMenuScope) => void);
+  /** When true, the hidden menu is shown immediately on render without requiring a long-press. */
+  forceHiddenMenuOpen?: boolean;
+  /** Called when the hidden menu is dismissed by the user. */
+  onHiddenMenuDismiss?: () => void;
 }
 
 /** Props for toggle-type DSL items (`AzRailToggle`, `AzMenuToggle`). */
@@ -738,14 +750,6 @@ export interface AzSubCyclerProps extends AzCyclerProps {
 export interface AzRailRelocItemProps extends AzSubItemProps {
   /** Called after the user drops the item to a new position with the source index, target index, and new ordering. */
   onRelocate?: (fromIndex: number, toIndex: number, newOrder: string[]) => void;
-  /** Hidden-menu definition: either an array of simple label/action pairs, or a builder function using `HiddenMenuScope`. */
-  hiddenMenu?:
-    | { text: string; onClick: () => void }[]
-    | ((scope: HiddenMenuScope) => void);
-  /** When true, the hidden menu is shown immediately on render without requiring a long-press. */
-  forceHiddenMenuOpen?: boolean;
-  /** Called when the hidden menu is dismissed by the user. */
-  onHiddenMenuDismiss?: () => void;
   /** Layout direction of the nested-rail popup for this item. */
   nestedRailAlignment?: AzNestedRailAlignment;
   /** React content rendered in an isolated nested-rail context inside this item. */

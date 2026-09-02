@@ -72,7 +72,10 @@ import {
   edgeStepKey,
 } from './guidance/AzGuidance';
 import { AzInstructionOverlay } from './components/AzInstructionOverlay';
-import { AzUnattachedRail } from './components/AzUnattachedRail';
+import {
+  AzUnattachedRail,
+  HiddenMenuWindow,
+} from './components/AzUnattachedRail';
 import { resolveHighlight } from './highlight';
 import { isSafeExternalUrl } from './util/AzSafeUrl';
 export { resolveHighlight };
@@ -292,6 +295,10 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
     { x: number; y: number; width: number; height: number } | undefined
   >(undefined);
   const [itemBounds, setItemBounds] = useState<Record<string, any>>({});
+  // Which non-reloc rail item currently has its hidden menu open. Reloc items keep their own,
+  // per-item hidden-menu state inside `DraggableRailItemWrapper` — this is for every other item
+  // type, which shares one slot since only one hidden menu is ever open at a time.
+  const [hiddenMenuOpenId, setHiddenMenuOpenId] = useState<string | null>(null);
   // The secret-location easter egg (nine long-presses on the credit line) is wired but has no
   // payoff yet. These two reads keep the state honest without rendering anything: they used to be
   // `{flag && <View />} {/* Silence unused var */}` inside the content View, and the stray space
@@ -1064,7 +1071,11 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
 
     if (item.isHost) {
       return (
-        <View key={item.id} style={{ alignItems: 'center', width: '100%' }}>
+        <View
+          key={item.id}
+          style={{ alignItems: 'center', width: '100%' }}
+          onLayout={(e) => handleItemLayout(item.id, e)}
+        >
           <AzButton
             {...commonProps}
             fillColor={item.fillColor}
@@ -1078,7 +1089,28 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
               logInteraction('Host toggled', item.text, item);
               item.onExpandedChange?.(newHostState);
             }}
+            onLongPress={
+              item.hiddenMenu && item.hiddenMenu.length > 0
+                ? () => {
+                    if (vibrate) Vibration.vibrate(50);
+                    setLastTappedId(item.id);
+                    setHiddenMenuOpenId(item.id);
+                  }
+                : undefined
+            }
           />
+          {hiddenMenuOpenId === item.id && !!item.hiddenMenu?.length && (
+            <HiddenMenuWindow
+              item={item}
+              accent={railAccent ?? AzNavRailDefaults.AccentFallback}
+              translucentBackground={config.translucentBackground}
+              anchor={itemBounds[item.id]}
+              onDismiss={() => {
+                item.onHiddenMenuDismiss?.();
+                setHiddenMenuOpenId(null);
+              }}
+            />
+          )}
           {isExpandedHost &&
             subItems
               .filter((sub) => sub.isRailItem)
@@ -1235,8 +1267,30 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
               recordNestedRailSelection(hostItem, item);
             }
           }}
-          onLongPress={reflectSelection ? openNestedRailPopup : undefined}
+          onLongPress={
+            reflectSelection
+              ? openNestedRailPopup
+              : item.hiddenMenu && item.hiddenMenu.length > 0
+                ? () => {
+                    if (vibrate) Vibration.vibrate(50);
+                    setLastTappedId(item.id);
+                    setHiddenMenuOpenId(item.id);
+                  }
+                : undefined
+          }
         />
+        {hiddenMenuOpenId === item.id && !!item.hiddenMenu?.length && (
+          <HiddenMenuWindow
+            item={item}
+            accent={railAccent ?? AzNavRailDefaults.AccentFallback}
+            translucentBackground={config.translucentBackground}
+            anchor={itemBounds[item.id]}
+            onDismiss={() => {
+              item.onHiddenMenuDismiss?.();
+              setHiddenMenuOpenId(null);
+            }}
+          />
+        )}
       </View>
     );
   };

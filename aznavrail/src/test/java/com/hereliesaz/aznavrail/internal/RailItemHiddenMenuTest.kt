@@ -82,4 +82,56 @@ class RailItemHiddenMenuTest {
         assertTrue("An ordinary quick tap must still fire onClick, hidden menu or not.", clicked)
         composeTestRule.onNodeWithText("Some action").assertDoesNotExist()
     }
+
+    @Test
+    fun `long-press on a rail toggle with a hidden menu opens it`() {
+        var actionClicked = false
+
+        composeTestRule.setContent {
+            val navController = rememberNavController()
+            AzHostActivityLayout(navController = navController) {
+                azRailToggle(id = "toggle1", isChecked = false, toggleOnText = "On", toggleOffText = "Off") {
+                    listItem("Reset") { actionClicked = true }
+                }
+                onscreen { }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithContentDescription("Off").performTouchInput { longClick() }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Reset").assertExists()
+        composeTestRule.onNodeWithText("Reset").performClick()
+        composeTestRule.waitForIdle()
+
+        assertTrue("The hidden menu wired onto azRailToggle should be reachable and clickable.", actionClicked)
+    }
+
+    @Test
+    fun `long-press on a rail host item with a hidden menu opens it`() {
+        var actionClicked = false
+
+        composeTestRule.setContent {
+            val navController = rememberNavController()
+            AzHostActivityLayout(navController = navController) {
+                azRailHostItem(id = "host1", text = "Host") {
+                    listItem("Rename") { actionClicked = true }
+                }
+                onscreen { }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithContentDescription("Host").performTouchInput { longClick() }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Rename").assertExists()
+        composeTestRule.onNodeWithText("Rename").performClick()
+        composeTestRule.waitForIdle()
+
+        assertTrue("The hidden menu wired onto azRailHostItem should be reachable and clickable.", actionClicked)
+    }
 }

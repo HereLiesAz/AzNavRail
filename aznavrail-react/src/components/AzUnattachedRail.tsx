@@ -464,6 +464,15 @@ const UnattachedNode: React.FC<UnattachedNodeProps> = (props) => {
           setHostStates((prev) => ({ ...prev, [item.id]: expanded }));
           item.onExpandedChange?.(expanded);
         }}
+        onLongPress={
+          item.hiddenMenu && item.hiddenMenu.length > 0
+            ? () => {
+                if (config.vibrate) Vibration.vibrate(50);
+                setLastTappedId(item.id);
+                setHiddenMenuOpenId(item.id);
+              }
+            : undefined
+        }
       />
     );
   } else if (item.isToggle) {
@@ -561,6 +570,15 @@ const UnattachedNode: React.FC<UnattachedNodeProps> = (props) => {
             setNestedRailOpenId(nestedRailOpenId === item.id ? null : item.id);
           }
         }}
+        onLongPress={
+          item.hiddenMenu && item.hiddenMenu.length > 0
+            ? () => {
+                if (config.vibrate) Vibration.vibrate(50);
+                setLastTappedId(item.id);
+                setHiddenMenuOpenId(item.id);
+              }
+            : undefined
+        }
       />
     );
   }
@@ -572,20 +590,18 @@ const UnattachedNode: React.FC<UnattachedNodeProps> = (props) => {
     <View>
       <View onLayout={(e) => onItemLayout(item.id, e)}>{content}</View>
 
-      {item.isRelocItem &&
-        hiddenMenuOpenId === item.id &&
-        !!item.hiddenMenu?.length && (
-          <HiddenMenuWindow
-            item={item}
-            accent={railAccent}
-            translucentBackground={config.translucentBackground}
-            anchor={itemBounds[item.id]}
-            onDismiss={() => {
-              item.onHiddenMenuDismiss?.();
-              setHiddenMenuOpenId(null);
-            }}
-          />
-        )}
+      {hiddenMenuOpenId === item.id && !!item.hiddenMenu?.length && (
+        <HiddenMenuWindow
+          item={item}
+          accent={railAccent}
+          translucentBackground={config.translucentBackground}
+          anchor={itemBounds[item.id]}
+          onDismiss={() => {
+            item.onHiddenMenuDismiss?.();
+            setHiddenMenuOpenId(null);
+          }}
+        />
+      )}
 
       {item.isNestedRail && nestedRailOpenId === item.id && (
         <AzNestedRailPopup
@@ -631,7 +647,11 @@ const UnattachedNode: React.FC<UnattachedNodeProps> = (props) => {
  * `Linking`) all work; only drag-to-reorder does not apply here (see the KDoc on
  * `AzRailRelocItem`'s `onRelocate`).
  */
-const HiddenMenuWindow: React.FC<{
+/**
+ * Renders a hidden context menu as a floating `AzWindow`, anchored beside `anchor`. Shared with the
+ * docked rail strip (`AzNavRail.tsx`) — a hidden menu is not an unattached-rail-only affordance.
+ */
+export const HiddenMenuWindow: React.FC<{
   item: AzNavItem;
   accent: string;
   translucentBackground?: string;
