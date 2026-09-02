@@ -389,6 +389,18 @@ private fun UnattachedNode(
             }
             scope.onClickMap[item.id]?.invoke()
         },
+        onLongClick = if (item.isRelocItem || item.hiddenMenuItems.isNullOrEmpty()) {
+            // Reloc items open their hidden menu through their own long-press-then-drag gesture
+            // above (`rememberUnattachedRelocGestureModifier`) — wiring a second long-press handler
+            // here would race it. Every other item with a hidden menu gets one, mirroring the
+            // docked rail strip and nested-rail children.
+            null
+        } else {
+            {
+                scope.onFocusMap[item.id]?.invoke()
+                onMenuOpen(item.id)
+            }
+        },
         onRailCyclerClick = onCyclerClick,
         onItemClick = { scope.advancedConfig.onInteraction?.invoke(item.id, item) },
         onHostClick = {
@@ -421,7 +433,7 @@ private fun UnattachedNode(
         onSliderRangeChange = { id, r -> scope.onSliderRangeChangeMap[id]?.invoke(r) },
     )
 
-    if (item.isRelocItem && hiddenMenuOpenId == item.id && !item.hiddenMenuItems.isNullOrEmpty()) {
+    if (hiddenMenuOpenId == item.id && !item.hiddenMenuItems.isNullOrEmpty()) {
         val bounds = scope.itemBoundsCache[item.id] ?: Rect.Zero
         HiddenMenuPopup(
             items = item.hiddenMenuItems,

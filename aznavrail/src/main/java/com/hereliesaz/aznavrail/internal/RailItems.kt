@@ -841,6 +841,14 @@ private fun DraggableRailItemWrapper(
                             scope.onFocusMap[item.id]?.invoke()
                             onNestedRailToggle(if (scope.nestedRailOpenId == item.id) null else item.id)
                         }
+                    } else if (!item.hiddenMenuItems.isNullOrEmpty()) {
+                        // Mirrors the reloc item's own long-press-opens-menu contract (and
+                        // NestedItemWrapper's identical handling for nested-rail children) — a
+                        // hidden menu is not a reloc-only affordance, any rail item can carry one.
+                        {
+                            scope.onFocusMap[item.id]?.invoke()
+                            onMenuOpen(item.id)
+                        }
                     } else null,
                     onRailCyclerClick = onRailCyclerClick,
                     onItemClick = { onItemSelected(item) },

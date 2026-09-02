@@ -65,10 +65,11 @@ internal fun RailContent(
     onItemClick: () -> Unit,
     onHostClick: () -> Unit = {},
     /**
-     * Long-press handler. Only ever supplied for a nested-rail host with
-     * `reflectSelectionInParent = true` — wired to open the popup, since a plain tap on that item is
-     * repurposed to fire the selected child's action directly. Null (the default, and every other
-     * item) means no long-press affordance, matching today's behaviour exactly.
+     * Long-press handler. Supplied for a nested-rail host with `reflectSelectionInParent = true`
+     * (wired to open the popup, since a plain tap on that item is repurposed to fire the selected
+     * child's action directly) and for any item that carries [AzNavItem.hiddenMenuItems] (wired to
+     * open that hidden menu) — reloc items open theirs through their own drag gesture instead, so
+     * this is never set for one. Null (every other item) means no long-press affordance.
      */
     onLongClick: (() -> Unit)? = null,
     onItemGloballyPositioned: ((String, Rect) -> Unit)? = null,
