@@ -418,7 +418,7 @@ interface AzNavRailScope {
      * @param keepNestedRailOpen If true, the nested rail remains open until the parent item is tapped again.
      * @param nestedContent DSL block to define the items within the nested rail.
      */
-    fun azNestedRail(id: String, text: String = "", route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, alignment: AzNestedRailAlignment = AzNestedRailAlignment.VERTICAL, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, translucentBackgroundColor: Color? = null, badge: String? = null, persistentBadge: Boolean = false, isLoading: Boolean = false, onFocus: (() -> Unit)? = null, keepNestedRailOpen: Boolean = false, reflectSelectionInParent: Boolean = false, selectedChildId: String? = null, expandWhen: (() -> Boolean)? = null, nestedContent: AzNavRailScope.() -> Unit)
+    fun azNestedRail(id: String, text: String = "", route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, alignment: AzNestedRailAlignment = AzNestedRailAlignment.VERTICAL, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, translucentBackgroundColor: Color? = null, badge: String? = null, persistentBadge: Boolean = false, isLoading: Boolean = false, onFocus: (() -> Unit)? = null, keepNestedRailOpen: Boolean = false, reflectSelectionInParent: Boolean = false, selectedChildId: String? = null, expandWhen: (() -> Boolean)? = null, forceHiddenMenuOpen: Boolean = false, onHiddenMenuDismiss: (() -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit = {}, nestedContent: AzNavRailScope.() -> Unit)
 
     /**
      * Adds a toggle switch item to the menu.
@@ -443,8 +443,11 @@ interface AzNavRailScope {
      * @param screenTitle Title to display when active.
      * @param info Help info string.
      * @param onClick Click callback.
+     * @param hiddenMenu Scope to define context menu actions revealed by long-pressing this item.
+     * @param forceHiddenMenuOpen Programmatic control to explicitly show or hide the hidden menu.
+     * @param onHiddenMenuDismiss Callback invoked when the hidden menu dismisses itself.
      */
-    fun azRailToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuToggleOnText: String? = null, menuToggleOffText: String? = null, textColor: Color? = null, fillColor: Color? = null, translucentBackgroundColor: Color? = null, badge: String? = null, persistentBadge: Boolean = false, isLoading: Boolean = false, onClick: (() -> Unit)? = null)
+    fun azRailToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuToggleOnText: String? = null, menuToggleOffText: String? = null, textColor: Color? = null, fillColor: Color? = null, translucentBackgroundColor: Color? = null, badge: String? = null, persistentBadge: Boolean = false, isLoading: Boolean = false, onClick: (() -> Unit)? = null, forceHiddenMenuOpen: Boolean = false, onHiddenMenuDismiss: (() -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit = {})
 
     /**
      * Adds a slider to the always-visible rail.
@@ -521,7 +524,7 @@ interface AzNavRailScope {
      * @param fillColor Translucent fill color override.
      * @param onClick Callback fired on commit.
      */
-    fun azRailCycler(id: String, options: List<String>, selectedOption: String, route: String? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuOptions: List<String>? = null, textColor: Color? = null, fillColor: Color? = null, translucentBackgroundColor: Color? = null, badge: String? = null, persistentBadge: Boolean = false, isLoading: Boolean = false, onClick: (() -> Unit)? = null)
+    fun azRailCycler(id: String, options: List<String>, selectedOption: String, route: String? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuOptions: List<String>? = null, textColor: Color? = null, fillColor: Color? = null, translucentBackgroundColor: Color? = null, badge: String? = null, persistentBadge: Boolean = false, isLoading: Boolean = false, onClick: (() -> Unit)? = null, forceHiddenMenuOpen: Boolean = false, onHiddenMenuDismiss: (() -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit = {})
 
     /**
      * Adds a visual divider line to the menu list. Has no effect on the collapsed rail.
@@ -571,7 +574,10 @@ interface AzNavRailScope {
         initiallyExpanded: Boolean = false,
         expandWhen: (() -> Boolean)? = null,
         onExpandedChange: ((Boolean) -> Unit)? = null,
-        onClick: (() -> Unit)? = null
+        onClick: (() -> Unit)? = null,
+        forceHiddenMenuOpen: Boolean = false,
+        onHiddenMenuDismiss: (() -> Unit)? = null,
+        hiddenMenu: HiddenMenuScope.() -> Unit = {}
     )
 
     /**
@@ -613,7 +619,10 @@ interface AzNavRailScope {
         initiallyExpanded: Boolean = false,
         expandWhen: (() -> Boolean)? = null,
         onExpandedChange: ((Boolean) -> Unit)? = null,
-        onClick: (() -> Unit)? = null
+        onClick: (() -> Unit)? = null,
+        forceHiddenMenuOpen: Boolean = false,
+        onHiddenMenuDismiss: (() -> Unit)? = null,
+        hiddenMenu: HiddenMenuScope.() -> Unit = {}
     )
 
     /**
@@ -689,7 +698,7 @@ interface AzNavRailScope {
      *
      * @param onFocus Called when the sub-item gains focus.
      */
-    fun azRailSubItem(id: String, hostId: String, text: String = "", route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, translucentBackgroundColor: Color? = null, badge: String? = null, persistentBadge: Boolean = false, isLoading: Boolean = false, onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null)
+    fun azRailSubItem(id: String, hostId: String, text: String = "", route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, translucentBackgroundColor: Color? = null, badge: String? = null, persistentBadge: Boolean = false, isLoading: Boolean = false, onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null, forceHiddenMenuOpen: Boolean = false, onHiddenMenuDismiss: (() -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit = {})
 
     /**
      * Adds a Sub Item that is itself a Host Item in the menu. It is a child of [hostId] (so it only
@@ -729,7 +738,10 @@ interface AzNavRailScope {
         initiallyExpanded: Boolean = false,
         expandWhen: (() -> Boolean)? = null,
         onExpandedChange: ((Boolean) -> Unit)? = null,
-        onClick: (() -> Unit)? = null
+        onClick: (() -> Unit)? = null,
+        forceHiddenMenuOpen: Boolean = false,
+        onHiddenMenuDismiss: (() -> Unit)? = null,
+        hiddenMenu: HiddenMenuScope.() -> Unit = {}
     )
 
     /**
@@ -749,7 +761,7 @@ interface AzNavRailScope {
      * Adds a Sub Toggle to a Host Item in the rail. Parameters mirror [azMenuSubToggle]; only
      * visible while the parent host is expanded on the rail.
      */
-    fun azRailSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuToggleOnText: String? = null, menuToggleOffText: String? = null, textColor: Color? = null, fillColor: Color? = null, translucentBackgroundColor: Color? = null, badge: String? = null, persistentBadge: Boolean = false, isLoading: Boolean = false, onClick: (() -> Unit)? = null)
+    fun azRailSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuToggleOnText: String? = null, menuToggleOffText: String? = null, textColor: Color? = null, fillColor: Color? = null, translucentBackgroundColor: Color? = null, badge: String? = null, persistentBadge: Boolean = false, isLoading: Boolean = false, onClick: (() -> Unit)? = null, forceHiddenMenuOpen: Boolean = false, onHiddenMenuDismiss: (() -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit = {})
 
     /**
      * Adds a Sub Cycler to a Host Item in the menu.
@@ -767,7 +779,7 @@ interface AzNavRailScope {
      * Adds a Sub Cycler to a Host Item in the rail. Parameters mirror [azMenuSubCycler]; the
      * cycler only renders while the parent host is expanded on the rail.
      */
-    fun azRailSubCycler(id: String, hostId: String, options: List<String>, selectedOption: String, route: String? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuOptions: List<String>? = null, textColor: Color? = null, fillColor: Color? = null, translucentBackgroundColor: Color? = null, badge: String? = null, persistentBadge: Boolean = false, isLoading: Boolean = false, onClick: (() -> Unit)? = null)
+    fun azRailSubCycler(id: String, hostId: String, options: List<String>, selectedOption: String, route: String? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, disabledOptions: List<String>? = null, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuOptions: List<String>? = null, textColor: Color? = null, fillColor: Color? = null, translucentBackgroundColor: Color? = null, badge: String? = null, persistentBadge: Boolean = false, isLoading: Boolean = false, onClick: (() -> Unit)? = null, forceHiddenMenuOpen: Boolean = false, onHiddenMenuDismiss: (() -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit = {})
 
     /**
      * Adds a Relocatable Item to a Host Item in the rail.
@@ -1503,8 +1515,10 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         addItem(id = id, text = text, menuText = menuText, config = AzItemConfig(isLoading = isLoading, classifiers = classifiers, route = route, screenTitle = screenTitle, info = info, isRailItem = true, disabled = disabled, onFocus = onFocus, content = content, color = color, textColor = textColor, fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor, shape = shape, badge = badge, persistentBadge = persistentBadge, hiddenMenuItems = hiddenMenuScope.items, forceHiddenMenuOpen = forceHiddenMenuOpen, onHiddenMenuDismiss = onHiddenMenuDismiss), onClick = onClick ?: {})
     }
 
-    override fun azNestedRail(id: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, alignment: AzNestedRailAlignment, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, translucentBackgroundColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean, onFocus: (() -> Unit)?, keepNestedRailOpen: Boolean, reflectSelectionInParent: Boolean, selectedChildId: String?, expandWhen: (() -> Boolean)?, nestedContent: AzNavRailScope.() -> Unit) {
+    override fun azNestedRail(id: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, alignment: AzNestedRailAlignment, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, translucentBackgroundColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean, onFocus: (() -> Unit)?, keepNestedRailOpen: Boolean, reflectSelectionInParent: Boolean, selectedChildId: String?, expandWhen: (() -> Boolean)?, forceHiddenMenuOpen: Boolean, onHiddenMenuDismiss: (() -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit, nestedContent: AzNavRailScope.() -> Unit) {
         checkId(id)
+        val hiddenMenuScope = HiddenMenuScopeImpl(id, hiddenMenuOnClickMap, hiddenMenuOnValueChangeMap)
+        hiddenMenuScope.hiddenMenu()
         val nestedScope = AzNavRailScopeImpl(this.globalIdSet)
         nestedScope.azConfig(dockingSide = this.dockingSide, packButtons = this.packButtons, noMenu = this.noMenu, vibrate = this.vibrate, displayAppName = this.displayAppName, activeClassifiers = this.activeClassifiers, secondaryClassifiers = this.secondaryClassifiers, tertiaryClassifiers = this.tertiaryClassifiers, expandedWidth = this.expandedWidth, collapsedWidth = this.collapsedWidth, railItemWidth = this.railItemWidth, showFooter = this.showFooter, appRepositoryUrl = this.appRepositoryUrl)
         nestedScope.azTheme(activeColor = this.activeColor, defaultShape = this.defaultShape, headerIconShape = this.headerIconShape, translucentBackground = this.translucentBackground, focusColor = this.focusColor, secondaryColor = this.secondaryColor, tertiaryColor = this.tertiaryColor)
@@ -1538,6 +1552,9 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
                 keepNestedRailOpen = keepNestedRailOpen,
                 reflectSelectionInParent = reflectSelectionInParent,
                 selectedChildId = selectedNestedChildMap[id],
+                hiddenMenuItems = hiddenMenuScope.items,
+                forceHiddenMenuOpen = forceHiddenMenuOpen,
+                onHiddenMenuDismiss = onHiddenMenuDismiss,
             )
         )
     }
@@ -1546,8 +1563,10 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         addToggle(id = id, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, menuToggleOnText = menuToggleOnText, menuToggleOffText = menuToggleOffText, config = AzItemConfig(isLoading = isLoading, classifiers = classifiers, route = route, disabled = disabled, screenTitle = screenTitle, info = info, isRailItem = false, isSubItem = false, color = color, textColor = textColor, fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor, shape = shape, badge = badge, persistentBadge = persistentBadge), onClick = onClick ?: {})
     }
 
-    override fun azRailToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuToggleOnText: String?, menuToggleOffText: String?, textColor: Color?, fillColor: Color?, translucentBackgroundColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean, onClick: (() -> Unit)?) {
-        addToggle(id = id, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, menuToggleOnText = menuToggleOnText, menuToggleOffText = menuToggleOffText, config = AzItemConfig(isLoading = isLoading, classifiers = classifiers, route = route, disabled = disabled, screenTitle = screenTitle, info = info, isRailItem = true, isSubItem = false, color = color, textColor = textColor, fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor, shape = shape, badge = badge, persistentBadge = persistentBadge), onClick = onClick ?: {})
+    override fun azRailToggle(id: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuToggleOnText: String?, menuToggleOffText: String?, textColor: Color?, fillColor: Color?, translucentBackgroundColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean, onClick: (() -> Unit)?, forceHiddenMenuOpen: Boolean, onHiddenMenuDismiss: (() -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
+        val hiddenMenuScope = HiddenMenuScopeImpl(id, hiddenMenuOnClickMap, hiddenMenuOnValueChangeMap)
+        hiddenMenuScope.hiddenMenu()
+        addToggle(id = id, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, menuToggleOnText = menuToggleOnText, menuToggleOffText = menuToggleOffText, config = AzItemConfig(isLoading = isLoading, classifiers = classifiers, route = route, disabled = disabled, screenTitle = screenTitle, info = info, isRailItem = true, isSubItem = false, color = color, textColor = textColor, fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor, shape = shape, badge = badge, persistentBadge = persistentBadge, hiddenMenuItems = hiddenMenuScope.items, forceHiddenMenuOpen = forceHiddenMenuOpen, onHiddenMenuDismiss = onHiddenMenuDismiss), onClick = onClick ?: {})
     }
 
     override fun azRailSlider(
@@ -1599,8 +1618,10 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         addCycler(id = id, options = options, menuOptions = menuOptions, selectedOption = selectedOption, disabledOptions = disabledOptions, config = AzItemConfig(isLoading = isLoading, classifiers = classifiers, route = route, disabled = disabled, screenTitle = screenTitle, info = info, isRailItem = false, isSubItem = false, color = color, textColor = textColor, fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor, shape = shape, badge = badge, persistentBadge = persistentBadge), onClick = onClick ?: {})
     }
 
-    override fun azRailCycler(id: String, options: List<String>, selectedOption: String, route: String?, color: Color?, shape: AzButtonShape?, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, info: String?, classifiers: Set<String>, menuOptions: List<String>?, textColor: Color?, fillColor: Color?, translucentBackgroundColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean, onClick: (() -> Unit)?) {
-        addCycler(id = id, options = options, menuOptions = menuOptions, selectedOption = selectedOption, disabledOptions = disabledOptions, config = AzItemConfig(isLoading = isLoading, classifiers = classifiers, route = route, disabled = disabled, screenTitle = screenTitle, info = info, isRailItem = true, isSubItem = false, color = color, textColor = textColor, fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor, shape = shape, badge = badge, persistentBadge = persistentBadge), onClick = onClick ?: {})
+    override fun azRailCycler(id: String, options: List<String>, selectedOption: String, route: String?, color: Color?, shape: AzButtonShape?, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, info: String?, classifiers: Set<String>, menuOptions: List<String>?, textColor: Color?, fillColor: Color?, translucentBackgroundColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean, onClick: (() -> Unit)?, forceHiddenMenuOpen: Boolean, onHiddenMenuDismiss: (() -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
+        val hiddenMenuScope = HiddenMenuScopeImpl(id, hiddenMenuOnClickMap, hiddenMenuOnValueChangeMap)
+        hiddenMenuScope.hiddenMenu()
+        addCycler(id = id, options = options, menuOptions = menuOptions, selectedOption = selectedOption, disabledOptions = disabledOptions, config = AzItemConfig(isLoading = isLoading, classifiers = classifiers, route = route, disabled = disabled, screenTitle = screenTitle, info = info, isRailItem = true, isSubItem = false, color = color, textColor = textColor, fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor, shape = shape, badge = badge, persistentBadge = persistentBadge, hiddenMenuItems = hiddenMenuScope.items, forceHiddenMenuOpen = forceHiddenMenuOpen, onHiddenMenuDismiss = onHiddenMenuDismiss), onClick = onClick ?: {})
     }
 
     override fun azDivider() {
@@ -1633,15 +1654,20 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         initiallyExpanded: Boolean,
         expandWhen: (() -> Boolean)?,
         onExpandedChange: ((Boolean) -> Unit)?,
-        onClick: (() -> Unit)?
+        onClick: (() -> Unit)?,
+        forceHiddenMenuOpen: Boolean,
+        onHiddenMenuDismiss: (() -> Unit)?,
+        hiddenMenu: HiddenMenuScope.() -> Unit
     ) {
         if (expandWhen != null) expandWhenMap[id] = expandWhen
         if (onExpandedChange != null) onExpandedChangeMap[id] = onExpandedChange
+        val hiddenMenuScope = HiddenMenuScopeImpl(id, hiddenMenuOnClickMap, hiddenMenuOnValueChangeMap)
+        hiddenMenuScope.hiddenMenu()
         addItem(
             id = id,
             text = text,
             menuText = menuText,
-            config = AzItemConfig(badge = badge, persistentBadge = persistentBadge, isLoading = isLoading, 
+            config = AzItemConfig(badge = badge, persistentBadge = persistentBadge, isLoading = isLoading,
                 classifiers = classifiers,
                 route = route,
                 screenTitle = screenTitle,
@@ -1654,7 +1680,10 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
                 textColor = textColor,
                 fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor,
                 shape = shape,
-                initiallyExpanded = initiallyExpanded
+                initiallyExpanded = initiallyExpanded,
+                hiddenMenuItems = hiddenMenuScope.items,
+                forceHiddenMenuOpen = forceHiddenMenuOpen,
+                onHiddenMenuDismiss = onHiddenMenuDismiss
             ),
             onClick = onClick ?: {})
     }
@@ -1680,10 +1709,15 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         initiallyExpanded: Boolean,
         expandWhen: (() -> Boolean)?,
         onExpandedChange: ((Boolean) -> Unit)?,
-        onClick: (() -> Unit)?
+        onClick: (() -> Unit)?,
+        forceHiddenMenuOpen: Boolean,
+        onHiddenMenuDismiss: (() -> Unit)?,
+        hiddenMenu: HiddenMenuScope.() -> Unit
     ) {
         if (expandWhen != null) expandWhenMap[id] = expandWhen
         if (onExpandedChange != null) onExpandedChangeMap[id] = onExpandedChange
+        val hiddenMenuScope = HiddenMenuScopeImpl(id, hiddenMenuOnClickMap, hiddenMenuOnValueChangeMap)
+        hiddenMenuScope.hiddenMenu()
         addItem(
             id = id,
             text = text,
@@ -1708,7 +1742,10 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
                 isLoading = isLoading,
                 initiallyExpanded = initiallyExpanded,
                 isUnattached = true,
-                unattachedAnchor = anchor
+                unattachedAnchor = anchor,
+                hiddenMenuItems = hiddenMenuScope.items,
+                forceHiddenMenuOpen = forceHiddenMenuOpen,
+                onHiddenMenuDismiss = onHiddenMenuDismiss
             ),
             onClick = onClick ?: {})
     }
@@ -1747,8 +1784,10 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         addItem(id = id, text = text, menuText = menuText, config = AzItemConfig(isLoading = isLoading, classifiers = classifiers, route = route, screenTitle = screenTitle, info = info, isRailItem = false, disabled = disabled, isSubItem = true, hostId = hostId, content = content, color = color, textColor = textColor, fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor, shape = shape, badge = badge, persistentBadge = persistentBadge), onClick = onClick ?: {})
     }
 
-    override fun azRailSubItem(id: String, hostId: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, translucentBackgroundColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean, onFocus: (() -> Unit)?, onClick: (() -> Unit)?) {
-        addItem(id = id, text = text, menuText = menuText, config = AzItemConfig(isLoading = isLoading, classifiers = classifiers, route = route, screenTitle = screenTitle, info = info, isRailItem = true, disabled = disabled, isSubItem = true, hostId = hostId, onFocus = onFocus, content = content, color = color, textColor = textColor, fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor, shape = shape, badge = badge, persistentBadge = persistentBadge), onClick = onClick ?: {})
+    override fun azRailSubItem(id: String, hostId: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, translucentBackgroundColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean, onFocus: (() -> Unit)?, onClick: (() -> Unit)?, forceHiddenMenuOpen: Boolean, onHiddenMenuDismiss: (() -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
+        val hiddenMenuScope = HiddenMenuScopeImpl(id, hiddenMenuOnClickMap, hiddenMenuOnValueChangeMap)
+        hiddenMenuScope.hiddenMenu()
+        addItem(id = id, text = text, menuText = menuText, config = AzItemConfig(isLoading = isLoading, classifiers = classifiers, route = route, screenTitle = screenTitle, info = info, isRailItem = true, disabled = disabled, isSubItem = true, hostId = hostId, onFocus = onFocus, content = content, color = color, textColor = textColor, fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor, shape = shape, badge = badge, persistentBadge = persistentBadge, hiddenMenuItems = hiddenMenuScope.items, forceHiddenMenuOpen = forceHiddenMenuOpen, onHiddenMenuDismiss = onHiddenMenuDismiss), onClick = onClick ?: {})
     }
 
     override fun azMenuSubHostItem(
@@ -1800,16 +1839,21 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         initiallyExpanded: Boolean,
         expandWhen: (() -> Boolean)?,
         onExpandedChange: ((Boolean) -> Unit)?,
-        onClick: (() -> Unit)?
+        onClick: (() -> Unit)?,
+        forceHiddenMenuOpen: Boolean,
+        onHiddenMenuDismiss: (() -> Unit)?,
+        hiddenMenu: HiddenMenuScope.() -> Unit
     ) {
         checkSubHost(id, hostId, "azRailSubHostItem")
         if (expandWhen != null) expandWhenMap[id] = expandWhen
         if (onExpandedChange != null) onExpandedChangeMap[id] = onExpandedChange
+        val hiddenMenuScope = HiddenMenuScopeImpl(id, hiddenMenuOnClickMap, hiddenMenuOnValueChangeMap)
+        hiddenMenuScope.hiddenMenu()
         addItem(
             id = id,
             text = text,
             menuText = menuText,
-            config = AzItemConfig(badge = badge, persistentBadge = persistentBadge, isLoading = isLoading, 
+            config = AzItemConfig(badge = badge, persistentBadge = persistentBadge, isLoading = isLoading,
                 classifiers = classifiers,
                 route = route,
                 screenTitle = screenTitle,
@@ -1824,7 +1868,10 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
                 textColor = textColor,
                 fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor,
                 shape = shape,
-                initiallyExpanded = initiallyExpanded
+                initiallyExpanded = initiallyExpanded,
+                hiddenMenuItems = hiddenMenuScope.items,
+                forceHiddenMenuOpen = forceHiddenMenuOpen,
+                onHiddenMenuDismiss = onHiddenMenuDismiss
             ),
             onClick = onClick ?: {})
     }
@@ -1846,16 +1893,20 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         addToggle(id = id, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, menuToggleOnText = menuToggleOnText, menuToggleOffText = menuToggleOffText, config = AzItemConfig(badge = badge, persistentBadge = persistentBadge, isLoading = isLoading, classifiers = classifiers, hostId = hostId, route = route, disabled = disabled, screenTitle = screenTitle, info = info, isRailItem = false, isSubItem = true, color = color, textColor = textColor, fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor, shape = shape), onClick = onClick ?: {})
     }
 
-    override fun azRailSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuToggleOnText: String?, menuToggleOffText: String?, textColor: Color?, fillColor: Color?, translucentBackgroundColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean, onClick: (() -> Unit)?) {
-        addToggle(id = id, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, menuToggleOnText = menuToggleOnText, menuToggleOffText = menuToggleOffText, config = AzItemConfig(badge = badge, persistentBadge = persistentBadge, isLoading = isLoading, classifiers = classifiers, hostId = hostId, route = route, disabled = disabled, screenTitle = screenTitle, info = info, isRailItem = true, isSubItem = true, color = color, textColor = textColor, fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor, shape = shape), onClick = onClick ?: {})
+    override fun azRailSubToggle(id: String, hostId: String, isChecked: Boolean, toggleOnText: String, toggleOffText: String, route: String?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuToggleOnText: String?, menuToggleOffText: String?, textColor: Color?, fillColor: Color?, translucentBackgroundColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean, onClick: (() -> Unit)?, forceHiddenMenuOpen: Boolean, onHiddenMenuDismiss: (() -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
+        val hiddenMenuScope = HiddenMenuScopeImpl(id, hiddenMenuOnClickMap, hiddenMenuOnValueChangeMap)
+        hiddenMenuScope.hiddenMenu()
+        addToggle(id = id, isChecked = isChecked, toggleOnText = toggleOnText, toggleOffText = toggleOffText, menuToggleOnText = menuToggleOnText, menuToggleOffText = menuToggleOffText, config = AzItemConfig(badge = badge, persistentBadge = persistentBadge, isLoading = isLoading, classifiers = classifiers, hostId = hostId, route = route, disabled = disabled, screenTitle = screenTitle, info = info, isRailItem = true, isSubItem = true, color = color, textColor = textColor, fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor, shape = shape, hiddenMenuItems = hiddenMenuScope.items, forceHiddenMenuOpen = forceHiddenMenuOpen, onHiddenMenuDismiss = onHiddenMenuDismiss), onClick = onClick ?: {})
     }
 
     override fun azMenuSubCycler(id: String, hostId: String, options: List<String>, selectedOption: String, route: String?, color: Color?, shape: AzButtonShape?, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, info: String?, classifiers: Set<String>, menuOptions: List<String>?, textColor: Color?, fillColor: Color?, translucentBackgroundColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean, onClick: (() -> Unit)?) {
         addCycler(id = id, options = options, menuOptions = menuOptions, selectedOption = selectedOption, disabledOptions = disabledOptions, config = AzItemConfig(badge = badge, persistentBadge = persistentBadge, isLoading = isLoading, classifiers = classifiers, hostId = hostId, route = route, disabled = disabled, screenTitle = screenTitle, info = info, isRailItem = false, isSubItem = true, color = color, textColor = textColor, fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor, shape = shape), onClick = onClick ?: {})
     }
 
-    override fun azRailSubCycler(id: String, hostId: String, options: List<String>, selectedOption: String, route: String?, color: Color?, shape: AzButtonShape?, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, info: String?, classifiers: Set<String>, menuOptions: List<String>?, textColor: Color?, fillColor: Color?, translucentBackgroundColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean, onClick: (() -> Unit)?) {
-        addCycler(id = id, options = options, menuOptions = menuOptions, selectedOption = selectedOption, disabledOptions = disabledOptions, config = AzItemConfig(badge = badge, persistentBadge = persistentBadge, isLoading = isLoading, classifiers = classifiers, hostId = hostId, route = route, disabled = disabled, screenTitle = screenTitle, info = info, isRailItem = true, isSubItem = true, color = color, textColor = textColor, fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor, shape = shape), onClick = onClick ?: {})
+    override fun azRailSubCycler(id: String, hostId: String, options: List<String>, selectedOption: String, route: String?, color: Color?, shape: AzButtonShape?, disabled: Boolean, disabledOptions: List<String>?, screenTitle: String?, info: String?, classifiers: Set<String>, menuOptions: List<String>?, textColor: Color?, fillColor: Color?, translucentBackgroundColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean, onClick: (() -> Unit)?, forceHiddenMenuOpen: Boolean, onHiddenMenuDismiss: (() -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
+        val hiddenMenuScope = HiddenMenuScopeImpl(id, hiddenMenuOnClickMap, hiddenMenuOnValueChangeMap)
+        hiddenMenuScope.hiddenMenu()
+        addCycler(id = id, options = options, menuOptions = menuOptions, selectedOption = selectedOption, disabledOptions = disabledOptions, config = AzItemConfig(badge = badge, persistentBadge = persistentBadge, isLoading = isLoading, classifiers = classifiers, hostId = hostId, route = route, disabled = disabled, screenTitle = screenTitle, info = info, isRailItem = true, isSubItem = true, color = color, textColor = textColor, fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor, shape = shape, hiddenMenuItems = hiddenMenuScope.items, forceHiddenMenuOpen = forceHiddenMenuOpen, onHiddenMenuDismiss = onHiddenMenuDismiss), onClick = onClick ?: {})
     }
 
     override fun azRailRelocItem(id: String, hostId: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, translucentBackgroundColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean, onFocus: (() -> Unit)?, onClick: (() -> Unit)?, onRelocate: ((Int, Int, List<String>) -> Unit)?, nestedRailAlignment: AzNestedRailAlignment, keepNestedRailOpen: Boolean, nestedContent: (AzNavRailScope.() -> Unit)?, forceHiddenMenuOpen: Boolean, onHiddenMenuDismiss: (() -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
@@ -1919,7 +1970,8 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
                 disabled = config.disabled, disabledOptions = disabledOptions, isSubItem = config.isSubItem,
                 hostId = config.hostId, info = config.info, color = config.color, textColor = config.textColor,
                 fillColor = config.fillColor, translucentBackgroundColor = config.translucentBackgroundColor, shape = config.shape, badge = config.badge,
-                persistentBadge = config.persistentBadge, isLoading = config.isLoading
+                persistentBadge = config.persistentBadge, isLoading = config.isLoading,
+                hiddenMenuItems = config.hiddenMenuItems, forceHiddenMenuOpen = config.forceHiddenMenuOpen, onHiddenMenuDismiss = config.onHiddenMenuDismiss
             )
         )
     }
@@ -1944,7 +1996,8 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
                 isSubItem = config.isSubItem, hostId = config.hostId, info = config.info, color = config.color,
                 textColor = config.textColor, fillColor = config.fillColor, translucentBackgroundColor = config.translucentBackgroundColor, shape = config.shape,
                 badge = config.badge, persistentBadge = config.persistentBadge,
-                isLoading = config.isLoading
+                isLoading = config.isLoading,
+                hiddenMenuItems = config.hiddenMenuItems, forceHiddenMenuOpen = config.forceHiddenMenuOpen, onHiddenMenuDismiss = config.onHiddenMenuDismiss
             )
         )
     }

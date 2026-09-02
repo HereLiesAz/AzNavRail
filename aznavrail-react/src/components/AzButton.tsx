@@ -7,6 +7,7 @@ import {
   View,
   StyleSheet,
   ImageSourcePropType,
+  GestureResponderEvent,
 } from 'react-native';
 import { AzButtonShape, baseShapeOf, isBorderlessShape } from '../types';
 import { AzLoad } from './AzLoad';
@@ -20,9 +21,10 @@ export interface AzButtonProps {
   onClick: () => void;
   /**
    * Called on a long-press (500ms), same idiom as the header icon and reloc items elsewhere in
-   * this library. Omit for no long-press behavior (today's default).
+   * this library. Omit for no long-press behavior (today's default). Receives the native gesture
+   * event so callers (eg. a hidden-menu opener) can read the touch position off `nativeEvent`.
    */
-  onLongPress?: () => void;
+  onLongPress?: (event: GestureResponderEvent) => void;
   /** Border and default text color. */
   color?: string;
   /** Background fill color drawn inside the button shape. */
