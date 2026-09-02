@@ -1,7 +1,7 @@
 package com.hereliesaz.aznavrail.model
 
 /**
- * Represents a single item in the hidden context menu of a relocatable rail item.
+ * Represents a single item in the hidden context menu of a rail item, opened by long-pressing it.
  *
  * Items are created via `com.hereliesaz.aznavrail.HiddenMenuScope` and stored on
  * [AzNavItem.hiddenMenuItems].

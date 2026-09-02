@@ -44,7 +44,7 @@ import kotlinx.parcelize.RawValue
  * @param isExpanded Whether the host item is currently expanded.
  * @param info The help text for the info screen.
  * @param isRelocItem If `true`, this item is a reorderable item.
- * @param hiddenMenuItems List of items for the hidden context menu (for reloc items).
+ * @param hiddenMenuItems List of items for the hidden context menu, opened by long-pressing this item. Available on any rail item, not just reloc items.
  * @param classifiers A set of strings to classify this item (for active state).
  * @param content Dynamic content (Color, Number, Image) to display on the button.
  * @param isNestedRail If `true`, this item triggers a nested rail popup.

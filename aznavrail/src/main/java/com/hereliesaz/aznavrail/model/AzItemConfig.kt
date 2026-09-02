@@ -57,5 +57,11 @@ data class AzItemConfig(
     /** Marks a host declared with `azUnattachedHostItem`, which lives outside the rail strip. */
     val isUnattached: Boolean = false,
     /** Where an [isUnattached] host parks. Ignored for every other item. */
-    val unattachedAnchor: AzUnattachedAnchor? = null
+    val unattachedAnchor: AzUnattachedAnchor? = null,
+    /** Context menu items revealed by long-pressing this item. Null/empty means no hidden menu. */
+    val hiddenMenuItems: List<HiddenMenuItem>? = null,
+    /** Programmatic control to explicitly show or hide the hidden menu. */
+    val forceHiddenMenuOpen: Boolean = false,
+    /** Callback invoked when the hidden menu dismisses itself. */
+    val onHiddenMenuDismiss: (() -> Unit)? = null
 )

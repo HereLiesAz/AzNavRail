@@ -393,8 +393,12 @@ interface AzNavRailScope {
      * @param classifiers Additional strings to identify this item for highlighting.
      * @param onFocus Callback invoked when the item receives focus.
      * @param onClick Callback invoked when the item is clicked.
+     * @param hiddenMenu Scope to define context menu actions revealed by long-pressing this item.
+     *   Not a reloc-only affordance — any rail item may carry one.
+     * @param forceHiddenMenuOpen Programmatic control to explicitly show or hide the hidden menu.
+     * @param onHiddenMenuDismiss Callback invoked when the hidden menu dismisses itself.
      */
-    fun azRailItem(id: String, text: String = "", route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, translucentBackgroundColor: Color? = null, badge: String? = null, persistentBadge: Boolean = false, isLoading: Boolean = false, onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null)
+    fun azRailItem(id: String, text: String = "", route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, translucentBackgroundColor: Color? = null, badge: String? = null, persistentBadge: Boolean = false, isLoading: Boolean = false, onFocus: (() -> Unit)? = null, onClick: (() -> Unit)? = null, forceHiddenMenuOpen: Boolean = false, onHiddenMenuDismiss: (() -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit = {})
 
     /**
      * Adds a Nested Rail item. This item opens a secondary popup rail when clicked.
@@ -1493,8 +1497,10 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         )
     }
 
-    override fun azRailItem(id: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, translucentBackgroundColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean, onFocus: (() -> Unit)?, onClick: (() -> Unit)?) {
-        addItem(id = id, text = text, menuText = menuText, config = AzItemConfig(isLoading = isLoading, classifiers = classifiers, route = route, screenTitle = screenTitle, info = info, isRailItem = true, disabled = disabled, onFocus = onFocus, content = content, color = color, textColor = textColor, fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor, shape = shape, badge = badge, persistentBadge = persistentBadge), onClick = onClick ?: {})
+    override fun azRailItem(id: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, translucentBackgroundColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean, onFocus: (() -> Unit)?, onClick: (() -> Unit)?, forceHiddenMenuOpen: Boolean, onHiddenMenuDismiss: (() -> Unit)?, hiddenMenu: HiddenMenuScope.() -> Unit) {
+        val hiddenMenuScope = HiddenMenuScopeImpl(id, hiddenMenuOnClickMap, hiddenMenuOnValueChangeMap)
+        hiddenMenuScope.hiddenMenu()
+        addItem(id = id, text = text, menuText = menuText, config = AzItemConfig(isLoading = isLoading, classifiers = classifiers, route = route, screenTitle = screenTitle, info = info, isRailItem = true, disabled = disabled, onFocus = onFocus, content = content, color = color, textColor = textColor, fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor, shape = shape, badge = badge, persistentBadge = persistentBadge, hiddenMenuItems = hiddenMenuScope.items, forceHiddenMenuOpen = forceHiddenMenuOpen, onHiddenMenuDismiss = onHiddenMenuDismiss), onClick = onClick ?: {})
     }
 
     override fun azNestedRail(id: String, text: String, route: String?, content: Any?, color: Color?, shape: AzButtonShape?, alignment: AzNestedRailAlignment, disabled: Boolean, screenTitle: String?, info: String?, classifiers: Set<String>, menuText: String?, textColor: Color?, fillColor: Color?, translucentBackgroundColor: Color?, badge: String?, persistentBadge: Boolean, isLoading: Boolean, onFocus: (() -> Unit)?, keepNestedRailOpen: Boolean, reflectSelectionInParent: Boolean, selectedChildId: String?, expandWhen: (() -> Boolean)?, nestedContent: AzNavRailScope.() -> Unit) {
@@ -1965,7 +1971,10 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
                 persistentBadge = config.persistentBadge,
                 isLoading = config.isLoading,
                 isUnattached = config.isUnattached,
-                unattachedAnchor = config.unattachedAnchor
+                unattachedAnchor = config.unattachedAnchor,
+                hiddenMenuItems = config.hiddenMenuItems,
+                forceHiddenMenuOpen = config.forceHiddenMenuOpen,
+                onHiddenMenuDismiss = config.onHiddenMenuDismiss
             )
         )
     }
