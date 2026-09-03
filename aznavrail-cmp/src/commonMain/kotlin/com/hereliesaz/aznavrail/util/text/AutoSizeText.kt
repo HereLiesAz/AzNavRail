@@ -319,17 +319,26 @@ private fun BoxWithConstraintsScope.shouldShrink(
     density: Density,
     fontFamilyResolver: FontFamily.Resolver,
     textMeasurer: TextMeasurer,
-) = textMeasurer.measure(
-    text = text,
-    style = textStyle,
-    overflow = TextOverflow.Clip,
-    softWrap = softWrap,
-    maxLines = maxLines,
-    constraints = constraints,
-    layoutDirection = layoutDirection,
-    density = density,
-    fontFamilyResolver = fontFamilyResolver,
-).hasVisualOverflow
+): Boolean {
+    // A collapsing container (e.g. mid-close-transition) can shrink the candidate search down to a
+    // single 0.sp entry. fontSize=0 makes the line-height/font-size ratio 0/0 = NaN, which trips a
+    // native assertion in Skia's TextStyle.setHeight ("Check failed") and crashes the composition.
+    // Skip the measurement entirely for a degenerate font size — the caller already treats an
+    // elected 0.sp as "cannot be displayed" regardless of what this returns.
+    if (!textStyle.fontSize.value.isFinite() || textStyle.fontSize.value <= 0f) return true
+
+    return textMeasurer.measure(
+        text = text,
+        style = textStyle,
+        overflow = TextOverflow.Clip,
+        softWrap = softWrap,
+        maxLines = maxLines,
+        constraints = constraints,
+        layoutDirection = layoutDirection,
+        density = density,
+        fontFamilyResolver = fontFamilyResolver,
+    ).hasVisualOverflow
+}
 
 @Stable
 @Composable
