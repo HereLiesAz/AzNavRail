@@ -149,6 +149,12 @@ data class AzNavItem(
     /** Where an [isUnattached] host parks. Null (and ignored) for every other item. */
     val unattachedAnchor: AzUnattachedAnchor? = null,
     /**
+     * Optional developer cap, in density-independent pixels, for this unattached host's visible
+     * vertical extent. Null lets it grow to the safe viewport limit. Content beyond the effective
+     * cap remains present and is reached by scrolling.
+     */
+    val unattachedMaxHeightDp: Float? = null,
+    /**
      * True for an item declared with `azRailSlider`: tapping it unfolds an
      * [com.hereliesaz.aznavrail.AzSlider] **in the item's own slot on the rail**, rather than
      * opening a panel somewhere else. The value stays where the user was already looking.
