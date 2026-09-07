@@ -6,6 +6,7 @@ on:
       - feature/platform-parity-scroll-visibility
     paths:
       - '.github/scripts/sync_platform_parity.py'
+      - '.github/scripts/update_platform_parity_docs.py'
       - '.github/workflows/sync-platform-parity.yml'
 
 permissions:
@@ -34,6 +35,9 @@ jobs:
 
       - name: Apply parity sync
         run: python .github/scripts/sync_platform_parity.py
+
+      - name: Synchronize documentation
+        run: python .github/scripts/update_platform_parity_docs.py
 
       - name: Normalize cross-platform API use
         run: |
@@ -88,7 +92,7 @@ jobs:
           rm -f aznavrail/src/test/java/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt
           git config user.name 'AzNavRail CI'
           git config user.email 'actions@users.noreply.github.com'
-          git add aznavrail aznavrail-cmp aznavrail-react SampleApp aznavrail-cmp-demo sample-pwa README.md docs
+          git add aznavrail aznavrail-cmp aznavrail-react SampleApp aznavrail-cmp-demo sample-pwa README.md docs .github/scripts/update_platform_parity_docs.py
           git diff --cached --quiet && exit 0
-          git commit -m 'Sync scrolling and visibility across all platforms'
+          git commit -m 'Sync platform libraries samples and documentation'
           git push origin HEAD:feature/platform-parity-scroll-visibility
