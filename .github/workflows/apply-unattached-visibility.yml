@@ -39,19 +39,32 @@ jobs:
       - name: Apply source migration
         run: python .github/scripts/apply_unattached_visibility.py
 
-      - name: Make NONE immediate
+      - name: Finalize generated visibility behavior
         run: |
           python - <<'PY'
           from pathlib import Path
-          for path in [
+          visibility_paths = [
               Path('aznavrail/src/main/java/com/hereliesaz/aznavrail/AzVisibility.kt'),
               Path('aznavrail-cmp/src/commonMain/kotlin/com/hereliesaz/aznavrail/AzVisibility.kt'),
-          ]:
+          ]
+          for path in visibility_paths:
               text = path.read_text()
               old = 'animationSpec = tween(durationMillis = effectiveDuration),'
               new = 'animationSpec = tween(durationMillis = if (effectiveAnimation == AzVisibilityAnimation.NONE) 0 else effectiveDuration),'
               if old not in text:
                   raise SystemExit(f'missing NONE animation marker in {path}')
+              path.write_text(text.replace(old, new, 1))
+
+          unattached_paths = [
+              Path('aznavrail/src/main/java/com/hereliesaz/aznavrail/internal/AzUnattachedRail.kt'),
+              Path('aznavrail-cmp/src/commonMain/kotlin/com/hereliesaz/aznavrail/internal/AzUnattachedRail.kt'),
+          ]
+          for path in unattached_paths:
+              text = path.read_text()
+              old = '.verticalScroll(scrollState)'
+              new = '.verticalScroll(scrollState, enabled = scrollState.maxValue > 0)'
+              if old not in text:
+                  raise SystemExit(f'missing scroll marker in {path}')
               path.write_text(text.replace(old, new, 1))
           PY
 
