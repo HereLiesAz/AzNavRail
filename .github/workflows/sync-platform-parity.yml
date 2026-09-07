@@ -1,0 +1,63 @@
+name: Sync platform parity
+
+on:
+  push:
+    branches:
+      - feature/platform-parity-scroll-visibility
+    paths:
+      - '.github/scripts/sync_platform_parity.py'
+      - '.github/workflows/sync-platform-parity.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/platform-parity-scroll-visibility
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: temurin
+
+      - name: Apply parity sync
+        run: python .github/scripts/sync_platform_parity.py
+
+      - name: Verify Android library and sample
+        run: ./gradlew :aznavrail:compileDebugKotlin :SampleApp:assembleDebug
+
+      - name: Verify CMP library and demo
+        run: ./gradlew :aznavrail-cmp:compileCommonMainKotlinMetadata :aznavrail-cmp:compileDebugKotlinAndroid :aznavrail-cmp:desktopMainClasses :aznavrail-cmp:compileKotlinWasmJs :aznavrail-cmp-demo:desktopMainClasses :aznavrail-cmp-demo:compileKotlinWasmJs
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Verify React library
+        working-directory: aznavrail-react
+        run: |
+          corepack enable
+          yarn install --immutable
+          yarn typecheck
+          yarn test --runInBand
+
+      - name: Verify PWA sample
+        working-directory: sample-pwa
+        run: |
+          corepack enable
+          yarn install --immutable
+          yarn build
+
+      - name: Commit verified parity sources
+        run: |
+          git config user.name 'AzNavRail CI'
+          git config user.email 'actions@users.noreply.github.com'
+          git add aznavrail aznavrail-cmp aznavrail-react SampleApp aznavrail-cmp-demo sample-pwa README.md docs
+          git diff --cached --quiet && exit 0
+          git commit -m 'Sync scrolling and visibility across all platforms'
+          git push origin HEAD:feature/platform-parity-scroll-visibility
