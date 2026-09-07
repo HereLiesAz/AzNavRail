@@ -25,6 +25,11 @@ jobs:
           java-version: '21'
           distribution: temurin
 
+      - name: Apply source migration
+        run: python .github/scripts/apply_unattached_visibility.py
+
+      - name: Verify Android library
+        run: ./gradlew :aznavrail:compileDebugKotlin
       - name: Seed Android unattached-rail test when absent
         run: |
           mkdir -p aznavrail/src/test/java/com/hereliesaz/aznavrail
