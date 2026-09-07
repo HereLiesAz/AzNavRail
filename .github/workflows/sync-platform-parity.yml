@@ -25,6 +25,12 @@ jobs:
           java-version: '21'
           distribution: temurin
 
+      - name: Seed migration fixture
+        run: |
+          mkdir -p aznavrail/src/test/java/com/hereliesaz/aznavrail
+          cp aznavrail-cmp/src/commonTest/kotlin/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt \
+             aznavrail/src/test/java/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt
+
       - name: Apply parity sync
         run: python .github/scripts/sync_platform_parity.py
 
@@ -55,6 +61,7 @@ jobs:
 
       - name: Commit verified parity sources
         run: |
+          rm -f aznavrail/src/test/java/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt
           git config user.name 'AzNavRail CI'
           git config user.email 'actions@users.noreply.github.com'
           git add aznavrail aznavrail-cmp aznavrail-react SampleApp aznavrail-cmp-demo sample-pwa README.md docs
