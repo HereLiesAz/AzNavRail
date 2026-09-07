@@ -25,6 +25,14 @@ jobs:
           java-version: '21'
           distribution: temurin
 
+      - name: Seed Android unattached-rail test when absent
+        run: |
+          mkdir -p aznavrail/src/test/java/com/hereliesaz/aznavrail
+          if [ ! -f aznavrail/src/test/java/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt ]; then
+            cp aznavrail-cmp/src/commonTest/kotlin/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt \
+               aznavrail/src/test/java/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt
+          fi
+
       - name: Apply source migration
         run: python .github/scripts/apply_unattached_visibility.py
 
