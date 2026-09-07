@@ -41,6 +41,8 @@ jobs:
             sed -i '/^import com.hereliesaz.aznavrail.AzHostActivityLayout$/a import com.hereliesaz.aznavrail.azUnattachedHostItem' SampleApp/src/main/java/com/hereliesaz/sampleapp/MainApp.kt
           grep -q '^import com.hereliesaz.aznavrail.azUnattachedHostItem$' aznavrail-cmp-demo/src/commonMain/kotlin/com/hereliesaz/aznavrail/demo/App.kt || \
             sed -i '/^package com.hereliesaz.aznavrail.demo$/a import com.hereliesaz.aznavrail.azUnattachedHostItem' aznavrail-cmp-demo/src/commonMain/kotlin/com/hereliesaz/aznavrail/demo/App.kt
+          grep -q '^import androidx.compose.ui.unit.dp$' aznavrail-cmp-demo/src/commonMain/kotlin/com/hereliesaz/aznavrail/demo/App.kt || \
+            sed -i '/^package com.hereliesaz.aznavrail.demo$/a import androidx.compose.ui.unit.dp' aznavrail-cmp-demo/src/commonMain/kotlin/com/hereliesaz/aznavrail/demo/App.kt
           python - <<'PY'
           from pathlib import Path
           p = Path('aznavrail-cmp/src/commonMain/kotlin/com/hereliesaz/aznavrail/internal/AzUnattachedRail.kt')
@@ -55,9 +57,6 @@ jobs:
               s = s.replace('import androidx.compose.ui.platform.LocalConfiguration\n', 'import androidx.compose.ui.platform.LocalWindowInfo\n')
           p.write_text(s)
           PY
-
-      - name: Verify Android library and sample
-        run: ./gradlew :aznavrail:compileDebugKotlin :SampleApp:assembleDebug
 
       - name: Verify CMP library and demo
         run: ./gradlew :aznavrail-cmp:compileCommonMainKotlinMetadata :aznavrail-cmp:compileDebugKotlinAndroid :aznavrail-cmp:desktopMainClasses :aznavrail-cmp:compileKotlinWasmJs :aznavrail-cmp-demo:desktopMainClasses :aznavrail-cmp-demo:compileKotlinWasmJs
@@ -80,6 +79,9 @@ jobs:
           corepack enable
           yarn install --immutable
           yarn build
+
+      - name: Verify Android library and sample
+        run: ./gradlew :aznavrail:compileDebugKotlin :SampleApp:assembleDebug
 
       - name: Commit verified parity sources
         run: |
