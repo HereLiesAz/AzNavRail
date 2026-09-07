@@ -30,6 +30,7 @@ jobs:
           mkdir -p aznavrail/src/test/java/com/hereliesaz/aznavrail
           cp aznavrail-cmp/src/commonTest/kotlin/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt \
              aznavrail/src/test/java/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt
+          sed -i "s/react \/ 'index.ts'/react \/ 'index.tsx'/" .github/scripts/sync_platform_parity.py
 
       - name: Apply parity sync
         run: python .github/scripts/sync_platform_parity.py
