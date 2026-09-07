@@ -1,0 +1,87 @@
+name: Apply unattached overflow and visibility
+
+on:
+  push:
+    branches:
+      - feature/unattached-rail-scrolling
+    paths:
+      - '.github/scripts/apply_unattached_visibility.py'
+      - '.github/workflows/apply-unattached-visibility.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/unattached-rail-scrolling
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+
+      - name: Seed Android unattached-rail test when absent
+        run: |
+          mkdir -p aznavrail/src/test/java/com/hereliesaz/aznavrail
+          if [ ! -f aznavrail/src/test/java/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt ]; then
+            cp aznavrail-cmp/src/commonTest/kotlin/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt \
+               aznavrail/src/test/java/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt
+          fi
+          sed -i 's/import kotlin.test.Test/import org.junit.Test/' aznavrail/src/test/java/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt
+          sed -i 's/import kotlin.test.assertEquals/import org.junit.Assert.assertEquals/' aznavrail/src/test/java/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt
+          sed -i 's/import kotlin.test.assertTrue/import org.junit.Assert.assertTrue/' aznavrail/src/test/java/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt
+
+      - name: Apply source migration
+        run: python .github/scripts/apply_unattached_visibility.py
+
+      - name: Finalize generated visibility behavior
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          visibility_paths = [
+              Path('aznavrail/src/main/java/com/hereliesaz/aznavrail/AzVisibility.kt'),
+              Path('aznavrail-cmp/src/commonMain/kotlin/com/hereliesaz/aznavrail/AzVisibility.kt'),
+          ]
+          for path in visibility_paths:
+              text = path.read_text()
+              old = 'animationSpec = tween(durationMillis = effectiveDuration),'
+              new = 'animationSpec = tween(durationMillis = if (effectiveAnimation == AzVisibilityAnimation.NONE) 0 else effectiveDuration),'
+              if old not in text:
+                  raise SystemExit(f'missing NONE animation marker in {path}')
+              path.write_text(text.replace(old, new, 1))
+
+          unattached_paths = [
+              Path('aznavrail/src/main/java/com/hereliesaz/aznavrail/internal/AzUnattachedRail.kt'),
+              Path('aznavrail-cmp/src/commonMain/kotlin/com/hereliesaz/aznavrail/internal/AzUnattachedRail.kt'),
+          ]
+          for path in unattached_paths:
+              text = path.read_text()
+              old = '.verticalScroll(scrollState)'
+              new = '.verticalScroll(scrollState, enabled = scrollState.maxValue > 0)'
+              if old not in text:
+                  raise SystemExit(f'missing scroll marker in {path}')
+              path.write_text(text.replace(old, new, 1))
+          PY
+
+      - name: Verify Android library tests
+        run: ./gradlew :aznavrail:testDebugUnitTest
+
+      - name: Verify Android sample
+        run: ./gradlew :SampleApp:assembleDebug
+
+      - name: Verify CMP common and platform targets
+        run: ./gradlew :aznavrail-cmp:compileCommonMainKotlinMetadata :aznavrail-cmp:compileDebugKotlinAndroid :aznavrail-cmp:desktopMainClasses :aznavrail-cmp:compileKotlinWasmJs
+
+      - name: Commit verified sources
+        run: |
+          git config user.name 'AzNavRail CI'
+          git config user.email 'actions@users.noreply.github.com'
+          git add aznavrail aznavrail-cmp docs
+          git diff --cached --quiet && exit 0
+          git commit -m 'Add scrollable unattached rails and reversible Az visibility'
+          git push origin HEAD:feature/unattached-rail-scrolling

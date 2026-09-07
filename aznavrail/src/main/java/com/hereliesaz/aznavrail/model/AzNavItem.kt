@@ -31,7 +31,7 @@ import kotlinx.parcelize.RawValue
  * @param menuToggleOffText Optional alternate text to display when the toggle is off in the menu.
  * @param isCycler If `true`, this item behaves like a cycler.
  * @param options The list of options for a cycler.
- * @param menuOptions Optional alternate list of options for a cycler in the menu.
+ * @param menuOptions Optional alternate list of options for a cycler.
  * @param selectedOption The currently selected option for a cycler.
  * @param isDivider If `true`, this item is a divider.
  * @param collapseOnClick If `true`, the navigation rail will collapse after this item is clicked.
@@ -177,6 +177,12 @@ data class AzNavItem(
     val isUnattached: Boolean = false,
     /** Where an [isUnattached] host parks. Null (and ignored) for every other item. */
     val unattachedAnchor: AzUnattachedAnchor? = null,
+    /**
+     * Optional developer cap, in density-independent pixels, for this unattached host's visible
+     * vertical extent. Null lets it grow to the safe viewport limit. Content beyond the effective
+     * cap remains present and is reached by scrolling.
+     */
+    val unattachedMaxHeightDp: Float? = null,
     /**
      * True for an item declared with `azRailSlider`: tapping it unfolds an
      * [com.hereliesaz.aznavrail.AzSlider] **in the item's own slot on the rail**, rather than
