@@ -30,6 +30,51 @@ jobs:
 
       - name: Verify Android library
         run: ./gradlew :aznavrail:compileDebugKotlin
+      - name: Seed Android unattached-rail test when absent
+        run: |
+          mkdir -p aznavrail/src/test/java/com/hereliesaz/aznavrail
+          if [ ! -f aznavrail/src/test/java/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt ]; then
+            cp aznavrail-cmp/src/commonTest/kotlin/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt \
+               aznavrail/src/test/java/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt
+          fi
+          sed -i 's/import kotlin.test.Test/import org.junit.Test/' aznavrail/src/test/java/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt
+          sed -i 's/import kotlin.test.assertEquals/import org.junit.Assert.assertEquals/' aznavrail/src/test/java/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt
+          sed -i 's/import kotlin.test.assertTrue/import org.junit.Assert.assertTrue/' aznavrail/src/test/java/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt
+
+      - name: Apply source migration
+        run: python .github/scripts/apply_unattached_visibility.py
+
+      - name: Finalize generated visibility behavior
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          visibility_paths = [
+              Path('aznavrail/src/main/java/com/hereliesaz/aznavrail/AzVisibility.kt'),
+              Path('aznavrail-cmp/src/commonMain/kotlin/com/hereliesaz/aznavrail/AzVisibility.kt'),
+          ]
+          for path in visibility_paths:
+              text = path.read_text()
+              old = 'animationSpec = tween(durationMillis = effectiveDuration),'
+              new = 'animationSpec = tween(durationMillis = if (effectiveAnimation == AzVisibilityAnimation.NONE) 0 else effectiveDuration),'
+              if old not in text:
+                  raise SystemExit(f'missing NONE animation marker in {path}')
+              path.write_text(text.replace(old, new, 1))
+
+          unattached_paths = [
+              Path('aznavrail/src/main/java/com/hereliesaz/aznavrail/internal/AzUnattachedRail.kt'),
+              Path('aznavrail-cmp/src/commonMain/kotlin/com/hereliesaz/aznavrail/internal/AzUnattachedRail.kt'),
+          ]
+          for path in unattached_paths:
+              text = path.read_text()
+              old = '.verticalScroll(scrollState)'
+              new = '.verticalScroll(scrollState, enabled = scrollState.maxValue > 0)'
+              if old not in text:
+                  raise SystemExit(f'missing scroll marker in {path}')
+              path.write_text(text.replace(old, new, 1))
+          PY
+
+      - name: Verify Android library tests
+        run: ./gradlew :aznavrail:testDebugUnitTest
 
       - name: Verify Android sample
         run: ./gradlew :SampleApp:assembleDebug
