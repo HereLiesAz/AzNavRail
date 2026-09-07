@@ -35,6 +35,13 @@ jobs:
       - name: Apply parity sync
         run: python .github/scripts/sync_platform_parity.py
 
+      - name: Normalize sample API imports
+        run: |
+          grep -q '^import com.hereliesaz.aznavrail.azUnattachedHostItem$' SampleApp/src/main/java/com/hereliesaz/sampleapp/MainApp.kt || \
+            sed -i '/^import com.hereliesaz.aznavrail.AzHostActivityLayout$/a import com.hereliesaz.aznavrail.azUnattachedHostItem' SampleApp/src/main/java/com/hereliesaz/sampleapp/MainApp.kt
+          grep -q '^import com.hereliesaz.aznavrail.azUnattachedHostItem$' aznavrail-cmp-demo/src/commonMain/kotlin/com/hereliesaz/aznavrail/demo/App.kt || \
+            sed -i '/^package com.hereliesaz.aznavrail.demo$/a import com.hereliesaz.aznavrail.azUnattachedHostItem' aznavrail-cmp-demo/src/commonMain/kotlin/com/hereliesaz/aznavrail/demo/App.kt
+
       - name: Verify Android library and sample
         run: ./gradlew :aznavrail:compileDebugKotlin :SampleApp:assembleDebug
 
