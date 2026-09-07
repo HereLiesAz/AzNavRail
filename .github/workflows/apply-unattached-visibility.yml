@@ -6,6 +6,7 @@ on:
       - feature/unattached-rail-scrolling
     paths:
       - '.github/scripts/apply_unattached_visibility.py'
+      - '.github/workflows/apply-unattached-visibility.yml'
 
 permissions:
   contents: write
