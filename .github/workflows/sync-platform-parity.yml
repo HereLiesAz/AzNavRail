@@ -1,0 +1,98 @@
+name: Sync platform parity
+
+on:
+  push:
+    branches:
+      - feature/platform-parity-scroll-visibility
+    paths:
+      - '.github/scripts/sync_platform_parity.py'
+      - '.github/scripts/update_platform_parity_docs.py'
+      - '.github/workflows/sync-platform-parity.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/platform-parity-scroll-visibility
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: temurin
+
+      - name: Seed migration fixture
+        run: |
+          mkdir -p aznavrail/src/test/java/com/hereliesaz/aznavrail
+          cp aznavrail-cmp/src/commonTest/kotlin/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt \
+             aznavrail/src/test/java/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt
+          sed -i "s/react \/ 'index.ts'/react \/ 'index.tsx'/" .github/scripts/sync_platform_parity.py
+
+      - name: Apply parity sync
+        run: python .github/scripts/sync_platform_parity.py
+
+      - name: Synchronize documentation
+        run: python .github/scripts/update_platform_parity_docs.py
+
+      - name: Normalize cross-platform API use
+        run: |
+          grep -q '^import com.hereliesaz.aznavrail.azUnattachedHostItem$' SampleApp/src/main/java/com/hereliesaz/sampleapp/MainApp.kt || \
+            sed -i '/^import com.hereliesaz.aznavrail.AzHostActivityLayout$/a import com.hereliesaz.aznavrail.azUnattachedHostItem' SampleApp/src/main/java/com/hereliesaz/sampleapp/MainApp.kt
+          grep -q '^import com.hereliesaz.aznavrail.azUnattachedHostItem$' aznavrail-cmp-demo/src/commonMain/kotlin/com/hereliesaz/aznavrail/demo/App.kt || \
+            sed -i '/^package com.hereliesaz.aznavrail.demo$/a import com.hereliesaz.aznavrail.azUnattachedHostItem' aznavrail-cmp-demo/src/commonMain/kotlin/com/hereliesaz/aznavrail/demo/App.kt
+          grep -q '^import androidx.compose.ui.unit.dp$' aznavrail-cmp-demo/src/commonMain/kotlin/com/hereliesaz/aznavrail/demo/App.kt || \
+            sed -i '/^package com.hereliesaz.aznavrail.demo$/a import androidx.compose.ui.unit.dp' aznavrail-cmp-demo/src/commonMain/kotlin/com/hereliesaz/aznavrail/demo/App.kt
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('aznavrail-cmp/src/commonMain/kotlin/com/hereliesaz/aznavrail/internal/AzUnattachedRail.kt')
+          s = p.read_text()
+          s = s.replace(
+              '    val configuration = LocalConfiguration.current\n    val safeViewportHeight = (configuration.screenHeightDp * 0.8f).dp\n',
+              '    val density = LocalDensity.current\n    val windowInfo = LocalWindowInfo.current\n    val safeViewportHeight = with(density) { windowInfo.containerSize.height.toDp() } * 0.8f\n'
+          )
+          if 'import androidx.compose.ui.platform.LocalDensity' not in s:
+              s = s.replace('import androidx.compose.ui.platform.LocalConfiguration\n', 'import androidx.compose.ui.platform.LocalDensity\nimport androidx.compose.ui.platform.LocalWindowInfo\n')
+          else:
+              s = s.replace('import androidx.compose.ui.platform.LocalConfiguration\n', 'import androidx.compose.ui.platform.LocalWindowInfo\n')
+          p.write_text(s)
+          PY
+
+      - name: Verify CMP library and demo
+        run: ./gradlew :aznavrail-cmp:compileCommonMainKotlinMetadata :aznavrail-cmp:compileDebugKotlinAndroid :aznavrail-cmp:desktopMainClasses :aznavrail-cmp:compileKotlinWasmJs :aznavrail-cmp-demo:desktopMainClasses :aznavrail-cmp-demo:compileKotlinWasmJs
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Verify React library
+        working-directory: aznavrail-react
+        run: |
+          corepack enable
+          yarn install --immutable
+          yarn typecheck
+          yarn test --runInBand
+
+      - name: Verify PWA sample
+        working-directory: sample-pwa
+        run: |
+          corepack enable
+          yarn install --immutable
+          yarn build
+
+      - name: Verify Android library and sample
+        run: ./gradlew :aznavrail:compileDebugKotlin :SampleApp:assembleDebug
+
+      - name: Commit verified parity sources
+        run: |
+          rm -f aznavrail/src/test/java/com/hereliesaz/aznavrail/AzUnattachedRailTest.kt
+          git config user.name 'AzNavRail CI'
+          git config user.email 'actions@users.noreply.github.com'
+          git add aznavrail aznavrail-cmp aznavrail-react SampleApp aznavrail-cmp-demo sample-pwa README.md docs .github/scripts/update_platform_parity_docs.py
+          git diff --cached --quiet && exit 0
+          git commit -m 'Sync platform libraries samples and documentation'
+          git push origin HEAD:feature/platform-parity-scroll-visibility
