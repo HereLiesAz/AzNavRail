@@ -649,7 +649,7 @@ private fun AzDropdownEntryItem(
 ) {
     val design = config.design
     fun navigate(route: String?) {
-        route?.let { navController?.navigate(it) }
+        route?.let { navController?.azNavigateWhenReady(it) }
     }
 
     // Dividers carry no kinetics; everything else gets the staggered entrance/exit + optional tilt.

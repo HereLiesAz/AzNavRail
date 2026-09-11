@@ -1,6 +1,8 @@
 // FILE: ./aznavrail/src/main/java/com/hereliesaz/aznavrail/internal/RailContent.kt
 package com.hereliesaz.aznavrail.internal
 
+import com.hereliesaz.aznavrail.azNavigateWhenReady
+
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.graphics.lerp
@@ -136,7 +138,7 @@ internal fun RailContent(
             }
         } else {
             {
-                item.route?.let { navController?.navigate(it) }
+                item.route?.let { navController?.azNavigateWhenReady(it) }
                 onClick?.invoke()
                 onItemClick()
             }
@@ -306,7 +308,7 @@ internal fun handleHostItemClick(
     onHostClick: () -> Unit
 ) {
     onHostClick()
-    item.route?.let { navController?.navigate(it) }
+    item.route?.let { navController?.azNavigateWhenReady(it) }
     onClick?.invoke()
     onItemClick()
 }
