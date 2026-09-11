@@ -1,6 +1,8 @@
 // FILE: ./aznavrail/src/main/java/com/hereliesaz/aznavrail/internal/RailItems.kt
 package com.hereliesaz.aznavrail.internal
 
+import com.hereliesaz.aznavrail.azNavigateWhenReady
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
@@ -710,7 +712,7 @@ private fun DraggableRailItemWrapper(
                                         scope.onClickMap[item.id]?.invoke()
                                     } else {
                                         scope.onClickMap[item.id]?.invoke()
-                                        item.route?.let { navController?.navigate(it) }
+                                        item.route?.let { navController?.azNavigateWhenReady(it) }
                                         onItemSelected(item)
                                     }
                                 }
@@ -805,7 +807,7 @@ private fun DraggableRailItemWrapper(
                                 val selectedChild = item.resolveReflectedChild()
                                 if (selectedChild != null) {
                                     scope.onClickMap[selectedChild.id]?.invoke()
-                                    selectedChild.route?.let { navController?.navigate(it) }
+                                    selectedChild.route?.let { navController?.azNavigateWhenReady(it) }
                                     onItemSelected(selectedChild)
                                     scope.advancedConfig.onInteraction?.invoke(selectedChild.id, selectedChild)
                                 }
@@ -905,7 +907,7 @@ private fun DraggableRailItemWrapper(
                                 scope.selectedNestedChildMap[item.id] = subItem.id
                             }
                             scope.onClickMap[subItem.id]?.invoke()
-                            subItem.route?.let { navController?.navigate(it) }
+                            subItem.route?.let { navController?.azNavigateWhenReady(it) }
                             onItemSelected(subItem)
                             scope.advancedConfig.onInteraction?.invoke(subItem.id, subItem)
                             if (!item.keepNestedRailOpen) {
@@ -932,7 +934,7 @@ private fun DraggableRailItemWrapper(
                         onHiddenMenuDismiss = onHiddenMenuDismiss,
                         onHiddenMenuItemClick = { menuItem ->
                             scope.hiddenMenuOnClickMap[menuItem.id]?.invoke()
-                            menuItem.route?.let { navController?.navigate(it) }
+                            menuItem.route?.let { navController?.azNavigateWhenReady(it) }
                         },
                         onHiddenMenuInputSubmit = { menuItem, value ->
                             scope.hiddenMenuOnValueChangeMap[menuItem.id]?.invoke(value)
@@ -968,7 +970,7 @@ private fun DraggableRailItemWrapper(
                                 scope.selectedNestedChildMap[item.id] = subItem.id
                             }
                             scope.onClickMap[subItem.id]?.invoke()
-                            subItem.route?.let { navController?.navigate(it) }
+                            subItem.route?.let { navController?.azNavigateWhenReady(it) }
                             onItemSelected(subItem)
                             scope.advancedConfig.onInteraction?.invoke(subItem.id, subItem)
                             if (!item.keepNestedRailOpen) {
@@ -995,7 +997,7 @@ private fun DraggableRailItemWrapper(
                         onHiddenMenuDismiss = onHiddenMenuDismiss,
                         onHiddenMenuItemClick = { menuItem ->
                             scope.hiddenMenuOnClickMap[menuItem.id]?.invoke()
-                            menuItem.route?.let { navController?.navigate(it) }
+                            menuItem.route?.let { navController?.azNavigateWhenReady(it) }
                         },
                         onHiddenMenuInputSubmit = { menuItem, value ->
                             scope.hiddenMenuOnValueChangeMap[menuItem.id]?.invoke(value)
@@ -1015,7 +1017,7 @@ private fun DraggableRailItemWrapper(
                 },
                 onItemClick = { menuItem ->
                     scope.hiddenMenuOnClickMap[menuItem.id]?.invoke()
-                    menuItem.route?.let { navController?.navigate(it) }
+                    menuItem.route?.let { navController?.azNavigateWhenReady(it) }
                     item.onHiddenMenuDismiss?.invoke()
                     onHiddenMenuDismiss()
                 },

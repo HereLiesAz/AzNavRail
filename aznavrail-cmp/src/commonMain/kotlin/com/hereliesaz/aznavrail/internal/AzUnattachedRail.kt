@@ -1,5 +1,7 @@
 package com.hereliesaz.aznavrail.internal
 
+import com.hereliesaz.aznavrail.azNavigateWhenReady
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -443,7 +445,7 @@ private fun UnattachedNode(
             },
             onItemClick = { menuItem ->
                 scope.hiddenMenuOnClickMap[menuItem.id]?.invoke()
-                menuItem.route?.let { navController?.navigate(it) }
+                menuItem.route?.let { navController?.azNavigateWhenReady(it) }
                 item.onHiddenMenuDismiss?.invoke()
                 onHiddenMenuDismiss()
             },
@@ -489,7 +491,7 @@ private fun UnattachedNode(
                     tertiaryColor = scope.tertiaryColor,
                     onItemSelected = { subItem ->
                         scope.onClickMap[subItem.id]?.invoke()
-                        subItem.route?.let { navController?.navigate(it) }
+                        subItem.route?.let { navController?.azNavigateWhenReady(it) }
                         scope.advancedConfig.onInteraction?.invoke(subItem.id, subItem)
                         if (!item.keepNestedRailOpen) scope.nestedRailOpenId = null
                     },
@@ -502,7 +504,7 @@ private fun UnattachedNode(
                     onHiddenMenuDismiss = onHiddenMenuDismiss,
                     onHiddenMenuItemClick = { menuItem ->
                         scope.hiddenMenuOnClickMap[menuItem.id]?.invoke()
-                        menuItem.route?.let { navController?.navigate(it) }
+                        menuItem.route?.let { navController?.azNavigateWhenReady(it) }
                     },
                     onHiddenMenuInputSubmit = { menuItem, value ->
                         scope.hiddenMenuOnValueChangeMap[menuItem.id]?.invoke(value)
@@ -528,7 +530,7 @@ private fun UnattachedNode(
                     tertiaryColor = scope.tertiaryColor,
                     onItemSelected = { subItem ->
                         scope.onClickMap[subItem.id]?.invoke()
-                        subItem.route?.let { navController?.navigate(it) }
+                        subItem.route?.let { navController?.azNavigateWhenReady(it) }
                         scope.advancedConfig.onInteraction?.invoke(subItem.id, subItem)
                         if (!item.keepNestedRailOpen) scope.nestedRailOpenId = null
                     },
@@ -541,7 +543,7 @@ private fun UnattachedNode(
                     onHiddenMenuDismiss = onHiddenMenuDismiss,
                     onHiddenMenuItemClick = { menuItem ->
                         scope.hiddenMenuOnClickMap[menuItem.id]?.invoke()
-                        menuItem.route?.let { navController?.navigate(it) }
+                        menuItem.route?.let { navController?.azNavigateWhenReady(it) }
                     },
                     onHiddenMenuInputSubmit = { menuItem, value ->
                         scope.hiddenMenuOnValueChangeMap[menuItem.id]?.invoke(value)

@@ -1,5 +1,7 @@
 package com.hereliesaz.aznavrail.internal
 
+import com.hereliesaz.aznavrail.azNavigateWhenReady
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -154,7 +156,7 @@ internal fun MenuItem(
                     interactionSource = interactionSource,
                     indication = null,
                     onValueChange = {
-                        item.route?.let { navController?.navigate(it) }
+                        item.route?.let { navController?.azNavigateWhenReady(it) }
                         onClick?.invoke()
                         onToggle()
                         onItemClick()
@@ -171,7 +173,7 @@ internal fun MenuItem(
                         } else if (item.isCycler) {
                             onCyclerClick?.invoke()
                         } else {
-                            item.route?.let { navController?.navigate(it) }
+                            item.route?.let { navController?.azNavigateWhenReady(it) }
                             onClick?.invoke()
                             onToggle()
                             onItemClick()
