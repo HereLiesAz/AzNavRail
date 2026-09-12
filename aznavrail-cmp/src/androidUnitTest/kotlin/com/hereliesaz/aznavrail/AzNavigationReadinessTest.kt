@@ -171,6 +171,25 @@ class AzNavigationReadinessTest {
     }
 
     @Test
+    fun cancelPendingNavigationRemovesTheDestinationChangedListener() {
+        var removedCount = 0
+        val controller = object : NavHostController(androidx.test.core.app.ApplicationProvider.getApplicationContext()) {
+            override fun removeOnDestinationChangedListener(listener: androidx.navigation.NavController.OnDestinationChangedListener) {
+                super.removeOnDestinationChangedListener(listener)
+                removedCount++
+            }
+        }
+        controller.navigatorProvider.addNavigator(androidx.navigation.compose.ComposeNavigator())
+
+        // Enqueue adds the listener because the graph is not ready
+        controller.azNavigateWhenReady("target")
+        assertEquals(0, removedCount)
+
+        controller.cancelPendingNavigation()
+        assertEquals(1, removedCount)
+    }
+
+    @Test
     fun controllerReplacementDoesNotReplayOldRoutes() {
         val scope = AzNavHostScopeImpl()
         lateinit var firstController: NavHostController

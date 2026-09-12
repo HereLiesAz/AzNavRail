@@ -288,30 +288,21 @@ class AzNavigationReadinessTest {
 
     @Test
     fun `cancelPendingNavigation removes the destination-changed listener`() {
-        lateinit var controller: NavHostController
-        val hostReady = mutableStateOf(false)
-
-        rule.setContent {
-            controller = rememberNavController()
-            if (hostReady.value) {
-                NavHost(navController = controller, startDestination = "home") {
-                    composable("home") {}
-                    composable("target") {}
-                }
+        var removedCount = 0
+        val controller = object : NavHostController(androidx.test.core.app.ApplicationProvider.getApplicationContext()) {
+            override fun removeOnDestinationChangedListener(listener: androidx.navigation.NavController.OnDestinationChangedListener) {
+                super.removeOnDestinationChangedListener(listener)
+                removedCount++
             }
         }
+        controller.navigatorProvider.addNavigator(androidx.navigation.compose.ComposeNavigator())
 
-        rule.runOnIdle {
-            controller.azNavigateWhenReady("target")
-            controller.cancelPendingNavigation()
-        }
+        // Enqueue adds the listener because the graph is not ready
+        controller.azNavigateWhenReady("target")
+        assertEquals(0, removedCount)
 
-        rule.runOnUiThread { hostReady.value = true }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertEquals("home", controller.currentDestination?.route)
-        }
+        controller.cancelPendingNavigation()
+        assertEquals(1, removedCount)
     }
 
     // -------------------------------------------------------------------------
