@@ -171,6 +171,40 @@ class AzNavigationReadinessTest {
     }
 
     @Test
+    fun cancelPendingNavigationRemovesListener() {
+        lateinit var controller: NavHostController
+        val hostReady = mutableStateOf(false)
+
+        rule.setContent {
+            controller = rememberNavController()
+            if (hostReady.value) {
+                NavHost(navController = controller, startDestination = "home") {
+                    composable("home") {}
+                    composable("target") {}
+                    composable("unintended") {}
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            controller.azNavigateWhenReady("target")
+            controller.cancelPendingNavigation()
+
+            val routesField = AzPendingNavigation::class.java.getDeclaredField("routes").apply { isAccessible = true }
+            @Suppress("UNCHECKED_CAST")
+            val routesMap = routesField.get(AzPendingNavigation) as MutableMap<androidx.navigation.NavController, MutableList<String>>
+            routesMap[controller] = mutableListOf("unintended")
+        }
+
+        rule.runOnUiThread { hostReady.value = true }
+        rule.waitForIdle()
+
+        rule.runOnIdle {
+            assertEquals("home", controller.currentDestination?.route)
+        }
+    }
+
+    @Test
     fun controllerReplacementDoesNotReplayOldRoutes() {
         val scope = AzNavHostScopeImpl()
         lateinit var firstController: NavHostController
