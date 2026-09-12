@@ -1,0 +1,55 @@
+# Labels applied automatically by actions/labeler based on changed paths.
+# See: https://github.com/actions/labeler
+
+android:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "aznavrail/**"
+
+cmp:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "aznavrail-cmp/**"
+
+annotations:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "aznavrail-annotations/**"
+          - "aznavrail-processor/**"
+
+react:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "aznavrail-react/**"
+          - "sample-pwa/**"
+
+demo:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "aznavrail-cmp-demo/**"
+          - "SampleApp/**"
+
+figma:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "figma-export/**"
+          - "figma-plugin/**"
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/**"
+          - "gradle/**"
+          - "*.gradle.kts"
+          - "gradle.properties"
+          - "gradlew"
+          - "gradlew.bat"
+          - "jitpack.yml"
+          - "setup_android.sh"
+
+docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "docs/**"
+          - "*.md"
+          - ".github/*.md"
