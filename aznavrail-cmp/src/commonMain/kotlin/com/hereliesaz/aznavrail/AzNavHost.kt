@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
@@ -316,6 +317,10 @@ fun AzHostActivityLayout(
     val effectiveCurrentDestination = currentDestination ?: run {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         navBackStackEntry?.destination?.route
+    }
+
+    DisposableEffect(navController) {
+        onDispose { navController.cancelPendingNavigation() }
     }
 
     val scope = remember { AzNavHostScopeImpl() }
