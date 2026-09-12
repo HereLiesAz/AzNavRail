@@ -1,3 +1,4 @@
+cat << 'INNER_EOF' > aznavrail-cmp/src/commonMain/kotlin/com/hereliesaz/aznavrail/util/HistoryStore.kt
 package com.hereliesaz.aznavrail.util
 
 import kotlinx.coroutines.sync.Mutex
@@ -113,3 +114,4 @@ internal object HistoryStore {
         }
     }
 }
+INNER_EOF

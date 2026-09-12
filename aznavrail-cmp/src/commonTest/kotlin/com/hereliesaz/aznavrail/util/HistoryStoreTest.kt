@@ -3,17 +3,18 @@ package com.hereliesaz.aznavrail.util
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.BeforeTest
 
-/**
- * Regression test for [HistoryStore.addEntry]'s ordering guarantee: it used to launch its mutation
- * on a detached `GlobalScope` job and return immediately, so a [HistoryStore.getSuggestions] call
- * issued right after (as `AzTextBox` does, from its own `LaunchedEffect(text)`) could race the write
- * on an unrelated dispatcher and miss the just-added entry — a divergence from the Android sibling's
- * synchronous `HistoryManager.addEntry`. Now that `addEntry` itself suspends until the write lands,
- * awaiting it (as this test does, and as `AzTextBox` does via its own `CoroutineScope`) guarantees
- * the entry is visible to the very next call.
- */
 class HistoryStoreTest {
+
+    private val memoryStore = mutableMapOf<String, String>()
+
+    @BeforeTest
+    fun setUp() {
+        memoryStore.clear()
+        HistoryStore.testSettingsOverride = { key, value -> memoryStore[key] = value }
+        HistoryStore.testSettingsReader = { key, default -> memoryStore[key] ?: default }
+    }
 
     @Test
     fun addEntry_isImmediatelyVisibleToGetSuggestions() = runBlocking {
