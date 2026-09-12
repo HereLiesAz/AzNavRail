@@ -2,6 +2,8 @@ package com.hereliesaz.aznavrail.demo
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -66,6 +68,7 @@ private fun DemoHost() {
     // The third highlight is the app's to drive; nothing in the library ever lights it.
     var armed by remember { mutableStateOf(false) }
     var lastLayerAction by remember { mutableStateOf("(none)") }
+    var showWidgets by remember { mutableStateOf(false) }
 
     AzHostActivityLayout(navController = navController) {
         // `vibrate` turns on the haptic vocabulary: every commit answers, not just FAB activation.
@@ -149,6 +152,11 @@ private fun DemoHost() {
 
         azMenuItem(id = "settings", text = "Settings", screenTitle = "Settings") {}
 
+        // Widget showcase — demonstrates standalone composables (AzTextBox, AzForm, AzSlider, etc.)
+        azRailItem(id = "widgets", text = "Widgets", screenTitle = "Widgets", color = Color.White) {
+            showWidgets = !showWidgets
+        }
+
         // The rail ends with an About ("?") item on its own. Declaring one places it yourself —
         // here, right after the menu item — and `azAbout(aboutRailItem = false)` drops it. Tapping
         // it opens the reader; tapping any other rail or menu item, or the app icon, closes it.
@@ -213,22 +221,26 @@ private fun DemoHost() {
 
         // --- Onscreen content, plus two title-row drop-downs ------------------------------------
         onscreen(alignment = Alignment.Center) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    text = "Tap Sync to watch one item spin on its own.",
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                Text(
-                    text = "Drag the floating Tools host anywhere; it comes back there.",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = "Layers → Detail last action: $lastLayerAction",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+            if (showWidgets) {
+                WidgetShowcase()
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = "Tap Sync to watch one item spin on its own.",
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    Text(
+                        text = "Drag the floating Tools host anywhere; it comes back there.",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Text(
+                        text = "Layers → Detail last action: $lastLayerAction",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
             }
 
             // Declared here, drawn up beside the screen title — and the two line up next to each
