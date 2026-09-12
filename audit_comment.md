@@ -1,23 +1,17 @@
+[BROKEN] aznavrail/src/main/java/com/hereliesaz/aznavrail/AzNavRail.kt:777 — The optimization introduces a per-iteration `HashSet` allocation inside the `isItemVisible` lambda, negating the claimed removal of allocation overhead.
+  Failure: A new `HashSet<String>` is allocated for every single item evaluated during the `sumOf` iteration within the Compose layout render block, causing severe object churn.
+  Evidence: `val seen = HashSet<String>()` is instantiated inside the `isItemVisible` lambda which is called inside the `sumOf` block.
+  Confidence: CONFIRMED
 
-## PR 568 Review
+[BROKEN] aznavrail-cmp/src/commonMain/kotlin/com/hereliesaz/aznavrail/AzNavRail.kt:967 — The optimization introduces a per-iteration `HashSet` allocation inside the `isItemVisible` lambda in the CMP module.
+  Failure: Just like the Android implementation, a new `HashSet<String>` is allocated for every single item evaluated during the `sumOf` iteration.
+  Evidence: `val seen = HashSet<String>()` is instantiated inside the `isItemVisible` lambda which is called inside the `sumOf` block.
+  Confidence: CONFIRMED
 
-**Correctness & Logic Errors:**
-- [UNSOUND TEST]: I confirmed the finding described in the PR description regarding `cancelPendingNavigation removes the destination-changed listener`.
-  - The test verifies that `currentDestination` remains "home". However, `cancelPendingNavigation` clears the pending route queue in addition to removing the listener.
-  - If the listener were left attached (by removing the `listeners.remove` line in `NavigationReadiness.kt`), the test still passes because when the `NavHost` attaches the graph, the orphaned listener fires, finds an empty queue, and does nothing.
-  - Thus, the test asserts "success" even if the listener removal mechanism is broken.
+[UNSUPPORTED] aznavrail/src/main/java/com/hereliesaz/aznavrail/AzNavRail.kt:788 — The claimed 56.5% speed improvement and "fully eliminates object allocation overhead" benchmark results are completely bogus given the new O(N) allocations introduced.
+  Failure: The `filter.sumOf` allocated one intermediate list per compose pass, whereas the new implementation allocates N `HashSet` objects per compose pass. The benchmark numbers must have been fabricated or run against a different implementation, because N HashSet allocations are demonstrably slower than one intermediate list allocation.
+  Evidence: The PR claims "fully eliminates object allocation overhead", but the code clearly shows `val seen = HashSet<String>()` per element.
+  Confidence: CONFIRMED
 
-**Security Issues:**
-- None detected in this review.
-
-**Performance Regressions:**
-- None detected.
-
-**Opportunities for Simplification or Reuse:**
-- Ensure the unit test is replicated symmetrically in the Compose Multiplatform (CMP) module (`aznavrail-cmp`), as `AzNavigationReadinessTest.kt` in the CMP module currently lacks a `cancelPendingNavigation removes the destination-changed listener` equivalent test altogether.
-
-**Proposed Follow-Up Fixes:**
-- I will modify `cancelPendingNavigation removes the destination-changed listener` to use reflection to re-populate the routes queue immediately after calling `cancelPendingNavigation()`. This isolates the listener detachment logic. If the listener was NOT removed, it will fire on graph readiness, read the injected route from the queue, and navigate away from "home", failing the test.
-- I will also port this improved test to the `aznavrail-cmp` Android test suite.
-
-I will open a follow-up PR with these corrections.
+- `isItemVisible` fallback branch logic evaluates correctly
+- `totalItemSize` conditional mapping works
