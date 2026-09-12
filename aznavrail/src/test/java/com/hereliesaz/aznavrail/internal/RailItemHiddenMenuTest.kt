@@ -36,9 +36,9 @@ class RailItemHiddenMenuTest {
         composeTestRule.setContent {
             val navController = rememberNavController()
             AzHostActivityLayout(navController = navController) {
-                azRailItem(id = "item1", text = "Item 1", onClick = { clicked = true }) {
+                azRailItem(id = "item1", text = "Item 1", onClick = { clicked = true }, hiddenMenu = {
                     listItem("Some action") { actionClicked = true }
-                }
+                })
                 onscreen { }
             }
         }
@@ -67,9 +67,9 @@ class RailItemHiddenMenuTest {
         composeTestRule.setContent {
             val navController = rememberNavController()
             AzHostActivityLayout(navController = navController) {
-                azRailItem(id = "item1", text = "Item 1", onClick = { clicked = true }) {
+                azRailItem(id = "item1", text = "Item 1", onClick = { clicked = true }, hiddenMenu = {
                     listItem("Some action") {}
-                }
+                })
                 onscreen { }
             }
         }
@@ -90,9 +90,9 @@ class RailItemHiddenMenuTest {
         composeTestRule.setContent {
             val navController = rememberNavController()
             AzHostActivityLayout(navController = navController) {
-                azRailToggle(id = "toggle1", isChecked = false, toggleOnText = "On", toggleOffText = "Off") {
+                azRailToggle(id = "toggle1", isChecked = false, toggleOnText = "On", toggleOffText = "Off", hiddenMenu = {
                     listItem("Reset") { actionClicked = true }
-                }
+                })
                 onscreen { }
             }
         }
@@ -116,9 +116,9 @@ class RailItemHiddenMenuTest {
         composeTestRule.setContent {
             val navController = rememberNavController()
             AzHostActivityLayout(navController = navController) {
-                azRailHostItem(id = "host1", text = "Host") {
+                azRailHostItem(id = "host1", text = "Host", hiddenMenu = {
                     listItem("Rename") { actionClicked = true }
-                }
+                })
                 onscreen { }
             }
         }

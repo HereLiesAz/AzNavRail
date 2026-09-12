@@ -203,10 +203,10 @@ private fun DemoHost() {
             hostId = "layers",
             text = "Detail",
             onClick = { lastLayerAction = "Detail selected" },
-        ) {
+         hiddenMenu = {
             listItem(text = "Duplicate") { lastLayerAction = "Detail → Duplicate" }
             listItem(text = "Delete") { lastLayerAction = "Detail → Delete" }
-        }
+        })
 
         // --- Popup bound to the rail -----------------------------------------------------------
         azPopup(alerts)

@@ -184,9 +184,9 @@ class AzNavRailScopeTest {
             id = "reloc",
             hostId = "host",
             text = "Reloc"
-        ) {
+        , hiddenMenu = {
             listItem("Action") {}
-        }
+        })
         
         val item = scope.navItems[0]
         assertTrue(item.isRelocItem)

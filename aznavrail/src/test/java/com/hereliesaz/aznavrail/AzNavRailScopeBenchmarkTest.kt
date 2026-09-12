@@ -16,11 +16,11 @@ class AzNavRailScopeBenchmarkTest {
                     id = "item_$i",
                     hostId = "host",
                     text = "Text $i"
-                ) {
+                , hiddenMenu = {
                     listItem("Action") {}
                     listItem("Action 2") {}
                     inputItem("Hint") {}
-                }
+                })
             }
         }
 
