@@ -785,8 +785,13 @@ fun AzNavRail(
                                     visible
                                 }
                             }
-                            val totalItemSize = orderedRailItems.filter(isItemVisible)
-                                .sumOf { (activeButtonSize.value + (if (scope.packButtons || isFloating) 0f else AzNavRailDefaults.RailContentVerticalArrangement.value)).toDouble() }.dp
+                            val totalItemSize = orderedRailItems.sumOf { item ->
+                                if (isItemVisible(item)) {
+                                    (activeButtonSize.value + (if (scope.packButtons || isFloating) 0f else AzNavRailDefaults.RailContentVerticalArrangement.value)).toDouble()
+                                } else {
+                                    0.0
+                                }
+                            }.dp
                             val availableSize = if (isHorizontal) maxWidth else maxHeight
                             val isScrollable = totalItemSize > (availableSize * 0.65f)
                             val scrollModifier = if (isScrollable) {

@@ -21,6 +21,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -616,7 +617,7 @@ private fun rememberUnattachedRelocGestureModifier(
     val hapticFeedback = LocalHapticFeedback.current
     val viewConfiguration = LocalViewConfiguration.current
     val coroutineScope = rememberCoroutineScope()
-    var dragOffsetY by remember(item.id) { mutableStateOf(0f) }
+    var dragOffsetY by remember(item.id) { mutableFloatStateOf(0f) }
     var isDragging by remember(item.id) { mutableStateOf(false) }
 
     return Modifier
@@ -762,7 +763,7 @@ private class AzFloatingRailState(
     var dock by mutableStateOf(dock)
     var freeOffset by mutableStateOf(freeOffset)
     /** Sort key among peers pinned to the same edge — a fraction of the window along that edge. */
-    var priority by mutableStateOf(priority)
+    var priority by mutableFloatStateOf(priority)
     /** This rail is docked to the right of the rail with this id, if any. At most one column over. */
     var rightOf by mutableStateOf<String?>(null)
     /** This rail is docked below the rail with this id, if any. */
