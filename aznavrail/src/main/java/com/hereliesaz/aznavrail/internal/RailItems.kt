@@ -39,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -123,7 +124,7 @@ internal fun RailItems(
         if (packRailButtons) topLevelItems.filter { it.isRailItem } else topLevelItems
 
     var draggedItemId by remember { mutableStateOf<String?>(null) }
-    var dragOffset by remember { mutableStateOf(0f) }
+    var dragOffset by remember { mutableFloatStateOf(0f) }
     var itemHeights by remember { mutableStateOf(mapOf<String, Int>()) }
     var itemWidths by remember { mutableStateOf(mapOf<String, Int>()) }
     var hiddenMenuOpenId by remember { mutableStateOf<String?>(null) }
