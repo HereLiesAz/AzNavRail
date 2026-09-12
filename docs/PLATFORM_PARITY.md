@@ -36,6 +36,11 @@ This document is the parity contract. A feature should not be described as cross
 | Status-driven guidance | ✅ | ✅ | ✅ |
 | Android system overlay | ✅ | Android target only | n/a |
 | `@Az` + KSP-generated Android graph/activity | ✅ | n/a | n/a |
+| Navigation readiness (`azNavigateWhenReady` / `cancelPendingNavigation`) | ✅ | ✅ | n/a |
+| Autocomplete history (`HistoryManager` / `HistoryStore`) | ✅ (file-backed) | ✅ (settings-backed) | n/a |
+| `AzAppMeta` / `LocalAzAppMeta` — injected app name, icon, packageId | Derived from `Context` in `AzHostActivityLayout` | Explicit `CompositionLocalProvider` | n/a |
+| `AzGuideStrings` / `LocalAzGuideStrings` — guidance string localization | Android string resources (`R.string.*`) | `CompositionLocalProvider` with English defaults | n/a |
+| Host `CompositionLocals` split | Defined in `AzNavHost.kt` (includes full nav machinery) | Split across `AzHostLocals.kt` (`LocalAzNavHostPresent`, `LocalAzNavHostScope`, `rememberAzNavHostScope`) and `AzSafeZonesLocals.kt` (`LocalAzSafeZones`, `AzAppMeta`, `AzGuideStrings`) to avoid pulling in nav deps | n/a |
 
 Platform-specific implementation mechanics are allowed to differ. Observable behavior should not.
 
