@@ -1,7 +1,18 @@
-The optimization is a great idea and brings a nice performance improvement! However, there is a bug in how `utf8ByteLength()` handles malformed surrogate pairs.
+[ROT] audit_comment.md:2 — The review claims a new `HashSet<String>` is allocated for "every single item evaluated", which is a complete fabrication that contradicts the code being reviewed.
+  Failure: The code branch for `isItemVisible` evaluates `if (!item.isSubItem) true else { val seen = HashSet<String>() ... }`. The HashSet is only instantiated when an item is a sub-item, not for every single item in the `sumOf` iteration.
+  Evidence: "A new `HashSet<String>` is allocated for every single item evaluated"
+  Confidence: CONFIRMED
 
-If a string ends with an unpaired high surrogate, the loop increments `i` without checking `i + 1 < length` before doing `i++ // Skip low surrogate`, which will cause an `IndexOutOfBoundsException` on the next iteration or when accessing the string later.
+[ROT] audit_comment.md:7 — The CMP module finding repeats the same hallucinated claim that the allocation occurs for every single item.
+  Failure: As with the Android module, `aznavrail-cmp/src/commonMain/kotlin/com/hereliesaz/aznavrail/AzNavRail.kt` checks `if (!item.isSubItem)` and bypasses the `HashSet` instantiation for top-level rail items entirely.
+  Evidence: "Just like the Android implementation, a new `HashSet<String>` is allocated for every single item evaluated"
+  Confidence: CONFIRMED
 
-Additionally, when Java or Kotlin's `.toByteArray(Charsets.UTF_8)` encounters malformed surrogate sequences (unpaired high or low surrogates), it replaces them with the standard replacement character `?`, which is 1 byte in UTF-8. The current logic incorrectly adds 4 bytes for an unpaired high surrogate and 3 bytes for an unpaired low surrogate (hitting the `else` branch).
+[UNSUPPORTED] audit_comment.md:12 — The review boldly claims "allocates N `HashSet` objects per compose pass", inventing mathematical certainty for an allocation that scales only with sub-items, not N.
+  Failure: `N` typically denotes the total number of elements. An application with 50 rail items and 0 sub-items will allocate exactly zero HashSets. The assertion that N HashSets are created demonstrates a complete failure to read the `if/else` condition enclosing the allocation.
+  Evidence: "the new implementation allocates N `HashSet` objects per compose pass."
+  Confidence: CONFIRMED
 
-We need to update the `Character.isHighSurrogate(ch)` block to verify `i + 1 < length && Character.isLowSurrogate(this[i + 1])` before adding 4 bytes and skipping the next character. We also need to add fallback branches to add 1 byte for unpaired high or low surrogates. I will open a follow-up PR with these corrections.
+- `isItemVisible` fallback branch logic evaluates correctly
+- `totalItemSize` conditional mapping works
+Glee verdict: The previous audit is a collection of padded hallucinations masquerading as rigor.
