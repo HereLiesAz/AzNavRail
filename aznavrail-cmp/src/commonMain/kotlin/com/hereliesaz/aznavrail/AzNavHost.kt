@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
@@ -233,6 +234,9 @@ class AzNavHostScopeImpl(
     fun hideMoreFromAz() { moreFromAzVisible = false }
 
     fun setController(controller: NavHostController) {
+        // Cancel any pending deferred navigation on the outgoing controller before replacing it,
+        // so stale routes cannot fire against the wrong graph and old instances can be GC'd.
+        _navController?.let { if (it !== controller) it.cancelPendingNavigation() }
         _navController = controller
         railScope.navController = controller
     }
@@ -313,6 +317,10 @@ fun AzHostActivityLayout(
     val effectiveCurrentDestination = currentDestination ?: run {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         navBackStackEntry?.destination?.route
+    }
+
+    DisposableEffect(navController) {
+        onDispose { navController.cancelPendingNavigation() }
     }
 
     val scope = remember { AzNavHostScopeImpl() }

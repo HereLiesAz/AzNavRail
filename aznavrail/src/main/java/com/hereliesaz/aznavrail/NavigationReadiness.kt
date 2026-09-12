@@ -12,8 +12,12 @@ import androidx.navigation.NavController
  * all use this function so a cold-start timing race cannot crash the host application.
  *
  * Requests made before readiness are kept in call order and are dispatched exactly once when the
- * first destination arrives. Invalid routes still fail normally after the graph is ready; this does
- * not swallow navigation errors.
+ * first destination arrives. Duplicate routes for the same controller are coalesced — a route
+ * already in the pending queue is not enqueued a second time. Invalid routes still fail normally
+ * after the graph is ready; this does not swallow navigation errors.
+ *
+ * When a controller is replaced (e.g. Activity recreation), call [cancelPendingNavigation] on the
+ * old controller to drop its queue and detach the listener so the old instance can be GC'd.
  */
 fun NavController.azNavigateWhenReady(route: String) {
     if (currentBackStackEntry != null) {
@@ -24,12 +28,23 @@ fun NavController.azNavigateWhenReady(route: String) {
     AzPendingNavigation.enqueue(this, route)
 }
 
-private object AzPendingNavigation {
+/**
+ * Drops any pending routes for this controller and removes the readiness listener.
+ * Call from [AzNavHostScopeImpl.setController] before replacing the held controller reference.
+ */
+fun NavController.cancelPendingNavigation() {
+    AzPendingNavigation.cancel(this)
+}
+
+internal object AzPendingNavigation {
     private val routes = mutableMapOf<NavController, MutableList<String>>()
     private val listeners = mutableMapOf<NavController, NavController.OnDestinationChangedListener>()
 
     fun enqueue(controller: NavController, route: String) {
-        routes.getOrPut(controller) { mutableListOf() }.add(route)
+        val queue = routes.getOrPut(controller) { mutableListOf() }
+        if (route in queue) return   // coalesce: identical pending route already waiting
+
+        queue.add(route)
         if (listeners.containsKey(controller)) return
 
         lateinit var listener: NavController.OnDestinationChangedListener
@@ -41,5 +56,19 @@ private object AzPendingNavigation {
         }
         listeners[controller] = listener
         controller.addOnDestinationChangedListener(listener)
+    }
+
+    fun cancel(controller: NavController) {
+        routes.remove(controller)
+        listeners.remove(controller)?.let { controller.removeOnDestinationChangedListener(it) }
+    }
+
+    /** Exposed for testing only — clears all state between test cases. */
+    internal fun clearAllForTest() {
+        listeners.forEach { (controller, listener) ->
+            controller.removeOnDestinationChangedListener(listener)
+        }
+        routes.clear()
+        listeners.clear()
     }
 }
