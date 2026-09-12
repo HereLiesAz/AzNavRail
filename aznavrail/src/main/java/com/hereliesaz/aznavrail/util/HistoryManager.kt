@@ -102,10 +102,10 @@ object HistoryManager {
                     }
 
                     val lineSeparator = System.lineSeparator()
-                    val lineSeparatorSize = lineSeparator.toByteArray(Charsets.UTF_8).size
+                    val lineSeparatorSize = lineSeparator.utf8ByteLength()
                     for (entry in entriesToWrite) {
                         if (maxSizeBytes == 0) break // Do not save if limit is 0KB
-                        val entrySize = entry.toByteArray(Charsets.UTF_8).size + lineSeparatorSize
+                        val entrySize = entry.utf8ByteLength() + lineSeparatorSize
                         if (currentSize + entrySize <= maxSizeBytes) {
                             writer.write(entry)
                             writer.write(lineSeparator)
@@ -232,5 +232,31 @@ object HistoryManager {
         }
         isInitialized = false
         context = null
+    }
+
+    private fun String.utf8ByteLength(): Int {
+        var count = 0
+        var i = 0
+        while (i < length) {
+            val ch = this[i]
+            if (ch.code <= 0x7F) {
+                count++
+            } else if (ch.code <= 0x7FF) {
+                count += 2
+            } else if (Character.isHighSurrogate(ch)) {
+                if (i + 1 < length && Character.isLowSurrogate(this[i + 1])) {
+                    count += 4
+                    i++ // Skip low surrogate
+                } else {
+                    count++ // Unpaired high surrogate replaced with '?'
+                }
+            } else if (Character.isLowSurrogate(ch)) {
+                count++ // Unpaired low surrogate replaced with '?'
+            } else {
+                count += 3
+            }
+            i++
+        }
+        return count
     }
 }
