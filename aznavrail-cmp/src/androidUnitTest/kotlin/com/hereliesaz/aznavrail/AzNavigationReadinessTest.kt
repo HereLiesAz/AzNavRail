@@ -171,22 +171,37 @@ class AzNavigationReadinessTest {
     }
 
     @Test
-    fun cancelPendingNavigationRemovesTheDestinationChangedListener() {
-        var removedCount = 0
-        val controller = object : NavHostController(androidx.test.core.app.ApplicationProvider.getApplicationContext()) {
-            override fun removeOnDestinationChangedListener(listener: androidx.navigation.NavController.OnDestinationChangedListener) {
-                super.removeOnDestinationChangedListener(listener)
-                removedCount++
+    fun cancelPendingNavigationRemovesListener() {
+        lateinit var controller: NavHostController
+        val hostReady = mutableStateOf(false)
+
+        rule.setContent {
+            controller = rememberNavController()
+            if (hostReady.value) {
+                NavHost(navController = controller, startDestination = "home") {
+                    composable("home") {}
+                    composable("target") {}
+                    composable("unintended") {}
+                }
             }
         }
-        controller.navigatorProvider.addNavigator(androidx.navigation.compose.ComposeNavigator())
 
-        // Enqueue adds the listener because the graph is not ready
-        controller.azNavigateWhenReady("target")
-        assertEquals(0, removedCount)
+        rule.runOnIdle {
+            controller.azNavigateWhenReady("target")
+            controller.cancelPendingNavigation()
 
-        controller.cancelPendingNavigation()
-        assertEquals(1, removedCount)
+            val routesField = AzPendingNavigation::class.java.getDeclaredField("routes").apply { isAccessible = true }
+            @Suppress("UNCHECKED_CAST")
+            val routesMap = routesField.get(AzPendingNavigation) as MutableMap<androidx.navigation.NavController, MutableList<String>>
+            routesMap[controller] = mutableListOf("unintended")
+        }
+
+        rule.runOnUiThread { hostReady.value = true }
+        rule.waitForIdle()
+
+        rule.runOnIdle {
+            assertEquals("home", controller.currentDestination?.route)
+        }
     }
 
     @Test
