@@ -169,9 +169,9 @@ class AzUnattachedRelocItemClickTest {
                     anchor = AzUnattachedAnchor.OPPOSITE,
                     initiallyExpanded = true,
                 )
-                azRailRelocItem(id = "item1", hostId = "host", text = "Item 1") {
+                azRailRelocItem(id = "item1", hostId = "host", text = "Item 1", hiddenMenu = {
                     listItem("Some action") { actionClicked = true }
-                }
+                })
                 onscreen { }
             }
         }

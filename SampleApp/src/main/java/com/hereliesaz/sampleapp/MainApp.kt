@@ -646,10 +646,10 @@ fun MainApp() {
             text = "Detail",
             info = "azRailRelocItem under an unattached host — tap selects it, long-press opens its hidden menu.",
             onClick = { hiddenLastAction = "unattached-layer-detail → selected" },
-        ) {
+         hiddenMenu = {
             listItem(text = "Duplicate") { hiddenLastAction = "unattached-layer-detail → Duplicate" }
             listItem(text = "Delete") { hiddenLastAction = "unattached-layer-detail → Delete" }
-        }
+        })
 
         // expandWhen demo toggle — lives in the menu so it doesn't clutter the rail.
         // Toggling On triggers a false→true edge on azRailHostItem("rail-host"), causing it
@@ -725,11 +725,11 @@ fun MainApp() {
                 hiddenRelocateLog = "$from → $to → $newOrder"
                 relocOrder.clear(); relocOrder.addAll(newOrder)
             },
-        ) {
+         hiddenMenu = {
             listItem(text = "Rename") { hiddenLastAction = "reloc-1 → Rename" }
             listItem(text = "Pin") { hiddenLastAction = "reloc-1 → Pin" }
             listItem(text = "Open standalone widgets", route = "standalone-widgets")
-        }
+        })
 
         azRailRelocItem(
             id = "reloc-2",
@@ -740,11 +740,11 @@ fun MainApp() {
                 hiddenRelocateLog = "$from → $to → $newOrder"
                 relocOrder.clear(); relocOrder.addAll(newOrder)
             },
-        ) {
+         hiddenMenu = {
             inputItem(hint = "Nickname") { hiddenInputs["nickname"] = it }
             inputItem(hint = "Tag", initialValue = hiddenInputs["tag"] ?: "foo") { hiddenInputs["tag"] = it }
             listItem(text = "Reset") { hiddenLastAction = "reloc-2 → Reset" }
-        }
+        })
 
         azRailRelocItem(
             id = "reloc-nested-h",
@@ -761,9 +761,9 @@ fun MainApp() {
                 azRailItem("nested-tool-h-2", "Tool 2", onClick = { Log.d(TAG, "H Tool 2 clicked") })
                 azRailItem("nested-tool-h-3", "Tool 3", onClick = { Log.d(TAG, "H Tool 3 clicked") })
             },
-        ) {
+         hiddenMenu = {
             listItem(text = "Remove") { hiddenLastAction = "reloc-nested-h → Remove" }
-        }
+        })
 
         azRailRelocItem(
             id = "reloc-nested-v",
@@ -781,9 +781,9 @@ fun MainApp() {
                 azRailItem("nested-tool-v-2", "Tool B", onClick = { Log.d(TAG, "V Tool B clicked") })
                 azRailItem("nested-tool-v-3", "Tool C", onClick = { Log.d(TAG, "V Tool C clicked") })
             },
-        ) {
+         hiddenMenu = {
             listItem(text = "Remove") { hiddenLastAction = "reloc-nested-v → Remove" }
-        }
+        })
 
         // Nested rails (without routes to avoid nav crashes on tap)
         azNestedRail(

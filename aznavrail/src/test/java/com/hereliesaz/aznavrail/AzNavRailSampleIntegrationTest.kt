@@ -128,10 +128,10 @@ class AzNavRailSampleIntegrationTest {
             id = "reloc",
             hostId = "host",
             text = "Relocatable"
-        ) {
+        , hiddenMenu = {
             listItem("Action 1") {}
             inputItem("Rename") {}
-        }
+        })
 
         assertEquals(1, scope.navItems.size)
         val item = scope.navItems[0]

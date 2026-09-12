@@ -69,9 +69,9 @@ class RailRelocItemLongPressClickTest {
             val navController = rememberNavController()
             AzHostActivityLayout(navController = navController) {
                 azRailHostItem(id = "host", text = "Host", initiallyExpanded = true)
-                azRailRelocItem(id = "item1", hostId = "host", text = "Item 1", onClick = { clicked = true }) {
+                azRailRelocItem(id = "item1", hostId = "host", text = "Item 1", onClick = { clicked = true }, hiddenMenu = {
                     listItem("Some action") { actionClicked = true }
-                }
+                })
                 onscreen { }
             }
         }
