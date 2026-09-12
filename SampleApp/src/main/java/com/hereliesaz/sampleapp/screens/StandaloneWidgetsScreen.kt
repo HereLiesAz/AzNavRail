@@ -36,14 +36,15 @@ import com.hereliesaz.aznavrail.AzToggle
 import com.hereliesaz.aznavrail.model.AzButtonShape
 import com.hereliesaz.aznavrail.util.EqualWidthLayout
 import com.hereliesaz.aznavrail.util.text.AutoSizeText
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootGraph
-
 private const val TAG = "StandaloneWidgetsScreen"
 
-// Compose Destinations pilot -- see the comment on FormShowcaseScreen for why this
-// argument-free leaf, and its route, are unchanged from the existing manual registration.
-@Destination<RootGraph>(route = "standalone-widgets")
+// Route constant used by MainApp.kt's manual composable() registration. The @Destination
+// annotation was removed after the UX Analyzer flagged this as unreachable — it had no
+// type-safe navigation path in the generated graph. The constant stays here (co-located
+// with the screen) so drift between the registered route and the rail item's route string
+// is still caught at compile time via the reference in MainApp.kt.
+const val StandaloneWidgetsRoute = "standalone-widgets"
+
 @Composable
 fun StandaloneWidgetsScreen() {
     Column(

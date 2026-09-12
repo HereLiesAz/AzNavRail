@@ -19,9 +19,23 @@ internal object HistoryStore {
     private const val DEFAULT_HISTORY_CONTEXT = "default"
 
     private var maxSuggestions = 5
-    private val histories = mutableMapOf<String, MutableList<String>>()
-    private val loadedContexts = mutableSetOf<String>()
+    private var histories = mutableMapOf<String, MutableList<String>>()
+    private var loadedContexts = mutableSetOf<String>()
     private val mutex = Mutex()
+
+    // Settable in tests via resetForTest() so the Android unit-test runner never touches
+    // azCacheSettings (which needs a real Context) when a MapSettings is injected instead.
+    private var settingsDelegate: com.russhwolf.settings.Settings? = null
+    private val settings: com.russhwolf.settings.Settings
+        get() = settingsDelegate ?: azCacheSettings
+
+    /** Resets all in-memory state and installs an optional settings backend (test use only). */
+    internal fun resetForTest(backend: com.russhwolf.settings.Settings? = null) {
+        histories = mutableMapOf()
+        loadedContexts = mutableSetOf()
+        maxSuggestions = 5
+        settingsDelegate = backend
+    }
 
     /**
      * Sets the maximum suggestion count. Clamped to 0..5 to match the Android sibling.
@@ -49,13 +63,13 @@ internal object HistoryStore {
             val list = histories.getOrPut(ctx) { mutableListOf() }
             list.remove(text)
             list.add(0, text)
-            azCacheSettings.putString("az_history_$ctx", Json.encodeToString(list))
+            settings.putString("az_history_$ctx", Json.encodeToString(list))
         }
     }
 
     private fun ensureLoaded(ctx: String) {
         if (loadedContexts.add(ctx)) {
-            val saved = azCacheSettings.getString("az_history_$ctx", "")
+            val saved = settings.getString("az_history_$ctx", "")
             if (saved.isNotBlank()) {
                 val list = histories.getOrPut(ctx) { mutableListOf() }
                 val parsed = try { Json.decodeFromString<List<String>>(saved) } catch (e: Exception) { emptyList() }

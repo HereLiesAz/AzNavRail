@@ -1,6 +1,8 @@
 package com.hereliesaz.aznavrail.util
 
+import com.russhwolf.settings.MapSettings
 import kotlinx.coroutines.runBlocking
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -14,6 +16,13 @@ import kotlin.test.assertEquals
  * the entry is visible to the very next call.
  */
 class HistoryStoreTest {
+
+    @BeforeTest
+    fun setUp() {
+        // Inject an in-memory MapSettings so tests never touch the platform Settings()
+        // factory, which needs a real Context on Android and would NPE in unit-test runs.
+        HistoryStore.resetForTest(MapSettings())
+    }
 
     @Test
     fun addEntry_isImmediatelyVisibleToGetSuggestions() = runBlocking {

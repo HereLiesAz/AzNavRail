@@ -103,6 +103,9 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                // MapSettings: in-memory Settings implementation for unit tests. Lets HistoryStoreTest
+                // inject a backend that needs no Context, so the tests pass on Android/Robolectric too.
+                implementation("com.russhwolf:multiplatform-settings-test:$multiplatformSettingsVersion")
             }
         }
 

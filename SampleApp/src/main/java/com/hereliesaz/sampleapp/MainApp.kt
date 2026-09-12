@@ -55,9 +55,9 @@ import com.hereliesaz.sampleapp.screens.LegacyRailDemoScreen
 import com.hereliesaz.sampleapp.screens.ShowcaseHomeScreen
 import com.hereliesaz.sampleapp.screens.StandaloneWidgetsScreen
 import com.hereliesaz.sampleapp.screens.TutorialDemoScreen
+import com.hereliesaz.sampleapp.screens.LegacyRoute
+import com.hereliesaz.sampleapp.screens.StandaloneWidgetsRoute
 import com.ramcosta.composedestinations.generated.destinations.FormsDestination
-import com.ramcosta.composedestinations.generated.destinations.LegacyDestination
-import com.ramcosta.composedestinations.generated.destinations.StandaloneWidgetsDestination
 import com.hereliesaz.aznavrail.AzHostActivityLayout
 import kotlinx.coroutines.launch
 import com.hereliesaz.aznavrail.AzNavHost
@@ -985,8 +985,8 @@ fun MainApp() {
                         ),
                     )
                 }
-                composable(StandaloneWidgetsDestination.route) { StandaloneWidgetsScreen() }
-                composable(LegacyDestination.route) { LegacyRailDemoScreen() }
+                composable(StandaloneWidgetsRoute) { StandaloneWidgetsScreen() }
+                composable(LegacyRoute) { LegacyRailDemoScreen() }
 
                 // Preserved legacy routes so old menu/rail items still navigate.
                 composable("menu-host") { ScreenContent("Menu Host Screen") }

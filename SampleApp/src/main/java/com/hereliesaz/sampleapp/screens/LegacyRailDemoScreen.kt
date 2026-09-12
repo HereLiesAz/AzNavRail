@@ -25,18 +25,17 @@ import com.hereliesaz.aznavrail.AzRoller
 import com.hereliesaz.aznavrail.AzTextBox
 import com.hereliesaz.aznavrail.AzToggle
 import com.hereliesaz.aznavrail.model.AzButtonShape
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootGraph
-
 private const val TAG = "LegacyRailDemoScreen"
 
 /**
  * The original SampleApp playground — text boxes, forms, button/toggle/cycler/roller variants.
  * Preserved so the existing demos still ship while the new screens cover the remaining API.
  */
-// Compose Destinations pilot -- see the comment on FormShowcaseScreen for why this
-// argument-free leaf, and its route, are unchanged from the existing manual registration.
-@Destination<RootGraph>(route = "legacy")
+// Route constant used by MainApp.kt's manual composable() registration. The @Destination
+// annotation was removed after the UX Analyzer flagged this as unreachable — same reasoning
+// as StandaloneWidgetsRoute (see that file).
+const val LegacyRoute = "legacy"
+
 @Composable
 fun LegacyRailDemoScreen() {
     Column(
