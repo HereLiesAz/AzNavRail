@@ -3,9 +3,8 @@ package com.hereliesaz.aznavrail.util.text
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.junit.Rule
@@ -55,15 +54,18 @@ class AutoSizeTextTest {
 
     @Test
     fun testAutoSizeText_textTooLarge() {
+        val text = "A very long text that definitely won't fit in 1dp x 1dp at 50sp"
         composeTestRule.setContent {
-            Box(modifier = Modifier.size(10.dp, 10.dp)) {
+            Box(modifier = Modifier.size(1.dp, 1.dp)) {
                 AutoSizeText(
-                    text = "A very long text that definitely won't fit in 10dp x 10dp at 50sp",
+                    text = text,
                     minTextSize = 50.sp,
                     maxTextSize = 100.sp,
                 )
             }
         }
+
+        composeTestRule.onNodeWithText(text).assertExists()
     }
 
     @Test
