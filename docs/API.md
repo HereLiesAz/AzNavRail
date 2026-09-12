@@ -104,6 +104,8 @@ fun azConfig(
     vibrate: Boolean = false,
     displayAppName: Boolean = false,
     activeClassifiers: Set<String> = emptySet(),
+    secondaryClassifiers: Set<String> = emptySet(),
+    tertiaryClassifiers: Set<String> = emptySet(),
     usePhysicalDocking: Boolean = false,
     expandedWidth: Dp = 160.dp,
     collapsedWidth: Dp = 100.dp,
@@ -671,3 +673,100 @@ The bottom-sheet shell is ported from [LogKitty](https://github.com/HereLiesAz/L
 The overlay window also delivers real window insets to its content: `WindowInsets.navigationBars` / `Modifier.navigationBarsPadding()` resolve to the actual system nav-bar inset inside the `content` slot (insets are forwarded un-consumed, so the app below still receives them).
 
 Consumer manifest: declares `SYSTEM_ALERT_WINDOW` (and `BIND_ACCESSIBILITY_SERVICE` for the nav-bar decoration). The library itself ships no permissions or services.
+
+---
+
+## 6. Navigation Readiness
+
+`NavigationReadiness.kt` exists in both `aznavrail` (Android) and `aznavrail-cmp` (commonMain). It guards
+against a cold-start race where the `NavController` is attached to `AzHostActivityLayout` one
+composition before `AzNavHost` installs its graph — calling `navigate()` in that window throws
+`IllegalArgumentException: Navigation graph has not been set`.
+
+All of AzNavRail's own route dispatchers call `azNavigateWhenReady` rather than `navigate` directly, so
+the race cannot crash a host application. Consumers wiring navigation calls outside the library can
+use the same extension.
+
+~~~kotlin
+// Extension on NavController — safe to call at any time:
+fun NavController.azNavigateWhenReady(route: String)
+
+// Drop any pending routes for this controller and remove the readiness listener.
+// Call from a scope that replaces the held controller (e.g. on Activity recreation):
+fun NavController.cancelPendingNavigation()
+~~~
+
+**Semantics**
+
+- If the controller already has a back-stack entry (`currentBackStackEntry != null`), `navigate` is
+  called immediately.
+- Otherwise the route is enqueued. Duplicate routes for the same controller are coalesced — a route
+  already in the pending queue is not enqueued again.
+- When the first destination change fires (i.e. `AzNavHost` has installed its graph), all queued routes
+  are dispatched in call order and the listener is removed.
+- Invalid routes still fail normally once the graph is ready.
+
+**Lifecycle**
+
+Call `cancelPendingNavigation()` on the old controller before replacing it (e.g. inside
+`AzNavHostScopeImpl.setController`). This drops the queue and detaches the listener so the old instance
+can be GC'd. `AzNavHost` already does this internally on controller replacement.
+
+---
+
+## 7. History / Autocomplete
+
+`AzTextBox` stores per-context autocomplete history. The two library targets implement this differently
+due to platform constraints, but expose the same public surface.
+
+### Android — `HistoryManager`
+
+`object HistoryManager` in `aznavrail`. Persists history to private files under `Context.filesDir`.
+
+~~~kotlin
+// Must be called before addEntry / getSuggestions:
+fun HistoryManager.init(context: Context, suggestionLimit: Int = 5)
+
+// Adjust the suggestion limit after init (also trims persisted files if the limit shrinks):
+fun HistoryManager.updateSettings(suggestionLimit: Int)
+
+// Record a submitted value (no-op if blank or limit is 0):
+fun HistoryManager.addEntry(text: String, historyContext: String?)
+
+// Ranked suggestions matching query (prefix-first, capped to suggestion limit):
+suspend fun HistoryManager.getSuggestions(query: String, historyContext: String?): List<String>
+~~~
+
+`init` is idempotent — calling it again only updates the suggestion limit. The suggestion limit is
+clamped to `0..5`.
+
+### CMP — `HistoryStore`
+
+`internal object HistoryStore` in `aznavrail-cmp`. Persists history via
+[multiplatform-settings](https://github.com/russhwolf/multiplatform-settings) backed by
+`azCacheSettings`. The public surface matches the Android sibling:
+
+~~~kotlin
+fun HistoryStore.updateSettings(suggestionLimit: Int)
+suspend fun HistoryStore.addEntry(text: String, historyContext: String?)
+suspend fun HistoryStore.getSuggestions(query: String, historyContext: String?): List<String>
+~~~
+
+Key difference: `addEntry` is `suspend` in the CMP target (no `Context`, no detached IO launch). A
+caller inside a composition scope controls the dispatcher, which guarantees that a `getSuggestions`
+call issued right after an `addEntry` sees the write — matching the Android sibling's synchronous
+behavior without a `GlobalScope` race.
+
+**Injectable settings backend (test isolation)**
+
+Both implementations expose `resetForTest`/`resetForTesting` to inject a `Settings` backend, so unit
+tests never touch `Context` (Android) or `azCacheSettings` (CMP). Use
+`com.russhwolf.settings.MapSettings` as the in-memory substitute:
+
+~~~kotlin
+// CMP:
+HistoryStore.resetForTest(backend = MapSettings())
+
+// Android:
+HistoryManager.resetForTesting()   // wipes in-memory state; context re-init required
+~~~
