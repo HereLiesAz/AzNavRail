@@ -1,7 +1,15 @@
-The optimization is a great idea and brings a nice performance improvement! However, there is a bug in how `utf8ByteLength()` handles malformed surrogate pairs.
+[UNSOUND] aznavrail/src/test/java/com/hereliesaz/aznavrail/util/HistoryManagerUtf8Test.kt:8 — A second copy of a single source of truth restates the implementation instead of testing the code.
+  Failure: The test suite defines its own local copy of `utf8ByteLength` and asserts against it, completely ignoring the production code in `HistoryManager.kt`. Reintroducing the bug in production will leave the tests perfectly green.
+  Evidence: `private fun String.utf8ByteLength(): Int` is explicitly defined in the test file on line 8, and the assertions test this mock rather than the manager.
+  Confidence: CONFIRMED
 
-If a string ends with an unpaired high surrogate, the loop increments `i` without checking `i + 1 < length` before doing `i++ // Skip low surrogate`, which will cause an `IndexOutOfBoundsException` on the next iteration or when accessing the string later.
+[UNSOUND] aznavrail/src/test/java/com/hereliesaz/aznavrail/util/HistoryManagerSaveBenchmark.kt:64 — A second copy of a single source of truth was left behind to test discarded code.
+  Failure: The benchmark tests a stale, isolated copy of `utf8ByteLength` that lacks the bug fix introduced in this PR, rendering its performance claims meaningless for the current implementation.
+  Evidence: The benchmark file contains its own `private fun utf8ByteLength(s: String): Int` at line 64 which uses the old, bugged surrogate logic.
+  Confidence: CONFIRMED
 
-Additionally, when Java or Kotlin's `.toByteArray(Charsets.UTF_8)` encounters malformed surrogate sequences (unpaired high or low surrogates), it replaces them with the standard replacement character `?`, which is 1 byte in UTF-8. The current logic incorrectly adds 4 bytes for an unpaired high surrogate and 3 bytes for an unpaired low surrogate (hitting the `else` branch).
+Checked and found sound:
+- Standard UTF-8 replacement logic using 1 byte for unpaired surrogates correctly matches `.toByteArray(Charsets.UTF_8)` behavior.
+- Out of bounds crash correctly prevented by robust `i + 1 < length` checks.
 
-We need to update the `Character.isHighSurrogate(ch)` block to verify `i + 1 < length && Character.isLowSurrogate(this[i + 1])` before adding 4 bytes and skipping the next character. We also need to add fallback branches to add 1 byte for unpaired high or low surrogates. I will open a follow-up PR with these corrections.
+Verdict: Incomplete and unsound. Tests pass only because they test a copy of the code, not the code itself.
