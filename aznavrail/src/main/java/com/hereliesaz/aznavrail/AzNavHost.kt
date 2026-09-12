@@ -526,7 +526,7 @@ fun AzHostActivityLayout(
         }
     }
 
-    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize()) {
         azOrderBackgrounds(scope.backgrounds, pagesEnabled).forEach { item ->
             Box(modifier = Modifier.fillMaxSize()) { item.content() }
         }

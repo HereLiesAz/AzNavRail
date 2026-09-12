@@ -74,10 +74,6 @@ internal fun AzEscortOverlay(
     val swipeThresholdPx = with(density) { 48.dp.toPx() }
     val breathPx = with(density) { 6.dp.toPx() }
 
-    // One travelling center per stable hop-key, so each active goal's halo moves independently and a
-    // key's halo glides from its previous target to its new one rather than popping.
-    val centers = remember { mutableStateMapOf<String, Animatable<Offset, AnimationVector2D>>() }
-
     Box(modifier = Modifier.fillMaxSize()) {
         resolved.forEach { r ->
             val shape = r.instruction.highlight.resolveShape(itemBoundsCache, activeItemId, targets) ?: return@forEach
@@ -85,12 +81,13 @@ internal fun AzEscortOverlay(
             val key = r.edge.stepKey()
             val target = bounds.center
 
-            val anim = centers.getOrPut(key) { Animatable(target, Offset.VectorConverter) }
-            LaunchedEffect(key, target) { anim.animateTo(target, spring(dampingRatio = 0.78f, stiffness = 220f)) }
-            val center = anim.value
+            androidx.compose.runtime.key(key) {
+                val anim = remember { Animatable(target, Offset.VectorConverter) }
+                LaunchedEffect(key, target) { anim.animateTo(target, spring(dampingRatio = 0.78f, stiffness = 220f)) }
+                val center = anim.value
 
-            val infinite = rememberInfiniteTransition(label = "az-escort-breathe")
-            val breathe by infinite.animateFloat(
+                val infinite = rememberInfiniteTransition(label = "az-escort-breathe")
+                val breathe by infinite.animateFloat(
                 initialValue = 0f,
                 targetValue = breathPx,
                 animationSpec = infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse),
@@ -131,7 +128,8 @@ internal fun AzEscortOverlay(
                             Modifier.pointerInput(stepKey) { detectTapGestures { controller.advance(stepKey) } }
                         } else Modifier,
                     ),
-            )
+                )
+            }
         }
     }
 }

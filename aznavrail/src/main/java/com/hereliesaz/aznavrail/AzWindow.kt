@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
@@ -80,11 +81,11 @@ class AzWindowState(
     initialMinimized: Boolean = false,
 ) {
     /** Horizontal displacement in px from wherever the window's parent placed it. */
-    var offsetX: Float by mutableStateOf(initialOffsetX)
+    var offsetX: Float by mutableFloatStateOf(initialOffsetX)
         internal set
 
     /** Vertical displacement in px from wherever the window's parent placed it. */
-    var offsetY: Float by mutableStateOf(initialOffsetY)
+    var offsetY: Float by mutableFloatStateOf(initialOffsetY)
         internal set
 
     /** True when the window is folded up to its title bar. */
