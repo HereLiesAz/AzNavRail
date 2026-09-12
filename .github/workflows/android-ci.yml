@@ -192,18 +192,20 @@ jobs:
           else
             APP_NAME="App"
           fi
-          APK_ORIGINAL=$(find app/build/outputs/apk/debug -name "*.apk" | head -n 1)
+          APK_ORIGINAL=$(find . -path "*/build/outputs/apk/debug/*.apk" | head -n 1)
           if [ -z "$APK_ORIGINAL" ]; then
             echo "Error: No APK found to release!"
             exit 1
           fi
+          # Derive the app module dir from the APK path (e.g. ./SampleApp/build/... → SampleApp).
+          APP_MODULE_DIR=$(echo "$APK_ORIGINAL" | cut -d'/' -f2)
           TARGET_NAME="${APP_NAME}-${VERSION_NAME}-debug.apk"
           mv "$APK_ORIGINAL" "$TARGET_NAME"
           echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
           echo "APK_FILE=$TARGET_NAME" >> $GITHUB_ENV
           mkdir -p build_tools_package/tools build_tools_package/native
-          [ -d "app/src/main/assets/tools" ] && cp -r app/src/main/assets/tools/* build_tools_package/tools/ || true
-          [ -d "app/src/main/jniLibs/arm64-v8a" ] && cp -r app/src/main/jniLibs/arm64-v8a/* build_tools_package/native/ || true
+          [ -d "${APP_MODULE_DIR}/src/main/assets/tools" ] && cp -r "${APP_MODULE_DIR}/src/main/assets/tools/"* build_tools_package/tools/ || true
+          [ -d "${APP_MODULE_DIR}/src/main/jniLibs/arm64-v8a" ] && cp -r "${APP_MODULE_DIR}/src/main/jniLibs/arm64-v8a/"* build_tools_package/native/ || true
           cd build_tools_package && zip -r ../build-tools.zip . && cd ..
 
       - name: Publish Release
