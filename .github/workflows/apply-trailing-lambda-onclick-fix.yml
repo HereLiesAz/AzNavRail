@@ -1,0 +1,236 @@
+name: Apply trailing-lambda onClick fix
+
+on:
+  push:
+    branches: [ fix/trailing-lambda-onclick ]
+    paths:
+      - .github/workflows/apply-trailing-lambda-onclick-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Make onClick the trailing lambda for rail APIs
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          roots = [
+              Path('aznavrail/src/main/java/com/hereliesaz/aznavrail'),
+              Path('aznavrail-cmp/src/commonMain/kotlin/com/hereliesaz/aznavrail'),
+          ]
+
+          def skip_quoted(s, i):
+              if s.startswith('"""', i):
+                  j = s.find('"""', i + 3)
+                  return len(s) if j < 0 else j + 3
+              q = s[i]
+              i += 1
+              while i < len(s):
+                  if s[i] == '\\':
+                      i += 2
+                      continue
+                  if s[i] == q:
+                      return i + 1
+                  i += 1
+              return i
+
+          def match_paren(s, start):
+              depth = 0
+              i = start
+              while i < len(s):
+                  if s.startswith('//', i):
+                      j = s.find('\n', i + 2)
+                      i = len(s) if j < 0 else j + 1
+                      continue
+                  if s.startswith('/*', i):
+                      j = s.find('*/', i + 2)
+                      i = len(s) if j < 0 else j + 2
+                      continue
+                  if s[i] in ('"', "'"):
+                      i = skip_quoted(s, i)
+                      continue
+                  if s[i] == '(':
+                      depth += 1
+                  elif s[i] == ')':
+                      depth -= 1
+                      if depth == 0:
+                          return i
+                  i += 1
+              raise RuntimeError(f'unmatched paren at {start}')
+
+          def split_params(raw):
+              parts=[]; start=0
+              par=ang=brack=brace=0
+              i=0
+              while i < len(raw):
+                  if raw.startswith('//', i):
+                      j=raw.find('\n', i+2); i=len(raw) if j<0 else j+1; continue
+                  if raw.startswith('/*', i):
+                      j=raw.find('*/', i+2); i=len(raw) if j<0 else j+2; continue
+                  if raw[i] in ('"', "'"):
+                      i=skip_quoted(raw,i); continue
+                  c=raw[i]
+                  if c=='(': par+=1
+                  elif c==')': par-=1
+                  elif c=='<': ang+=1
+                  elif c=='>': ang=max(0,ang-1)
+                  elif c=='[': brack+=1
+                  elif c==']': brack-=1
+                  elif c=='{': brace+=1
+                  elif c=='}': brace-=1
+                  elif c==',' and par==ang==brack==brace==0:
+                      parts.append(raw[start:i])
+                      start=i+1
+                  i+=1
+              parts.append(raw[start:])
+              return parts
+
+          total=0
+          touched=[]
+          for root in roots:
+              for path in root.rglob('*.kt'):
+                  text=path.read_text(encoding='utf-8')
+                  changes=[]
+                  for m in re.finditer(r'\bfun\s+[A-Za-z_][A-Za-z0-9_]*\s*\(', text):
+                      open_idx=text.find('(',m.start())
+                      close_idx=match_paren(text,open_idx)
+                      raw=text[open_idx+1:close_idx]
+                      params=split_params(raw)
+                      names=[]
+                      for p in params:
+                          mm=re.match(r'\s*(?:crossinline\s+|noinline\s+|vararg\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*:',p,re.S)
+                          names.append(mm.group(1) if mm else None)
+                      if not names or names[-1] != 'hiddenMenu' or 'onClick' not in names:
+                          continue
+                      click_index=names.index('onClick')
+                      if click_index == len(params)-1:
+                          continue
+                      click=params.pop(click_index)
+                      params.append(click)
+                      # Preserve multiline formatting reasonably; compiler is the authority.
+                      if '\n' in raw:
+                          indent='        '
+                          new='\n'+',\n'.join(indent+p.strip() for p in params)+'\n    '
+                      else:
+                          new=', '.join(p.strip() for p in params)
+                      changes.append((open_idx+1,close_idx,new))
+                  if changes:
+                      for a,b,new in reversed(changes):
+                          text=text[:a]+new+text[b:]
+                      path.write_text(text,encoding='utf-8')
+                      touched.append(str(path))
+                      total += len(changes)
+
+          if total < 10:
+              raise SystemExit(f'Expected at least 10 dangerous API declarations/overrides, found {total}')
+          print(f'Reordered {total} declarations so trailing lambda binds to onClick')
+          for p in touched: print(' -',p)
+          PY
+
+      - name: Add regression tests
+        run: |
+          cat > aznavrail/src/test/java/com/hereliesaz/aznavrail/AzTrailingLambdaSemanticsTest.kt <<'EOF'
+          package com.hereliesaz.aznavrail
+
+          import org.junit.Assert.assertEquals
+          import org.junit.Assert.assertNotNull
+          import org.junit.Test
+
+          class AzTrailingLambdaSemanticsTest {
+              @Test
+              fun `rail subitem trailing lambda is deferred click callback`() {
+                  val scope = AzNavRailScopeImpl()
+                  scope.azRailHostItem(id = "host", text = "Host")
+                  var calls = 0
+
+                  scope.azRailSubItem(id = "child", hostId = "host", text = "Child") {
+                      calls++
+                  }
+
+                  assertEquals("registration must not execute the trailing lambda", 0, calls)
+                  assertNotNull(scope.onClickMap["child"])
+                  scope.onClickMap["child"]?.invoke()
+                  assertEquals(1, calls)
+              }
+
+              @Test
+              fun `hidden menu remains explicit and separate from click`() {
+                  val scope = AzNavRailScopeImpl()
+                  scope.azRailHostItem(id = "host", text = "Host")
+                  var clicks = 0
+                  var hiddenActions = 0
+
+                  scope.azRailSubItem(
+                      id = "child",
+                      hostId = "host",
+                      text = "Child",
+                      hiddenMenu = {
+                          listItem("Hidden") { hiddenActions++ }
+                      },
+                  ) {
+                      clicks++
+                  }
+
+                  assertEquals(0, clicks)
+                  assertEquals(0, hiddenActions)
+                  scope.onClickMap["child"]?.invoke()
+                  assertEquals(1, clicks)
+                  assertEquals(0, hiddenActions)
+              }
+          }
+          EOF
+
+          mkdir -p aznavrail-cmp/src/commonTest/kotlin/com/hereliesaz/aznavrail
+          cat > aznavrail-cmp/src/commonTest/kotlin/com/hereliesaz/aznavrail/AzTrailingLambdaSemanticsTest.kt <<'EOF'
+          package com.hereliesaz.aznavrail
+
+          import kotlin.test.Test
+          import kotlin.test.assertEquals
+          import kotlin.test.assertNotNull
+
+          class AzTrailingLambdaSemanticsTest {
+              @Test
+              fun trailingLambdaIsDeferredClickCallback() {
+                  val scope = AzNavRailScopeImpl()
+                  scope.azRailHostItem(id = "host", text = "Host")
+                  var calls = 0
+
+                  scope.azRailSubItem(id = "child", hostId = "host", text = "Child") {
+                      calls++
+                  }
+
+                  assertEquals(0, calls)
+                  assertNotNull(scope.onClickMap["child"])
+                  scope.onClickMap["child"]?.invoke()
+                  assertEquals(1, calls)
+              }
+          }
+          EOF
+
+      - name: Compile and test Android plus CMP
+        run: |
+          chmod +x gradlew
+          ./gradlew :aznavrail:testDebugUnitTest :aznavrail-cmp:desktopTest :SampleApp:compileDebugKotlin :aznavrail-cmp-demo:compileKotlinDesktop
+
+      - name: Commit verified API fix
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm .github/workflows/apply-trailing-lambda-onclick-fix.yml
+          git add -A
+          git commit -m "fix: make rail trailing lambdas click callbacks [skip ci]"
+          git push origin HEAD:fix/trailing-lambda-onclick
