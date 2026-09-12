@@ -6,7 +6,7 @@ A contemptably stubborn if not dictatorially restrictive navigation rail/menu--I
 
 This "navigrenuail" provides a vertical navigation rail that expands to a full menu drawer. It is designed to be "batteries-included," providing common behaviors and features out-of-the-box to ensure a consistent look and feel across applications.
 
----
+---   
 
 > **Platform parity note.** The Kotlin modules (`aznavrail` for Android, `aznavrail-cmp` for
 > Compose Multiplatform) are the reference implementation. The React port (`aznavrail-react`) is

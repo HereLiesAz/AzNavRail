@@ -442,6 +442,10 @@ fun AzHostActivityLayout(
         navBackStackEntry?.destination?.route
     }
 
+    DisposableEffect(navController) {
+        onDispose { navController.cancelPendingNavigation() }
+    }
+
     val scope = remember { AzNavHostScopeImpl() }
     scope.resetHost()
     scope.setController(navController)
