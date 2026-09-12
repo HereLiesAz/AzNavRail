@@ -233,6 +233,9 @@ class AzNavHostScopeImpl(
     fun hideMoreFromAz() { moreFromAzVisible = false }
 
     fun setController(controller: NavHostController) {
+        // Cancel any pending deferred navigation on the outgoing controller before replacing it,
+        // so stale routes cannot fire against the wrong graph and old instances can be GC'd.
+        _navController?.let { if (it !== controller) it.cancelPendingNavigation() }
         _navController = controller
         railScope.navController = controller
     }

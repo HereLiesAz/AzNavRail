@@ -106,6 +106,17 @@ kotlin {
             }
         }
 
+        // Robolectric-based unit tests for the CMP module's Android target. These cover
+        // navigation-readiness integration scenarios that require a real NavController and NavHost
+        // and cannot be expressed in commonTest (which has no Android context).
+        val androidUnitTest by getting {
+            dependencies {
+                implementation(libs.junit)
+                implementation(libs.robolectric)
+                implementation(libs.androidx.ui.test.junit4)
+            }
+        }
+
         val androidMain by getting {
             dependencies {
                 // BackHandler's `actual` on Android delegates to androidx.activity's BackHandler.
@@ -157,6 +168,12 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
     }
 }
 
