@@ -301,6 +301,7 @@ class AzNavigationReadinessTest {
                 }
             }
         }
+        controller.navigatorProvider.addNavigator(androidx.navigation.compose.ComposeNavigator())
 
         rule.runOnIdle {
             controller.azNavigateWhenReady("target")
