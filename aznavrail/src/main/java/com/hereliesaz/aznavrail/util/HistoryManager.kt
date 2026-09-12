@@ -244,8 +244,14 @@ object HistoryManager {
             } else if (ch.code <= 0x7FF) {
                 count += 2
             } else if (Character.isHighSurrogate(ch)) {
-                count += 4
-                i++ // Skip low surrogate
+                if (i + 1 < length && Character.isLowSurrogate(this[i + 1])) {
+                    count += 4
+                    i++ // Skip low surrogate
+                } else {
+                    count++ // Unpaired high surrogate replaced with '?'
+                }
+            } else if (Character.isLowSurrogate(ch)) {
+                count++ // Unpaired low surrogate replaced with '?'
             } else {
                 count += 3
             }
