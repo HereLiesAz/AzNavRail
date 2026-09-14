@@ -1,18 +1,8 @@
-name: Bake more-from-az
-
-# The maintainer pastes a list of GitHub repo links into more-from-az.json — one link per line, any
-# order. This workflow RESOLVES each repo and bakes a finished manifest the rail just renders:
-#   - groups by repository (one repo = one app),
-#   - constructs + verifies the Play link from the package convention com.<owner>.<repo>,
-#   - reads the website/PWA from the repo's GitHub "homepage" (detecting PWA vs site),
-#   - excludes apps whose README first line says WIP,
-#   - sorts apps with a working Play link first,
-#   - fills name / icon / description, and bumps `version`.
-# Resolution happens server-side here (authenticated GITHUB_TOKEN, no CORS), so the app needs no
-# network resolution and isn't subject to the unauthenticated rate limit.
-#
-# Loop safety: the bot commit message contains [skip ci], which GitHub honors to skip ALL workflows
-# for that push (so neither this nor android-sample-build.yml re-runs on the bake commit).
+# centralized-by: HereLiesAz/workflows
+# central-source-path: .github/workflows/bump-more-from-az.yml
+# central-source-sha256: e144627a504a0d9c127cf6efe9d59d7f273098811d3e5e76bf35a14599be026c
+# This file intentionally contains no repository secrets.
+name: Bake more-from-az [central proxy]
 on:
   push:
     branches: [main]
@@ -21,29 +11,20 @@ on:
   schedule:
     - cron: '0 6 * * 1' # weekly refresh of names/icons/descriptions
   workflow_dispatch:
-
 permissions:
-  contents: write
-
+  contents: read
+  id-token: write
 jobs:
-  bake:
-    if: github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[skip ci]')
+  central-dispatch:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: true
-
-      - name: Resolve & bake manifest
+      - name: Dispatch to HereLiesAz/workflows
         env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: python3 .github/scripts/bake_more_from_az.py
-
-      - name: Commit baked manifest
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore: bake more-from-az [skip ci]"
-          commit_user_name: "github-actions[bot]"
-          commit_user_email: "41898282+github-actions[bot]@users.noreply.github.com"
-          file_pattern: more-from-az.json
+          WORKFLOWS_GATEWAY_URL: ${{ vars.WORKFLOWS_GATEWAY_URL }}
+          EVENT_JSON: ${{ toJSON(github.event) }}
+          INPUTS_JSON: ${{ toJSON(inputs) }}
+          VARS_JSON: ${{ toJSON(vars) }}
+          SOURCE_WORKFLOW_PATH: .github/workflows/bump-more-from-az.yml
+          SOURCE_SHA256: e144627a504a0d9c127cf6efe9d59d7f273098811d3e5e76bf35a14599be026c
+        shell: bash
+        run: "set -euo pipefail\n[[ -n \"${WORKFLOWS_GATEWAY_URL:-}\" ]] || { echo \"Repository variable WORKFLOWS_GATEWAY_URL is not configured.\" >&2; exit 1; }\noidc_response=\"$(curl --fail-with-body --silent --show-error -H \"Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}\" \"${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=hereliesaz-workflows\")\"\noidc_token=\"$(jq -r '.value // empty' <<<\"$oidc_response\")\"\n[[ -n \"$oidc_token\" ]] || { echo \"GitHub did not issue an OIDC token.\" >&2; exit 1; }\necho \"::add-mask::$oidc_token\"\npayload=\"$(jq -n   --arg repository \"$GITHUB_REPOSITORY\" --arg repository_id \"$GITHUB_REPOSITORY_ID\"   --arg repository_owner \"$GITHUB_REPOSITORY_OWNER\" --arg repository_owner_id \"$GITHUB_REPOSITORY_OWNER_ID\"   --arg sha \"$GITHUB_SHA\" --arg ref \"$GITHUB_REF\" --arg ref_name \"$GITHUB_REF_NAME\" --arg ref_type \"$GITHUB_REF_TYPE\"   --arg head_ref \"$GITHUB_HEAD_REF\" --arg base_ref \"$GITHUB_BASE_REF\" --arg actor \"$GITHUB_ACTOR\" --arg actor_id \"$GITHUB_ACTOR_ID\"   --arg event_name \"$GITHUB_EVENT_NAME\" --arg run_id \"$GITHUB_RUN_ID\" --arg run_number \"$GITHUB_RUN_NUMBER\" --arg run_attempt \"$GITHUB_RUN_ATTEMPT\"   --arg workflow_ref \"$GITHUB_WORKFLOW_REF\" --arg workflow_name \"$GITHUB_WORKFLOW\" --arg source_workflow_path \"$SOURCE_WORKFLOW_PATH\"   --arg source_sha256 \"$SOURCE_SHA256\" --argjson event \"$EVENT_JSON\" --argjson inputs \"$INPUTS_JSON\" --argjson vars \"$VARS_JSON\"   '{repository:$repository,repository_id:$repository_id,repository_owner:$repository_owner,repository_owner_id:$repository_owner_id,sha:$sha,check_sha:($event.pull_request.head.sha // $sha),ref:$ref,ref_name:$ref_name,ref_type:$ref_type,head_ref:$head_ref,base_ref:$base_ref,actor:$actor,actor_id:$actor_id,event_name:$event_name,event:$event,inputs:$inputs,vars:$vars,run_id:$run_id,run_number:$run_number,run_attempt:$run_attempt,workflow_ref:$workflow_ref,workflow_name:$workflow_name,source_workflow_path:$source_workflow_path,source_sha256:$source_sha256}')\"\ncurl --fail-with-body --silent --show-error -X POST \"${WORKFLOWS_GATEWAY_URL%/}/dispatch\" -H \"Authorization: Bearer ${oidc_token}\" -H \"Content-Type: application/json\" --data-binary \"$payload\""
