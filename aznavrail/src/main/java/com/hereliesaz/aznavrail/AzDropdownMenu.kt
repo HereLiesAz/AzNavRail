@@ -1,7 +1,9 @@
 package com.hereliesaz.aznavrail
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -591,7 +593,9 @@ private fun AzDropdownFooter(
                         if (isHttp) {
                             try {
                                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(repoUrl)))
-                            } catch (e: Exception) {}
+                            } catch (e: ActivityNotFoundException) {
+                                Toast.makeText(context, "No app found to open this link", Toast.LENGTH_SHORT).show()
+                            }
                         }
                     }
                 },
@@ -609,7 +613,9 @@ private fun AzDropdownFooter(
                         putExtra(Intent.EXTRA_SUBJECT, appName)
                     }
                     context.startActivity(Intent.createChooser(emailIntent, "Send feedback"))
-                } catch (e: Exception) {}
+                } catch (e: ActivityNotFoundException) {
+                    Toast.makeText(context, "No email app found", Toast.LENGTH_SHORT).show()
+                }
             },
             modifier = Modifier.padding(vertical = 4.dp),
         )
@@ -621,7 +627,9 @@ private fun AzDropdownFooter(
             onClick = {
                 try {
                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(AZ_INSTAGRAM_URL)))
-                } catch (e: Exception) {}
+                } catch (e: ActivityNotFoundException) {
+                    Toast.makeText(context, "No app found to open this link", Toast.LENGTH_SHORT).show()
+                }
             },
             modifier = Modifier.padding(vertical = 4.dp),
         )

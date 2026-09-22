@@ -112,7 +112,9 @@ object RelocItemHandler {
     }
 
     /**
-     * Legacy/Alternative calculation using item bounds directly.
+     * Overload using item bounds directly instead of a height map. Used for unattached-rail
+     * drags (see [com.hereliesaz.aznavrail.AzUnattachedRail]); the [Map]-based overload above is
+     * used by the docked rail. Both are live, parallel implementations of the same 40% threshold.
      */
     fun calculateTargetIndex(
         items: List<AzNavItem>,

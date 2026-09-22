@@ -90,12 +90,19 @@ class AzSymbolProcessor(
                 }
             }
 
+        // Every `RailHost` id declared on this class, so a `SubItem.hostId` that doesn't match any
+        // of them can be flagged instead of silently rendering an item nothing ever displays.
+        val hostIds = host.declarations
+            .mapNotNull { decl -> decl.annotationOf(AZ_SIMPLE)?.nested("host")?.string("id") }
+            .filter { it.isNotBlank() }
+            .toSet()
+
         // Items come from the annotated members, in declaration order — which is the order they will
         // appear in the rail, matching how the hand-written DSL behaves.
         val items = buildList {
             host.declarations.forEach { decl ->
                 val az = decl.annotationOf(AZ_SIMPLE) ?: return@forEach
-                renderItem(decl, az)?.let { add(it) }
+                renderItem(decl, az, hostIds)?.let { add(it) }
             }
         }
 
@@ -144,7 +151,7 @@ class AzSymbolProcessor(
     }
 
     /** One DSL call for one annotated member, or null when the `@Az` declared nothing renderable. */
-    private fun renderItem(decl: KSDeclaration, az: KSAnnotation): String? {
+    private fun renderItem(decl: KSDeclaration, az: KSAnnotation, hostIds: Set<String>): String? {
         val member = decl.simpleName.asString()
         val isFunction = decl is KSFunctionDeclaration
         val isProperty = decl is KSPropertyDeclaration
@@ -199,6 +206,13 @@ class AzSymbolProcessor(
             "sub" -> {
                 val id = a.string("id")!!
                 val hostId = a.string("hostId").orEmpty()
+                if (hostId.isBlank() || hostId !in hostIds) {
+                    logger.error(
+                        "AzNavRail: SubItem '$id' has hostId '$hostId', which matches no RailHost declared on this class — it will never render. Declared host ids: ${hostIds.joinToString().ifBlank { "(none)" }}.",
+                        decl,
+                    )
+                    return null
+                }
                 "azRailSubItem(id = ${id.q()}, hostId = ${hostId.q()}, text = ${textArg(a, member, isProperty)}" +
                     optional("route", a.string("route")) +
                     optional("info", a.string("info")) + ")$click"
@@ -355,8 +369,14 @@ $navHost
         arguments.firstOrNull { it.name?.asString() == argument }?.value as? String
 
     @Suppress("UNCHECKED_CAST")
-    private fun KSAnnotation.strings(argument: String): List<String> =
-        (arguments.firstOrNull { it.name?.asString() == argument }?.value as? List<String>).orEmpty()
+    private fun KSAnnotation.strings(argument: String): List<String> {
+        val value = arguments.firstOrNull { it.name?.asString() == argument }?.value
+        return when (value) {
+            is List<*> -> value.map { it.toString() }
+            is Array<*> -> value.map { it.toString() }
+            else -> emptyList()
+        }
+    }
 
     private fun KSAnnotation.boolean(argument: String): Boolean =
         arguments.firstOrNull { it.name?.asString() == argument }?.value as? Boolean ?: false

@@ -145,9 +145,29 @@ object HistoryManager {
             val history = histories.getOrPut(safeContext) { mutableListOf() }
             history.remove(text)
             history.add(0, text)
+            trimToByteBudget(history)
         }
         coroutineScope.launch {
             saveHistory(safeContext)
+        }
+    }
+
+    /**
+     * Drops entries past [maxSizeBytes] so the in-memory list, not just the on-disk file, stays
+     * bounded. Must be called while holding the [histories] monitor.
+     */
+    private fun trimToByteBudget(history: MutableList<String>) {
+        val lineSeparatorSize = System.lineSeparator().utf8ByteLength()
+        var currentSize = 0
+        var keepCount = 0
+        for (entry in history) {
+            val entrySize = entry.utf8ByteLength() + lineSeparatorSize
+            if (currentSize + entrySize > maxSizeBytes) break
+            currentSize += entrySize
+            keepCount++
+        }
+        while (history.size > keepCount) {
+            history.removeAt(history.size - 1)
         }
     }
 

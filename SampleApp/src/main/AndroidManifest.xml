@@ -31,6 +31,13 @@
             android:label="AzGraph Demo"
             android:theme="@style/Theme.SampleApp" />
 
+        <!-- Demos the member-only `@Az` variant (annotations with no class-level `@Az`). -->
+        <activity
+            android:name=".AzGraphMemberOnlyDemoActivity"
+            android:exported="false"
+            android:label="AzGraph Member-Only Demo"
+            android:theme="@style/Theme.SampleApp" />
+
         <service
             android:name=".SampleOverlayService"
             android:exported="false" />

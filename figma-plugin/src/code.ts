@@ -50,7 +50,7 @@ figma.ui.onmessage = async (msg) => {
     railBtnSet.x = currentX;
     railBtnSet.y = 0;
 
-    // Add Hover Interaction (Automatic Import)
+    // Add hover interaction: smart-animate to the hover variant on ON_HOVER.
     azRailBtnDefault.reactions = [
       {
         trigger: { type: "ON_HOVER" },
@@ -131,7 +131,9 @@ figma.ui.onmessage = async (msg) => {
     // Frame C: FAB Mode (Unfolded)
     const frameC = figma.createFrame();
     frameC.name = "Demo: FAB Mode (Unfolded)";
-    frameC.resize(360, 800);
+    // Tall enough that the unfolded rail (header + 4 buttons + spacing/padding, ~464px starting
+    // at y=400) never clips against the frame's clipsContent bottom edge.
+    frameC.resize(360, 900);
     frameC.x = currentX;
     frameC.y = 0;
     frameC.fills = [{ type: 'SOLID', color: { r: 0.98, g: 0.98, b: 0.98 } }];

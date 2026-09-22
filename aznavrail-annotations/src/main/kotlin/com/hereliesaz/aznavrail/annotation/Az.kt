@@ -76,6 +76,10 @@ annotation class Advanced(
  * An item on the always-visible rail. On a **function**, the function is its `onClick`; on a
  * **property**, the property's value supplies the item's text.
  *
+ * If neither [text], [textProperty] nor the annotated property itself supplies text, an annotated
+ * **function** falls back to its own name verbatim (e.g. `fun goHome()` renders as "goHome") —
+ * always set [text] or [textProperty] on a function to avoid a raw camelCase label in the UI.
+ *
  * The `*Property` parameters name a property on the Activity and bind it reactively — the DSL block
  * re-runs on every recomposition, so a `mutableStateOf` property keeps the item in sync with no
  * further wiring.
@@ -107,7 +111,12 @@ annotation class MenuItem(
     val disabledProperty: String = "",
 )
 
-/** A rail host item; sub-items attach to it by naming its [id] as their `hostId`. */
+/**
+ * A rail host item; sub-items attach to it by naming its [id] as their `hostId`.
+ *
+ * Unlike [RailItem]/[MenuItem], there is no `badgeProperty`/`loadingProperty`/`disabledProperty` —
+ * per-item reactive state is not currently wired for host or sub items.
+ */
 @Retention(AnnotationRetention.SOURCE)
 annotation class RailHost(
     val id: String = "",

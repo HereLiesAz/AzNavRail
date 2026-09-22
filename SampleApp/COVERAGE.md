@@ -34,7 +34,7 @@ should be added before shipping.
 | `azHelpSubItem` | `MainApp.kt` (menu-host-help) |
 | `azDivider` (DSL) | `MainApp.kt` (×3) |
 | `azNestedRail` (VERTICAL + HORIZONTAL, custom `AzComposableContent` child) | `MainApp.kt` (nested-rail vertical, nested-horizontal) |
-| `azRailRelocItem` (with `HiddenMenuScope`, `onRelocate`, `nestedContent`) | `MainApp.kt` (reloc-1, reloc-2, reloc-nested-parent) |
+| `azRailRelocItem` (with `HiddenMenuScope`, `onRelocate`, `nestedContent`) | `MainApp.kt` (reloc-1, reloc-2, reloc-nested-h, reloc-nested-v) |
 | `HiddenMenuScope.listItem(text, onClick)` | reloc-1 |
 | `HiddenMenuScope.listItem(text, route)` | reloc-1 ("Open standalone widgets") |
 | `HiddenMenuScope.inputItem(hint, onValueChange)` | reloc-2 ("Nickname") |
@@ -57,7 +57,7 @@ should be added before shipping.
 | `AzDivider` (both orientations) | `StandaloneWidgetsScreen` |
 | `AzBottomSheet` | `BottomSheetDemoScreen` |
 | `AzBottomSheetInsetAware` | `BottomSheetDemoScreen` (toggleable) |
-| `AzTutorialOverlay` (transitive via `AzTutorialController.startTutorial`) | `TutorialDemoScreen` |
+| `AzInstructionOverlay` (transitive via active `azGoal`s) | `TutorialDemoScreen` (routed as "Guidance") |
 | `EqualWidthLayout` | `StandaloneWidgetsScreen` |
 | `AutoSizeText` | `StandaloneWidgetsScreen` |
 
@@ -67,21 +67,16 @@ should be added before shipping.
 | --- | --- |
 | `rememberAzSheetController` | `BottomSheetDemoScreen` |
 | `AzSheetController` (`detent`, `isEnabled`, `stepUp`, `stepDown`, `snapTo`) | `BottomSheetDemoScreen` |
-| `rememberAzTutorialController` (via `AzHostActivityLayout`) | `TutorialDemoScreen` |
-| `AzTutorialController.startTutorial`, `endTutorial`, `fireEvent`, `markTutorialRead` | `TutorialDemoScreen` |
-| `LocalAzTutorialController` | `TutorialDemoScreen` |
 | `AzTextBoxDefaults.setSuggestionLimit`, `setBackgroundColor`, `setBackgroundOpacity` | `FormShowcaseScreen` |
 
-## Tutorial DSL & models
+## Guidance DSL (status-driven; replaced the old scripted tutorial framework)
 
 | Symbol | Exercised by |
 | --- | --- |
-| `azTutorial` builder | `TutorialDemoScreen` (`SampleTutorials`) |
-| `AzTutorialBuilder.scene` / `AzSceneBuilder.card` / `AzSceneBuilder.branch` | `SampleTutorials` |
-| `AzAdvanceCondition.Button` / `.TapTarget` / `.TapAnywhere` / `.Event` | `SampleTutorials` |
-| `AzHighlight.Area` / `.Item` / `.FullScreen` / `.None` | `SampleTutorials` (Item, FullScreen, None — Area is also reachable via Item internally) |
-| `AzCard.checklistItems` / `mediaContent` | `SampleTutorials` |
-| `AzScene.branchVar` + `branches` | `SampleTutorials.branching-demo` |
+| `azStatus(id) { predicate }` | `MainApp.kt` (`guide_task_done`, `coach_ball_dragged`) |
+| `azEdge(...)` | `MainApp.kt` (guidance routing edges) |
+| `azGoal(id, target, label, autoStartWhen)` | `MainApp.kt` (`guide_onboarding`, `guide_expand_host`, `guide_custom_task`, `guide_coach`) |
+| `azGuidanceTarget(id) { shape }` | `MainApp.kt` (guidance callout anchors) |
 
 ## Services
 
