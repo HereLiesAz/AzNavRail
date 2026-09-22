@@ -157,7 +157,7 @@ interface AzDropdownMenuScope {
      *   size and clip shape come from [headerIconSize] / [headerIconShape].
      * @param triggerPlacement Where that trigger is drawn. [AzDropdownTriggerPlacement.AUTO] (the
      *   default) lifts it up next to the big screen title, above the onscreen content area, whenever
-     *   the drop-down is declared inside an `AzHostActivityLayout`; standalone drop-downs stay
+     *   there is an active [LocalAzNavHostScope] to host it; standalone drop-downs stay
      *   inline. Several title-hosted drop-downs line their triggers up beside each other in
      *   declaration order. Force either behaviour with [AzDropdownTriggerPlacement.TITLE] /
      *   [AzDropdownTriggerPlacement.INLINE].
@@ -844,8 +844,8 @@ private class AzDropdownEdgePositionProvider(
 /**
  * A standalone, hamburger-style drop-down menu, declared with the same opinionated DSL as the rail.
  *
- * The trigger defaults to the **three vertical dots** and, when the drop-down is declared inside an
- * `AzHostActivityLayout` (the usual case — inside an `onscreen { … }` block), it is placed
+ * The trigger defaults to the **three vertical dots** and, when there is an active
+ * `LocalAzNavHostScope` (the usual case — inside an `onscreen { … }` block), it is placed
  * automatically **next to the big screen title**, above the onscreen content area, rather than where
  * the composable happens to sit. Declare several drop-downs and their triggers line up beside each
  * other there, in declaration order. Choose a word or your own glyph with
@@ -946,7 +946,8 @@ fun AzDropdownMenu(
     val panelAccent = azReadableOn(panelColor, azAccent())
 
     // Where the trigger ends up. AUTO lifts it into the screen-title row whenever there is a host to
-    // put it in; a standalone drop-down (no AzHostActivityLayout) has no title row, so it stays inline.
+    // put it in; a standalone drop-down (no LocalAzNavHostScope provided) has no title row, so it
+    // stays inline.
     val titleHost = LocalAzNavHostScope.current as? AzNavHostScopeImpl
     val hostsTrigger = titleHost != null && when (config.triggerPlacement) {
         AzDropdownTriggerPlacement.INLINE -> false
@@ -961,8 +962,8 @@ fun AzDropdownMenu(
         AzDropdownEdgePositionProvider(config.dockingSide) { triggerBounds }
     }
 
-    // The launcher icon, provided via LocalAzAppMeta. Android's AzHostActivityLayout populates it
-    // from `packageManager.getApplicationIcon`; other targets pass a caller-supplied Coil3 model
+    // The launcher icon, provided via LocalAzAppMeta. On Android, the app supplies it from
+    // `packageManager.getApplicationIcon`; other targets pass a caller-supplied Coil3 model
     // (URL string, ByteArray, or Painter). Only AzDropdownTrigger.AppIcon uses it.
     val appIcon = appMeta.icon
 

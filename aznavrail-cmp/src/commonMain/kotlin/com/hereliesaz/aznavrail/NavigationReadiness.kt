@@ -6,7 +6,7 @@ import androidx.navigation.NavController
  * Navigates immediately once this controller owns a graph, or defers the request until the graph
  * produces its first destination.
  *
- * A [NavController] can be attached to [AzHostActivityLayout] one composition before [AzNavHost]
+ * A [NavController] can be attached before [AzNavHost]
  * installs its graph. Calling [NavController.navigate] during that window throws
  * `IllegalArgumentException: Navigation graph has not been set`. AzNavRail's own route dispatchers
  * all use this function so a cold-start timing race cannot crash the host application.

@@ -21,14 +21,14 @@ This document is the parity contract. A feature should not be described as cross
 | Unattached hosts | ✅ | ✅ | ✅ |
 | Unattached subtree scrolling | ✅ | ✅ | ✅ |
 | Configurable unattached maximum height | ✅ | ✅ | ✅ |
-| Global rail/chrome visibility | ✅ | ✅ | ✅ |
-| Per-unattached-host visibility | ✅ | ✅ | ✅ |
-| Reversible visibility animation | ✅ | ✅ | ✅ |
-| Visibility duration control | ✅ | ✅ | ✅ |
-| `NONE` visibility transition | ✅ | ✅ | ✅ |
-| `DISSOLVE` visibility transition | ✅ | ✅ | ✅ |
-| `NEAREST_EDGE` visibility transition | ✅ | ✅ | ✅ |
-| `SWIPE_LEFT` visibility transition | ✅ | ✅ | ✅ |
+| Global rail/chrome visibility | ❌ | ❌ | ❌ |
+| Per-unattached-host visibility | ❌ | ❌ | ❌ |
+| Reversible visibility animation | ❌ | ❌ | ❌ |
+| Visibility duration control | ❌ | ❌ | ❌ |
+| `NONE` visibility transition | ❌ | ❌ | ❌ |
+| `DISSOLVE` visibility transition | ❌ | ❌ | ❌ |
+| `NEAREST_EDGE` visibility transition | ❌ | ❌ | ❌ |
+| `SWIPE_LEFT` visibility transition | ❌ | ❌ | ❌ |
 | Floating windows (`AzWindow`) | ✅ | ✅ | ✅ |
 | Popups (`azPopup` / `AzPopup`) | ✅ | ✅ | ✅ |
 | Three highlight channels | ✅ | ✅ | ✅ |
@@ -48,71 +48,18 @@ Platform-specific implementation mechanics are allowed to differ. Observable beh
 
 ## Visibility
 
-Visibility is **controlled state**. Hiding Az chrome does not destroy app content or reset AzNavRail state. Restoring visibility reverses the configured transition.
+**Not implemented on any platform.** No `visible`/`visibilityAnimation`/`visibilityDurationMillis`
+parameter, `AzVisibilityAnimation` enum, or per-unattached-host visibility override exists in the
+Android, CMP, or React source (`AzVisibilityAnimation`, `NEAREST_EDGE`, and `SWIPE_LEFT` do not
+appear anywhere in `aznavrail`, `aznavrail-cmp`, or `aznavrail-react`). The design sketched
+below is aspirational — a proposal for what such a feature could look like — not a shipped
+contract. Do not write code against it until it lands and this note is removed.
 
-The four transition modes are:
-
-- `NONE` — immediate hide/show.
-- `DISSOLVE` — opacity transition.
-- `NEAREST_EDGE` — exits toward the nearest screen edge and returns from the same direction.
-- `SWIPE_LEFT` — exits left and reverses on show.
-
-The same duration is used in both directions. Negative durations are invalid.
-
-### Android / Compose Multiplatform
-
-Use the visibility fields exposed by the Az configuration/host APIs. Names follow the Kotlin convention:
-
-```kotlin
-azConfig(
-    visible = chromeVisible,
-    visibilityAnimation = AzVisibilityAnimation.DISSOLVE,
-    visibilityDurationMillis = 250,
-)
-```
-
-An unattached host may override visibility for its own complete subtree:
-
-```kotlin
-azUnattachedHostItem(
-    id = "tools",
-    text = "Tools",
-    maxHeight = 420.dp,
-    visible = toolsVisible,
-    visibilityAnimation = AzVisibilityAnimation.NEAREST_EDGE,
-    visibilityDurationMillis = 250,
-)
-```
-
-A global hide always wins. A locally visible host cannot punch through globally hidden Az chrome.
-
-### React
-
-```tsx
-<AzNavRail
-  visible={chromeVisible}
-  visibilityAnimation={AzVisibilityAnimation.DISSOLVE}
-  visibilityDurationMillis={250}
->
-  {/* app screen content remains mounted */}
-</AzNavRail>
-```
-
-Per unattached host:
-
-```tsx
-<AzUnattachedHostItem
-  id="tools"
-  text="Tools"
-  anchor={AzUnattachedAnchor.FLOATING}
-  maxHeight={420}
-  visible={toolsVisible}
-  visibilityAnimation={AzVisibilityAnimation.NEAREST_EDGE}
-  visibilityDurationMillis={250}
-/>
-```
-
-React uses an inherited visibility provider internally. Global visibility therefore applies to rail chrome, unattached hosts, windows, and other Az surfaces without forcing each child to duplicate the global state.
+Proposed shape, for reference: visibility as **controlled state** (hiding Az chrome would not
+destroy app content or reset AzNavRail state; restoring visibility would reverse the configured
+transition), with four transition modes (`NONE` immediate, `DISSOLVE` opacity, `NEAREST_EDGE`
+toward the nearest screen edge, `SWIPE_LEFT` exits left), the same duration in both directions,
+and a global hide that always wins over a locally-visible host.
 
 ---
 

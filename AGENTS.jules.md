@@ -1,6 +1,9 @@
-# AGENTS.md
+# AGENTS.jules.md
 
-Operating instructions for this repository. Read before planning.
+Operating instructions for the Jules environment specifically. `AGENTS.md` is the base operating
+instructions for this repository; this file overrides/adds to it where the Jules environment's
+constraints differ (notably: GLEE runs cold outside this session here, unlike `AGENTS.md`'s
+self-run policy — see "Out of Scope for This Environment" below). Read before planning.
 
 ---
 

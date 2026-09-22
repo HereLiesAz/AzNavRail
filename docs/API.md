@@ -109,6 +109,7 @@ fun azConfig(
     usePhysicalDocking: Boolean = false,
     expandedWidth: Dp = 160.dp,
     collapsedWidth: Dp = 100.dp,
+    railItemWidth: Dp = Dp.Unspecified,
     showFooter: Boolean = true,
     appRepositoryUrl: String = "",
     // Menu-drawer look-and-feel:
@@ -119,6 +120,8 @@ fun azConfig(
 )
 ~~~
 
+* `railItemWidth: Dp` — overrides the width of individual rail item buttons. `Dp.Unspecified`
+  (the default) derives the width from `collapsedWidth` as today.
 * `dimBehindMenu` / `dimBehindMenuAlpha` — opt-in dim scrim behind the expanded drawer. When off,
   the drawer's tap-catcher is still full-size but fully transparent (existing behaviour).
 * `menuItemAlignment: AzMenuItemAlignment` (`CENTER` | `SIDE`) — alignment of the drawer's labels

@@ -2,12 +2,12 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { View, Text } from 'react-native-web';
 
-// Import the web components directly from the built library source since we don't have it installed via npm
-import AzButton from '../aznavrail-react/src/web/AzButton.jsx';
-import AzTextBox from '../aznavrail-react/src/web/AzTextBox.jsx';
-import AzToggle from '../aznavrail-react/src/web/AzToggle.jsx';
-import AzDivider from '../aznavrail-react/src/web/AzDivider.jsx';
-import AzLoad from '../aznavrail-react/src/web/AzLoad.jsx';
+// Import the components directly from the library source since we don't have it installed via npm
+import { AzButton } from '../aznavrail-react/src/components/AzButton.tsx';
+import { AzTextBox } from '../aznavrail-react/src/components/AzTextBox.tsx';
+import { AzToggle } from '../aznavrail-react/src/components/AzToggle.tsx';
+import { AzDivider } from '../aznavrail-react/src/components/AzDivider.tsx';
+import { AzLoad } from '../aznavrail-react/src/components/AzLoad.tsx';
 
 const FigmaExport = () => {
   return (

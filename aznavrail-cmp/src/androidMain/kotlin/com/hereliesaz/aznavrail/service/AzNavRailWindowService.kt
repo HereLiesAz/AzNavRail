@@ -89,12 +89,15 @@ abstract class AzNavRailWindowService : Service(), LifecycleOwner, SavedStateReg
         }
     }
 
+    private var isDragging = false
+
     private inner class ControllerImpl : AzNavRailOverlayController {
         private val _contentOffset = mutableStateOf(IntOffset.Zero)
         override val contentOffset: State<IntOffset> = _contentOffset
 
         override fun onDragStart() {
             if (composeView != null && windowManager != null) {
+                isDragging = true
                 // Save current position
                 val currentX = windowParams.x
                 val currentY = windowParams.y
@@ -126,8 +129,10 @@ abstract class AzNavRailWindowService : Service(), LifecycleOwner, SavedStateReg
                 val screenWidth = displayMetrics.widthPixels
                 val screenHeight = displayMetrics.heightPixels
 
-                // Clamp final position to ensure at least some part of the window is visible
-                // Allow dragging mostly off-screen but keep a margin visible
+                // Clamp final position so the window's origin can't land more than `margin` off
+                // the visible screen. This is a fixed pixel margin, not measured against the
+                // window's actual rendered width/height (which is MATCH_PARENT during the drag
+                // itself) — it bounds the origin, not the full visible area of arbitrary content.
                 val margin = 100 // px
                 // Ensure the window is not lost off-screen.
                 // Assuming standard gravity (Top|Start), (x,y) is the top-left corner.
@@ -149,6 +154,7 @@ abstract class AzNavRailWindowService : Service(), LifecycleOwner, SavedStateReg
                 windowParams.y = finalY
                 windowManager?.updateViewLayout(composeView, windowParams)
             }
+            isDragging = false
         }
     }
 
@@ -181,11 +187,17 @@ abstract class AzNavRailWindowService : Service(), LifecycleOwner, SavedStateReg
 
     /**
      * Updates the position of the window manually.
+     *
+     * No-ops while a gesture drag ([AzNavRailOverlayController.onDragStart] through
+     * [AzNavRailOverlayController.onDragEnd]) is in progress: the window is MATCH_PARENT
+     * full-screen for the duration of that drag, and mutating x/y then would offset a full-screen
+     * window rather than move the rail.
+     *
      * @param x The delta X.
      * @param y The delta Y.
      */
     fun updatePosition(x: Float, y: Float) {
-        if (composeView != null && windowManager != null) {
+        if (composeView != null && windowManager != null && !isDragging) {
             windowParams.x += x.toInt()
             windowParams.y += y.toInt()
             windowManager?.updateViewLayout(composeView, windowParams)

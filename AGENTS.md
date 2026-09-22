@@ -1,6 +1,8 @@
 # AGENTS.md
 
 Operating instructions. Read at thread start. Applies to every agent, subagent, and session.
+The Jules environment runs under `AGENTS.jules.md` instead, which overrides this file's GLEE
+policy and a few other constraints where that environment differs.
 
 ---
 

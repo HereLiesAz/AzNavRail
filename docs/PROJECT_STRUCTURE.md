@@ -3,7 +3,16 @@
 This project is a monorepo containing the following packages:
 
 -   `aznavrail`: The core Android library.
+-   `aznavrail-annotations`: The `@Az` annotation definitions.
+-   `aznavrail-processor`: The KSP processor that generates `AzGraph` from `@Az` annotations.
+-   `aznavrail-cmp`: The Compose Multiplatform port (Android/Desktop/Web, iOS on macOS builds).
+-   `aznavrail-cmp-demo`: A sample app demonstrating `aznavrail-cmp`.
+-   `aznavrail-react`: The React / React Native / Web port.
 -   `SampleApp`: A sample Android application that demonstrates how to use the `aznavrail` library.
+-   `sample-pwa`: A sample web app demonstrating `aznavrail-react`.
+-   `figma-plugin`: A Figma plugin that generates AzNavRail component sets.
+-   `figma-export`: A dev harness that renders `aznavrail-react`'s web components for Figma export.
+-   `maven/`: Local Maven-style publish output for ad hoc testing.
 
 ### File Dictionary
 
@@ -16,7 +25,15 @@ This document provides a brief but thorough description of what each file in the
 | `.github/` | Contains GitHub Actions workflows for CI/CD. |
 | `SampleApp/` | An Android application that demonstrates how to use the `aznavrail` library. |
 | `aznavrail/` | The core `aznavrail` Android library module. |
+| `aznavrail-annotations/` | The `@Az` annotation definitions (Kotlin, no Android dependency). |
+| `aznavrail-processor/` | The KSP symbol processor that generates `AzGraph` from `@Az`. |
+| `aznavrail-cmp/` | The Compose Multiplatform port of the library. |
+| `aznavrail-cmp-demo/` | Sample app for `aznavrail-cmp`. |
 | `aznavrail-react/` | The React and React Native version of the `aznavrail` library. |
+| `sample-pwa/` | Sample web app demonstrating `aznavrail-react`. |
+| `figma-plugin/` | Figma plugin that generates AzNavRail component sets. |
+| `figma-export/` | Dev harness that renders `aznavrail-react`'s web components for Figma export. |
+| `maven/` | Local Maven-style publish output for ad hoc testing. |
 | `docs/` | Contains detailed documentation guides. |
 | `gradle/` | Contains the Gradle wrapper files. |
 | `.gitignore` | Specifies intentionally untracked files to ignore. |
@@ -35,8 +52,8 @@ This document provides a brief but thorough description of what each file in the
 | `DSL.md` | Direct documentation covering the builder Domain Specific Language parameters. |
 | `PROJECT_STRUCTURE.md` | Explains the layout of the repository. |
 | `SECURITY.md` | Security policy and vulnerability reporting. |
-| `MIGRATION_GUIDE.md` | Guide for migrating to the current architecture. |
-| `TUTORIAL_FRAMEWORK_PROPOSAL.md` | Reference for the cross-platform tutorial framework. |
+| `PLATFORM_PARITY.md` | Cross-platform (Android/CMP/React) behavior parity contract. |
+| `TUTORIAL_FRAMEWORK_PROPOSAL.md` | Historical proposal for the tutorial framework; superseded by the status-driven guidance framework (`azStatus`/`azEdge`/`azGoal`). |
 
 #### .github Directory
 

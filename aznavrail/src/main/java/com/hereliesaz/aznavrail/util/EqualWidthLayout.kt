@@ -27,7 +27,8 @@ fun EqualWidthLayout(
         modifier = modifier,
         content = content
     ) { measurables, constraints ->
-        val maxWidth = measurables.maxOfOrNull { it.maxIntrinsicWidth(constraints.maxHeight) } ?: 0
+        val desiredWidth = measurables.maxOfOrNull { it.maxIntrinsicWidth(constraints.maxHeight) } ?: 0
+        val maxWidth = desiredWidth.coerceAtMost(constraints.maxWidth)
         val newConstraints = constraints.copy(minWidth = maxWidth, maxWidth = maxWidth)
 
         val placeables = measurables.map { it.measure(newConstraints) }

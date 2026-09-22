@@ -8,6 +8,9 @@
 - `aznavrail-processor` turns `aznavrail-annotations` declarations into Android graph code.
 - `SampleApp` is the Android integration consumer. Application-only navigation processors belong here unless a reusable library contract is proven.
 - `aznavrail-cmp-demo` is the desktop and Wasm consumer. It is runnable, not published.
+- `aznavrail-react` is the React / React Native / Web port. Android remains the reference
+  implementation for behavior; `aznavrail-react` and `aznavrail-cmp` are expected to reach parity —
+  see `docs/PLATFORM_PARITY.md` for the current contract and known gaps.
 
 ## Invariants
 
@@ -22,7 +25,8 @@
 
 ## Current version
 
-AzNavRail `11.0`, as declared by `gradle/libs.versions.toml`.
+See the `aznavrail` key in `gradle/libs.versions.toml` — do not hardcode the number here, it drifts
+every release.
 
 ## Decisions
 

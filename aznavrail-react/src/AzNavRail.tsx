@@ -685,7 +685,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       itemHeight
     );
 
-    // Animation logic omitted for brevity, but same as before
+    // Spring-animate every other item in the cluster to its shifted slot.
     cluster.forEach((item, index) => {
       if (item.id === draggedItem.id) return;
       let offset = 0;
@@ -1395,16 +1395,10 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
       if (config.inAppAbout) {
         setIsExpanded(false);
         setShowAbout(true);
-      } else if (config.appRepositoryUrl) {
-        // Only follow safe web URLs — on react-native-web a `javascript:` URL would otherwise execute.
-        const isSafe =
-          config.appRepositoryUrl.startsWith('http://') ||
-          config.appRepositoryUrl.startsWith('https://');
-        if (isSafe) {
-          Linking.openURL(config.appRepositoryUrl).catch((e) =>
-            console.error('Could not open About', e)
-          );
-        }
+      } else if (config.appRepositoryUrl && isSafeExternalUrl(config.appRepositoryUrl)) {
+        Linking.openURL(config.appRepositoryUrl).catch((e) =>
+          console.error('Could not open About', e)
+        );
       }
     };
 
