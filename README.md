@@ -348,6 +348,7 @@ export default function App() {
 *   **`azMenuItem`**: Visible only in the drawer.
 *   **`azNestedRail`**: Opens a secondary popup rail (Vertical/Horizontal).
 *   **`azRailRelocItem`**: Draggable items for user reordering.
+*   **`azRailRelocSubHostItem`**: A sub-host that is also draggable among its reloc siblings; moves as one block with its children.
 
 ### 3. Interactive Components
 Manage state directly in the rail without leaving the context.
@@ -528,8 +529,9 @@ azRailSubToggle(
 ```
 
 `azRailRelocItem` attaches by `hostId` here too — a Procreate-style layers panel is exactly this: each
-layer row is an `azRailRelocItem(hostId = "tools")`. Tap and long-press-to-open-hidden-menu both work;
-drag-to-reorder does not (`onRelocate` only fires when `hostId` names a rail host — see below).
+layer row is an `azRailRelocItem(hostId = "tools")`. Tap, long-press hidden menus and long-press-drag
+reordering all work. A group row is an `azRailRelocSubHostItem`: a host that is one draggable slot
+together with its children (see the complete guide, §5).
 
 ### Per-Item Badges & Loading (`azItemState`)
 
