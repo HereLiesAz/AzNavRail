@@ -802,7 +802,7 @@ azRailSubItem(id = "layer-1", hostId = "layers", text = "Base") { select(0) }
 
 `azRailRelocItem` (see §5) attaches to an unattached host's `hostId` the same way — a Procreate-style
 layers panel is exactly this: each layer row is an `azRailRelocItem` under an `azUnattachedHostItem`.
-Tap-to-activate and long-press-to-open-hidden-menu both work; drag-to-reorder does not — see §5's note.
+Tap, long-press hidden menus and drag-to-reorder all work; a group row is an `azRailRelocSubHostItem` — see §5.
 
 
 ### Per-item badges, loading and alerts (`azItemState`)
@@ -852,10 +852,40 @@ azRailRelocItem(
 }
 ```
 
-**`hostId` may name a rail host or an `azUnattachedHostItem` (§4)** — tap-to-activate (`onClick`) and
-long-press-to-open-hidden-menu work identically either way. Drag-to-reorder is only wired for the rail
-strip, though: under an unattached host, `onRelocate` never fires (that stack's linear layout has no
-reorder gesture of its own).
+**`hostId` may name a rail host or an `azUnattachedHostItem` (§4)** — tap-to-activate (`onClick`),
+long-press-to-open-hidden-menu and long-press-drag reordering work either way. Under an unattached host,
+`onRelocate(from, to, newOrder)` fires once, on drop, only if the order changed; `newOrder` is that
+host's direct reloc members, by id, in their new displayed order, top-first.
+
+### Relocatable sub-hosts (`azRailRelocSubHostItem`)
+
+A host that can also be dragged among its reloc siblings — e.g. a group layer in a layers panel. It
+takes the parameters of `azRailSubHostItem` plus `onFocus`, `onRelocate` and a `hiddenMenu` block.
+
+```kotlin
+azUnattachedHostItem(id = "layers", text = "Layers", anchor = AzUnattachedAnchor.OPPOSITE)
+azRailRelocItem(id = "layer.a", hostId = "layers", text = "A", onRelocate = onTop)
+azRailRelocSubHostItem(id = "layer.g", hostId = "layers", text = "Group", onRelocate = onTop) {
+    listItem("Ungroup") { ungroup("g") }
+}
+    // Declare the group's children directly after it.
+    azRailRelocItem(id = "layer.g1", hostId = "layer.g", text = "G1", onRelocate = onGroup)
+    azRailRelocItem(id = "layer.g2", hostId = "layer.g", text = "G2", onRelocate = onGroup)
+azRailRelocItem(id = "layer.b", hostId = "layers", text = "B", onRelocate = onTop)
+```
+
+- In its parent's reloc cluster it is **one slot together with all its descendants**: its children
+  never split the parent's run, so `layer.a` can be dragged past the group.
+- Tap toggles its children; long-press opens its hidden menu; long-press-drag on the host button moves
+  the **whole block** (host plus expanded children). A sibling dragged past it jumps the whole block.
+- `onRelocate` semantics match reloc items: once, on drop, only if the order changed, with the parent's
+  direct reloc members (reloc items and relocatable sub-hosts) by id, top-first — `["layer.a",
+  "layer.g", "layer.b"]` above, never the group's children. Reorders inside the group report through
+  the children's own `onRelocate` with the group's members only.
+- Saved orders (`savedRelocOrders`) record the host's position, so it survives recomposition with its
+  children still under it.
+- Implemented for unattached hosts. In the docked rail strip it renders and expands like a plain
+  `azRailSubHostItem` but is not draggable; reloc siblings dragged there still jump its block.
 
 ---
 

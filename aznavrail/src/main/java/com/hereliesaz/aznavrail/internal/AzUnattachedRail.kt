@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -310,6 +311,7 @@ private fun UnattachedStack(
             key(host.id) {
             UnattachedNode(
                 item = host,
+                spacingDp = spacingDp,
                 scope = scope,
                 navController = navController,
                 currentDestination = currentDestination,
@@ -344,6 +346,10 @@ private fun UnattachedNode(
     onHiddenMenuDismiss: () -> Unit,
     popupOpensLeft: Boolean,
     relocDrag: UnattachedRelocDragState? = null,
+    /** Gap between this item and its unfolded sub-items; matches the enclosing stack's spacing. */
+    spacingDp: Dp = 0.dp,
+    /** Slot-level modifier from the parent (accordion unfold, drag lift). */
+    modifier: Modifier = Modifier,
 ) {
     // A cycler shows its transient option while the commit window is still running, exactly as it
     // does on the rail.
@@ -363,6 +369,14 @@ private fun UnattachedNode(
             onTap = {
                 scope.onFocusMap[item.id]?.invoke()
                 scope.lastTouchedItemId = item.id
+                if (item.isHost) {
+                    // A relocatable sub-host (`azRailRelocSubHostItem`): its tap is still a host
+                    // tap. RailContent wires no click for reloc items, so the gesture does it.
+                    val expanded = !(hostStates[item.id] ?: false)
+                    hostStates[item.id] = expanded
+                    scope.onExpandedChangeMap[item.id]?.invoke(expanded)
+                    item.route?.let { navController?.azNavigateWhenReady(it) }
+                }
                 scope.onClickMap[item.id]?.invoke()
                 scope.advancedConfig.onInteraction?.invoke(item.id, item)
             },
@@ -378,6 +392,32 @@ private fun UnattachedNode(
         Modifier
     }
 
+    // The whole node — the item plus, for an expanded host, its unfolded sub-items — is one slot:
+    // one Box that the reloc gesture and its draw offset sit on. For a relocatable sub-host that is
+    // what makes the block move as one; for a plain reloc item the Box holds the item alone. The
+    // slot bounds are recorded *before* the drag offset in the chain, so they stay untranslated.
+    val slotModifier = if (relocDrag != null && item.isRelocItem) {
+        Modifier.onGloballyPositioned { c ->
+            val pos = c.positionInWindow()
+            relocDrag.slotBounds[item.id] =
+                Rect(pos.x, pos.y, pos.x + c.size.width, pos.y + c.size.height)
+        }
+    } else {
+        Modifier
+    }
+    Box(modifier = modifier.then(slotModifier).then(dragModifier)) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(spacingDp),
+    ) {
+    // The item's own button height, measured locally: a relocatable sub-host's gesture only
+    // answers presses on its button, not on the sub-items unfolded beneath it in the same slot.
+    // (Not `itemBoundsCache`, which every DSL re-run clears.)
+    Box(
+        modifier = if (relocDrag != null && item.isRelocItem && item.isHost) {
+            Modifier.onGloballyPositioned { relocDrag.headerHeights[item.id] = it.size.height.toFloat() }
+        } else Modifier
+    ) {
     RailContent(
         defaultShape = scope.defaultShape,
         item = displayItem,
@@ -442,10 +482,10 @@ private fun UnattachedNode(
         focusColor = scope.focusColor,
         secondaryColor = scope.secondaryColor,
         tertiaryColor = scope.tertiaryColor,
-        dragModifier = dragModifier,
         onSliderChange = { id, v -> scope.onSliderChangeMap[id]?.invoke(v) },
         onSliderRangeChange = { id, r -> scope.onSliderRangeChangeMap[id]?.invoke(r) },
     )
+    }
 
     if (hiddenMenuOpenId == item.id && !item.hiddenMenuItems.isNullOrEmpty()) {
         val bounds = scope.itemBoundsCache[item.id] ?: Rect.Zero
@@ -578,20 +618,19 @@ private fun UnattachedNode(
           // Keyed by id, not slot: after a drop the list reorders, and slot-keyed composition would
           // hand each moved item the previous occupant's remembered state (gesture, highlight and
           // badge animations), which flickers every item between the old and new slot.
-          key(child.id) {
+            key(child.id) {
             // The same staggered accordion the rail's own sub-items unfold on. The unfolding is
             // what tells you these belong to the host above them; blinking into place says nothing.
-            Box(
-                modifier = rememberAzAccordionModifier(
-                    index = index,
-                    count = children.size,
-                    visible = true,
-                    isHorizontal = false,
-                    staggerMs = AzMotion.ItemStaggerMs,
-                    durationMs = AzMotion.ItemDurationMs,
-                ).zIndex(if (relocDrag.isLifted(child.id)) 1f else 0f)
-            ) {
                 UnattachedNode(
+                    modifier = rememberAzAccordionModifier(
+                        index = index,
+                        count = children.size,
+                        visible = true,
+                        isHorizontal = false,
+                        staggerMs = AzMotion.ItemStaggerMs,
+                        durationMs = AzMotion.ItemDurationMs,
+                    ).zIndex(if (relocDrag.isLifted(child.id)) 1f else 0f),
+                    spacingDp = spacingDp,
                     item = child,
                     relocDrag = relocDrag,
                     scope = scope,
@@ -605,9 +644,10 @@ private fun UnattachedNode(
                     onHiddenMenuDismiss = onHiddenMenuDismiss,
                     popupOpensLeft = popupOpensLeft,
                 )
-            }
           }
         }
+    }
+    }
     }
 }
 
@@ -645,6 +685,16 @@ internal class UnattachedRelocDragState {
     private var fromIndex = -1
     /** Per-item slot pitch (height + gap), px, frozen at drag start. */
     private var pitch: Map<String, Float> = emptyMap()
+
+    /**
+     * Window-space bounds of each reloc child's whole slot, written on every layout pass. For a
+     * relocatable sub-host the slot is its block (host plus unfolded sub-items), which is what a
+     * sibling has to travel past to jump it.
+     */
+    val slotBounds: MutableMap<String, Rect> = HashMap()
+
+    /** Button height (px) of each relocatable sub-host child, the part of its slot that drags it. */
+    val headerHeights: MutableMap<String, Float> = HashMap()
 
     fun isLifted(id: String) = id == draggedId || id == snappingId
 
@@ -786,6 +836,12 @@ private fun rememberUnattachedRelocGestureModifier(
         .pointerInput(item.id, item.hiddenMenuItems.isNullOrEmpty()) {
             awaitEachGesture {
                 val down = awaitFirstDown(requireUnconsumed = false)
+                // A relocatable sub-host's slot also holds its unfolded sub-items, which have their
+                // own gestures. Only a press on the host's own button drives the host.
+                if (item.isHost) {
+                    val header = drag.headerHeights[item.id]
+                    if (header != null && down.position.y > header) return@awaitEachGesture
+                }
                 val longPressTimeout = viewConfiguration.longPressTimeoutMillis
                 val preSelected = scope.lastTouchedItemId == item.id
                 var isLongPress = false
@@ -802,8 +858,9 @@ private fun rememberUnattachedRelocGestureModifier(
                 }
 
                 fun startDrag(): Boolean {
-                    val cluster = RelocItemHandler.findCluster(scope.navItems, item.id) ?: return false
-                    drag.begin(item.id, scope.navItems.slice(cluster).map { it.id }, scope.itemBoundsCache)
+                    // Top-first slot heads: a relocatable sub-host is one slot with its descendants.
+                    val slots = RelocItemHandler.clusterSlots(scope.navItems, item.id) ?: return false
+                    drag.begin(item.id, slots.map { scope.navItems[it.first].id }, drag.slotBounds)
                     return true
                 }
 
@@ -853,16 +910,14 @@ private fun rememberUnattachedRelocGestureModifier(
                     longPressJob.cancel()
                     if (dragStarted) {
                         val hostId = item.hostId
-                        val cluster = RelocItemHandler.findCluster(scope.navItems, item.id)
                         val landing = drag.end { anim -> coroutineScope.launch { anim() } }
-                        if (landing != null && cluster != null && hostId != null) {
-                            val hostOrderBefore = scope.navItems
-                                .filter { it.isRelocItem && it.hostId == hostId }.map { it.id }
+                        if (landing != null && hostId != null) {
+                            val hostOrderBefore = RelocItemHandler.memberIds(scope.navItems, hostId)
                             val from = hostOrderBefore.indexOf(item.id)
-                            val targetNavIndex = (cluster.first + landing).coerceIn(cluster)
-                            RelocItemHandler.updateOrder(scope.navItems, item.id, targetNavIndex)
-                            val newOrder = scope.navItems
-                                .filter { it.isRelocItem && it.hostId == hostId }.map { it.id }
+                            // `landing` is a slot index into the cluster frozen at drag start; the
+                            // dragged item's whole block (descendants included) moves there.
+                            RelocItemHandler.moveToSlot(scope.navItems, item.id, landing)
+                            val newOrder = RelocItemHandler.memberIds(scope.navItems, hostId)
                             scope.savedRelocOrders[hostId] = newOrder
                             val to = newOrder.indexOf(item.id)
                             if (from != to) scope.onRelocateMap[item.id]?.invoke(from, to, newOrder)
