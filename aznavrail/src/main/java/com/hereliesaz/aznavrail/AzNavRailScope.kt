@@ -806,8 +806,11 @@ interface AzNavRailScope {
      * @param classifiers Active classifiers.
      * @param onFocus Focus callback.
      * @param onClick Click callback (selection).
-     * @param onRelocate Callback invoked when the item is moved. Provides old index, new index, and the
-     *   new ID order, including when hosted under an `azUnattachedHostItem`.
+     * @param onRelocate Callback invoked once, on drop, when the item is moved. Provides old index,
+     *   new index, and the new ID order. Under an `azUnattachedHostItem`, the order is exactly this
+     *   host's reloc item ids in their new displayed order, top-first, and both indices point into
+     *   that list. In the docked rail it is currently every rail item id, and the indices are
+     *   positions in that full list.
      * @param nestedRailAlignment The alignment of the nested rail (VERTICAL or HORIZONTAL).
      * @param nestedContent DSL block to define the items within the nested rail.
      * @param keepNestedRailOpen If true, the nested rail remains open until the parent item is tapped again.
