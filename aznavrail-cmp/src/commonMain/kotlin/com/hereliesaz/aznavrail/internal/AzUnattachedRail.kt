@@ -2,6 +2,8 @@ package com.hereliesaz.aznavrail.internal
 
 import com.hereliesaz.aznavrail.azNavigateWhenReady
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -21,6 +23,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -299,6 +302,7 @@ private fun UnattachedStack(
         verticalArrangement = Arrangement.spacedBy(spacingDp),
     ) {
         hosts.forEach { host ->
+            key(host.id) {
             UnattachedNode(
                 item = host,
                 scope = scope,
@@ -312,6 +316,7 @@ private fun UnattachedStack(
                 onHiddenMenuDismiss = onHiddenMenuDismiss,
                 popupOpensLeft = popupOpensLeft,
             )
+            }
         }
     }
 }
@@ -333,6 +338,7 @@ private fun UnattachedNode(
     onMenuOpen: (String) -> Unit,
     onHiddenMenuDismiss: () -> Unit,
     popupOpensLeft: Boolean,
+    relocDrag: UnattachedRelocDragState? = null,
 ) {
     // A cycler shows its transient option while the commit window is still running, exactly as it
     // does on the rail.
@@ -348,6 +354,7 @@ private fun UnattachedNode(
         rememberUnattachedRelocGestureModifier(
             item = item,
             scope = scope,
+            relocDrag = relocDrag,
             onTap = {
                 scope.onFocusMap[item.id]?.invoke()
                 scope.lastTouchedItemId = item.id
@@ -559,7 +566,14 @@ private fun UnattachedNode(
         // the drawer along with its whole subtree, so this stack is the only place a
         // `azMenuSubItem` attached to it can be drawn at all.
         val children = scope.navItems.filter { it.isSubItem && it.hostId == item.id }
+        // One drag state per host, shared by its reloc children so a drag can displace its
+        // neighbours and lift itself above them (see [UnattachedRelocDragState]).
+        val relocDrag = remember(item.id) { UnattachedRelocDragState() }
         children.forEachIndexed { index, child ->
+          // Keyed by id, not slot: after a drop the list reorders, and slot-keyed composition would
+          // hand each moved item the previous occupant's remembered state (gesture, highlight and
+          // badge animations), which flickers every item between the old and new slot.
+          key(child.id) {
             // The same staggered accordion the rail's own sub-items unfold on. The unfolding is
             // what tells you these belong to the host above them; blinking into place says nothing.
             Box(
@@ -570,10 +584,11 @@ private fun UnattachedNode(
                     isHorizontal = false,
                     staggerMs = AzMotion.ItemStaggerMs,
                     durationMs = AzMotion.ItemDurationMs,
-                )
+                ).zIndex(if (relocDrag.isLifted(child.id)) 1f else 0f)
             ) {
                 UnattachedNode(
                     item = child,
+                    relocDrag = relocDrag,
                     scope = scope,
                     navController = navController,
                     currentDestination = currentDestination,
@@ -586,7 +601,138 @@ private fun UnattachedNode(
                     popupOpensLeft = popupOpensLeft,
                 )
             }
+          }
         }
+    }
+}
+
+/**
+ * Drag state shared by the reloc children of one expanded unattached host.
+ *
+ * Hoisted out of the individual item so that a drag can do what the docked rail's drag does:
+ * lift the dragged item above its siblings (`zIndex` must sit on the sibling-level wrapper, not deep
+ * inside the item, or it has no effect), slide the displaced neighbours out of the way while the
+ * finger moves, and glide the dropped item into its new slot instead of jumping there.
+ *
+ * Every distance here is measured once, at drag start, from the items' laid-out slot bounds
+ * ([AzNavRailScopeImpl.itemBoundsCache] is written *before* the drag offset is applied), including
+ * the column's inter-item gap — so the drop index agrees with what the neighbours visibly did.
+ */
+internal class UnattachedRelocDragState {
+    /** Id of the item under the finger, or null when no drag is in progress. */
+    var draggedId by mutableStateOf<String?>(null)
+        private set
+    /** Finger travel since drag start, px. Positive = down. */
+    var dragOffset by mutableFloatStateOf(0f)
+        private set
+    /** Where the dragged item would land, as an index into [clusterIds]. */
+    var targetIndex by mutableStateOf(-1)
+        private set
+
+    /** Id of the item gliding into its new slot after a drop, and the animation doing it. */
+    var snappingId by mutableStateOf<String?>(null)
+        private set
+    var snapAnim by mutableStateOf<Animatable<Float, AnimationVector1D>?>(null)
+        private set
+
+    /** The dragged item's reloc cluster, top-first, frozen at drag start. */
+    private var clusterIds: List<String> = emptyList()
+    private var fromIndex = -1
+    /** Per-item slot pitch (height + gap), px, frozen at drag start. */
+    private var pitch: Map<String, Float> = emptyMap()
+
+    fun isLifted(id: String) = id == draggedId || id == snappingId
+
+    /** Starts a drag of [id] over [cluster] (top-first ids), measuring slots from [bounds]. */
+    fun begin(id: String, cluster: List<String>, bounds: Map<String, Rect>) {
+        val rects = cluster.map { bounds[it] }
+        // The gap the stack's `Arrangement.spacedBy` puts between consecutive slots.
+        val gap = (0 until rects.size - 1).firstNotNullOfOrNull { i ->
+            val a = rects[i]; val b = rects[i + 1]
+            if (a != null && b != null) (b.top - a.bottom).coerceAtLeast(0f) else null
+        } ?: 0f
+        pitch = cluster.zip(rects).associate { (cid, r) -> cid to ((r?.height ?: 0f) + gap) }
+        clusterIds = cluster
+        fromIndex = cluster.indexOf(id)
+        targetIndex = fromIndex
+        dragOffset = 0f
+        snappingId = null
+        snapAnim = null
+        draggedId = id
+    }
+
+    /** Moves the drag to [offset] px from its start and recomputes the landing slot. */
+    fun dragTo(offset: Float) {
+        dragOffset = offset
+        var target = fromIndex
+        var remaining = offset
+        // Same 40%-overlap rule as [RelocItemHandler.calculateTargetIndex], but over slot pitch
+        // (height + gap) rather than bare height, so it doesn't overshoot by one gap per slot.
+        if (remaining > 0) {
+            while (target < clusterIds.lastIndex) {
+                val next = pitch[clusterIds[target + 1]] ?: 0f
+                if (next <= 0f || remaining <= next * 0.4f) break
+                remaining -= next; target++
+            }
+        } else {
+            while (target > 0) {
+                val prev = pitch[clusterIds[target - 1]] ?: 0f
+                if (prev <= 0f || remaining >= -prev * 0.4f) break
+                remaining += prev; target--
+            }
+        }
+        targetIndex = target
+    }
+
+    /** How far a non-dragged item [id] should be displaced to open the target slot, px. */
+    fun neighbourShift(id: String): Float {
+        val dragged = draggedId ?: return 0f
+        val idx = clusterIds.indexOf(id)
+        if (idx < 0 || id == dragged) return 0f
+        val shift = pitch[dragged] ?: 0f
+        return when {
+            fromIndex < targetIndex && idx in (fromIndex + 1)..targetIndex -> -shift
+            targetIndex < fromIndex && idx in targetIndex until fromIndex -> shift
+            else -> 0f
+        }
+    }
+
+    /**
+     * Ends the drag. Returns the landing index into the frozen cluster, or null when the item did
+     * not move. Starts the dropped item's glide from where it was drawn to its new slot; the caller
+     * must apply the reorder in the same frame so the two land together.
+     */
+    fun end(onSnapDone: (suspend () -> Unit) -> Unit): Int? {
+        val id = draggedId ?: return null
+        val from = fromIndex
+        val to = targetIndex
+        val moved = when {
+            to > from -> (from + 1..to).sumOf { (pitch[clusterIds[it]] ?: 0f).toDouble() }.toFloat()
+            to < from -> -(to until from).sumOf { (pitch[clusterIds[it]] ?: 0f).toDouble() }.toFloat()
+            else -> 0f
+        }
+        val start = dragOffset - moved
+        draggedId = null
+        dragOffset = 0f
+        targetIndex = -1
+        if (start != 0f) {
+            val anim = Animatable(start)
+            snapAnim = anim
+            snappingId = id
+            onSnapDone {
+                anim.animateTo(0f)
+                if (snapAnim === anim) { snapAnim = null; snappingId = null }
+            }
+        }
+        return if (to != from && to >= 0) to else null
+    }
+
+    /** Vertical draw offset for item [id], px. Read only at placement time. */
+    fun offsetFor(id: String, neighbourAnimated: Float): Float = when {
+        id == draggedId -> dragOffset
+        id == snappingId -> snapAnim?.value ?: 0f
+        draggedId != null -> neighbourAnimated
+        else -> 0f
     }
 }
 
@@ -599,11 +745,21 @@ private fun UnattachedNode(
  * landed on it — [AzNavRailScopeImpl.lastTouchedItemId]), the hold is skipped entirely: this next
  * press is a tap-and-drag, and movement past touch slop starts reordering immediately, consuming the
  * gesture before the FLOATING host's own drag detector sees it.
+ *
+ * The `pointerInput` sits *before* the draw offset in the modifier chain. The other way round (as it
+ * once was) every pointer position the gesture read was already translated by the offset it had just
+ * applied, so the item fed its own displacement back into its delta: it crawled at roughly half the
+ * finger's speed, jittered, and dropped short of where the finger went.
+ *
+ * On drop, `onRelocate(from, to, newOrder)` fires exactly once, and only if the position changed:
+ * `newOrder` is this host's reloc item ids in their new displayed order, top-first (index 0 is the
+ * item drawn nearest the host); `from`/`to` are indices into that same host-scoped list.
  */
 @Composable
 private fun rememberUnattachedRelocGestureModifier(
     item: AzNavItem,
     scope: AzNavRailScopeImpl,
+    relocDrag: UnattachedRelocDragState?,
     onTap: () -> Unit,
     onMenuOpen: () -> Unit,
     onMenuDismiss: () -> Unit,
@@ -611,12 +767,17 @@ private fun rememberUnattachedRelocGestureModifier(
     val hapticFeedback = LocalHapticFeedback.current
     val viewConfiguration = LocalViewConfiguration.current
     val coroutineScope = rememberCoroutineScope()
-    var dragOffsetY by remember(item.id) { mutableStateOf(0f) }
-    var isDragging by remember(item.id) { mutableStateOf(false) }
+    val drag = relocDrag ?: remember(item.id) { UnattachedRelocDragState() }
+
+    // Neighbour displacement glides; it is only *read* while a drag is live, so the instant the drop
+    // reorders the list the displaced items sit at their new slots with no offset — no double move.
+    val neighbourTarget = drag.neighbourShift(item.id)
+    val neighbourAnim = remember(item.id) { Animatable(0f) }
+    LaunchedEffect(neighbourTarget, drag.draggedId != null) {
+        if (drag.draggedId != null) neighbourAnim.animateTo(neighbourTarget) else neighbourAnim.snapTo(0f)
+    }
 
     return Modifier
-        .offset { IntOffset(0, dragOffsetY.roundToInt()) }
-        .zIndex(if (isDragging) 1f else 0f)
         .pointerInput(item.id, item.hiddenMenuItems.isNullOrEmpty()) {
             awaitEachGesture {
                 val down = awaitFirstDown(requireUnconsumed = false)
@@ -626,8 +787,6 @@ private fun rememberUnattachedRelocGestureModifier(
                 var movedBeforeLongPress = false
                 var dragStarted = false
                 var completed = false
-                var totalDragY = 0f
-                var targetIndex = scope.navItems.indexOfFirst { it.id == item.id }
 
                 val longPressJob = coroutineScope.launch {
                     delay(longPressTimeout)
@@ -637,9 +796,14 @@ private fun rememberUnattachedRelocGestureModifier(
                     if (!item.hiddenMenuItems.isNullOrEmpty()) onMenuOpen()
                 }
 
+                fun startDrag(): Boolean {
+                    val cluster = RelocItemHandler.findCluster(scope.navItems, item.id) ?: return false
+                    drag.begin(item.id, scope.navItems.slice(cluster).map { it.id }, scope.itemBoundsCache)
+                    return true
+                }
+
                 try {
                     val pointerId = down.id
-                    var currentPosition = down.position
                     while (true) {
                         val event = awaitPointerEvent()
                         val change = event.changes.firstOrNull { it.id == pointerId } ?: break
@@ -657,10 +821,8 @@ private fun rememberUnattachedRelocGestureModifier(
                                     if (distance > viewConfiguration.touchSlop) {
                                         longPressJob.cancel()
                                         change.consume()
-                                        dragStarted = true
-                                        isDragging = true
+                                        dragStarted = startDrag()
                                         onMenuDismiss()
-                                        targetIndex = scope.navItems.indexOfFirst { it.id == item.id }
                                     }
                                 } else if (!isLongPress) {
                                     if (distance > viewConfiguration.touchSlop) {
@@ -670,48 +832,36 @@ private fun rememberUnattachedRelocGestureModifier(
                                 } else {
                                     change.consume()
                                     if (distance > viewConfiguration.touchSlop) {
-                                        dragStarted = true
-                                        isDragging = true
+                                        dragStarted = startDrag()
                                         onMenuDismiss()
-                                        targetIndex = scope.navItems.indexOfFirst { it.id == item.id }
                                     }
                                 }
                             }
                             if (dragStarted) {
                                 change.consume()
-                                val dragY = (change.position - currentPosition).y
-                                totalDragY += dragY
-                                dragOffsetY = totalDragY
-                                RelocItemHandler.calculateTargetIndex(
-                                    items = scope.navItems,
-                                    draggedItemId = item.id,
-                                    currentDragOffset = totalDragY,
-                                    itemBounds = scope.itemBoundsCache,
-                                    isVertical = true,
-                                )?.let { targetIndex = it }
+                                // Untranslated local space (see KDoc), so this is true finger travel.
+                                drag.dragTo((change.position - down.position).y)
                             }
                         }
-                        currentPosition = change.position
                     }
                 } finally {
                     longPressJob.cancel()
                     if (dragStarted) {
-                        val currentIndex = scope.navItems.indexOfFirst { it.id == item.id }
-                        if (currentIndex != -1 && targetIndex != -1 && currentIndex != targetIndex) {
-                            RelocItemHandler.updateOrder(scope.navItems, item.id, targetIndex)
-                            item.hostId?.let { hostId ->
-                                scope.savedRelocOrders[hostId] = scope.navItems
-                                    .filter { it.isRelocItem && it.hostId == hostId }
-                                    .map { it.id }
-                            }
-                            scope.onRelocateMap[item.id]?.invoke(
-                                currentIndex,
-                                targetIndex,
-                                scope.navItems.map { it.id },
-                            )
+                        val hostId = item.hostId
+                        val cluster = RelocItemHandler.findCluster(scope.navItems, item.id)
+                        val landing = drag.end { anim -> coroutineScope.launch { anim() } }
+                        if (landing != null && cluster != null && hostId != null) {
+                            val hostOrderBefore = scope.navItems
+                                .filter { it.isRelocItem && it.hostId == hostId }.map { it.id }
+                            val from = hostOrderBefore.indexOf(item.id)
+                            val targetNavIndex = (cluster.first + landing).coerceIn(cluster)
+                            RelocItemHandler.updateOrder(scope.navItems, item.id, targetNavIndex)
+                            val newOrder = scope.navItems
+                                .filter { it.isRelocItem && it.hostId == hostId }.map { it.id }
+                            scope.savedRelocOrders[hostId] = newOrder
+                            val to = newOrder.indexOf(item.id)
+                            if (from != to) scope.onRelocateMap[item.id]?.invoke(from, to, newOrder)
                         }
-                        dragOffsetY = 0f
-                        isDragging = false
                         scope.advancedConfig.onInteraction?.invoke(item.id, item)
                     } else if (
                         completed && !movedBeforeLongPress &&
@@ -722,7 +872,9 @@ private fun rememberUnattachedRelocGestureModifier(
                 }
             }
         }
+        .offset { IntOffset(0, drag.offsetFor(item.id, neighbourAnim.value).roundToInt()) }
 }
+
 
 // ---------------------------------------------------------------------------------------------
 // FLOATING: independent per-rail docking, rail-to-rail attachment, and group dragging.
