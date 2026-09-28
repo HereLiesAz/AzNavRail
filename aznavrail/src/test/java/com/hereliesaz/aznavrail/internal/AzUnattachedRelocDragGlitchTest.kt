@@ -15,6 +15,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import kotlin.math.abs
 
 /**
@@ -26,6 +27,9 @@ import kotlin.math.abs
  * each, which is what a real finger does and what exposes the feedback.
  */
 @RunWith(RobolectricTestRunner::class)
+// Tall enough that the list never overflows: these tests are about drag tracking, not scrolling
+// (an overflowing list auto-scrolls near its edge, see AzUnattachedScrollTest).
+@Config(qualifiers = "w411dp-h1600dp")
 class AzUnattachedRelocDragGlitchTest {
 
     @get:Rule
