@@ -2,6 +2,8 @@ package com.hereliesaz.aznavrail.internal
 
 import com.hereliesaz.aznavrail.azNavigateWhenReady
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -11,12 +13,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -35,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -58,6 +63,7 @@ import com.hereliesaz.aznavrail.model.AzNestedRailAlignment
 import com.hereliesaz.aznavrail.model.AzUnattachedAnchor
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.merge
@@ -304,9 +310,13 @@ private fun UnattachedStack(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(spacingDp),
     ) {
-        hosts.forEach { host ->
+        hosts.forEachIndexed { index, host ->
+            key(host.id) {
             UnattachedNode(
                 item = host,
+                // Every later host keeps at least its own button on screen.
+                reserveBelow = (buttonSize + spacingDp) * (hosts.size - 1 - index),
+                spacingDp = spacingDp,
                 scope = scope,
                 navController = navController,
                 currentDestination = currentDestination,
@@ -318,6 +328,7 @@ private fun UnattachedStack(
                 onHiddenMenuDismiss = onHiddenMenuDismiss,
                 popupOpensLeft = popupOpensLeft,
             )
+            }
         }
     }
 }
@@ -339,6 +350,18 @@ private fun UnattachedNode(
     onMenuOpen: (String) -> Unit,
     onHiddenMenuDismiss: () -> Unit,
     popupOpensLeft: Boolean,
+    relocDrag: UnattachedRelocDragState? = null,
+    /**
+     * The scrolling list this node sits in, or null for a top-level host (which owns one for its
+     * own children). Nested relocatable sub-hosts share their top-level host's list.
+     */
+    scroller: UnattachedHostScroll? = null,
+    /** Room kept free below a top-level host's scrolling children for the hosts after it. */
+    reserveBelow: Dp = 0.dp,
+    /** Gap between this item and its unfolded sub-items; matches the enclosing stack's spacing. */
+    spacingDp: Dp = 0.dp,
+    /** Slot-level modifier from the parent (accordion unfold, drag lift). */
+    modifier: Modifier = Modifier,
 ) {
     // A cycler shows its transient option while the commit window is still running, exactly as it
     // does on the rail.
@@ -354,9 +377,19 @@ private fun UnattachedNode(
         rememberUnattachedRelocGestureModifier(
             item = item,
             scope = scope,
+            relocDrag = relocDrag,
+            scroller = scroller,
             onTap = {
                 scope.onFocusMap[item.id]?.invoke()
                 scope.lastTouchedItemId = item.id
+                if (item.isHost) {
+                    // A relocatable sub-host (`azRailRelocSubHostItem`): its tap is still a host
+                    // tap. RailContent wires no click for reloc items, so the gesture does it.
+                    val expanded = !(hostStates[item.id] ?: false)
+                    hostStates[item.id] = expanded
+                    scope.onExpandedChangeMap[item.id]?.invoke(expanded)
+                    item.route?.let { navController?.azNavigateWhenReady(it) }
+                }
                 scope.onClickMap[item.id]?.invoke()
                 scope.advancedConfig.onInteraction?.invoke(item.id, item)
             },
@@ -372,6 +405,47 @@ private fun UnattachedNode(
         Modifier
     }
 
+    // The whole node — the item plus, for an expanded host, its unfolded sub-items — is one slot:
+    // one Box that the reloc gesture and its draw offset sit on. For a relocatable sub-host that is
+    // what makes the block move as one; for a plain reloc item the Box holds the item alone. The
+    // slot bounds are recorded *before* the drag offset in the chain, so they stay untranslated.
+    val slotModifier = if (relocDrag != null && item.isRelocItem) {
+        Modifier.onGloballyPositioned { c ->
+            val pos = c.positionInWindow()
+            relocDrag.slotBounds[item.id] =
+                Rect(pos.x, pos.y, pos.x + c.size.width, pos.y + c.size.height)
+        }
+    } else {
+        Modifier
+    }
+    // Highlight parity with the rail strip (`RailItems.kt`'s `isVisuallyActive`), see `RailContent`.
+    val isSelected = (item.route != null && item.route == currentDestination) ||
+        item.classifiers.any { scope.activeClassifiers.contains(it) } ||
+        (item.route == null && scope.lastTouchedItemId == item.id)
+    // Inside a scrolling host list, the active item is located so expanding the host can reveal it.
+    val revealModifier = if (scroller != null) {
+        DisposableEffect(scroller, item.id, isSelected) {
+            onDispose { scroller.selected.remove(item.id) }
+        }
+        if (isSelected) Modifier.onGloballyPositioned { scroller.selected[item.id] = it } else Modifier
+    } else {
+        Modifier
+    }
+    Box(modifier = modifier.then(slotModifier).then(dragModifier)) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(spacingDp),
+    ) {
+    // The item's own button height, measured locally: a relocatable sub-host's gesture only
+    // answers presses on its button, not on the sub-items unfolded beneath it in the same slot.
+    // (Not `itemBoundsCache`, which every DSL re-run clears.)
+    Box(
+        modifier = if (relocDrag != null && item.isRelocItem && item.isHost) {
+            Modifier.onGloballyPositioned { relocDrag.headerHeights[item.id] = it.size.height.toFloat() }
+        } else {
+            Modifier
+        }.then(revealModifier)
+    ) {
     RailContent(
         defaultShape = scope.defaultShape,
         item = displayItem,
@@ -382,9 +456,7 @@ private fun UnattachedNode(
         // you tapped" highlight the rail strip's own items get — the tap's callback still fired either
         // way (that's independent of this), but nothing in this subtree read the snapshot state the
         // tap wrote, so this composable was never invalidated to redraw active either.
-        isSelected = (item.route != null && item.route == currentDestination) ||
-            item.classifiers.any { scope.activeClassifiers.contains(it) } ||
-            (item.route == null && scope.lastTouchedItemId == item.id),
+        isSelected = isSelected,
         buttonSize = buttonSize,
         onClick = {
             scope.lastTouchedItemId = item.id
@@ -436,10 +508,10 @@ private fun UnattachedNode(
         focusColor = scope.focusColor,
         secondaryColor = scope.secondaryColor,
         tertiaryColor = scope.tertiaryColor,
-        dragModifier = dragModifier,
         onSliderChange = { id, v -> scope.onSliderChangeMap[id]?.invoke(v) },
         onSliderRangeChange = { id, r -> scope.onSliderRangeChangeMap[id]?.invoke(r) },
     )
+    }
 
     if (hiddenMenuOpenId == item.id && !item.hiddenMenuItems.isNullOrEmpty()) {
         val bounds = scope.itemBoundsCache[item.id] ?: Rect.Zero
@@ -565,34 +637,220 @@ private fun UnattachedNode(
         // the drawer along with its whole subtree, so this stack is the only place a
         // `azMenuSubItem` attached to it can be drawn at all.
         val children = scope.navItems.filter { it.isSubItem && it.hostId == item.id }
-        children.forEachIndexed { index, child ->
-            // The same staggered accordion the rail's own sub-items unfold on. The unfolding is
-            // what tells you these belong to the host above them; blinking into place says nothing.
-            Box(
-                modifier = rememberAzAccordionModifier(
-                    index = index,
-                    count = children.size,
-                    visible = true,
-                    isHorizontal = false,
-                    staggerMs = AzMotion.ItemStaggerMs,
-                    durationMs = AzMotion.ItemDurationMs,
-                )
-            ) {
-                UnattachedNode(
-                    item = child,
-                    scope = scope,
-                    navController = navController,
-                    currentDestination = currentDestination,
-                    hostStates = hostStates,
-                    buttonSize = buttonSize,
-                    onCyclerClick = onCyclerClick,
-                    hiddenMenuOpenId = hiddenMenuOpenId,
-                    onMenuOpen = onMenuOpen,
-                    onHiddenMenuDismiss = onHiddenMenuDismiss,
-                    popupOpensLeft = popupOpensLeft,
-                )
+        // One drag state per host, shared by its reloc children so a drag can displace its
+        // neighbours and lift itself above them (see [UnattachedRelocDragState]).
+        val relocDrag = remember(item.id) { UnattachedRelocDragState() }
+        // A top-level host owns the scrolling list its children (and any sub-host's children) live
+        // in; it only scrolls when they overflow — see [azUnattachedChildScroll]. Remembered inside
+        // this expanded branch, so every expansion starts at the top and reveals the active item.
+        val ownScroller = if (scroller == null) remember(item.id) { UnattachedHostScroll() } else null
+        val listScroller = scroller ?: ownScroller
+        if (ownScroller != null) {
+            LaunchedEffect(ownScroller) {
+                snapshotFlow { ownScroller.autoScrollSpeed != 0f }.collectLatest { active ->
+                    if (active) ownScroller.runAutoScroll()
+                }
+            }
+            LaunchedEffect(ownScroller) {
+                // After the accordion has finished unfolding, so the positions are the resting ones.
+                delay(children.size.toLong() * AzMotion.ItemStaggerMs + AzMotion.ItemDurationMs)
+                ownScroller.revealSelected()
             }
         }
+        // Same spacing as before, one level down: the header-to-first-child gap comes from the
+        // node's column, the gaps between children from this one — identical positions. Emitted
+        // inline, not through a separate composable: `scope.navItems` is a plain list, so after a
+        // reorder this host recomposes only because it reads the drag state below (`isLifted`),
+        // and it must re-read its children in that same recomposition. Skipped when there are no
+        // children, where an empty column would still take a `spacedBy` gap.
+        if (children.isNotEmpty()) Column(
+            modifier = if (ownScroller != null) {
+                Modifier.azUnattachedChildScroll(
+                    ownScroller,
+                    with(LocalDensity.current) { reserveBelow.roundToPx() },
+                )
+            } else {
+                Modifier
+            },
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(spacingDp),
+        ) {
+            children.forEachIndexed { index, child ->
+                // Keyed by id, not slot: after a drop the list reorders, and slot-keyed composition would
+                // hand each moved item the previous occupant's remembered state (gesture, highlight and
+                // badge animations), which flickers every item between the old and new slot.
+                key(child.id) {
+                    // The same staggered accordion the rail's own sub-items unfold on. The unfolding is
+                    // what tells you these belong to the host above them; blinking into place says nothing.
+                    UnattachedNode(
+                        modifier = rememberAzAccordionModifier(
+                            index = index,
+                            count = children.size,
+                            visible = true,
+                            isHorizontal = false,
+                            staggerMs = AzMotion.ItemStaggerMs,
+                            durationMs = AzMotion.ItemDurationMs,
+                        ).zIndex(if (relocDrag.isLifted(child.id)) 1f else 0f),
+                        spacingDp = spacingDp,
+                        item = child,
+                        relocDrag = relocDrag,
+                        scroller = listScroller,
+                        scope = scope,
+                        navController = navController,
+                        currentDestination = currentDestination,
+                        hostStates = hostStates,
+                        buttonSize = buttonSize,
+                        onCyclerClick = onCyclerClick,
+                        hiddenMenuOpenId = hiddenMenuOpenId,
+                        onMenuOpen = onMenuOpen,
+                        onHiddenMenuDismiss = onHiddenMenuDismiss,
+                        popupOpensLeft = popupOpensLeft,
+                    )
+                }
+            }
+        }
+    }
+    }
+    }
+}
+
+/**
+ * Drag state shared by the reloc children of one expanded unattached host.
+ *
+ * Hoisted out of the individual item so that a drag can do what the docked rail's drag does:
+ * lift the dragged item above its siblings (`zIndex` must sit on the sibling-level wrapper, not deep
+ * inside the item, or it has no effect), slide the displaced neighbours out of the way while the
+ * finger moves, and glide the dropped item into its new slot instead of jumping there.
+ *
+ * Every distance here is measured once, at drag start, from the items' laid-out slot bounds
+ * ([AzNavRailScopeImpl.itemBoundsCache] is written *before* the drag offset is applied), including
+ * the column's inter-item gap — so the drop index agrees with what the neighbours visibly did.
+ */
+internal class UnattachedRelocDragState {
+    /** Id of the item under the finger, or null when no drag is in progress. */
+    var draggedId by mutableStateOf<String?>(null)
+        private set
+    /** Finger travel since drag start, px. Positive = down. */
+    var dragOffset by mutableFloatStateOf(0f)
+        private set
+    /** Where the dragged item would land, as an index into [clusterIds]. */
+    var targetIndex by mutableStateOf(-1)
+        private set
+
+    /** Id of the item gliding into its new slot after a drop, and the animation doing it. */
+    var snappingId by mutableStateOf<String?>(null)
+        private set
+    var snapAnim by mutableStateOf<Animatable<Float, AnimationVector1D>?>(null)
+        private set
+
+    /** The dragged item's reloc cluster, top-first, frozen at drag start. */
+    private var clusterIds: List<String> = emptyList()
+    private var fromIndex = -1
+    /** Per-item slot pitch (height + gap), px, frozen at drag start. */
+    private var pitch: Map<String, Float> = emptyMap()
+
+    /**
+     * Window-space bounds of each reloc child's whole slot, written on every layout pass. For a
+     * relocatable sub-host the slot is its block (host plus unfolded sub-items), which is what a
+     * sibling has to travel past to jump it.
+     */
+    val slotBounds: MutableMap<String, Rect> = HashMap()
+
+    /** Button height (px) of each relocatable sub-host child, the part of its slot that drags it. */
+    val headerHeights: MutableMap<String, Float> = HashMap()
+
+    fun isLifted(id: String) = id == draggedId || id == snappingId
+
+    /** Starts a drag of [id] over [cluster] (top-first ids), measuring slots from [bounds]. */
+    fun begin(id: String, cluster: List<String>, bounds: Map<String, Rect>) {
+        val rects = cluster.map { bounds[it] }
+        // The gap the stack's `Arrangement.spacedBy` puts between consecutive slots.
+        val gap = (0 until rects.size - 1).firstNotNullOfOrNull { i ->
+            val a = rects[i]; val b = rects[i + 1]
+            if (a != null && b != null) (b.top - a.bottom).coerceAtLeast(0f) else null
+        } ?: 0f
+        pitch = cluster.zip(rects).associate { (cid, r) -> cid to ((r?.height ?: 0f) + gap) }
+        clusterIds = cluster
+        fromIndex = cluster.indexOf(id)
+        targetIndex = fromIndex
+        dragOffset = 0f
+        snappingId = null
+        snapAnim = null
+        draggedId = id
+    }
+
+    /** Moves the drag to [offset] px from its start and recomputes the landing slot. */
+    fun dragTo(offset: Float) {
+        dragOffset = offset
+        var target = fromIndex
+        var remaining = offset
+        // Same 40%-overlap rule as [RelocItemHandler.calculateTargetIndex], but over slot pitch
+        // (height + gap) rather than bare height, so it doesn't overshoot by one gap per slot.
+        if (remaining > 0) {
+            while (target < clusterIds.lastIndex) {
+                val next = pitch[clusterIds[target + 1]] ?: 0f
+                if (next <= 0f || remaining <= next * 0.4f) break
+                remaining -= next; target++
+            }
+        } else {
+            while (target > 0) {
+                val prev = pitch[clusterIds[target - 1]] ?: 0f
+                if (prev <= 0f || remaining >= -prev * 0.4f) break
+                remaining += prev; target--
+            }
+        }
+        targetIndex = target
+    }
+
+    /** How far a non-dragged item [id] should be displaced to open the target slot, px. */
+    fun neighbourShift(id: String): Float {
+        val dragged = draggedId ?: return 0f
+        val idx = clusterIds.indexOf(id)
+        if (idx < 0 || id == dragged) return 0f
+        val shift = pitch[dragged] ?: 0f
+        return when {
+            fromIndex < targetIndex && idx in (fromIndex + 1)..targetIndex -> -shift
+            targetIndex < fromIndex && idx in targetIndex until fromIndex -> shift
+            else -> 0f
+        }
+    }
+
+    /**
+     * Ends the drag. Returns the landing index into the frozen cluster, or null when the item did
+     * not move. Starts the dropped item's glide from where it was drawn to its new slot; the caller
+     * must apply the reorder in the same frame so the two land together.
+     */
+    fun end(onSnapDone: (suspend () -> Unit) -> Unit): Int? {
+        val id = draggedId ?: return null
+        val from = fromIndex
+        val to = targetIndex
+        val moved = when {
+            to > from -> (from + 1..to).sumOf { (pitch[clusterIds[it]] ?: 0f).toDouble() }.toFloat()
+            to < from -> -(to until from).sumOf { (pitch[clusterIds[it]] ?: 0f).toDouble() }.toFloat()
+            else -> 0f
+        }
+        val start = dragOffset - moved
+        draggedId = null
+        dragOffset = 0f
+        targetIndex = -1
+        if (start != 0f) {
+            val anim = Animatable(start)
+            snapAnim = anim
+            snappingId = id
+            onSnapDone {
+                anim.animateTo(0f)
+                if (snapAnim === anim) { snapAnim = null; snappingId = null }
+            }
+        }
+        return if (to != from && to >= 0) to else null
+    }
+
+    /** Vertical draw offset for item [id], px. Read only at placement time. */
+    fun offsetFor(id: String, neighbourAnimated: Float): Float = when {
+        id == draggedId -> dragOffset
+        id == snappingId -> snapAnim?.value ?: 0f
+        draggedId != null -> neighbourAnimated
+        else -> 0f
     }
 }
 
@@ -605,11 +863,22 @@ private fun UnattachedNode(
  * landed on it — [AzNavRailScopeImpl.lastTouchedItemId]), the hold is skipped entirely: this next
  * press is a tap-and-drag, and movement past touch slop starts reordering immediately, consuming the
  * gesture before the FLOATING host's own drag detector sees it.
+ *
+ * The `pointerInput` sits *before* the draw offset in the modifier chain. The other way round (as it
+ * once was) every pointer position the gesture read was already translated by the offset it had just
+ * applied, so the item fed its own displacement back into its delta: it crawled at roughly half the
+ * finger's speed, jittered, and dropped short of where the finger went.
+ *
+ * On drop, `onRelocate(from, to, newOrder)` fires exactly once, and only if the position changed:
+ * `newOrder` is this host's reloc item ids in their new displayed order, top-first (index 0 is the
+ * item drawn nearest the host); `from`/`to` are indices into that same host-scoped list.
  */
 @Composable
 private fun rememberUnattachedRelocGestureModifier(
     item: AzNavItem,
     scope: AzNavRailScopeImpl,
+    relocDrag: UnattachedRelocDragState?,
+    scroller: UnattachedHostScroll?,
     onTap: () -> Unit,
     onMenuOpen: () -> Unit,
     onMenuDismiss: () -> Unit,
@@ -617,23 +886,35 @@ private fun rememberUnattachedRelocGestureModifier(
     val hapticFeedback = LocalHapticFeedback.current
     val viewConfiguration = LocalViewConfiguration.current
     val coroutineScope = rememberCoroutineScope()
-    var dragOffsetY by remember(item.id) { mutableFloatStateOf(0f) }
-    var isDragging by remember(item.id) { mutableStateOf(false) }
+    val density = LocalDensity.current
+    val autoScrollEdgePx = with(density) { AutoScrollEdge.toPx() }
+    val autoScrollMaxSpeedPx = with(density) { AutoScrollMaxSpeedPerSecond.toPx() }
+    val drag = relocDrag ?: remember(item.id) { UnattachedRelocDragState() }
+
+    // Neighbour displacement glides; it is only *read* while a drag is live, so the instant the drop
+    // reorders the list the displaced items sit at their new slots with no offset — no double move.
+    val neighbourTarget = drag.neighbourShift(item.id)
+    val neighbourAnim = remember(item.id) { Animatable(0f) }
+    LaunchedEffect(neighbourTarget, drag.draggedId != null) {
+        if (drag.draggedId != null) neighbourAnim.animateTo(neighbourTarget) else neighbourAnim.snapTo(0f)
+    }
 
     return Modifier
-        .offset { IntOffset(0, dragOffsetY.roundToInt()) }
-        .zIndex(if (isDragging) 1f else 0f)
         .pointerInput(item.id, item.hiddenMenuItems.isNullOrEmpty()) {
             awaitEachGesture {
                 val down = awaitFirstDown(requireUnconsumed = false)
+                // A relocatable sub-host's slot also holds its unfolded sub-items, which have their
+                // own gestures. Only a press on the host's own button drives the host.
+                if (item.isHost) {
+                    val header = drag.headerHeights[item.id]
+                    if (header != null && down.position.y > header) return@awaitEachGesture
+                }
                 val longPressTimeout = viewConfiguration.longPressTimeoutMillis
                 val preSelected = scope.lastTouchedItemId == item.id
                 var isLongPress = false
                 var movedBeforeLongPress = false
                 var dragStarted = false
                 var completed = false
-                var totalDragY = 0f
-                var targetIndex = scope.navItems.indexOfFirst { it.id == item.id }
 
                 val longPressJob = coroutineScope.launch {
                     delay(longPressTimeout)
@@ -643,9 +924,15 @@ private fun rememberUnattachedRelocGestureModifier(
                     if (!item.hiddenMenuItems.isNullOrEmpty()) onMenuOpen()
                 }
 
+                fun startDrag(): Boolean {
+                    // Top-first slot heads: a relocatable sub-host is one slot with its descendants.
+                    val slots = RelocItemHandler.clusterSlots(scope.navItems, item.id) ?: return false
+                    drag.begin(item.id, slots.map { scope.navItems[it.first].id }, drag.slotBounds)
+                    return true
+                }
+
                 try {
                     val pointerId = down.id
-                    var currentPosition = down.position
                     while (true) {
                         val event = awaitPointerEvent()
                         val change = event.changes.firstOrNull { it.id == pointerId } ?: break
@@ -663,10 +950,8 @@ private fun rememberUnattachedRelocGestureModifier(
                                     if (distance > viewConfiguration.touchSlop) {
                                         longPressJob.cancel()
                                         change.consume()
-                                        dragStarted = true
-                                        isDragging = true
+                                        dragStarted = startDrag()
                                         onMenuDismiss()
-                                        targetIndex = scope.navItems.indexOfFirst { it.id == item.id }
                                     }
                                 } else if (!isLongPress) {
                                     if (distance > viewConfiguration.touchSlop) {
@@ -676,48 +961,49 @@ private fun rememberUnattachedRelocGestureModifier(
                                 } else {
                                     change.consume()
                                     if (distance > viewConfiguration.touchSlop) {
-                                        dragStarted = true
-                                        isDragging = true
+                                        dragStarted = startDrag()
                                         onMenuDismiss()
-                                        targetIndex = scope.navItems.indexOfFirst { it.id == item.id }
                                     }
                                 }
                             }
                             if (dragStarted) {
                                 change.consume()
-                                val dragY = (change.position - currentPosition).y
-                                totalDragY += dragY
-                                dragOffsetY = totalDragY
-                                RelocItemHandler.calculateTargetIndex(
-                                    items = scope.navItems,
-                                    draggedItemId = item.id,
-                                    currentDragOffset = totalDragY,
-                                    itemBounds = scope.itemBoundsCache,
-                                    isVertical = true,
-                                )?.let { targetIndex = it }
+                                // Untranslated local space (see KDoc), so this is finger travel in
+                                // the list's content space: when the list scrolls under a still
+                                // finger, the local position already moved by the scrolled amount.
+                                drag.dragTo((change.position - down.position).y)
                             }
                         }
-                        currentPosition = change.position
+                        if (dragStarted && scroller != null) {
+                            // Near the viewport's edge the list scrolls on its own; each step moves
+                            // the item by the same amount, keeping it under the finger.
+                            val slotTop = drag.slotBounds[item.id]?.top
+                            if (slotTop != null) {
+                                scroller.updateDragAutoScroll(
+                                    fingerY = slotTop + change.position.y,
+                                    edgePx = autoScrollEdgePx,
+                                    maxSpeedPx = autoScrollMaxSpeedPx,
+                                ) { moved -> if (drag.draggedId == item.id) drag.dragTo(drag.dragOffset + moved) }
+                            }
+                        }
                     }
                 } finally {
                     longPressJob.cancel()
+                    if (dragStarted) scroller?.stopDragAutoScroll()
                     if (dragStarted) {
-                        val currentIndex = scope.navItems.indexOfFirst { it.id == item.id }
-                        if (currentIndex != -1 && targetIndex != -1 && currentIndex != targetIndex) {
-                            RelocItemHandler.updateOrder(scope.navItems, item.id, targetIndex)
-                            item.hostId?.let { hostId ->
-                                scope.savedRelocOrders[hostId] = scope.navItems
-                                    .filter { it.isRelocItem && it.hostId == hostId }
-                                    .map { it.id }
-                            }
-                            scope.onRelocateMap[item.id]?.invoke(
-                                currentIndex,
-                                targetIndex,
-                                scope.navItems.map { it.id },
-                            )
+                        val hostId = item.hostId
+                        val landing = drag.end { anim -> coroutineScope.launch { anim() } }
+                        if (landing != null && hostId != null) {
+                            val hostOrderBefore = RelocItemHandler.memberIds(scope.navItems, hostId)
+                            val from = hostOrderBefore.indexOf(item.id)
+                            // `landing` is a slot index into the cluster frozen at drag start; the
+                            // dragged item's whole block (descendants included) moves there.
+                            RelocItemHandler.moveToSlot(scope.navItems, item.id, landing)
+                            val newOrder = RelocItemHandler.memberIds(scope.navItems, hostId)
+                            scope.savedRelocOrders[hostId] = newOrder
+                            val to = newOrder.indexOf(item.id)
+                            if (from != to) scope.onRelocateMap[item.id]?.invoke(from, to, newOrder)
                         }
-                        dragOffsetY = 0f
-                        isDragging = false
                         scope.advancedConfig.onInteraction?.invoke(item.id, item)
                     } else if (
                         completed && !movedBeforeLongPress &&
@@ -728,7 +1014,15 @@ private fun rememberUnattachedRelocGestureModifier(
                 }
             }
         }
+        .offset { IntOffset(0, drag.offsetFor(item.id, neighbourAnim.value).roundToInt()) }
 }
+
+
+/** Depth of the band at a scrolling list's top and bottom edge where a reloc drag auto-scrolls. */
+private val AutoScrollEdge = 48.dp
+
+/** Auto-scroll speed with the finger at the very edge, per second. */
+private val AutoScrollMaxSpeedPerSecond = 960.dp
 
 // ---------------------------------------------------------------------------------------------
 // FLOATING: independent per-rail docking, rail-to-rail attachment, and group dragging.
@@ -1201,9 +1495,19 @@ private fun FloatingDockGroup(
                                 )
                             },
                     ) {
+                        // Room left for this rail's stack between where it sits and the bottom
+                        // safe inset; its children scroll inside that when they'd run past it.
+                        // A bottom-docked rail grows upward instead, so it may use the full band.
+                        val gutterPx = with(density) { AzNavRailDefaults.RailContentVerticalArrangement.toPx() }
+                        val contentTopPx = if (st.dock == FloatingDock.BOTTOM && isColumnRoot && !st.dragging) {
+                            minY
+                        } else {
+                            pos.y + barHeightPx(host.id) + gutterPx
+                        }
+                        val maxStackPx = (maxYBase - contentTopPx - gutterPx).coerceAtLeast(buttonSizePx)
                         UnattachedStack(
                             hosts = listOf(host),
-                            modifier = Modifier,
+                            modifier = Modifier.heightIn(max = with(density) { maxStackPx.toDp() }),
                             scope = scope,
                             navController = navController,
                             currentDestination = currentDestination,

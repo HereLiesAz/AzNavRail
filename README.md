@@ -348,6 +348,7 @@ export default function App() {
 *   **`azMenuItem`**: Visible only in the drawer.
 *   **`azNestedRail`**: Opens a secondary popup rail (Vertical/Horizontal).
 *   **`azRailRelocItem`**: Draggable items for user reordering.
+*   **`azRailRelocSubHostItem`**: A sub-host that is also draggable among its reloc siblings; moves as one block with its children.
 
 ### 3. Interactive Components
 Manage state directly in the rail without leaving the context.
@@ -518,6 +519,16 @@ nest to any depth. The host and its whole subtree leave both the rail strip and 
 
 Each host's own resting spot is persisted per-launch; rail-to-rail attachments are not.
 
+**Long lists scroll.** When an expanded host's sub-items run past the room it has — the window
+below the host, minus the safe insets (for `OPPOSITE`/`BOTTOM`, also minus one button per host
+stacked after it; for `FLOATING`, down to the bottom safe inset from wherever the rail sits) — the
+sub-items scroll under the host, which itself stays fixed. Unfolded relocatable sub-hosts are part
+of the same list. With no overflow nothing changes: no clipping, no scroll gesture. A swipe over the
+list scrolls it and clicks nothing; a tap still clicks. Long-press-then-drag reordering still works
+inside a scrolled list, and dragging an item into the list's top or bottom edge band auto-scrolls it
+so the item can be dropped beyond the visible window. On expansion, the active item (current route,
+active classifier or last tapped) is scrolled into view.
+
 ```kotlin
 azUnattachedHostItem(id = "tools", text = "Tools", anchor = AzUnattachedAnchor.FLOATING)
 azRailSubItem(id = "measure", hostId = "tools", text = "Measure") { measure() }
@@ -528,8 +539,9 @@ azRailSubToggle(
 ```
 
 `azRailRelocItem` attaches by `hostId` here too — a Procreate-style layers panel is exactly this: each
-layer row is an `azRailRelocItem(hostId = "tools")`. Tap and long-press-to-open-hidden-menu both work;
-drag-to-reorder does not (`onRelocate` only fires when `hostId` names a rail host — see below).
+layer row is an `azRailRelocItem(hostId = "tools")`. Tap, long-press hidden menus and long-press-drag
+reordering all work. A group row is an `azRailRelocSubHostItem`: a host that is one draggable slot
+together with its children (see the complete guide, §5).
 
 ### Per-Item Badges & Loading (`azItemState`)
 

@@ -136,6 +136,15 @@ kotlin {
                 implementation("io.ktor:ktor-client-cio:$ktorVersion")
             }
         }
+        // Compose UI tests on the JVM desktop target. The gesture-level regressions (e.g. the
+        // unattached reloc drag) need a real composition and pointer input, which commonTest can't
+        // host; the desktop target runs them headless with no device or emulator.
+        val desktopTest by getting {
+            dependencies {
+                implementation(compose.desktop.uiTestJUnit4)
+                implementation(compose.desktop.currentOs)
+            }
+        }
         val wasmJsMain by getting {
             dependencies {
                 // Ktor JS engine (publishes a wasm-js variant) — routes through the browser fetch API.

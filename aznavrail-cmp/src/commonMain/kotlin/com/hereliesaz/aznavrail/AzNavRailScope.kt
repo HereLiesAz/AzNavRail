@@ -813,8 +813,11 @@ interface AzNavRailScope {
      * @param classifiers Active classifiers.
      * @param onFocus Focus callback.
      * @param onClick Click callback (selection).
-     * @param onRelocate Callback invoked when the item is moved. Provides old index, new index, and the
-     *   new ID order, including when hosted under an `azUnattachedHostItem`.
+     * @param onRelocate Callback invoked once, on drop, when the item is moved. Provides old index,
+     *   new index, and the new ID order. Under an `azUnattachedHostItem`, the order is exactly this
+     *   host's reloc item ids in their new displayed order, top-first, and both indices point into
+     *   that list. In the docked rail it is currently every rail item id, and the indices are
+     *   positions in that full list.
      * @param nestedRailAlignment The alignment of the nested rail (VERTICAL or HORIZONTAL).
      * @param nestedContent DSL block to define the items within the nested rail.
      * @param keepNestedRailOpen If true, the nested rail remains open until the parent item is tapped again.
@@ -823,6 +826,66 @@ interface AzNavRailScope {
      * @param onHiddenMenuDismiss Callback invoked when the hidden menu dismisses itself.
      */
     fun azRailRelocItem(id: String, hostId: String, text: String, route: String? = null, content: Any? = null, color: Color? = null, shape: AzButtonShape? = null, disabled: Boolean = false, screenTitle: String? = null, info: String? = null, classifiers: Set<String> = emptySet(), menuText: String? = null, textColor: Color? = null, fillColor: Color? = null, translucentBackgroundColor: Color? = null, badge: String? = null, persistentBadge: Boolean = false, isLoading: Boolean = false, onFocus: (() -> Unit)? = null, onRelocate: ((Int, Int, List<String>) -> Unit)? = null, nestedRailAlignment: AzNestedRailAlignment = AzNestedRailAlignment.VERTICAL, keepNestedRailOpen: Boolean = false, nestedContent: (AzNavRailScope.() -> Unit)? = null, forceHiddenMenuOpen: Boolean = false, onHiddenMenuDismiss: (() -> Unit)? = null, hiddenMenu: HiddenMenuScope.() -> Unit = {}, onClick: (() -> Unit)? = null)
+
+    /**
+     * Adds a **relocatable sub-host**: an [azRailSubHostItem] that can also be long-press-dragged
+     * among its reloc siblings under [hostId], exactly like an [azRailRelocItem].
+     *
+     * It is a host: tapping it expands/collapses its own sub-items (those declaring `hostId = id`),
+     * which may themselves be reloc items and further relocatable sub-hosts. It is also one reloc
+     * member of its parent: in the parent's reloc cluster it counts as a single slot together with
+     * all of its descendants, so
+     * - dragging it moves the whole block (the host plus its expanded children);
+     * - dragging a sibling past it jumps over the whole block;
+     * - its children always stay under it, and it never splits the parent's run of reloc items.
+     *
+     * Declare its sub-items directly after it (the natural recursive DSL order): the block is the
+     * host plus the contiguous items that descend from it.
+     *
+     * Drag reordering is implemented for unattached hosts ([azUnattachedHostItem] and sub-hosts
+     * beneath one). In the docked rail strip this item renders and expands like a plain
+     * [azRailSubHostItem] but is not draggable there; plain reloc siblings still jump its block.
+     *
+     * @param id Unique identifier. Its sub-items target it via their `hostId`.
+     * @param hostId The ID of the parent host whose reloc cluster this item joins.
+     * @param onRelocate Callback invoked once, on drop, only if the order changed. `newOrder` is
+     *   [hostId]'s direct reloc members (reloc items and relocatable sub-hosts, by id) in their new
+     *   displayed order, top-first; `from`/`to` are indices into that list. Descendants are not in it.
+     * @param initiallyExpanded Whether the host starts expanded.
+     * @param expandWhen Reactive expansion condition, as on [azRailSubHostItem].
+     * @param onExpandedChange Invoked when the expansion state changes.
+     * @param hiddenMenu Long-press menu, as on [azRailRelocItem].
+     * @param onClick Invoked on tap, in addition to toggling expansion.
+     */
+    fun azRailRelocSubHostItem(
+        id: String,
+        hostId: String,
+        text: String,
+        route: String? = null,
+        content: Any? = null,
+        color: Color? = null,
+        shape: AzButtonShape? = null,
+        disabled: Boolean = false,
+        screenTitle: String? = null,
+        info: String? = null,
+        classifiers: Set<String> = emptySet(),
+        menuText: String? = null,
+        textColor: Color? = null,
+        fillColor: Color? = null,
+        translucentBackgroundColor: Color? = null,
+        badge: String? = null,
+        persistentBadge: Boolean = false,
+        isLoading: Boolean = false,
+        onFocus: (() -> Unit)? = null,
+        initiallyExpanded: Boolean = false,
+        expandWhen: (() -> Boolean)? = null,
+        onExpandedChange: ((Boolean) -> Unit)? = null,
+        onRelocate: ((Int, Int, List<String>) -> Unit)? = null,
+        forceHiddenMenuOpen: Boolean = false,
+        onHiddenMenuDismiss: (() -> Unit)? = null,
+        hiddenMenu: HiddenMenuScope.() -> Unit = {},
+        onClick: (() -> Unit)? = null
+    )
 }
 
 /**
@@ -1045,26 +1108,12 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
         if (savedRelocOrders.isEmpty()) return
         val staleHosts = mutableListOf<String>()
         savedRelocOrders.forEach { (hostId, savedOrder) ->
-            // Index every reloc item belonging to this host along with its position in navItems.
-            val indexed = navItems.mapIndexedNotNull { idx, item ->
-                if (item.isRelocItem && item.hostId == hostId) idx to item else null
-            }
-            if (indexed.isEmpty()) {
-                staleHosts.add(hostId)
-                return@forEach
-            }
-            val currentIds = indexed.map { it.second.id }.toSet()
-            // If saved set and current set diverge, drop the saved order rather than risk swapping
+            // Block-aware: a relocatable sub-host (`azRailRelocSubHostItem`) is one member of its
+            // parent's order and carries its descendants with it (see `RelocItemHandler`). If the
+            // saved set and current set diverge, drop the saved order rather than risk swapping
             // unrelated items. The next reorder will rebuild it.
-            if (currentIds != savedOrder.toSet()) {
+            if (!com.hereliesaz.aznavrail.internal.RelocItemHandler.applyOrder(navItems, hostId, savedOrder)) {
                 staleHosts.add(hostId)
-                return@forEach
-            }
-            val byId = indexed.associate { it.second.id to it.second }
-            val positions = indexed.map { it.first }
-            // Write items back in saved order at the same positions they currently occupy.
-            positions.forEachIndexed { i, pos ->
-                navItems[pos] = byId.getValue(savedOrder[i])
             }
         }
         staleHosts.forEach { savedRelocOrders.remove(it) }
@@ -1880,6 +1929,71 @@ class AzNavRailScopeImpl(private val globalIdSet: MutableSet<String> = mutableSe
                 onHiddenMenuDismiss = onHiddenMenuDismiss
             ),
             onClick = onClick ?: {})
+    }
+
+    override fun azRailRelocSubHostItem(
+        id: String,
+        hostId: String,
+        text: String,
+        route: String?,
+        content: Any?,
+        color: Color?,
+        shape: AzButtonShape?,
+        disabled: Boolean,
+        screenTitle: String?,
+        info: String?,
+        classifiers: Set<String>,
+        menuText: String?,
+        textColor: Color?,
+        fillColor: Color?,
+        translucentBackgroundColor: Color?,
+        badge: String?,
+        persistentBadge: Boolean,
+        isLoading: Boolean,
+        onFocus: (() -> Unit)?,
+        initiallyExpanded: Boolean,
+        expandWhen: (() -> Boolean)?,
+        onExpandedChange: ((Boolean) -> Unit)?,
+        onRelocate: ((Int, Int, List<String>) -> Unit)?,
+        forceHiddenMenuOpen: Boolean,
+        onHiddenMenuDismiss: (() -> Unit)?,
+        hiddenMenu: HiddenMenuScope.() -> Unit,
+        onClick: (() -> Unit)?
+    ) {
+        checkSubHost(id, hostId, "azRailRelocSubHostItem")
+        if (expandWhen != null) expandWhenMap[id] = expandWhen
+        if (onExpandedChange != null) onExpandedChangeMap[id] = onExpandedChange
+        if (onRelocate != null) onRelocateMap[id] = onRelocate
+        val hiddenMenuScope = HiddenMenuScopeImpl(id, hiddenMenuOnClickMap, hiddenMenuOnValueChangeMap)
+        hiddenMenuScope.hiddenMenu()
+        addItem(
+            id = id,
+            text = text,
+            menuText = menuText,
+            config = AzItemConfig(badge = badge, persistentBadge = persistentBadge, isLoading = isLoading,
+                classifiers = classifiers,
+                route = route,
+                screenTitle = screenTitle,
+                info = info,
+                isRailItem = true,
+                disabled = disabled,
+                isHost = true,
+                isSubItem = true,
+                hostId = hostId,
+                onFocus = onFocus,
+                content = content,
+                color = color,
+                textColor = textColor,
+                fillColor = fillColor, translucentBackgroundColor = translucentBackgroundColor,
+                shape = shape,
+                initiallyExpanded = initiallyExpanded,
+                hiddenMenuItems = hiddenMenuScope.items,
+                forceHiddenMenuOpen = forceHiddenMenuOpen,
+                onHiddenMenuDismiss = onHiddenMenuDismiss
+            ),
+            onClick = onClick ?: {})
+        // A host that is also a reloc member of its parent (see `RelocItemHandler`).
+        navItems[navItems.lastIndex] = navItems.last().copy(isRelocItem = true)
     }
 
     /**

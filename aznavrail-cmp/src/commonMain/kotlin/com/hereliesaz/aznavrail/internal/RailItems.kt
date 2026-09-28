@@ -526,7 +526,12 @@ private fun DraggableRailItemWrapper(
 
     val itemHeightsState = rememberUpdatedState(itemHeights)
 
-    if (draggedItemId != null && !isDragging && item.isRelocItem && currentDropTargetIndex != null) {
+    // A relocatable sub-host (`azRailRelocSubHostItem`) is not draggable in the docked strip: it
+    // renders and expands as a plain sub-host here. Its block is still one slot in
+    // `RelocItemHandler`, so reloc siblings dragged past it jump the whole block.
+    val isDockedReloc = item.isRelocItem && !item.isHost
+
+    if (draggedItemId != null && !isDragging && isDockedReloc && currentDropTargetIndex != null) {
         val currentIdx = scope.navItems.indexOfFirst { it.id == item.id }
         val draggedStartIdx = scope.navItems.indexOfFirst { it.id == draggedItemId }
 
@@ -571,7 +576,7 @@ private fun DraggableRailItemWrapper(
     val nestedRailOpenIdState = rememberUpdatedState(nestedRailOpenId)
     val lastTappedIdState = rememberUpdatedState(lastTappedId)
 
-    val dragModifier = if (item.isRelocItem && !helpEnabled) {
+    val dragModifier = if (isDockedReloc && !helpEnabled) {
         Modifier.pointerInput(item.id) {
             awaitEachGesture {
                 val down = awaitFirstDown(requireUnconsumed = false)
@@ -757,7 +762,7 @@ private fun DraggableRailItemWrapper(
             .offset(y = finalOffsetY)
             .alpha(alpha)
         ) {
-            if (item.isRelocItem) {
+            if (isDockedReloc) {
                 RailContent(
                                     defaultShape = scope.defaultShape,
                                     item = item,
@@ -786,7 +791,7 @@ private fun DraggableRailItemWrapper(
             } else {
                 RailContent(
                                     defaultShape = scope.defaultShape,
-                                    item = item,
+                                    item = if (item.isRelocItem) item.copy(isRelocItem = false) else item,
                     navController = navController,
                     isSelected = isVisuallyActive,
                     buttonSize = buttonSize,
