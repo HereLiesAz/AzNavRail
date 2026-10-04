@@ -138,6 +138,12 @@ internal fun HelpOverlay(
     val defaultColors = listOf(Color.Red, Color.Green, Color.Blue, Color.Cyan, Color.Magenta, Color.Yellow)
     val colorPalette = if (helpLineColors.isNotEmpty()) helpLineColors else defaultColors
 
+    // System Back dismisses the overlay, same as AboutOverlay/MoreFromAzOverlay/AzBottomSheet. Without
+    // it, Back falls through to the host app while Help is open (helpVisible/hideHelp aren't on the
+    // public scope, so the app can't close it), trapping the user; tap-to-dismiss alone can be
+    // swallowed by a full-screen host surface such as a camera view.
+    AzBackHandler(enabled = true) { onDismiss() }
+
     Box(
         modifier = Modifier
             .fillMaxSize()

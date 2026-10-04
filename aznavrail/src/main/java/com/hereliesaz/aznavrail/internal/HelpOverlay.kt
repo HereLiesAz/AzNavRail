@@ -1,5 +1,6 @@
 package com.hereliesaz.aznavrail.internal
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -136,6 +137,13 @@ internal fun HelpOverlay(
     val dynamicStartPadding = if (isNestedRailOpen) 240.dp else 120.dp
     val defaultColors = listOf(Color.Red, Color.Green, Color.Blue, Color.Cyan, Color.Magenta, Color.Yellow)
     val colorPalette = if (helpLineColors.isNotEmpty()) helpLineColors else defaultColors
+
+    // System Back dismisses the overlay, same as AboutOverlay/MoreFromAzOverlay. Without this, Back
+    // falls through to the host app's own back handling while Help is open — which has no way to see
+    // that Help is visible (helpVisible/hideHelp aren't on the public AzNavHostScope) — so the app
+    // navigates away underneath the overlay and the user is trapped in Help. Tap-to-dismiss alone
+    // isn't enough: a full-screen host surface (e.g. a camera GL view) can swallow the background tap.
+    BackHandler(enabled = true) { onDismiss() }
 
     Box(
         modifier = Modifier
