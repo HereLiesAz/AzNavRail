@@ -34,7 +34,7 @@ import { useItemOverrides } from './services/itemOverrides';
 import { AzKineticItem, useAzClosing } from './components/AzKinetics';
 import { Easing as RNEasing } from 'react-native';
 import { AzEasing } from './types';
-import { AzNavRailDefaults, AzMotion } from './AzNavRailDefaults';
+import { AzNavRailDefaults, AzMotion, azCascadeDelayMs } from './AzNavRailDefaults';
 import { AzButton } from './components/AzButton';
 import { AzFooterLabel } from './components/AzFooterLabel';
 import { AzAboutSurface, useAzAboutOwnership } from './services/aboutPresence';
@@ -112,7 +112,7 @@ interface AzNavRailProps extends AzNavRailSettings {
 /**
  * Unfolds children downward (scaleY 0→1 + fade) with an accordion motion. Kicks off one stagger
  * tick AFTER the last menu item starts its own kinetic entrance — the footer is the natural next
- * beat in the cascade, scheduled `menuItemCount * staggerMs` after the drawer opens.
+ * beat in the cascade, scheduled `azCascadeDelayMs(menuItemCount, menuItemCount, staggerMs)` after the drawer opens.
  */
 const FooterAccordion: React.FC<{
   visible: boolean;
@@ -130,7 +130,7 @@ const FooterAccordion: React.FC<{
       const a = Animated.timing(anim, {
         toValue: 1,
         duration: durationMs,
-        delay: Math.max(0, menuItemCount) * staggerMs,
+        delay: azCascadeDelayMs(menuItemCount, menuItemCount, staggerMs),
         easing: RNEasing.bezier(...AzEasing.Wp7Decelerate),
         useNativeDriver: true,
       });

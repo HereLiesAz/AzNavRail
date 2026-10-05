@@ -8,6 +8,7 @@ import {
   LayoutChangeEvent,
 } from 'react-native';
 import { AzDockingSide, AzEasing, AzEntrance, AzExit } from '../types';
+import { azCascadeDelayMs } from '../AzNavRailDefaults';
 
 const CASCADE_DIST = 20; // px vertical slide for FAB-mode / SlideUp cascade
 
@@ -34,9 +35,9 @@ export function useAzClosing(
       setRendered(false);
       return;
     }
-    // `count · staggerMs` (not `(count - 1) · staggerMs`) matches the exit-cascade shift below:
+    // `count` steps (not `count - 1`), count-normalized via `azCascadeDelayMs`, matches the exit-cascade shift below:
     // on close the footer folds first and item[count-1] doesn't start until t = staggerMs.
-    const total = durationMs + Math.max(0, count) * staggerMs;
+    const total = durationMs + azCascadeDelayMs(count, count, staggerMs);
     const t = setTimeout(() => setRendered(false), total);
     return () => clearTimeout(t);
   }, [open, exit, count, staggerMs, durationMs]);
@@ -104,7 +105,7 @@ export const AzKineticItem: React.FC<AzKineticItemProps> = ({
       const anim = Animated.timing(vis, {
         toValue: 1,
         duration: durationMs,
-        delay: index * staggerMs,
+        delay: azCascadeDelayMs(index, count, staggerMs),
         easing,
         useNativeDriver: true,
       });
@@ -118,7 +119,7 @@ export const AzKineticItem: React.FC<AzKineticItemProps> = ({
         // `count - index` (not `count - 1 - index`) shifts every exit by one stagger tick so the
         // footer can fold first at t=0 and the last item begins at t=staggerMs. Symmetric mirror
         // of the entrance cascade.
-        delay: Math.max(0, count - index) * staggerMs,
+        delay: azCascadeDelayMs(count - index, count, staggerMs),
         easing,
         useNativeDriver: true,
       });

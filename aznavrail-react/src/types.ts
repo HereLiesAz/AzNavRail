@@ -333,7 +333,7 @@ export interface AzNavRailSettings {
   itemExit?: AzExit;
   /** Style merged over each menu item's label (big/light/wide Metro type). */
   itemTextStyle?: object;
-  /** Per-item cascade delay (ms), multiplied by position. Default 60. */
+  /** Per-item cascade delay (ms) at `AzMotion.CascadeReferenceCount` items; rescaled by item count so every cascade takes the same total time. Default 60. */
   entranceStaggerMs?: number;
   /** Duration (ms) of each item's entrance/exit. Default 720. */
   entranceDurationMs?: number;

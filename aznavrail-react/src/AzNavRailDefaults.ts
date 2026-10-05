@@ -60,4 +60,22 @@ export const AzMotion = {
   SettleDurationMs: 240,
   /** One step of a continuous, non-blocking indicator. */
   IndicatorStepMs: 420,
+  /**
+   * The item count at which `ItemStaggerMs` is taken literally. Every cascade is rescaled to the
+   * total a list of this length would take — `ItemStaggerMs × CascadeReferenceCount` — so a
+   * three-item rail folds as fast as a twelve-item one. Mirrors Kotlin's `AzMotion`.
+   */
+  CascadeReferenceCount: 8,
 } as const;
+
+/**
+ * Delay, in ms, for cascade position `steps` in a list of `count` items. `staggerMs` is the gap at
+ * `AzMotion.CascadeReferenceCount` items; the real gap is rescaled by `CascadeReferenceCount / count`
+ * so the whole cascade spans the same time whatever its length. Floors like Kotlin's `Long`
+ * division so both ports agree to the millisecond. Non-positive `count` falls back to unscaled.
+ */
+export function azCascadeDelayMs(steps: number, count: number, staggerMs: number): number {
+  const s = Math.max(0, steps);
+  if (count <= 0) return s * staggerMs;
+  return Math.floor((s * staggerMs * AzMotion.CascadeReferenceCount) / count);
+}
