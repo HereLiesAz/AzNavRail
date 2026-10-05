@@ -58,6 +58,14 @@ object AzMotion {
      */
     const val ItemStaggerMs: Int = 22
 
+    /**
+     * The item count at which [ItemStaggerMs] is taken literally. Every cascade is rescaled to the
+     * total a list of this length would take — `ItemStaggerMs × CascadeReferenceCount` — so a
+     * three-item rail folds as fast as a twelve-item one: fewer items, wider gaps; more items,
+     * tighter ones. The reason: a fold that takes longer the more you own is a tax on having things.
+     */
+    const val CascadeReferenceCount: Int = 8
+
     /** A container arriving or leaving — a panel, a scrim, a popup. M3 Expressive `effects`. */
     const val PanelDurationMs: Int = 200
 

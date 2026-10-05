@@ -98,6 +98,7 @@ import com.hereliesaz.aznavrail.model.AzEntrance
 import com.hereliesaz.aznavrail.model.AzExit
 import com.hereliesaz.aznavrail.model.AzHeaderIconShape
 import com.hereliesaz.aznavrail.internal.rememberAzKineticModifier
+import com.hereliesaz.aznavrail.internal.azCascadeDelayMs
 import com.hereliesaz.aznavrail.internal.rememberAzClosingState
 
 /**
@@ -143,7 +144,7 @@ interface AzDropdownMenuScope {
      *   items keep their auto-sized text.
      * @param itemEntrance Windows-Phone-7-style entrance played as the panel opens (see [AzEntrance]);
      *   defaults to [AzEntrance.Turnstile]. Pass [AzEntrance.None] for a static panel.
-     * @param entranceStaggerMs Per-item cascade delay, multiplied by the item's position.
+     * @param entranceStaggerMs Per-item cascade delay at `AzMotion.CascadeReferenceCount` items; rescaled by item count so every cascade takes the same total time.
      * @param entranceDurationMs Duration of each item's entrance/exit animation.
      * @param entranceEasing Easing for the entrance/exit (defaults to [AzEasing.Wp7Decelerate]).
      * @param entranceStartAngle Starting `rotationY` for the [AzEntrance.Turnstile] sweep, in degrees.
@@ -557,7 +558,7 @@ private fun AzDropdownFooter(
         val spec = tween<Float>(durationMillis = durationMs, easing = easing)
         if (visible) {
             // One stagger tick beyond the last item's start — the footer is the next beat.
-            delay(menuItemCount.coerceAtLeast(0).toLong() * staggerMs)
+            delay(azCascadeDelayMs(menuItemCount, menuItemCount, staggerMs))
             launch { scaleY.animateTo(1f, spec) }
             launch { fade.animateTo(1f, spec) }
         } else {

@@ -224,7 +224,8 @@ duration any more.
 | Constant | Value | What it times |
 | --- | ---: | --- |
 | `ItemDurationMs` | 280 ms | One item's own entrance or exit |
-| `ItemStaggerMs` | 22 ms | The gap between one item starting and the next |
+| `ItemStaggerMs` | 22 ms | The gap between one item starting and the next, at `CascadeReferenceCount` items |
+| `CascadeReferenceCount` | 8 | Every cascade is rescaled to `ItemStaggerMs × 8` total, so 3 items fold as fast as 12 |
 | `PanelDurationMs` | 200 ms | A container arriving or leaving — panel, scrim, popup |
 | `SettleDurationMs` | 240 ms | A layout settling into a new size |
 | `IndicatorStepMs` | 420 ms | One step of a continuous indicator (`AzLoad`'s morph) |
