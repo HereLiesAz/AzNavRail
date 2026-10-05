@@ -142,8 +142,8 @@ internal fun Footer(
     footerColor: Color,
     onAboutClick: (() -> Unit)? = null,
     showAbout: Boolean = true,
-    // Accordion-unfold controls. `visible` drives the anim; the delay is `(menuItemCount-1)*staggerMs`
-    // so the footer begins the moment the LAST menu item begins its own kinetic entrance.
+    // Accordion-unfold controls. `visible` drives the anim; the delay is the full count-normalized
+    // cascade span (`azCascadeDelayMs(n, n, staggerMs)`), one tick after the last item begins.
     visible: Boolean = true,
     menuItemCount: Int = 0,
     staggerMs: Int = AzMotion.ItemStaggerMs,
