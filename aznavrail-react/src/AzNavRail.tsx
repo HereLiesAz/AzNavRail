@@ -1500,7 +1500,7 @@ const AzNavRailInner: React.FC<AzNavRailProps> = (props) => {
   const kItemEntrance =
     (config as AzNavRailSettings).itemEntrance ?? AzEntrance.Turnstile;
   const kItemExit = (config as AzNavRailSettings).itemExit ?? AzExit.Turnstile;
-  const kStaggerMs = (config as AzNavRailSettings).entranceStaggerMs ?? 60;
+  const kStaggerMs = (config as AzNavRailSettings).entranceStaggerMs ?? AzMotion.ItemStaggerMs;
   const kDurationMs =
     (config as AzNavRailSettings).entranceDurationMs ?? AzMotion.ItemDurationMs;
   const kStartAngle = (config as AzNavRailSettings).entranceStartAngle ?? 90;

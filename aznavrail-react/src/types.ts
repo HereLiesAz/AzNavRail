@@ -333,9 +333,9 @@ export interface AzNavRailSettings {
   itemExit?: AzExit;
   /** Style merged over each menu item's label (big/light/wide Metro type). */
   itemTextStyle?: object;
-  /** Per-item cascade delay (ms) at `AzMotion.CascadeReferenceCount` items; rescaled by item count so every cascade takes the same total time. Default 60. */
+  /** Per-item cascade delay (ms) at `AzMotion.CascadeReferenceCount` items; rescaled by item count so every cascade takes the same total time. Default `AzMotion.ItemStaggerMs` (22). */
   entranceStaggerMs?: number;
-  /** Duration (ms) of each item's entrance/exit. Default 720. */
+  /** Duration (ms) of each item's entrance/exit. Default `AzMotion.ItemDurationMs` (280). */
   entranceDurationMs?: number;
   /** Starting rotateY (deg) for the turnstile sweep. Default 90 (pure edge-on → flat). */
   entranceStartAngle?: number;

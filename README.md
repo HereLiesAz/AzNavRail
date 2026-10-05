@@ -761,8 +761,8 @@ swings 90° around the docked edge, edge-on → flat, **no fade, no vertical sli
 type. It's config-driven (preset enums, no free-composable escape hatch). In **FAB / floating**
 mode, where there's no docked edge to hinge on, the cascade degrades to a vertical up/down slide.
 
-Default timing lets items **overlap heavily**: `entranceDurationMs = 720` and
-`entranceStaggerMs = 60` mean the next item begins ~60 ms after the previous begins *while* the
+Default timing lets items **overlap heavily**: `entranceDurationMs = 280` and
+`entranceStaggerMs = 22` mean the next item begins ~22 ms after the previous begins *while* the
 previous is still animating. The stagger is rescaled by item count (`AzMotion.CascadeReferenceCount`), so a
 three-item rail folds and unfolds in the same time as a twelve-item one. One stagger tick **after** the last item begins, the **footer**
 (About / Feedback / @HereLiesAz) **unfolds like an accordion** from the top edge — the natural next

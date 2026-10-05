@@ -53,7 +53,8 @@ object AzMotion {
 
     /**
      * The gap between one item starting and the next. Small enough that the cascade reads as a
-     * single gesture rather than a queue: eight items are fully settled inside ~440 ms, where the
+     * single gesture rather than a queue: any list is fully settled inside ~456 ms (see
+     * [CascadeReferenceCount]), where the
      * old 60 ms tick alone spent 480 ms before the last item had begun.
      */
     const val ItemStaggerMs: Int = 22

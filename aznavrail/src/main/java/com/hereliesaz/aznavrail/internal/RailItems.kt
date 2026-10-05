@@ -275,7 +275,8 @@ internal fun RailItems(
                                 rotationDegrees = rotationDegrees,
                                 orientation = orientation,
                                 index = index,
-                                count = railItemsCount,
+                                // The cascade index runs over itemsToRender, so its count must too; teardown is count-independent.
+                                count = itemsToRender.size,
                                 isRailOpen = isRailOpen
                             )
                         } else {
@@ -323,7 +324,8 @@ internal fun RailItems(
                                 rotationDegrees = rotationDegrees,
                                 orientation = orientation,
                                 index = index,
-                                count = railItemsCount,
+                                // The cascade index runs over itemsToRender, so its count must too; teardown is count-independent.
+                                count = itemsToRender.size,
                                 isRailOpen = isRailOpen
                             )
                         } else {
