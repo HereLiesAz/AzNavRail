@@ -162,7 +162,7 @@ internal fun Footer(
         if (visible) {
             // Footer unfolds one stagger tick AFTER the last menu item begins its own kinetic
             // entrance — the natural next beat in the cascade rhythm.
-            delay(menuItemCount.coerceAtLeast(0).toLong() * staggerMs)
+            delay(azCascadeDelayMs(menuItemCount, menuItemCount, staggerMs))
             launch { scaleY.animateTo(1f, spec) }
             launch { fade.animateTo(1f, spec) }
         } else {
