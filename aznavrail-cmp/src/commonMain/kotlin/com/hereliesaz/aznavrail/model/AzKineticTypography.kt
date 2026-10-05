@@ -53,10 +53,19 @@ object AzMotion {
 
     /**
      * The gap between one item starting and the next. Small enough that the cascade reads as a
-     * single gesture rather than a queue: eight items are fully settled inside ~440 ms, where the
+     * single gesture rather than a queue: any list is fully settled inside ~456 ms (see
+     * [CascadeReferenceCount]), where the
      * old 60 ms tick alone spent 480 ms before the last item had begun.
      */
     const val ItemStaggerMs: Int = 22
+
+    /**
+     * The item count at which [ItemStaggerMs] is taken literally. Every cascade is rescaled to the
+     * total a list of this length would take — `ItemStaggerMs × CascadeReferenceCount` — so a
+     * three-item rail folds as fast as a twelve-item one: fewer items, wider gaps; more items,
+     * tighter ones. The reason: a fold that takes longer the more you own is a tax on having things.
+     */
+    const val CascadeReferenceCount: Int = 8
 
     /** A container arriving or leaving — a panel, a scrim, a popup. M3 Expressive `effects`. */
     const val PanelDurationMs: Int = 200

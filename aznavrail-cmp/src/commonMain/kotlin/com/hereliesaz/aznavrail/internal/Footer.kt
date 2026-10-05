@@ -124,8 +124,8 @@ internal fun Footer(
      * [AzAboutRegistry].
      */
     showAbout: Boolean = true,
-    // Accordion-unfold controls. `visible` drives the anim; the delay is `(menuItemCount-1)*staggerMs`
-    // so the footer begins the moment the LAST menu item begins its own kinetic entrance.
+    // Accordion-unfold controls. `visible` drives the anim; the delay is the full count-normalized
+    // cascade span (`azCascadeDelayMs(n, n, staggerMs)`), one tick after the last item begins.
     visible: Boolean = true,
     menuItemCount: Int = 0,
     staggerMs: Int = AzMotion.ItemStaggerMs,
@@ -144,7 +144,7 @@ internal fun Footer(
         if (visible) {
             // Footer unfolds one stagger tick AFTER the last menu item begins its own kinetic
             // entrance — the natural next beat in the cascade rhythm.
-            delay(menuItemCount.coerceAtLeast(0).toLong() * staggerMs)
+            delay(azCascadeDelayMs(menuItemCount, menuItemCount, staggerMs))
             launch { scaleY.animateTo(1f, spec) }
             launch { fade.animateTo(1f, spec) }
         } else {

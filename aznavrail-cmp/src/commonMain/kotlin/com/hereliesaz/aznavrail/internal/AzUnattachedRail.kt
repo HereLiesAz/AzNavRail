@@ -648,7 +648,7 @@ private fun UnattachedNode(
             }
             LaunchedEffect(ownScroller) {
                 // After the accordion has finished unfolding, so the positions are the resting ones.
-                delay(children.size.toLong() * AzMotion.ItemStaggerMs + AzMotion.ItemDurationMs)
+                delay(azCascadeDelayMs(children.size, children.size, AzMotion.ItemStaggerMs) + AzMotion.ItemDurationMs)
                 ownScroller.revealSelected()
             }
         }

@@ -21,8 +21,23 @@ import androidx.compose.ui.platform.LocalDensity
 import com.hereliesaz.aznavrail.model.AzDockingSide
 import com.hereliesaz.aznavrail.model.AzEntrance
 import com.hereliesaz.aznavrail.model.AzExit
+import com.hereliesaz.aznavrail.model.AzMotion
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+/**
+ * Delay, in ms, for the cascade position [steps] in a list of [count] items.
+ *
+ * [staggerMs] is the gap at [AzMotion.CascadeReferenceCount] items; the real gap is rescaled by
+ * `CascadeReferenceCount / count`, so the whole cascade spans the same time whatever its length.
+ * Computed as one product before dividing so rounding never accumulates across positions.
+ * A non-positive [count] falls back to the unscaled [staggerMs].
+ */
+internal fun azCascadeDelayMs(steps: Int, count: Int, staggerMs: Int): Long {
+    val s = steps.coerceAtLeast(0).toLong()
+    if (count <= 0) return s * staggerMs
+    return s * staggerMs * AzMotion.CascadeReferenceCount / count
+}
 
 /**
  * Returns a [Modifier] that plays a Windows-Phone-7 entrance/exit and an optional [tiltOnPress] 3D
@@ -41,6 +56,7 @@ import kotlinx.coroutines.launch
  * `clickable`/`onClick` still fires.
  *
  * @param index Stable positional index of the item; drives the [staggerMs] cascade.
+ * @param staggerMs Gap at [AzMotion.CascadeReferenceCount] items; rescaled by [count] via [azCascadeDelayMs].
  * @param count Total item count, used to reverse the stagger on exit.
  * @param dockingSide Which edge the panel is docked to — the turnstile hinges on that edge.
  * @param baseRotationZ A pre-existing Z rotation to preserve (e.g. the rail's landscape upright text).
@@ -94,7 +110,7 @@ internal fun rememberAzKineticModifier(
                 launch { transY.snapTo(0f) }
                 return@LaunchedEffect
             }
-            delay(index.toLong() * staggerMs)
+            delay(azCascadeDelayMs(index, count, staggerMs))
             launch { alpha.animateTo(1f, spec) }
             launch { rotY.animateTo(0f, spec) }
             launch { transY.animateTo(0f, spec) }
@@ -105,7 +121,7 @@ internal fun rememberAzKineticModifier(
             // item[count-1] starts one stagger tick later, so the eye reads "footer goes first,
             // then items swing away from the bottom up". The `(count - index)` offset shifts the
             // whole reverse-cascade by one tick to make room for the footer's fold.
-            delay((count - index).coerceAtLeast(0).toLong() * staggerMs)
+            delay(azCascadeDelayMs(count - index, count, staggerMs))
             launch { alpha.animateTo(exitAlpha, spec) }
             launch { rotY.animateTo(exitRotY, spec) }
             launch { transY.animateTo(exitTransY, spec) }
@@ -155,12 +171,12 @@ internal fun rememberAzKineticModifier(
 /**
  * Drives the "closing state" for a panel that wants an [AzExit]: returns whether the items should be
  * **rendered** (kept composed) given the [open] target. When [open] flips false it stays true for the
- * length of the staggered exit ([durationMs] + [count]·[staggerMs]) so the items can animate out,
- * then flips false to let the caller tear the panel down. The `count·staggerMs` (rather than
- * `(count-1)·staggerMs`) matches the exit-cascade shift in [rememberAzKineticModifier]: on close
- * the footer folds first at t=0 and item[count-1] doesn't start until t=staggerMs, so the last
- * item finishes at t = count·staggerMs + durationMs. With [exit] == [AzExit.None] it tracks
- * [open] exactly (immediate teardown, the legacy behavior).
+ * length of the staggered exit ([durationMs] + [azCascadeDelayMs] of [count] steps) so the items
+ * can animate out, then flips false to let the caller tear the panel down. `count` steps (not
+ * `count - 1`) matches the exit-cascade shift in [rememberAzKineticModifier], where item[0] starts
+ * last at `azCascadeDelayMs(count, count, …)`. Because cascades are count-normalized, that is the
+ * fixed span `staggerMs × AzMotion.CascadeReferenceCount` for any `count > 0`. With [exit] ==
+ * [AzExit.None] it tracks [open] exactly (immediate teardown, the legacy behavior).
  */
 @Composable
 internal fun rememberAzClosingState(
@@ -176,7 +192,7 @@ internal fun rememberAzClosingState(
             rendered = true
         } else if (rendered) {
             if (exit != AzExit.None) {
-                delay(durationMs.toLong() + count.coerceAtLeast(0).toLong() * staggerMs)
+                delay(durationMs.toLong() + azCascadeDelayMs(count, count, staggerMs))
             }
             rendered = false
         }
@@ -199,10 +215,10 @@ internal fun rememberAzAccordionModifier(
     LaunchedEffect(visible) {
         val spec = tween<Float>(durationMillis = durationMs, easing = androidx.compose.animation.core.FastOutSlowInEasing)
         if (visible) {
-            delay(index.toLong() * staggerMs)
+            delay(azCascadeDelayMs(index, count, staggerMs))
             progress.animateTo(1f, spec)
         } else {
-            delay((count - 1 - index).coerceAtLeast(0).toLong() * staggerMs)
+            delay(azCascadeDelayMs(count - 1 - index, count, staggerMs))
             progress.animateTo(0f, spec)
         }
     }

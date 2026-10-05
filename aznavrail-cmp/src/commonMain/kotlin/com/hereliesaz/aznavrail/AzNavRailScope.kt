@@ -137,7 +137,7 @@ interface AzNavRailScope {
      * @param itemExit Exit played by each item when the menu collapses (items are held mounted through
      *   the close so they can animate out).
      * @param itemTextStyle Optional style merged over each menu item's label (big/light/wide Metro type).
-     * @param entranceStaggerMs Per-item cascade delay, multiplied by the item's position.
+     * @param entranceStaggerMs Per-item cascade delay at `AzMotion.CascadeReferenceCount` items; rescaled by item count so every cascade takes the same total time.
      * @param entranceDurationMs Duration of each item's entrance/exit animation.
      * @param entranceEasing Easing for the entrance/exit (defaults to [AzEasing.Wp7Decelerate]).
      * @param entranceStartAngle Starting `rotationY` for the [AzEntrance.Turnstile] sweep, in degrees.

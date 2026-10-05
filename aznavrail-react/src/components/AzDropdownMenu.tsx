@@ -34,7 +34,7 @@ import {
   AzExit,
   AzHeaderIconShape,
 } from '../types';
-import { AzNavRailDefaults, AzMotion } from '../AzNavRailDefaults';
+import { AzNavRailDefaults, AzMotion, azCascadeDelayMs } from '../AzNavRailDefaults';
 import { AboutOverlay } from './AboutOverlay';
 import { AzFooterLabel } from './AzFooterLabel';
 import { AzAboutSurface, useAzAboutOwnership } from '../services/aboutPresence';
@@ -716,7 +716,7 @@ const AzDropdownFooter: React.FC<{
       const a = Animated.timing(anim, {
         toValue: 1,
         duration: durationMs,
-        delay: Math.max(0, menuItemCount) * staggerMs,
+        delay: azCascadeDelayMs(menuItemCount, menuItemCount, staggerMs),
         easing: RNEasing.bezier(...AzEasing.Wp7Decelerate),
         useNativeDriver: true,
       });

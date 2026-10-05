@@ -171,12 +171,12 @@ internal fun rememberAzKineticModifier(
 /**
  * Drives the "closing state" for a panel that wants an [AzExit]: returns whether the items should be
  * **rendered** (kept composed) given the [open] target. When [open] flips false it stays true for the
- * length of the staggered exit ([durationMs] + [azCascadeDelayMs] of [count] steps) so the items can animate out,
- * then flips false to let the caller tear the panel down. The `count·staggerMs` (rather than
- * `(count-1)·staggerMs`) matches the exit-cascade shift in [rememberAzKineticModifier]: on close
- * the footer folds first at t=0 and item[count-1] doesn't start until t=staggerMs, so the last
- * item finishes at t = count·staggerMs + durationMs. With [exit] == [AzExit.None] it tracks
- * [open] exactly (immediate teardown, the legacy behavior).
+ * length of the staggered exit ([durationMs] + [azCascadeDelayMs] of [count] steps) so the items
+ * can animate out, then flips false to let the caller tear the panel down. `count` steps (not
+ * `count - 1`) matches the exit-cascade shift in [rememberAzKineticModifier], where item[0] starts
+ * last at `azCascadeDelayMs(count, count, …)`. Because cascades are count-normalized, that is the
+ * fixed span `staggerMs × AzMotion.CascadeReferenceCount` for any `count > 0`. With [exit] ==
+ * [AzExit.None] it tracks [open] exactly (immediate teardown, the legacy behavior).
  */
 @Composable
 internal fun rememberAzClosingState(

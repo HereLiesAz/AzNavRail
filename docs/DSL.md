@@ -131,8 +131,8 @@ fun azKinetics(
     itemEntrance: AzEntrance = AzEntrance.Turnstile,
     itemExit: AzExit = AzExit.Turnstile,
     itemTextStyle: TextStyle? = null,
-    entranceStaggerMs: Int = 60,           // small stagger → items overlap heavily
-    entranceDurationMs: Int = 720,         // per-item duration
+    entranceStaggerMs: Int = AzMotion.ItemStaggerMs, // 22 ms at 8 items; rescaled by count
+    entranceDurationMs: Int = AzMotion.ItemDurationMs, // 280 ms per item
     entranceEasing: Easing = AzEasing.Wp7Decelerate,
     entranceStartAngle: Float = 90f,       // pure edge-on → flat, no fade, no slide
     tiltOnPress: Boolean = false,          // off by default on the rail (drag-safe)
@@ -145,11 +145,12 @@ fun azKinetics(
 `AzEntrance` = `None | Fade | SlideUp | Turnstile`; `AzExit` = `None | Fade | Turnstile`;
 `AzEasing.Wp7Decelerate` is the signature snappy easing. `tiltOnPress` is automatically suppressed for
 draggable/relocatable items. The default **Turnstile** entrance is a pure 90° `rotationY` sweep
-hinged on the docked edge — no fade, no vertical slide. Because the stagger (60 ms) is much smaller
-than the duration (720 ms), items overlap heavily: the next item starts ~60 ms after the previous
-begins while the previous is still animating. The footer (About / Feedback / @HereLiesAz) then
+hinged on the docked edge — no fade, no vertical slide. Because the stagger (22 ms) is much smaller
+than the duration (280 ms), items overlap heavily. The stagger is rescaled by item count
+(`AzMotion.CascadeReferenceCount` = 8), so every cascade spans 176 ms whatever its length: three
+items fold as fast as twelve. The footer (About / Feedback / @HereLiesAz) then
 **unfolds like an accordion** from the top edge, starting one stagger tick after the last item
-begins (delay = `count * staggerMs` — the footer is the natural next beat in the cascade rhythm).
+begins (delay = the full 176 ms span — the footer is the natural next beat in the cascade rhythm).
 
 In React, the rail reads these from `settings` (`itemEntrance`, `itemExit`, `titleEntrance`, …).
 On **native React Native** the hinge is emulated via a `translateX ±(width/2)` correction around
@@ -260,8 +261,8 @@ interface AzDropdownMenuScope {
         // — kinetic typography (on by default; pass None to opt out) —
         itemTextStyle: TextStyle? = null,                    // merged over each MENU row label
         itemEntrance: AzEntrance = AzEntrance.Turnstile,     // None | Fade | SlideUp | Turnstile
-        entranceStaggerMs: Int = 55,
-        entranceDurationMs: Int = 360,
+        entranceStaggerMs: Int = AzMotion.ItemStaggerMs,     // 22 ms at 8 items; rescaled by count
+        entranceDurationMs: Int = AzMotion.ItemDurationMs,   // 280 ms
         entranceEasing: Easing = AzEasing.Wp7Decelerate,
         entranceStartAngle: Float = 70f,
         tiltOnPress: Boolean = false,                        // WP7 3D tilt toward the press

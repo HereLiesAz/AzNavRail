@@ -1,5 +1,6 @@
 package com.hereliesaz.aznavrail
 
+import com.hereliesaz.aznavrail.internal.azCascadeDelayMs
 import com.hereliesaz.aznavrail.model.AzMotion
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -21,13 +22,24 @@ class AzMotionTest {
      */
     @Test
     fun fullCascadeSettlesWithinBudget() {
-        val worstCaseItems = 12
-        val settleMs = AzMotion.ItemStaggerMs * worstCaseItems + AzMotion.ItemDurationMs
-        assertTrue(
-            settleMs <= 650,
-            "A $worstCaseItems-item cascade settles in ${settleMs}ms; the budget is 650ms. " +
-                "Motion is a guide, not a toll.",
-        )
+        // Cascades are count-normalized, so the budget must hold at every length, not one worst case.
+        for (n in 1..40) {
+            val settleMs = azCascadeDelayMs(n - 1, n, AzMotion.ItemStaggerMs) + AzMotion.ItemDurationMs
+            assertTrue(
+                settleMs <= 650,
+                "A $n-item cascade settles in ${settleMs}ms; the budget is 650ms. " +
+                    "Motion is a guide, not a toll.",
+            )
+        }
+    }
+
+    /** The last item's start never reaches the fixed span (22 ms × 8 = 176 ms, written literally). */
+    @Test
+    fun lastItemStartsInsideTheFixedSpan() {
+        for (n in 1..40) {
+            val lastStart = azCascadeDelayMs(n - 1, n, AzMotion.ItemStaggerMs)
+            assertTrue(lastStart < 176, "$n items: last start ${lastStart}ms is not under 176ms.")
+        }
     }
 
     /**
