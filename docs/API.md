@@ -238,7 +238,7 @@ then get out of the way.
 
 The scale is proportional, so a host wanting a different tempo scales the whole thing through
 `azKinetics(entranceDurationMs = …, entranceStaggerMs = …)` rather than hunting literals. A unit test
-(`AzMotionTest`) holds the budget: a twelve-item cascade must settle inside 650 ms, the stagger must
+(`AzMotionTest`) holds the budget: a cascade of any length must settle inside 650 ms, the stagger must
 stay well under the duration it offsets, and a panel must never outlast its own contents.
 
 * `AzEntrance`: `None | Fade | SlideUp | Turnstile`. `AzExit`: `None | Fade | Turnstile`.
