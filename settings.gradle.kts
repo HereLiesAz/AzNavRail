@@ -1,8 +1,12 @@
 pluginManagement {
     repositories {
         google()
-        mavenCentral()
+        // Google's mirror of Maven Central first: JitPack's shared build hosts get HTTP 429 from
+        // repo.maven.apache.org, and Gradle treats that as a hard failure rather than moving on to
+        // the next repository. Central stays as the fallback.
+        maven { url = uri("https://maven-central.storage-download.googleapis.com/maven2/") }
         gradlePluginPortal()
+        mavenCentral()
     }
 }
 plugins {
@@ -12,6 +16,10 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
         google()
+        // Google's mirror of Maven Central first: JitPack's shared build hosts get HTTP 429 from
+        // repo.maven.apache.org, and Gradle treats that as a hard failure rather than moving on to
+        // the next repository. Central stays as the fallback.
+        maven { url = uri("https://maven-central.storage-download.googleapis.com/maven2/") }
         mavenCentral()
         maven { url = uri("https://jitpack.io") }
     }
