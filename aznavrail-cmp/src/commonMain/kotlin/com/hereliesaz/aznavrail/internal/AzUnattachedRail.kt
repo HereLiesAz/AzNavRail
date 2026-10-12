@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.NonSkippableComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
@@ -102,8 +103,15 @@ internal fun azUnattachedSubtreeIds(items: List<AzNavItem>): Set<String> {
  * @param scope The rail scope supplying items, callbacks and theme tokens.
  * @param visualDockingSide The side the rail is currently drawn on; the [AzUnattachedAnchor.BOTTOM]
  *   and [AzUnattachedAnchor.OPPOSITE] stacks park on the other one.
+ *
+ * Non-skippable, like the stack, node and dock-group composables below it: the items arrive in
+ * `scope.navItems`, a plain list refilled on every DSL run inside the same scope instance. Under
+ * strong skipping an unchanged `scope` argument skipped this whole subtree, so an expanded host kept
+ * drawing its old children (new items missing, content stale) until something it does observe, its
+ * own expansion, changed.
  */
 @Composable
+@NonSkippableComposable
 internal fun AzUnattachedRail(
     scope: AzNavRailScopeImpl,
     navController: NavController?,
@@ -274,6 +282,7 @@ internal fun AzUnattachedRail(
 
 /** One anchor's column of unattached hosts, each unfolding its own sub-items beneath it. */
 @Composable
+@NonSkippableComposable
 private fun UnattachedStack(
     hosts: List<AzNavItem>,
     modifier: Modifier,
@@ -333,6 +342,7 @@ private fun UnattachedStack(
  * flat into the enclosing stack's [Column] so a host and its children share the rail's spacing.
  */
 @Composable
+@NonSkippableComposable
 private fun UnattachedNode(
     item: AzNavItem,
     scope: AzNavRailScopeImpl,
@@ -1092,6 +1102,7 @@ private class AzFloatingRailState(
  * other column. A lone (unpaired) rail falls back to the main rail's own left/right convention.
  */
 @Composable
+@NonSkippableComposable
 private fun FloatingDockGroup(
     hosts: List<AzNavItem>,
     scope: AzNavRailScopeImpl,
