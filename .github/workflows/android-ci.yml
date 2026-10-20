@@ -69,7 +69,7 @@ jobs:
       - name: Run unit tests
         run: |
           chmod +x gradlew
-          ./gradlew test :aznavrail-subscriptions:allTests --continue --build-cache --no-daemon --stacktrace
+          ./gradlew test :aznavrail-subscriptions:desktopTest --continue --build-cache --no-daemon --stacktrace
 
       - name: Upload test reports
         if: always()

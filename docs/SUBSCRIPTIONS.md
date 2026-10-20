@@ -118,10 +118,10 @@ entry points pass through that root, and protect paid backend operations separat
 ~~~sh
 ./gradlew :app:bundlePlayRelease
 ./gradlew :app:assembleGithubRelease
-./gradlew :aznavrail-subscriptions:allTests
+./gradlew :aznavrail-subscriptions:desktopTest
 ~~~
 
-Actual Gradle task capitalization depends on each app's flavor/build-type
+The desktop target runs the shared entitlement unit tests. The allTests\naggregator is intentionally not used in CI because upstream Wasm Node 25.0.0\nresolution currently fails independently of those tests. Run Wasm tests separately\nwhen the toolchain source is restored.\n\nActual Gradle task capitalization depends on each app's flavor/build-type
 configuration. Inspect the release AAB dependencies with `dependencies
 --configuration playReleaseRuntimeClasspath` and the GitHub release variant with
 `githubReleaseRuntimeClasspath`. Verify that the latter contains **no**
