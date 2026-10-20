@@ -774,3 +774,7 @@ HistoryStore.resetForTest(backend = MapSettings())
 // Android:
 HistoryManager.resetForTesting()   // wipes in-memory state; context re-init required
 ~~~
+
+## Optional Play-only subscription gate
+
+The independently published `aznavrail-subscriptions` module exposes `AzSubscriptionGate` (platform-agnostic Compose UI), `AzSubscriptionUiState`, `AzSubscriptionOffer`, `AzSubscriptionAccess`, and the Android-only `AzPlaySubscriptionGate(activity, config, content)` and `AzPlaySubscriptionConfig`. It has no effect on the normal rail/DSL/navigation APIs. See [SUBSCRIPTIONS.md](SUBSCRIPTIONS.md) for the flavor-specific wiring, Play Console requirements, trial and localized pricing, restore, and security caveats.
