@@ -5,6 +5,7 @@ This project is a monorepo containing the following packages:
 -   `aznavrail`: The core Android library.
 -   `aznavrail-annotations`: The `@Az` annotation definitions.
 -   `aznavrail-processor`: The KSP processor that generates `AzGraph` from `@Az` annotations.
+-   `aznavrail-subscriptions`: Optional CMP subscription UI with Android-only Google Play Billing, included by consumers only through `playImplementation`.
 -   `aznavrail-cmp`: The Compose Multiplatform port (Android/Desktop/Web, iOS on macOS builds).
 -   `aznavrail-cmp-demo`: A sample app demonstrating `aznavrail-cmp`.
 -   `aznavrail-react`: The React / React Native / Web port.
@@ -28,6 +29,7 @@ This document provides a brief but thorough description of what each file in the
 | `aznavrail-annotations/` | The `@Az` annotation definitions (Kotlin, no Android dependency). |
 | `aznavrail-processor/` | The KSP symbol processor that generates `AzGraph` from `@Az`. |
 | `aznavrail-cmp/` | The Compose Multiplatform port of the library. |
+| `aznavrail-subscriptions/` | Optional CMP Play subscription gate; Android billing code in androidMain only. |
 | `aznavrail-cmp-demo/` | Sample app for `aznavrail-cmp`. |
 | `aznavrail-react/` | The React and React Native version of the `aznavrail` library. |
 | `sample-pwa/` | Sample web app demonstrating `aznavrail-react`. |

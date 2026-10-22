@@ -3,6 +3,7 @@
 ## Module boundaries
 
 - `aznavrail` is the Android library. It owns the Android host, rail DSL, and AndroidX Navigation integration.
+- `aznavrail-subscriptions` is an optional, independently published Compose Multiplatform paywall with an Android-only Play Billing adapter. It is only consumed through a Play flavor dependency, never from the base rail or CMP common module.
 - `aznavrail-cmp` is the Compose Multiplatform library. Common code owns shared UI and navigation behavior; platform source sets contain platform glue.
 - `aznavrail-annotations` contains source-retained declarations and has no UI runtime.
 - `aznavrail-processor` turns `aznavrail-annotations` declarations into Android graph code.
@@ -21,7 +22,9 @@
 5. Compose Destinations remains consumer wiring until an adapter demonstrates a stable, reusable contract.
 6. Android navigation integration does not enter `aznavrail-cmp` common source unless every published CMP target can compile it.
 7. Existing KSP-generated `AzGraphInterface` consumers retain their source contract while Compose Destinations is introduced.
-8. Generated destination graphs are checked before the Android build; UX errors block CI, while UX warnings remain visible in annotations, summaries, SARIF, and artifacts.
+8. The optional billing module never enters the base AzNavRail or CMP navigation dependencies. Play-only consumers must use `playImplementation`; GitHub builds must contain neither its artifact nor BillingClient.
+9. Only a completed, product-matching purchase returned by a successful Play query can unlock the Play root; pending and errors fail closed.
+10. Generated destination graphs are checked before the Android build; UX errors block CI, while UX warnings remain visible in annotations, summaries, SARIF, and artifacts.
 
 ## Current version
 
@@ -49,3 +52,7 @@ The processor continues generating `AzGraphInterface` implementations that invok
 ### Analyze user flows before KSP
 
 The Compose Destinations UX analyzer reads Kotlin source before generated code exists because generated graphs prove that routes compile, not that users can escape them. It treats sealed-state variants, enum decisions, and navigation events as the behavioral graph. Errors fail CI; warnings remain non-blocking because conservative source analysis cannot see every dynamic route, but silence would be the more expensive lie.
+
+### Isolate Play subscriptions in a separate CMP artifact
+
+The existing navigation library must not force Google Play code or fees onto its consumers or non-Android targets. The reusable paywall UI is common Compose; the Android adapter is private to the optional `aznavrail-subscriptions` artifact. A consuming app chooses the `playImplementation` flavor so the GitHub APK has no billing dependency at all. The store, not a local clock, owns prices and trial eligibility. See `docs/SUBSCRIPTIONS.md`.

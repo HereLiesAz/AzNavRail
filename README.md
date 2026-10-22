@@ -17,6 +17,7 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 ## 📚 Documentation
 
 -   **[Complete Guide (The Bible)](/docs/AZNAVRAIL_COMPLETE_GUIDE.md)**: Comprehensive, encyclopedic reference for every feature.
+-   **[Play-only subscriptions (opt-in)](/docs/SUBSCRIPTIONS.md)**: Reusable CMP gate with Android Play Billing isolated to Play build flavors.
 -   **[API Reference](/docs/API.md)**: Javadoc-style listing.
 -   **[DSL Reference](/docs/DSL.md)**: Quick look at DSL functions.
 -   **[Capabilities & Limitations](/docs/CAPABILITIES_AND_LIMITATIONS.md)**: What each feature can and can't do (kinetic typography, host `expandWhen`, the About screen), plus requirements — Android + React parity.

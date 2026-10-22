@@ -30,6 +30,7 @@ include(":aznavrail")
 include(":aznavrail-annotations")
 include(":aznavrail-processor")
 include(":aznavrail-cmp")
+include(":aznavrail-subscriptions")
 // SampleApp and the CMP demo are runnable apps, not published artifacts — neither appears in any
 // module's `publishing {}` block. Building either one during a release is pure waste: SampleApp's
 // release variant alone runs a full R8/multidex `mergeDexRelease`, which was observed to exhaust
