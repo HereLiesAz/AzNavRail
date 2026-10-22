@@ -447,7 +447,11 @@ fun AzNavRail(
         }
     }
 
-    LaunchedEffect(scope.navItems) {
+    // Keyed on a snapshot of the items, not on `scope.navItems` itself: that is one mutable list the
+    // scope clears and refills on every build, so as a key it never changed and an item declared
+    // after the first composition (a cycler behind an `if`) was never seeded — every tap on it was
+    // dropped and its onClick never ran.
+    LaunchedEffect(scope.navItems.toList()) {
         scope.navItems.forEach { item ->
             if (item.isCycler) {
                 // putIfAbsent is a JVM-only Map default method; use containsKey guards for KMP.
