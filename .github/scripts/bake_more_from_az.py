@@ -47,13 +47,24 @@ def parse_repo(url):
     return (owner, repo) if owner and repo else None
 
 
+# Repos whose Play package isn't com.<owner>.<repo>, keyed by lower-cased "owner/repo".
+PLAY_PACKAGE_OVERRIDES = {
+    "hereliesaz/guillotine": "com.hereliesaz.theguillotine",
+    "hereliesaz/thelexorcist": "com.hereliesaz.lexorcist",
+    "hereliesaz/sir-match-a-lot": "com.hereliesaz.sirmatchalot",
+    "hereliesaz/azphalt": "com.hereliesaz.azphalt.store",
+}
+
+
 def derive_play_url(github_url):
-    """Conventional Play URL com.<owner>.<repo> (lower-cased) for a GitHub repo, else None."""
+    """Play URL for a GitHub repo: its PLAY_PACKAGE_OVERRIDES entry, else the conventional
+    com.<owner>.<repo> (lower-cased). None for a non-GitHub URL."""
     parsed = parse_repo(github_url)
     if not parsed:
         return None
     owner, repo = parsed
-    return f"https://play.google.com/store/apps/details?id=com.{owner.lower()}.{repo.lower()}"
+    package = PLAY_PACKAGE_OVERRIDES.get(f"{owner}/{repo}".lower(), f"com.{owner.lower()}.{repo.lower()}")
+    return f"https://play.google.com/store/apps/details?id={package}"
 
 
 def is_wip_first_line(readme):

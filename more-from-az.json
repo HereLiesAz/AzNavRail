@@ -1,5 +1,5 @@
 {
-  "version": 16,
+  "version": 18,
   "apps": [
     {
       "name": "GraffitiXR",
@@ -38,11 +38,26 @@
       "isPwa": false
     },
     {
+      "name": "illumera",
+      "iconUrl": "https://play-lh.googleusercontent.com/aHFjt0uyUnatIdnc4PlbAD4LQRPiSDrAnsZNEZ_LEYhWD4BWtNp2gP3kDtJkgoA6bjqoY2_xyAQj7b0vusQDFvc=s0-br30",
+      "description": "Android TV streaming app for Stremio addons",
+      "github": "https://github.com/HereLiesAz/illumera",
+      "play": "https://play.google.com/store/apps/details?id=com.hereliesaz.illumera"
+    },
+    {
+      "name": "Graffux",
+      "iconUrl": "https://play-lh.googleusercontent.com/_pscUeQfkbqIZ4dllOjKLT_NTwisRoifzfRluGxJwEodHZBuTa2QwF2c2EWqPO3_HTx0uFtz832wbDQeVVQI0Ok=s0-br30",
+      "description": "",
+      "github": "https://github.com/HereLiesAz/Graffux",
+      "play": "https://play.google.com/store/apps/details?id=com.hereliesaz.graffux",
+      "web": "https://hereliesaz.github.io/Graffux/",
+      "isPwa": false
+    },
+    {
       "name": "Guillotine",
       "iconUrl": "https://play-lh.googleusercontent.com/1dM5Lu2ZVxSWl19psk-GNxQGgOxNCnYXjFm39Ln_R8YWIn3xbawthPDwnNRML4DaOwsLDaKeL0VIRM9d6Fff=s0-br30",
       "description": "An AI-Powered Non-Linear Video Editor",
       "github": "https://github.com/HereLiesAz/Guillotine",
-      "play": "https://play.google.com/store/apps/details?id=com.hereliesaz.guillotine",
       "web": "https://hereliesaz.com/guillotine/",
       "isPwa": false
     },
@@ -165,6 +180,132 @@
       "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/ReUp/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
       "description": "A gentle cognitive behavioral helper in Android app form.",
       "github": "https://github.com/HereLiesAz/ReUp"
+    },
+    {
+      "name": "The Aive",
+      "iconUrl": "https://opengraph.githubassets.com/1/HereLiesAz/aive",
+      "description": "Manage your agentic swarm workflows like you *do* your tamagotchis.",
+      "github": "https://github.com/HereLiesAz/aive"
+    },
+    {
+      "name": "HG2Gui",
+      "iconUrl": "https://opengraph.githubassets.com/1/HereLiesAz/HG2Gui",
+      "description": "Touch CLI for Android",
+      "github": "https://github.com/HereLiesAz/HG2Gui"
+    },
+    {
+      "name": "MCPserved",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/MCPserved/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "description": "",
+      "github": "https://github.com/HereLiesAz/MCPserved"
+    },
+    {
+      "name": "WaveFrom",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/WaveFrom/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
+      "description": "",
+      "github": "https://github.com/HereLiesAz/WaveFrom"
+    },
+    {
+      "name": "SIMplyManaged",
+      "iconUrl": "https://opengraph.githubassets.com/1/HereLiesAz/SIMplyManaged",
+      "description": "An android app that manages your SIMs and eSIMs better. ",
+      "github": "https://github.com/HereLiesAz/SIMplyManaged"
+    },
+    {
+      "name": "nhen",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/nhen/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
+      "description": "",
+      "github": "https://github.com/HereLiesAz/nhen"
+    },
+    {
+      "name": "sir-match-a-lot",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/sir-match-a-lot/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
+      "description": "An auto mixing DJ app with a unique UI/UX \"spin\"... get it? Spin? I crack myself up. ",
+      "github": "https://github.com/HereLiesAz/sir-match-a-lot"
+    },
+    {
+      "name": "morphont",
+      "iconUrl": "https://opengraph.githubassets.com/1/HereLiesAz/morphont",
+      "description": "",
+      "github": "https://github.com/HereLiesAz/morphont"
+    },
+    {
+      "name": "clappiest",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/clappiest/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
+      "description": "The clappiest app to find your android phone. ",
+      "github": "https://github.com/HereLiesAz/clappiest"
+    },
+    {
+      "name": "photo-unroll",
+      "iconUrl": "https://opengraph.githubassets.com/1/HereLiesAz/photo-unroll",
+      "description": "Unroll images taken around and of a cylinder. ",
+      "github": "https://github.com/HereLiesAz/photo-unroll"
+    },
+    {
+      "name": "doxray",
+      "iconUrl": "https://opengraph.githubassets.com/1/HereLiesAz/doxray",
+      "description": "Real-time facial recognition based person search using Meta Ray Bans ",
+      "github": "https://github.com/HereLiesAz/doxray"
+    },
+    {
+      "name": "lunchheir",
+      "iconUrl": "https://opengraph.githubassets.com/1/HereLiesAz/lunchheir",
+      "description": "No clever tagline wanted. ",
+      "github": "https://github.com/HereLiesAz/lunchheir"
+    },
+    {
+      "name": "ApathyBasedRendering",
+      "iconUrl": "https://opengraph.githubassets.com/1/HereLiesAz/ApathyBasedRendering",
+      "description": "",
+      "github": "https://github.com/HereLiesAz/ApathyBasedRendering"
+    },
+    {
+      "name": "CaptureTheFlag",
+      "iconUrl": "https://opengraph.githubassets.com/1/HereLiesAz/CaptureTheFlag",
+      "description": "",
+      "github": "https://github.com/HereLiesAz/CaptureTheFlag"
+    },
+    {
+      "name": "MeatPiety",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/MeatPiety/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
+      "description": "The vegan's calculator of righteous deeds. ",
+      "github": "https://github.com/HereLiesAz/MeatPiety"
+    },
+    {
+      "name": "HandJob",
+      "iconUrl": "https://opengraph.githubassets.com/1/HereLiesAz/HandJob",
+      "description": "An auto-posing 3D hand model for artists.",
+      "github": "https://github.com/HereLiesAz/HandJob"
+    },
+    {
+      "name": "lamplight",
+      "iconUrl": "https://opengraph.githubassets.com/1/HereLiesAz/lamplight",
+      "description": "A tourist's guide to local haunts. ",
+      "github": "https://github.com/HereLiesAz/lamplight"
+    },
+    {
+      "name": "barterchain",
+      "iconUrl": "https://opengraph.githubassets.com/1/HereLiesAz/barterchain",
+      "description": "",
+      "github": "https://github.com/HereLiesAz/barterchain"
+    },
+    {
+      "name": "NoobWiFinder",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/NoobWiFinder/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
+      "description": "",
+      "github": "https://github.com/HereLiesAz/NoobWiFinder"
+    },
+    {
+      "name": "pwncatharsis",
+      "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/pwncatharsis/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
+      "description": "A gui'd attempt at facing Pwncat. ",
+      "github": "https://github.com/HereLiesAz/pwncatharsis"
+    },
+    {
+      "name": "azphalt",
+      "iconUrl": "https://opengraph.githubassets.com/1/HereLiesAz/azphalt",
+      "description": "Store and platform for creative extensions: brushes, effects and models for HereLiesAz apps.",
+      "github": "https://github.com/HereLiesAz/azphalt"
     }
   ]
 }
