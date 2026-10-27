@@ -1,5 +1,5 @@
 {
-  "version": 17,
+  "version": 18,
   "apps": [
     {
       "name": "GraffitiXR",
@@ -182,7 +182,7 @@
       "github": "https://github.com/HereLiesAz/ReUp"
     },
     {
-      "name": "aive",
+      "name": "The Aive",
       "iconUrl": "https://opengraph.githubassets.com/1/HereLiesAz/aive",
       "description": "Manage your agentic swarm workflows like you *do* your tamagotchis.",
       "github": "https://github.com/HereLiesAz/aive"
@@ -300,6 +300,12 @@
       "iconUrl": "https://raw.githubusercontent.com/HereLiesAz/pwncatharsis/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
       "description": "A gui'd attempt at facing Pwncat. ",
       "github": "https://github.com/HereLiesAz/pwncatharsis"
+    },
+    {
+      "name": "azphalt",
+      "iconUrl": "https://opengraph.githubassets.com/1/HereLiesAz/azphalt",
+      "description": "Store and platform for creative extensions: brushes, effects and models for HereLiesAz apps.",
+      "github": "https://github.com/HereLiesAz/azphalt"
     }
   ]
 }
