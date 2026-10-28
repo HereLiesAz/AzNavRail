@@ -524,7 +524,7 @@ private fun AzDropdownMenuRow(
  * @param footerColor The panel's resolved, legible accent — the same colour its item rows wear.
  */
 @Composable
-private fun AzDropdownFooter(
+internal fun AzDropdownFooter(
     repoUrl: String,
     onAboutClick: (() -> Unit)?,
     footerColor: Color,
