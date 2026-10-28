@@ -118,3 +118,8 @@ Fresh context is the fix for drift. An agent has no sunk investment in the code 
 - Decisions, each with its reason
 
 Re-read at thread start. Never recalled.
+
+<!-- entire-agent:begin -->
+Read .entire/agent-guide.md for this repository's workflow, source inspection, and verification guidance.
+@.entire/agent-guide.md
+<!-- entire-agent:end -->
