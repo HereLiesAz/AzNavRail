@@ -75,6 +75,20 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**
+ * The top-level items the collapsed rail strip lays out: rail items only.
+ *
+ * Menu-only items ([AzNavItem.isRailItem] `false`) have no button in the strip. They used to take a
+ * blank [AzNavRailDefaults.RailContentSpacerHeight] slot each whenever `packButtons` was false, so a
+ * rail with many menu-only items scrolled that many slots past its last button (and its About
+ * button was parked beyond them). The scroll-or-not test in `AzNavRail` already counted only rail
+ * items; the layout now agrees with it.
+ *
+ * @param items All items in the scope, in declaration order.
+ */
+internal fun railStripItems(items: List<AzNavItem>): List<AzNavItem> =
+    items.filter { !it.isSubItem && it.isRailItem }
+
+/**
  * Renders the full ordered set of rail buttons in the collapsed rail, including nested-rail popups
  * and hidden-menu popups for relocatable items.
  *
@@ -82,7 +96,8 @@ import kotlin.math.roundToInt
  * relocatable items, manages the visual drag shadow, and handles the snap-back animation on drop.
  * Sub-items belonging to host items are rendered inline when their host is expanded.
  *
- * @param items All items in the scope (including sub-items and cyclers).
+ * @param items All items in the scope (including sub-items, cyclers and menu-only items). Only the
+ *   top-level rail items are laid out; see [railStripItems].
  * @param scope The active [AzNavRailScopeImpl] providing callbacks and state.
  * @param navController Used for route-based navigation on item click.
  * @param currentDestination The active route; used to determine selection state.
@@ -119,9 +134,7 @@ internal fun RailItems(
 ) {
     val isHorizontal = orientation == com.hereliesaz.aznavrail.model.AzOrientation.Horizontal
     val density = LocalDensity.current
-    val topLevelItems = items.filter { !it.isSubItem }
-    val itemsToRender =
-        if (packRailButtons) topLevelItems.filter { it.isRailItem } else topLevelItems
+    val itemsToRender = railStripItems(items)
 
     var draggedItemId by remember { mutableStateOf<String?>(null) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
