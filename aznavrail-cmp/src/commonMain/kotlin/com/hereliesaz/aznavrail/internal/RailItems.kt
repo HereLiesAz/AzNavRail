@@ -14,9 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.foundation.layout.offset
@@ -73,6 +71,18 @@ import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.LocalWindowInfo
 
 /**
+ * The top-level items the collapsed rail strip lays out: rail items only.
+ *
+ * Menu-only items ([AzNavItem.isRailItem] `false`) have no button in the strip. They used to take a
+ * blank [AzNavRailDefaults.RailContentSpacerHeight] slot each whenever `packButtons` was false, so a
+ * rail with many menu-only items scrolled that many slots past its last button.
+ *
+ * @param items All items in the scope, in declaration order.
+ */
+internal fun railStripItems(items: List<AzNavItem>): List<AzNavItem> =
+    items.filter { !it.isSubItem && it.isRailItem }
+
+/**
  * Renders the full ordered set of rail buttons in the collapsed rail, including nested-rail popups
  * and hidden-menu popups for relocatable items.
  *
@@ -117,9 +127,7 @@ internal fun RailItems(
 ) {
     val isHorizontal = orientation == com.hereliesaz.aznavrail.model.AzOrientation.Horizontal
     val density = LocalDensity.current
-    val topLevelItems = items.filter { !it.isSubItem }
-    val itemsToRender =
-        if (packRailButtons) topLevelItems.filter { it.isRailItem } else topLevelItems
+    val itemsToRender = railStripItems(items)
 
     var draggedItemId by remember { mutableStateOf<String?>(null) }
     var dragOffset by remember { mutableStateOf(0f) }
@@ -238,48 +246,44 @@ internal fun RailItems(
             Row {
                 itemsToRender.forEachIndexed { index, item ->
                     key(item.id) {
-                        if (item.isRailItem) {
-                            RailItemNode(
-                                item = item,
-                                scope = scope,
-                                navController = navController,
-                                currentDestination = currentDestination,
-                                buttonSize = buttonSize,
-                                onRailCyclerClick = onRailCyclerClick,
-                                onItemSelected = onItemSelected,
-                                hostStates = hostStates,
-                                onClickOverride = onClickOverride,
-                                onItemGloballyPositioned = onItemGloballyPositioned,
-                                helpEnabled = helpEnabled,
-                                draggedItemId = draggedItemId,
-                                dragOffset = dragOffset,
-                                currentDropTargetIndex = currentDropTargetIndex,
-                                onDragStart = onDragStart,
-                                onDragEnd = onDragEnd,
-                                onDragDelta = onDragDelta,
-                                onDragTargetChange = onDragTargetChange,
-                                onMenuOpen = onMenuOpen,
-                                itemHeights = itemHeights,
-                                onHeightReported = onHeightReported,
-                                itemWidths = itemWidths,
-                                onWidthReported = onWidthReported,
-                                coroutineScope = coroutineScope,
-                                hiddenMenuOpenId = hiddenMenuOpenId,
-                                onHiddenMenuDismiss = onHiddenMenuDismiss,
-                                lastTappedId = lastTappedId,
-                                onUpdateLastTappedId = onUpdateLastTappedId,
-                                snappingOffsets = snappingOffsets,
-                                visualDockingSide = visualDockingSide,
-                                rotationDegrees = rotationDegrees,
-                                orientation = orientation,
-                                index = index,
-                                // The cascade index runs over itemsToRender, so its count must too; teardown is count-independent.
-                                count = itemsToRender.size,
-                                isRailOpen = isRailOpen
-                            )
-                        } else {
-                            Spacer(modifier = Modifier.width(AzNavRailDefaults.RailContentSpacerHeight))
-                        }
+                        RailItemNode(
+                            item = item,
+                            scope = scope,
+                            navController = navController,
+                            currentDestination = currentDestination,
+                            buttonSize = buttonSize,
+                            onRailCyclerClick = onRailCyclerClick,
+                            onItemSelected = onItemSelected,
+                            hostStates = hostStates,
+                            onClickOverride = onClickOverride,
+                            onItemGloballyPositioned = onItemGloballyPositioned,
+                            helpEnabled = helpEnabled,
+                            draggedItemId = draggedItemId,
+                            dragOffset = dragOffset,
+                            currentDropTargetIndex = currentDropTargetIndex,
+                            onDragStart = onDragStart,
+                            onDragEnd = onDragEnd,
+                            onDragDelta = onDragDelta,
+                            onDragTargetChange = onDragTargetChange,
+                            onMenuOpen = onMenuOpen,
+                            itemHeights = itemHeights,
+                            onHeightReported = onHeightReported,
+                            itemWidths = itemWidths,
+                            onWidthReported = onWidthReported,
+                            coroutineScope = coroutineScope,
+                            hiddenMenuOpenId = hiddenMenuOpenId,
+                            onHiddenMenuDismiss = onHiddenMenuDismiss,
+                            lastTappedId = lastTappedId,
+                            onUpdateLastTappedId = onUpdateLastTappedId,
+                            snappingOffsets = snappingOffsets,
+                            visualDockingSide = visualDockingSide,
+                            rotationDegrees = rotationDegrees,
+                            orientation = orientation,
+                            index = index,
+                            // The cascade index runs over itemsToRender, so its count must too; teardown is count-independent.
+                            count = itemsToRender.size,
+                            isRailOpen = isRailOpen
+                        )
                     }
                 }
             }
@@ -287,48 +291,44 @@ internal fun RailItems(
             Column {
                 itemsToRender.forEachIndexed { index, item ->
                     key(item.id) {
-                        if (item.isRailItem) {
-                            RailItemNode(
-                                item = item,
-                                scope = scope,
-                                navController = navController,
-                                currentDestination = currentDestination,
-                                buttonSize = buttonSize,
-                                onRailCyclerClick = onRailCyclerClick,
-                                onItemSelected = onItemSelected,
-                                hostStates = hostStates,
-                                onClickOverride = onClickOverride,
-                                onItemGloballyPositioned = onItemGloballyPositioned,
-                                helpEnabled = helpEnabled,
-                                draggedItemId = draggedItemId,
-                                dragOffset = dragOffset,
-                                currentDropTargetIndex = currentDropTargetIndex,
-                                onDragStart = onDragStart,
-                                onDragEnd = onDragEnd,
-                                onDragDelta = onDragDelta,
-                                onDragTargetChange = onDragTargetChange,
-                                onMenuOpen = onMenuOpen,
-                                itemHeights = itemHeights,
-                                onHeightReported = onHeightReported,
-                                itemWidths = itemWidths,
-                                onWidthReported = onWidthReported,
-                                coroutineScope = coroutineScope,
-                                hiddenMenuOpenId = hiddenMenuOpenId,
-                                onHiddenMenuDismiss = onHiddenMenuDismiss,
-                                lastTappedId = lastTappedId,
-                                onUpdateLastTappedId = onUpdateLastTappedId,
-                                snappingOffsets = snappingOffsets,
-                                visualDockingSide = visualDockingSide,
-                                rotationDegrees = rotationDegrees,
-                                orientation = orientation,
-                                index = index,
-                                // The cascade index runs over itemsToRender, so its count must too; teardown is count-independent.
-                                count = itemsToRender.size,
-                                isRailOpen = isRailOpen
-                            )
-                        } else {
-                            Spacer(modifier = Modifier.height(AzNavRailDefaults.RailContentSpacerHeight))
-                        }
+                        RailItemNode(
+                            item = item,
+                            scope = scope,
+                            navController = navController,
+                            currentDestination = currentDestination,
+                            buttonSize = buttonSize,
+                            onRailCyclerClick = onRailCyclerClick,
+                            onItemSelected = onItemSelected,
+                            hostStates = hostStates,
+                            onClickOverride = onClickOverride,
+                            onItemGloballyPositioned = onItemGloballyPositioned,
+                            helpEnabled = helpEnabled,
+                            draggedItemId = draggedItemId,
+                            dragOffset = dragOffset,
+                            currentDropTargetIndex = currentDropTargetIndex,
+                            onDragStart = onDragStart,
+                            onDragEnd = onDragEnd,
+                            onDragDelta = onDragDelta,
+                            onDragTargetChange = onDragTargetChange,
+                            onMenuOpen = onMenuOpen,
+                            itemHeights = itemHeights,
+                            onHeightReported = onHeightReported,
+                            itemWidths = itemWidths,
+                            onWidthReported = onWidthReported,
+                            coroutineScope = coroutineScope,
+                            hiddenMenuOpenId = hiddenMenuOpenId,
+                            onHiddenMenuDismiss = onHiddenMenuDismiss,
+                            lastTappedId = lastTappedId,
+                            onUpdateLastTappedId = onUpdateLastTappedId,
+                            snappingOffsets = snappingOffsets,
+                            visualDockingSide = visualDockingSide,
+                            rotationDegrees = rotationDegrees,
+                            orientation = orientation,
+                            index = index,
+                            // The cascade index runs over itemsToRender, so its count must too; teardown is count-independent.
+                            count = itemsToRender.size,
+                            isRailOpen = isRailOpen
+                        )
                     }
                 }
             }
