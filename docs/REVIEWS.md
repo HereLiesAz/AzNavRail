@@ -52,4 +52,4 @@ For an explicitly user-initiated Rate app link, Google recommends linking to the
 
 ## Publishing
 
-`Publish Play review library` builds and tests the standalone module and publishes immutable SHA coordinates from main and numeric coordinates for subsequent stable releases containing the module. It uses the shared Maven branch and serialization group to avoid publication races. No existing release is mutated.
+`Verify Play review library` tests the standalone build on pull requests without acquiring the publication queue. `Publish Android update libraries` then publishes the review artifact after the update artifacts, using the same SHA/stable-tag matrix and Maven branch. Revisions predating the review module are skipped. Keeping the writers in one workflow avoids GitHub Actions cancelling a pending publication when a third run enters the shared concurrency group. No existing release is mutated.
