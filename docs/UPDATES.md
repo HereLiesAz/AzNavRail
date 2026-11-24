@@ -7,3 +7,9 @@ Call `AzUpdateChecker.check(this, "HereLiesAz/YourRepo")` after activity creatio
 GitHub installs query stable releases and prioritize the release workflow's versionCode. Debug builds and unrelated stores are ignored. Automatic checks are throttled for six hours. A skipped version can still be checked manually. The dialog opens the official release page rather than downloading an APK.
 
 For Google Play builds add `com.github.HereLiesAz.AzNavRail:aznavrail-updates-play` through `playImplementation` (or the actual Play-only configuration). Pass `playSource = AzPlayUpdates` from the Play source set, importing `com.hereliesaz.aznavrail.updates.play.AzPlayUpdates`. The adapter queries actual Play update availability. Without it no offer is shown; GitHub is never substituted for Play. The core artifact has no Play dependency.
+
+## Reliable artifact repository
+
+The dedicated `Publish Android update libraries` workflow tests and publishes both standalone modules into the public Maven repository at `https://raw.githubusercontent.com/HereLiesAz/AzNavRail/update-maven/`. Use the full SHA of a successfully published source commit as the version. The publication branch retains previous versions. This avoids requiring consumers to trigger an on-demand JitPack build. Existing navigation artifacts and JitPack coordinates are unchanged.
+
+In Gradle settings, add a Maven repository for that URL with an exclusive content filter for the two update modules. Do not select this repository for navigation artifacts.
