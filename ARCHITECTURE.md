@@ -13,6 +13,9 @@
   implementation for behavior; `aznavrail-react` and `aznavrail-cmp` are expected to reach parity —
   see `docs/PLATFORM_PARITY.md` for the current contract and known gaps.
 
+- `aznavrail-updates` is an optional Android-only release checker, independent of navigation.
+- `aznavrail-updates-play` is an optional Play-only adapter; the core update checker has no Play dependency.
+
 ## Invariants
 
 1. A host, its rail, and its navigation graph share one `NavHostController` and therefore one back stack.
@@ -56,3 +59,7 @@ The Compose Destinations UX analyzer reads Kotlin source before generated code e
 ### Isolate Play subscriptions in a separate CMP artifact
 
 The existing navigation library must not force Google Play code or fees onto its consumers or non-Android targets. The reusable paywall UI is common Compose; the Android adapter is private to the optional `aznavrail-subscriptions` artifact. A consuming app chooses the `playImplementation` flavor so the GitHub APK has no billing dependency at all. The store, not a local clock, owns prices and trial eligibility. See `docs/SUBSCRIPTIONS.md`.
+
+### Isolate update checks from navigation and distribution SDKs
+
+Both Android and CMP Android hosts need the same update policy without acquiring navigation or Google Play dependencies. The core checker routes by installer; the optional Play adapter owns the Play SDK. See `docs/UPDATES.md`.

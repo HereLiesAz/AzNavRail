@@ -16,6 +16,8 @@ This "navigrenuail" provides a vertical navigation rail that expands to a full m
 
 ## 📚 Documentation
 
+- **[Android update checks](/docs/UPDATES.md)**: Optional GitHub release checker and Play-only adapter.
+
 -   **[Complete Guide (The Bible)](/docs/AZNAVRAIL_COMPLETE_GUIDE.md)**: Comprehensive, encyclopedic reference for every feature.
 -   **[Play-only subscriptions (opt-in)](/docs/SUBSCRIPTIONS.md)**: Reusable CMP gate with Android Play Billing isolated to Play build flavors.
 -   **[API Reference](/docs/API.md)**: Javadoc-style listing.
