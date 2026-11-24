@@ -37,6 +37,7 @@ object AzUpdateChecker {
      * dependencies to the GitHub flavor. Network failures never interrupt startup.
      */
     @JvmStatic
+    @JvmOverloads
     fun check(activity: Activity, repository: String, manual: Boolean = false, playSource: AzPlayUpdateSource? = null) {
         require(repositoryPattern.matches(repository) && repository.split('/').none { it == "." || it == ".." })
         if (activity.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0) return
