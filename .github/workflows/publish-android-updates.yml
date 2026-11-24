@@ -37,7 +37,7 @@ jobs:
           JITPACK_VERSION: ${{ github.sha }}
         run: |
           chmod +x gradlew
-          ./gradlew :aznavrail-updates:testReleaseUnitTest :aznavrail-updates:publishReleasePublicationToMavenLocal :aznavrail-updates-play:publishReleasePublicationToMavenLocal -Dmaven.repo.local="$RUNNER_TEMP/update-maven" --no-daemon
+          ./gradlew :aznavrail-updates:testDebugUnitTest :aznavrail-updates:publishReleasePublicationToMavenLocal :aznavrail-updates-play:publishReleasePublicationToMavenLocal -Dmaven.repo.local="$RUNNER_TEMP/update-maven" --no-daemon
       - name: Publish immutable Maven coordinates
         shell: bash
         run: |
