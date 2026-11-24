@@ -1,0 +1,96 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.github.HereLiesAz.AzNavRail",
+    "module": "aznavrail-updates-compat",
+    "version": "12.5",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.9"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "1.9.24"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "aznavrail-updates-compat-12.5.aar",
+          "url": "aznavrail-updates-compat-12.5.aar",
+          "size": 14128,
+          "sha512": "956d30eb57ebde2cfb2858a8f93eef54d0c2ba081dbbb1d6afba13ff611f4b422f0204f1ed193213e873dd4a203681e392f4853718fcdeb601615fc41d9f8a2b",
+          "sha256": "532fea513e340c8a57df477011c49dd08b39c0b759f567f4f4f72bb5cea561eb",
+          "sha1": "7a002e0ce3e3526efe6171d48d0e4d9fb1b4cb84",
+          "md5": "796cd0d89db538fb489b36935c340451"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "1.9.24"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "aznavrail-updates-compat-12.5.aar",
+          "url": "aznavrail-updates-compat-12.5.aar",
+          "size": 14128,
+          "sha512": "956d30eb57ebde2cfb2858a8f93eef54d0c2ba081dbbb1d6afba13ff611f4b422f0204f1ed193213e873dd4a203681e392f4853718fcdeb601615fc41d9f8a2b",
+          "sha256": "532fea513e340c8a57df477011c49dd08b39c0b759f567f4f4f72bb5cea561eb",
+          "sha1": "7a002e0ce3e3526efe6171d48d0e4d9fb1b4cb84",
+          "md5": "796cd0d89db538fb489b36935c340451"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseSourcePublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "aznavrail-updates-compat-12.5-sources.jar",
+          "url": "aznavrail-updates-compat-12.5-sources.jar",
+          "size": 3917,
+          "sha512": "e55affe4911c2e2b5ca6aa2ea167481b1529e62e58d3c0614e6777a8a3bbdb77ae403a992febd1c5860bfb8483287f6503a0e99a3e6314e098867cee7ab10522",
+          "sha256": "e7f5bddfb21b757c157a3f19f8c53d284b10feea35409abb1910d07f17490f33",
+          "sha1": "4fa1e130f16c8fc1b71dc6977f991917e4390499",
+          "md5": "fb749e83c27d480b987741cbcfed1545"
+        }
+      ]
+    }
+  ]
+}
