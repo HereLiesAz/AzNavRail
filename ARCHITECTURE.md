@@ -30,7 +30,7 @@
 9. Only a completed, product-matching purchase returned by a successful Play query can unlock the Play root; pending and errors fail closed.
 10. Generated destination graphs are checked before the Android build; UX errors block CI, while UX warnings remain visible in annotations, summaries, SARIF, and artifacts.
 
-11. The review requester never enters navigation or the GitHub distribution by default. Only eligible foreground Play installs may request a review, and a completed review flow is never treated as proof of a rating or review.
+11. The review requester never enters navigation or the GitHub distribution by default. Only eligible foreground Play installs may request a review, after one minute and at most once per local calendar day; a completed review flow is never treated as proof of a rating or review.
 
 ## Current version
 
@@ -69,4 +69,4 @@ Both Android and CMP Android hosts need the same update policy without acquiring
 
 ### Isolate Play reviews
 
-The review requester is Java-only, with no navigation or update-check dependency, so older Kotlin consumers can use the same artifact. Only the Play Store decides whether to show its native dialog: local state tracks opportunities and attempted requests, never ratings or review results. See `docs/REVIEWS.md`.
+The review requester is Java-only, with no navigation or update-check dependency, so older Kotlin consumers can use the same artifact. Only the Play Store decides whether to show its native dialog: local state tracks foreground timing and the last attempted request, never ratings or review results. See `docs/REVIEWS.md`.

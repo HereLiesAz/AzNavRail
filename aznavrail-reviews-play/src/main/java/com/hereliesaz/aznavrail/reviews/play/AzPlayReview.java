@@ -1,17 +1,27 @@
 package com.hereliesaz.aznavrail.reviews.play;
 
 import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 
 import com.google.android.play.core.review.ReviewManager;
 import com.google.android.play.core.review.ReviewManagerFactory;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Set;
+import java.util.TimeZone;
 
 /**
  * Optional native Google Play review requests. No navigation, backend, account or review lookup.
@@ -20,74 +30,139 @@ import java.lang.ref.WeakReference;
  */
 public final class AzPlayReview {
     private static final String PREFS = "az_play_review_requests";
-    public static final int DEFAULT_MINIMUM_USAGE_DAYS = 3;
-    public static final int DEFAULT_COOLDOWN_DAYS = 90;
+    /** @deprecated No minimum usage-day threshold remains. */
+    @Deprecated public static final int DEFAULT_MINIMUM_USAGE_DAYS = 1;
+    /** @deprecated Requests are limited by local calendar day, not an elapsed-day cooldown. */
+    @Deprecated public static final int DEFAULT_COOLDOWN_DAYS = 1;
+    private static ForegroundRequests registered;
 
     private AzPlayReview() {}
 
     /**
-     * Record an opportunity at a natural stopping point on the main thread.
-     * By default, require three distinct UTC usage days and wait ninety days between attempts.
+     * Enable automatic review requests for the process. Call on the main thread in the launch
+     * Activity's onCreate, after super.onCreate. Repeated calls are harmless. Each foreground
+     * session becomes eligible after one minute; at most one Play request is made per local
+     * calendar day. No request is made while the app is backgrounded or lacks window focus.
      *
-     * @param activity the currently focused foreground activity, not an application context
+     * @param activity an Activity belonging to the consuming application
      */
     public static void request(Activity activity) {
-        request(activity, DEFAULT_MINIMUM_USAGE_DAYS, DEFAULT_COOLDOWN_DAYS);
+        if (activity == null || Looper.myLooper() != Looper.getMainLooper()) return;
+        if (registered != null) return;
+        try {
+            boolean debug = (activity.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+            if (debug || !ReviewEligibility.allowed(debug, installer(activity), true)) return;
+            Application app = activity.getApplication();
+            ForegroundRequests requests = new ForegroundRequests(app);
+            app.registerActivityLifecycleCallbacks(requests);
+            registered = requests;
+            // Also accept a first call from an already-focused Activity for older consumers.
+            if (active(activity)) {
+                requests.onActivityStarted(activity);
+                requests.onActivityResumed(activity);
+            }
+        } catch (PackageManager.NameNotFoundException | RuntimeException ignored) {
+            // Unknown installer or unavailable app state: fail closed.
+        }
     }
 
     /**
-     * Record an opportunity and, when locally eligible, ask Play to show its native review flow.
-     * Call only after a meaningful interaction, never as a button promising to open the dialog.
-     * Debug, sideloaded, unknown-store and inactive activities are ignored without recording usage.
-     * A failed or suppressed Play request still consumes the local cooldown.
-     *
-     * @param activity the currently focused foreground activity
-     * @param minimumUsageDays distinct UTC days with meaningful opportunities (positive)
-     * @param cooldownDays minimum interval between attempts in 24-hour days (positive)
+     * @deprecated The daily policy is fixed; both legacy policy arguments are ignored.
+     * Use {@link #request(Activity)} during Activity creation instead.
      */
+    @Deprecated
     public static void request(Activity activity, int minimumUsageDays, int cooldownDays) {
-        if (minimumUsageDays < 1 || cooldownDays < 1) {
-            throw new IllegalArgumentException("Usage and cooldown must be positive");
-        }
-        if (activity == null || Looper.myLooper() != Looper.getMainLooper()) return;
-        try {
-            boolean debug = (activity.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
-            if (debug || !active(activity)) return;
-            if (!ReviewEligibility.allowed(debug, installer(activity), active(activity))) return;
+        request(activity);
+    }
 
-            SharedPreferences prefs = activity.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-            ReviewEligibility.State state = new ReviewEligibility.State(
-                    prefs.getLong("last_day", -1L),
-                    prefs.getInt("usage_days", 0),
-                    prefs.getLong("last_attempt", -1L));
-            ReviewEligibility.Decision decision = ReviewEligibility.evaluate(
-                    state, System.currentTimeMillis(), minimumUsageDays, cooldownDays);
-            if (decision.state == state) return;
-            SharedPreferences.Editor edit = prefs.edit()
-                    .putLong("last_day", decision.state.lastDay)
-                    .putInt("usage_days", decision.state.usageDays)
-                    .putLong("last_attempt", decision.state.lastAttempt);
-            if (!decision.request) {
-                edit.apply();
+    /** Tracks the app's foreground session, rather than starting a timer per Activity. */
+    private static final class ForegroundRequests implements Application.ActivityLifecycleCallbacks {
+        private final Application app;
+        private final Handler handler = new Handler(Looper.getMainLooper());
+        private final ReviewEligibility.Session session = new ReviewEligibility.Session();
+        private final Set<Activity> started =
+                Collections.newSetFromMap(new IdentityHashMap<Activity, Boolean>());
+        private final List<Activity> resumed = new ArrayList<>();
+        private final Runnable attempt = this::attemptWhenReady;
+
+        ForegroundRequests(Application app) {
+            this.app = app;
+        }
+
+        @Override public void onActivityCreated(Activity activity, Bundle savedInstanceState) {}
+        @Override public void onActivityStarted(Activity activity) { started.add(activity); }
+        @Override public void onActivityResumed(Activity activity) {
+            started.add(activity);
+            resumed.remove(activity);
+            resumed.add(activity);
+            session.open(SystemClock.uptimeMillis());
+            schedule();
+        }
+        @Override public void onActivityPaused(Activity activity) {
+            resumed.remove(activity);
+            schedule();
+        }
+        @Override public void onActivityStopped(Activity activity) {
+            started.remove(activity);
+            resumed.remove(activity);
+            if (started.isEmpty() && !activity.isChangingConfigurations()) {
+                session.close();
+            }
+            schedule();
+        }
+        @Override public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
+        @Override public void onActivityDestroyed(Activity activity) {
+            started.remove(activity);
+            resumed.remove(activity);
+            schedule();
+        }
+
+        private void schedule() {
+            handler.removeCallbacks(attempt);
+            if (resumed.isEmpty()) return;
+            long remaining = session.remaining(SystemClock.uptimeMillis());
+            if (remaining >= 0) handler.postDelayed(attempt, remaining);
+        }
+
+        private void attemptWhenReady() {
+            if (session.remaining(SystemClock.uptimeMillis()) != 0 || resumed.isEmpty()) return;
+            Activity activity = null;
+            for (int i = resumed.size() - 1; i >= 0; i--) {
+                if (active(resumed.get(i))) {
+                    activity = resumed.get(i);
+                    break;
+                }
+            }
+            if (activity == null) {
+                // A permission dialog or transition can temporarily take focus.
+                handler.postDelayed(attempt, 1000L);
                 return;
             }
-            // Reserve the attempt durably before contacting Play, including on failure or dismissal.
-            // Main-thread serialization prevents overlapping requests from multiple activities.
-            if (!edit.commit()) return;
-            WeakReference<Activity> reference = new WeakReference<>(activity);
-            ReviewManager manager = ReviewManagerFactory.create(activity.getApplicationContext());
-            manager.requestReviewFlow().addOnCompleteListener(task -> {
-                Activity current = reference.get();
-                if (!task.isSuccessful() || current == null || !active(current)) return;
-                try {
-                    manager.launchReviewFlow(current, task.getResult());
-                    // Never infer a submitted review from task completion.
-                } catch (RuntimeException ignored) {
-                    // A failed Play interaction must not interrupt the host app.
-                }
-            });
-        } catch (PackageManager.NameNotFoundException | RuntimeException ignored) {
-            // Missing Play services, unavailable installer or corrupt local state: fail closed.
+            session.complete();
+            try {
+                SharedPreferences prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+                long now = System.currentTimeMillis();
+                long last = prefs.getLong("last_attempt", -1L);
+                if (!ReviewEligibility.canAttempt(last, now, TimeZone.getDefault())) return;
+                // Preserve the existing timestamp across upgrades; reserve before contacting Play.
+                // Failed and suppressed requests count as attempts, never as submitted reviews.
+                if (!prefs.edit().putLong("last_attempt", now).commit()) return;
+                long generation = session.generation();
+                WeakReference<Activity> reference = new WeakReference<>(activity);
+                ReviewManager manager = ReviewManagerFactory.create(app);
+                manager.requestReviewFlow().addOnCompleteListener(task -> {
+                    Activity current = reference.get();
+                    if (!task.isSuccessful() || current == null || !active(current)
+                            || !resumed.contains(current) || session.generation() != generation) return;
+                    try {
+                        manager.launchReviewFlow(current, task.getResult());
+                    } catch (RuntimeException ignored) {
+                        // Play interaction failures must not interrupt the host app.
+                    }
+                });
+            } catch (RuntimeException ignored) {
+                // Missing Play services or corrupt state: fail closed.
+            }
         }
     }
 
