@@ -11,6 +11,8 @@ on:
       - 'settings.gradle.kts'
       - 'build.gradle.kts'
       - '.github/workflows/publish-android-updates.yml'
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -21,11 +23,45 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.versions.outputs.versions }}
+    steps:
+      - id: versions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == release ]]; then
+            [[ "$RELEASE_TAG" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)*$ ]] || { echo 'versions=[]' >> "$GITHUB_OUTPUT"; exit 0; }
+            versions=$(jq -cn --arg v "$RELEASE_TAG" '[$v]')
+          else
+            versions=$(jq -cn --arg v "$GITHUB_SHA" '[$v]')
+            # Backfill the latest stable tag when publishing main; preserve SHA coordinates.
+            tag=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq '.tag_name' 2>/dev/null || true)
+            if [[ "$tag" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)*$ ]]; then
+              versions=$(jq -c --arg v "$tag" '. + [$v]' <<< "$versions")
+            fi
+          fi
+          echo "versions=$versions" >> "$GITHUB_OUTPUT"
   publish:
+    needs: resolve
+    if: needs.resolve.outputs.versions != '[]'
+    strategy:
+      max-parallel: 1
+      matrix:
+        version: ${{ fromJSON(needs.resolve.outputs.versions) }}
+    env:
+      UPDATE_VERSION: ${{ matrix.version }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.version }}
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -34,7 +70,7 @@ jobs:
       - name: Test and publish the standalone artifacts
         env:
           JITPACK: 'true'
-          JITPACK_VERSION: ${{ github.sha }}
+          JITPACK_VERSION: ${{ matrix.version }}
         run: |
           chmod +x gradlew
           ./gradlew :aznavrail-updates:testDebugUnitTest :aznavrail-updates:publishReleasePublicationToMavenLocal :aznavrail-updates-play:publishReleasePublicationToMavenLocal -Dmaven.repo.local="$RUNNER_TEMP/update-maven" --no-daemon
@@ -45,8 +81,8 @@ jobs:
           source_dir="$RUNNER_TEMP/update-maven/com/github/HereLiesAz/AzNavRail"
           publish_dir="$RUNNER_TEMP/update-maven-branch"
           for module in aznavrail-updates aznavrail-updates-play; do
-            test -s "$source_dir/$module/$GITHUB_SHA/$module-$GITHUB_SHA.aar"
-            test -s "$source_dir/$module/$GITHUB_SHA/$module-$GITHUB_SHA.pom"
+            test -s "$source_dir/$module/$UPDATE_VERSION/$module-$UPDATE_VERSION.aar"
+            test -s "$source_dir/$module/$UPDATE_VERSION/$module-$UPDATE_VERSION.pom"
           done
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -61,17 +97,17 @@ jobs:
             git -C "$publish_dir" rm -rf .
           fi
           for module in aznavrail-updates aznavrail-updates-play; do
-            dest="$publish_dir/com/github/HereLiesAz/AzNavRail/$module/$GITHUB_SHA"
+            dest="$publish_dir/com/github/HereLiesAz/AzNavRail/$module/$UPDATE_VERSION"
             if test -d "$dest"; then
-              test -s "$dest/$module-$GITHUB_SHA.aar"
-              test -s "$dest/$module-$GITHUB_SHA.pom"
+              test -s "$dest/$module-$UPDATE_VERSION.aar"
+              test -s "$dest/$module-$UPDATE_VERSION.pom"
               continue
             fi
             mkdir -p "$dest"
-            cp -a "$source_dir/$module/$GITHUB_SHA/." "$dest/"
+            cp -a "$source_dir/$module/$UPDATE_VERSION/." "$dest/"
           done
           git -C "$publish_dir" add com
           if ! git -C "$publish_dir" diff --cached --quiet; then
-            git -C "$publish_dir" commit -m "Publish Android update libraries $GITHUB_SHA"
+            git -C "$publish_dir" commit -m "Publish Android update libraries $UPDATE_VERSION"
             git -C "$publish_dir" push origin HEAD:refs/heads/update-maven
           fi
