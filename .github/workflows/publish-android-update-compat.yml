@@ -1,0 +1,90 @@
+name: Publish Android update compatibility libraries
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'update-compat-build/**'
+      - '.github/workflows/publish-android-update-compat.yml'
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-update-maven
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve stable source tag
+        id: tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="$EVENT_TAG"
+          if [[ -z "$tag" ]]; then
+            tag=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq '.tag_name')
+          fi
+          [[ "$tag" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)*$ ]]
+          echo "version=$tag" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.tag.outputs.version }}
+          path: tagged-source
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build and test unchanged tagged sources
+        env:
+          UPDATE_VERSION: ${{ steps.tag.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp -a tagged-source/aznavrail-updates/src update-compat-build/aznavrail-updates-compat/
+          cp -a tagged-source/aznavrail-updates-play/src update-compat-build/aznavrail-updates-play-compat/
+          gradle -p update-compat-build :aznavrail-updates-compat:testDebugUnitTest :aznavrail-updates-compat:publishReleasePublicationToMavenLocal :aznavrail-updates-play-compat:publishReleasePublicationToMavenLocal -PupdateVersion="$UPDATE_VERSION" -Dmaven.repo.local="$RUNNER_TEMP/update-compat-maven" --no-daemon
+      - name: Publish immutable compatibility coordinates
+        env:
+          UPDATE_VERSION: ${{ steps.tag.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_dir="$RUNNER_TEMP/update-compat-maven/com/github/HereLiesAz/AzNavRail"
+          publish_dir="$RUNNER_TEMP/update-compat-branch"
+          for module in aznavrail-updates-compat aznavrail-updates-play-compat; do
+            test -s "$source_dir/$module/$UPDATE_VERSION/$module-$UPDATE_VERSION.aar"
+            test -s "$source_dir/$module/$UPDATE_VERSION/$module-$UPDATE_VERSION.pom"
+          done
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin refs/heads/update-maven
+          git worktree add --detach "$publish_dir" FETCH_HEAD
+          for module in aznavrail-updates-compat aznavrail-updates-play-compat; do
+            dest="$publish_dir/com/github/HereLiesAz/AzNavRail/$module/$UPDATE_VERSION"
+            if test -d "$dest"; then
+              test -s "$dest/$module-$UPDATE_VERSION.aar"
+              test -s "$dest/$module-$UPDATE_VERSION.pom"
+              continue
+            fi
+            mkdir -p "$dest"
+            cp -a "$source_dir/$module/$UPDATE_VERSION/." "$dest/"
+          done
+          git -C "$publish_dir" add com
+          if ! git -C "$publish_dir" diff --cached --quiet; then
+            git -C "$publish_dir" commit -m "Publish Android update compatibility libraries $UPDATE_VERSION"
+            git -C "$publish_dir" push origin HEAD:refs/heads/update-maven
+          fi
