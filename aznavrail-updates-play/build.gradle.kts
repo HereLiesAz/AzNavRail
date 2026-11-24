@@ -8,7 +8,7 @@ version = System.getenv("JITPACK_VERSION") ?: libs.versions.aznavrail.get()
 android {
     namespace = "com.hereliesaz.aznavrail.updates.play"
     compileSdk = 37
-    defaultConfig { minSdk = 26 }
+    defaultConfig { minSdk = 24 }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
