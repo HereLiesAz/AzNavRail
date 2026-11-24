@@ -6,6 +6,7 @@ on:
     paths:
       - 'aznavrail-updates/**'
       - 'aznavrail-updates-play/**'
+      - 'aznavrail-reviews-play/**'
       - 'gradle/**'
       - 'gradle.properties'
       - 'settings.gradle.kts'
@@ -111,3 +112,69 @@ jobs:
             git -C "$publish_dir" commit -m "Publish Android update libraries $UPDATE_VERSION"
             git -C "$publish_dir" push origin HEAD:refs/heads/update-maven
           fi
+
+  # Share the publication workflow (not just its concurrency group): GitHub Actions
+  # cancels an older pending run when a third run joins a group, even with
+  # cancel-in-progress disabled. Finish the update writers before the review writer.
+  publish-review:
+    needs: [resolve, publish]
+    if: ${{ always() && needs.resolve.result == 'success' && needs.resolve.outputs.versions != '[]' }}
+    strategy:
+      max-parallel: 1
+      matrix:
+        version: ${{ fromJSON(needs.resolve.outputs.versions) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.version }}
+      - name: Check whether this revision contains the module
+        id: module
+        shell: bash
+        run: |
+          if [[ -f aznavrail-reviews-play/build.gradle.kts ]]; then
+            echo 'present=true' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-java@v4
+        if: steps.module.outputs.present == 'true'
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        if: steps.module.outputs.present == 'true'
+        with:
+          gradle-version: '8.9'
+      - name: Build, test and publish locally
+        if: steps.module.outputs.present == 'true'
+        env:
+          REVIEW_VERSION: ${{ matrix.version }}
+        run: |
+          gradle -p aznavrail-reviews-play testDebugUnitTest publishReleasePublicationToMavenLocal -PreviewVersion="$REVIEW_VERSION" -Dmaven.repo.local="$RUNNER_TEMP/review-maven" --no-daemon
+      - name: Publish immutable Maven coordinates
+        if: steps.module.outputs.present == 'true'
+        env:
+          REVIEW_VERSION: ${{ matrix.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          module=aznavrail-reviews-play
+          source_dir="$RUNNER_TEMP/review-maven/com/github/HereLiesAz/AzNavRail/$module/$REVIEW_VERSION"
+          test -s "$source_dir/$module-$REVIEW_VERSION.aar"
+          test -s "$source_dir/$module-$REVIEW_VERSION.pom"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin refs/heads/update-maven
+          publish_dir="$RUNNER_TEMP/review-maven-branch"
+          git worktree add --detach "$publish_dir" FETCH_HEAD
+          dest="$publish_dir/com/github/HereLiesAz/AzNavRail/$module/$REVIEW_VERSION"
+          if [[ -d "$dest" ]]; then
+            test -s "$dest/$module-$REVIEW_VERSION.aar"
+            test -s "$dest/$module-$REVIEW_VERSION.pom"
+            exit 0
+          fi
+          mkdir -p "$dest"
+          cp -a "$source_dir/." "$dest/"
+          git -C "$publish_dir" add com
+          git -C "$publish_dir" commit -m "Publish Play review library $REVIEW_VERSION"
+          git -C "$publish_dir" push origin HEAD:refs/heads/update-maven

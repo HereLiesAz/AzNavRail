@@ -1,89 +1,33 @@
-name: Publish Play review library
+name: Verify Play review library
 
 on:
   pull_request:
     paths:
       - 'aznavrail-reviews-play/**'
       - '.github/workflows/publish-play-reviews.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'aznavrail-reviews-play/**'
-      - '.github/workflows/publish-play-reviews.yml'
-  release:
-    types: [published]
+      - '.github/workflows/publish-android-updates.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: android-update-maven
-  cancel-in-progress: false
+  group: play-review-verify-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  publish:
+  verify:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Resolve version
-        id: version
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ "$GITHUB_EVENT_NAME" == release ]]; then
-            [[ "$RELEASE_TAG" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)*$ ]] || exit 0
-            version="$RELEASE_TAG"
-          else
-            version="$GITHUB_SHA"
-          fi
-          if [[ -f aznavrail-reviews-play/build.gradle.kts ]]; then
-            echo "version=$version" >> "$GITHUB_OUTPUT"
-          fi
       - uses: actions/setup-java@v4
-        if: steps.version.outputs.version != ''
         with:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
-        if: steps.version.outputs.version != ''
         with:
           gradle-version: '8.9'
       - name: Build, test and publish locally
-        if: steps.version.outputs.version != ''
-        env:
-          REVIEW_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          gradle -p aznavrail-reviews-play testDebugUnitTest publishReleasePublicationToMavenLocal -PreviewVersion="$REVIEW_VERSION" -Dmaven.repo.local="$RUNNER_TEMP/review-maven" --no-daemon
-      - name: Publish immutable Maven coordinates
-        if: steps.version.outputs.version != '' && github.event_name != 'pull_request'
-        env:
-          REVIEW_VERSION: ${{ steps.version.outputs.version }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          module=aznavrail-reviews-play
-          source_dir="$RUNNER_TEMP/review-maven/com/github/HereLiesAz/AzNavRail/$module/$REVIEW_VERSION"
-          test -s "$source_dir/$module-$REVIEW_VERSION.aar"
-          test -s "$source_dir/$module-$REVIEW_VERSION.pom"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin refs/heads/update-maven
-          publish_dir="$RUNNER_TEMP/review-maven-branch"
-          git worktree add --detach "$publish_dir" FETCH_HEAD
-          dest="$publish_dir/com/github/HereLiesAz/AzNavRail/$module/$REVIEW_VERSION"
-          if [[ -d "$dest" ]]; then
-            test -s "$dest/$module-$REVIEW_VERSION.aar"
-            test -s "$dest/$module-$REVIEW_VERSION.pom"
-            exit 0
-          fi
-          mkdir -p "$dest"
-          cp -a "$source_dir/." "$dest/"
-          git -C "$publish_dir" add com
-          git -C "$publish_dir" commit -m "Publish Play review library $REVIEW_VERSION"
-          git -C "$publish_dir" push origin HEAD:refs/heads/update-maven
+          gradle -p aznavrail-reviews-play testDebugUnitTest publishReleasePublicationToMavenLocal -PreviewVersion="$GITHUB_SHA" -Dmaven.repo.local="$RUNNER_TEMP/review-maven" --no-daemon
