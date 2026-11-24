@@ -34,19 +34,15 @@ For Play-only apps, `implementation` is sufficient. Never add it to GitHub/FOSS 
 ~~~kotlin
 import com.hereliesaz.aznavrail.reviews.play.AzPlayReview
 
-// At a natural stopping point, after the user completes a meaningful action:
-AzPlayReview.request(activity)
+// Launch Activity, after super.onCreate(savedInstanceState):
+AzPlayReview.request(this)
 ~~~
 
-For a custom policy:
+Register once on the main thread during Activity creation. The module waits one minute after the app enters the foreground and then makes at most one review attempt per local calendar day. There is no minimum usage-day threshold or multi-day cooldown. Reopening on the same day does not repeat the attempt; returning from the background starts a fresh one-minute timer. Activity changes and configuration recreation do not reset an ongoing foreground timer. If window focus is temporarily unavailable, the request waits until focus returns. The app must be in the foreground when Play's review flow is launched. An app left open across midnight waits until the next foreground session before attempting again.
 
-~~~kotlin
-AzPlayReview.request(activity, 5, 120)
-~~~
+The attempt timestamp is persisted before contacting Play, including failed or suppressed requests, and existing timestamps remain valid after an upgrade. The deprecated three-argument overload remains source- and binary-compatible but ignores its old policy arguments. State is app-local (it may be cleared or restored by Android app-data management), not tied to an account or version. Debug, sideload and unknown-store installs are ignored.
 
-Arguments are minimum distinct usage days and cooldown days. Defaults: three distinct UTC days with a meaningful opportunity; ninety 24-hour days between attempts. Call on the main thread when the Activity is focused, not during startup, on every recomposition, or during another dialog. A day is counted at most once even if the Activity is recreated. The attempt is persisted before requesting Play, including failed or suppressed requests. State is app-local (it may be cleared or restored by Android app-data management); it is not tied to an account or version. Debug, sideload and unknown-store installs are ignored.
-
-**Existing ratings:** Play may suppress the native review prompt for accounts that already reviewed the app or exceed its quota. The application cannot query a user's review status, cannot know whether a dialog appeared, and cannot know whether a rating or review was submitted. Local cooldown state must never be called a rating status. No pre-screening, incentives, or fallback dialog is used.
+**Existing ratings:** Play may suppress the native review prompt for accounts that already reviewed the app or exceed its quota. The application cannot query a user's review status, cannot know whether a dialog appeared, and cannot know whether a rating or review was submitted. Local attempt state must never be called a rating status. No pre-screening, incentives, or fallback dialog is used.
 
 For an explicitly user-initiated Rate app link, Google recommends linking to the Play listing instead of promising the in-app dialog. See the [guidelines](https://developer.android.com/guide/playcore/in-app-review#when-to-request) and [testing instructions](https://developer.android.com/guide/playcore/in-app-review/test). Unit tests verify the local policy; a Play internal test-track install with an eligible Google account is needed to test the actual dialog. Internal testing does not enforce production quotas.
 
