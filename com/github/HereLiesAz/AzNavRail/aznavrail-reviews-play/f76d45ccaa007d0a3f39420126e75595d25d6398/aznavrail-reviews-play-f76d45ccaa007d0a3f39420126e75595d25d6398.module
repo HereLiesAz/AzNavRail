@@ -1,0 +1,87 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.github.HereLiesAz.AzNavRail",
+    "module": "aznavrail-reviews-play",
+    "version": "f76d45ccaa007d0a3f39420126e75595d25d6398",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.9"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "aznavrail-reviews-play-f76d45ccaa007d0a3f39420126e75595d25d6398.aar",
+          "url": "aznavrail-reviews-play-f76d45ccaa007d0a3f39420126e75595d25d6398.aar",
+          "size": 7389,
+          "sha512": "8f2eba88911325fc4752325bb21c73df0263bc329f797b58d3bacf6ace334f2cbf852ec34d25e725faa131062e84d07c3f6f18a346ab807255db82bbcad179e8",
+          "sha256": "789b2997e9e0b007561c002b2422224e3e5717d2c04da6417f2d48e191fa756a",
+          "sha1": "5c49eed7ac71a54f75ce8272897c4409c747f5ed",
+          "md5": "1285f18c4e65aa565aa9b661cddb14a5"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "com.google.android.play",
+          "module": "review",
+          "version": {
+            "requires": "2.0.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "aznavrail-reviews-play-f76d45ccaa007d0a3f39420126e75595d25d6398.aar",
+          "url": "aznavrail-reviews-play-f76d45ccaa007d0a3f39420126e75595d25d6398.aar",
+          "size": 7389,
+          "sha512": "8f2eba88911325fc4752325bb21c73df0263bc329f797b58d3bacf6ace334f2cbf852ec34d25e725faa131062e84d07c3f6f18a346ab807255db82bbcad179e8",
+          "sha256": "789b2997e9e0b007561c002b2422224e3e5717d2c04da6417f2d48e191fa756a",
+          "sha1": "5c49eed7ac71a54f75ce8272897c4409c747f5ed",
+          "md5": "1285f18c4e65aa565aa9b661cddb14a5"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseSourcePublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "aznavrail-reviews-play-f76d45ccaa007d0a3f39420126e75595d25d6398-sources.jar",
+          "url": "aznavrail-reviews-play-f76d45ccaa007d0a3f39420126e75595d25d6398-sources.jar",
+          "size": 4720,
+          "sha512": "2ad0bb409cbbe08aa60f494287b3fbb8f58ad5312c9b1cb9eb6d813552fd35a5001568404c8f29282c253af156f9dc6046b0f4209885e2544c7c0626df4d4646",
+          "sha256": "8c622ffb362963430a85a0cb992047e8a36e04de25ee7daab2d6585aaed2e38d",
+          "sha1": "9350526f7331f22623f5104988604aa79043fa68",
+          "md5": "79946fdcc26315b7316bdf711c5181cc"
+        }
+      ]
+    }
+  ]
+}
