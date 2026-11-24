@@ -1,0 +1,117 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.github.HereLiesAz.AzNavRail",
+    "module": "aznavrail-updates-play",
+    "version": "6ddf2958fb0f96ef540b00fd41035bc134c30d94",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.6.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "com.github.HereLiesAz.AzNavRail",
+          "module": "aznavrail-updates",
+          "version": {
+            "requires": "6ddf2958fb0f96ef540b00fd41035bc134c30d94"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.4.10"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "aznavrail-updates-play-6ddf2958fb0f96ef540b00fd41035bc134c30d94.aar",
+          "url": "aznavrail-updates-play-6ddf2958fb0f96ef540b00fd41035bc134c30d94.aar",
+          "size": 3215,
+          "sha512": "948c893557a25f229f3100ee83164155227344cf5532390877a08b0ceeeabadd3d191ef5f60f434dafd752bf150b38854746f104fe4fab1d4b5ee9503342da47",
+          "sha256": "8faaf56f113b02e199792fe7054db79685e406e502e09585775f671572e3ab33",
+          "sha1": "b63356180744399053dfc14d61dc37d97d1d7ace",
+          "md5": "b1c59e8b920ac8f57cafd7ac932460d3"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "com.google.android.play",
+          "module": "app-update",
+          "version": {
+            "requires": "2.1.0"
+          }
+        },
+        {
+          "group": "com.github.HereLiesAz.AzNavRail",
+          "module": "aznavrail-updates",
+          "version": {
+            "requires": "6ddf2958fb0f96ef540b00fd41035bc134c30d94"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.4.10"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "aznavrail-updates-play-6ddf2958fb0f96ef540b00fd41035bc134c30d94.aar",
+          "url": "aznavrail-updates-play-6ddf2958fb0f96ef540b00fd41035bc134c30d94.aar",
+          "size": 3215,
+          "sha512": "948c893557a25f229f3100ee83164155227344cf5532390877a08b0ceeeabadd3d191ef5f60f434dafd752bf150b38854746f104fe4fab1d4b5ee9503342da47",
+          "sha256": "8faaf56f113b02e199792fe7054db79685e406e502e09585775f671572e3ab33",
+          "sha1": "b63356180744399053dfc14d61dc37d97d1d7ace",
+          "md5": "b1c59e8b920ac8f57cafd7ac932460d3"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseSourcePublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "aznavrail-updates-play-6ddf2958fb0f96ef540b00fd41035bc134c30d94-sources.jar",
+          "url": "aznavrail-updates-play-6ddf2958fb0f96ef540b00fd41035bc134c30d94-sources.jar",
+          "size": 1516,
+          "sha512": "576181069b53d9e81922c485bede318efc597077469f826e98a641806fd1415c5773e08e5bce9602b1a16d0d9622d976207929936fd9a3f4141d5ce4851d5183",
+          "sha256": "8829ae7d0c57cd10b9547c80c0816f65c67fc80fdce351a964820e1ddb38a6fa",
+          "sha1": "67689d09c88af32a283a2c8dddadca3cf93938be",
+          "md5": "60bd58be655a4e9a4e836ab35d942113"
+        }
+      ]
+    }
+  ]
+}
