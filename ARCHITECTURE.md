@@ -15,6 +15,7 @@
 
 - `aznavrail-updates` is an optional Android-only release checker, independent of navigation.
 - `aznavrail-updates-play` is an optional Play-only adapter; the core update checker has no Play dependency.
+- `aznavrail-reviews-play` is an independent Android-only in-app review requester; only Play builds opt into it.
 
 ## Invariants
 
@@ -28,6 +29,8 @@
 8. The optional billing module never enters the base AzNavRail or CMP navigation dependencies. Play-only consumers must use `playImplementation`; GitHub builds must contain neither its artifact nor BillingClient.
 9. Only a completed, product-matching purchase returned by a successful Play query can unlock the Play root; pending and errors fail closed.
 10. Generated destination graphs are checked before the Android build; UX errors block CI, while UX warnings remain visible in annotations, summaries, SARIF, and artifacts.
+
+11. The review requester never enters navigation or the GitHub distribution by default. Only eligible foreground Play installs may request a review, and a completed review flow is never treated as proof of a rating or review.
 
 ## Current version
 
@@ -63,3 +66,7 @@ The existing navigation library must not force Google Play code or fees onto its
 ### Isolate update checks from navigation and distribution SDKs
 
 Both Android and CMP Android hosts need the same update policy without acquiring navigation or Google Play dependencies. The core checker routes by installer; the optional Play adapter owns the Play SDK. See `docs/UPDATES.md`.
+
+### Isolate Play reviews
+
+The review requester is Java-only, with no navigation or update-check dependency, so older Kotlin consumers can use the same artifact. Only the Play Store decides whether to show its native dialog: local state tracks opportunities and attempted requests, never ratings or review results. See `docs/REVIEWS.md`.
