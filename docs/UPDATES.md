@@ -13,3 +13,7 @@ For Google Play builds add `com.github.HereLiesAz.AzNavRail:aznavrail-updates-pl
 The dedicated `Publish Android update libraries` workflow tests and publishes both standalone modules into the public Maven repository at `https://raw.githubusercontent.com/HereLiesAz/AzNavRail/update-maven/`. Use a successfully published numeric release tag (for example, `12.5`) as the version, or a full source commit SHA for development builds. The workflow publishes stable numeric release tags and backfills the latest stable tag when main is published. The publication branch retains previous versions. This avoids requiring consumers to trigger an on-demand JitPack build. Existing navigation artifacts and JitPack coordinates are unchanged.
 
 In Gradle settings, add a Maven repository for that URL with an exclusive content filter for the two update modules. Do not select this repository for navigation artifacts.
+
+## Older Android toolchains
+
+The optional `aznavrail-updates-compat` and `aznavrail-updates-play-compat` artifacts are built from the exact same numeric release tag, including 12.5, using Kotlin 1.9.24, AGP 8.7.3, compile SDK 35 and Java 8 bytecode. They retain minSdk 24 and the same public package/API; use these coordinates instead of (not alongside) the normal modules in older consumers. Add the two compatibility module names to the repository content filter. The Play compatibility module depends on the core compatibility module, not the modern one. These separately published coordinates do not replace or mutate an existing release.
